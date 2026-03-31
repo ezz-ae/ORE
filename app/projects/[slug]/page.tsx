@@ -141,6 +141,12 @@ const amenityIconMap: { [key: string]: LucideIcon } = {
   "default": Check,
 }
 
+const projectTabTriggerClass =
+  "rounded-full border border-[#152E24]/10 bg-white px-4 text-[#152E24]/65 data-[state=active]:border-[#152E24] data-[state=active]:bg-[#152E24] data-[state=active]:text-white"
+
+const brandOutlineButtonClass =
+  "border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]"
+
 const getAmenityIcon = (amenity: string): LucideIcon => {
   const lowerAmenity = amenity.toLowerCase()
   for (const key in amenityIconMap) {
@@ -347,42 +353,43 @@ export default async function ProjectPage({
         </section>
 
         {/* Project Header */}
-        <section className="border-b border-border bg-card py-8 -mt-24 relative z-10">
+        <section className="relative z-10 -mt-24 bg-[#FAF8F5] pb-8">
           <div className="container">
-            <div className="grid gap-8 lg:grid-cols-[1.5fr,1fr] w-full items-start">
+            <div className="grid w-full items-start gap-8 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-[1.5fr,1fr] lg:p-10">
                 <div className="space-y-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">ORE Signature Development</p>
                   <div className="flex flex-wrap gap-3">
-                    <Badge variant="secondary" className="backdrop-blur-md bg-card/60">
+                    <Badge variant="secondary" className="border-none bg-[#152E24]/[0.06] text-[#152E24]">
                       {project.status?.replace("-", " ")}
                     </Badge>
                     {project.investmentHighlights?.goldenVisaEligible && (
-                      <Badge className="ore-gradient text-black border-none">Golden Visa Eligible</Badge>
+                      <Badge className="border-none ore-gradient text-[#152E24]">Golden Visa Eligible</Badge>
                     )}
                     {location.freehold && (
-                      <Badge variant="outline">Freehold</Badge>
+                      <Badge variant="outline" className="border-[#152E24]/10 bg-[#FAF8F5] text-[#152E24]">Freehold</Badge>
                     )}
                   </div>
                   
                   <div className="space-y-2">
-                    <h1 className="font-serif text-4xl font-bold md:text-5xl lg:text-6xl">
+                    <h1 className="font-serif text-4xl font-bold text-[#152E24] md:text-5xl lg:text-6xl">
                       {project.name}
                     </h1>
-                    <p className="text-lg text-muted-foreground font-light max-w-2xl">
+                    <p className="max-w-2xl text-lg font-light text-[#152E24]/60">
                       {project.tagline}
                     </p>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-6 text-sm md:text-base font-medium">
+                  <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-[#152E24] md:text-base">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-amber-400" />
+                      <MapPin className="h-5 w-5 text-[#C69B3E]" />
                       <span>{location.area}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5 text-amber-400" />
+                      <Building2 className="h-5 w-5 text-[#C69B3E]" />
                       <span>{developer.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-amber-400" />
+                      <Calendar className="h-5 w-5 text-[#C69B3E]" />
                       <span>Handover: {timeline.handoverDate || timeline.expectedCompletion || "TBD"}</span>
                     </div>
                   </div>
@@ -393,6 +400,7 @@ export default async function ProjectPage({
                       <Button
                         size="lg"
                         variant="outline"
+                        className={brandOutlineButtonClass}
                         asChild
                       >
                         <Link href="#media">
@@ -404,6 +412,7 @@ export default async function ProjectPage({
                     <Button
                       size="lg"
                       variant="outline"
+                      className={brandOutlineButtonClass}
                       asChild
                     >
                       <a href={`https://wa.me/${phoneNumber.replace("+", "")}`} target="_blank" rel="noopener noreferrer">
@@ -416,7 +425,7 @@ export default async function ProjectPage({
 
                 {/* Floating Glass Card for Key Stats */}
                 <div className="hidden lg:block">
-                  <div className="rounded-2xl border border-border bg-muted/30 p-6 shadow-sm">
+                  <div className="rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6 shadow-none">
                     <div className="grid grid-cols-2 gap-6">
                       <div>
                         <div className="text-sm text-muted-foreground">Starting Price</div>
@@ -441,7 +450,7 @@ export default async function ProjectPage({
                       </div>
                     </div>
                     <div className="mt-6 pt-6 border-t border-border flex gap-3">
-                       <Button className="w-full ore-gradient text-black font-semibold hover:opacity-90" asChild>
+                       <Button className="w-full ore-gradient text-[#152E24] font-semibold hover:opacity-90" asChild>
                           <Link href="#contact">Enquire Now</Link>
                        </Button>
                     </div>
@@ -452,13 +461,13 @@ export default async function ProjectPage({
         </section>
 
         {/* Key Stats Bar */}
-        <section className="border-b border-border bg-card/50 py-8">
+        <section className="bg-[#FAF8F5] pb-6">
           <div className="container">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 rounded-[28px] border border-[#152E24]/10 bg-white p-6 sm:grid-cols-2 lg:grid-cols-4">
               {hasRoi && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 rounded-2xl border border-[#152E24]/10 bg-[#FAF8F5] p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg ore-gradient flex-shrink-0">
-                    <TrendingUp className="h-6 w-6 text-black" />
+                    <TrendingUp className="h-6 w-6 text-[#152E24]" />
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Expected ROI</div>
@@ -467,9 +476,9 @@ export default async function ProjectPage({
                 </div>
               )}
               {hasYield && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 rounded-2xl border border-[#152E24]/10 bg-[#FAF8F5] p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg ore-gradient flex-shrink-0">
-                    <Home className="h-6 w-6 text-black" />
+                    <Home className="h-6 w-6 text-[#152E24]" />
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Rental Yield</div>
@@ -477,9 +486,9 @@ export default async function ProjectPage({
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 rounded-2xl border border-[#152E24]/10 bg-[#FAF8F5] p-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg ore-gradient flex-shrink-0">
-                  <Calendar className="h-6 w-6 text-black" />
+                  <Calendar className="h-6 w-6 text-[#152E24]" />
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Handover</div>
@@ -487,9 +496,9 @@ export default async function ProjectPage({
                 </div>
               </div>
               {showProgress && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 rounded-2xl border border-[#152E24]/10 bg-[#FAF8F5] p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg ore-gradient flex-shrink-0">
-                    <Maximize className="h-6 w-6 text-black" />
+                    <Maximize className="h-6 w-6 text-[#152E24]" />
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Progress</div>
@@ -502,29 +511,30 @@ export default async function ProjectPage({
         </section>
 
         {/* Main Content */}
-        <section className="py-16">
+        <section className="bg-[#FAF8F5] py-10 md:py-16">
           <div className="container">
-            <div className="grid gap-12 lg:grid-cols-3">
+            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+              <div className="grid gap-12 lg:grid-cols-3">
               {/* Main Content */}
               <div className="lg:col-span-2">
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="flex w-full flex-wrap justify-start gap-2 bg-transparent">
+                  <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-[24px] bg-[#FAF8F5] p-2">
                     <TabsTrigger
                       value="overview"
-                      className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className={projectTabTriggerClass}
                     >
                       Overview
                     </TabsTrigger>
                     <TabsTrigger
                       value="units"
-                      className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className={projectTabTriggerClass}
                     >
                       Units
                     </TabsTrigger>
                     {hasMedia && (
                       <TabsTrigger
                         value="media"
-                        className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        className={projectTabTriggerClass}
                       >
                         Media
                       </TabsTrigger>
@@ -532,27 +542,27 @@ export default async function ProjectPage({
                     {hasMap && (
                       <TabsTrigger
                         value="location"
-                        className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        className={projectTabTriggerClass}
                       >
                         Location
                       </TabsTrigger>
                     )}
                     <TabsTrigger
                       value="payment"
-                      className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className={projectTabTriggerClass}
                     >
                       Payment Plan
                     </TabsTrigger>
                     <TabsTrigger
                       value="developer"
-                      className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      className={projectTabTriggerClass}
                     >
                       Developer
                     </TabsTrigger>
                     {faqs.length > 0 && (
                       <TabsTrigger
                         value="faq"
-                        className="rounded-full border border-border px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        className={projectTabTriggerClass}
                       >
                         FAQs
                       </TabsTrigger>
@@ -1025,46 +1035,49 @@ export default async function ProjectPage({
                 <ProjectLeadForm projectName={project.name} projectSlug={project.slug} />
                 
                 {/* Market Intelligence Loop */}
-                <Card>
+                <Card className="border-[#152E24]/10 bg-[#FAF8F5] shadow-none">
                   <CardContent className="p-6 space-y-4">
                     <h4 className="font-semibold">Market Intelligence</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-[#152E24]/60">
                       Connect this project with area insights, developer track records, and market-wide trends.
                     </p>
                     <div className="flex flex-col gap-2">
-                      <Button variant="outline" asChild>
+                      <Button variant="outline" className={brandOutlineButtonClass} asChild>
                         <Link href={`/areas/${areaSlug}`}>Explore {location.area} Analysis</Link>
                       </Button>
                       {developer.slug && (
-                        <Button variant="outline" asChild>
+                        <Button variant="outline" className={brandOutlineButtonClass} asChild>
                           <Link href={`/developers/${developer.slug}`}>Developer Profile</Link>
                         </Button>
                       )}
-                      <Button variant="outline" asChild>
+                      <Button variant="outline" className={brandOutlineButtonClass} asChild>
                         <Link href="/market/trends">Market Trends & Reports</Link>
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               </aside>
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="bg-muted py-16">
-          <div className="container text-center">
-            <h2 className="font-serif text-3xl font-bold">Ready to Invest in {project.name}?</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Schedule a private viewing or consultation with our investment team
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="ore-gradient" asChild>
-                <Link href="#contact">Request Details</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/chat">Ask AI About This Project</Link>
-              </Button>
+        <section className="bg-[#FAF8F5] pb-20">
+          <div className="container">
+            <div className="rounded-[32px] bg-[#152E24] px-6 py-12 text-center text-white shadow-[0_32px_100px_-50px_rgba(21,46,36,0.7)] md:px-10">
+              <h2 className="font-serif text-3xl font-bold">Ready to Invest in {project.name}?</h2>
+              <p className="mt-4 text-lg text-white/70">
+                Schedule a private viewing or consultation with our investment team.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-4">
+                <Button size="lg" className="ore-gradient text-[#152E24]" asChild>
+                  <Link href="#contact">Request Details</Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white" asChild>
+                  <Link href="/chat">Ask AI About This Project</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
@@ -1073,30 +1086,30 @@ export default async function ProjectPage({
           <>
             <div className="sm:hidden pb-24" />
             <div className="fixed inset-x-0 bottom-0 z-50 bg-transparent sm:hidden">
-              <div className="mx-4 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-background/90 px-4 py-3 shadow-2xl backdrop-blur">
+              <div className="mx-4 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#152E24]/10 bg-white/95 px-4 py-3 shadow-2xl backdrop-blur">
                 {prevSlug ? (
                   <Link
                     href={`/projects/${prevSlug}`}
-                    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#152E24]/60 hover:text-[#152E24]"
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Prev listing
                   </Link>
                 ) : (
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#152E24]/35">
                     Start
                   </span>
                 )}
                 {nextSlug ? (
                   <Link
                     href={`/projects/${nextSlug}`}
-                    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#152E24]/60 hover:text-[#152E24]"
                   >
                     Next listing
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 ) : (
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#152E24]/35">
                     Latest
                   </span>
                 )}

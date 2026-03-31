@@ -82,56 +82,60 @@ export async function FeaturedProperties() {
             }
 
             return (
-              <Card
+              <Link
                 key={property.id}
-                className="group overflow-hidden border-white/[0.06] bg-white/[0.04] transition-all hover:border-white/[0.12] hover:bg-white/[0.06] rounded-2xl"
+                href={`/properties/${property.slug}`}
+                className="group block"
+                prefetch={false}
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={imageSrc}
-                    alt={property.title}
-                    fill
-                    className={imageClass}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
-                  <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5">
-                    {badges.map((badge) => (
-                      <Badge key={badge} className="bg-[#C69B3E]/90 text-white border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-md">
-                        {badge}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <CardContent className="p-5">
-                  <div className="mb-3">
-                    <h3 className="font-serif text-lg font-semibold line-clamp-1 text-white group-hover:text-[#D4AC50] transition-colors">
-                      {property.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 mt-1.5 text-sm text-white/40">
-                      <MapPinIcon className="h-3.5 w-3.5" />
-                      <span>{property.location.area}</span>
+                <Card className="overflow-hidden border-white/[0.06] bg-white/[0.04] transition-all hover:-translate-y-1 hover:border-white/[0.12] hover:bg-white/[0.06] rounded-2xl">
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <Image
+                      src={imageSrc}
+                      alt={property.title}
+                      fill
+                      className={imageClass}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
+                    <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5">
+                      {badges.map((badge) => (
+                        <Badge key={badge} className="bg-[#C69B3E]/90 text-white border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-md">
+                          {badge}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-xl font-bold text-[#D4AC50]">
-                      {formatPrice(property.price, property.currency)}
-                    </span>
-                    <span className="text-xs text-white/30">
-                      {property.currency === "AED"
-                        ? formatPrice(Math.round(property.price / 3.67), "USD")
-                        : formatPrice(Math.round(property.price * 3.67), "AED")}
-                      </span>
-                  </div>
+                  <CardContent className="p-5">
+                    <div className="mb-3">
+                      <h3 className="font-serif text-lg font-semibold line-clamp-1 text-white group-hover:text-[#D4AC50] transition-colors">
+                        {property.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-1.5 text-sm text-white/40">
+                        <MapPinIcon className="h-3.5 w-3.5" />
+                        <span>{property.location.area}</span>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-end pt-3 border-t border-white/[0.06]">
-                    <Button size="sm" variant="outline" asChild className="border-white/10 text-white/60 hover:bg-white/5 hover:text-white rounded-lg text-[11px]">
-                      <Link href={`/properties/${property.slug}`}>View Details</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex items-baseline gap-2 mb-4">
+                      <span className="text-xl font-bold text-[#D4AC50]">
+                        {formatPrice(property.price, property.currency)}
+                      </span>
+                      <span className="text-xs text-white/30">
+                        {property.currency === "AED"
+                          ? formatPrice(Math.round(property.price / 3.67), "USD")
+                          : formatPrice(Math.round(property.price * 3.67), "AED")}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-end pt-3 border-t border-white/[0.06]">
+                      <div className="inline-flex items-center rounded-lg border border-white/10 px-3 py-2 text-[11px] font-medium text-white/60 transition-colors group-hover:border-[#D4AC50]/30 group-hover:text-white">
+                        View Details
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             )
           })}
         </div>

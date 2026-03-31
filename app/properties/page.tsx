@@ -89,12 +89,12 @@ export default async function PropertiesPage({
                   <span className="flex h-1.5 w-1.5 rounded-full bg-[#D4AF37] mr-2"></span>
                   Live Inventory
                 </div>
-                <h1 className="font-serif text-4xl font-bold md:text-5xl text-white">Dubai <span className="text-[#AA8122]">Properties</span></h1>
+                <h1 className="font-serif text-4xl font-bold md:text-5xl text-white">Dubai <span className="text-[#D4AF37]">Properties</span></h1>
                 <p className="mt-4 text-lg text-white/70 font-light max-w-xl">
                   Explore thousands of premium residential and commercial investment opportunities across the UAE.
                 </p>
               </div>
-              <Button className="ore-gradient text-black font-semibold h-12 px-8" asChild>
+              <Button className="ore-gradient text-[#152E24] font-semibold h-12 px-8" asChild>
                 <Link href="/chat">Ask AI Assistant</Link>
               </Button>
             </div>
@@ -102,102 +102,114 @@ export default async function PropertiesPage({
         </section>
 
         {/* Filters & Results */}
-        <section className="py-8">
+        <section className="bg-[#FAF8F5] py-8 md:py-10">
           <div className="container">
-            <div className="grid gap-8 lg:grid-cols-[280px,1fr]">
-              {/* Filters Sidebar */}
-              <aside className="hidden lg:block">
-                <div className="sticky top-24">
-                  <PropertyFilters
-                    collapsible
-                    defaultOpen={false}
-                    areas={areaNames}
-                    developers={developerNames}
-                  />
+            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-4 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-6 lg:p-8">
+              <div className="mb-6 flex flex-col gap-3 border-b border-[#152E24]/[0.08] pb-6 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Premium Browse</p>
+                  <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Search active inventory</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-[#152E24]/55">
+                    Filter Dubai inventory by district, budget, and investment angle in a cleaner brand-aligned workspace.
+                  </p>
                 </div>
-              </aside>
+              </div>
 
-              {/* Results */}
-              <div id="properties-results" className="flex-1">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                   <div className="lg:hidden">
-                     <MobilePropertyFilters
-                       areas={areaNames}
-                       developers={developerNames}
-                     />
-                   </div>
-                   <div className="flex-1">
-                     <PropertiesToolbar total={total} page={page} pageSize={pageSize} sort={sort} view={view} />
-                   </div>
-                </div>
+              <div className="grid gap-8 lg:grid-cols-[280px,1fr]">
+                {/* Filters Sidebar */}
+                <aside className="hidden lg:block">
+                  <div className="sticky top-24">
+                    <PropertyFilters
+                      collapsible
+                      defaultOpen={false}
+                      areas={areaNames}
+                      developers={developerNames}
+                    />
+                  </div>
+                </aside>
 
-                {/* Properties Grid */}
-                <div
-                  className={
-                    view === "list"
-                      ? "grid gap-6"
-                      : "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
-                  }
-                >
-                  {properties.length > 0 ? (
-                    properties.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
-                    ))
-                  ) : (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                      <div className="mb-4 rounded-full bg-muted p-6">
-                        <svg className="h-10 w-10 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                {/* Results */}
+                <div id="properties-results" className="flex-1">
+                  <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                     <div className="lg:hidden">
+                       <MobilePropertyFilters
+                         areas={areaNames}
+                         developers={developerNames}
+                       />
+                     </div>
+                     <div className="flex-1">
+                       <PropertiesToolbar total={total} page={page} pageSize={pageSize} sort={sort} view={view} />
+                     </div>
+                  </div>
+
+                  {/* Properties Grid */}
+                  <div
+                    className={
+                      view === "list"
+                        ? "grid gap-6"
+                        : "grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+                    }
+                  >
+                    {properties.length > 0 ? (
+                      properties.map((property) => (
+                        <PropertyCard key={property.id} property={property} />
+                      ))
+                    ) : (
+                      <div className="col-span-full flex flex-col items-center justify-center rounded-[28px] border border-dashed border-[#152E24]/10 bg-[#FAF8F5] py-20 text-center">
+                        <div className="mb-4 rounded-full bg-white p-6 shadow-sm">
+                          <svg className="h-10 w-10 text-[#152E24]/45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-[#152E24]">No properties found</h3>
+                        <p className="mt-2 max-w-xs text-[#152E24]/55">
+                          Try adjusting your filters or search criteria to find what you&apos;re looking for.
+                        </p>
+                        <Button variant="outline" className="mt-8 border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" asChild>
+                          <Link href="/properties">Clear All Filters</Link>
+                        </Button>
                       </div>
-                      <h3 className="text-xl font-bold">No properties found</h3>
-                      <p className="mt-2 text-muted-foreground max-w-xs">
-                        Try adjusting your filters or search criteria to find what you're looking for.
-                      </p>
-                      <Button variant="outline" className="mt-8" asChild>
-                        <Link href="/properties">Clear All Filters</Link>
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* Pagination */}
-                <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
-                  <Link
-                    href={buildPageLink(Math.max(1, page - 1))}
-                    className={cn(
-                      "inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition hover:border-foreground hover:text-foreground",
-                      page <= 1 && "pointer-events-none opacity-50"
-                    )}
-                  >
-                    Previous
-                  </Link>
-                  {Array.from({ length: totalPages }, (_, idx) => idx + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                    .map((p, idx) => (
-                      <Link
-                        key={`${p}-${idx}`}
-                        href={buildPageLink(p)}
-                        className={cn(
-                          "inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition",
-                          p === page
-                            ? "border-secondary bg-secondary text-secondary-foreground"
-                            : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                        )}
-                        aria-current={p === page ? "page" : undefined}
-                      >
-                        {p}
-                      </Link>
-                    ))}
-                  <Link
-                    href={buildPageLink(Math.min(totalPages, page + 1))}
-                    className={cn(
-                      "inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition hover:border-foreground hover:text-foreground",
-                      page >= totalPages && "pointer-events-none opacity-50"
-                    )}
-                  >
-                    Next
-                  </Link>
+                  {/* Pagination */}
+                  <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
+                    <Link
+                      href={buildPageLink(Math.max(1, page - 1))}
+                      className={cn(
+                        "inline-flex h-10 items-center justify-center rounded-md border border-[#152E24]/10 bg-[#FAF8F5] px-4 text-sm font-medium text-[#152E24] transition hover:border-[#C69B3E]/25 hover:text-[#152E24]",
+                        page <= 1 && "pointer-events-none opacity-50"
+                      )}
+                    >
+                      Previous
+                    </Link>
+                    {Array.from({ length: totalPages }, (_, idx) => idx + 1)
+                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                      .map((p, idx) => (
+                        <Link
+                          key={`${p}-${idx}`}
+                          href={buildPageLink(p)}
+                          className={cn(
+                            "inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition",
+                            p === page
+                              ? "border-[#152E24] bg-[#152E24] text-white"
+                              : "border-[#152E24]/10 bg-white text-[#152E24]/65 hover:border-[#C69B3E]/25 hover:text-[#152E24]"
+                          )}
+                          aria-current={p === page ? "page" : undefined}
+                        >
+                          {p}
+                        </Link>
+                      ))}
+                    <Link
+                      href={buildPageLink(Math.min(totalPages, page + 1))}
+                      className={cn(
+                        "inline-flex h-10 items-center justify-center rounded-md border border-[#152E24]/10 bg-[#FAF8F5] px-4 text-sm font-medium text-[#152E24] transition hover:border-[#C69B3E]/25 hover:text-[#152E24]",
+                        page >= totalPages && "pointer-events-none opacity-50"
+                      )}
+                    >
+                      Next
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

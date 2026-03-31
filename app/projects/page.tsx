@@ -50,24 +50,33 @@ export default async function ProjectsPage() {
         </div>
       </section>
 
-      <section className="py-16">
+      <section className="bg-[#FAF8F5] py-16 md:py-20">
         <div className="container">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="font-serif text-2xl font-bold">Featured Developments</h2>
-              <p className="text-sm text-muted-foreground">
-                {projects.length} curated projects across Dubai
-              </p>
+          <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+            <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <Badge variant="secondary" className="mb-4 rounded-full border-none bg-[#C69B3E]/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8E6B21]">
+                  Launch Inventory
+                </Badge>
+                <h2 className="font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Featured Developments</h2>
+                <p className="mt-2 text-sm text-[#152E24]/55">
+                  {projects.length} curated projects across Dubai with a cleaner, brand-aligned browse experience.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="border-[#152E24]/10 bg-[#FAF8F5] text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]"
+                asChild
+              >
+                <Link href="/properties">Browse Properties</Link>
+              </Button>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/properties">Browse Properties</Link>
-            </Button>
-          </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
           </div>
         </div>
       </section>
