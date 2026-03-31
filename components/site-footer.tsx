@@ -77,9 +77,9 @@ export function SiteFooter() {
               <Image
                 src="/ore-logo-white.png"
                 alt="ORE Real Estate"
-                width={210}
-                height={84}
-                className="h-12 w-auto sm:h-14"
+                width={228}
+                height={92}
+                className="h-14 w-auto sm:h-16"
               />
             </Link>
 

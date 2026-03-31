@@ -216,7 +216,7 @@ export default async function Home() {
             <Button size="lg" className="h-13 w-full rounded-xl bg-white px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition-all hover:bg-white/90 sm:h-14 sm:w-auto sm:px-10" asChild>
               <Link href="/contact">Schedule Consultation</Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-13 w-full rounded-xl border-white/10 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white transition-all hover:bg-white/[0.06] sm:h-14 sm:w-auto sm:px-10" asChild>
+            <Button size="lg" variant="outline" className="h-13 w-full rounded-xl border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 transition-all hover:border-[#D4AC50]/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:px-10" asChild>
               <Link href="/market">Market Intelligence</Link>
             </Button>
           </div>

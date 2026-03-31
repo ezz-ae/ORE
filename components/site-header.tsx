@@ -88,10 +88,10 @@ export function SiteHeader() {
           <Image
             src="/ore-logo-gold.png"
             alt="ORE Real Estate"
-            width={150}
-            height={60}
+            width={168}
+            height={68}
             priority
-            className="h-8 w-auto sm:h-9"
+            className="h-9 w-auto sm:h-10"
           />
         </Link>
 
@@ -223,9 +223,9 @@ export function SiteHeader() {
                     <Image
                       src="/ore-logo-gold.png"
                       alt="ORE Real Estate"
-                      width={160}
-                      height={64}
-                      className="h-9 w-auto"
+                      width={176}
+                      height={70}
+                      className="h-10 w-auto"
                     />
                   </Link>
                 </div>

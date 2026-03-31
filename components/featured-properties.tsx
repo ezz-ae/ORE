@@ -55,7 +55,7 @@ export async function FeaturedProperties() {
               Handpicked investment opportunities with exceptional ROI
             </p>
           </div>
-          <Button variant="outline" asChild className="hidden md:inline-flex border-white/10 text-white/60 hover:bg-white/5 hover:text-white rounded-lg gap-2">
+          <Button variant="outline" asChild className="hidden md:inline-flex border-white/15 text-white/85 hover:border-[#D4AC50]/30 hover:bg-white/5 hover:text-white rounded-lg gap-2">
             <Link href="/properties">
               View All
               <ArrowRightIcon />
@@ -129,7 +129,7 @@ export async function FeaturedProperties() {
                     </div>
 
                     <div className="flex items-center justify-end pt-3 border-t border-white/[0.06]">
-                      <div className="inline-flex items-center rounded-lg border border-white/10 px-3 py-2 text-[11px] font-medium text-white/60 transition-colors group-hover:border-[#D4AC50]/30 group-hover:text-white">
+                      <div className="inline-flex items-center rounded-lg border border-white/15 px-3 py-2 text-[11px] font-medium text-white/80 transition-colors group-hover:border-[#D4AC50]/30 group-hover:text-white">
                         View Details
                       </div>
                     </div>
@@ -141,7 +141,7 @@ export async function FeaturedProperties() {
         </div>
 
         <div className="mt-8 text-center md:hidden">
-          <Button variant="outline" asChild className="border-white/10 text-white/60 hover:bg-white/5 hover:text-white rounded-lg">
+          <Button variant="outline" asChild className="border-white/15 text-white/85 hover:border-[#D4AC50]/30 hover:bg-white/5 hover:text-white rounded-lg">
             <Link href="/properties">View All Properties</Link>
           </Button>
         </div>
