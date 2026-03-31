@@ -21,7 +21,7 @@ export function DashboardMobileNav({ userRole }: { userRole: string }) {
   }
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#081710]/95 pb-safe shadow-[0_-16px_48px_rgba(0,0,0,0.24)] backdrop-blur-xl lg:hidden">
       <div className="flex items-center justify-around px-1 py-3">
         {mainItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
@@ -33,8 +33,8 @@ export function DashboardMobileNav({ userRole }: { userRole: string }) {
               className={cn(
                 "flex flex-col items-center justify-center gap-1.5 min-w-[64px] rounded-xl px-2 py-1.5 transition-all duration-200",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                  ? "bg-[#D4AC50]/14 text-[#E7C56B]"
+                  : "text-white/55 hover:bg-white/[0.04] hover:text-white",
               )}
             >
               <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-2")} />

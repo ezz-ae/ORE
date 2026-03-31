@@ -280,7 +280,7 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
                   <Link href="/contact">Schedule Consultation</Link>
                 </Button>
                 <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white" asChild>
-                  <Link href="/chat">Ask the AI Assistant</Link>
+                  <Link href="/chat">Ask ORE AI</Link>
                 </Button>
               </div>
             </div>

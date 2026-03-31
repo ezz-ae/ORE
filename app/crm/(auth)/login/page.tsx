@@ -77,19 +77,22 @@ export default function DashboardLoginPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <section className="rounded-2xl border border-border bg-gradient-to-b from-background to-muted/70 p-6">
-        <Badge className="mb-3 ore-gradient" variant="secondary">
+      <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:p-7">
+        <Badge
+          className="mb-3 border border-[#D4AC50]/25 bg-[#D4AC50]/12 text-[#E7C56B] hover:bg-[#D4AC50]/12"
+          variant="secondary"
+        >
           Broker Dashboard
         </Badge>
-        <h1 className="font-serif text-3xl font-bold">Sign in to the CRM</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-serif text-3xl font-bold text-white">Sign in to the CRM</h1>
+        <p className="text-sm text-white/60">
           Use your ORE company email to access the sales portal.
         </p>
       </section>
 
-      <Card className="mt-6">
+      <Card className="mt-6 border-white/10 bg-[#0F241C]/88 shadow-[0_24px_72px_rgba(0,0,0,0.2)] backdrop-blur-xl">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <CardTitle className="text-white">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -98,6 +101,7 @@ export default function DashboardLoginPage() {
               placeholder="you@company.com"
               value={form.email}
               onChange={handleChange("email")}
+              className="border-white/10 bg-background/55"
               required
             />
             <Input
@@ -105,14 +109,15 @@ export default function DashboardLoginPage() {
               placeholder="Password"
               value={form.password}
               onChange={handleChange("password")}
+              className="border-white/10 bg-background/55"
               required
             />
             {error && <div className="text-xs text-destructive">{error}</div>}
-            <Button type="submit" className="w-full ore-gradient" disabled={isLoading}>
+            <Button type="submit" className="w-full ore-gradient text-[#152E24]" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
-          <div className="mt-4 text-xs text-muted-foreground">
+          <div className="mt-4 text-xs text-white/50">
             Forgot your password?{" "}
             <Link href="/crm/reset" className="text-primary underline-offset-4 hover:underline">
               Reset it here
@@ -122,9 +127,9 @@ export default function DashboardLoginPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-4 border-primary/20">
+      <Card className="mt-4 border-white/10 bg-[#0B1D16]/86 shadow-[0_24px_72px_rgba(0,0,0,0.18)] backdrop-blur-xl">
         <CardHeader>
-          <CardTitle>Initialize Admin Access</CardTitle>
+          <CardTitle className="text-white">Initialize Admin Access</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-3" onSubmit={handleSetupSubmit}>
@@ -133,6 +138,7 @@ export default function DashboardLoginPage() {
               placeholder="Admin name"
               value={setupForm.name}
               onChange={handleSetupChange("name")}
+              className="border-white/10 bg-background/55"
               required
             />
             <Input
@@ -140,6 +146,7 @@ export default function DashboardLoginPage() {
               placeholder="admin@company.com"
               value={setupForm.email}
               onChange={handleSetupChange("email")}
+              className="border-white/10 bg-background/55"
               required
             />
             <Input
@@ -147,6 +154,7 @@ export default function DashboardLoginPage() {
               placeholder="Admin password (min 8)"
               value={setupForm.password}
               onChange={handleSetupChange("password")}
+              className="border-white/10 bg-background/55"
               required
             />
             <Input
@@ -154,14 +162,20 @@ export default function DashboardLoginPage() {
               placeholder="Setup key (CRM_ADMIN_SETUP_KEY)"
               value={setupForm.setupKey}
               onChange={handleSetupChange("setupKey")}
+              className="border-white/10 bg-background/55"
               required
             />
             {setupError && <div className="text-xs text-destructive">{setupError}</div>}
-            <Button type="submit" variant="outline" className="w-full" disabled={isSetupLoading}>
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] hover:text-white"
+              disabled={isSetupLoading}
+            >
               {isSetupLoading ? "Initializing..." : "Create / Reset Admin Login"}
             </Button>
           </form>
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-3 text-xs text-white/45">
             This uses a secure setup key and should be used only by the website owner.
           </p>
         </CardContent>

@@ -108,7 +108,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "ORE Real Estate",
-    "image": "https://orerealestate.ae/logo-light.png",
+    "image": "https://orerealestate.ae/ore-logo-gold.png",
     "@id": "https://orerealestate.ae",
     "url": "https://orerealestate.ae",
     "telephone": "+971 4 580 8244",

@@ -103,6 +103,9 @@ Rules:
 - WhatsApp should sound natural and broker-ready.
 - Email should be short and polished.
 - nextSteps should be 3 short actionable bullets.
+- Use ORE tone: premium, concise, data-aware, and confident.
+- Mention ORE naturally once where appropriate.
+- Do not sound generic, pushy, or overhyped.
 - Do not invent unavailable facts beyond the input.`
 
     const model = getGeminiModel("broker")

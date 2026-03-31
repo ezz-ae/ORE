@@ -52,7 +52,7 @@ html {
   }
 
   .ore-gradient {
-    @apply bg-gradient-to-r from-[#C69B3E] via-[#D4AC50] to-[#B8892E] text-white shadow-lg shadow-[#C69B3E]/15 hover:shadow-xl hover:shadow-[#C69B3E]/20 hover:brightness-105 transition-all active:scale-[0.98];
+    @apply bg-gradient-to-r from-[#C69B3E] via-[#D4AC50] to-[#B8892E] text-[#152E24] shadow-lg shadow-[#C69B3E]/15 hover:shadow-xl hover:shadow-[#C69B3E]/20 hover:brightness-105 transition-all active:scale-[0.98];
   }
 
   .ore-text-gradient {

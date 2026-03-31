@@ -9,18 +9,18 @@ export function AIMarketPanel() {
     <section className="py-16 bg-muted/30">
       <div className="container">
         <div className="mx-auto max-w-3xl space-y-6 rounded-2xl border border-border bg-card p-8 text-center">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">AI Market Analysis</p>
-          <h2 className="font-serif text-3xl font-bold">Ask the AI Analyst</h2>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">ORE AI Market Analysis</p>
+          <h2 className="font-serif text-3xl font-bold">Ask ORE AI</h2>
           <p className="text-muted-foreground">
-            Connect your search with the ORE AI assistant for live Intel, demand trends,
+            Connect your search with ORE AI for live intelligence, demand trends,
             and tailored recommendations.
           </p>
           <div className="mx-auto max-w-xl">
-            <AISearchBar placeholder="Ask about Dubai market trends, yields, or off-plan strategy..." />
+            <AISearchBar placeholder="Ask ORE about Dubai market trends, yields, or off-plan strategy..." />
           </div>
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" className="ore-gradient" asChild>
-              <Link href="/chat">Open AI Assistant</Link>
+              <Link href="/chat">Open ORE AI</Link>
             </Button>
           </div>
         </div>

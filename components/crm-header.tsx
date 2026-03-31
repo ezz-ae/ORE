@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -33,32 +34,66 @@ export function CrmHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081710]/95 backdrop-blur-xl">
       <div className="container flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge className="ore-gradient border-none" variant="secondary">
-              CRM
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {user.org_title || user.role}
-            </span>
+        <div className="flex items-start gap-4">
+          <Link
+            href="/crm/overview"
+            className="hidden shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05] sm:flex"
+          >
+            <Image
+              src="/ore-logo-white.png"
+              alt="ORE CRM"
+              width={140}
+              height={56}
+              priority
+              className="h-8 w-auto"
+            />
+          </Link>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge
+                className="border border-[#D4AC50]/25 bg-[#D4AC50]/12 text-[#E7C56B] hover:bg-[#D4AC50]/12"
+                variant="secondary"
+              >
+                CRM Workspace
+              </Badge>
+              <span className="text-xs text-white/55">
+                {user.org_title || user.role}
+              </span>
+            </div>
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-white">{current.title}</h1>
+            <p className="text-sm text-white/55">{current.subtitle}</p>
           </div>
-          <h1 className="font-serif text-2xl font-bold tracking-tight">{current.title}</h1>
-          <p className="text-sm text-muted-foreground">{current.subtitle}</p>
         </div>
 
         <div className="hidden md:flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] hover:text-white" asChild>
             <Link href="/crm/leads">Leads</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="border-white/10 bg-white/[0.03] text-white hover:bg-white/[0.06] hover:text-white" asChild>
             <Link href="/crm/analytics">Analytics</Link>
           </Button>
-          <Button className="ore-gradient text-white border-none" asChild>
+          <Button className="ore-gradient border-none text-[#152E24] shadow-[0_18px_36px_rgba(212,172,80,0.24)]" asChild>
             <Link href="/crm/ai-assistant">AI Workspace</Link>
           </Button>
         </div>
+      </div>
+      <div className="container pb-4 sm:hidden">
+        <Link
+          href="/crm/overview"
+          className="inline-flex rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05]"
+        >
+          <Image
+            src="/ore-logo-white.png"
+            alt="ORE CRM"
+            width={132}
+            height={52}
+            priority
+            className="h-7 w-auto"
+          />
+        </Link>
       </div>
     </header>
   )

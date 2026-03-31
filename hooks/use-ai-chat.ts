@@ -129,12 +129,15 @@ export function useAIChat(mode: 'public' | 'broker' = 'public') {
           ? 'Your CRM session expired. Please sign in again to continue using AI.'
           : message
       )
+      const fallbackContent = isUnauthorized
+        ? 'Your CRM session has expired. Please sign in again at /crm/login, then retry your request.'
+        : mode === 'broker'
+          ? 'ORE AI is temporarily unavailable. Please try again shortly, or use the CRM directly for leads, listings, and project updates.'
+          : 'I’m having trouble connecting to ORE AI right now. Tell me your budget, preferred area, and unit type, then share your name + phone so an ORE advisor can send a tailored shortlist.'
       const fallbackMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: isUnauthorized
-          ? 'Your CRM session has expired. Please sign in again at /crm/login, then retry your request.'
-          : "I'm having trouble connecting to the AI right now. Tell me your budget, preferred area, and unit type, then share your name + phone so I can send a tailored shortlist.",
+        content: fallbackContent,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, fallbackMessage])

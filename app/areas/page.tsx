@@ -63,7 +63,7 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#FAF8F5] py-16 md:py-20">
+        <section className="bg-[#0E241C] py-16 md:py-20">
           <div className="container">
             <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-10">
               <SmallLeadForm
@@ -74,9 +74,9 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#FAF8F5] pb-8">
+        <section className="bg-[#0E241C] pb-8">
           <div className="container">
-            <div className="grid gap-6 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-3 md:p-8">
+            <div className="grid gap-6 rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl lg:grid-cols-3 md:p-8">
               <div className="rounded-[24px] border border-[#152E24]/10 bg-[#FAF8F5] p-5">
                 <div className="text-xs font-semibold uppercase text-muted-foreground">Top Yield</div>
                 <h3 className="mt-2 font-serif text-2xl font-bold">{topYieldAreas[0]?.name}</h3>
@@ -120,12 +120,12 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#FAF8F5] pb-20">
+        <section className="bg-[#0E241C] pb-20">
           <div className="container">
-            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+            <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
               <div className="mb-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Neighborhood intelligence</p>
-                <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Browse Dubai districts</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Neighborhood intelligence</p>
+                <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">Browse Dubai districts</h2>
               </div>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {areas.map((area) => (

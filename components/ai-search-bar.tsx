@@ -22,7 +22,7 @@ interface AISearchBarProps {
 }
 
 export function AISearchBar({
-  placeholder = "Ask me anything about Dubai real estate...",
+  placeholder = "Ask ORE about Dubai opportunities, ROI, or Golden Visa...",
   showSuggestions = true
 }: AISearchBarProps) {
   const [query, setQuery] = useState("")
@@ -43,9 +43,9 @@ export function AISearchBar({
   }
 
   const suggestions = [
-    "Best ROI projects in 2026",
-    "Golden Visa eligible properties",
-    "Off-plan projects in Downtown Dubai",
+    "Build an ORE shortlist under AED 2M",
+    "ORE Golden Visa-ready projects",
+    "ORE off-plan picks in Downtown Dubai",
   ]
 
   return (

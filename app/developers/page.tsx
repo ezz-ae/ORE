@@ -49,20 +49,20 @@ export default async function DevelopersPage() {
           </div>
         </section>
 
-        <section className="bg-[#FAF8F5] py-16 md:py-20">
+        <section className="bg-[#0E241C] py-16 md:py-20">
           <div className="container">
-            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+            <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
               <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Verified Partners</p>
-                  <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Developer Directory</h2>
-                  <p className="mt-2 text-sm text-[#152E24]/55">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Verified Partners</p>
+                  <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">Developer Directory</h2>
+                  <p className="mt-2 text-sm text-white/60">
                     {developers.length} active developer profiles with track records, flagship launches, and delivery context.
                   </p>
                 </div>
                 <Button
                   variant="outline"
-                  className="border-[#152E24]/10 bg-[#FAF8F5] text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]"
+                  className="border-white/10 bg-white/[0.05] text-white/75 hover:border-[#C69B3E]/25 hover:bg-white/[0.08] hover:text-white"
                   asChild
                 >
                   <Link href="/projects">Browse Projects</Link>

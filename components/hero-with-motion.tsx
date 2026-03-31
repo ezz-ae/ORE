@@ -76,7 +76,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-white/55 md:text-lg md:leading-relaxed">
                 Scan every corridor, compare live pricing, and validate risk before you invest.
-                Our AI desk captures market-moving launches and Golden Path opportunities.
+                Our ORE AI desk captures market-moving launches and ORE signature opportunities.
               </p>
             </div>
 
@@ -84,7 +84,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
             <div className="space-y-5">
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.06] p-3 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.7)] backdrop-blur-2xl sm:p-4">
                 <AISearchBar
-                  placeholder="Search opportunities, ROI, or Golden Visa projects..."
+                  placeholder="Ask ORE about opportunities, ROI, or Golden Visa projects..."
                   showSuggestions={false}
                 />
               </div>
@@ -107,7 +107,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button size="lg" className="ore-gradient h-13 w-full rounded-full px-8 text-[11px] font-bold uppercase tracking-[0.15em] sm:h-14 sm:w-auto sm:px-10" asChild>
-                <Link href="/chat">Ask the AI Desk</Link>
+                <Link href="/chat">Ask the ORE AI Desk</Link>
               </Button>
               <Button
                 size="lg"

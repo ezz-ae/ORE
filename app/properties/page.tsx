@@ -102,14 +102,14 @@ export default async function PropertiesPage({
         </section>
 
         {/* Filters & Results */}
-        <section className="bg-[#FAF8F5] py-8 md:py-10">
+        <section className="bg-[#0E241C] py-8 md:py-10">
           <div className="container">
-            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-4 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-6 lg:p-8">
-              <div className="mb-6 flex flex-col gap-3 border-b border-[#152E24]/[0.08] pb-6 md:flex-row md:items-end md:justify-between">
+            <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-6 lg:p-8">
+              <div className="mb-6 flex flex-col gap-3 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Premium Browse</p>
-                  <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Search active inventory</h2>
-                  <p className="mt-2 max-w-2xl text-sm text-[#152E24]/55">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Premium Browse</p>
+                  <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">Search active inventory</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-white/60">
                     Filter Dubai inventory by district, budget, and investment angle in a cleaner brand-aligned workspace.
                   </p>
                 </div>

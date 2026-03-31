@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
@@ -83,13 +84,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 w-full border-b border-[#152E24]/[0.06] bg-[#FAF8F5]/85 backdrop-blur-2xl h-16 transition-all duration-300 lg:h-[4.5rem]">
       <div className="container flex h-full items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href="/" className="flex items-baseline gap-1.5 group shrink-0 transition-opacity hover:opacity-80">
-          <span className="font-serif text-2xl font-bold tracking-tight text-[#152E24] uppercase">
-            ORE
-          </span>
-          <span className="text-[9px] font-bold tracking-[0.35em] text-[#C69B3E] uppercase">
-            REAL ESTATE
-          </span>
+        <Link href="/" className="group shrink-0 transition-opacity hover:opacity-80">
+          <Image
+            src="/ore-logo-gold.png"
+            alt="ORE Real Estate"
+            width={150}
+            height={60}
+            priority
+            className="h-8 w-auto sm:h-9"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -216,13 +219,14 @@ export function SiteHeader() {
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex flex-col h-full bg-[#FAF8F5]">
                 <div className="p-6 border-b border-[#152E24]/[0.06]">
-                  <Link href="/" onClick={() => setIsOpen(false)} className="flex items-baseline gap-1.5">
-                    <span className="font-serif text-2xl font-bold tracking-tight text-[#152E24] uppercase">
-                      ORE
-                    </span>
-                    <span className="text-[9px] font-bold tracking-[0.35em] text-[#C69B3E] uppercase">
-                      REAL ESTATE
-                    </span>
+                  <Link href="/" onClick={() => setIsOpen(false)} className="shrink-0">
+                    <Image
+                      src="/ore-logo-gold.png"
+                      alt="ORE Real Estate"
+                      width={160}
+                      height={64}
+                      className="h-9 w-auto"
+                    />
                   </Link>
                 </div>
 

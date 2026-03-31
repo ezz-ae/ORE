@@ -139,13 +139,13 @@ const buildFallbackReply = (
   hasContact: boolean,
 ) => {
   if (!wantsProperties) {
-    return "I can help with Dubai property search, ROI, Golden Visa eligibility, and area comparison. Tell me your budget, preferred area, or goal and I’ll narrow it down."
+    return "I can help with ORE-curated Dubai property search, ROI, Golden Visa eligibility, and area comparison. Tell me your budget, preferred area, or goal and I’ll narrow it down."
   }
 
   if (!projects.length) {
     return hasContact
-      ? "I couldn’t find an exact match right now, but I’ve captured your request and a consultant can refine the shortlist for you."
-      : "I couldn’t find an exact match right now. Share your budget range, preferred area, and bedroom count, and I’ll refine the shortlist."
+      ? "I couldn’t find an exact match right now, but ORE has captured your request and a private advisor can refine the shortlist for you."
+      : "I couldn’t find an exact match right now. Share your budget range, preferred area, and bedroom count, and I’ll refine the ORE shortlist."
   }
 
   const lines = projects.slice(0, 3).map((project) => {
@@ -160,10 +160,10 @@ const buildFallbackReply = (
   })
 
   const followUp = hasContact
-    ? "I’ve also marked your request for consultant follow-up."
-    : "If you want, share your name and WhatsApp or email and I can arrange a consultant follow-up."
+    ? "I’ve also marked your request for ORE advisor follow-up."
+    : "If you want, share your name and WhatsApp or email and I can arrange an ORE advisor follow-up."
 
-  return `Here are strong matches right now:\n${lines.join("\n")}\n\n${followUp}`
+  return `Here are strong ORE matches right now:\n${lines.join("\n")}\n\n${followUp}`
 }
 
 const buildLeadGuidance = (contact: ReturnType<typeof extractContactDetails>, userTurns: number) => `
@@ -177,13 +177,13 @@ BEHAVIOR RULES:
 - Be conversational and answer the user first.
 - Do not ask for contact details in every reply.
 - If contact details are missing, only ask after you provide value, or when the user wants brochure, availability, callback, WhatsApp, email, report, or shortlist delivery.
-- Once contact details are available, acknowledge naturally and mention consultant follow-up only if relevant.
+- Once contact details are available, acknowledge naturally and mention ORE advisor follow-up only if relevant.
 `
 
 const maybeAppendEmailConfirmation = (reply: string, emailSent: boolean) => {
   if (!emailSent) return reply
   if (/email|inbox|sent/i.test(reply)) return reply
-  return `${reply}\n\nI’ve also sent the project details to your email.`
+  return `${reply}\n\nI’ve also sent the ORE project details to your email.`
 }
 
 const persistAiLead = async (input: {

@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sparkles, Flame, TrendingUp, MessageSquare, Users } from "lucide-react"
 
 const QUICK_ACTIONS = [
-  { label: "Hot leads today", prompt: "Show me my hottest leads and why I should follow up today", icon: Flame },
-  { label: "8%+ ROI projects", prompt: "List projects in the inventory with 8% or more expected ROI", icon: TrendingUp },
-  { label: "Draft WhatsApp", prompt: "Draft a professional WhatsApp follow-up for a lead who viewed a Dubai Marina project", icon: MessageSquare },
-  { label: "Unassigned leads", prompt: "Show me all unassigned leads from the last 7 days", icon: Users },
+  { label: "ORE hot leads", prompt: "Show me ORE's hottest leads today and explain the priority order", icon: Flame },
+  { label: "ORE ROI shortlist", prompt: "Build an ORE shortlist of projects in inventory with 8% or more expected ROI", icon: TrendingUp },
+  { label: "ORE WhatsApp", prompt: "Draft an ORE WhatsApp follow-up for a lead who viewed a Dubai Marina project", icon: MessageSquare },
+  { label: "ORE unassigned", prompt: "Show me all unassigned ORE leads from the last 7 days", icon: Users },
 ]
 
 export function DashboardAIWidget() {
@@ -34,9 +34,9 @@ export function DashboardAIWidget() {
     <Card className="rounded-[2rem] border-primary/20 bg-primary/5 shadow-sm overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="space-y-0.5">
-          <CardTitle className="font-serif text-2xl font-bold text-primary">Broker AI</CardTitle>
+          <CardTitle className="font-serif text-2xl font-bold text-primary">ORE Broker AI</CardTitle>
           <p className="text-[10px] uppercase font-bold tracking-widest text-primary/50">
-            Real Estate Copilot
+            ORE Sales Copilot
           </p>
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl ore-gradient shadow-lg shadow-primary/20">
@@ -69,7 +69,7 @@ export function DashboardAIWidget() {
         >
           {!hasMessages ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
-              Use the quick actions above or ask for the next best buyer move.
+              Use the quick actions above or ask ORE AI for the next best buyer move.
             </div>
           ) : (
             recentMessages.map((message) => (
@@ -84,7 +84,7 @@ export function DashboardAIWidget() {
           {isLoading && (
             <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
-              <span>AI is thinking...</span>
+              <span>ORE AI is thinking...</span>
             </div>
           )}
           {/* Scroll anchor */}
@@ -100,7 +100,7 @@ export function DashboardAIWidget() {
         <ChatInput
           onSend={sendMessage}
           disabled={isLoading}
-          placeholder="Ask who to call, what to send, or which project fits..."
+          placeholder="Ask ORE AI who to call, what to send, or which project fits..."
         />
       </CardContent>
     </Card>

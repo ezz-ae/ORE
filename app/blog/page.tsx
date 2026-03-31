@@ -34,12 +34,12 @@ export default async function BlogPage() {
         </section>
 
         {featured && (
-          <section className="bg-[#FAF8F5] py-16 md:py-20">
+          <section className="bg-[#0E241C] py-16 md:py-20">
             <div className="container">
-              <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+              <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
                 <div className="mb-8">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Editorial Briefing</p>
-                  <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Latest market reads and investor guidance</h2>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Editorial Briefing</p>
+                  <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">Latest market reads and investor guidance</h2>
                 </div>
               <div className="grid gap-8 lg:grid-cols-[1.4fr,0.8fr]">
                 <article className="overflow-hidden rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] shadow-none transition hover:border-[#C69B3E]/25">
@@ -105,12 +105,12 @@ export default async function BlogPage() {
           </section>
         )}
 
-        <section className="bg-[#FAF8F5] pb-20">
+        <section className="bg-[#0E241C] pb-20">
           <div className="container">
-            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+            <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="mb-8">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Archive</p>
-              <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">More ORE stories</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Archive</p>
+              <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">More ORE stories</h2>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {stories.map((post) => (

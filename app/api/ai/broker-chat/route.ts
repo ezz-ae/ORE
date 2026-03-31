@@ -575,7 +575,7 @@ export async function POST(req: NextRequest) {
 
       if (!hasGeminiKey) {
         aiReply =
-          "AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft branded offers if you phrase the request directly."
+          "ORE AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft ORE-branded offers if you phrase the request directly."
       } else {
         try {
           const model = getGeminiModel("broker")
@@ -588,7 +588,7 @@ export async function POST(req: NextRequest) {
                 },
                 {
                   role: "model",
-                  parts: [{ text: "Ready to assist with CRM operations, lead intelligence, listings, and branded sales materials." }],
+                  parts: [{ text: "Ready to assist with ORE CRM operations, lead intelligence, listings, and branded sales materials." }],
                 },
                 ...buildConversationHistory(history),
               ],

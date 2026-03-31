@@ -47,10 +47,10 @@ const formatUpdatedAt = (value?: string) => {
 }
 
 const metricCardClassName =
-  "rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm shadow-[0_20px_60px_-40px_rgba(0,0,0,0.8)]"
+  "rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm shadow-[0_20px_60px_-40px_rgba(0,0,0,0.8)] sm:p-5"
 
 const listCardClassName =
-  "rounded-3xl border border-white/[0.08] bg-white/[0.025] p-5 backdrop-blur-sm shadow-[0_24px_80px_-48px_rgba(0,0,0,0.75)]"
+  "rounded-[28px] border border-white/[0.08] bg-white/[0.025] p-4 backdrop-blur-sm shadow-[0_24px_80px_-48px_rgba(0,0,0,0.75)] sm:rounded-3xl sm:p-5"
 
 export function IntelligenceBlock({ data }: Props) {
   if (!data) {
@@ -107,29 +107,29 @@ export function IntelligenceBlock({ data }: Props) {
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#0A1F17] px-4 py-24 text-white md:py-28">
+    <section className="relative overflow-hidden bg-[#0A1F17] px-4 py-16 text-white md:py-28">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,172,80,0.16),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.06),transparent_26%)]" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
       <div className="relative mx-auto max-w-7xl">
-        <div className="overflow-hidden rounded-[36px] border border-white/[0.08] bg-white/[0.03] p-6 shadow-[0_30px_120px_-60px_rgba(0,0,0,0.85)] backdrop-blur-sm md:p-8 lg:p-10">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AC50]/20 bg-[#D4AC50]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F0D792]">
+        <div className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_30px_120px_-60px_rgba(0,0,0,0.85)] backdrop-blur-sm sm:rounded-[36px] sm:p-6 md:p-8 lg:p-10">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start md:gap-8">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AC50]/20 bg-[#D4AC50]/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F0D792] sm:px-4 sm:py-2 sm:text-[11px] sm:tracking-[0.18em]">
                 <Sparkles className="h-3.5 w-3.5" />
                 Live Market Intelligence
               </div>
 
               <div className="max-w-3xl">
-                <h2 className="font-serif text-4xl font-bold leading-tight text-white md:text-5xl">
+                <h2 className="font-serif text-[2rem] font-bold leading-[1.02] text-white sm:text-4xl md:text-5xl">
                   What Moves Dubai Right Now
                 </h2>
-                <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/55 md:text-lg">
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/55 sm:mt-4 sm:text-base md:text-lg">
                   A live market read on momentum, yield leadership, and pricing gaps across Dubai’s most investable corridors.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+              <div className="flex flex-col items-stretch gap-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:text-[11px] sm:tracking-[0.14em]">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                   <Clock3 className="h-3.5 w-3.5 text-[#D4AC50]" />
                   Refreshed {formatUpdatedAt(generated_at)}
@@ -143,9 +143,9 @@ export function IntelligenceBlock({ data }: Props) {
               {featuredProject && (
                 <Link
                   href={`/projects/${featuredProject.slug}`}
-                  className="group relative block overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.025]"
+                  className="group relative block overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.025] sm:rounded-[30px]"
                 >
-                  <div className="relative min-h-[360px] overflow-hidden">
+                  <div className="relative min-h-[320px] overflow-hidden sm:min-h-[360px]">
                     {featuredProject.hero_image ? (
                       <Image
                         src={featuredProject.hero_image}
@@ -161,36 +161,36 @@ export function IntelligenceBlock({ data }: Props) {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#081510] via-[#081510]/50 to-transparent" />
                     <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/35 to-transparent" />
 
-                    <div className="absolute left-5 right-5 top-5 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#152E24] shadow-sm">
+                    <div className="absolute left-4 right-4 top-4 flex flex-wrap items-center gap-2 sm:left-5 sm:right-5 sm:top-5">
+                      <span className="rounded-full bg-white/90 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#152E24] shadow-sm sm:text-[10px] sm:tracking-[0.16em]">
                         Momentum leader
                       </span>
                       {featuredProject.golden_visa_eligible && (
-                        <span className="rounded-full bg-[#D4AC50]/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F0D792] backdrop-blur-sm">
+                        <span className="rounded-full bg-[#D4AC50]/20 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#F0D792] backdrop-blur-sm sm:text-[10px] sm:tracking-[0.16em]">
                           Golden Visa
                         </span>
                       )}
                     </div>
 
-                    <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-6">
                       <div className="max-w-2xl">
-                        <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">
+                        <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/45 sm:text-[11px] sm:tracking-[0.16em]">
                           {featuredProject.area || "Dubai"}
                         </div>
-                        <h3 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">
+                        <h3 className="mt-2 font-serif text-xl font-bold leading-tight text-white sm:text-2xl md:text-3xl">
                           {featuredProject.name}
                         </h3>
-                        <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-4">
+                        <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 sm:mt-5 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
                           <div className="flex flex-wrap gap-4 text-sm text-white/65">
                             <div>
                               <div className="text-[10px] uppercase tracking-[0.14em] text-white/35">From</div>
-                              <div className="mt-1 text-lg font-semibold text-white">
+                              <div className="mt-1 text-base font-semibold text-white sm:text-lg">
                                 {formatPriceMillions(Number(featuredProject.price_from_aed))}
                               </div>
                             </div>
                             <div>
                               <div className="text-[10px] uppercase tracking-[0.14em] text-white/35">Yield signal</div>
-                              <div className="mt-1 text-lg font-semibold text-[#F0D792]">
+                              <div className="mt-1 text-base font-semibold text-[#F0D792] sm:text-lg">
                                 {isPositiveNumber(Number(featuredProject.rental_yield))
                                   ? `${Number(featuredProject.rental_yield).toFixed(1)}%`
                                   : "—"}
@@ -210,17 +210,17 @@ export function IntelligenceBlock({ data }: Props) {
               )}
             </div>
 
-            <div className="space-y-5 lg:pl-2">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-4 sm:space-y-5 lg:pl-2">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {pulseMetrics.map(({ label, value, icon: Icon, accent }) => (
                   <div key={label} className={metricCardClassName}>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35 sm:text-[11px] sm:tracking-[0.14em]">
                         {label}
                       </span>
                       <Icon className="h-4 w-4 text-[#D4AC50]" />
                     </div>
-                    <div className={`mt-4 text-3xl font-bold tracking-tight ${accent}`}>{value}</div>
+                    <div className={`mt-3 text-2xl font-bold leading-none tracking-tight sm:mt-4 sm:text-3xl ${accent}`}>{value}</div>
                   </div>
                 ))}
               </div>
@@ -284,14 +284,14 @@ export function IntelligenceBlock({ data }: Props) {
 
           <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.85fr_1fr]">
             <div className={listCardClassName}>
-              <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">
                     Trending Projects
                   </div>
                   <h3 className="mt-2 font-serif text-2xl font-bold text-white">Momentum board</h3>
                 </div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/25">
+                <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-white/25 sm:block">
                   High attention launches
                 </div>
               </div>
@@ -306,7 +306,7 @@ export function IntelligenceBlock({ data }: Props) {
                     <Link
                       key={project.slug}
                       href={`/projects/${project.slug}`}
-                      className="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-[#D4AC50]/25 hover:bg-white/[0.05]"
+                      className="group flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-[#D4AC50]/25 hover:bg-white/[0.05] sm:items-center"
                     >
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/[0.04]">
                         {project.hero_image ? (
@@ -329,9 +329,15 @@ export function IntelligenceBlock({ data }: Props) {
                           {yieldLabel && <span className="text-emerald-300">{yieldLabel}</span>}
                           {project.golden_visa_eligible && <span className="text-[#F0D792]">Golden Visa</span>}
                         </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 sm:hidden">
+                          <div className="text-[10px] uppercase tracking-[0.14em] text-white/25">From</div>
+                          <div className="text-xs font-semibold text-white/80">
+                            {formatPriceMillions(Number(project.price_from_aed))}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="shrink-0 text-right">
+                      <div className="hidden shrink-0 text-right sm:block">
                         <div className="text-[10px] uppercase tracking-[0.14em] text-white/25">From</div>
                         <div className="mt-1 text-xs font-semibold text-white/80">
                           {formatPriceMillions(Number(project.price_from_aed))}
@@ -344,14 +350,14 @@ export function IntelligenceBlock({ data }: Props) {
             </div>
 
             <div className={listCardClassName}>
-              <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">
                     Best Yield Areas
                   </div>
                   <h3 className="mt-2 font-serif text-2xl font-bold text-white">Area leaders</h3>
                 </div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/25">
+                <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-white/25 sm:block">
                   Ranked by average yield
                 </div>
               </div>
@@ -399,14 +405,14 @@ export function IntelligenceBlock({ data }: Props) {
             </div>
 
             <div className={listCardClassName}>
-              <div className="mb-4 flex items-end justify-between gap-4">
+              <div className="mb-4 flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">
                     Pricing Window
                   </div>
                   <h3 className="mt-2 font-serif text-2xl font-bold text-white">Below-market opportunities</h3>
                 </div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/25">
+                <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-white/25 sm:block">
                   Relative to local cohort
                 </div>
               </div>
@@ -421,7 +427,7 @@ export function IntelligenceBlock({ data }: Props) {
                     <Link
                       key={project.slug}
                       href={`/projects/${project.slug}`}
-                      className="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-violet-300/25 hover:bg-white/[0.05]"
+                      className="group flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-violet-300/25 hover:bg-white/[0.05] sm:items-center"
                     >
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/[0.04]">
                         {project.hero_image ? (
@@ -445,9 +451,15 @@ export function IntelligenceBlock({ data }: Props) {
                             {formatDeltaLabel(Number(project.vs_cohort))}
                           </span>
                         )}
+                        <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 sm:hidden">
+                          <div className="text-[10px] uppercase tracking-[0.14em] text-white/25">From</div>
+                          <div className="text-xs font-semibold text-white/80">
+                            {formatPriceMillions(Number(project.price_from_aed))}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="shrink-0 text-right">
+                      <div className="hidden shrink-0 text-right sm:block">
                         <div className="text-[10px] uppercase tracking-[0.14em] text-white/25">From</div>
                         <div className="mt-1 text-xs font-semibold text-white/80">
                           {formatPriceMillions(Number(project.price_from_aed))}
@@ -460,7 +472,7 @@ export function IntelligenceBlock({ data }: Props) {
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-[28px] border border-white/[0.08] bg-gradient-to-r from-white/[0.03] to-white/[0.01] px-6 py-5 text-center lg:flex-row lg:text-left">
+          <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-[24px] border border-white/[0.08] bg-gradient-to-r from-white/[0.03] to-white/[0.01] px-4 py-5 text-center sm:px-6 lg:flex-row lg:text-left">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">
                 ORE Intelligence Desk
@@ -472,7 +484,7 @@ export function IntelligenceBlock({ data }: Props) {
 
             <Link
               href="/search"
-              className="inline-flex items-center gap-2 rounded-xl ore-gradient px-8 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] transition"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl ore-gradient px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] transition sm:w-auto sm:px-8"
             >
               Explore All 3,500+ Projects
               <ArrowRight className="h-4 w-4" />

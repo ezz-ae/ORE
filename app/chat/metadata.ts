@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AI Assistant | ORE",
     description:
-      "Ask the AI assistant about Dubai market trends, Golden Visa projects, and curated property recommendations.",
+      "Ask ORE AI about Dubai market trends, Golden Visa projects, and curated property recommendations.",
     url: "https://orerealestate.ae/chat",
     siteName: "ORE Real Estate",
     type: "website",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ORE AI Assistant",
     description:
-      "Talk to the AI assistant for instant Dubai property intelligence and curated project shortlists.",
+      "Talk to ORE AI for instant Dubai property intelligence and curated project shortlists.",
     images: ["https://orerealestate.ae/ai-og.png"],
   },
 }

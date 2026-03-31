@@ -24,9 +24,9 @@ const ArrowRightIcon = ({ className }: { className?: string }) => (
 )
 
 const heroPrompts = [
-  "Best ROI projects in 2026",
-  "Beachfront properties in Marina",
-  "Off-plan projects in Downtown",
+  "Create an ORE shortlist under AED 2M",
+  "Show ORE beachfront picks in Dubai Marina",
+  "Build an ORE brief for Downtown off-plan opportunities",
 ]
 
 export default async function Home() {

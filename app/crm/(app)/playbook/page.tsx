@@ -839,7 +839,7 @@ export default function PlaybookPage() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[
             { icon: Clock, time: "Morning", title: "Start with Overview", body: "Check your hot leads, pipeline value, and the AI's three suggested tasks. This takes 2 minutes and sets your focus for the day." },
-            { icon: Sparkles, time: "Morning", title: "Ask the AI for your call list", body: "Type \"who should I follow up with today\" in the AI Assistant. You get a scored, ranked list — start calling from the top." },
+            { icon: Sparkles, time: "Morning", title: "Ask ORE AI for your call list", body: "Type \"which leads should ORE follow up with first today\" in the AI Assistant. You get a scored, ranked list — start calling from the top." },
             { icon: MessageSquare, time: "Before every call", title: "Open the lead page first", body: "The AI draft will be ready. Glance at it before you call — it reminds you what they were interested in and what their budget is." },
             { icon: Send, time: "After every interaction", title: "Log a note or send WhatsApp", body: "Always record what happened. A note after every call keeps your pipeline accurate and means any team member can step in if needed." },
             { icon: Rocket, time: "Weekly", title: "Share campaign pages", body: "Pick your best property of the week, open its advertising page, and share the link in your WhatsApp broadcast or Instagram story." },

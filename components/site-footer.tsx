@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -72,13 +73,14 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex items-baseline gap-1.5 group">
-              <span className="font-serif text-4xl font-bold tracking-tight text-white group-hover:text-[#D4AC50] transition-colors uppercase">
-                ORE
-              </span>
-              <span className="text-[10px] font-bold tracking-[0.35em] text-[#D4AC50] uppercase">
-                REAL ESTATE
-              </span>
+            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85">
+              <Image
+                src="/ore-logo-white.png"
+                alt="ORE Real Estate"
+                width={210}
+                height={84}
+                className="h-12 w-auto sm:h-14"
+              />
             </Link>
 
             <p className="text-[14px] text-white/40 leading-relaxed max-w-sm">
