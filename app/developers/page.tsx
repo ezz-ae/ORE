@@ -7,8 +7,11 @@ import Link from "next/link"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Top Real Estate Developers in Dubai | ORE",
+  title: "Top Real Estate Developers in Dubai",
   description: "Learn about the leading real estate developers in Dubai, including Emaar, Damac, Nakheel, and Sobha. Track records and project insights.",
+  alternates: {
+    canonical: "/developers",
+  },
   openGraph: {
     title: "Top Real Estate Developers in Dubai | ORE",
     description: "Learn about the leading real estate developers in Dubai.",

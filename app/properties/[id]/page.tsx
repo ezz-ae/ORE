@@ -47,13 +47,16 @@ export async function generateMetadata({
     return { title: "Property Not Found" }
   }
 
-  const title = `${property.title} | ORE Real Estate`
+  const title = property.title
   const description = property.description || `${property.title} in ${property.location.area}, Dubai.`
   const image = property.images?.[0] || "/og-image.png"
 
   return {
     title,
     description,
+    alternates: {
+      canonical: `/properties/${id}`,
+    },
     openGraph: {
       title,
       description,

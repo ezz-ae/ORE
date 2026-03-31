@@ -4,9 +4,12 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · ORE Real Estate",
+  title: "Privacy Policy",
   description:
     "ORE Real Estate protects investor data with ORE Intelligence. Review how we collect, use, and safeguard your information.",
+  alternates: {
+    canonical: "/privacy",
+  },
 }
 
 const privacyItems = [

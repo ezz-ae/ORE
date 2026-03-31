@@ -3,8 +3,11 @@ import { Search, TrendingUp, FileText, Globe, Shield, HeadphonesIcon, Home, Brie
 import Link from "next/link"
 
 export const metadata = {
-  title: "Our Services | ORE Real Estate",
+  title: "Our Services",
   description: "Comprehensive real estate services for international investors in Dubai - from property search to portfolio management and Golden Visa support.",
+  alternates: {
+    canonical: "/services",
+  },
 }
 
 export default function ServicesPage() {

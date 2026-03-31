@@ -41,9 +41,6 @@ export const metadata: Metadata = {
   description:
     "Your Gateway to Your Dream Home. Discover 3,500+ premium Dubai properties, off-plan launches, and elite investment guidance with ORE Real Estate.",
   generator: "ORE Real Estate Engine",
-  alternates: {
-    canonical: "/",
-  },
   authors: [{ name: "ORE Real Estate", url: siteUrl }],
   creator: "ORE Real Estate",
   publisher: "ORE Real Estate",

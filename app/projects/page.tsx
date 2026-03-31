@@ -6,8 +6,11 @@ import Link from "next/link"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "New Projects & Master Communities in Dubai | ORE",
+  title: "New Projects & Master Communities in Dubai",
   description: "Explore the latest off-plan projects and master-planned communities in Dubai. Detailed insights into ROI, completion dates, and amenities.",
+  alternates: {
+    canonical: "/projects",
+  },
   openGraph: {
     title: "New Projects & Master Communities in Dubai | ORE",
     description: "Explore the latest off-plan projects and master-planned communities in Dubai.",

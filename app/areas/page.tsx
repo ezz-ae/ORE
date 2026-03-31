@@ -9,8 +9,11 @@ import { filterAuthorizedAreas } from "@/lib/utils/authorized"
 import { safeNum, safePercent, shouldShow } from "@/lib/utils/safeDisplay"
 
 export const metadata: Metadata = {
-  title: "Dubai Area Guides & Neighborhood Insights | ORE",
+  title: "Dubai Area Guides & Neighborhood Insights",
   description: "Discover the best places to live and invest in Dubai. Comprehensive guides for Dubai Marina, Downtown, Palm Jumeirah, and more.",
+  alternates: {
+    canonical: "/areas",
+  },
   openGraph: {
     title: "Dubai Area Guides & Neighborhood Insights | ORE",
     description: "Discover the best places to live and invest in Dubai.",

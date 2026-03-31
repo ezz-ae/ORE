@@ -32,6 +32,9 @@ export async function generateMetadata({
   return {
     title: landing.seo.title,
     description: landing.seo.description,
+    alternates: {
+      canonical: `/lp/${slug}`,
+    },
     openGraph: {
       title: landing.seo.title,
       description: landing.seo.description,

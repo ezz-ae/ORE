@@ -4,8 +4,11 @@ import Link from "next/link"
 import { ContactEnquiryForm } from "@/components/contact-enquiry-form"
 
 export const metadata = {
-  title: "Contact Us | ORE Real Estate",
+  title: "Contact Us",
   description: "Get in touch with ORE Real Estate - Schedule a consultation, ask questions, or visit our Dubai office.",
+  alternates: {
+    canonical: "/contact",
+  },
 }
 
 export default function ContactPage() {

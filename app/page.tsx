@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button"
 import { IntelligenceBlock } from "@/components/IntelligenceBlock"
 import { getIntelligenceBlockData } from "@/lib/intelligence-block"
 import Link from "next/link"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+}
 
 // Inline SVGs for Stability
 const SparklesIcon = ({ className }: { className?: string }) => (

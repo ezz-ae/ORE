@@ -20,8 +20,11 @@ export async function generateMetadata({
     return { title: "Article Not Found" }
   }
   return {
-    title: `${post.title} | ORE Real Estate`,
+    title: post.title,
     description: post.excerpt || post.title,
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
     openGraph: post.hero_image ? { images: [post.hero_image] } : undefined,
   }
 }

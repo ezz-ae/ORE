@@ -46,8 +46,11 @@ export async function generateMetadata({
     return { title: "Developer Not Found" }
   }
   return {
-    title: `${developer.name} | ORE Real Estate`,
+    title: developer.name,
     description: developer.description,
+    alternates: {
+      canonical: `/developers/${slug}`,
+    },
   }
 }
 

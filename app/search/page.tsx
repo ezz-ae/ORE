@@ -6,8 +6,11 @@ import { getProjectsForGrid } from "@/lib/ore"
 import { AIMarketPanel } from "@/components/ai-market-panel"
 
 export const metadata: Metadata = {
-  title: "Project Search | ORE",
+  title: "Project Search",
   description: "Browse curated Dubai investment projects with detailed specs, ROI insight, and developer intelligence.",
+  alternates: {
+    canonical: "/search",
+  },
 }
 
 export default async function ProjectSearchPage() {

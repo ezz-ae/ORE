@@ -176,7 +176,7 @@ export async function generateMetadata({
 
   const priceRange = getPriceRange(project)
   const locationArea = project.location?.area || "Dubai"
-  const title = project.seoTitle || `${project.name} - ${project.tagline} | ORE Real Estate`
+  const title = project.seoTitle || `${project.name} - ${project.tagline}`
   const description = project.seoDescription ||
       `${project.longDescription} Starting from ${priceRange}. Golden Visa eligible. Contact us today.`
   const image = project.heroImage || "/og-image.png"
@@ -184,6 +184,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: {
+      canonical: `/projects/${slug}`,
+    },
     keywords: project.seoKeywords?.length
       ? project.seoKeywords
       : [project.name, locationArea, "Dubai property", "off-plan Dubai", "Golden Visa", "investment"],

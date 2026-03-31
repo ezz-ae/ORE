@@ -3,9 +3,12 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Terms of Service · ORE Real Estate",
+  title: "Terms of Service",
   description:
     "Review the terms that govern your use of ORE's investor platform, chat, and data services powered by ORE Intelligence.",
+  alternates: {
+    canonical: "/terms",
+  },
 }
 
 const termsItems = [

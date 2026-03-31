@@ -10,8 +10,11 @@ const EyeIcon = ({ className }: { className?: string }) => (
 )
 
 export const metadata = {
-  title: "Our Firm | ORE Real Estate",
+  title: "Our Firm",
   description: "Institutional Dubai property intelligence with 15+ years of conviction and AI-driven excellence.",
+  alternates: {
+    canonical: "/about",
+  },
 }
 
 export default function AboutPage() {

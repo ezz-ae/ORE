@@ -9,8 +9,11 @@ import { getDashboardProjectFilters, getPropertyListing } from "@/lib/ore"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Dubai Properties for Sale | ORE Real Estate",
+  title: "Dubai Properties for Sale",
   description: "Browse over 3500+ luxury properties and investment opportunities in Dubai. Filter by location, price, and property type to find your perfect home.",
+  alternates: {
+    canonical: "/properties",
+  },
   openGraph: {
     title: "Dubai Properties for Sale | ORE Real Estate",
     description: "Browse over 3500+ luxury properties and investment opportunities in Dubai.",

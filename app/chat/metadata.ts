@@ -4,9 +4,12 @@ import { BRAND_AI_OG_IMAGE, getSiteUrl } from "@/lib/site"
 const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  title: "AI Assistant | ORE Real Estate",
+  title: "AI Assistant",
   description:
     "Instant answers on Dubai real estate, curated projects, and market intelligence from the ORE AI assistant.",
+  alternates: {
+    canonical: "/chat",
+  },
   openGraph: {
     title: "AI Assistant | ORE",
     description:
