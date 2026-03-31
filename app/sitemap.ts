@@ -1,9 +1,10 @@
 import { MetadataRoute } from 'next'
 import { getProjectsForGrid, getAreas, getProperties } from '@/lib/ore'
+import { getSiteUrl } from '@/lib/site'
 import { filterAuthorizedAreas } from '@/lib/utils/authorized'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://orerealestate.ae'
+  const baseUrl = getSiteUrl()
 
   // Fetch dynamic data
   const projects = await getProjectsForGrid(120)

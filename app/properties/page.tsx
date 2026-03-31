@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Dubai Properties for Sale | ORE Real Estate",
     description: "Browse over 3500+ luxury properties and investment opportunities in Dubai.",
-    images: ["/logo_blsck.png"],
+    images: ["/og-image.png"],
   },
 }
 export default async function PropertiesPage({

@@ -49,7 +49,7 @@ export async function generateMetadata({
 
   const title = `${property.title} | ORE Real Estate`
   const description = property.description || `${property.title} in ${property.location.area}, Dubai.`
-  const image = property.images?.[0] || "/logo_blsck.png"
+  const image = property.images?.[0] || "/og-image.png"
 
   return {
     title,

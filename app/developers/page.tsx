@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Top Real Estate Developers in Dubai | ORE",
     description: "Learn about the leading real estate developers in Dubai.",
-    images: ["/logo_blsck.png"],
+    images: ["/og-image.png"],
   },
 }
 

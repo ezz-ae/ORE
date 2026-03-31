@@ -1,4 +1,7 @@
 import type { Metadata } from "next"
+import { BRAND_AI_OG_IMAGE, getSiteUrl } from "@/lib/site"
+
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
   title: "AI Assistant | ORE Real Estate",
@@ -8,12 +11,12 @@ export const metadata: Metadata = {
     title: "AI Assistant | ORE",
     description:
       "Ask ORE AI about Dubai market trends, Golden Visa projects, and curated property recommendations.",
-    url: "https://orerealestate.ae/chat",
+    url: `${siteUrl}/chat`,
     siteName: "ORE Real Estate",
     type: "website",
     images: [
       {
-        url: "https://orerealestate.ae/ai-og.png",
+        url: BRAND_AI_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "ORE AI Assistant",
@@ -25,6 +28,6 @@ export const metadata: Metadata = {
     title: "ORE AI Assistant",
     description:
       "Talk to ORE AI for instant Dubai property intelligence and curated project shortlists.",
-    images: ["https://orerealestate.ae/ai-og.png"],
+    images: [BRAND_AI_OG_IMAGE],
   },
 }

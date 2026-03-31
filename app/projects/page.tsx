@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "New Projects & Master Communities in Dubai | ORE",
     description: "Explore the latest off-plan projects and master-planned communities in Dubai.",
-    images: ["/logo_blsck.png"],
+    images: ["/og-image.png"],
   },
 }
 

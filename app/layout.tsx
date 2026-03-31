@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
 import "./globals.css"
 
 export const dynamic = "force-dynamic"
@@ -28,17 +29,25 @@ const playfair = Playfair_Display({
   preload: false,
 })
 
-const metadataBaseUrl = process.env.METADATA_BASE || "https://orerealestate.ae"
+const siteUrl = getSiteUrl()
 
 export const metadata: Metadata = {
-  metadataBase: new URL(metadataBaseUrl),
+  metadataBase: getMetadataBase(),
   title: {
     default: "ORE Real Estate",
     template: "%s | ORE Real Estate",
   },
+  applicationName: "ORE Real Estate",
   description:
     "Your Gateway to Your Dream Home. Discover 3,500+ premium Dubai properties, off-plan launches, and elite investment guidance with ORE Real Estate.",
   generator: "ORE Real Estate Engine",
+  alternates: {
+    canonical: "/",
+  },
+  authors: [{ name: "ORE Real Estate", url: siteUrl }],
+  creator: "ORE Real Estate",
+  publisher: "ORE Real Estate",
+  category: "Real Estate",
   keywords: [
     "Dubai real estate",
     "Dubai properties",
@@ -55,13 +64,13 @@ export const metadata: Metadata = {
     title: "ORE Real Estate | Dubai Property Intelligence",
     description:
       "ORE delivers curated Dubai projects, off-plan intelligence, and broker-grade AI insight for international investors.",
-    url: new URL(metadataBaseUrl),
+    url: siteUrl,
     siteName: "ORE Real Estate",
     type: "website",
     locale: "en_US",
     images: [
       {
-        url: `${metadataBaseUrl}/og-image.png`,
+        url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "ORE Real Estate Dubai",
@@ -73,19 +82,17 @@ export const metadata: Metadata = {
     title: "ORE Real Estate",
     description:
       "Dubai investment intelligence with 3,500+ verified projects, AI chat, and CRM-grade leads.",
-    images: [
-      `${metadataBaseUrl}/og-image.png`,
-    ],
-    creator: "@orerealestate.ae",
+    images: [BRAND_OG_IMAGE],
   },
   icons: {
     icon: [
-      "/favicon.ico",
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
     shortcut: "/favicon.ico",
-    apple: "/icon.png",
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
   },
+  manifest: "/site.webmanifest",
   robots: {
     index: true,
     follow: true,
@@ -108,9 +115,10 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "ORE Real Estate",
-    "image": "https://orerealestate.ae/ore-logo-gold.png",
-    "@id": "https://orerealestate.ae",
-    "url": "https://orerealestate.ae",
+    "image": `${siteUrl}/ore-logo-gold.png`,
+    "logo": `${siteUrl}/ore-logo-gold.png`,
+    "@id": siteUrl,
+    "url": siteUrl,
     "telephone": "+971 4 580 8244",
     "address": {
       "@type": "PostalAddress",

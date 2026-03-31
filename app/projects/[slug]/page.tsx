@@ -179,7 +179,7 @@ export async function generateMetadata({
   const title = project.seoTitle || `${project.name} - ${project.tagline} | ORE Real Estate`
   const description = project.seoDescription ||
       `${project.longDescription} Starting from ${priceRange}. Golden Visa eligible. Contact us today.`
-  const image = project.heroImage || "/logo_blsck.png"
+  const image = project.heroImage || "/og-image.png"
 
   return {
     title,
