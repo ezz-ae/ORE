@@ -60,7 +60,7 @@ export function AISearchBar({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder={placeholder}
-            className="w-full rounded-xl border border-[#152E24]/[0.06] bg-white/70 px-14 py-5 pr-44 text-[15px] font-medium backdrop-blur-md transition-all focus:border-[#C69B3E]/30 focus:bg-white/90 focus:outline-none placeholder:text-[#152E24]/25 shadow-[0_2px_16px_-4px_rgba(21,46,36,0.04)] focus:shadow-[0_8px_32px_-8px_rgba(21,46,36,0.08)]"
+            className="w-full rounded-xl border border-[#152E24]/[0.06] bg-white/70 px-14 py-5 pr-44 text-[15px] font-medium text-[#152E24] backdrop-blur-md transition-all focus:border-[#C69B3E]/30 focus:bg-white/90 focus:outline-none placeholder:text-[#152E24]/25 shadow-[0_2px_16px_-4px_rgba(21,46,36,0.04)] focus:shadow-[0_8px_32px_-8px_rgba(21,46,36,0.08)]"
           />
           <Button
             type="submit"

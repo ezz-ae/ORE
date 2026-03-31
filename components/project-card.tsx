@@ -65,8 +65,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link href={projectSlug} className="group block" prefetch={false}>
-      <Card className="overflow-hidden hover:shadow-lg hover:border-border">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <Card className="overflow-hidden rounded-[28px] border-[#152E24]/10 bg-white shadow-[0_20px_60px_-40px_rgba(21,46,36,0.24)] transition-all duration-300 hover:-translate-y-1 hover:border-[#C69B3E]/20 hover:shadow-[0_32px_90px_-45px_rgba(21,46,36,0.32)]">
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#F5F1E8]">
           <Image
             src={project.heroImage || "/logo.png"}
             alt={project.name || "Project"}
@@ -75,7 +75,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            <Badge variant="secondary" className="bg-white/90 text-foreground backdrop-blur-md border-none shadow-sm text-[11px]">
+            <Badge variant="secondary" className="border-none bg-white/90 text-[#152E24] backdrop-blur-md shadow-sm text-[11px]">
               {statusLabel}
             </Badge>
             {investmentHighlights.goldenVisaEligible && (
@@ -86,45 +86,45 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
 
-        <CardContent className="p-5">
+        <CardContent className="p-5 text-[#152E24]">
           <div className="mb-3">
-            <h3 className="font-serif text-lg font-bold line-clamp-1 group-hover:text-[#C69B3E] transition-colors">
+            <h3 className="font-serif text-lg font-bold line-clamp-1 text-[#152E24] transition-colors group-hover:text-[#C69B3E]">
               {project.name || "Project"}
             </h3>
-            <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground mt-1.5">
+            <div className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-[#152E24]/55">
               <MapPin className="h-3 w-3 text-[#C69B3E]/60" />
               <span className="line-clamp-1">{location.area || "Dubai"}</span>
             </div>
           </div>
 
           <div className="mb-4">
-            <p className="font-bold text-xl text-foreground tracking-tight">{getPriceRange(project)}</p>
+            <p className="text-xl font-bold tracking-tight text-[#152E24]">{getPriceRange(project)}</p>
           </div>
 
           {(bedrooms || baths || area) && (
-            <div className="flex flex-wrap gap-4 text-[11px] text-muted-foreground mb-5 pt-3.5 border-t border-border/40">
+            <div className="mb-5 flex flex-wrap gap-4 border-t border-[#152E24]/10 pt-3.5 text-[11px] text-[#152E24]/55">
               {bedrooms && (
                 <div className="flex items-center gap-1.5">
-                  <BedDouble className="h-3.5 w-3.5 text-foreground/50" />
+                  <BedDouble className="h-3.5 w-3.5 text-[#152E24]/45" />
                   <span>{bedrooms}</span>
                 </div>
               )}
               {baths && (
                 <div className="flex items-center gap-1.5">
-                  <Bath className="h-3.5 w-3.5 text-foreground/50" />
+                  <Bath className="h-3.5 w-3.5 text-[#152E24]/45" />
                   <span>{baths}</span>
                 </div>
               )}
               {area && (
                 <div className="flex items-center gap-1.5">
-                  <Ruler className="h-3.5 w-3.5 text-foreground/50" />
+                  <Ruler className="h-3.5 w-3.5 text-[#152E24]/45" />
                   <span>{area}</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.1em] text-[#C69B3E]/70 group-hover:text-[#C69B3E] transition-colors pt-3.5 border-t border-border/40">
+          <div className="flex items-center justify-between border-t border-[#152E24]/10 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#C69B3E]/70 transition-colors group-hover:text-[#C69B3E]">
             <span>Explore Development</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </div>

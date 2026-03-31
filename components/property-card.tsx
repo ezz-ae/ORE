@@ -49,8 +49,8 @@ export function PropertyCard({ property, compact = false }: PropertyCardProps) {
 
   return (
     <Link href={projectUrl} className="group block" prefetch={false}>
-      <Card className="overflow-hidden hover:shadow-lg hover:border-border">
-        <div className={`relative overflow-hidden bg-muted ${compact ? "aspect-[16/9]" : "aspect-[4/3]"}`}>
+      <Card className="overflow-hidden rounded-[28px] border-[#152E24]/10 bg-white shadow-[0_20px_60px_-40px_rgba(21,46,36,0.24)] transition-all duration-300 hover:-translate-y-1 hover:border-[#C69B3E]/20 hover:shadow-[0_32px_90px_-45px_rgba(21,46,36,0.32)]">
+        <div className={`relative overflow-hidden bg-[#F5F1E8] ${compact ? "aspect-[16/9]" : "aspect-[4/3]"}`}>
           <Image
             src={imageSrc}
             alt={property.title}
@@ -61,7 +61,7 @@ export function PropertyCard({ property, compact = false }: PropertyCardProps) {
           <div className={`absolute left-3 z-10 flex flex-wrap gap-1.5 ${compact ? "top-2.5" : "top-3"}`}>
             <Badge
               variant="secondary"
-              className={`bg-white/90 text-foreground backdrop-blur-md border-none shadow-sm ${compact ? "text-[10px] px-2 py-0.5" : "text-[11px]"}`}
+              className={`border-none bg-white/90 text-[#152E24] backdrop-blur-md shadow-sm ${compact ? "text-[10px] px-2 py-0.5" : "text-[11px]"}`}
             >
               {property.type === "off-plan" ? "Off-Plan" : property.type === "secondary" ? "Secondary" : "Commercial"}
             </Badge>
@@ -73,9 +73,9 @@ export function PropertyCard({ property, compact = false }: PropertyCardProps) {
           </div>
         </div>
 
-        <CardContent className={compact ? "p-3.5" : "p-5"}>
+        <CardContent className={compact ? "p-3.5 text-[#152E24]" : "p-5 text-[#152E24]"}>
           <div className="mb-2 flex items-start justify-between gap-2">
-            <h3 className={`font-serif font-bold group-hover:text-[#C69B3E] transition-colors ${compact ? "text-base line-clamp-2" : "text-lg line-clamp-1"}`}>
+            <h3 className={`font-serif font-bold text-[#152E24] transition-colors group-hover:text-[#C69B3E] ${compact ? "text-base line-clamp-2" : "text-lg line-clamp-1"}`}>
               {property.title}
             </h3>
             {roiLabel && (
@@ -89,32 +89,32 @@ export function PropertyCard({ property, compact = false }: PropertyCardProps) {
             )}
           </div>
 
-          <div className="mb-3.5 flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+          <div className="mb-3.5 flex items-center gap-1 text-[11px] font-medium text-[#152E24]/55">
             <MapPin className="h-3 w-3 text-[#C69B3E]/60" />
             <span className="line-clamp-1">{property.location.area}, Dubai</span>
           </div>
 
-          <div className={`flex items-center text-[11px] text-muted-foreground border-y border-border/40 ${compact ? "mb-3 gap-3 py-2" : "mb-4 gap-4 py-2.5"}`}>
+          <div className={`flex items-center border-y border-[#152E24]/10 text-[11px] text-[#152E24]/55 ${compact ? "mb-3 gap-3 py-2" : "mb-4 gap-4 py-2.5"}`}>
             <div className="flex items-center gap-1.5">
-              <BedDouble className="h-3.5 w-3.5 text-foreground/50" />
+              <BedDouble className="h-3.5 w-3.5 text-[#152E24]/45" />
               <span>{bedLabel}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Bath className="h-3.5 w-3.5 text-foreground/50" />
+              <Bath className="h-3.5 w-3.5 text-[#152E24]/45" />
               <span>{bathLabel}</span>
             </div>
             {!compact && shouldShow(property.specifications.sizeSqft) && (
               <div className="flex items-center gap-1.5">
-                <Maximize className="h-3.5 w-3.5 text-foreground/50" />
+                <Maximize className="h-3.5 w-3.5 text-[#152E24]/45" />
                 <span>{property.specifications.sizeSqft.toLocaleString()} sqft</span>
               </div>
             )}
           </div>
 
-          <div className={`${compact ? "text-lg" : "text-xl"} font-bold text-foreground tracking-tight`}>
+          <div className={`${compact ? "text-lg" : "text-xl"} font-bold tracking-tight text-[#152E24]`}>
             {formatPrice(property.price, property.currency)}
           </div>
-          <div className="mt-1.5 flex items-center gap-3 text-[12px] text-muted-foreground">
+          <div className="mt-1.5 flex items-center gap-3 text-[12px] text-[#152E24]/55">
             {rentalYield && (
               <span className="flex items-center gap-1">
                 <span className="font-semibold text-emerald-600">{rentalYield}%</span>

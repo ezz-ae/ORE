@@ -139,6 +139,19 @@ html {
   * {
     @apply border-border outline-ring/50;
   }
+
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  select {
+    color: hsl(var(--foreground));
+    caret-color: hsl(var(--foreground));
+  }
+
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"])::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
   body {
     @apply bg-background text-foreground;
   }

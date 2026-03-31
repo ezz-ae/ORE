@@ -122,26 +122,26 @@ export default function ChatPage() {
 
   return (
     <div 
-      className="flex flex-col bg-background overflow-hidden overscroll-none"
+      className="flex flex-col overflow-hidden overscroll-none bg-[#FAF8F5]"
       style={{ height: viewportHeight }}
     >
        {/* Header */}
-       <header className="flex-none border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
+       <header className="z-10 flex-none border-b border-[#152E24]/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/75">
           <div className="container flex h-14 items-center justify-between px-4">
             <div className="flex items-center">
-                <Button variant="ghost" size="sm" className="mr-2 text-muted-foreground hover:text-foreground rounded-full h-8 w-8 p-0 sm:w-auto sm:px-3 sm:mr-4" asChild>
+                <Button variant="ghost" size="sm" className="mr-2 h-8 w-8 rounded-full p-0 text-[#152E24]/55 hover:bg-[#FAF8F5] hover:text-[#152E24] sm:mr-4 sm:w-auto sm:px-3" asChild>
                     <Link href="/">
                         <ArrowLeft className="h-4 w-4 sm:mr-2" />
                         <span className="hidden sm:inline">Back</span>
                     </Link>
                 </Button>
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-primary/10 shadow-sm">
-                        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C69B3E]/10 shadow-sm sm:h-8 sm:w-8">
+                        <Sparkles className="h-3.5 w-3.5 text-[#C69B3E] sm:h-4 sm:w-4" />
                     </span>
                     <div>
-                        <h1 className="text-xs sm:text-sm font-semibold leading-none">AI Assistant</h1>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">ORE Intelligence</p>
+                        <h1 className="text-xs font-semibold leading-none text-[#152E24] sm:text-sm">AI Assistant</h1>
+                        <p className="mt-0.5 text-[10px] text-[#152E24]/45">ORE Intelligence</p>
                     </div>
                 </div>
             </div>
@@ -158,7 +158,7 @@ export default function ChatPage() {
 
             <div className="flex-1 flex flex-col overflow-hidden">
               <section
-                className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col sm:rounded-2xl md:rounded-[2rem] sm:border border-border bg-card/80 sm:shadow-2xl backdrop-blur-xl overflow-hidden touch-pan-y sm:my-4 md:my-8"
+                className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-hidden touch-pan-y bg-white/90 backdrop-blur-xl sm:my-4 sm:rounded-2xl sm:border sm:border-[#152E24]/10 sm:shadow-[0_24px_80px_-40px_rgba(21,46,36,0.28)] md:my-8 md:rounded-[2rem]"
               >
                 <div
                     ref={scrollViewportRef}
@@ -168,11 +168,11 @@ export default function ChatPage() {
                       {messages.length === 0 ? (
                         <div className="flex min-h-full flex-col items-center justify-center text-center space-y-8 py-12">
                           <div className="space-y-4">
-                            <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 ring-8 ring-primary/5">
-                              <Sparkles className="h-8 w-8 text-primary" />
+                            <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#C69B3E]/10 ring-8 ring-[#C69B3E]/5">
+                              <Sparkles className="h-8 w-8 text-[#C69B3E]" />
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight">How can I help you today?</h2>
-                            <p className="text-muted-foreground max-w-md mx-auto px-4">
+                            <h2 className="text-2xl font-bold tracking-tight text-[#152E24]">How can I help you today?</h2>
+                            <p className="mx-auto max-w-md px-4 text-[#152E24]/55">
                               I can help you find properties, analyze market trends, and calculate ROI for your investments in Dubai.
                             </p>
                           </div>
@@ -182,10 +182,10 @@ export default function ChatPage() {
                               <button
                                 key={index}
                                 onClick={() => handleSendMessage(question)}
-                                className="flex items-center gap-3 rounded-xl border bg-background/50 p-4 text-sm text-left transition-all hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm"
+                                className="flex items-center gap-3 rounded-xl border border-[#152E24]/10 bg-[#FAF8F5] p-4 text-left text-sm text-[#152E24]/80 transition-all hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:shadow-sm"
                               >
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                                  <Zap className="h-4 w-4 text-primary" />
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#C69B3E]/10">
+                                  <Zap className="h-4 w-4 text-[#C69B3E]" />
                                 </div>
                                 {question}
                               </button>
@@ -213,26 +213,26 @@ export default function ChatPage() {
                           <div ref={listEndRef} />
 
                           {resultProperties.length > 0 && (
-                            <div className="mt-8 overflow-hidden rounded-2xl border bg-card shadow-sm">
-                              <div className="border-b bg-muted/30 px-6 py-4">
+                            <div className="mt-8 overflow-hidden rounded-2xl border border-[#152E24]/10 bg-white shadow-sm">
+                              <div className="border-b border-[#152E24]/10 bg-[#FAF8F5] px-6 py-4">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <h3 className="font-semibold">Featured Properties</h3>
-                                    <p className="text-xs text-muted-foreground">Based on your preferences</p>
+                                    <h3 className="font-semibold text-[#152E24]">Featured Properties</h3>
+                                    <p className="text-xs text-[#152E24]/55">Based on your preferences</p>
                                   </div>
                                   {shortlistStats && (
                                     <div className="hidden sm:flex gap-2">
-                                      <span className="inline-flex items-center rounded-full border bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                      <span className="inline-flex items-center rounded-full border border-[#152E24]/10 bg-white px-2.5 py-0.5 text-xs font-medium text-[#152E24]/55">
                                         {shortlistStats.topArea}
                                       </span>
-                                      <span className="inline-flex items-center rounded-full border bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                                      <span className="inline-flex items-center rounded-full border border-[#152E24]/10 bg-white px-2.5 py-0.5 text-xs font-medium text-[#152E24]/55">
                                         ROI: {shortlistStats.avgRoi.toFixed(1)}%
                                       </span>
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              <div className="p-4 md:p-6 bg-muted/10">
+                              <div className="bg-white p-4 md:p-6">
                                 <Carousel opts={{ align: "start" }} className="w-full">
                                   <CarouselContent>
                                     {resultProperties.map((property) => (

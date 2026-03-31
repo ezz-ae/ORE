@@ -6,7 +6,6 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   NavigationMenu,
@@ -186,7 +185,6 @@ export function SiteHeader() {
 
         {/* Actions */}
         <div className="flex items-center gap-2.5">
-          <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"

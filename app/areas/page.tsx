@@ -35,23 +35,27 @@ export default async function AreasPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
-        <section className="border-b border-border bg-gradient-to-b from-background to-muted py-16">
+        <section className="relative overflow-hidden border-b border-white/5 bg-[#0A1F17] py-16 md:py-24">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute right-0 top-0 h-[420px] w-[420px] bg-[radial-gradient(circle_at_50%_50%,rgba(198,155,62,0.16),transparent_55%)] blur-[80px]" />
+            <div className="absolute bottom-0 left-0 h-[360px] w-[360px] bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.10),transparent_55%)] blur-[80px]" />
+          </div>
           <div className="container">
-            <div className="mx-auto max-w-3xl text-center">
-              <Badge className="mb-4 ore-gradient" variant="secondary">
+            <div className="relative z-10 mx-auto max-w-4xl text-center">
+              <Badge className="mb-4 border-none bg-[#C69B3E]/10 px-4 py-1.5 text-[#F0D792]" variant="secondary">
                 Areas
               </Badge>
-              <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+              <h1 className="font-serif text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
                 Dubai Areas & Neighborhoods
               </h1>
-              <p className="mt-6 text-lg text-muted-foreground">
+              <p className="mt-6 text-lg text-white/65">
                 Compare Dubai neighborhoods by lifestyle, yield, and investment potential. Surface the few that actually outperform — not just another card grid.
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Button className="ore-gradient" asChild>
+                <Button className="ore-gradient text-[#152E24]" asChild>
                   <Link href="/contact">Get Area Guidance</Link>
                 </Button>
-                <Button variant="outline" asChild>
+                <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white" asChild>
                   <Link href="/properties">Browse Properties</Link>
                 </Button>
               </div>
@@ -59,9 +63,9 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="py-16">
+        <section className="bg-[#FAF8F5] py-16 md:py-20">
           <div className="container">
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-[0_20px_45px_rgba(15,23,42,0.15)] md:p-10">
+            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-10">
               <SmallLeadForm
                 title="Request tailored area intelligence"
                 caption="Tell us your preferred budget, timelines, and districts and we will craft an investment brief for you."
@@ -70,10 +74,10 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-card py-12 border-b border-border">
+        <section className="bg-[#FAF8F5] pb-8">
           <div className="container">
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="rounded-lg border border-border bg-muted/50 p-5">
+            <div className="grid gap-6 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-3 md:p-8">
+              <div className="rounded-[24px] border border-[#152E24]/10 bg-[#FAF8F5] p-5">
                 <div className="text-xs font-semibold uppercase text-muted-foreground">Top Yield</div>
                 <h3 className="mt-2 font-serif text-2xl font-bold">{topYieldAreas[0]?.name}</h3>
                 <p className="text-sm text-muted-foreground">Rental yield leader</p>
@@ -86,7 +90,7 @@ export default async function AreasPage() {
                   ))}
                 </ul>
               </div>
-              <div className="rounded-lg border border-border bg-muted/50 p-5">
+              <div className="rounded-[24px] border border-[#152E24]/10 bg-[#FAF8F5] p-5">
                 <div className="text-xs font-semibold uppercase text-muted-foreground">Best Value</div>
                 <h3 className="mt-2 font-serif text-2xl font-bold">{bestValueAreas[0]?.name}</h3>
                 <p className="text-sm text-muted-foreground">Lowest price per sqft</p>
@@ -99,7 +103,7 @@ export default async function AreasPage() {
                   ))}
                 </ul>
               </div>
-              <div className="rounded-lg border border-border bg-muted/50 p-5">
+              <div className="rounded-[24px] border border-[#152E24]/10 bg-[#FAF8F5] p-5">
                 <div className="text-xs font-semibold uppercase text-muted-foreground">Score Leaders</div>
                 <h3 className="mt-2 font-serif text-2xl font-bold">{topScoreAreas[0]?.name}</h3>
                 <p className="text-sm text-muted-foreground">Balanced demand + returns</p>
@@ -116,12 +120,18 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="py-16">
+        <section className="bg-[#FAF8F5] pb-20">
           <div className="container">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {areas.map((area) => (
-                <AreaCard key={area.id} area={area} />
-              ))}
+            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
+              <div className="mb-8">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#C69B3E]">Neighborhood intelligence</p>
+                <h2 className="mt-2 font-serif text-2xl font-bold text-[#152E24] md:text-3xl">Browse Dubai districts</h2>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {areas.map((area) => (
+                  <AreaCard key={area.id} area={area} />
+                ))}
+              </div>
             </div>
           </div>
         </section>

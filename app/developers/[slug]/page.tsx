@@ -89,68 +89,89 @@ export default async function DeveloperDetailPage({
 
   return (
     <>
-        <section className="border-b border-border bg-gradient-to-b from-background to-muted py-16">
+        <section className="relative overflow-hidden border-b border-white/5 bg-[#0A1F17] py-16 md:py-24">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute right-0 top-0 h-[420px] w-[420px] bg-[radial-gradient(circle_at_50%_50%,rgba(198,155,62,0.16),transparent_55%)] blur-[80px]" />
+            <div className="absolute bottom-0 left-0 h-[360px] w-[360px] bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.10),transparent_55%)] blur-[80px]" />
+          </div>
           <div className="container">
-            <Badge className="mb-4 ore-gradient" variant="secondary">
+            <div className="relative z-10">
+            <Badge className="mb-4 border-none bg-[#C69B3E]/10 px-4 py-1.5 text-[#F0D792]" variant="secondary">
               Developer Profile
             </Badge>
-            <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+            <h1 className="font-serif text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
               {developer.name}
             </h1>
-            <p className="mt-4 max-w-3xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-3xl text-lg text-white/65">
               {developer.description || "Developer profile overview and flagship project activity in Dubai."}
             </p>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
-              <span className="rounded-full border border-border px-3 py-1">
+            <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/70">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
                 {developer.tier ? `${developer.tier} developer` : "Dubai developer"}
               </span>
               {developerProjects.length > 0 && (
-                <span className="rounded-full border border-border px-3 py-1">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
                   {developerProjects.length} projects
                 </span>
               )}
+              {showDelivered && (
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                  {unitsDelivered}+ delivered
+                </span>
+              )}
+              {showStars && (
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                  {developer.stars}★ rating
+                </span>
+              )}
+              {showHonesty && (
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                  {developer.honestyScore}/10 trust
+                </span>
+              )}
+            </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16">
+        <section className="bg-[#FAF8F5] py-16 md:py-20">
           <div className="container">
-            <div className="grid gap-10 lg:grid-cols-[1.4fr,0.6fr]">
+            <div className="grid gap-10 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-[1.4fr,0.6fr] md:p-8 lg:p-10">
               <div className="space-y-8">
-                <div className="rounded-3xl border border-border bg-card p-6">
-                  <h2 className="font-serif text-3xl font-bold">About {developer.name}</h2>
-                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                <div className="rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6">
+                  <h2 className="font-serif text-3xl font-bold text-[#152E24]">About {developer.name}</h2>
+                  <p className="mt-4 text-sm leading-relaxed text-[#152E24]/60">
                     {developer.description ||
                       "A trusted UAE developer delivering premium residential communities across Dubai and beyond."}
                   </p>
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <div>
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">Track record</div>
-                      <div className="mt-2 text-sm text-foreground">
+                      <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Track record</div>
+                      <div className="mt-2 text-sm text-[#152E24]">
                         {developer.trackRecord || "Strong delivery pipeline with investor-grade projects."}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">Top focus areas</div>
+                      <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Top focus areas</div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {stats.topAreas.length ? (
                           stats.topAreas.slice(0, 4).map((area) => (
-                            <Badge key={area.area} variant="secondary">
+                            <Badge key={area.area} variant="secondary" className="border-none bg-[#C69B3E]/10 text-[#8E6B21]">
                               {area.area}
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-sm text-muted-foreground">Dubai-focused</span>
+                          <span className="text-sm text-[#152E24]/60">Dubai-focused</span>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="rounded-3xl border border-border bg-card p-6">
-                  <h3 className="font-serif text-xl font-semibold mb-3">Awards</h3>
+                <div className="rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6">
+                  <h3 className="mb-3 font-serif text-xl font-semibold text-[#152E24]">Awards</h3>
                   <div className="flex flex-wrap gap-2">
                     {(developer.awards?.length ? developer.awards : ["Top Developer"]).map((award) => (
-                      <Badge key={award} variant="secondary">
+                      <Badge key={award} variant="secondary" className="border-none bg-white text-[#152E24]">
                         {award}
                       </Badge>
                     ))}
@@ -158,29 +179,29 @@ export default async function DeveloperDetailPage({
                 </div>
               </div>
               <div className="space-y-6">
-                <div className="rounded-3xl border border-border bg-card p-6 space-y-3">
+                <div className="space-y-3 rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Headquarters</div>
-                    <div className="text-lg font-semibold">{headquarters}</div>
+                    <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Headquarters</div>
+                    <div className="text-lg font-semibold text-[#152E24]">{headquarters}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Founded</div>
-                    <div className="text-lg font-semibold">{foundedYear || "Est. TBD"}</div>
+                    <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Founded</div>
+                    <div className="text-lg font-semibold text-[#152E24]">{foundedYear || "Est. TBD"}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Website</div>
+                    <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Website</div>
                     <div className="text-lg font-semibold">
-                      <Link href={developer.website || "#"} className="text-primary">
+                      <Link href={developer.website || "#"} className="text-[#C69B3E] hover:text-[#8E6B21]">
                         {officialWebsite}
                       </Link>
                     </div>
                   </div>
                 </div>
-                <div className="rounded-3xl border border-border bg-card p-6">
-                  <p className="text-sm text-muted-foreground">
+                <div className="rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6">
+                  <p className="text-sm text-[#152E24]/60">
                     Connect with the developer team for the latest launch updates.
                   </p>
-                  <Button className="mt-4 w-full ore-gradient text-black" asChild>
+                  <Button className="mt-4 w-full ore-gradient text-[#152E24]" asChild>
                     <Link href="/contact">Request Consultation</Link>
                   </Button>
                 </div>
@@ -189,20 +210,21 @@ export default async function DeveloperDetailPage({
           </div>
         </section>
 
-        <section className="py-16 bg-muted/40">
+        <section className="bg-[#FAF8F5] pb-20">
           <div className="container">
+            <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-8 lg:p-10">
             <div className="mb-8 flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-2xl font-bold">Projects by {developer.name}</h2>
-                <p className="text-sm text-muted-foreground">Signature developments and communities</p>
+                <h2 className="font-serif text-2xl font-bold text-[#152E24]">Projects by {developer.name}</h2>
+                <p className="text-sm text-[#152E24]/55">Signature developments and communities</p>
               </div>
-              <Button variant="outline" asChild>
+              <Button variant="outline" className="border-[#152E24]/10 bg-[#FAF8F5] text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" asChild>
                 <Link href="/projects">View All Projects</Link>
               </Button>
             </div>
 
             {developerProjects.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+              <div className="rounded-[28px] border border-dashed border-[#152E24]/10 bg-[#FAF8F5] p-8 text-center text-sm text-[#152E24]/55">
                 No projects are linked to {developer.name} yet. Explore all projects to find similar launches.
               </div>
             ) : (
@@ -212,6 +234,7 @@ export default async function DeveloperDetailPage({
                 ))}
               </div>
             )}
+            </div>
           </div>
         </section>
 
