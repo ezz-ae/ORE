@@ -1,0 +1,11 @@
+./DASHBOARD.MD
+./app/crm/(app)/leads/[id]/page.tsx
+./app/crm/(app)/projects/add/page.tsx
+./app/crm/(app)/projects/page.tsx
+./app/crm/(app)/profile/page.tsx
+./app/crm/(app)/layout.tsx
+./app/crm/(app)/overview/page.tsx
+./app/crm/(auth)/reset/[token]/page.tsx
+./app/crm/(auth)/reset/page.tsx
+./app/crm/(auth)/login/page.tsx
+./app/api/auth/request-reset/route.ts

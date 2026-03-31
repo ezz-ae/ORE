@@ -1,0 +1,8 @@
+app/dashboard/layout.tsx(12,14): error TS2741: Property 'user' is missing in type '{}' but required in type '{ user: { id: string; name: string; role: string; org_title?: string | null | undefined; }; }'.
+app/developers/[slug]/page.tsx(87,42): error TS2339: Property 'stars' does not exist on type 'DeveloperProfile'.
+app/developers/[slug]/page.tsx(88,44): error TS2339: Property 'honestyScore' does not exist on type 'DeveloperProfile'.
+components/animated-revenue-chart.tsx(26,24): error TS2304: Cannot find name 'useMemo'.
+components/developer-card.tsx(14,42): error TS2339: Property 'stars' does not exist on type 'DeveloperProfile'.
+components/developer-card.tsx(15,44): error TS2339: Property 'honestyScore' does not exist on type 'DeveloperProfile'.
+lib/db.ts(23,5): error TS2353: Object literal may only specify known properties, and 'onConnect' does not exist in type 'PoolConfig'.
+lib/db.ts(23,17): error TS7006: Parameter 'client' implicitly has an 'any' type.
