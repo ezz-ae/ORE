@@ -152,7 +152,7 @@ export default async function PropertiesPage({
                   >
                     {properties.length > 0 ? (
                       properties.map((property) => (
-                        <PropertyCard key={property.id} property={property} />
+                        <PropertyCard key={property.id} property={property} layout={view} />
                       ))
                     ) : (
                       <div className="col-span-full flex flex-col items-center justify-center rounded-[28px] border border-dashed border-[#152E24]/10 bg-[#FAF8F5] py-20 text-center">

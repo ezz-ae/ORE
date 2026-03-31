@@ -99,7 +99,7 @@ export async function FeaturedProperties() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
                     <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5">
                       {badges.map((badge) => (
-                        <Badge key={badge} className="bg-[#C69B3E]/90 text-white border-0 text-[10px] font-semibold px-2.5 py-0.5 rounded-md">
+                        <Badge key={badge} className="border-0 bg-[#C69B3E]/95 text-[#152E24] text-[10px] font-semibold px-2.5 py-0.5 rounded-md">
                           {badge}
                         </Badge>
                       ))}

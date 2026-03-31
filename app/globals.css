@@ -20,7 +20,7 @@ html {
 
   /* Refined Champagne Gold — warmer, richer */
   --primary: 38 52% 52%; /* #C69B3E */
-  --primary-foreground: 40 20% 98%;
+  --primary-foreground: 160 32% 10%;
 
   --secondary: 160 32% 8%;
   --secondary-foreground: 40 20% 98%;
@@ -29,7 +29,7 @@ html {
   --muted-foreground: 160 12% 46%;
 
   --accent: 38 68% 48%; /* Deeper amber-gold for CTAs */
-  --accent-foreground: 40 20% 98%;
+  --accent-foreground: 160 32% 10%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;

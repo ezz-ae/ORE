@@ -83,7 +83,7 @@ export function SiteFooter() {
               />
             </Link>
 
-            <p className="text-[14px] text-white/40 leading-relaxed max-w-sm">
+            <p className="max-w-sm text-[14px] leading-relaxed text-white/58">
               Pioneering private real estate intelligence. Delivering curated Dubai projects and boutique investment services for global investors.
             </p>
 
@@ -94,7 +94,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5 py-0.5">
                   <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Headquarters</span>
-                  <span className="leading-snug text-white/50">Office 38 floor, The One Tower,<br/>Dubai Media City, Sheikh Zayed Road</span>
+                  <span className="leading-snug text-white/65">Office 38 floor, The One Tower,<br/>Dubai Media City, Sheikh Zayed Road</span>
                 </div>
               </div>
 
@@ -104,7 +104,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Intelligence Desk</span>
-                   <span className="text-white/50">+971 4 580 8244</span>
+                   <span className="text-white/65">+971 4 580 8244</span>
                 </div>
               </div>
 
@@ -114,7 +114,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Secure Channel</span>
-                   <span className="text-white/50">info@orerealestate.ae</span>
+                   <span className="text-white/65">info@orerealestate.ae</span>
                 </div>
               </div>
             </div>
@@ -131,7 +131,7 @@ export function SiteFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="h-10 w-10 rounded-lg border border-white/[0.06] bg-white/[0.03] flex items-center justify-center text-white/40 hover:bg-white/[0.06] hover:text-[#D4AC50] transition-all"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/60 transition-all hover:bg-white/[0.08] hover:text-[#D4AC50]"
                 >
                   {social.icon}
                 </a>
@@ -142,7 +142,7 @@ export function SiteFooter() {
           <div className="grid gap-10 sm:grid-cols-3">
             {footerLinks.map((section) => (
               <div key={section.title} className="space-y-6">
-                <h4 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/25">
+                <h4 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/45">
                   {section.title}
                 </h4>
                 <ul className="space-y-3">
@@ -150,7 +150,7 @@ export function SiteFooter() {
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-[13px] text-white/45 transition-colors hover:text-[#D4AC50] font-medium"
+                        className="text-[13px] font-medium text-white/68 transition-colors hover:text-[#D4AC50]"
                       >
                         {link.label}
                       </Link>
@@ -161,19 +161,19 @@ export function SiteFooter() {
             ))}
 
             <div className="space-y-6">
-              <h4 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/25">
+              <h4 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/45">
                 Briefing
               </h4>
               <div className="space-y-4">
-                <p className="text-[12px] text-white/25 leading-relaxed">
+                <p className="text-[12px] leading-relaxed text-white/55">
                   Join our weekly institutional project briefing.
                 </p>
                 <div className="flex flex-col gap-2.5">
                   <Input
                     placeholder="E-mail"
-                    className="bg-white/[0.04] border-white/[0.06] text-white placeholder:text-white/15 h-10 rounded-lg focus:border-[#C69B3E]/30 text-sm"
+                    className="h-10 rounded-lg border-white/[0.1] bg-white/[0.06] text-white placeholder:text-white/35 focus:border-[#C69B3E]/30 text-sm"
                   />
-                  <LeadFormPopup buttonClassName="ore-gradient border-none h-10 w-full rounded-lg text-[11px]" />
+                  <LeadFormPopup buttonClassName="ore-gradient h-10 w-full rounded-lg border-none text-[11px] text-[#152E24]" />
                 </div>
               </div>
             </div>
@@ -182,10 +182,10 @@ export function SiteFooter() {
 
         <div className="mt-16 border-t border-white/[0.04] pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <p className="text-[10px] text-white/15 tracking-[0.12em] font-medium uppercase text-center md:text-left">
+            <p className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-white/35 md:text-left">
               &copy; {new Date().getFullYear()} ORE Real Estate &middot; RERA ORN: 28628 &middot; Media City HQ &middot; DUBAI
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/15 md:gap-8">
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/38 md:gap-8">
               <Link href="/privacy" className="transition-colors hover:text-[#D4AC50]">Privacy Policy</Link>
               <Link href="/terms" className="transition-colors hover:text-[#D4AC50]">Terms & Conditions</Link>
             </div>

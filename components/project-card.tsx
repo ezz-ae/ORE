@@ -79,7 +79,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {statusLabel}
             </Badge>
             {investmentHighlights.goldenVisaEligible && (
-              <Badge className="bg-[#C69B3E] text-white border-none shadow-sm text-[11px]">
+              <Badge className="border-none bg-[#C69B3E] text-[#152E24] shadow-sm text-[11px]">
                 Golden Visa
               </Badge>
             )}
@@ -124,7 +124,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-between border-t border-[#152E24]/10 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#C69B3E]/70 transition-colors group-hover:text-[#C69B3E]">
+          <div className="flex items-center justify-between border-t border-[#152E24]/10 pt-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#A56F12] transition-colors group-hover:text-[#8B5E11]">
             <span>Explore Development</span>
             <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </div>

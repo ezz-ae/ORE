@@ -90,7 +90,7 @@ export async function BlogSection() {
                       <span />
                     )}
                     {post.featured && (
-                      <Badge className="border-none bg-[#C69B3E] text-white shadow-sm">
+                      <Badge className="border-none bg-[#C69B3E] text-[#152E24] shadow-sm">
                         Featured
                       </Badge>
                     )}
