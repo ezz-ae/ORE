@@ -65,20 +65,21 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link href={projectSlug} className="group block" prefetch={false}>
-      <Card className="overflow-hidden border-border bg-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+      <Card className="overflow-hidden hover:shadow-lg hover:border-border">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           <Image
             src={project.heroImage || "/logo.png"}
             alt={project.name || "Project"}
             fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            <Badge variant={project.status === "selling" ? "default" : "secondary"} className="shadow-sm backdrop-blur-md bg-background/95 border-none">
+            <Badge variant="secondary" className="bg-white/90 text-foreground backdrop-blur-md border-none shadow-sm text-[11px]">
               {statusLabel}
             </Badge>
             {investmentHighlights.goldenVisaEligible && (
-              <Badge className="ore-gradient text-black shadow-sm border-none">
+              <Badge className="bg-[#C69B3E] text-white border-none shadow-sm text-[11px]">
                 Golden Visa
               </Badge>
             )}
@@ -87,45 +88,45 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
         <CardContent className="p-5">
           <div className="mb-3">
-            <h3 className="font-serif text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
+            <h3 className="font-serif text-lg font-bold line-clamp-1 group-hover:text-[#C69B3E] transition-colors">
               {project.name || "Project"}
             </h3>
-            <div className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground mt-1">
-              <MapPin className="h-3 w-3 text-primary/70" />
+            <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground mt-1.5">
+              <MapPin className="h-3 w-3 text-[#C69B3E]/60" />
               <span className="line-clamp-1">{location.area || "Dubai"}</span>
             </div>
           </div>
 
-          <div className="mb-5">
-            <p className="ore-text-gradient font-bold text-2xl tracking-tight">{getPriceRange(project)}</p>
+          <div className="mb-4">
+            <p className="font-bold text-xl text-foreground tracking-tight">{getPriceRange(project)}</p>
           </div>
 
           {(bedrooms || baths || area) && (
-            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-6 pt-4 border-t border-border/50">
+            <div className="flex flex-wrap gap-4 text-[11px] text-muted-foreground mb-5 pt-3.5 border-t border-border/40">
               {bedrooms && (
                 <div className="flex items-center gap-1.5">
-                  <BedDouble className="h-4 w-4 text-foreground/70" />
+                  <BedDouble className="h-3.5 w-3.5 text-foreground/50" />
                   <span>{bedrooms}</span>
                 </div>
               )}
               {baths && (
                 <div className="flex items-center gap-1.5">
-                  <Bath className="h-4 w-4 text-foreground/70" />
+                  <Bath className="h-3.5 w-3.5 text-foreground/50" />
                   <span>{baths}</span>
                 </div>
               )}
               {area && (
                 <div className="flex items-center gap-1.5">
-                  <Ruler className="h-4 w-4 text-foreground/70" />
+                  <Ruler className="h-3.5 w-3.5 text-foreground/50" />
                   <span>{area}</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80 group-hover:text-primary transition-colors">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.1em] text-[#C69B3E]/70 group-hover:text-[#C69B3E] transition-colors pt-3.5 border-t border-border/40">
             <span>Explore Development</span>
-            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1.5" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </div>
         </CardContent>
       </Card>

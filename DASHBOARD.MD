@@ -2,7 +2,7 @@
 
 
 Phase 4: Broker Dashboard (Sales & CRM Portal)
-Purpose: Internal tool for Gold Century brokers to manage 3500 projects, leads, and sales operations with AI assistance.
+Purpose: Internal tool for ORE brokers to manage 3500 projects, leads, and sales operations with AI assistance.
 4.1 Authentication
 
 Role-based access (Broker, Sales Manager, Admin)

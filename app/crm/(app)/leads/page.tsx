@@ -1,7 +1,7 @@
 import { LeadsTable } from "@/components/leads-table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { getLeads, getUserAccessList, resolveAccessRole } from "@/lib/entrestate"
+import { getLeads, getUserAccessList, resolveAccessRole } from "@/lib/ore"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 
 export default async function LeadsPage() {

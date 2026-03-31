@@ -18,57 +18,58 @@ export function AreaCard({ area }: AreaCardProps) {
   const listingCount = shouldShow(area.propertyCount) ? `${area.propertyCount}+` : "—"
   return (
     <Link href={`/areas/${area.slug.trim().toLowerCase()}`}>
-      <Card className="group overflow-hidden border-border bg-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+      <Card className="group overflow-hidden hover:shadow-lg hover:border-border">
         <div className="aspect-video relative overflow-hidden bg-muted">
           <Image
             src={area.image}
             alt={area.name}
             fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 z-10">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
             {area.freehold && (
-              <Badge className="bg-green-600 text-white border-none shadow-sm h-6">
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+              <Badge className="bg-emerald-600 text-white border-none shadow-sm text-[11px]">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
                 Freehold
               </Badge>
             )}
             {shouldShow(area.propertyCount) && (
-              <Badge variant="secondary" className="bg-background/95 backdrop-blur-md shadow-sm border-none h-6">
+              <Badge variant="secondary" className="bg-white/90 text-foreground backdrop-blur-md border-none shadow-sm text-[11px]">
                 {listingCount} listings
               </Badge>
             )}
           </div>
         </div>
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-5 space-y-4">
           <div>
-            <h3 className="font-serif text-2xl font-bold group-hover:text-primary transition-colors tracking-tight">{area.name}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mt-2 font-light">
+            <h3 className="font-serif text-xl font-bold group-hover:text-[#C69B3E] transition-colors tracking-tight">{area.name}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mt-1.5">
               {area.description}
             </p>
           </div>
-          
-          <div className="grid grid-cols-3 gap-4 text-[10px] font-bold uppercase tracking-[0.1em] pt-6 border-t border-border/50">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                <Home className="h-3.5 w-3.5 text-primary/70" />
-                <span>Price</span>
+
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/40">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <Home className="h-3 w-3 text-[#C69B3E]/50" />
+                <span>Price/sqft</span>
               </div>
-              <div className="text-xs font-bold text-foreground">{priceDisplay}</div>
+              <div className="text-[13px] font-bold text-foreground">{priceDisplay}</div>
             </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                <TrendingUp className="h-3.5 w-3.5 text-primary/70" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <TrendingUp className="h-3 w-3 text-[#C69B3E]/50" />
                 <span>Yield</span>
               </div>
-              <div className="text-xs font-bold text-green-600">{yieldDisplay}</div>
+              <div className="text-[13px] font-bold text-emerald-600">{yieldDisplay}</div>
             </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-muted-foreground/80">
-                <MapPin className="h-3.5 w-3.5 text-primary/70" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <MapPin className="h-3 w-3 text-[#C69B3E]/50" />
                 <span>Score</span>
               </div>
-              <div className="text-xs font-bold ore-text-gradient">{scoreDisplay}</div>
+              <div className="text-[13px] font-bold text-[#C69B3E]">{scoreDisplay}</div>
             </div>
           </div>
         </CardContent>

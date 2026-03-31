@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getProjectsBySlugs } from "@/lib/entrestate"
+import { getProjectsBySlugs } from "@/lib/ore"
 import { generateComparisonPdf } from "@/lib/pdf"
 
 export async function POST(req: Request) {

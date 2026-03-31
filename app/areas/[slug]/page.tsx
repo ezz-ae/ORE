@@ -8,7 +8,7 @@ import { SmallLeadForm } from "@/components/small-lead-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getAreaBySlug, getAreas, getProjectsByArea, getPropertiesByArea } from "@/lib/entrestate"
+import { getAreaBySlug, getAreas, getProjectsByArea, getPropertiesByArea } from "@/lib/ore"
 import { filterAuthorizedAreas, isAuthorizedAreaSlug } from "@/lib/utils/authorized"
 import { safeNum, safePercent, shouldShow } from "@/lib/utils/safeDisplay"
 

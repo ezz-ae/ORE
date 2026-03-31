@@ -11,119 +11,92 @@ interface HeroWithMotionProps {
 }
 
 const trustMetrics = [
-  { value: "3,500+", label: "Dubai projects mapped" },
+  { value: "3,500+", label: "Projects mapped" },
   { value: "45,000+", label: "Units tracked" },
   { value: "19 yrs", label: "Market expertise" },
-  { value: "AED 72B", label: "Capital under review" },
+  { value: "AED 72B", label: "Capital reviewed" },
 ]
 
 const marketSignals = [
-  { label: "Transaction velocity", value: "138", note: "launches this week" },
-  { label: "Average ROI", value: "8.6%", note: "on tracked releases" },
-  { label: "Golden Visa ready", value: "72%", note: "of available stock" },
+  { label: "Transaction velocity", value: "138", note: "launches this week", color: "text-emerald-400" },
+  { label: "Average ROI", value: "8.6%", note: "on tracked releases", color: "text-[#D4AC50]" },
+  { label: "Golden Visa ready", value: "72%", note: "of available stock", color: "text-sky-400" },
 ]
 
 export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
   return (
-    <section className="relative overflow-x-clip bg-[#020c08] text-white">
-      {/* Background imagery and moving light beams keep the skyline alive without making the hero noisy. */}
+    <section className="relative overflow-x-clip bg-[#0A1F17] text-white min-h-[90vh] flex items-center">
+      {/* Background layers */}
       <div className="pointer-events-none absolute inset-0">
         <Image
           src="/images/hero-bg.png"
           alt="Dubai skyline at twilight"
           fill
           priority
-          className="object-cover opacity-85"
+          className="object-cover opacity-40"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#020c08] via-[#02120c]/70 to-[#020c08]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_75%,rgba(250,222,164,0.12),transparent_35%),radial-gradient(circle_at_72%_34%,rgba(255,255,255,0.12),transparent_24%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A1F17]/80 via-[#0A1F17]/40 to-[#0A1F17]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(198,155,62,0.08),transparent)]" />
+
+        {/* Subtle animated accents */}
         <motion.div
-          animate={{ rotate: [0, 45, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-20 -left-16 h-[420px] w-[420px] rounded-[50%] bg-[#C5A059]/10 blur-[140px]"
-        />
-        <motion.div
-          animate={{ rotate: [0, -30, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 32, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-32 -right-20 h-[360px] w-[360px] rounded-[50%] bg-[#163327]/20 blur-[120px]"
+          animate={{ opacity: [0.06, 0.12, 0.06] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[10%] left-[15%] h-[500px] w-[500px] rounded-full bg-[#C69B3E]/10 blur-[160px]"
         />
         <motion.div
-          animate={{ x: ["-10%", "8%", "-6%"], opacity: [0.16, 0.28, 0.18] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[10%] left-[8%] h-[150%] w-28 rotate-[14deg] bg-[linear-gradient(180deg,rgba(255,244,212,0.42),rgba(255,244,212,0))] blur-3xl mix-blend-screen"
-        />
-        <motion.div
-          animate={{ x: ["8%", "-4%", "10%"], opacity: [0.1, 0.22, 0.12] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-          className="absolute -top-[18%] right-[12%] h-[165%] w-24 -rotate-[18deg] bg-[linear-gradient(180deg,rgba(230,250,255,0.3),rgba(230,250,255,0))] blur-3xl mix-blend-screen"
-        />
-        <motion.div
-          animate={{ opacity: [0.18, 0.4, 0.2], scaleX: [0.92, 1.06, 0.96] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[22%] left-[10%] h-px w-[80%] bg-gradient-to-r from-transparent via-[#f4cc7a] to-transparent blur-sm"
-        />
-        <motion.div
-          animate={{ opacity: [0.12, 0.22, 0.14], y: [0, -6, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-          className="absolute bottom-[10%] left-[18%] h-28 w-28 rounded-full bg-[#f0c26a]/20 blur-[80px]"
+          animate={{ opacity: [0.04, 0.1, 0.04] }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-[5%] right-[10%] h-[400px] w-[400px] rounded-full bg-[#152E24]/30 blur-[120px]"
         />
       </div>
 
-      <div className="container relative z-10 py-20 md:py-32">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr,0.9fr] lg:gap-12">
+      <div className="container relative z-10 py-24 md:py-32 lg:py-36">
+        <div className="grid gap-12 lg:grid-cols-[1.15fr,0.85fr] lg:gap-16 items-center">
+          {/* Left column */}
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-8"
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-10"
           >
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center justify-center rounded-full border border-white/20 px-4 py-1 text-[10px] uppercase tracking-[0.3em] text-white/70 sm:text-[11px] sm:tracking-[0.4em]">
-                Dubai Market Intelligence
+            {/* Badge */}
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#C69B3E]/30 bg-[#C69B3E]/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50] animate-pulse" />
+                Live Intelligence
               </span>
-              <span className="hidden text-[10px] uppercase tracking-[0.4em] text-white/40 md:block">ORE Collective</span>
             </div>
 
-            <div>
-              <h1 className="font-serif text-4xl font-bold leading-tight text-white md:text-6xl lg:text-7xl">
-                Investment <span className="ore-text-gradient">Intelligence</span> for Dubai Real Estate
-              </h1>
-              <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/72 sm:hidden">
-                Search Dubai opportunities faster, compare pricing clearly, and move with verified market signals.
-              </p>
-              <p className="mt-6 hidden max-w-2xl text-base text-white/70 md:text-lg sm:block">
-                Scan every Dubai corridor, compare live pricing, and validate risk before you invest. Our AI desk keeps you ahead of market-moving launches and captures every Golden Path opportunity.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
-              {trustMetrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left shadow-[0_24px_48px_-28px_rgba(0,0,0,0.5)] sm:px-5"
-                >
-                  <p className="text-xl font-semibold text-white md:text-2xl">{metric.value}</p>
-                  <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-xs sm:tracking-[0.3em]">{metric.label}</p>
-                </div>
-              ))}
-            </div>
-
+            {/* Headline */}
             <div className="space-y-6">
-              <div className="rounded-[2rem] border border-white/10 bg-white/10 px-4 py-4 shadow-[0_50px_120px_-40px_rgba(0,0,0,0.9)] backdrop-blur-3xl sm:px-6 sm:py-5">
+              <h1 className="font-serif text-[2.5rem] font-bold leading-[1.08] text-white sm:text-5xl md:text-6xl lg:text-[4.25rem]">
+                Dubai Real Estate{" "}
+                <span className="ore-text-gradient">Intelligence</span>
+              </h1>
+              <p className="max-w-xl text-base leading-relaxed text-white/55 md:text-lg md:leading-relaxed">
+                Scan every corridor, compare live pricing, and validate risk before you invest.
+                Our AI desk captures market-moving launches and Golden Path opportunities.
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-white/[0.08] bg-white/[0.06] p-3 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.7)] backdrop-blur-2xl sm:p-4">
                 <AISearchBar
-                  placeholder="Search Dubai opportunities, ROI, or Golden Visa projects"
+                  placeholder="Search opportunities, ROI, or Golden Visa projects..."
                   showSuggestions={false}
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 sm:gap-3 sm:tracking-[0.35em]">
-                <span>Golden Path</span>
-                <div className="h-0.5 w-10 rounded-full bg-white/40" />
+              {/* Prompt chips */}
+              <div className="flex flex-wrap items-center gap-2 pl-1">
+                <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/30">Try:</span>
                 {heroPrompts.map((prompt) => (
                   <Link
                     key={prompt}
                     href={`/chat?q=${encodeURIComponent(prompt)}`}
-                    className="rounded-full border border-white/30 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-white transition hover:border-primary hover:text-primary sm:text-[11px] sm:tracking-[0.35em]"
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[11px] font-medium text-white/50 transition-all hover:border-[#C69B3E]/40 hover:bg-[#C69B3E]/10 hover:text-[#D4AC50]"
                   >
                     {prompt}
                   </Link>
@@ -131,57 +104,77 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <Button size="lg" className="ore-gradient h-12 w-full rounded-full px-6 text-[10px] font-bold uppercase tracking-[0.2em] sm:h-14 sm:w-auto sm:px-10 sm:text-[11px] sm:tracking-[0.3em]" asChild>
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button size="lg" className="ore-gradient h-13 w-full rounded-full px-8 text-[11px] font-bold uppercase tracking-[0.15em] sm:h-14 sm:w-auto sm:px-10" asChild>
                 <Link href="/chat">Ask the AI Desk</Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 w-full rounded-full border-white/40 px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-white sm:h-14 sm:w-auto sm:px-10 sm:text-[11px] sm:tracking-[0.3em]"
+                className="h-13 w-full rounded-full border-white/15 bg-white/[0.04] px-8 text-[11px] font-bold uppercase tracking-[0.15em] text-white hover:bg-white/10 hover:border-white/25 sm:h-14 sm:w-auto sm:px-10"
                 asChild
               >
-                <Link href="/market">View Dubai Market Map</Link>
+                <Link href="/market">Market Intelligence</Link>
               </Button>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 sm:hidden">
-              <span>Licensed Dubai intelligence desk</span>
-            </div>
-            <div className="hidden flex-wrap gap-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60 sm:flex sm:gap-6 sm:tracking-[0.3em]">
-              <span>Trusted by licensed brokers</span>
-              <span>Media City HQ · 24/7 concierge</span>
-              <span>Instant Golden Visa assessments</span>
+            {/* Trust metrics */}
+            <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-4 sm:gap-4">
+              {trustMetrics.map((metric) => (
+                <div
+                  key={metric.label}
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3.5 backdrop-blur-sm"
+                >
+                  <p className="text-lg font-bold text-white sm:text-xl">{metric.value}</p>
+                  <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35">{metric.label}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
 
+          {/* Right column — Market Signals */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="relative hidden md:block lg:pl-4"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="relative hidden lg:block"
           >
-            <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/30 blur-3xl" />
-            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-3xl md:rounded-[2.5rem] md:p-8">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-white/60">Dubai Snapshot</p>
-              <h3 className="mt-3 text-3xl font-bold text-white">Market Signals</h3>
-              <div className="mt-6 grid gap-4 md:gap-6">
+            <div className="rounded-3xl border border-white/[0.08] bg-white/[0.05] p-8 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">Dubai Snapshot</p>
+                  <h3 className="mt-1 text-2xl font-bold text-white">Market Signals</h3>
+                </div>
+                <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] font-semibold text-emerald-400">Live</span>
+                </div>
+              </div>
+
+              <div className="mt-8 space-y-4">
                 {marketSignals.map((signal) => (
-                  <div key={signal.label} className="rounded-2xl border border-white/5 bg-white/5 p-4">
-                    <p className="text-2xl font-semibold text-white">{signal.value}</p>
-                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">{signal.label}</p>
-                    <p className="mt-1 text-sm text-white/60">{signal.note}</p>
+                  <div key={signal.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+                    <div className="flex items-baseline justify-between">
+                      <p className={`text-3xl font-bold ${signal.color}`}>{signal.value}</p>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/30">{signal.note}</p>
+                    </div>
+                    <p className="mt-1.5 text-xs font-medium text-white/50">{signal.label}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 flex items-center gap-3 text-sm text-white/70">
-                <span className="inline-flex h-3 w-3 rounded-full bg-[#16a34a]" />
-                Live data refreshed every 24 minutes · Tier-gated insights
+
+              <div className="mt-6 flex items-center gap-2 border-t border-white/[0.06] pt-5 text-[11px] text-white/35">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Updated every 24 minutes
               </div>
             </div>
           </motion.div>
         </div>
       </div>
+
+      {/* Bottom fade */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0A1F17] to-transparent" />
     </section>
   )
 }

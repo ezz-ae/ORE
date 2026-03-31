@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getProjectsForGrid, getAreas, getProperties } from '@/lib/entrestate'
+import { getProjectsForGrid, getAreas, getProperties } from '@/lib/ore'
 import { filterAuthorizedAreas } from '@/lib/utils/authorized'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

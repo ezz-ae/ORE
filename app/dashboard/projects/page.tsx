@@ -7,7 +7,7 @@ import {
   getDashboardProjectFilters,
   getDashboardProjects,
   type DashboardProjectFilters,
-} from "@/lib/entrestate"
+} from "@/lib/ore"
 
 interface DashboardProjectsPageProps {
   searchParams?: Record<string, string | string[] | undefined>

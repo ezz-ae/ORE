@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { DashboardProfileForm } from "@/components/dashboard-profile-form"
-import { getUserProfileByEmail } from "@/lib/entrestate"
+import { getUserProfileByEmail } from "@/lib/ore"
 
 interface DashboardProfilePageProps {
   searchParams?: { email?: string }

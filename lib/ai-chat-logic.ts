@@ -14,7 +14,7 @@ import {
   getTopROIProjects,
   projectToProperty,
   searchProjects,
-} from "@/lib/entrestate"
+} from "@/lib/ore"
 
 export async function processAiChatMessage(input: {
   message: string
@@ -82,7 +82,7 @@ Highlights: ${(p.highlights || []).join(', ')}`
     projects: relevantProjects,
     dataCards: relevantProjects.map(p => projectToProperty(p)),
     evidence: {
-      sources_used: wantsProperties ? ["Entrestate Intelligence Database"] : ["AI Knowledge Base"]
+      sources_used: wantsProperties ? ["ORE Intelligence Database"] : ["AI Knowledge Base"]
     },
     compiler_output: {
       output_type: wantsProperties ? "table_spec" : "text",

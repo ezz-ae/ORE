@@ -1,5 +1,5 @@
 -- ============================================================
--- Gold Century Real Estate — Data Migration Script
+-- ORE Real Estate — Data Migration Script
 -- Notebook Agent Target: Neon PostgreSQL (NEON_DATABASE_URL)
 -- Generated: 2026-03-10
 -- Source: data-request.md
@@ -205,7 +205,7 @@ WHERE
 -- Broker role:  can read/update only WHERE assigned_broker_id = their user id
 -- Assignments:  stored in gc_leads.assigned_broker_id (FK advisory, not enforced at DB level
 --               to allow flexibility for unassigned leads)
--- No RLS is applied here — enforcement is in lib/entrestate.ts query builders.
+-- No RLS is applied here — enforcement is in lib/ore.ts query builders.
 
 
 -- ============================================================

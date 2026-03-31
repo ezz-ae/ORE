@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
-import { ensureLeadActivityTable, ensureLeadsTable, type LeadRecord } from "@/lib/entrestate"
+import { ensureLeadActivityTable, ensureLeadsTable, type LeadRecord } from "@/lib/ore"
 import { getSessionUser, isAdminRole, logActivity } from "@/lib/auth"
 
 export const runtime = "nodejs"

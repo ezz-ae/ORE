@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 export const metadata: Metadata = {
   title: "Terms of Service · ORE Real Estate",
   description:
-    "Review the terms that govern your use of ORE's investor platform, chat, and data services powered by Entrestate Intelligence.",
+    "Review the terms that govern your use of ORE's investor platform, chat, and data services powered by ORE Intelligence.",
 }
 
 const termsItems = [
@@ -15,7 +15,7 @@ const termsItems = [
   },
   {
     title: "Data accuracy",
-    body: "Every number is backed by live Entrestate data. We do not guarantee future performance, but we strive to show meaningful signals while guarding against zero-value artifacts.",
+    body: "Every number is backed by live ORE data. We do not guarantee future performance, but we strive to show meaningful signals while guarding against zero-value artifacts.",
   },
   {
     title: "Content & conduct",
@@ -33,7 +33,7 @@ export default function TermsPage() {
           </Badge>
           <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight">Terms of Service</h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
-            These terms explain how you may interact with ORE Real Estate and the Entrestate Intelligence tools embedded across the platform.
+            These terms explain how you may interact with ORE Real Estate and the ORE Intelligence tools embedded across the platform.
           </p>
         </div>
       </section>

@@ -103,7 +103,7 @@ export function RoiSection({ data }: RoiSectionProps) {
         })}
       </div>
       <p className="mt-6 text-center text-[11px] text-muted-foreground/60">
-        Projected estimates only · Past performance does not guarantee future returns · Data: Entrestate Intelligence
+        Projected estimates only · Past performance does not guarantee future returns · Data: ORE Intelligence
       </p>
     </SectionShell>
   )

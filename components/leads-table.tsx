@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import type { LeadRecord } from "@/lib/entrestate"
+import type { LeadRecord } from "@/lib/ore"
 
 interface LeadsTableProps {
   leads: LeadRecord[]

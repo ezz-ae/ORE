@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Building2 } from "lucide-react"
+import { Building2, ArrowRight } from "lucide-react"
 import type { DeveloperProfile } from "@/lib/types/project"
 import { safeNum, safeScore, shouldShow } from "@/lib/utils/safeDisplay"
 
@@ -16,39 +16,35 @@ export function DeveloperCard({ developer }: DeveloperCardProps) {
 
   return (
     <Link href={`/developers/${developer.slug}`}>
-      <Card className="group overflow-hidden border-border bg-card transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
-        <CardContent className="p-6">
+      <Card className="group overflow-hidden hover:shadow-lg hover:border-border">
+        <CardContent className="p-5">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 shadow-sm shrink-0">
-              <Building2 className="h-6 w-6 text-primary" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#C69B3E]/10 bg-[#C69B3E]/[0.04] shadow-sm shrink-0">
+              <Building2 className="h-5 w-5 text-[#C69B3E]" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-serif text-xl font-bold text-foreground group-hover:text-primary transition-colors truncate">{developer.name}</div>
-                  <div className="mt-1 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                    {developer.tier ? `${developer.tier} Tier` : "Official Developer"}
-                  </div>
-                </div>
+              <div className="font-serif text-lg font-bold text-foreground group-hover:text-[#C69B3E] transition-colors truncate">{developer.name}</div>
+              <div className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                {developer.tier ? `${developer.tier} Tier` : "Official Developer"}
               </div>
             </div>
           </div>
 
-          <p className="mt-5 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          <p className="mt-4 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
             {developer.description}
           </p>
 
-          <div className="mt-6 rounded-2xl border border-border/50 bg-muted/40 p-4">
-            <div className="text-[10px] uppercase font-bold tracking-widest text-primary mb-1.5">Elite Track Record</div>
-            <p className="text-xs text-foreground font-medium line-clamp-2 leading-relaxed">{developer.trackRecord}</p>
+          <div className="mt-5 rounded-xl border border-border/40 bg-muted/30 p-3.5">
+            <div className="text-[10px] uppercase font-semibold tracking-[0.1em] text-[#C69B3E] mb-1">Track Record</div>
+            <p className="text-[13px] text-foreground font-medium line-clamp-2 leading-relaxed">{developer.trackRecord}</p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-border/50 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">
+          <div className="mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-[11px] font-semibold text-muted-foreground group-hover:text-[#C69B3E] transition-colors">
             <span className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Verified Partner
             </span>
-            <span>Profile →</span>
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </div>
         </CardContent>
       </Card>

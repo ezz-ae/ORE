@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { getBlogPostBySlug, getBlogPosts } from "@/lib/entrestate"
+import { getBlogPostBySlug, getBlogPosts } from "@/lib/ore"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"

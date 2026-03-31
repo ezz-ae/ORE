@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getDashboardAnalyticsData, resolveAccessRole } from "@/lib/entrestate"
+import { getDashboardAnalyticsData, resolveAccessRole } from "@/lib/ore"
 import { getSessionUser } from "@/lib/auth"
 import { CircleDollarSign, BarChart3, Users, Rocket, MousePointerClick, FilePenLine } from "lucide-react"
 

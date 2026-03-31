@@ -1,5 +1,5 @@
 # FINALIZATION.md
-# Entrestate Intelligence OS — Enterprise Finalization Checklist
+# ORE Intelligence OS — Enterprise Finalization Checklist
 # Generated: 2026-03-22 by notebook agent
 # Source of truth: Hex notebook "Enterprise Decision Infrastructure Finalization"
 # 
@@ -54,7 +54,7 @@
 - [ ] "Projects Outlier Analysis" — `price_from` → `price_from_aed`, enforce float64
 - [ ] "Merge & Create Unified Dataset" — rename at merge + `pd.to_numeric` enforce
 - [ ] "STATIC TRUTH: Final State & Quality Report" — rename in all print/summary refs
-- [ ] "ENTRESTATE FINAL STATISTICS" — rename + enforce numeric before aggregation
+- [ ] "ORE FINAL STATISTICS" — rename + enforce numeric before aggregation
 - [ ] "FINAL ENRICHMENT: Fill Gaps from PF + Re-export Everything" — no string cast
 - [ ] "NEON DATABASE: Schema + Push Pipeline" — `DOUBLE PRECISION` in DDL + SQLAlchemy dtype
 - [ ] "GROWTH SHEET" — groupby on `price_from_aed`
@@ -70,10 +70,10 @@
 - [ ] `grep -r "lelwa|mashroi" src/ lib/` → 0 results in filter context
 
 ### Narration gating
-- [ ] `ENTRESTATE_LOG_LEVEL` env var added top of pipeline
+- [ ] `ORE_LOG_LEVEL` env var added top of pipeline
 - [ ] All emoji print() statements gated behind `if _verbose:`
 - [ ] Contract output prints (JSON, assertions, provenance) ungated
-- [ ] `ENTRESTATE_LOG_LEVEL=INFO` produces zero emoji stdout
+- [ ] `ORE_LOG_LEVEL=INFO` produces zero emoji stdout
 
 ### DB contract tests
 - [ ] `tests/db-contract.test.ts` created
@@ -140,7 +140,7 @@
 - [ ] `packages/embed/src/index.ts` — self-contained, CSP-safe, no eval()
 - [ ] 4 widget types implemented: `market_card`, `area_table`, `score_badge`, `market_pulse`
 - [ ] `app/api/embed/route.ts` — returns only `columns_exposed` per embed type
-- [ ] Free-tier: "Powered by Entrestate" non-removable (hardcoded in `styles.ts`)
+- [ ] Free-tier: "Powered by ORE" non-removable (hardcoded in `styles.ts`)
 - [ ] Pro-embedder: `data-accent` custom color supported
 - [ ] Gated columns render blurred + upgrade CTA
 - [ ] Response cache: `Cache-Control: public, max-age=3600`
@@ -211,7 +211,7 @@
 - [ ] User never leaves broker's page on widget interaction
 - [ ] `market_card` + `area_table`: lead magnet `dual_capture` enabled
 - [ ] `data-lead-webhook` fires to broker CRM on email submit (broker gets CRM lead)
-- [ ] `/api/signup?tier=free&source=widget` fires simultaneously (Entrestate gets signup)
+- [ ] `/api/signup?tier=free&source=widget` fires simultaneously (ORE gets signup)
 - [ ] Overlay fallback: if drawer fails → open `/chat?ref=widget` in new tab (not same tab)
 - [ ] `packages/embed` handles `data-interaction="overlay"` + `data-lead-magnet="true"` attributes
 
@@ -220,11 +220,11 @@
 ## GLOBAL ACCEPTANCE CRITERIA (must be true after all 4 prompts)
 - [ ] `grep -r "price_from[^_]" src/ lib/ notebooks/` → 0 results
 - [ ] `grep -r "lelwa|mashroi" src/ lib/` → 0 results in filter context
-- [ ] `ENTRESTATE_LOG_LEVEL=INFO` → zero emoji prints in stdout
+- [ ] `ORE_LOG_LEVEL=INFO` → zero emoji prints in stdout
 - [ ] `/api/chat` response includes `provenance.run_id` on every call
 - [ ] Home page: only Chat / Search / Map + Golden Paths + Trust Bar visible
 - [ ] Tier gating enforced server-side (JWT, not client claim)
-- [ ] Widget "Powered by Entrestate" cannot be hidden via external CSS
+- [ ] Widget "Powered by ORE" cannot be hidden via external CSS
 - [ ] `latest_provenance` view returns 1 row after notebook pipeline run
 - [ ] `pnpm lint` → 0 errors
 - [ ] `pnpm test` → all green (including db-contract + copy-rules)
@@ -237,7 +237,7 @@
 - [ ] `inventory_spine` view exposes `unit_sample` + `unit_coverage_pct`
 - [ ] Ask Compiler returns `partial_spec` for complex multi-signal queries (not fallback)
 - [ ] Widget CTA opens overlay on embedder site — no same-tab redirect to `/chat`
-- [ ] Lead magnet dual-capture fires broker webhook + Entrestate signup simultaneously
+- [ ] Lead magnet dual-capture fires broker webhook + ORE signup simultaneously
 
 ---
 

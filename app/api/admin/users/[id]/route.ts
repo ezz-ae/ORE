@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { canDeleteCrmUsers, getSessionUser, logActivity, normalizeCrmRole } from "@/lib/auth"
-import { deleteUserAccess, getUserProfileById } from "@/lib/entrestate"
+import { deleteUserAccess, getUserProfileById } from "@/lib/ore"
 
 export const runtime = "nodejs"
 

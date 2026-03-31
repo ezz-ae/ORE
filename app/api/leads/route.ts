@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
-import { ensureLeadsTable, getProjectBySlug } from "@/lib/entrestate"
+import { ensureLeadsTable, getProjectBySlug } from "@/lib/ore"
 import {
   getLeadershipLeadRecipients,
   sendInternalLeadAlertEmail,

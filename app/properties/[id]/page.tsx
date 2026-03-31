@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { getProperties, getPropertyBySlug } from "@/lib/entrestate"
+import { getProperties, getPropertyBySlug } from "@/lib/ore"
 import { notFound } from "next/navigation"
 
 export const runtime = "nodejs"

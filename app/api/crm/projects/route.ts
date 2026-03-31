@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser, isAdminRole, logActivity } from "@/lib/auth"
-import { upsertDashboardProject } from "@/lib/entrestate"
+import { upsertDashboardProject } from "@/lib/ore"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

@@ -19,7 +19,7 @@ import {
   searchCrmLeads,
   searchProjects,
   upsertDashboardProject,
-} from "@/lib/entrestate"
+} from "@/lib/ore"
 import { getSessionUser, logActivity } from "@/lib/auth"
 import { appendConversationMessage, upsertConversationMessage } from "@/lib/ai-conversations"
 import type { AiMessageRecord } from "@/lib/ai-conversations"

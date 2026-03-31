@@ -1,4 +1,4 @@
-import { getProjectsForGrid } from "@/lib/entrestate"
+import { getProjectsForGrid } from "@/lib/ore"
 import { ProjectComparatorClient } from "@/components/project-comparator-client"
 
 export default async function ComparatorPage() {

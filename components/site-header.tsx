@@ -81,14 +81,14 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#163327]/5 bg-[#FBF9F6]/80 backdrop-blur-xl h-20 transition-all duration-300">
-      <div className="container flex h-20 items-center justify-between px-6 max-w-7xl mx-auto">
+    <header className="sticky top-0 z-50 w-full border-b border-[#152E24]/[0.06] bg-[#FAF8F5]/85 backdrop-blur-2xl h-16 transition-all duration-300 lg:h-[4.5rem]">
+      <div className="container flex h-full items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Logo */}
-        <Link href="/" className="flex flex-col group leading-none shrink-0 transition-opacity hover:opacity-90">
-          <span className="font-serif text-3xl font-bold tracking-tighter text-[#163327] group-hover:text-[#C5A059] transition-colors uppercase">
+        <Link href="/" className="flex items-baseline gap-1.5 group shrink-0 transition-opacity hover:opacity-80">
+          <span className="font-serif text-2xl font-bold tracking-tight text-[#152E24] uppercase">
             ORE
           </span>
-          <span className="text-[10px] font-bold tracking-[0.4em] text-[#C5A059] uppercase -mt-0.5">
+          <span className="text-[9px] font-bold tracking-[0.35em] text-[#C69B3E] uppercase">
             REAL ESTATE
           </span>
         </Link>
@@ -96,21 +96,21 @@ export function SiteHeader() {
         {/* Desktop Navigation */}
         <nav className="hidden flex-1 items-center justify-center lg:flex">
           <NavigationMenu viewport={false}>
-            <NavigationMenuList className="gap-2">
+            <NavigationMenuList className="gap-1">
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent hover:bg-[#163327]/05 text-[#163327]/70 hover:text-[#163327] font-medium text-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-[#152E24]/[0.04] text-[#152E24]/60 hover:text-[#152E24] font-medium text-[13px] h-9 px-3">
                   Properties
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className={megaMenuWide}>
-                  <div className="grid gap-2 p-3 md:grid-cols-2 bg-[#FBF9F6]">
+                  <div className="grid gap-1 p-3 md:grid-cols-2 bg-white rounded-xl">
                     {mainLinks.map((item) => (
                       <NavigationMenuLink asChild key={item.href}>
                         <Link
                           href={item.href}
-                          className="rounded-xl border border-transparent p-3 transition hover:border-[#163327]/10 hover:bg-[#163327]/05"
+                          className="rounded-lg border border-transparent p-3 transition hover:bg-[#152E24]/[0.03]"
                         >
-                          <div className="text-sm font-semibold text-[#163327]">{item.label}</div>
-                          <div className="text-[11px] text-[#163327]/50">{item.description}</div>
+                          <div className="text-sm font-semibold text-[#152E24]">{item.label}</div>
+                          <div className="text-[11px] text-[#152E24]/40 mt-0.5">{item.description}</div>
                         </Link>
                       </NavigationMenuLink>
                     ))}
@@ -119,19 +119,19 @@ export function SiteHeader() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent hover:bg-[#163327]/05 text-[#163327]/70 hover:text-[#163327] font-medium text-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-[#152E24]/[0.04] text-[#152E24]/60 hover:text-[#152E24] font-medium text-[13px] h-9 px-3">
                   Market Intelligence
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className={megaMenuWide}>
-                  <div className="grid gap-2 p-3 md:grid-cols-2 bg-[#FBF9F6]">
+                  <div className="grid gap-1 p-3 md:grid-cols-2 bg-white rounded-xl">
                     {marketLinks.map((item) => (
                       <NavigationMenuLink asChild key={item.href}>
                         <Link
                           href={item.href}
-                          className="rounded-xl border border-transparent p-3 transition hover:border-[#163327]/10 hover:bg-[#163327]/05"
+                          className="rounded-lg border border-transparent p-3 transition hover:bg-[#152E24]/[0.03]"
                         >
-                          <div className="text-sm font-semibold text-[#163327]">{item.label}</div>
-                          <div className="text-[11px] text-[#163327]/50">{item.description}</div>
+                          <div className="text-sm font-semibold text-[#152E24]">{item.label}</div>
+                          <div className="text-[11px] text-[#152E24]/40 mt-0.5">{item.description}</div>
                         </Link>
                       </NavigationMenuLink>
                     ))}
@@ -140,19 +140,19 @@ export function SiteHeader() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent hover:bg-[#163327]/05 text-[#163327]/70 hover:text-[#163327] font-medium text-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-[#152E24]/[0.04] text-[#152E24]/60 hover:text-[#152E24] font-medium text-[13px] h-9 px-3">
                   Investment Tools
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className={megaMenuMedium}>
-                  <div className="grid gap-2 p-3 md:grid-cols-2 bg-[#FBF9F6]">
+                  <div className="grid gap-1 p-3 md:grid-cols-2 bg-white rounded-xl">
                     {toolsLinks.map((item) => (
                       <NavigationMenuLink asChild key={item.href}>
                         <Link
                           href={item.href}
-                          className="rounded-xl border border-transparent p-3 transition hover:border-[#163327]/10 hover:bg-[#163327]/05"
+                          className="rounded-lg border border-transparent p-3 transition hover:bg-[#152E24]/[0.03]"
                         >
-                          <div className="text-sm font-semibold text-[#163327]">{item.label}</div>
-                          <div className="text-[11px] text-[#163327]/50">{item.description}</div>
+                          <div className="text-sm font-semibold text-[#152E24]">{item.label}</div>
+                          <div className="text-[11px] text-[#152E24]/40 mt-0.5">{item.description}</div>
                         </Link>
                       </NavigationMenuLink>
                     ))}
@@ -161,19 +161,19 @@ export function SiteHeader() {
               </NavigationMenuItem>
 
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent hover:bg-[#163327]/05 text-[#163327]/70 hover:text-[#163327] font-medium text-sm">
+                <NavigationMenuTrigger className="bg-transparent hover:bg-[#152E24]/[0.04] text-[#152E24]/60 hover:text-[#152E24] font-medium text-[13px] h-9 px-3">
                   Company
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className={megaMenuCompact}>
-                  <div className="grid gap-2 p-3 bg-[#FBF9F6]">
+                  <div className="grid gap-1 p-3 bg-white rounded-xl">
                     {companyLinks.map((item) => (
                       <NavigationMenuLink asChild key={item.href}>
                         <Link
                           href={item.href}
-                          className="rounded-xl border border-transparent p-3 transition hover:border-[#163327]/10 hover:bg-[#163327]/05"
+                          className="rounded-lg border border-transparent p-3 transition hover:bg-[#152E24]/[0.03]"
                         >
-                          <div className="text-sm font-semibold text-[#163327]">{item.label}</div>
-                          <div className="text-[11px] text-[#163327]/50">{item.description}</div>
+                          <div className="text-sm font-semibold text-[#152E24]">{item.label}</div>
+                          <div className="text-[11px] text-[#152E24]/40 mt-0.5">{item.description}</div>
                         </Link>
                       </NavigationMenuLink>
                     ))}
@@ -185,13 +185,13 @@ export function SiteHeader() {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
             asChild
-            className="rounded-full border border-[#163327]/10 text-[#163327]/60 hover:bg-[#163327]/05 h-10 w-10"
+            className="rounded-full text-[#152E24]/50 hover:bg-[#152E24]/[0.04] h-9 w-9"
           >
             <a href="https://wa.me/971553308046" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
               <MessageCircleIcon />
@@ -199,57 +199,57 @@ export function SiteHeader() {
           </Button>
           <LeadFormPopup
             buttonLabel="Briefing"
-            buttonClassName="hidden md:inline-flex ore-gradient h-10 px-6 rounded-full text-[10px] uppercase font-bold tracking-widest border-none"
+            buttonClassName="hidden md:inline-flex ore-gradient h-9 px-5 rounded-lg text-[10px] uppercase font-semibold tracking-[0.12em] border-none"
             buttonSize="sm"
           />
-          <Button asChild className="hidden md:inline-flex bg-[#163327] hover:bg-[#163327]/90 text-white rounded-full h-10 px-6 text-[10px] uppercase font-bold tracking-widest">
+          <Button asChild className="hidden md:inline-flex bg-[#152E24] hover:bg-[#152E24]/90 text-white rounded-lg h-9 px-5 text-[10px] uppercase font-semibold tracking-[0.12em]">
             <Link href="/chat">AI Assistant</Link>
           </Button>
 
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden text-[#163327]">
+              <Button variant="ghost" size="icon" className="lg:hidden text-[#152E24] h-9 w-9">
                 <MenuIcon />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-l border-[#163327]/10 bg-[#FBF9F6]">
+            <SheetContent side="right" className="w-[85vw] max-w-[360px] p-0 border-l border-[#152E24]/[0.06] bg-[#FAF8F5]">
               <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-              <div className="flex flex-col h-full bg-[#FBF9F6]">
-                <div className="p-8 border-b border-[#163327]/5">
-                  <Link href="/" onClick={() => setIsOpen(false)} className="flex flex-col">
-                    <span className="font-serif text-3xl font-bold tracking-tighter text-[#163327] uppercase">
+              <div className="flex flex-col h-full bg-[#FAF8F5]">
+                <div className="p-6 border-b border-[#152E24]/[0.06]">
+                  <Link href="/" onClick={() => setIsOpen(false)} className="flex items-baseline gap-1.5">
+                    <span className="font-serif text-2xl font-bold tracking-tight text-[#152E24] uppercase">
                       ORE
                     </span>
-                    <span className="text-[10px] font-bold tracking-[0.4em] text-[#C5A059] uppercase -mt-0.5">
+                    <span className="text-[9px] font-bold tracking-[0.35em] text-[#C69B3E] uppercase">
                       REAL ESTATE
                     </span>
                   </Link>
                 </div>
-                
+
                 <ScrollArea className="flex-1 min-h-0">
-                  <div className="p-8 space-y-10 pb-24">
+                  <div className="p-6 space-y-8 pb-24">
                     {[
                       { title: "Properties", links: mainLinks },
                       { title: "Market", links: marketLinks },
                       { title: "Investment Tools", links: toolsLinks },
                       { title: "Our Firm", links: companyLinks }
                     ].map((section) => (
-                      <div key={section.title} className="space-y-5">
-                        <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#163327]/30 px-1">
+                      <div key={section.title} className="space-y-3">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#152E24]/25 px-1">
                           {section.title}
                         </div>
-                        <div className="grid gap-1">
+                        <div className="grid gap-0.5">
                           {section.links.map((item) => (
                             <Link
                               key={item.href}
                               href={item.href}
                               onClick={() => setIsOpen(false)}
-                              className="flex flex-col gap-0.5 rounded-2xl p-4 text-sm font-medium transition-colors hover:bg-[#163327]/05 active:bg-[#163327]/10"
+                              className="flex flex-col gap-0.5 rounded-xl p-3 text-sm font-medium transition-colors hover:bg-[#152E24]/[0.03] active:bg-[#152E24]/[0.06]"
                             >
-                              <span className="text-[16px] text-[#163327]">{item.label}</span>
-                              <span className="text-[11px] font-normal text-[#163327]/50 line-clamp-1">{item.description}</span>
+                              <span className="text-[15px] text-[#152E24]">{item.label}</span>
+                              <span className="text-[11px] font-normal text-[#152E24]/40 line-clamp-1">{item.description}</span>
                             </Link>
                           ))}
                         </div>
@@ -258,11 +258,11 @@ export function SiteHeader() {
                   </div>
                 </ScrollArea>
 
-                <div className="p-8 border-t border-[#163327]/5 bg-white/40 backdrop-blur-xl">
-                  <Button asChild className="w-full ore-gradient shadow-2xl h-14 rounded-full text-[11px] uppercase font-bold tracking-[0.2em]" size="lg">
+                <div className="p-6 border-t border-[#152E24]/[0.06] bg-white/50 backdrop-blur-xl">
+                  <Button asChild className="w-full ore-gradient shadow-lg h-12 rounded-xl text-[11px] uppercase font-semibold tracking-[0.12em]" size="lg">
                     <Link href="/chat" onClick={() => setIsOpen(false)}>
                       <SparklesIcon />
-                      <span className="ml-3">AI Intelligence Desk</span>
+                      <span className="ml-2">AI Intelligence Desk</span>
                     </Link>
                   </Button>
                 </div>

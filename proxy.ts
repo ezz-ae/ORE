@@ -6,7 +6,7 @@ export function proxy(request: NextRequest) {
   const hostname = request.headers.get("host") || ""
   const { pathname } = url
 
-  // crm.goldcentury.ae → goldcentury.ae/crm
+  // crm.orerealestate.ae → orerealestate.ae/crm
   if (hostname.startsWith("crm.")) {
     // Keep same-origin API calls on crm.* to avoid redirecting fetch/XHR to a different
     // origin (which can break cookies/CORS and method semantics for POST requests).
@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
       return res
     }
 
-    url.hostname = "goldcentury.ae"
+    url.hostname = "orerealestate.ae"
     url.protocol = "https:"
     if (!pathname.startsWith("/crm")) {
       url.pathname = `/crm${pathname}`

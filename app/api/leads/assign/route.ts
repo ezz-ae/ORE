@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
-import { ensureLeadActivityTable, ensureLeadsTable } from "@/lib/entrestate"
+import { ensureLeadActivityTable, ensureLeadsTable } from "@/lib/ore"
 import { getSessionUser, isAdminRole, logActivity } from "@/lib/auth"
 
 export async function POST(req: Request) {

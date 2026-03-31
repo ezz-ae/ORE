@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getBlogPosts } from "@/lib/entrestate"
+import { getBlogPosts } from "@/lib/ore"
 import Image from "next/image"
 import Link from "next/link"
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getProjectBySlug } from "@/lib/entrestate"
+import { getProjectBySlug } from "@/lib/ore"
 import { generateProjectPdf } from "@/lib/pdf"
 import { query } from "@/lib/db"
 import { randomUUID } from "node:crypto"

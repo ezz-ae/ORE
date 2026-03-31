@@ -34,7 +34,7 @@ export function IntelligenceBlock({ data }: Props) {
             </h2>
           </div>
           <span className="text-xs text-zinc-500">
-            Data: Entrestate Intelligence · Updated every 10 min
+            Data: ORE Intelligence · Updated every 10 min
           </span>
         </div>
 

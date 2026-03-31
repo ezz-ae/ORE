@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { getAreas } from "@/lib/entrestate"
+import { getAreas } from "@/lib/ore"
 import { filterAuthorizedAreas } from "@/lib/utils/authorized"
 import { AreasGuideClient } from "@/components/areas-guide-client"
 

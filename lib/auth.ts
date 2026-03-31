@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers"
 import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto"
 import { promisify } from "node:util"
 import { query } from "@/lib/db"
-import { ensureUsersTable, type UserProfileRecord } from "@/lib/entrestate"
+import { ensureUsersTable, type UserProfileRecord } from "@/lib/ore"
 
 const scryptAsync = promisify(scrypt)
 

@@ -7,56 +7,60 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ORE - Vault Aesthetic (Refined Ivory & Deep Forest) */
+/* ORE - Elevated Luxury Aesthetic */
 :root {
-  --background: 36 30% 98%; /* Ivory Sand #FBF9F6 */
-  --foreground: 156 42% 12%; /* Deeper Forest Green #163327 */
-  
-  --card: 36 20% 96%; /* Subtle parchment for cards */
-  --card-foreground: 156 42% 12%;
-  
-  --popover: 36 30% 98%;
-  --popover-foreground: 156 42% 12%;
-  
-  /* Vault Champagne Gold */
-  --primary: 40 46% 56%; /* Champagne Gold #C5A059 */
-  --primary-foreground: 36 30% 98%;
-  
-  --secondary: 156 42% 8%; /* Near-black forest */
-  --secondary-foreground: 36 30% 98%;
-  
-  --muted: 36 10% 90%;
-  --muted-foreground: 156 15% 45%;
-  
-  --accent: 43 78% 46%; /* Classic Amber Gold for high-action items */
-  --accent-foreground: 36 30% 98%;
-  
+  --background: 40 20% 98%; /* Warm White #FAF8F5 */
+  --foreground: 160 32% 10%; /* Deep Forest #152E24 */
+
+  --card: 40 18% 97%;
+  --card-foreground: 160 32% 10%;
+
+  --popover: 40 20% 98%;
+  --popover-foreground: 160 32% 10%;
+
+  /* Refined Champagne Gold — warmer, richer */
+  --primary: 38 52% 52%; /* #C69B3E */
+  --primary-foreground: 40 20% 98%;
+
+  --secondary: 160 32% 8%;
+  --secondary-foreground: 40 20% 98%;
+
+  --muted: 40 12% 92%;
+  --muted-foreground: 160 12% 46%;
+
+  --accent: 38 68% 48%; /* Deeper amber-gold for CTAs */
+  --accent-foreground: 40 20% 98%;
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  
-  --border: 36 10% 90%;
-  --input: 36 10% 92%;
-  --ring: 156 42% 12%;
-  
-  --radius: 1.5rem; /* More organic curved corners */
+
+  --border: 40 12% 91%;
+  --input: 40 12% 93%;
+  --ring: 160 32% 10%;
+
+  --radius: 1rem;
 }
 
 .dark {
-  --background: 156 42% 8%; /* Deep night forest */
-  --foreground: 36 30% 98%;
+  --background: 160 32% 6%;
+  --foreground: 40 20% 98%;
 }
 
 @layer components {
   .ore-glass {
-    @apply bg-white/60 backdrop-blur-2xl border border-black/[0.03] shadow-[0_32px_64px_-12px_rgba(22,51,39,0.08)];
+    @apply bg-white/70 backdrop-blur-2xl border border-black/[0.04] shadow-[0_24px_48px_-12px_rgba(21,46,36,0.06)];
   }
-  
+
   .ore-gradient {
-    @apply bg-gradient-to-br from-[#D4A017] to-[#AA8122] text-white shadow-xl shadow-primary/10 hover:brightness-110 transition-all active:scale-95;
+    @apply bg-gradient-to-r from-[#C69B3E] via-[#D4AC50] to-[#B8892E] text-white shadow-lg shadow-[#C69B3E]/15 hover:shadow-xl hover:shadow-[#C69B3E]/20 hover:brightness-105 transition-all active:scale-[0.98];
   }
 
   .ore-text-gradient {
-    @apply bg-gradient-to-r from-[#163327] via-[#2D5A47] to-[#163327] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#C69B3E] via-[#D8B45A] to-[#C69B3E] bg-clip-text text-transparent;
+  }
+
+  .ore-dark-gradient {
+    @apply bg-gradient-to-br from-[#152E24] via-[#1A3A2E] to-[#0F2119];
   }
 }
 
@@ -65,7 +69,7 @@ html {
   --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
   --font-mono: "Geist Mono", "Courier New", monospace;
-  
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -90,7 +94,7 @@ html {
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
-  
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -99,33 +103,32 @@ html {
 
 /* Custom utilities for ORE */
 @layer utilities {
-  /* Legacy alias kept for compatibility */
   .gold-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #AA8122 50%, #CFA329 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #B8892E 100%);
   }
-  
+
   .gold-text-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #F8E28B 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .ore-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #AA8122 50%, #CFA329 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #B8892E 100%);
   }
 
   .ore-text-gradient {
-    background: linear-gradient(135deg, #D4AF37 0%, #F8E28B 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
+
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .text-pretty {
     text-wrap: pretty;
   }

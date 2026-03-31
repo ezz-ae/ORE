@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * scripts/smoke.ts
- * Entrestate Intelligence OS — Staging Smoke Runner
+ * ORE Intelligence OS — Staging Smoke Runner
  *
  * Usage:
  *   pnpm smoke                          # runs against STAGING_URL
@@ -9,8 +9,8 @@
  *   pnpm smoke --prod                   # runs against PRODUCTION_URL
  *
  * Env vars:
- *   STAGING_URL          e.g. https://entrestate-staging.vercel.app
- *   PRODUCTION_URL       e.g. https://entrestate.com
+ *   STAGING_URL          e.g. https://staging.orerealestate.ae
+ *   PRODUCTION_URL       e.g. https://orerealestate.ae
  *   VERCEL_BYPASS_TOKEN  Vercel protection bypass secret (staging only)
  *   SMOKE_TIMEOUT_MS     Per-request timeout (default: 8000)
  *
@@ -33,7 +33,7 @@ const { values: args } = parseArgs({
 const BASE_URL =
   args.url ??
   (args.prod
-    ? process.env.PRODUCTION_URL ?? "https://entrestate.com"
+    ? process.env.PRODUCTION_URL ?? "https://orerealestate.ae"
     : process.env.STAGING_URL   ?? "http://localhost:3000")
 
 const BYPASS_TOKEN = args.prod ? undefined : process.env.VERCEL_BYPASS_TOKEN
@@ -280,7 +280,7 @@ const SMOKE_TESTS: SmokeTest[] = [
 // ── Runner ────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n${"═".repeat(60)}`)
-  console.log(`  ENTRESTATE SMOKE RUNNER`)
+  console.log(`  ORE SMOKE RUNNER`)
   console.log(`  Target: ${BASE_URL}`)
   console.log(`  Bypass: ${BYPASS_TOKEN ? "✓ set" : "✗ not set (may fail on protected staging)"}`)
   console.log(`  Tests:  ${SMOKE_TESTS.length}`)

@@ -20,7 +20,7 @@ import {
   getTopROIProjects,
   projectToProperty,
   searchProjects,
-} from "@/lib/entrestate"
+} from "@/lib/ore"
 import { query } from "@/lib/db"
 import {
   getLeadershipLeadRecipients,
@@ -475,7 +475,7 @@ export async function POST(req: NextRequest) {
 
     const leadGuidance = buildLeadGuidance(contact, userTurnCount)
     const contextBlock = areaContext
-      ? `\n\nAREA INTELLIGENCE (Data: Entrestate Intelligence)\n${areaContext}`
+      ? `\n\nAREA INTELLIGENCE (Data: ORE Intelligence)\n${areaContext}`
       : ""
 
     let aiReply = ""
@@ -550,7 +550,7 @@ export async function POST(req: NextRequest) {
         ? relevantProjects.slice(0, resultLimit).map((project) => projectToProperty(project))
         : [], // Smoke test compatibility
       evidence: {
-        sources_used: wantsProperties ? ["Entrestate Intelligence Database"] : ["AI Knowledge Base"]
+        sources_used: wantsProperties ? ["ORE Intelligence Database"] : ["AI Knowledge Base"]
       },
       compiler_output: {
         output_type: wantsProperties ? "table_spec" : "text",

@@ -21,9 +21,9 @@ interface AISearchBarProps {
   showSuggestions?: boolean
 }
 
-export function AISearchBar({ 
-  placeholder = "Ask me anything about Dubai real estate... e.g., '2BR apartment in Marina with sea view under 2M'",
-  showSuggestions = true 
+export function AISearchBar({
+  placeholder = "Ask me anything about Dubai real estate...",
+  showSuggestions = true
 }: AISearchBarProps) {
   const [query, setQuery] = useState("")
   const [isFocused, setIsFocused] = useState(false)
@@ -46,15 +46,13 @@ export function AISearchBar({
     "Best ROI projects in 2026",
     "Golden Visa eligible properties",
     "Off-plan projects in Downtown Dubai",
-    "2BR apartments under AED 2M",
-    "Beachfront properties in Dubai Marina"
   ]
 
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className={`relative transition-all duration-500 ${isFocused ? 'scale-[1.01]' : 'scale-100'} rounded-full`}>
-          <SearchIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-[#163327]/30" />
+        <div className={`relative transition-all duration-300 ${isFocused ? 'scale-[1.005]' : 'scale-100'} rounded-xl`}>
+          <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-[#152E24]/25" />
           <input
             type="text"
             value={query}
@@ -62,27 +60,27 @@ export function AISearchBar({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder={placeholder}
-            className="w-full rounded-full border border-[#163327]/05 bg-white/60 px-16 py-6 text-[15px] font-medium backdrop-blur-md transition-all focus:border-[#C5A059]/40 focus:bg-white focus:outline-none placeholder:text-[#163327]/30 shadow-[0_4px_32px_-8px_rgba(22,51,39,0.05)] focus:shadow-[0_24px_48px_-12px_rgba(22,51,39,0.1)]"
+            className="w-full rounded-xl border border-[#152E24]/[0.06] bg-white/70 px-14 py-5 pr-44 text-[15px] font-medium backdrop-blur-md transition-all focus:border-[#C69B3E]/30 focus:bg-white/90 focus:outline-none placeholder:text-[#152E24]/25 shadow-[0_2px_16px_-4px_rgba(21,46,36,0.04)] focus:shadow-[0_8px_32px_-8px_rgba(21,46,36,0.08)]"
           />
-          <Button 
+          <Button
             type="submit"
-            size="lg" 
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full ore-gradient gap-3 h-12 px-8 shadow-2xl transition-all hover:translate-x-1"
+            size="lg"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg ore-gradient gap-2.5 h-11 px-6 shadow-lg transition-all"
           >
             <SparklesIcon />
-            <span className="hidden sm:inline font-bold uppercase tracking-[0.2em] text-[10px]">Intelligence</span>
+            <span className="hidden sm:inline font-semibold text-[11px] uppercase tracking-[0.1em]">Search</span>
           </Button>
         </div>
       </form>
 
       {showSuggestions && (
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[11px] font-bold uppercase tracking-[0.2em]">
-          <span className="text-[#163327]/20">Trends:</span>
-          {suggestions.slice(0, 3).map((suggestion) => (
-            <button 
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[11px] font-medium">
+          <span className="text-[#152E24]/20 uppercase tracking-[0.15em]">Trending:</span>
+          {suggestions.map((suggestion) => (
+            <button
               key={suggestion}
               type="button"
-              className="text-[#163327]/40 hover:text-[#C5A059] transition-colors"
+              className="text-[#152E24]/35 hover:text-[#C69B3E] transition-colors"
               onClick={() => handleSuggestionClick(suggestion)}
             >
               {suggestion}

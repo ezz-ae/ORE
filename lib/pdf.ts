@@ -74,7 +74,7 @@ export async function generateProjectPdf(project: Project) {
     y -= 14
   })
 
-  page.drawText("Data: Entrestate Intelligence", {
+  page.drawText("Data: ORE Intelligence", {
     x: 40,
     y: 30,
     size: 9,
@@ -128,7 +128,7 @@ export async function generateComparisonPdf(projects: Project[]) {
     y -= 20
   })
 
-  page.drawText("Data: Entrestate Intelligence", {
+  page.drawText("Data: ORE Intelligence", {
     x: 40,
     y: 30,
     size: 9,

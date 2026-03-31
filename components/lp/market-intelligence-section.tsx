@@ -31,7 +31,7 @@ export function MarketIntelligenceSection({ data }: MarketIntelligenceSectionPro
           <div className="relative overflow-hidden rounded-3xl border border-[#C9A961]/25 bg-gradient-to-br from-[#C9A961]/8 to-transparent p-8 md:p-10">
             <Sparkles className="absolute right-6 top-6 h-5 w-5 text-[#C9A961]/40" />
             <div className="mb-4 text-[10px] font-bold uppercase tracking-[0.18em] text-[#C9A961]/70">
-              AI Intelligence · Entrestate
+              AI Intelligence · ORE
             </div>
             <blockquote className="font-serif text-2xl font-semibold leading-snug text-foreground md:text-3xl">
               &ldquo;{summary}&rdquo;

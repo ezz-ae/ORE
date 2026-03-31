@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LeadActivityForm } from "@/components/lead-activity-form"
 import { LeadAiComposer } from "@/components/lead-ai-composer"
-import { getLeadActivity, getLeadById, getProjectBySlug, getUserProfileById } from "@/lib/entrestate"
+import { getLeadActivity, getLeadById, getProjectBySlug, getUserProfileById } from "@/lib/ore"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 
 interface LeadDetailPageProps {

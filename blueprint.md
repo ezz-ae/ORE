@@ -1,4 +1,4 @@
-Thought for 4sRead planAdded theme systemUpdated shared componentsUpdated stackUpdated implementation orderAdded theme notesGold Century Real Estate - Full Platform Implementation PlanRejectOverview
+Thought for 4sRead planAdded theme systemUpdated shared componentsUpdated stackUpdated implementation orderAdded theme notesORE Real Estate - Full Platform Implementation PlanRejectOverview
 Build a comprehensive high-end real estate investment platform focused on the Dubai, UAE market serving international buyers. Four distinct layers: Public Site, Discovery Layer, Intelligence Layer, and Dashboard. The design will emphasize luxury, credibility, and sophisticated tooling to convert cold traffic into qualified leads.
 Key Focus:
 
@@ -45,7 +45,7 @@ Similar project comparisons
 Brand Identity
 
 
-Logo: Gold Century Real Estate with gold gradient leaf icon
+Logo: ORE Real Estate with gold gradient leaf icon
 
 
 Theme System: Dark/Light mode toggle with sophisticated color palettes
@@ -164,7 +164,7 @@ Phase 1: Foundation & Public Site
 
 Update brand colors and typography in globals.css
 Add logo to public/images/
-Create shared layout components with Gold Century branding
+Create shared layout components with ORE branding
 Set up navigation with all main routes
 
 1.2 Public Pages
@@ -652,7 +652,7 @@ Sticky floating CTA bar on scroll
 
 SEO Optimization:
 
-Unique meta title: "[Project Name] Dubai - [Key Benefit] | Gold Century Real Estate"
+Unique meta title: "[Project Name] Dubai - [Key Benefit] | ORE Real Estate"
 Meta description with project highlights and CTA
 Structured data: RealEstateListing schema
 H1: Project name with location
@@ -803,7 +803,7 @@ Customizable date ranges
 Export data functionality
 
 Phase 4: Broker Dashboard (Sales & CRM Portal)
-Purpose: Internal tool for Gold Century brokers to manage 3500 projects, leads, and sales operations with AI assistance.
+Purpose: Internal tool for ORE brokers to manage 3500 projects, leads, and sales operations with AI assistance.
 4.1 Authentication
 
 Role-based access (Broker, Sales Manager, Admin)
@@ -1338,9 +1338,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 // System prompts for different contexts
-const PUBLIC_SYSTEM_PROMPT = `You are an AI assistant for Gold Century Real Estate, specializing in Dubai property investment. You have access to 3500 Dubai projects with complete data including specifications, ROI, demand scores, rankings, and market trends. Help international buyers find perfect properties through conversational queries. Always be professional, knowledgeable, and conversion-focused.`
+const PUBLIC_SYSTEM_PROMPT = `You are an AI assistant for ORE Real Estate, specializing in Dubai property investment. You have access to 3500 Dubai projects with complete data including specifications, ROI, demand scores, rankings, and market trends. Help international buyers find perfect properties through conversational queries. Always be professional, knowledgeable, and conversion-focused.`
 
-const BROKER_SYSTEM_PROMPT = `You are an AI assistant for Gold Century Real Estate brokers. Help them manage 3500 Dubai projects, analyze leads, draft communications, query the CRM, and provide sales strategies. You have access to the full property database, CRM data, and sales best practices. Be concise, actionable, and data-driven.`
+const BROKER_SYSTEM_PROMPT = `You are an AI assistant for ORE Real Estate brokers. Help them manage 3500 Dubai projects, analyze leads, draft communications, query the CRM, and provide sales strategies. You have access to the full property database, CRM data, and sales best practices. Be concise, actionable, and data-driven.`
 API Routes:
 
 /api/ai/chat - Public AI chat endpoint
@@ -1469,7 +1469,7 @@ Property filtering and search working smoothly
 All calculator tools operational with accurate results
 Mobile responsive across all pages
 Fast load times (<3s initial, <1s navigation)
-Professional, luxury aesthetic with Gold Century branding throughout
+Professional, luxury aesthetic with ORE branding throughout
 SEO-optimized with proper meta tags and structured data
 Accessible (WCAG AA compliance)
 
@@ -1519,7 +1519,7 @@ File Storage: Vercel Blob for images, documents, and brochures
 
 Implementation Order
 
-Session 1: Brand setup (Gold Century logo, gold theme colors), dark/light mode system with theme toggle, navigation structure, layout foundation
+Session 1: Brand setup (ORE logo, gold theme colors), dark/light mode system with theme toggle, navigation structure, layout foundation
 Session 2: AI Integration Setup - Gemini 1.5 API, chat infrastructure, system prompts
 Session 3: Homepage with AI search bar (transitions to chat), trust indicators, featured sections (both themes)
 Session 4: /chat page - Full AI conversational interface with split view (chat + results panel, theme-optimized)

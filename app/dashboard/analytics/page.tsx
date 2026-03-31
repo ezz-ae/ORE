@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getDashboardAnalyticsData } from "@/lib/entrestate"
+import { getDashboardAnalyticsData } from "@/lib/ore"
 import { CircleDollarSign, BarChart3, Users } from "lucide-react"
 
 interface DashboardAnalyticsProps {

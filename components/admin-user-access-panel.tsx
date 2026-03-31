@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
-import type { UserAccessRecord } from "@/lib/entrestate"
+import type { UserAccessRecord } from "@/lib/ore"
 
 interface AdminUserAccessPanelProps {
   users: UserAccessRecord[]

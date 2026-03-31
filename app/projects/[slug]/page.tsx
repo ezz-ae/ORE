@@ -35,7 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/entrestate"
+import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/ore"
 import { Toaster } from "@/components/ui/toaster"
 import type { Project } from "@/lib/types/project"
 import { ProjectLeadForm } from "@/components/project-lead-form"

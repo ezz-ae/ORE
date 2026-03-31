@@ -236,7 +236,7 @@ export const projectToProperty = (project: Project): Property => {
     projectRecord.developer,
     "ORE",
   )
-  const developerSlug = safeDeveloper.slug || normalizeSlug(developerName) || "gold-century"
+  const developerSlug = safeDeveloper.slug || normalizeSlug(developerName) || "ore"
   const developerLogo = safeDeveloper.pfLogo || safeDeveloper.logo || "/logo.png"
   const bedrooms =
     typeof primaryUnit?.bedrooms === "number"
@@ -532,7 +532,7 @@ const normalizeListingProject = (row: ProjectListingRow) => {
       enriched.developer?.slug,
       payloadDeveloperRecord?.slug,
       normalizeSlug(developerName),
-      "gold-century",
+      "ore",
     ),
     logo: pickString(enriched.developer?.logo, payloadDeveloperRecord?.logo, "/logo.png"),
     description: pickString(enriched.developer?.description, "Developer profile"),
@@ -1962,9 +1962,9 @@ const buildProjectPayload = (input: DashboardProjectInput, existing?: Project | 
     virtualTour: base.virtualTour,
     gallery: base.gallery?.length ? base.gallery : [heroImage],
     developer: {
-      id: base.developer?.id || normalizeSlug(developerName) || "gold-century",
+      id: base.developer?.id || normalizeSlug(developerName) || "ore",
       name: developerName,
-      slug: base.developer?.slug || normalizeSlug(developerName) || "gold-century",
+      slug: base.developer?.slug || normalizeSlug(developerName) || "ore",
       logo: base.developer?.logo || "/logo.png",
       pfLogo: base.developer?.pfLogo,
       description: base.developer?.description || `${developerName} development profile.`,

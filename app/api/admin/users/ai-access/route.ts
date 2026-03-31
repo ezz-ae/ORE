@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { canManageCrmUsers, getSessionUser } from "@/lib/auth"
-import { resolveAccessRole, setUserAiAccess } from "@/lib/entrestate"
+import { resolveAccessRole, setUserAiAccess } from "@/lib/ore"
 
 const ensureAdmin = (user: Awaited<ReturnType<typeof getSessionUser>>) => {
   if (!user) return false

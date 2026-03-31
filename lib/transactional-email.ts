@@ -1,5 +1,5 @@
 import { query } from "@/lib/db"
-import { ensureUsersTable } from "@/lib/entrestate"
+import { ensureUsersTable } from "@/lib/ore"
 
 interface ShortProjectEmailItem {
   slug: string

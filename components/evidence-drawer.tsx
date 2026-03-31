@@ -93,7 +93,7 @@ export function EvidenceDrawer({ requestId, sources = [], runId, timestamp, chil
         </ScrollArea>
 
         <div className="absolute bottom-6 left-6 right-6 pt-4 border-t text-[10px] text-muted-foreground text-center">
-          Entrestate Intelligence OS — Enterprise Tier Data Contract Applied
+          ORE Intelligence OS — Enterprise Tier Data Contract Applied
         </div>
       </SheetContent>
     </Sheet>

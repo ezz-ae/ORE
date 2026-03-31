@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { DashboardProfileForm } from "@/components/dashboard-profile-form"
 import { TeamAccountsPanel } from "@/components/team-accounts-panel"
-import { getBrokerPerformanceSummary, getUserAccessList, getUserProfileByEmail } from "@/lib/entrestate"
+import { getBrokerPerformanceSummary, getUserAccessList, getUserProfileByEmail } from "@/lib/ore"
 import { canDeleteCrmUsers, canManageCrmUsers, getSessionUser } from "@/lib/auth"
 
 interface DashboardProfilePageProps {

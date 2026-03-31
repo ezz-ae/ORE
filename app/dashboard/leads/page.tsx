@@ -1,6 +1,6 @@
 import { LeadsTable } from "@/components/leads-table"
 import { Badge } from "@/components/ui/badge"
-import { getLeads } from "@/lib/entrestate"
+import { getLeads } from "@/lib/ore"
 
 interface LeadsPageProps {
   searchParams?: Promise<{ role?: string; brokerId?: string }>

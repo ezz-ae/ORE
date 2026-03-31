@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/project-card"
-import { getProjectsForGrid } from "@/lib/entrestate"
+import { getProjectsForGrid } from "@/lib/ore"
 import { AIMarketPanel } from "@/components/ai-market-panel"
 
 export const metadata: Metadata = {

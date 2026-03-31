@@ -228,7 +228,7 @@ to render each one on the single project page.
 ━━━ AI CHAT RULES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   - Inject llm_context rows into Gemini system prompt
   - All yield/ROI outputs: "projected" / "estimated" — never exact
-  - Footer attribution: "Data: Entrestate Intelligence"
+  - Footer attribution: "Data: ORE Intelligence"
   - Golden Visa filter: WHERE golden_visa_eligible = true
   - "Monthly rent?" → rentalIntelligence.estimatedMonthlyRent
   - "Break even?"   → roiCalculator.breakEvenYears

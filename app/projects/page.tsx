@@ -1,7 +1,7 @@
 import { ProjectCard } from "@/components/project-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getProjectsForGrid } from "@/lib/entrestate"
+import { getProjectsForGrid } from "@/lib/ore"
 import Link from "next/link"
 import { Metadata } from "next"
 

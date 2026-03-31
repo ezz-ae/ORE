@@ -1,5 +1,5 @@
 import { ProjectComparatorClient } from "@/components/project-comparator-client"
-import { getProjectsForGrid } from "@/lib/entrestate"
+import { getProjectsForGrid } from "@/lib/ore"
 
 export default async function ProjectComparatorPage() {
   const projects = await getProjectsForGrid(1000) // Fetch all projects

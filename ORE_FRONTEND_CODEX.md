@@ -1,4 +1,4 @@
-# GOLD CENTURY — FRONTEND CODEX FIX PACKAGE
+# ORE — FRONTEND CODEX FIX PACKAGE
 # Generated: 2026-03-22
 # Database: Neon PostgreSQL (gc_projects, gc_developer_profiles, gc_area_profiles, gc_blog_posts, gc_project_landing_pages)
 
