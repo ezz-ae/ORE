@@ -24,7 +24,7 @@ export default async function BlogPage() {
               Blog
             </Badge>
             <h1 className="font-serif text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
-              ORE Insights
+              Freehold Insights
             </h1>
             <p className="mt-6 text-lg text-white/65">
               Market updates, investment guides, and expert commentary on Dubai real estate.
@@ -110,7 +110,7 @@ export default async function BlogPage() {
             <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="mb-8">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">Archive</p>
-              <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">More ORE stories</h2>
+              <h2 className="mt-2 font-serif text-2xl font-bold text-white md:text-3xl">More Freehold stories</h2>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {stories.map((post) => (

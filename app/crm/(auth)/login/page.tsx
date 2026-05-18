@@ -86,7 +86,7 @@ export default function DashboardLoginPage() {
         </Badge>
         <h1 className="font-serif text-3xl font-bold text-white">Sign in to the CRM</h1>
         <p className="text-sm text-white/60">
-          Use your ORE company email to access the sales portal.
+          Use your Freehold company email to access the sales portal.
         </p>
       </section>
 

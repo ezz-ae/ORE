@@ -17,7 +17,7 @@ const DEFAULT_PROMPTS = [
 ]
 
 export function AiConciergeSection({ data, landingSlug, projectSlug }: AiConciergeSectionProps) {
-  const title = (typeof data.title === "string" && data.title) || "Ask ORE AI"
+  const title = (typeof data.title === "string" && data.title) || "Ask Freehold AI"
   const subtitle =
     (typeof data.subtitle === "string" && data.subtitle) ||
     "Get instant answers about this project — AI qualifies your brief before the broker follows up."

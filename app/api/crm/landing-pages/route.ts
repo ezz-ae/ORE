@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
         data: {
           title: headline,
           subtitle: subheadline,
-          eyebrow: `${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "ORE"}`,
+          eyebrow: `${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
           chips: [toText(project.area) || "Dubai", formattedPrice, formattedYield],
         },
       },
@@ -277,12 +277,12 @@ export async function POST(req: NextRequest) {
         type: "location",
         data: {
           area: toText(project.area) || "Dubai",
-          developer: toText(toObject(payload.developer).name) || "ORE",
+          developer: toText(toObject(payload.developer).name) || "Freehold",
           title: "Location & Positioning",
           subtitle: "Use this page to qualify the buyer and frame the project quickly.",
           highlights: [
             `${toText(project.area) || "Dubai"} market focus`,
-            `Developer: ${toText(toObject(payload.developer).name) || "ORE"}`,
+            `Developer: ${toText(toObject(payload.developer).name) || "Freehold"}`,
             `Starting price: ${formattedPrice}`,
           ],
         },
@@ -290,7 +290,7 @@ export async function POST(req: NextRequest) {
       {
         type: "ai-concierge",
         data: {
-          title: "Ask ORE AI",
+          title: "Ask Freehold AI",
           subtitle: "Use AI to compare this launch, explain ROI, and qualify the lead before a broker handoff.",
           prompts: [
             `Is ${toText(project.name) || finalProjectSlug} better for yield or appreciation?`,

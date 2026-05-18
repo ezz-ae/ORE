@@ -328,7 +328,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
         summary: marketSummary,
         bullets: [
           `Area focus: ${project?.area || "Dubai"}`,
-          `Developer: ${project?.developerName || "ORE"}`,
+          `Developer: ${project?.developerName || "Freehold"}`,
           `Entry point: ${startPrice}`,
           `Income lens: ${yieldText}`,
         ],
@@ -374,12 +374,12 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
       type: "location",
       data: {
         area: project?.area || "Dubai",
-        developer: project?.developerName || "ORE",
+        developer: project?.developerName || "Freehold",
         title: "Location & Positioning",
         subtitle: "The commercial frame brokers can use immediately in a client conversation.",
         highlights: [
           `${project?.area || "Dubai"} demand corridor`,
-          `Developer: ${project?.developerName || "ORE"}`,
+          `Developer: ${project?.developerName || "Freehold"}`,
           `Entry point: ${startPrice}`,
         ],
       },
@@ -387,7 +387,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
     {
       type: "ai-concierge",
       data: {
-        title: "Ask ORE AI",
+        title: "Ask Freehold AI",
         subtitle: "Let the AI explain ROI, compare areas, and qualify the next step before a broker call.",
         prompts: [
           `Is ${project?.name || "this project"} better for rental yield or appreciation?`,
@@ -585,7 +585,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     slug: pickString(row.slug, payload.slug) || projectSlug,
     name: pickString(row.name, payload.name) || "Dubai Project",
     area: pickString(row.area, toObject(payload.location).area) || "Dubai",
-    developerName: pickString(row.developer_name, toObject(payload.developer).name) || "ORE",
+    developerName: pickString(row.developer_name, toObject(payload.developer).name) || "Freehold",
     heroImage: pickString(row.hero_image, payload.heroImage, toObject(payload.mediaSource).heroImage) || "/logo.png",
     priceFromAed: pickNumber(row.price_from_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceFrom : null),
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
@@ -622,12 +622,12 @@ export async function getLandingPageBySlug(
   const projectSlug = pickString(row.project_slug, row.projectSlug)
   const project = await getProjectSummary(projectSlug)
 
-  const title = pickString(row.headline, row.title, project?.name) || "ORE Real Estate"
+  const title = pickString(row.headline, row.title, project?.name) || "Freehold Real Estate"
   const subtitle =
     pickString(row.subheadline, row.subtitle) ||
     (project
       ? `${project.name} in ${project.area} crafted for investors seeking strong fundamentals.`
-      : "Exclusive project campaign by ORE.")
+      : "Exclusive project campaign by Freehold.")
 
   const heroImage = pickString(row.hero_image, row.heroImage, row.og_image, project?.heroImage) || "/logo.png"
   const ctaText = pickString(row.cta_text, row.ctaText, row.primary_cta) || "Request Availability"

@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -64,7 +63,9 @@ const footerLinks = [
 export function SiteFooter() {
   const pathname = usePathname()
 
-  if (pathname?.startsWith("/crm") || pathname === "/chat") {
+  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/owner-session", "/agent-network", "/reports", "/demo", "/settings"]
+  const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
+  if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null
   }
 
@@ -73,14 +74,13 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85">
-              <Image
-                src="/ore-logo-white.png"
-                alt="ORE Real Estate"
-                width={228}
-                height={92}
-                className="h-14 w-auto sm:h-16"
-              />
+            <Link href="/" className="inline-flex flex-col group transition-opacity hover:opacity-85">
+              <span className="text-[28px] font-semibold tracking-[0.14em] text-white">
+                FREEHOLD
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-[#D4AC50]">
+                Property UAE
+              </span>
             </Link>
 
             <p className="max-w-sm text-[14px] leading-relaxed text-white/58">
@@ -94,7 +94,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5 py-0.5">
                   <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Headquarters</span>
-                  <span className="leading-snug text-white/65">Office 38 floor, The One Tower,<br/>Dubai Media City, Sheikh Zayed Road</span>
+                  <span className="leading-snug text-white/65">Sobha Sapphire Building, Office 904,<br/>Business Bay, Dubai</span>
                 </div>
               </div>
 
@@ -104,7 +104,7 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Intelligence Desk</span>
-                   <span className="text-white/65">+971 4 580 8244</span>
+                   <span className="text-white/65">+971 50 417 3622</span>
                 </div>
               </div>
 
@@ -114,17 +114,17 @@ export function SiteFooter() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                    <span className="font-semibold text-[10px] uppercase tracking-[0.15em] text-[#D4AC50]">Secure Channel</span>
-                   <span className="text-white/65">info@orerealestate.ae</span>
+                   <span className="text-white/65">info@freeholdproperty.ae</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5 pt-2">
               {[
-                { icon: <FacebookIcon />, href: "https://www.facebook.com/Orerealestate/" },
-                { icon: <InstagramIcon />, href: "https://www.instagram.com/ore.realestate/" },
-                { icon: <LinkedinIcon />, href: "https://www.linkedin.com/company/ore-real-estate-l-l-c/" },
-                { icon: <MessageCircleIcon />, href: "https://wa.me/971553308046" }
+                { icon: <FacebookIcon />, href: "https://www.facebook.com/FreeholdProperty/" },
+                { icon: <InstagramIcon />, href: "https://www.instagram.com/freeholdproperty/" },
+                { icon: <LinkedinIcon />, href: "https://www.linkedin.com/company/freehold-property-uae/" },
+                { icon: <MessageCircleIcon />, href: "https://wa.me/971504173622" }
               ].map((social, i) => (
                 <a
                   key={i}
@@ -183,7 +183,7 @@ export function SiteFooter() {
         <div className="mt-16 border-t border-white/[0.04] pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-center text-[10px] font-medium uppercase tracking-[0.12em] text-white/35 md:text-left">
-              &copy; {new Date().getFullYear()} ORE Real Estate &middot; RERA ORN: 28628 &middot; Media City HQ &middot; DUBAI
+              &copy; {new Date().getFullYear()} Freehold Property UAE &middot; RERA ORN: 28628 &middot; Business Bay &middot; DUBAI
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/38 md:gap-8">
               <Link href="/privacy" className="transition-colors hover:text-[#D4AC50]">Privacy Policy</Link>

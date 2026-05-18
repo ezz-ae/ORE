@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     canonical: "/developers",
   },
   openGraph: {
-    title: "Top Real Estate Developers in Dubai | ORE",
+    title: "Top Real Estate Developers in Dubai | Freehold",
     description: "Learn about the leading real estate developers in Dubai.",
     images: ["/og-image.png"],
   },

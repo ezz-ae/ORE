@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     canonical: "/properties",
   },
   openGraph: {
-    title: "Dubai Properties for Sale | ORE Real Estate",
+    title: "Dubai Properties for Sale | Freehold Real Estate",
     description: "Browse over 3500+ luxury properties and investment opportunities in Dubai.",
     images: ["/og-image.png"],
   },

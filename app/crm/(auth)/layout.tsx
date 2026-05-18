@@ -1,5 +1,4 @@
 
-import Image from "next/image"
 import Link from "next/link"
 
 export default function DashboardAuthLayout({ children }: { children: React.ReactNode }) {
@@ -8,14 +7,10 @@ export default function DashboardAuthLayout({ children }: { children: React.Reac
       <div className="container py-10 sm:py-12">
         <div className="mx-auto mb-8 flex max-w-lg items-center justify-between rounded-[1.75rem] border border-white/10 bg-white/[0.03] px-5 py-4 shadow-[0_24px_64px_rgba(0,0,0,0.18)] backdrop-blur-xl">
           <Link href="/" className="inline-flex transition-opacity hover:opacity-85">
-            <Image
-              src="/ore-logo-white.png"
-              alt="ORE Real Estate"
-              width={150}
-              height={60}
-              priority
-              className="h-8 w-auto"
-            />
+            <span className="flex flex-col">
+              <span className="text-base font-semibold tracking-[0.14em] text-white">FREEHOLD</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.26em] text-[#D4AC50]">Property UAE</span>
+            </span>
           </Link>
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#D4AC50]">CRM Portal</div>

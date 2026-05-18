@@ -475,7 +475,7 @@ export function IntelligenceBlock({ data }: Props) {
           <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-[24px] border border-white/[0.08] bg-gradient-to-r from-white/[0.03] to-white/[0.01] px-4 py-5 text-center sm:px-6 lg:flex-row lg:text-left">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F0D792]">
-                ORE Intelligence Desk
+                Freehold Intelligence Desk
               </div>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/55">
                 Explore the full search inventory to compare high-momentum projects, yield-led communities, and pricing anomalies in one place.

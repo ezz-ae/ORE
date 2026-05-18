@@ -13,7 +13,7 @@ export function PropertyContactBar() {
           className="rounded-none"
           asChild
         >
-          <a href="tel:+971526326541">
+          <a href="tel:+971504173622">
             <Phone className="mr-2 h-4 w-4" />
             Call Now
           </a>
@@ -23,7 +23,7 @@ export function PropertyContactBar() {
           className="rounded-none ore-gradient text-black"
           asChild
         >
-          <a href="https://wa.me/971526326541" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/971504173622" target="_blank" rel="noopener noreferrer">
             <MessageSquare className="mr-2 h-4 w-4" />
             WhatsApp
           </a>

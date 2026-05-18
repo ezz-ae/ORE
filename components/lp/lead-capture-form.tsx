@@ -134,7 +134,7 @@ export function LeadCaptureForm({
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-300">
             <p className="font-semibold">Thanks. Your request was sent successfully.</p>
             <p className="mt-1 text-sm text-emerald-200/90">
-              A ORE consultant will contact you shortly with live availability and pricing.
+              A Freehold consultant will contact you shortly with live availability and pricing.
             </p>
           </div>
         ) : (

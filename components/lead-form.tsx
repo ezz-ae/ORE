@@ -127,7 +127,7 @@ export function LeadForm({ projectName, source = "website" }: LeadFormProps) {
             id="phone"
             name="phone"
             type="tel"
-            placeholder="+971 55 330 8046"
+            placeholder="+971 50 417 3622"
             required
           />
         </div>
@@ -196,7 +196,7 @@ export function LeadForm({ projectName, source = "website" }: LeadFormProps) {
       <div className="flex items-start space-x-2">
         <Checkbox id="consent" name="consent" required />
         <Label htmlFor="consent" className="text-sm leading-relaxed cursor-pointer">
-          I agree to receive updates and marketing communications from ORE Real Estate. *
+          I agree to receive updates and marketing communications from Freehold Real Estate. *
         </Label>
       </div>
 

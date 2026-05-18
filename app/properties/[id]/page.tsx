@@ -110,7 +110,7 @@ export default async function PropertyPage({
     "@type": "RealEstateListing",
     "name": property.title,
     "description": description,
-    "url": `https://orerealestate.ae/properties/${property.slug}`,
+    "url": `https://freeholdproperty.ae/properties/${property.slug}`,
     "image": images[0],
     "datePosted": property.createdAt,
     "address": {
@@ -142,7 +142,7 @@ export default async function PropertyPage({
             <div className="lg:col-span-2">
               {/* Property Header */}
               <div className="space-y-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">ORE Signature Listing</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">Freehold Signature Listing</p>
                 <div className="flex flex-wrap gap-2">
                   <Badge className="border-none ore-gradient text-[#152E24]">
                     {property.type === "off-plan"
@@ -408,7 +408,7 @@ export default async function PropertyPage({
                         </a>
                       </Button>
                       <Button className="w-full border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" variant="outline" size="lg" asChild>
-                        <a href="mailto:info@orerealestate.ae">
+                        <a href="mailto:info@freeholdproperty.ae">
                           <Mail className="mr-2 h-4 w-4" />
                           Email Inquiry
                         </a>
@@ -437,7 +437,7 @@ export default async function PropertyPage({
                 <Card className="border-[#152E24]/10 bg-[#FAF8F5] shadow-none">
                   <CardContent className="p-6 space-y-4">
                     <h3 className="font-serif text-lg font-semibold">Property ID</h3>
-                    <div className="text-sm text-muted-foreground font-mono">ORE-{property.id.slice(0, 8).toUpperCase()}</div>
+                    <div className="text-sm text-muted-foreground font-mono">Freehold-{property.id.slice(0, 8).toUpperCase()}</div>
                     <Separator />
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between">

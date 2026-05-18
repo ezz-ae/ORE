@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -29,7 +28,7 @@ export function CrmHeader({
       ? { title: "Landing Page Editor", subtitle: "Publish, schedule, and refine campaign pages." }
       : null) ||
     titleMap[pathname || ""] || {
-    title: "ORE CRM",
+    title: "Freehold CRM",
     subtitle: "Internal workspace",
   }
 
@@ -41,14 +40,10 @@ export function CrmHeader({
             href="/crm/overview"
             className="hidden shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05] sm:flex"
           >
-            <Image
-              src="/ore-logo-white.png"
-              alt="ORE CRM"
-              width={140}
-              height={56}
-              priority
-              className="h-8 w-auto"
-            />
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold tracking-[0.14em] text-white">FREEHOLD</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.26em] text-[#D4AC50]">CRM Core</span>
+            </span>
           </Link>
 
           <div className="space-y-1">
@@ -85,14 +80,10 @@ export function CrmHeader({
           href="/crm/overview"
           className="inline-flex rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:bg-white/[0.05]"
         >
-          <Image
-            src="/ore-logo-white.png"
-            alt="ORE CRM"
-            width={132}
-            height={52}
-            priority
-            className="h-7 w-auto"
-          />
+          <span className="flex flex-col">
+            <span className="text-sm font-semibold tracking-[0.14em] text-white">FREEHOLD</span>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.26em] text-[#D4AC50]">CRM Core</span>
+          </span>
         </Link>
       </div>
     </header>

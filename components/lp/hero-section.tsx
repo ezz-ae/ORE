@@ -108,7 +108,7 @@ export function HeroSection({
                 <span>Verified Project Data</span>
               </div>
               <div className="hidden h-4 w-px bg-white/20 sm:block" />
-              <div className="text-sm text-white/75">ORE Brokerage · Dubai</div>
+              <div className="text-sm text-white/75">Freehold Brokerage · Dubai</div>
               <div className="hidden h-4 w-px bg-white/20 sm:block" />
               <div className="text-sm text-white/75">RERA Registered</div>
             </div>

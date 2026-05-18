@@ -36,7 +36,7 @@ export default function AboutPage() {
                   <span className="ore-text-gradient">Conviction.</span>
                 </h1>
                 <p className="text-xl text-white/50 leading-relaxed font-light max-w-xl">
-                  ORE is a private advisory delivering premium Dubai real estate intelligence, combining 15+ years of human market expertise with proprietary AI-driven curation.
+                  Freehold is a private advisory delivering premium Dubai real estate intelligence, combining 15+ years of human market expertise with proprietary AI-driven curation.
                 </p>
                 <div className="mt-16 flex items-center gap-12">
                   <div className="flex flex-col">

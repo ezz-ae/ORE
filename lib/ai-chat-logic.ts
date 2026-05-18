@@ -82,7 +82,7 @@ Highlights: ${(p.highlights || []).join(', ')}`
     projects: relevantProjects,
     dataCards: relevantProjects.map(p => projectToProperty(p)),
     evidence: {
-      sources_used: wantsProperties ? ["ORE Intelligence Database"] : ["AI Knowledge Base"]
+      sources_used: wantsProperties ? ["Freehold Intelligence Database"] : ["AI Knowledge Base"]
     },
     compiler_output: {
       output_type: wantsProperties ? "table_spec" : "text",

@@ -3,7 +3,7 @@ import path from "node:path"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import type { Project } from "@/lib/types/project"
 
-const GOLD = rgb(0.05, 0.43, 0.43) // ORE Teal
+const GOLD = rgb(0.05, 0.43, 0.43) // Freehold Teal
 
 const loadLogo = () => {
   const logoPath = path.join(process.cwd(), "public", "logo-light.png")
@@ -36,7 +36,7 @@ export async function generateProjectPdf(project: Project) {
   const logoHeight = (logo.height / logo.width) * logoWidth
   page.drawImage(logo, { x: 40, y: height - 60, width: logoWidth, height: logoHeight })
 
-  page.drawText("ORE Real Estate", {
+  page.drawText("Freehold Real Estate", {
     x: 40,
     y: height - 90,
     size: 10,
@@ -74,7 +74,7 @@ export async function generateProjectPdf(project: Project) {
     y -= 14
   })
 
-  page.drawText("Data: ORE Intelligence", {
+  page.drawText("Data: Freehold Intelligence", {
     x: 40,
     y: 30,
     size: 9,
@@ -100,7 +100,7 @@ export async function generateComparisonPdf(projects: Project[]) {
   page.drawImage(logo, { x: 40, y: height - 60, width: logoWidth, height: logoHeight })
 
   page.drawText("Project Comparison", { x: 40, y: height - 120, size: 18, font: fontBold, color: rgb(0, 0, 0) })
-  page.drawText("ORE Real Estate", {
+  page.drawText("Freehold Real Estate", {
     x: 40,
     y: height - 140,
     size: 10,
@@ -128,7 +128,7 @@ export async function generateComparisonPdf(projects: Project[]) {
     y -= 20
   })
 
-  page.drawText("Data: ORE Intelligence", {
+  page.drawText("Data: Freehold Intelligence", {
     x: 40,
     y: 30,
     size: 9,

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     canonical: "/areas",
   },
   openGraph: {
-    title: "Dubai Area Guides & Neighborhood Insights | ORE",
+    title: "Dubai Area Guides & Neighborhood Insights | Freehold",
     description: "Discover the best places to live and invest in Dubai.",
     images: ["/og-image.png"],
   },

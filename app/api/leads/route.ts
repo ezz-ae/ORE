@@ -13,7 +13,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const toText = (value: unknown) => (typeof value === "string" ? value.trim() : "")
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://orerealestate.ae"
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
 
 export async function POST(req: NextRequest) {
   try {

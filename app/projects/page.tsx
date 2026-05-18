@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     canonical: "/projects",
   },
   openGraph: {
-    title: "New Projects & Master Communities in Dubai | ORE",
+    title: "New Projects & Master Communities in Dubai | Freehold",
     description: "Explore the latest off-plan projects and master-planned communities in Dubai.",
     images: ["/og-image.png"],
   },

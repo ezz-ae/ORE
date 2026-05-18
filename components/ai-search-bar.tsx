@@ -22,7 +22,7 @@ interface AISearchBarProps {
 }
 
 export function AISearchBar({
-  placeholder = "Ask ORE about Dubai opportunities, ROI, or Golden Visa...",
+  placeholder = "Ask Freehold about Dubai opportunities, ROI, or Golden Visa...",
   showSuggestions = true
 }: AISearchBarProps) {
   const [query, setQuery] = useState("")
@@ -43,9 +43,9 @@ export function AISearchBar({
   }
 
   const suggestions = [
-    "Build an ORE shortlist under AED 2M",
-    "ORE Golden Visa-ready projects",
-    "ORE off-plan picks in Downtown Dubai",
+    "Build an Freehold shortlist under AED 2M",
+    "Freehold Golden Visa-ready projects",
+    "Freehold off-plan picks in Downtown Dubai",
   ]
 
   return (

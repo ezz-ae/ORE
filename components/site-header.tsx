@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
@@ -76,7 +75,9 @@ export function SiteHeader() {
   const megaMenuMedium = "w-[min(640px,92vw)] min-w-[340px] p-2"
   const megaMenuCompact = "w-[min(520px,92vw)] min-w-[320px] p-2"
 
-  if (pathname?.startsWith("/crm") || pathname === "/chat") {
+  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/owner-session", "/agent-network", "/reports", "/demo", "/settings"]
+  const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
+  if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null
   }
 
@@ -85,14 +86,12 @@ export function SiteHeader() {
       <div className="container flex h-full items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="group shrink-0 transition-opacity hover:opacity-80">
-          <Image
-            src="/ore-logo-gold.png"
-            alt="ORE Real Estate"
-            width={168}
-            height={68}
-            priority
-            className="h-9 w-auto sm:h-10"
-          />
+          <span className="block text-[18px] font-semibold tracking-[0.12em] text-[#152E24] sm:text-[20px]">
+            FREEHOLD
+          </span>
+          <span className="block text-[9px] font-semibold uppercase tracking-[0.28em] text-[#B88A2A]">
+            Property UAE
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -194,7 +193,7 @@ export function SiteHeader() {
             asChild
             className="rounded-full text-[#152E24]/50 hover:bg-[#152E24]/[0.04] h-9 w-9"
           >
-            <a href="https://wa.me/971553308046" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <a href="https://wa.me/971504173622" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
               <MessageCircleIcon />
             </a>
           </Button>
@@ -220,13 +219,12 @@ export function SiteHeader() {
               <div className="flex flex-col h-full bg-[#FAF8F5]">
                 <div className="p-6 border-b border-[#152E24]/[0.06]">
                   <Link href="/" onClick={() => setIsOpen(false)} className="shrink-0">
-                    <Image
-                      src="/ore-logo-gold.png"
-                      alt="ORE Real Estate"
-                      width={176}
-                      height={70}
-                      className="h-10 w-auto"
-                    />
+                    <span className="block text-[20px] font-semibold tracking-[0.12em] text-[#152E24]">
+                      FREEHOLD
+                    </span>
+                    <span className="block text-[9px] font-semibold uppercase tracking-[0.28em] text-[#B88A2A]">
+                      Property UAE
+                    </span>
                   </Link>
                 </div>
 

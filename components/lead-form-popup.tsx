@@ -50,7 +50,7 @@ export function LeadFormPopup({
           <LeadForm />
           
           <div className="mt-12 pt-8 border-t border-[#163327]/05 text-center">
-            <p className="text-[10px] text-[#163327]/30 uppercase tracking-[0.2em]">Media City Headquarters · Dubai, UAE</p>
+            <p className="text-[10px] text-[#163327]/30 uppercase tracking-[0.2em]">Business Bay Office · Dubai, UAE</p>
           </div>
         </div>
       </SheetContent>

@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL = "https://ore-mu.vercel.app"
+const FALLBACK_SITE_URL = "https://www.freeholdproperty.ae"
 
 const ensureProtocol = (value: string) =>
   value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`

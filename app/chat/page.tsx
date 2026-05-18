@@ -113,11 +113,11 @@ export default function ChatPage() {
   }, [isLoading, messages.length, resultProperties.length, scrollToBottom])
 
   const suggestedQuestions = [
-    "Build me an ORE shortlist of 2BR apartments in Dubai Marina under AED 2M",
-    "What are ORE's strongest ROI projects right now?",
-    "Which ORE projects qualify for Golden Visa?",
-    "Give me an ORE brief on off-plan vs secondary market",
-    "Which family areas would ORE shortlist in Dubai?",
+    "Build me an Freehold shortlist of 2BR apartments in Dubai Marina under AED 2M",
+    "What are Freehold's strongest ROI projects right now?",
+    "Which Freehold projects qualify for Golden Visa?",
+    "Give me an Freehold brief on off-plan vs secondary market",
+    "Which family areas would Freehold shortlist in Dubai?",
   ]
 
   return (
@@ -140,8 +140,8 @@ export default function ChatPage() {
                         <Sparkles className="h-3.5 w-3.5 text-[#C69B3E] sm:h-4 sm:w-4" />
                     </span>
                     <div>
-                        <h1 className="text-xs font-semibold leading-none text-[#152E24] sm:text-sm">ORE AI Assistant</h1>
-                        <p className="mt-0.5 text-[10px] text-[#152E24]/45">ORE Intelligence</p>
+                        <h1 className="text-xs font-semibold leading-none text-[#152E24] sm:text-sm">Freehold AI Assistant</h1>
+                        <p className="mt-0.5 text-[10px] text-[#152E24]/45">Freehold Intelligence</p>
                     </div>
                 </div>
             </div>
@@ -171,9 +171,9 @@ export default function ChatPage() {
                             <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#C69B3E]/10 ring-8 ring-[#C69B3E]/5">
                               <Sparkles className="h-8 w-8 text-[#C69B3E]" />
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight text-[#152E24]">How can ORE guide you today?</h2>
+                            <h2 className="text-2xl font-bold tracking-tight text-[#152E24]">How can Freehold guide you today?</h2>
                             <p className="mx-auto max-w-md px-4 text-[#152E24]/55">
-                              I can build ORE shortlists, compare Dubai opportunities, explain market signals, and frame the right next step for your investment brief.
+                              I can build Freehold shortlists, compare Dubai opportunities, explain market signals, and frame the right next step for your investment brief.
                             </p>
                           </div>
 
@@ -262,7 +262,7 @@ export default function ChatPage() {
                     <ChatInput
                       onSend={handleSendMessage}
                       disabled={isLoading}
-                      placeholder="Ask ORE about Dubai properties, ROI, or Golden Visa eligibility"
+                      placeholder="Ask Freehold about Dubai properties, ROI, or Golden Visa eligibility"
                       suggestedQuestions={suggestedQuestions}
                     />
                   </div>

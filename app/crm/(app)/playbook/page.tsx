@@ -126,7 +126,7 @@ export default function PlaybookPage() {
           <BookOpen className="h-7 w-7 text-[#C9A961]" />
         </div>
         <Badge className="mb-6 border-[#C9A961]/40 bg-[#C9A961]/15 text-[#C9A961] text-[10px] uppercase tracking-[0.2em]">
-          ORE · Team Guide
+          Freehold · Team Guide
         </Badge>
         <h1 className="font-serif text-4xl font-bold leading-tight md:text-5xl">
           Your complete guide<br />to working smarter<br />with every lead.
@@ -839,7 +839,7 @@ export default function PlaybookPage() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[
             { icon: Clock, time: "Morning", title: "Start with Overview", body: "Check your hot leads, pipeline value, and the AI's three suggested tasks. This takes 2 minutes and sets your focus for the day." },
-            { icon: Sparkles, time: "Morning", title: "Ask ORE AI for your call list", body: "Type \"which leads should ORE follow up with first today\" in the AI Assistant. You get a scored, ranked list — start calling from the top." },
+            { icon: Sparkles, time: "Morning", title: "Ask Freehold AI for your call list", body: "Type \"which leads should Freehold follow up with first today\" in the AI Assistant. You get a scored, ranked list — start calling from the top." },
             { icon: MessageSquare, time: "Before every call", title: "Open the lead page first", body: "The AI draft will be ready. Glance at it before you call — it reminds you what they were interested in and what their budget is." },
             { icon: Send, time: "After every interaction", title: "Log a note or send WhatsApp", body: "Always record what happened. A note after every call keeps your pipeline accurate and means any team member can step in if needed." },
             { icon: Rocket, time: "Weekly", title: "Share campaign pages", body: "Pick your best property of the week, open its advertising page, and share the link in your WhatsApp broadcast or Instagram story." },

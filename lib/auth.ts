@@ -227,7 +227,7 @@ export async function getSessionUser() {
   return getSessionUserFromToken(token)
 }
 
-const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim() || (process.env.NODE_ENV === "production" ? ".orerealestate.ae" : undefined)
+const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim() || (process.env.NODE_ENV === "production" ? ".freeholdproperty.ae" : undefined)
 
 const cookieOptions = {
   name: SESSION_COOKIE,

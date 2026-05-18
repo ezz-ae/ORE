@@ -283,7 +283,7 @@ export default async function ProjectPage({
   const constructionUpdates = toArray(project.constructionUpdates)
   const testimonials = toArray(project.testimonials)
   const faqs = toArray(project.faqs)
-  const developer = project.developer || { name: "ORE", logo: "" }
+  const developer = project.developer || { name: "Freehold", logo: "" }
   const phoneNumber = "+97150000000"
   const heroImage = project.heroImage || "/logo.png"
   const heroImageClass = project.heroImage ? "object-cover" : "object-contain bg-card"
@@ -360,7 +360,7 @@ export default async function ProjectPage({
           <div className="container">
             <div className="grid w-full items-start gap-8 rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] lg:grid-cols-[1.5fr,1fr] lg:p-10">
                 <div className="space-y-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">ORE Signature Development</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">Freehold Signature Development</p>
                   <div className="flex flex-wrap gap-3">
                     <Badge variant="secondary" className="border-none bg-[#152E24]/[0.06] text-[#152E24]">
                       {project.status?.replace("-", " ")}

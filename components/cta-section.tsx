@@ -15,7 +15,7 @@ export function CTASection() {
             Ready to invest in Dubai real estate?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-10">
-            Join thousands of international investors who trust ORE for their Dubai property investments.
+            Join thousands of international investors who trust Freehold for their Dubai property investments.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

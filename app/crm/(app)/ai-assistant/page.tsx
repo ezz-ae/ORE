@@ -10,12 +10,12 @@ import { useAIChat } from "@/hooks/use-ai-chat"
 import { Sparkles, FileSpreadsheet, FileText, Pin, Share2 } from "lucide-react"
 
 const suggestions = [
-  "Build an ORE shortlist of Dubai Marina projects with 8%+ ROI",
-  "Which leads should ORE follow up with first today?",
-  "Draft an ORE follow-up email for a lead who viewed 3 properties",
-  "Prepare an ORE investment brief comparing Project A vs Project B",
-  "Add a new listing called ORE Marina Edge in Dubai Marina by Select Group starting from AED 1,850,000 with 8.4% ROI",
-  "Create an ORE-branded offer for a lead interested in Dubai Hills",
+  "Build an Freehold shortlist of Dubai Marina projects with 8%+ ROI",
+  "Which leads should Freehold follow up with first today?",
+  "Draft an Freehold follow-up email for a lead who viewed 3 properties",
+  "Prepare an Freehold investment brief comparing Project A vs Project B",
+  "Add a new listing called Freehold Marina Edge in Dubai Marina by Select Group starting from AED 1,850,000 with 8.4% ROI",
+  "Create an Freehold-branded offer for a lead interested in Dubai Hills",
 ]
 
 export default function DashboardAIAssistantPage() {
@@ -119,7 +119,7 @@ export default function DashboardAIAssistantPage() {
   }
 
   const shareConversation = (title: string) => {
-    const text = `ORE AI Insight: ${title}`
+    const text = `Freehold AI Insight: ${title}`
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text)
     }
@@ -188,9 +188,9 @@ export default function DashboardAIAssistantPage() {
         <Badge className="mb-3 ore-gradient border-none px-3" variant="secondary">
           AI Workspace
         </Badge>
-        <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">Your ORE AI Workspace</h1>
+        <h1 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">Your Freehold AI Workspace</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Ask for ORE follow-up ideas, curated shortlists, client messages in ORE voice, or listing updates without leaving the CRM.
+          Ask for Freehold follow-up ideas, curated shortlists, client messages in Freehold voice, or listing updates without leaving the CRM.
         </p>
       </section>
 
@@ -202,9 +202,9 @@ export default function DashboardAIAssistantPage() {
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <CardTitle className="font-serif text-xl font-bold">Ask ORE AI</CardTitle>
+                <CardTitle className="font-serif text-xl font-bold">Ask Freehold AI</CardTitle>
                 <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mt-0.5">
-                  ORE follow-up, stock support, and campaign help
+                  Freehold follow-up, stock support, and campaign help
                 </p>
               </div>
             </div>
@@ -226,7 +226,7 @@ export default function DashboardAIAssistantPage() {
             <div ref={scrollRef} className="max-h-[65dvh] space-y-4 overflow-y-auto overscroll-contain rounded-3xl border border-border/40 bg-card/40 p-4 shadow-inner md:max-h-[580px] md:p-6">
               {messages.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  Start with an ORE buyer brief, listing task, or follow-up request.
+                  Start with an Freehold buyer brief, listing task, or follow-up request.
                 </div>
               ) : (
                 messages.map((message) => (
@@ -238,7 +238,7 @@ export default function DashboardAIAssistantPage() {
                   />
                 ))
               )}
-              {isLoading && <ChatMessage role="assistant" content="Preparing an ORE-ready answer for you..." />}
+              {isLoading && <ChatMessage role="assistant" content="Preparing an Freehold-ready answer for you..." />}
             </div>
             {error && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -249,7 +249,7 @@ export default function DashboardAIAssistantPage() {
               onSend={sendMessage}
               onFileUpload={handleFileUpload}
               disabled={isLoading}
-              placeholder="Ask ORE AI about buyers, listings, offers, or investment comparisons..."
+              placeholder="Ask Freehold AI about buyers, listings, offers, or investment comparisons..."
             />
           </CardContent>
         </Card>

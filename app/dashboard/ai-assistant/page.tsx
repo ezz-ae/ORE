@@ -10,10 +10,10 @@ import { useAIChat } from "@/hooks/use-ai-chat"
 import { Sparkles, FileSpreadsheet, FileText } from "lucide-react"
 
 const suggestions = [
-  "Build an ORE shortlist of Dubai Marina projects with 8%+ ROI",
-  "Which leads should ORE follow up with first today?",
-  "Draft an ORE follow-up email for a lead who viewed 3 properties",
-  "Prepare an ORE investment brief comparing Project A vs Project B",
+  "Build an Freehold shortlist of Dubai Marina projects with 8%+ ROI",
+  "Which leads should Freehold follow up with first today?",
+  "Draft an Freehold follow-up email for a lead who viewed 3 properties",
+  "Prepare an Freehold investment brief comparing Project A vs Project B",
 ]
 
 export default function DashboardAIAssistantPage() {
@@ -85,9 +85,9 @@ export default function DashboardAIAssistantPage() {
         <Badge className="mb-3 ore-gradient" variant="secondary">
           AI Assistant
         </Badge>
-        <h1 className="font-serif text-3xl font-bold">ORE Broker AI Command Center</h1>
+        <h1 className="font-serif text-3xl font-bold">Freehold Broker AI Command Center</h1>
         <p className="text-sm text-muted-foreground">
-          Query projects, analyze leads, and craft ORE-ready sales responses with ORE intelligence.
+          Query projects, analyze leads, and craft Freehold-ready sales responses with Freehold intelligence.
         </p>
       </section>
 
@@ -99,9 +99,9 @@ export default function DashboardAIAssistantPage() {
                 <Sparkles className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <CardTitle>Ask ORE AI</CardTitle>
+                <CardTitle>Ask Freehold AI</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  ORE database queries, CRM intelligence, and sales coaching.
+                  Freehold database queries, CRM intelligence, and sales coaching.
                 </p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function DashboardAIAssistantPage() {
             <div className="max-h-[520px] space-y-2 overflow-y-auto">
               {messages.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  Start a conversation to see ORE shortlists, lead insights, and AI coaching.
+                  Start a conversation to see Freehold shortlists, lead insights, and AI coaching.
                 </div>
               ) : (
                 messages.map((message) => (
@@ -135,7 +135,7 @@ export default function DashboardAIAssistantPage() {
                 ))
               )}
               {isLoading && (
-                <ChatMessage role="assistant" content="Analyzing the latest ORE data..." />
+                <ChatMessage role="assistant" content="Analyzing the latest Freehold data..." />
               )}
             </div>
             {error && (
@@ -146,7 +146,7 @@ export default function DashboardAIAssistantPage() {
             <ChatInput
               onSend={sendMessage}
               disabled={isLoading}
-              placeholder="Ask ORE AI about ROI, leads, follow-ups, or comparisons..."
+              placeholder="Ask Freehold AI about ROI, leads, follow-ups, or comparisons..."
             />
           </CardContent>
         </Card>

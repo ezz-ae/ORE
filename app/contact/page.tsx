@@ -5,7 +5,7 @@ import { ContactEnquiryForm } from "@/components/contact-enquiry-form"
 
 export const metadata = {
   title: "Contact Us",
-  description: "Get in touch with ORE Real Estate - Schedule a consultation, ask questions, or visit our Dubai office.",
+  description: "Get in touch with Freehold Property UAE - Schedule a consultation, ask questions, or visit our Dubai office.",
   alternates: {
     canonical: "/contact",
   },
@@ -58,8 +58,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm">Call Center</div>
-                      <a href="tel:+971526326541" className="text-base text-muted-foreground hover:text-primary transition-colors">
-                        +971526326541
+                      <a href="tel:+971504173622" className="text-base text-muted-foreground hover:text-primary transition-colors">
+                        +971 50 417 3622
                       </a>
                     </div>
                   </div>
@@ -70,7 +70,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm">WhatsApp</div>
-                      <a href="https://wa.me/971526326541" className="text-base text-muted-foreground hover:text-green-600 transition-colors">
+                      <a href="https://wa.me/971504173622" className="text-base text-muted-foreground hover:text-green-600 transition-colors">
                         Available 24/7
                       </a>
                     </div>
@@ -82,8 +82,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <div className="font-bold text-sm">Email Support</div>
-                      <a href="mailto:info@orerealestate.ae" className="text-base text-muted-foreground hover:text-primary transition-colors">
-                        info@orerealestate.ae
+                      <a href="mailto:info@freeholdproperty.ae" className="text-base text-muted-foreground hover:text-primary transition-colors">
+                        info@freeholdproperty.ae
                       </a>
                     </div>
                   </div>
@@ -95,7 +95,7 @@ export default function ContactPage() {
                     <div>
                       <div className="font-bold text-sm">Headquarters</div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        Office 38 floor, Building The One Tower, Dubai Media City, Sheikh Zayed Road, Dubai
+                        Sobha Sapphire Building, Office 904, Business Bay, Dubai
                       </p>
                     </div>
                   </div>
@@ -107,12 +107,12 @@ export default function ContactPage() {
                     <div>
                       <div className="font-bold text-sm">Instagram</div>
                       <a
-                        href="https://www.instagram.com/ore.realestate/"
+                        href="https://www.instagram.com/freeholdproperty/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-base text-muted-foreground hover:text-primary transition-colors"
                       >
-                        @ore.realestate
+                        @freeholdproperty
                       </a>
                     </div>
                   </div>
@@ -158,9 +158,9 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <div className="font-semibold">ORE Real Estate</div>
+                    <div className="font-semibold">Freehold Property UAE</div>
                     <div className="text-sm text-muted-foreground">
-                      Office 38 floor, Building The One Tower, Media City, Dubai
+                      Sobha Sapphire Building, Office 904, Business Bay, Dubai
                     </div>
                     <div className="mt-2 text-sm text-muted-foreground">
                       Mon - Sat: 9:00 AM - 7:00 PM
@@ -169,10 +169,10 @@ export default function ContactPage() {
                 </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div>
-                      <span className="font-medium text-foreground">Phone:</span> +971526326541
+                      <span className="font-medium text-foreground">Phone:</span> +971 50 417 3622
                     </div>
                   <div>
-                    <span className="font-medium text-foreground">Email:</span> info@orerealestate.ae
+                    <span className="font-medium text-foreground">Email:</span> info@freeholdproperty.ae
                   </div>
                   <div>
                     <span className="font-medium text-foreground">Consultations:</span> By appointment
@@ -180,12 +180,12 @@ export default function ContactPage() {
                   <div>
                     <span className="font-medium text-foreground">Instagram:</span>{" "}
                     <a
-                      href="https://www.instagram.com/ore.realestate/"
+                      href="https://www.instagram.com/freeholdproperty/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-primary transition-colors"
                     >
-                      @ore.realestate
+                      @freeholdproperty
                     </a>
                   </div>
                 </div>

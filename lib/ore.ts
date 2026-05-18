@@ -234,7 +234,7 @@ export const projectToProperty = (project: Project): Property => {
     toRecord(projectRecord.developer)?.name,
     projectRecord.developer_name,
     projectRecord.developer,
-    "ORE",
+    "Freehold",
   )
   const developerSlug = safeDeveloper.slug || normalizeSlug(developerName) || "ore"
   const developerLogo = safeDeveloper.pfLogo || safeDeveloper.logo || "/logo.png"
@@ -303,7 +303,7 @@ export const projectToProperty = (project: Project): Property => {
       ? project.mediaSource?.gallery
       : project.gallery
 
-  const projectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://orerealestate.ae"}/projects/${project.slug || normalizeSlug(projectName)}`
+  const projectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://freeholdproperty.ae"}/projects/${project.slug || normalizeSlug(projectName)}`
 
   return {
     id: project.id || project.slug || normalizeSlug(projectName) || "property",
@@ -522,7 +522,7 @@ const normalizeListingProject = (row: ProjectListingRow) => {
     row.developer_name,
     payloadRecord.developerName,
     payloadRecord.developer,
-    "ORE",
+    "Freehold",
   )
   enriched.developer = {
     ...(enriched.developer || {}),
@@ -1936,7 +1936,7 @@ const buildProjectPayload = (input: DashboardProjectInput, existing?: Project | 
   const priceFrom = input.priceFrom ?? existing?.units?.[0]?.priceFrom ?? 0
   const priceTo = input.priceTo ?? existing?.units?.[0]?.priceTo ?? priceFrom
   const roi = input.roi ?? existing?.investmentHighlights?.expectedROI ?? 0
-  const developerName = pickString(input.developer, existing?.developer?.name, "ORE") || "ORE"
+  const developerName = pickString(input.developer, existing?.developer?.name, "Freehold") || "Freehold"
   const slug = normalizeSlug(input.slug)
   const name = pickString(input.name, existing?.name, slugToTitle(slug)) || "Untitled Project"
   const area = pickString(input.area, existing?.location?.area, "Dubai") || "Dubai"

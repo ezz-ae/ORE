@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -70,13 +69,8 @@ export function DashboardSidebar({
         href="/crm/overview"
         className="mb-6 block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 transition hover:bg-white/[0.05]"
       >
-        <Image
-          src="/ore-logo-white.png"
-          alt="ORE CRM"
-          width={150}
-          height={60}
-          className="h-8 w-auto"
-        />
+        <div className="text-[16px] font-semibold tracking-[0.16em] text-white">FREEHOLD</div>
+        <div className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#D4AC50]">CRM Core</div>
         <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#D4AC50]/80">Internal workspace</div>
       </Link>
 

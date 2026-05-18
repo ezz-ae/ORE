@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "ORE Real Estate protects investor data with ORE Intelligence. Review how we collect, use, and safeguard your information.",
+    "Freehold Real Estate protects investor data with Freehold Intelligence. Review how we collect, use, and safeguard your information.",
   alternates: {
     canonical: "/privacy",
   },
@@ -23,7 +23,7 @@ const privacyItems = [
   },
   {
     title: "Security & storage",
-    body: "All data is encrypted in transit, stored in Neon PostgreSQL, and audited via ORE Intelligence logs. Access is tier-gated per internal policy.",
+    body: "All data is encrypted in transit, stored in Neon PostgreSQL, and audited via Freehold Intelligence logs. Access is tier-gated per internal policy.",
   },
 ]
 
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
           <p className="mt-4 text-lg text-muted-foreground max-w-3xl">
             We collect only what is needed to deliver transparent Dubai investment intelligence. You can always request deletion or see data we hold by contacting
             <Link href="/contact" className="ml-1 text-primary underline">
-              hello@orerealestate.ae
+              hello@freeholdproperty.ae
             </Link>
             .
           </p>
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
           <div className="space-y-4 rounded-3xl border border-border bg-card p-8">
             <h3 className="font-serif text-2xl font-bold">Need help with your data?</h3>
             <p className="text-sm text-muted-foreground">
-              Reach out to our privacy officer and we will respond within 48 hours. All requests are tracked inside ORE Intelligence for compliance.
+              Reach out to our privacy officer and we will respond within 48 hours. All requests are tracked inside Freehold Intelligence for compliance.
             </p>
             <Link href="/contact" className="inline-flex items-center gap-2 text-primary font-semibold">
               Contact privacy team →

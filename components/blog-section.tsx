@@ -56,7 +56,7 @@ export async function BlogSection() {
           </div>
           <h2 className="font-serif text-3xl font-bold text-[#152E24] md:text-4xl">Latest Insights</h2>
           <p className="mt-4 max-w-2xl mx-auto text-[#152E24]/55">
-            Market updates, investment guides, and Dubai real estate insights from the ORE team.
+            Market updates, investment guides, and Dubai real estate insights from the Freehold team.
           </p>
         </div>
 
@@ -124,10 +124,10 @@ export async function BlogSection() {
                   <div className="mt-auto flex items-center justify-between gap-4 pt-6">
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#C69B3E]/75">
-                        ORE Journal
+                        Freehold Journal
                       </div>
                       <div className="truncate text-sm text-[#152E24]/55">
-                        {post.author || "ORE Editorial Team"}
+                        {post.author || "Freehold Editorial Team"}
                       </div>
                     </div>
 

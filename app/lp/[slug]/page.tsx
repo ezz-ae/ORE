@@ -71,11 +71,11 @@ export default async function LandingPage({
     name: landing.title,
     description: landing.subtitle,
     image: landing.heroImage,
-    url: `https://orerealestate.ae/lp/${landing.slug}`,
+    url: `https://freeholdproperty.ae/lp/${landing.slug}`,
     publisher: {
       "@type": "Organization",
-      name: "ORE Real Estate",
-      url: "https://orerealestate.ae",
+      name: "Freehold Real Estate",
+      url: "https://freeholdproperty.ae",
     },
   }
 

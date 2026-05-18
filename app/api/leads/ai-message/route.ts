@@ -21,18 +21,18 @@ const fallbackDrafts = (input: {
       : ""
 
   return {
-    whatsapp: `Hi ${input.leadName}, this is ORE. I’m following up on your inquiry. I have details for ${projectLine}.${roiLine} If you want, I can send the brochure, payment plan, and current availability.`,
-    emailSubject: `Your ORE project update`,
+    whatsapp: `Hi ${input.leadName}, this is Freehold. I’m following up on your inquiry. I have details for ${projectLine}.${roiLine} If you want, I can send the brochure, payment plan, and current availability.`,
+    emailSubject: `Your Freehold project update`,
     emailBody: `Hi ${input.leadName},
 
-Thank you for your interest in ORE.
+Thank you for your interest in Freehold.
 
 I wanted to follow up with details on ${projectLine}.${roiLine}
 
 If useful, I can send you the brochure, payment plan, and current availability, or shortlist a few similar options based on your budget and investment goal.
 
 Best regards,
-ORE`,
+Freehold`,
     nextSteps: [
       "Send brochure and payment plan",
       "Confirm buyer budget and timeline",
@@ -103,8 +103,8 @@ Rules:
 - WhatsApp should sound natural and broker-ready.
 - Email should be short and polished.
 - nextSteps should be 3 short actionable bullets.
-- Use ORE tone: premium, concise, data-aware, and confident.
-- Mention ORE naturally once where appropriate.
+- Use Freehold tone: premium, concise, data-aware, and confident.
+- Mention Freehold naturally once where appropriate.
 - Do not sound generic, pushy, or overhyped.
 - Do not invent unavailable facts beyond the input.`
 

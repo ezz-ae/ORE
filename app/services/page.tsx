@@ -171,7 +171,7 @@ export default function ServicesPage() {
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
               <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl">
-                Why Choose ORE
+                Why Choose Freehold
               </h2>
               <p className="mt-4 text-muted-foreground">
                 We go beyond traditional brokerage to deliver comprehensive investment support

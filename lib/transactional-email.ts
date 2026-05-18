@@ -25,12 +25,12 @@ interface LeadershipRecipient {
   orgTitle: string | null
 }
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://orerealestate.ae"
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
 const resendApiKey = process.env.RESEND_API_KEY?.trim() || ""
 const fromEmail =
   process.env.LEADS_FROM_EMAIL?.trim() ||
   process.env.NOTIFICATIONS_FROM_EMAIL?.trim() ||
-  "ORE <hello@orerealestate.ae>"
+  "Freehold <hello@freeholdproperty.ae>"
 const whatsappWebhookUrl =
   process.env.LEADS_WHATSAPP_WEBHOOK_URL?.trim() ||
   process.env.CRM_WHATSAPP_WEBHOOK_URL?.trim() ||
@@ -111,24 +111,24 @@ export async function sendLeadAcknowledgementEmail(input: LeadAckEmailInput) {
 
   const text = `${greeting}
 
-Thank you for contacting ORE. Your request has been received and one of our consultants will contact you shortly.
+Thank you for contacting Freehold. Your request has been received and one of our consultants will contact you shortly.
 
 ${input.inquiry ? `Your request: ${input.inquiry}\n` : ""}Shortlist:
 ${projectText}
 
 You can also continue the conversation here: ${baseUrl}/chat
 
-ORE Real Estate`
+Freehold Real Estate`
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
       <p>${greeting}</p>
-      <p>Thank you for contacting <strong>ORE</strong>. Your request has been received and one of our consultants will contact you shortly.</p>
+      <p>Thank you for contacting <strong>Freehold</strong>. Your request has been received and one of our consultants will contact you shortly.</p>
       ${input.inquiry ? `<p><strong>Your request:</strong> ${input.inquiry}</p>` : ""}
       <p><strong>Shortlist</strong></p>
       ${projectHtml}
       <p><a href="${baseUrl}/chat">Continue with the AI assistant</a></p>
-      <p>ORE Real Estate</p>
+      <p>Freehold Real Estate</p>
     </div>
   `
 
@@ -141,7 +141,7 @@ ORE Real Estate`
     body: JSON.stringify({
       from: fromEmail,
       to: [input.to],
-      subject: "ORE received your inquiry",
+      subject: "Freehold received your inquiry",
       text,
       html,
     }),

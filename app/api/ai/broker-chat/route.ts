@@ -322,7 +322,7 @@ const generateOfferMarkdown = (input: {
       : "ROI to be confirmed"
 
   return [
-    `ORE Branded Offer`,
+    `Freehold Branded Offer`,
     ``,
     `Client: ${input.lead?.name || "Prospective buyer"}`,
     budgetText,
@@ -447,7 +447,7 @@ export async function POST(req: NextRequest) {
         `Would you be available for a quick call this week? I can answer any questions and walk you through the investment potential. 🏙️`,
         ``,
         `Best regards,`,
-        `ORE Brokerage`,
+        `Freehold Brokerage`,
       ].join("\n")
 
       attachedData = {
@@ -575,7 +575,7 @@ export async function POST(req: NextRequest) {
 
       if (!hasGeminiKey) {
         aiReply =
-          "ORE AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft ORE-branded offers if you phrase the request directly."
+          "Freehold AI is temporarily unavailable. I can still list leads, shortlist projects, create listings, update listings, and draft Freehold-branded offers if you phrase the request directly."
       } else {
         try {
           const model = getGeminiModel("broker")
@@ -588,7 +588,7 @@ export async function POST(req: NextRequest) {
                 },
                 {
                   role: "model",
-                  parts: [{ text: "Ready to assist with ORE CRM operations, lead intelligence, listings, and branded sales materials." }],
+                  parts: [{ text: "Ready to assist with Freehold CRM operations, lead intelligence, listings, and branded sales materials." }],
                 },
                 ...buildConversationHistory(history),
               ],
