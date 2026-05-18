@@ -25,7 +25,6 @@ const navItems = [
   { href: "/crm", label: "CRM Core", icon: Users },
   { href: "/notebook", label: "Market Notebook", icon: BookOpen },
   { href: "/cloud", label: "Market Cloud", icon: Cloud },
-  { href: "/owner-session", label: "Owner Session", icon: Building2 },
   { href: "/agent-network", label: "Agent Network", icon: Network },
   { href: "/reports", label: "Reports", icon: FileBarChart },
   { href: "/demo", label: "Operating Flow", icon: PlaySquare },

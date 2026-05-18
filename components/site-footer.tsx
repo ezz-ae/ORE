@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -63,7 +64,7 @@ const footerLinks = [
 export function SiteFooter() {
   const pathname = usePathname()
 
-  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/owner-session", "/agent-network", "/reports", "/demo", "/settings"]
+  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/demo", "/settings"]
   const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
   if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null
@@ -74,13 +75,14 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex flex-col group transition-opacity hover:opacity-85">
-              <span className="text-[28px] font-semibold tracking-[0.14em] text-white">
-                FREEHOLD
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-[#D4AC50]">
-                Property UAE
-              </span>
+            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85">
+              <Image
+                src="/freehold-logo.png"
+                alt="Freehold Properties"
+                width={160}
+                height={120}
+                className="h-auto w-40"
+              />
             </Link>
 
             <p className="max-w-sm text-[14px] leading-relaxed text-white/58">

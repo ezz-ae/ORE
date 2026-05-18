@@ -75,7 +75,7 @@ export function SiteHeader() {
   const megaMenuMedium = "w-[min(640px,92vw)] min-w-[340px] p-2"
   const megaMenuCompact = "w-[min(520px,92vw)] min-w-[320px] p-2"
 
-  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/owner-session", "/agent-network", "/reports", "/demo", "/settings"]
+  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/demo", "/settings"]
   const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
   if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null
