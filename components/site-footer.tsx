@@ -173,7 +173,7 @@ export function SiteFooter() {
                     placeholder="E-mail"
                     className="h-10 rounded-lg border-white/[0.1] bg-white/[0.06] text-white placeholder:text-white/35 focus:border-[#C69B3E]/30 text-sm"
                   />
-                  <LeadFormPopup buttonClassName="ore-gradient h-10 w-full rounded-lg border-none text-[11px] text-[#152E24]" />
+                  <LeadFormPopup buttonClassName="freehold-gradient h-10 w-full rounded-lg border-none text-[11px] text-[#152E24]" />
                 </div>
               </div>
             </div>

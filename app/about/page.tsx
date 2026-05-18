@@ -10,8 +10,8 @@ const EyeIcon = ({ className }: { className?: string }) => (
 )
 
 export const metadata = {
-  title: "Our Firm",
-  description: "Institutional Dubai property intelligence with 15+ years of conviction and AI-driven excellence.",
+  title: "About Freehold Property UAE | Dubai Real Estate Advisory",
+  description: "Freehold Properties LLC - 15+ years of Dubai real estate expertise. Sales, leasing, investments, consultancy, and market intelligence for global investors.",
   alternates: {
     canonical: "/about",
   },
@@ -32,21 +32,21 @@ export default function AboutPage() {
                   Institutional Intelligence
                 </div>
                 <h1 className="font-serif text-6xl font-bold tracking-tight lg:text-8xl text-white leading-[0.95] mb-10">
-                  Precision in <br/>
-                  <span className="ore-text-gradient">Conviction.</span>
+                  Free Hold<br/>
+                  <span className="freehold-text-gradient">Properties.</span>
                 </h1>
                 <p className="text-xl text-white/50 leading-relaxed font-light max-w-xl">
-                  Freehold is a private advisory delivering premium Dubai real estate intelligence, combining 15+ years of human market expertise with proprietary AI-driven curation.
+                  Over 15 years of trusted Dubai real estate brokerage, project marketing, investments, and consultancy. We specialize in sales, leasing, valuations, and strategic market intelligence for international investors and local clients.
                 </p>
                 <div className="mt-16 flex items-center gap-12">
                   <div className="flex flex-col">
-                    <span className="text-4xl font-bold text-white">$2B+</span>
-                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">AUM Guided</span>
+                    <span className="text-4xl font-bold text-white">1,530+</span>
+                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">Clients Served</span>
                   </div>
                   <div className="h-12 w-px bg-white/10"></div>
                   <div className="flex flex-col">
-                    <span className="text-4xl font-bold text-white">15+</span>
-                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">Years Active</span>
+                    <span className="text-4xl font-bold text-white">285+</span>
+                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">Properties Sold/Leased</span>
                   </div>
                 </div>
               </div>
@@ -80,9 +80,9 @@ export default function AboutPage() {
                   <TargetIcon />
                 </div>
                 <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Charter</h2>
+                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Mission</h2>
                   <p className="text-[#163327]/60 leading-relaxed font-light text-lg">
-                    To empower international capital with transparent, data-driven intelligence, making Dubai's premier assets accessible through verified institutional rigor.
+                    To provide superior full-service real estate brokerage with in-depth market knowledge and ethical practices, delivering value for property sales, leasing, investments, and strategic consultancy.
                   </p>
                 </div>
               </div>
@@ -91,9 +91,9 @@ export default function AboutPage() {
                   <EyeIcon />
                 </div>
                 <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Horizon</h2>
+                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Vision</h2>
                   <p className="text-[#163327]/60 leading-relaxed font-light text-lg">
-                    To be the global standard for Dubai investment intelligence, bridging the gap between high-conviction investors and trophy real estate assets.
+                    To reach the pinnacle of achievement and positive growth in all corporate fields while upholding fundamental values. We believe innovation and productivity drive success in the dynamic Dubai real estate market.
                   </p>
                 </div>
               </div>
@@ -107,16 +107,16 @@ export default function AboutPage() {
           <div className="container mx-auto px-6 max-w-7xl relative z-10">
             <div className="mx-auto max-w-3xl text-center mb-24">
               <h2 className="font-serif text-5xl font-bold tracking-tight md:text-6xl text-white">
-                Institutional <span className="ore-text-gradient">Benchmark.</span>
+                Why Choose <span className="freehold-text-gradient">Freehold.</span>
               </h2>
             </div>
 
             <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: "Years Active", value: "15+" },
-                { label: "Assets Guided", value: "$2B+" },
-                { label: "Global Desks", value: "50+" },
-                { label: "Live Assets", value: "3.6K" }
+                { label: "Years in Market", value: "15+" },
+                { label: "Properties Handled", value: "285+" },
+                { label: "Expert Agents", value: "15+" },
+                { label: "Clients Served", value: "1.5K+" }
               ].map((stat, i) => (
                 <div key={i} className="text-center p-12 rounded-[2.5rem] bg-white/05 border border-white/05 hover:bg-white/10 transition-all group">
                   <div className="text-6xl font-bold text-white mb-4 group-hover:scale-110 transition-transform duration-500">{stat.value}</div>
@@ -139,7 +139,7 @@ export default function AboutPage() {
                 Connect with our senior conviction desk for a personalized market report tailored to your portfolio goals.
               </p>
               <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
-                <Button size="lg" className="ore-gradient text-black font-bold uppercase tracking-[0.2em] text-[11px] h-16 px-12 rounded-full shadow-2xl transition-all hover:scale-105 border-0" asChild>
+                <Button size="lg" className="freehold-gradient text-black font-bold uppercase tracking-[0.2em] text-[11px] h-16 px-12 rounded-full shadow-2xl transition-all hover:scale-105 border-0" asChild>
                   <Link href="/contact">Schedule Consultation</Link>
                 </Button>
                 <Button size="lg" variant="outline" className="h-16 px-12 rounded-full border-[#163327]/10 text-[#163327] font-bold uppercase tracking-[0.2em] text-[11px] transition-all hover:bg-[#163327]/05" asChild>

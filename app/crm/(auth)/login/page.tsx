@@ -113,7 +113,7 @@ export default function DashboardLoginPage() {
               required
             />
             {error && <div className="text-xs text-destructive">{error}</div>}
-            <Button type="submit" className="w-full ore-gradient text-[#152E24]" disabled={isLoading}>
+            <Button type="submit" className="w-full freehold-gradient text-[#152E24]" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>

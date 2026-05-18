@@ -17,11 +17,11 @@ export default function MarketTrendsPage() {
         <section id="overview" className="border-b border-border bg-gradient-to-b from-background to-muted py-16">
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
-              <Badge className="mb-4 ore-gradient" variant="secondary">
+              <Badge className="mb-4 freehold-gradient" variant="secondary">
                 Market Intelligence
               </Badge>
               <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-                Dubai Real Estate Market Trends
+                Dubai Real Estate Market Trends & Analysis | Freehold Property UAE
               </h1>
               <p className="mt-6 text-lg text-muted-foreground">
                 Latest data, analytics, and AI-powered insights into Dubai’s property market
@@ -37,7 +37,7 @@ export default function MarketTrendsPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Ask our AI about market trends, price forecasts, or investment opportunities
                   </p>
-                  <Button className="ore-gradient" asChild>
+                  <Button className="freehold-gradient" asChild>
                     <Link href="/chat">Ask AI About Market Trends</Link>
                   </Button>
                 </CardContent>
@@ -304,7 +304,7 @@ export default function MarketTrendsPage() {
                   <Badge variant="outline">Best time to invest in off-plan?</Badge>
                 </div>
                 <div className="text-center">
-                  <Button size="lg" className="ore-gradient" asChild>
+                  <Button size="lg" className="freehold-gradient" asChild>
                     <Link href="/chat">
                       <Sparkles className="mr-2 h-4 w-4" />
                       Start AI Conversation

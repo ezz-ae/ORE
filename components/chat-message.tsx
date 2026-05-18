@@ -72,7 +72,7 @@ export function ChatMessage({ role, content, timestamp, properties = [], project
       {!isUser && (
         <Avatar className="mt-0.5 h-7 w-7 sm:h-8 sm:w-8 border border-border/50 shadow-sm shrink-0">
           <AvatarImage src="/images/ai-avatar.png" alt="AI" />
-          <AvatarFallback className="ore-gradient text-black">
+          <AvatarFallback className="freehold-gradient text-black">
             <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
           </AvatarFallback>
         </Avatar>

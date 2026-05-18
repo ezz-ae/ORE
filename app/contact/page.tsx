@@ -53,7 +53,7 @@ export default function ContactPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                   <div className="flex items-start gap-4 p-5 rounded-2xl border bg-card shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ore-gradient">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl freehold-gradient">
                       <Phone className="h-6 w-6 text-black" />
                     </div>
                     <div>
@@ -77,7 +77,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex items-start gap-4 p-5 rounded-2xl border bg-card shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ore-gradient">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl freehold-gradient">
                       <Mail className="h-6 w-6 text-black" />
                     </div>
                     <div>
@@ -89,7 +89,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex items-start gap-4 p-5 rounded-2xl border bg-card shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ore-gradient">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl freehold-gradient">
                       <MapPin className="h-6 w-6 text-black" />
                     </div>
                     <div>
@@ -101,7 +101,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="flex items-start gap-4 p-5 rounded-2xl border bg-card shadow-sm">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ore-gradient">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl freehold-gradient">
                       <Instagram className="h-6 w-6 text-black" />
                     </div>
                     <div>

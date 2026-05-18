@@ -154,7 +154,7 @@ export function PropertyFilters({
             variant={currency === "AED" ? "default" : "outline"}
             size="sm"
             onClick={() => setCurrency("AED")}
-            className={currency === "AED" ? "ore-gradient" : ""}
+            className={currency === "AED" ? "freehold-gradient" : ""}
           >
             AED
           </Button>
@@ -162,7 +162,7 @@ export function PropertyFilters({
             variant={currency === "USD" ? "default" : "outline"}
             size="sm"
             onClick={() => setCurrency("USD")}
-            className={currency === "USD" ? "ore-gradient" : ""}
+            className={currency === "USD" ? "freehold-gradient" : ""}
           >
             USD
           </Button>
@@ -313,7 +313,7 @@ export function PropertyFilters({
         </div>
       </div>
 
-      <Button className="w-full ore-gradient" onClick={applyFilters}>
+      <Button className="w-full freehold-gradient" onClick={applyFilters}>
         Apply Filters
       </Button>
     </div>

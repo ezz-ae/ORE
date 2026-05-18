@@ -155,7 +155,7 @@ export function ProjectLeadForm({ projectName, projectSlug }: ProjectLeadFormPro
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full ore-gradient text-black font-semibold" disabled={form.formState.isSubmitting}>
+            <Button type="submit" className="w-full freehold-gradient text-black font-semibold" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Sending..." : "Send Enquiry"}
             </Button>
           </form>

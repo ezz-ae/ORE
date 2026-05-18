@@ -47,21 +47,27 @@ html {
 }
 
 @layer components {
-  .ore-glass {
+  .freehold-glass {
     @apply bg-white/70 backdrop-blur-2xl border border-black/[0.04] shadow-[0_24px_48px_-12px_rgba(21,46,36,0.06)];
   }
 
-  .ore-gradient {
+  .freehold-gradient {
     @apply bg-gradient-to-r from-[#C69B3E] via-[#D4AC50] to-[#B8892E] text-[#152E24] shadow-lg shadow-[#C69B3E]/15 hover:shadow-xl hover:shadow-[#C69B3E]/20 hover:brightness-105 transition-all active:scale-[0.98];
   }
 
-  .ore-text-gradient {
+  .freehold-text-gradient {
     @apply bg-gradient-to-r from-[#C69B3E] via-[#D8B45A] to-[#C69B3E] bg-clip-text text-transparent;
   }
 
-  .ore-dark-gradient {
+  .freehold-dark-gradient {
     @apply bg-gradient-to-br from-[#152E24] via-[#1A3A2E] to-[#0F2119];
   }
+
+  /* Legacy aliases for backwards compatibility */
+  .ore-gradient { @apply freehold-gradient; }
+  .ore-text-gradient { @apply freehold-text-gradient; }
+  .ore-glass { @apply freehold-glass; }
+  .ore-dark-gradient { @apply freehold-dark-gradient; }
 }
 
 
@@ -114,16 +120,20 @@ html {
     -webkit-text-fill-color: transparent;
   }
 
-  .ore-gradient {
+  .freehold-gradient {
     background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #B8892E 100%);
   }
 
-  .ore-text-gradient {
+  .freehold-text-gradient {
     background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+
+  /* Legacy ore- aliases */
+  .ore-gradient { @apply freehold-gradient; }
+  .ore-text-gradient { @apply freehold-text-gradient; }
 
   .text-balance {
     text-wrap: balance;

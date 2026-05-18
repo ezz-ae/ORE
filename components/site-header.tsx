@@ -199,7 +199,7 @@ export function SiteHeader() {
           </Button>
           <LeadFormPopup
             buttonLabel="Briefing"
-            buttonClassName="hidden md:inline-flex ore-gradient h-9 px-5 rounded-lg text-[10px] uppercase font-semibold tracking-[0.12em] border-none"
+            buttonClassName="hidden md:inline-flex freehold-gradient h-9 px-5 rounded-lg text-[10px] uppercase font-semibold tracking-[0.12em] border-none"
             buttonSize="sm"
           />
           <Button asChild className="hidden md:inline-flex bg-[#152E24] hover:bg-[#152E24]/90 text-white rounded-lg h-9 px-5 text-[10px] uppercase font-semibold tracking-[0.12em]">
@@ -259,7 +259,7 @@ export function SiteHeader() {
                 </ScrollArea>
 
                 <div className="p-6 border-t border-[#152E24]/[0.06] bg-white/50 backdrop-blur-xl">
-                  <Button asChild className="w-full ore-gradient shadow-lg h-12 rounded-xl text-[11px] uppercase font-semibold tracking-[0.12em]" size="lg">
+                  <Button asChild className="w-full freehold-gradient shadow-lg h-12 rounded-xl text-[11px] uppercase font-semibold tracking-[0.12em]" size="lg">
                     <Link href="/chat" onClick={() => setIsOpen(false)}>
                       <SparklesIcon />
                       <span className="ml-2">AI Intelligence Desk</span>

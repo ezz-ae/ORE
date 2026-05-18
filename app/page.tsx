@@ -59,7 +59,7 @@ export default async function Home() {
           <div className="mx-auto mb-14 max-w-3xl text-center md:mb-20">
             <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">Freehold Advantage</p>
             <h2 className="font-serif text-3xl font-bold text-white md:text-5xl lg:text-6xl">
-              Brokerage service with <span className="ore-text-gradient">market intelligence.</span>
+              Brokerage service with <span className="freehold-text-gradient">market intelligence.</span>
             </h2>
           </div>
 
@@ -164,7 +164,7 @@ export default async function Home() {
                     <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#152E24]/35">WhatsApp or Phone</label>
                     <input type="tel" name="phone" required placeholder="+971 50 417 3622" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#FAF8F5] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
                   </div>
-                  <Button type="submit" className="mt-4 h-13 w-full rounded-xl border-0 ore-gradient text-[11px] font-semibold uppercase tracking-[0.12em] md:mt-6 md:h-14">
+                  <Button type="submit" className="mt-4 h-13 w-full rounded-xl border-0 freehold-gradient text-[11px] font-semibold uppercase tracking-[0.12em] md:mt-6 md:h-14">
                     Request Consultation
                     <ArrowRightIcon className="ml-2" />
                   </Button>
@@ -183,7 +183,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_20%,rgba(198,155,62,0.08),transparent)]" />
         <div className="container relative z-10 text-center">
           <h2 className="mx-auto mb-6 max-w-3xl font-serif text-3xl font-bold text-white md:text-5xl lg:text-6xl">
-            Work with <span className="ore-text-gradient">Freehold Property UAE.</span>
+            Work with <span className="freehold-text-gradient">Freehold Property UAE.</span>
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40 md:text-lg">
             Schedule a consultation for buying, selling, renting, project sales, or investment advisory.

@@ -74,7 +74,7 @@ export function SmallLeadForm({
           <Textarea id="compact-message" name="message" rows={3} placeholder="Budget, area, timeframe..." />
         </div>
         <input type="hidden" name="source" value={source || "inline"} />
-        <Button type="submit" className="w-full ore-gradient" size="lg" disabled={loading}>
+        <Button type="submit" className="w-full freehold-gradient" size="lg" disabled={loading}>
           {loading ? "Sending..." : "Send Inquiry"}
         </Button>
       </div>

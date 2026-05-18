@@ -10,7 +10,7 @@ export default function GoldenVisaPage() {
         <section className="border-b border-border bg-gradient-to-b from-background to-muted py-16">
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full ore-gradient mb-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full freehold-gradient mb-6">
                 <Award className="h-10 w-10 text-primary-foreground" />
               </div>
               <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
@@ -286,7 +286,7 @@ export default function GoldenVisaPage() {
                 Explore our curated selection of properties valued at AED 2M+ that qualify for UAE Golden Visa
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Button size="lg" className="ore-gradient" asChild>
+                <Button size="lg" className="freehold-gradient" asChild>
                   <Link href="/properties?goldenVisa=true">View Eligible Properties</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>

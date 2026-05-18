@@ -226,7 +226,7 @@ export function DashboardProfileForm({ initialProfile, canEditRole }: ProfileFor
             onChange={handleChange("password")}
           />
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" className="ore-gradient" disabled={status === "saving"}>
+            <Button type="submit" className="freehold-gradient" disabled={status === "saving"}>
               {status === "saving" ? "Saving..." : "Save Profile"}
             </Button>
             <Button type="button" variant="outline" onClick={handleLogout}>

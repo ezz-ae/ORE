@@ -3,8 +3,8 @@ import { Search, TrendingUp, FileText, Globe, Shield, HeadphonesIcon, Home, Brie
 import Link from "next/link"
 
 export const metadata = {
-  title: "Our Services",
-  description: "Comprehensive real estate services for international investors in Dubai - from property search to portfolio management and Golden Visa support.",
+  title: "Real Estate Services in Dubai | Freehold Properties UAE",
+  description: "Full-service real estate solutions: property acquisition, investment advisory, Golden Visa support, mortgages, portfolio management, and consultancy for Dubai investors.",
   alternates: {
     canonical: "/services",
   },
@@ -223,7 +223,7 @@ export default function ServicesPage() {
                 Schedule a consultation to discuss how we can help you achieve your Dubai investment goals
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Button size="lg" className="ore-gradient" asChild>
+                <Button size="lg" className="freehold-gradient" asChild>
                   <Link href="/contact">Book Consultation</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>

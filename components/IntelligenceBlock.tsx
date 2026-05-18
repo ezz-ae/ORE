@@ -484,7 +484,7 @@ export function IntelligenceBlock({ data }: Props) {
 
             <Link
               href="/search"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl ore-gradient px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] transition sm:w-auto sm:px-8"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl freehold-gradient px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[0.1em] transition sm:w-auto sm:px-8"
             >
               Explore All 3,500+ Projects
               <ArrowRight className="h-4 w-4" />

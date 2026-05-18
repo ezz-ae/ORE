@@ -368,7 +368,7 @@ export default function RegulationsPage() {
                 Our team guides international buyers through every step, ensuring a smooth and secure purchase
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Button size="lg" className="ore-gradient" asChild>
+                <Button size="lg" className="freehold-gradient" asChild>
                   <Link href="/contact">Schedule Consultation</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>

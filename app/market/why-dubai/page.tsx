@@ -11,7 +11,7 @@ export default function WhyDubaiPage() {
           <div className="container">
             <div className="mx-auto max-w-3xl text-center">
               <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-                Why Invest in <span className="ore-text-gradient">Dubai Real Estate</span>
+                Why Invest in <span className="freehold-text-gradient">Dubai Real Estate</span>
               </h1>
               <p className="mt-6 text-lg text-muted-foreground text-balance">
                 Discover why Dubai has become the world’s most attractive destination for international property investors
@@ -219,7 +219,7 @@ export default function WhyDubaiPage() {
                 Explore 3500+ properties and get personalized recommendations from our AI assistant
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Button size="lg" className="ore-gradient" asChild>
+                <Button size="lg" className="freehold-gradient" asChild>
                   <Link href="/properties">Browse Properties</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>

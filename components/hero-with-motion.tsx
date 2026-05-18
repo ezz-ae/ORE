@@ -72,7 +72,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
             <div className="space-y-6">
               <h1 className="font-serif text-[2.5rem] font-bold leading-[1.08] text-white sm:text-5xl md:text-6xl lg:text-[4.25rem]">
                 Dubai Real Estate{" "}
-                <span className="ore-text-gradient">Intelligence</span>
+                <span className="freehold-text-gradient">Intelligence</span>
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-white/55 md:text-lg md:leading-relaxed">
                 Scan every corridor, compare live pricing, and validate risk before you invest.
@@ -106,7 +106,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
 
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button size="lg" className="ore-gradient h-13 w-full rounded-full px-8 text-[11px] font-bold uppercase tracking-[0.15em] sm:h-14 sm:w-auto sm:px-10" asChild>
+              <Button size="lg" className="freehold-gradient h-13 w-full rounded-full px-8 text-[11px] font-bold uppercase tracking-[0.15em] sm:h-14 sm:w-auto sm:px-10" asChild>
                 <Link href="/chat">Ask the Freehold AI Desk</Link>
               </Button>
               <Button

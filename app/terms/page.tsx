@@ -31,7 +31,7 @@ export default function TermsPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <section className="border-b border-border bg-gradient-to-b from-background to-muted py-20">
         <div className="container">
-          <Badge variant="secondary" className="ore-gradient">
+          <Badge variant="secondary" className="freehold-gradient">
             Terms
           </Badge>
           <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight">Terms of Service</h1>
