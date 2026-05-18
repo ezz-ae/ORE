@@ -64,7 +64,7 @@ const footerLinks = [
 export function SiteFooter() {
   const pathname = usePathname()
 
-  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/demo", "/settings"]
+  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/settings"]
   const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
   if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null

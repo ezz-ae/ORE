@@ -27,7 +27,6 @@ const navItems = [
   { href: "/cloud", label: "Market Cloud", icon: Cloud },
   { href: "/agent-network", label: "Agent Network", icon: Network },
   { href: "/reports", label: "Reports", icon: FileBarChart },
-  { href: "/demo", label: "Operating Flow", icon: PlaySquare },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
@@ -69,9 +68,6 @@ export function CommandShell({ children }: { children: React.ReactNode }) {
             <p className="fh-topbar-title">Private company cockpit</p>
             <div className="fh-button-row">
               <span className="fh-status gold">Internal intelligence data</span>
-              <Link className="fh-btn primary" href="/demo">
-                Open operating flow
-              </Link>
             </div>
           </div>
           {children}
