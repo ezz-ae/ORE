@@ -82,13 +82,13 @@ export function SiteFooter() {
       <div className="container px-6 max-w-7xl mx-auto">
         <div className="grid gap-14 lg:grid-cols-[1.4fr,2fr]">
           <div className="space-y-8">
-            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85">
+            <Link href="/" className="inline-flex group transition-opacity hover:opacity-85" aria-label="Freehold Properties — Home">
               <Image
                 src="/freehold-logo.png"
                 alt="Freehold Properties"
-                width={160}
-                height={120}
-                className="h-auto w-40"
+                width={1042}
+                height={417}
+                className="h-auto w-44"
               />
             </Link>
 

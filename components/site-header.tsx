@@ -72,17 +72,17 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#152E24]/[0.06] bg-[#FAF8F5]/85 backdrop-blur-2xl h-16 transition-all duration-300 lg:h-[4.5rem]">
+    <header className="sticky top-0 z-50 w-full border-b border-[#152E24]/[0.06] bg-[#FAF8F5]/85 backdrop-blur-2xl h-[4.5rem] transition-all duration-300 lg:h-20">
       <div className="container flex h-full items-center justify-between px-6 max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="group shrink-0 transition-opacity hover:opacity-80" aria-label="Freehold Properties — Home">
           <Image
             src="/freehold-logo.png"
             alt="Freehold Properties"
-            width={160}
-            height={120}
+            width={1042}
+            height={417}
             priority
-            className="h-10 w-auto sm:h-11"
+            className="h-12 w-auto sm:h-[3.25rem] lg:h-14"
           />
         </Link>
 
@@ -193,9 +193,9 @@ export function SiteHeader() {
                     <Image
                       src="/freehold-logo.png"
                       alt="Freehold Properties"
-                      width={160}
-                      height={120}
-                      className="h-11 w-auto"
+                      width={1042}
+                      height={417}
+                      className="h-14 w-auto"
                     />
                   </Link>
                 </div>
