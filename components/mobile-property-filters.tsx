@@ -8,9 +8,11 @@ import { PropertyFilters } from "./property-filters"
 interface MobilePropertyFiltersProps {
   areas?: string[]
   developers?: string[]
+  basePath?: string
+  resultAnchor?: string
 }
 
-export function MobilePropertyFilters({ areas, developers }: MobilePropertyFiltersProps) {
+export function MobilePropertyFilters({ areas, developers, basePath = "/properties", resultAnchor = "properties-results" }: MobilePropertyFiltersProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -21,10 +23,10 @@ export function MobilePropertyFilters({ areas, developers }: MobilePropertyFilte
       </SheetTrigger>
       <SheetContent className="w-[320px] sm:w-[400px]">
         <SheetHeader>
-          <SheetTitle>Filter Properties</SheetTitle>
+          <SheetTitle>Filter Inventory</SheetTitle>
         </SheetHeader>
         <div className="py-6">
-          <PropertyFilters areas={areas} developers={developers} />
+          <PropertyFilters areas={areas} developers={developers} basePath={basePath} resultAnchor={resultAnchor} />
         </div>
         <SheetFooter>
            <p className="text-xs text-muted-foreground">Apply filters to refine your search.</p>

@@ -23,7 +23,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
 
       {/* Slim floating chrome — does not own real estate */}
       <header className="sticky top-0 z-40 border-b border-white/[0.04] bg-[#06080A]/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
           <Link href="/freehold-intelligence" className="flex items-center gap-2.5 text-[13px] font-medium tracking-[0.04em] text-white/85 transition hover:text-white">
             {!isHome ? (
               <ArrowLeft className="h-4 w-4 text-white/40" />

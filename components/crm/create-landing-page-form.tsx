@@ -29,7 +29,7 @@ export function CreateLandingPageForm({ projects }: CreateLandingPageFormProps) 
   const [headline, setHeadline] = useState("")
   const [status, setStatus] = useState("draft")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [result, setResult] = useState<{ slug: string; url: string } | null>(null)
+  const [result, setResult] = useState<{ slug: string; url: string; status?: string } | null>(null)
   const [error, setError] = useState("")
 
   const selectedProject = useMemo(
@@ -59,7 +59,7 @@ export function CreateLandingPageForm({ projects }: CreateLandingPageFormProps) 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to create landing page")
       }
-      setResult({ slug: data.slug, url: data.url })
+      setResult({ slug: data.slug, url: data.url, status: data.status })
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to create landing page")
     } finally {
@@ -159,11 +159,11 @@ export function CreateLandingPageForm({ projects }: CreateLandingPageFormProps) 
         <Card className="border-emerald-500/20 bg-emerald-500/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
             <div>
-              <p className="text-sm text-emerald-700">Landing page created: <strong>/lp/{result.slug}</strong></p>
+              <p className="text-sm text-emerald-700">Landing page created: <strong>/lp/{result.slug}</strong>{result.status === "draft" ? " · draft preview" : ""}</p>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" asChild>
-                <a href={result.url} target="_blank" rel="noreferrer">Open LP</a>
+                <a href={result.url} target="_blank" rel="noreferrer">{result.status === "draft" ? "Preview LP" : "Open LP"}</a>
               </Button>
               <Button size="sm" asChild>
                 <Link href="/crm/landing-pages">Open CRM LP List</Link>

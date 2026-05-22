@@ -636,15 +636,53 @@ const mapDeveloperRow = (row: DeveloperRow): DeveloperProfile => {
   }
 }
 
-export async function getProjectsForGrid(limit = 50) {
+const getProjectOrderBy = (sort?: PropertyListingFilters["sort"]) => {
+  switch (sort) {
+    case "newest":
+      return "created_at DESC NULLS LAST"
+    case "price-low":
+      return `${LISTING_PRICE_SQL} ASC NULLS LAST`
+    case "price-high":
+      return `${LISTING_PRICE_SQL} DESC NULLS LAST`
+    case "roi":
+      return `${LISTING_ROI_SQL} DESC NULLS LAST`
+    case "yield":
+      return "rental_yield DESC NULLS LAST"
+    case "score":
+    default:
+      return SORT_SCORE_ORDER
+  }
+}
+
+export async function getProjectsForGrid(limit = 50, filters?: PropertyListingFilters) {
+  const safeLimit = Math.max(1, Math.min(limit, 96))
+  const page = Math.max(1, filters?.page || 1)
+  const offset = (page - 1) * safeLimit
+  const values: Array<string | number> = []
+  const where = filters ? buildPropertyListingWhere(filters, values) : []
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : ""
+  values.push(safeLimit, offset)
+
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
      FROM freehold_site_projects
-     ORDER BY ${SORT_SCORE_ORDER}
-     LIMIT $1`,
-    [limit],
+     ${whereClause}
+     ORDER BY ${getProjectOrderBy(filters?.sort)}
+     LIMIT $${values.length - 1} OFFSET $${values.length}`,
+    values,
   )
   return rows.map((row) => normalizeProjectPayload(row))
+}
+
+export async function getProjectsForGridCount(filters?: PropertyListingFilters) {
+  const values: Array<string | number> = []
+  const where = filters ? buildPropertyListingWhere(filters, values) : []
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : ""
+  const rows = await query<{ total: number }>(
+    `SELECT COUNT(*)::int AS total FROM freehold_site_projects ${whereClause}`,
+    values,
+  )
+  return rows[0]?.total || 0
 }
 
 export async function getAdjacentProjectSlugs(slug: string) {

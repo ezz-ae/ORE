@@ -37,6 +37,8 @@ interface PropertyFiltersProps {
   defaultOpen?: boolean
   areas?: string[]
   developers?: string[]
+  basePath?: string
+  resultAnchor?: string
 }
 
 export function PropertyFilters({
@@ -44,6 +46,8 @@ export function PropertyFilters({
   defaultOpen = true,
   areas,
   developers,
+  basePath = "/properties",
+  resultAnchor = "properties-results",
 }: PropertyFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -105,7 +109,7 @@ export function PropertyFilters({
       params.delete(key),
     )
     params.set("page", "1")
-    router.push(`/properties?${params.toString()}#properties-results`, { scroll: false })
+    router.push(`${basePath}?${params.toString()}#${resultAnchor}`, { scroll: false })
   }
 
   const applyFilters = () => {
@@ -141,7 +145,7 @@ export function PropertyFilters({
     params.set("goldenVisa", String(goldenVisaEligible))
     params.set("currency", currency)
     params.set("page", "1")
-    router.push(`/properties?${params.toString()}#properties-results`, { scroll: false })
+    router.push(`${basePath}?${params.toString()}#${resultAnchor}`, { scroll: false })
   }
 
   const filtersBody = (

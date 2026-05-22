@@ -1,7 +1,5 @@
 import Link from 'next/link'
-import { ArrowUpRight, Sparkles, Zap } from 'lucide-react'
-import { executeTool } from '@/lib/freehold/mcp/execute-tool'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { ArrowUpRight, LayoutList } from 'lucide-react'
 import {
   leadMachineListings,
   type LeadMachineListing,
@@ -28,7 +26,7 @@ function readiness(listing: LeadMachineListing) {
   return 'In progress'
 }
 
-function ListingStory({ listing }: { listing: LeadMachineListing }) {
+function ListingCard({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
@@ -76,7 +74,8 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
             <span className="capitalize text-white/75">{statusText(listing.blockerStatus)}</span>
           </span>
           <span className="text-white/45">
-            Opportunity <span className="tabular-nums font-semibold text-white/85">{listing.opportunityScore}</span>
+            Opportunity{' '}
+            <span className="font-semibold tabular-nums text-white/85">{listing.opportunityScore}</span>
           </span>
         </div>
 
@@ -85,7 +84,10 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
             <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">Holding it back</div>
             <ul className="mt-2 grid gap-1 text-[14px] text-white/65">
               {listing.missingRequirements.map((req) => (
-                <li key={req} className="flex items-start gap-2 before:mt-2 before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-[#D4AF37]/70">
+                <li
+                  key={req}
+                  className="flex items-start gap-2 before:mt-2 before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-[#D4AF37]/70"
+                >
                   {req}
                 </li>
               ))}
@@ -109,84 +111,49 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
   )
 }
 
-export default async function LeadMachinePage() {
-  const summaryRes = await executeTool({ tool: 'lead_machine_summary', role: 'owner' })
-  const summary = summaryRes.data
-  const isLive = summaryRes.fallbackStatus === 'live'
-
-  const totalListings = summary?.totalListings
-  const ready = summary?.landingPagesReady
-  const blocked = summary?.blockedByAccess
+export default function ListingsPage() {
+  const total = leadMachineListings.length
+  const ready = leadMachineListings.filter(
+    (l) => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80,
+  ).length
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
-      {/* Eyebrow & Editorial header */}
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
       <section>
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
-          <Zap className="h-3.5 w-3.5" /> Lead Machine
+          <LayoutList className="h-3.5 w-3.5" /> Active Listings
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
-          Listings,
-          <br />
-          <span className="text-white/40">on their way to launch.</span>
+          Active Listings
         </h1>
         <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
-          {isLive && totalListings != null ? (
+          <span className="text-white">{total} listings</span> in the current curated set.{' '}
+          {ready > 0 ? (
             <>
-              <span className="text-white">{Number(totalListings).toLocaleString()} active listings</span> across the private server.{' '}
-              {ready != null && <>{Number(ready).toLocaleString()} have landing pages ready. </>}
-              {blocked != null && blocked > 0 && (
-                <>{Number(blocked).toLocaleString()} are blocked on access or billing.</>
-              )}
+              <span className="text-white">{ready}</span> ready for paid traffic — the rest are pending
+              data, approvals, or landing generation.
             </>
           ) : (
-            'Featured listings on their way to a campaign. The AI is curating these by opportunity, readiness and clear next action.'
+            'None are fully ready yet — resolve blockers to unlock campaigns.'
           )}
         </p>
       </section>
 
-      {/* AI Prompt scoped */}
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about listings, landings, ads, blockers…"
-          suggestions={[
-            'Which listings are ready for ads?',
-            'What is blocking Meta launch?',
-            'Show the readiness matrix.',
-            'Draft a landing request for Business Bay.',
-          ]}
-        />
-      </section>
-
-      {/* Editorial section title */}
-      <section className="mt-20">
+      <section className="mt-16">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Featured</div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Today's curated set
+              {total} listings
             </h2>
           </div>
-          <Link href="/freehold-intelligence/review-requests" className="hidden text-[12px] font-medium text-[#D4AF37] sm:inline-flex sm:items-center sm:gap-1.5">
-            All listings <ArrowUpRight className="h-3 w-3" />
-          </Link>
         </div>
 
         <div className="mt-8 grid gap-8">
           {leadMachineListings.map((listing) => (
-            <ListingStory key={listing.id} listing={listing} />
+            <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
-      </section>
-
-      {/* Closing editorial note */}
-      <section className="mt-20 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
-          <Sparkles className="h-3 w-3" /> AI take
-        </div>
-        <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">
-          One listing is ready for paid traffic — the bottleneck is the Meta billing owner. Resolve that, and Dubai Hills launches today. Palm needs a single landing approval; Business Bay needs payment-plan data before a landing can be generated.
-        </p>
       </section>
     </div>
   )

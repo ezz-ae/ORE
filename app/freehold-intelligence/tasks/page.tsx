@@ -7,7 +7,7 @@ export default async function TasksPage() {
   const tasks = await getReviewItems('task')
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
 
       <section>
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">

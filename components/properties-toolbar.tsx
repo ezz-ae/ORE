@@ -12,11 +12,13 @@ interface PropertiesToolbarProps {
   pageSize: number
   sort: string
   view: string
+  basePath?: string
+  noun?: string
 }
 
 const countFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 })
 
-export function PropertiesToolbar({ total, page, pageSize, sort, view }: PropertiesToolbarProps) {
+export function PropertiesToolbar({ total, page, pageSize, sort, view, basePath = "/properties", noun = "properties" }: PropertiesToolbarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -26,7 +28,7 @@ export function PropertiesToolbar({ total, page, pageSize, sort, view }: Propert
     if (key !== "page") {
       params.set("page", "1")
     }
-    router.push(`/properties?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   return (
@@ -36,7 +38,7 @@ export function PropertiesToolbar({ total, page, pageSize, sort, view }: Propert
         <span className="font-semibold text-foreground">
           {Math.min(page * pageSize, total)}
         </span>{" "}
-        of <span className="font-semibold text-foreground">{countFormatter.format(total)}</span> properties
+        of <span className="font-semibold text-foreground">{countFormatter.format(total)}</span> {noun}
       </p>
 
       <div className="flex items-center gap-2">

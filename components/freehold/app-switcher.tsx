@@ -40,11 +40,12 @@ const govern: AppEntry[] = [
   { href: '/freehold-intelligence/settings',      label: 'Settings',     blurb: 'Workspace preferences.',         icon: Settings,    tint: 'from-white/15 to-transparent' },
 ]
 
-function Tile({ entry }: { entry: AppEntry }) {
+function Tile({ entry, onClose }: { entry: AppEntry; onClose: () => void }) {
   const Icon = entry.icon
   return (
     <Link
       href={entry.href}
+      onClick={onClose}
       className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/30 hover:bg-[#0E1216]"
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${entry.tint} opacity-60 transition group-hover:opacity-90`} />
@@ -97,14 +98,14 @@ export function AppSwitcher({ onClose }: { onClose: () => void }) {
         <section className="mt-12">
           <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/35">Operate</div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {operate.map((entry) => <Tile key={entry.href} entry={entry} />)}
+            {operate.map((entry) => <Tile key={entry.href} entry={entry} onClose={onClose} />)}
           </div>
         </section>
 
         <section className="mt-10">
           <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/35">Govern</div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {govern.map((entry) => <Tile key={entry.href} entry={entry} />)}
+            {govern.map((entry) => <Tile key={entry.href} entry={entry} onClose={onClose} />)}
           </div>
         </section>
       </div>

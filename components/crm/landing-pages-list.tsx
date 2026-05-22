@@ -31,6 +31,17 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
   const router = useRouter()
   const [pages, setPages] = useState(initialPages)
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all")
+  const [search, setSearch] = useState("")
+
+  const filteredPages = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return pages.filter((page) => {
+      const matchesStatus = statusFilter === "all" || page.status === statusFilter
+      const matchesSearch = !q || [page.headline, page.slug, page.projectSlug].some((value) => (value || "").toLowerCase().includes(q))
+      return matchesStatus && matchesSearch
+    })
+  }, [pages, search, statusFilter])
 
   const publishedCount = useMemo(() => pages.filter((page) => page.isLiveNow).length, [pages])
   const totalViews = useMemo(() => pages.reduce((sum, page) => sum + page.pageViews, 0), [pages])
@@ -96,6 +107,24 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
         </Card>
       </section>
 
+      <section className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search landing pages by campaign, slug, or project..."
+            className="h-10 rounded-md border border-border bg-background px-3 text-sm md:min-w-[360px]"
+          />
+          <div className="flex gap-2">
+            {(["all", "published", "draft"] as const).map((status) => (
+              <Button key={status} size="sm" variant={statusFilter === status ? "default" : "outline"} onClick={() => setStatusFilter(status)}>
+                {status === "all" ? "All" : status === "published" ? "Published" : "Drafts"}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
         <div className="grid grid-cols-10 gap-3 border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <div className="col-span-3">Campaign</div>
@@ -107,7 +136,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
           <div>Actions</div>
         </div>
 
-        {pages.map((page) => (
+        {filteredPages.map((page) => (
           <div key={page.slug} className="grid grid-cols-10 gap-3 border-b border-border px-4 py-4 text-sm last:border-b-0">
             <div className="col-span-3 min-w-0">
               <div className="font-semibold truncate">{page.headline}</div>
@@ -129,7 +158,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
                 <Link href={`/crm/landing-pages/${page.slug}`}>Edit</Link>
               </Button>
               <Button size="sm" variant="outline" asChild>
-                <Link href={`/lp/${page.slug}`} target="_blank">Open</Link>
+                <Link href={`/lp/${page.slug}`} target="_blank">{page.status === "published" ? "Open" : "Preview"}</Link>
               </Button>
               <Button
                 size="sm"
@@ -144,15 +173,15 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
           </div>
         ))}
 
-        {pages.length === 0 ? (
+        {filteredPages.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No campaign pages have been created yet.
+            No campaign pages match the current filters.
           </div>
         ) : null}
       </div>
 
       <div className="space-y-3 md:hidden">
-        {pages.map((page) => (
+        {filteredPages.map((page) => (
           <Card key={page.slug}>
             <CardContent className="space-y-3 p-4">
               <div>
@@ -193,16 +222,16 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
                   {loadingSlug === page.slug ? "Saving..." : page.status === "published" ? "Unpublish" : "Publish"}
                 </Button>
                 <Button size="sm" variant="outline" asChild className="w-full">
-                  <Link href={`/lp/${page.slug}`} target="_blank">Open Landing Page</Link>
+                  <Link href={`/lp/${page.slug}`} target="_blank">{page.status === "published" ? "Open Landing Page" : "Preview Draft"}</Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
 
-        {pages.length === 0 ? (
+        {filteredPages.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-            No campaign pages have been created yet.
+            No campaign pages match the current filters.
           </div>
         ) : null}
       </div>

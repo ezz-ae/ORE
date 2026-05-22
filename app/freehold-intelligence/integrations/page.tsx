@@ -58,7 +58,7 @@ export default async function IntegrationsPage() {
   const categoryOrder = ['CRM', 'Paid Ads', 'Messaging', 'Analytics', 'Infrastructure', 'Other']
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
 
       {/* Header */}
       <section>

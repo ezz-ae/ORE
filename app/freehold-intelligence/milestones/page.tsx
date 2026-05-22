@@ -29,7 +29,7 @@ export default async function MilestonesPage() {
   const overall = Math.round(milestones.reduce((s, m) => s + (m.progress_pct ?? 0), 0) / Math.max(1, milestones.length))
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
 
       <section>
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">

@@ -368,7 +368,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       slug: finalSlug,
+      status,
       url: `/lp/${finalSlug}`,
+      previewUrl: `/lp/${finalSlug}`,
       crmUrl: `/crm/landing-pages`,
     })
   } catch (error) {

@@ -75,6 +75,9 @@ const hasPropertyIntent = (message: string) => {
     "where to buy",
     "best for",
     "compare",
+    "brief",
+    "shortlist",
+    "opportunity",
   ]
   const propertyNouns = [
     "property",
@@ -90,6 +93,9 @@ const hasPropertyIntent = (message: string) => {
     "studio",
     "penthouse",
     "townhouse",
+    "off-plan",
+    "offplan",
+    "development",
   ]
 
   const hasKeyword = propertyKeywords.some((kw) => text.includes(kw))
@@ -97,6 +103,45 @@ const hasPropertyIntent = (message: string) => {
   const hasBeds = /\b[1-6]\s*(br|bed(room)?s?)\b/.test(text)
   const hasPrice = /\b(aed|price|budget|million|k)\b/.test(text)
   return hasNoun && (hasKeyword || hasPrice || hasBeds)
+}
+
+const containsUngroundedArtifacts = (text: string) => {
+  if (/SELECT\s+\*?\s+FROM/i.test(text)) return true
+  if (/\[\s*\{/.test(text) && /\"slug\"\s*:/.test(text)) return true
+  if (/```(sql|json)/i.test(text)) return true
+  return false
+}
+
+const buildGroundedProjectContext = (
+  projects: Awaited<ReturnType<typeof searchProjects>>,
+) => {
+  if (!projects.length) return ""
+  const lines = projects.slice(0, 6).map((p) => {
+    const prop = projectToProperty(p)
+    const price = prop.price ? `AED ${prop.price.toLocaleString("en-AE")}` : "price on request"
+    const roi = Number.isFinite(p.investmentHighlights?.expectedROI)
+      ? `${p.investmentHighlights.expectedROI}% ROI`
+      : ""
+    return `- ${prop.title} | slug: ${p.slug} | ${prop.location.area} | ${price}${roi ? ` | ${roi}` : ""} | ${p.developerName || ""}`
+  })
+  return `\n\nVERIFIED PROJECT ROWS (use only these for names, slugs, prices, ROI):\n${lines.join("\n")}`
+}
+
+const buildGroundedBriefReply = (
+  projects: Awaited<ReturnType<typeof searchProjects>>,
+) => {
+  if (!projects.length) {
+    return "I don't have verified matches for that criteria right now. Share your budget range, preferred area, and bedroom count and I'll refine the Freehold shortlist."
+  }
+  const lines = projects.slice(0, 3).map((p) => {
+    const prop = projectToProperty(p)
+    const price = prop.price ? `AED ${prop.price.toLocaleString("en-AE")}` : "price on request"
+    const roi = Number.isFinite(p.investmentHighlights?.expectedROI)
+      ? `${p.investmentHighlights.expectedROI}% ROI`
+      : "investment-ready"
+    return `[PROJECT:${p.slug}]\n${prop.title} — ${prop.location.area}, from ${price} · ${roi}`
+  })
+  return `Here are Freehold-verified matches:\n\n${lines.join("\n\n")}\n\nWant me to compare these or prepare a private investment brief? Share your WhatsApp and I'll send it directly.`
 }
 
 const hasCompareIntent = (message: string) => {
