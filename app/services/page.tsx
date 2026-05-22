@@ -113,7 +113,7 @@ export default function ServicesPage() {
   return (
     <>
         {/* Hero Section */}
-        <section className="relative bg-[#0a0a0a] pt-32 pb-24 md:pt-40 md:pb-32 border-b border-border/10 overflow-hidden">
+        <section className="relative bg-[#0A1F17] pt-32 pb-24 md:pt-40 md:pb-32 border-b border-border/10 overflow-hidden">
           <div className="absolute inset-0 z-0">
             {/* Animated bg glows */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -rotate-45 w-[800px] h-[200px] bg-gradient-to-r from-transparent via-[#D4AF37]/20 to-transparent blur-[80px] opacity-70" />
@@ -123,12 +123,12 @@ export default function ServicesPage() {
           <div className="container relative z-10">
             <div className="mx-auto max-w-4xl text-center flex flex-col items-center">
               <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-white/80 backdrop-blur-sm mb-8">
-                  <span className="flex h-2 w-2 rounded-full bg-[#AA8122] mr-2"></span>
+                  <span className="flex h-2 w-2 rounded-full bg-[#C69B3E] mr-2"></span>
                   Comprehensive Investor Coverage
               </div>
               <h1 className="font-serif text-5xl font-bold tracking-tight md:text-6xl lg:text-7xl text-white leading-[1.1]">
                 End-to-End <br className="hidden md:block"/>
-                <span className="text-[#AA8122] italic">Real Estate</span> Solutions
+                <span className="text-[#C69B3E] italic">Real Estate</span> Solutions
               </h1>
               <p className="mt-8 text-xl text-white/70 leading-relaxed font-light max-w-2xl mx-auto">
                 Discover a suite of premium services designed exclusively for discerning international investors seeking to capitalize on Dubai's dynamic property market.

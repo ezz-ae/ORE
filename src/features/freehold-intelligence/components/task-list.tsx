@@ -19,7 +19,7 @@ export function TaskList({ tasks }: { tasks: ReviewItem[] }) {
             {task.status !== "resolved" ? (
               <form action={closeTask}>
                 <input type="hidden" name="item_id" value={task.item_id} />
-                <Button className="bg-[#D4AF37] text-black hover:bg-[#AA8122]">Mark resolved</Button>
+                <Button className="bg-[#D4AF37] text-black hover:bg-[#C69B3E]">Mark resolved</Button>
               </form>
             ) : null}
           </div>

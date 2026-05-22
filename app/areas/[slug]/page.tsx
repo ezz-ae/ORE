@@ -205,7 +205,7 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
                         <Link href="/areas">Compare Dubai Areas</Link>
                       </Button>
                       <Button variant="outline" className="border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" asChild>
-                        <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
+                        <Link href="/chat">Ask Freehold AI</Link>
                       </Button>
                     </div>
                   </CardContent>

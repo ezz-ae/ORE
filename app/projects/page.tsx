@@ -79,7 +79,7 @@ export default async function ProjectsPage({
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-border/10 bg-[#0a0a0a] py-16 md:py-24">
+      <section className="relative overflow-hidden border-b border-border/10 bg-[#0A1F17] py-16 md:py-24">
         <div className="absolute inset-0 z-0 opacity-50">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.05)_0%,transparent_50%)] rounded-full blur-[80px] mix-blend-screen" />
           <div className="absolute bottom-0 left-10 w-[400px] h-[400px] bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.2)_0%,transparent_50%)] rounded-full blur-[80px] mix-blend-screen animate-pulse" />
@@ -87,7 +87,7 @@ export default async function ProjectsPage({
         <div className="container relative z-10">
           <div className="mx-auto max-w-3xl text-center flex flex-col items-center">
             <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80 backdrop-blur-sm mb-6">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-[#AA8122] mr-2"></span>
+              <span className="flex h-1.5 w-1.5 rounded-full bg-[#C69B3E] mr-2"></span>
               Live Freehold Inventory
             </div>
             <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-white leading-tight">
@@ -109,7 +109,7 @@ export default async function ProjectsPage({
         </div>
       </section>
 
-      <section className="bg-[#0E241C] py-16 md:py-20">
+      <section className="bg-[#152E24] py-16 md:py-20">
         <div className="container">
           <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

@@ -1064,7 +1064,7 @@ export default async function ProjectPage({
                         </Button>
                       )}
                       <Button variant="outline" className={brandOutlineButtonClass} asChild>
-                        <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
+                        <Link href="/chat">Ask Freehold AI</Link>
                       </Button>
                     </div>
                   </CardContent>

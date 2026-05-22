@@ -28,7 +28,7 @@ export function LeadFormPopup({
     <Sheet>
       <SheetTrigger asChild>
         <Button
-          className={cn("ore-gradient flex items-center justify-center rounded-full font-bold uppercase tracking-widest text-[10px] border-none shadow-xl", buttonClassName)}
+          className={cn("freehold-gradient flex items-center justify-center rounded-full font-bold uppercase tracking-widest text-[10px] border-none shadow-xl", buttonClassName)}
           size={buttonSize}
         >
           <SparklesIcon className="mr-2" />
@@ -37,20 +37,20 @@ export function LeadFormPopup({
       </SheetTrigger>
       <SheetContent side="bottom" className="w-[min(720px,92vw)] max-w-[720px] mx-auto border-none p-0 shadow-2xl bg-transparent">
         <SheetTitle className="sr-only">Request a consultation</SheetTitle>
-        <div className="relative rounded-t-[3rem] bg-[#FBF9F6] p-10 lg:p-16 border-t border-[#163327]/05">
+        <div className="relative rounded-t-[3rem] bg-[#FAF8F5] p-10 lg:p-16 border-t border-[#152E24]/05">
           <div className="mb-10 text-center max-w-lg mx-auto">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#C5A059] mb-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#C69B3E] mb-4">
               Institutional Intelligence
             </p>
-            <h2 className="font-serif text-4xl lg:text-5xl font-bold text-[#163327] mb-6">Briefing Request</h2>
-            <p className="text-[15px] text-[#163327]/60 leading-relaxed font-light">
+            <h2 className="font-serif text-4xl lg:text-5xl font-bold text-[#152E24] mb-6">Briefing Request</h2>
+            <p className="text-[15px] text-[#152E24]/60 leading-relaxed font-light">
               Submit your requirements for a personalized project briefing from our senior conviction desk.
             </p>
           </div>
           <LeadForm />
           
-          <div className="mt-12 pt-8 border-t border-[#163327]/05 text-center">
-            <p className="text-[10px] text-[#163327]/30 uppercase tracking-[0.2em]">Business Bay Office · Dubai, UAE</p>
+          <div className="mt-12 pt-8 border-t border-[#152E24]/05 text-center">
+            <p className="text-[10px] text-[#152E24]/30 uppercase tracking-[0.2em]">Business Bay Office · Dubai, UAE</p>
           </div>
         </div>
       </SheetContent>

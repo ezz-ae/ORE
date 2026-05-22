@@ -17,7 +17,7 @@ export function CommentsPanel({ pageRef, items }: { pageRef: string; items: Revi
         <input type="hidden" name="page_ref" value={pageRef} />
         <input name="author" placeholder="Author" className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/35" />
         <Textarea name="body" placeholder="Add a review comment or decision request…" className="border-white/10 bg-black/30 text-white placeholder:text-white/35" />
-        <Button className="bg-[#D4AF37] text-black hover:bg-[#AA8122]">Add comment</Button>
+        <Button className="bg-[#D4AF37] text-black hover:bg-[#C69B3E]">Add comment</Button>
       </form>
 
       <div className="mt-6 space-y-3">

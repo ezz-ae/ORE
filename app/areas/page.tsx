@@ -66,7 +66,7 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#0E241C] py-16 md:py-20">
+        <section className="bg-[#152E24] py-16 md:py-20">
           <div className="container">
             <div className="rounded-[32px] border border-[#152E24]/[0.08] bg-white p-6 shadow-[0_24px_80px_-40px_rgba(21,46,36,0.18)] md:p-10">
               <SmallLeadForm
@@ -77,7 +77,7 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#0E241C] pb-8">
+        <section className="bg-[#152E24] pb-8">
           <div className="container">
             <div className="grid gap-6 rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl lg:grid-cols-3 md:p-8">
               <div className="rounded-[24px] border border-[#152E24]/10 bg-[#FAF8F5] p-5">
@@ -123,7 +123,7 @@ export default async function AreasPage() {
           </div>
         </section>
 
-        <section className="bg-[#0E241C] pb-20">
+        <section className="bg-[#152E24] pb-20">
           <div className="container">
             <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
               <div className="mb-8">

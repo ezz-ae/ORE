@@ -147,7 +147,7 @@ export function RealtimePropertyCard() {
               <defs>
                 <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#D4AF37" />
-                  <stop offset="100%" stopColor="#AA8122" />
+                  <stop offset="100%" stopColor="#C69B3E" />
                 </linearGradient>
               </defs>
               <Bar dataKey="visitors" radius={[4, 4, 0, 0]}>

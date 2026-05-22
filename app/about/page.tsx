@@ -19,9 +19,9 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="bg-[#FBF9F6]">
+    <div className="bg-[#FAF8F5]">
         {/* Hero Section */}
-        <section className="relative bg-[#163327] pt-40 pb-32 md:pt-56 md:pb-48 border-b border-white/05 overflow-hidden text-white">
+        <section className="relative bg-[#152E24] pt-40 pb-32 md:pt-56 md:pb-48 border-b border-white/05 overflow-hidden text-white">
           <div className="absolute inset-0 z-0 opacity-40">
             <div className="absolute -top-40 -right-20 w-[1000px] h-[1000px] bg-[radial-gradient(circle_at_50%_50%,rgba(197,160,89,0.15)_0%,transparent_60%)] rounded-full blur-[120px]" />
           </div>
@@ -52,11 +52,11 @@ export default function AboutPage() {
               </div>
               <div className="relative mx-auto w-full max-w-lg lg:ml-auto">
                 <div className="aspect-[4/5] rounded-[3.5rem] bg-white/05 border border-white/10 backdrop-blur-3xl p-12 relative overflow-hidden shadow-2xl flex flex-col justify-end group hover:bg-white/10 transition-all duration-700">
-                   <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-[#C5A059]/20 blur-3xl group-hover:bg-[#C5A059]/30 transition-colors"></div>
+                   <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-[#C69B3E]/20 blur-3xl group-hover:bg-[#C69B3E]/30 transition-colors"></div>
                    <div className="relative z-10 bg-white/10 backdrop-blur-3xl rounded-[2rem] p-8 border border-white/10">
                      <p className="text-white font-medium italic mb-6 font-serif text-xl leading-relaxed">&ldquo;Navigating Dubai's growth corridors with institutional rigor.&rdquo;</p>
                      <div className="flex items-center gap-6">
-                       <div className="w-14 h-14 rounded-2xl bg-white text-[#163327] flex items-center justify-center shrink-0">
+                       <div className="w-14 h-14 rounded-2xl bg-white text-[#152E24] flex items-center justify-center shrink-0">
                          <TargetIcon />
                        </div>
                        <div>
@@ -72,27 +72,27 @@ export default function AboutPage() {
         </section>
 
         {/* Mission & Vision */}
-        <section className="py-32 bg-[#FBF9F6]">
+        <section className="py-32 bg-[#FAF8F5]">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="grid gap-20 lg:grid-cols-2 items-start">
               <div className="flex items-start gap-8">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#163327]/05 shadow-xl text-[#163327]">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#152E24]/05 shadow-xl text-[#152E24]">
                   <TargetIcon />
                 </div>
                 <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Mission</h2>
-                  <p className="text-[#163327]/60 leading-relaxed font-light text-lg">
+                  <h2 className="font-serif text-3xl font-bold text-[#152E24] mb-4">Our Mission</h2>
+                  <p className="text-[#152E24]/60 leading-relaxed font-light text-lg">
                     To provide superior full-service real estate brokerage with in-depth market knowledge and ethical practices, delivering value for property sales, leasing, investments, and strategic consultancy.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-8">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#163327]/05 shadow-xl text-[#163327]">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#152E24]/05 shadow-xl text-[#152E24]">
                   <EyeIcon />
                 </div>
                 <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#163327] mb-4">Our Vision</h2>
-                  <p className="text-[#163327]/60 leading-relaxed font-light text-lg">
+                  <h2 className="font-serif text-3xl font-bold text-[#152E24] mb-4">Our Vision</h2>
+                  <p className="text-[#152E24]/60 leading-relaxed font-light text-lg">
                     To reach the pinnacle of achievement and positive growth in all corporate fields while upholding fundamental values. We believe innovation and productivity drive success in the dynamic Dubai real estate market.
                   </p>
                 </div>
@@ -102,7 +102,7 @@ export default function AboutPage() {
         </section>
 
         {/* Stats */}
-        <section className="py-32 bg-[#163327] text-white overflow-hidden relative">
+        <section className="py-32 bg-[#152E24] text-white overflow-hidden relative">
            <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <div className="container mx-auto px-6 max-w-7xl relative z-10">
             <div className="mx-auto max-w-3xl text-center mb-24">
@@ -128,21 +128,21 @@ export default function AboutPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-40 bg-[#FBF9F6]">
+        <section className="py-40 bg-[#FAF8F5]">
           <div className="container mx-auto px-6 max-w-7xl">
             <div className="mx-auto max-w-4xl text-center">
-              <h2 className="font-serif text-6xl md:text-7xl font-bold tracking-tight text-[#163327] leading-[0.9]">
+              <h2 className="font-serif text-6xl md:text-7xl font-bold tracking-tight text-[#152E24] leading-[0.9]">
                 Initiate Private<br/>
-                <span className="text-[#C5A059] italic">Briefing.</span>
+                <span className="text-[#C69B3E] italic">Briefing.</span>
               </h2>
-              <p className="mt-10 text-xl text-[#163327]/50 max-w-xl mx-auto font-light leading-relaxed">
+              <p className="mt-10 text-xl text-[#152E24]/50 max-w-xl mx-auto font-light leading-relaxed">
                 Connect with our senior conviction desk for a personalized market report tailored to your portfolio goals.
               </p>
               <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
                 <Button size="lg" className="freehold-gradient text-black font-bold uppercase tracking-[0.2em] text-[11px] h-16 px-12 rounded-full shadow-2xl transition-all hover:scale-105 border-0" asChild>
                   <Link href="/contact">Schedule Consultation</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="h-16 px-12 rounded-full border-[#163327]/10 text-[#163327] font-bold uppercase tracking-[0.2em] text-[11px] transition-all hover:bg-[#163327]/05" asChild>
+                <Button size="lg" variant="outline" className="h-16 px-12 rounded-full border-[#152E24]/10 text-[#152E24] font-bold uppercase tracking-[0.2em] text-[11px] transition-all hover:bg-[#152E24]/05" asChild>
                   <Link href="/properties">Portfolio Access</Link>
                 </Button>
               </div>

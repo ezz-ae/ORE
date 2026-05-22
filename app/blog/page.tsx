@@ -34,7 +34,7 @@ export default async function BlogPage() {
         </section>
 
         {featured && (
-          <section className="bg-[#0E241C] py-16 md:py-20">
+          <section className="bg-[#152E24] py-16 md:py-20">
             <div className="container">
               <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
                 <div className="mb-8">
@@ -105,7 +105,7 @@ export default async function BlogPage() {
           </section>
         )}
 
-        <section className="bg-[#0E241C] pb-20">
+        <section className="bg-[#152E24] pb-20">
           <div className="container">
             <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-8 lg:p-10">
             <div className="mb-8">

@@ -81,7 +81,7 @@ export default async function PropertiesPage({
   return (
     <>
         {/* Header */}
-        <section className="relative overflow-hidden border-b border-border/10 bg-[#0a0a0a] py-16 md:py-20">
+        <section className="relative overflow-hidden border-b border-border/10 bg-[#0A1F17] py-16 md:py-20">
           <div className="absolute inset-0 z-0">
             <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.15)_0%,transparent_50%)] rounded-full blur-[80px] mix-blend-screen animate-pulse" />
           </div>
@@ -105,7 +105,7 @@ export default async function PropertiesPage({
         </section>
 
         {/* Filters & Results */}
-        <section className="bg-[#0E241C] py-8 md:py-10">
+        <section className="bg-[#152E24] py-8 md:py-10">
           <div className="container">
             <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_28px_90px_-55px_rgba(0,0,0,0.6)] backdrop-blur-xl md:p-6 lg:p-8">
               <div className="mb-6 flex flex-col gap-3 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">

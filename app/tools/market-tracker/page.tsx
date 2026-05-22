@@ -60,8 +60,8 @@ export default function MarketTrackerPage() {
             </div>
 
             <div className="mt-10 text-center">
-              <Button className="ore-gradient" asChild>
-                <Link href="/freehold-intelligence/apps/market">View Control Room Market App</Link>
+              <Button className="freehold-gradient" asChild>
+                <Link href="/chat">Ask Freehold AI for market insight</Link>
               </Button>
             </div>
           </div>

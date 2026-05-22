@@ -100,7 +100,7 @@ html {
   }
 
   .gold-text-gradient {
-    background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #E5C975 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -111,7 +111,7 @@ html {
   }
 
   .freehold-text-gradient {
-    background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #E5C975 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -123,7 +123,7 @@ html {
   }
 
   .ore-text-gradient {
-    background: linear-gradient(135deg, #C69B3E 0%, #E8CA72 100%);
+    background: linear-gradient(135deg, #C69B3E 0%, #D4AC50 50%, #E5C975 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
