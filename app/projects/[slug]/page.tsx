@@ -164,7 +164,9 @@ export async function generateMetadata({
 }) {
   const { slug } = await params
   if (slug.startsWith("gc-")) {
-    redirect(`/projects/freehold-${slug.slice(3)}`)
+    const legacyTarget = `freehold-${slug.slice(3)}`
+    const legacyProject = await getProject(legacyTarget)
+    redirect(legacyProject ? `/projects/${legacyTarget}` : "/projects")
   }
   const project = await getProject(slug)
   const adjacent = project ? await getAdjacentProjectSlugs(project.slug) : { prev_slug: null, next_slug: null }
@@ -215,7 +217,9 @@ export default async function ProjectPage({
 }) {
   const { slug } = await params
   if (slug.startsWith("gc-")) {
-    redirect(`/projects/freehold-${slug.slice(3)}`)
+    const legacyTarget = `freehold-${slug.slice(3)}`
+    const legacyProject = await getProject(legacyTarget)
+    redirect(legacyProject ? `/projects/${legacyTarget}` : "/projects")
   }
   const project = await getProject(slug)
   let prevSlug: string | null = null
