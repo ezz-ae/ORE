@@ -34,7 +34,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
                 FI
               </div>
               <div>
-                <div className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Private Server</div>
+                <div className="text-sm font-semibold uppercase tracking-[0.18em] text-white">Free Hold Server</div>
                 <div className="mt-1 text-xs text-white/45">Freehold Intelligence</div>
               </div>
             </Link>
@@ -97,7 +97,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
         <section className="flex min-h-0 flex-col">
           <header className="border-b border-white/10 bg-[#07110D]/90 px-4 py-3 backdrop-blur lg:hidden">
             <div className="flex items-center justify-between gap-3">
-              <Link href="/freehold-intelligence" className="text-sm font-semibold uppercase tracking-[0.16em] text-white">Private Server</Link>
+              <Link href="/freehold-intelligence" className="text-sm font-semibold uppercase tracking-[0.16em] text-white">Free Hold Server</Link>
               <Link href="/freehold-intelligence/apps" className="text-xs text-[#D4AF37]">Apps</Link>
             </div>
           </header>
