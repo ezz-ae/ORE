@@ -5,7 +5,7 @@ import { ChatMessage } from "@/components/chat-message"
 import { ChatInput } from "@/components/chat-input"
 import { PropertyCard } from "@/components/property-card"
 import { useAIChat } from "@/hooks/use-ai-chat"
-import { Sparkles } from "lucide-react"
+import { Sparkles, MapPin, TrendingUp, Shield, Compass, Building2, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
@@ -107,6 +107,51 @@ export default function ChatPage() {
     "Which family areas would you shortlist in Dubai?",
   ]
 
+  const categories = [
+    {
+      icon: Compass,
+      eyebrow: "Find",
+      title: "By area",
+      prompt: "Show me the best 2BR investment options in Dubai Marina under AED 2M",
+      tone: "from-emerald-400/15 to-emerald-400/[0.03] text-emerald-300 lg:border-emerald-400/20",
+    },
+    {
+      icon: TrendingUp,
+      eyebrow: "Compare",
+      title: "Highest ROI",
+      prompt: "What are the strongest ROI projects in Dubai right now?",
+      tone: "from-[#D4AF37]/20 to-[#D4AF37]/[0.04] text-[#D4AF37] lg:border-[#D4AF37]/25",
+    },
+    {
+      icon: Shield,
+      eyebrow: "Eligibility",
+      title: "Golden Visa",
+      prompt: "Which projects qualify for the Golden Visa? Give me a quick shortlist.",
+      tone: "from-violet-400/15 to-violet-400/[0.03] text-violet-300 lg:border-violet-400/20",
+    },
+    {
+      icon: Building2,
+      eyebrow: "Strategy",
+      title: "Off-plan vs ready",
+      prompt: "Give me a brief on off-plan vs secondary market — pros, cons, who it fits.",
+      tone: "from-sky-400/15 to-sky-400/[0.03] text-sky-300 lg:border-sky-400/20",
+    },
+    {
+      icon: MapPin,
+      eyebrow: "Lifestyle",
+      title: "Family areas",
+      prompt: "Which family-friendly areas would you shortlist in Dubai?",
+      tone: "from-rose-400/15 to-rose-400/[0.03] text-rose-300 lg:border-rose-400/20",
+    },
+    {
+      icon: Sparkles,
+      eyebrow: "Ask",
+      title: "Free-form",
+      prompt: "I have AED 1.8M and want a 7-year hold. What would you do?",
+      tone: "from-amber-400/15 to-amber-400/[0.03] text-amber-300 lg:border-amber-400/20",
+    },
+  ]
+
   return (
     <div
       className="flex overflow-hidden bg-white lg:bg-[#0A0D10] lg:h-[100dvh]"
@@ -142,30 +187,60 @@ export default function ChatPage() {
           <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-6 pb-8">
 
             {messages.length === 0 ? (
-              /* Empty state */
-              <div className="flex min-h-[60vh] flex-col items-center justify-center text-center space-y-8 py-12">
-                <div className="space-y-4">
-                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#D4AF37]/10 ring-8 ring-[#D4AF37]/5">
-                    <Sparkles className="h-8 w-8 text-[#D4AF37]" />
+              /* Empty state — premium workspace welcome */
+              <div className="space-y-10 py-8 sm:py-12">
+                {/* Welcome block */}
+                <div className="text-center">
+                  <div className="relative mx-auto inline-flex h-16 w-16 items-center justify-center">
+                    <span className="absolute inset-0 rounded-full bg-[#D4AF37]/15 blur-xl" />
+                    <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/20 lg:border-[#D4AF37]/30 bg-gradient-to-br from-[#D4AF37]/15 to-[#D4AF37]/[0.04]">
+                      <Sparkles className="h-7 w-7 text-[#D4AF37]" />
+                    </span>
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-[#152E24] lg:text-white">
-                    How can Freehold guide you?
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C69B3E] lg:text-[#D4AF37]">Freehold AI</p>
+                  <h2 className="mt-2.5 font-serif text-[28px] font-semibold leading-[1.1] tracking-tight text-[#152E24] lg:text-white sm:text-[32px]">
+                    What are we figuring out today?
                   </h2>
-                  <p className="mx-auto max-w-sm text-sm text-[#152E24]/55 lg:text-white/50">
-                    Build shortlists, compare Dubai opportunities, decode market signals, and frame the right next step for your brief.
+                  <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-[#152E24]/55 lg:text-white/50">
+                    Shortlists, ROI math, Golden Visa eligibility, area comparisons, or a free-form brief — pick a starting point or just ask.
                   </p>
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-2 w-full">
-                  {suggestedQuestions.map((question, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSendMessage(question)}
-                      className="rounded-2xl border border-[#152E24]/10 lg:border-white/[0.06] bg-white lg:bg-[#0E1216] p-4 text-left text-[13px] text-[#152E24]/70 lg:text-white/60 transition-all hover:border-[#C69B3E]/25 lg:hover:border-[#D4AF37]/25 hover:text-[#152E24] lg:hover:text-white/80 lg:hover:bg-[#0E1216]/80"
-                    >
-                      {question}
-                    </button>
-                  ))}
+                {/* Category cards */}
+                <div>
+                  <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#152E24]/35 lg:text-white/30">Quick starts</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+                    {categories.map((cat) => {
+                      const Icon = cat.icon
+                      return (
+                        <button
+                          key={cat.title}
+                          onClick={() => handleSendMessage(cat.prompt)}
+                          className="group relative overflow-hidden rounded-2xl border border-[#152E24]/[0.08] lg:border-white/[0.06] bg-white lg:bg-white/[0.025] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#C69B3E]/30 lg:hover:bg-white/[0.05] hover:shadow-[0_12px_30px_-15px_rgba(21,46,36,0.18)]"
+                        >
+                          <div className="flex items-start gap-3.5">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#152E24]/[0.06] bg-gradient-to-br ${cat.tone}`}>
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#152E24]/40 lg:text-white/35">{cat.eyebrow}</p>
+                              <p className="mt-0.5 text-[14px] font-semibold text-[#152E24] lg:text-white">{cat.title}</p>
+                              <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-[#152E24]/55 lg:text-white/50">
+                                {cat.prompt}
+                              </p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 shrink-0 text-[#152E24]/25 transition-all group-hover:translate-x-0.5 group-hover:text-[#C69B3E] lg:text-white/25 lg:group-hover:text-[#D4AF37]" />
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Disclaimer strip */}
+                <div className="flex items-center justify-center gap-2 rounded-full border border-[#152E24]/[0.06] lg:border-white/[0.05] bg-[#152E24]/[0.02] lg:bg-white/[0.02] px-4 py-2 text-[10px] text-[#152E24]/35 lg:text-white/30">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                  <span>Live data · 3,500+ projects mapped · responds in &lt;2s</span>
                 </div>
               </div>
             ) : (

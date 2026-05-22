@@ -1,154 +1,193 @@
 import { Button } from "@/components/ui/button"
+import { Target, Eye, ArrowRight, Quote } from "lucide-react"
 import Link from "next/link"
-
-// Inline SVGs for Stability
-const TargetIcon = ({ className }: { className?: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-)
-const EyeIcon = ({ className }: { className?: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>
-)
 
 export const metadata = {
   title: "About Freehold Property UAE | Dubai Real Estate Advisory",
-  description: "Freehold Properties LLC - 15+ years of Dubai real estate expertise. Sales, leasing, investments, consultancy, and market intelligence for global investors.",
-  alternates: {
-    canonical: "/about",
-  },
+  description: "Freehold Properties LLC — 19 years of Dubai real estate. Sales, leasing, investments, consultancy, and market intelligence for global investors.",
+  alternates: { canonical: "/about" },
 }
+
+const chapters = [
+  {
+    eyebrow: "01 · Mission",
+    title: "Make Dubai property decisions clear.",
+    body: "Full-service brokerage with deep market knowledge and ethical practice — sales, leasing, advisory, and valuation, all from one desk.",
+    icon: Target,
+  },
+  {
+    eyebrow: "02 · Vision",
+    title: "The standard for institutional advisory.",
+    body: "Innovation, productivity, and integrity — the way we think about every project, every client, every brief.",
+    icon: Eye,
+  },
+]
+
+const stats = [
+  { value: "19", suffix: "yrs", label: "in the Dubai market" },
+  { value: "3,500", suffix: "+", label: "Projects mapped" },
+  { value: "1,530", suffix: "+", label: "Clients served" },
+  { value: "285", suffix: "+", label: "Properties closed" },
+]
+
+const principles = [
+  { number: "01", title: "Conviction over volume", body: "We curate, we don't carpet-bomb. A shortlist of five with reasoning beats fifty without." },
+  { number: "02", title: "Numbers, not narratives", body: "Every recommendation comes with ROI math, payment-plan modeling, and exit assumptions." },
+  { number: "03", title: "Senior team, not relays", body: "You speak with the advisor who handles your brief — same line from first call to closing." },
+]
 
 export default function AboutPage() {
   return (
     <div className="bg-[#FAF8F5]">
-        {/* Hero Section */}
-        <section className="relative bg-[#152E24] pt-40 pb-32 md:pt-56 md:pb-48 border-b border-white/05 overflow-hidden text-white">
-          <div className="absolute inset-0 z-0 opacity-40">
-            <div className="absolute -top-40 -right-20 w-[1000px] h-[1000px] bg-[radial-gradient(circle_at_50%_50%,rgba(197,160,89,0.15)_0%,transparent_60%)] rounded-full blur-[120px]" />
-          </div>
-          <div className="container relative z-10 mx-auto px-6 max-w-7xl">
-            <div className="grid gap-12 lg:grid-cols-2 items-center">
-              <div className="max-w-2xl">
-                <div className="inline-block px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-10">
-                  Institutional Intelligence
-                </div>
-                <h1 className="font-serif text-6xl font-bold tracking-tight lg:text-8xl text-white leading-[0.95] mb-10">
-                  Free Hold<br/>
-                  <span className="freehold-text-gradient">Properties.</span>
-                </h1>
-                <p className="text-xl text-white/50 leading-relaxed font-light max-w-xl">
-                  Over 15 years of trusted Dubai real estate brokerage, project marketing, investments, and consultancy. We specialize in sales, leasing, valuations, and strategic market intelligence for international investors and local clients.
-                </p>
-                <div className="mt-16 flex items-center gap-12">
-                  <div className="flex flex-col">
-                    <span className="text-4xl font-bold text-white">1,530+</span>
-                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">Clients Served</span>
-                  </div>
-                  <div className="h-12 w-px bg-white/10"></div>
-                  <div className="flex flex-col">
-                    <span className="text-4xl font-bold text-white">285+</span>
-                    <span className="text-[10px] text-white/30 mt-2 uppercase tracking-[0.3em] font-bold">Properties Sold/Leased</span>
-                  </div>
-                </div>
-              </div>
-              <div className="relative mx-auto w-full max-w-lg lg:ml-auto">
-                <div className="aspect-[4/5] rounded-[3.5rem] bg-white/05 border border-white/10 backdrop-blur-3xl p-12 relative overflow-hidden shadow-2xl flex flex-col justify-end group hover:bg-white/10 transition-all duration-700">
-                   <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-[#C69B3E]/20 blur-3xl group-hover:bg-[#C69B3E]/30 transition-colors"></div>
-                   <div className="relative z-10 bg-white/10 backdrop-blur-3xl rounded-[2rem] p-8 border border-white/10">
-                     <p className="text-white font-medium italic mb-6 font-serif text-xl leading-relaxed">&ldquo;Navigating Dubai's growth corridors with institutional rigor.&rdquo;</p>
-                     <div className="flex items-center gap-6">
-                       <div className="w-14 h-14 rounded-2xl bg-white text-[#152E24] flex items-center justify-center shrink-0">
-                         <TargetIcon />
-                       </div>
-                       <div>
-                         <p className="text-[11px] text-primary uppercase tracking-[0.2em] font-bold">Conviction Desk</p>
-                         <p className="text-sm text-white/60 font-light italic">Curated exclusively</p>
-                       </div>
-                     </div>
-                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Mission & Vision */}
-        <section className="py-32 bg-[#FAF8F5]">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="grid gap-20 lg:grid-cols-2 items-start">
-              <div className="flex items-start gap-8">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#152E24]/05 shadow-xl text-[#152E24]">
-                  <TargetIcon />
-                </div>
-                <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#152E24] mb-4">Our Mission</h2>
-                  <p className="text-[#152E24]/60 leading-relaxed font-light text-lg">
-                    To provide superior full-service real estate brokerage with in-depth market knowledge and ethical practices, delivering value for property sales, leasing, investments, and strategic consultancy.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-8">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] bg-white border border-[#152E24]/05 shadow-xl text-[#152E24]">
-                  <EyeIcon />
-                </div>
-                <div>
-                  <h2 className="font-serif text-3xl font-bold text-[#152E24] mb-4">Our Vision</h2>
-                  <p className="text-[#152E24]/60 leading-relaxed font-light text-lg">
-                    To reach the pinnacle of achievement and positive growth in all corporate fields while upholding fundamental values. We believe innovation and productivity drive success in the dynamic Dubai real estate market.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats */}
-        <section className="py-32 bg-[#152E24] text-white overflow-hidden relative">
-           <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          <div className="container mx-auto px-6 max-w-7xl relative z-10">
-            <div className="mx-auto max-w-3xl text-center mb-24">
-              <h2 className="font-serif text-5xl font-bold tracking-tight md:text-6xl text-white">
-                Why Choose <span className="freehold-text-gradient">Freehold.</span>
-              </h2>
-            </div>
-
-            <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: "Years in Market", value: "15+" },
-                { label: "Properties Handled", value: "285+" },
-                { label: "Expert Agents", value: "15+" },
-                { label: "Clients Served", value: "1.5K+" }
-              ].map((stat, i) => (
-                <div key={i} className="text-center p-12 rounded-[2.5rem] bg-white/05 border border-white/05 hover:bg-white/10 transition-all group">
-                  <div className="text-6xl font-bold text-white mb-4 group-hover:scale-110 transition-transform duration-500">{stat.value}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-40 bg-[#FAF8F5]">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="mx-auto max-w-4xl text-center">
-              <h2 className="font-serif text-6xl md:text-7xl font-bold tracking-tight text-[#152E24] leading-[0.9]">
-                Initiate Private<br/>
-                <span className="text-[#C69B3E] italic">Briefing.</span>
-              </h2>
-              <p className="mt-10 text-xl text-[#152E24]/50 max-w-xl mx-auto font-light leading-relaxed">
-                Connect with our senior conviction desk for a personalized market report tailored to your portfolio goals.
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-[#0A1F17] pt-32 pb-28 text-white md:pt-40 md:pb-40">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-0 h-[400px] w-[1100px] -translate-x-1/2 bg-[radial-gradient(ellipse_50%_50%_at_50%_0%,rgba(212,175,55,0.18),transparent)]" />
+          <div className="absolute bottom-0 right-0 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(212,175,55,0.10),transparent_55%)] blur-[100px]" />
+        </div>
+        <div className="container relative z-10">
+          <div className="grid items-end gap-14 lg:grid-cols-[1.4fr_1fr]">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#F0D792] backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50]" />
+                About Freehold
+              </span>
+              <h1 className="mt-8 font-serif text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl lg:text-[5.5rem]">
+                Dubai property,<br />
+                <span className="freehold-text-gradient italic">decoded.</span>
+              </h1>
+              <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/55">
+                Freehold Properties LLC is a private advisory and brokerage firm built around one idea — clients should never have to guess. Nineteen years inside the Dubai market, 3,500+ projects mapped, and a team of senior advisors who own every brief end-to-end.
               </p>
-              <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
-                <Button size="lg" className="freehold-gradient text-black font-bold uppercase tracking-[0.2em] text-[11px] h-16 px-12 rounded-full shadow-2xl transition-all hover:scale-105 border-0" asChild>
-                  <Link href="/contact">Schedule Consultation</Link>
-                </Button>
-                <Button size="lg" variant="outline" className="h-16 px-12 rounded-full border-[#152E24]/10 text-[#152E24] font-bold uppercase tracking-[0.2em] text-[11px] transition-all hover:bg-[#152E24]/05" asChild>
-                  <Link href="/properties">Portfolio Access</Link>
-                </Button>
+
+              <div className="mt-12 flex flex-wrap items-center gap-10">
+                {stats.slice(0, 2).map((s) => (
+                  <div key={s.label}>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-serif text-5xl font-bold text-white md:text-6xl">{s.value}</span>
+                      <span className="text-2xl font-bold text-[#D4AC50]">{s.suffix}</span>
+                    </div>
+                    <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
+
+            {/* Quote card */}
+            <aside className="relative">
+              <div className="absolute -inset-3 -z-10 rounded-[36px] bg-gradient-to-br from-[#D4AC50]/15 via-transparent to-transparent opacity-70 blur-2xl" />
+              <div className="relative overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.04] p-8 backdrop-blur-xl md:p-10">
+                <Quote className="h-8 w-8 text-[#D4AC50]/60" />
+                <blockquote className="mt-6 font-serif text-xl leading-relaxed text-white md:text-2xl">
+                  "Navigating Dubai's growth corridors with institutional rigor."
+                </blockquote>
+                <div className="mt-8 flex items-center gap-4 border-t border-white/[0.06] pt-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#D4AC50]/25 bg-gradient-to-br from-[#D4AC50]/20 to-transparent">
+                    <Target className="h-5 w-5 text-[#D4AC50]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">Conviction Desk</p>
+                    <p className="mt-1 text-[13px] text-white/60">Curated exclusively · senior advisors</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
-        </section>
+        </div>
+      </section>
+
+      {/* MISSION & VISION — split editorial */}
+      <section className="relative bg-[#FAF8F5] py-20 md:py-28">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_40%_30%_at_80%_20%,rgba(198,155,62,0.04),transparent)]" />
+        <div className="container relative z-10">
+          <div className="grid gap-8 md:grid-cols-2 lg:gap-10">
+            {chapters.map((c) => {
+              const Icon = c.icon
+              return (
+                <article key={c.eyebrow} className="group relative overflow-hidden rounded-[28px] border border-[#152E24]/[0.06] bg-white p-8 shadow-[0_24px_80px_-50px_rgba(21,46,36,0.18)] transition-all hover:-translate-y-1 hover:border-[#C69B3E]/25 md:p-10">
+                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C69B3E]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#C69B3E]/15 to-[#C69B3E]/[0.04] text-[#C69B3E] ring-1 ring-[#C69B3E]/15">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#152E24]/35">{c.eyebrow}</span>
+                  </div>
+                  <h2 className="mt-7 font-serif text-3xl font-bold leading-tight text-[#152E24] md:text-4xl">{c.title}</h2>
+                  <p className="mt-5 text-[15px] leading-relaxed text-[#152E24]/60 md:text-base">{c.body}</p>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* PRINCIPLES — numbered editorial on cream */}
+      <section className="relative bg-[#F2EFE8] py-20 md:py-28">
+        <div className="container">
+          <div className="mb-14 max-w-2xl md:mb-20">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">How We Operate</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold leading-[1.05] text-[#152E24] md:text-5xl">
+              Three things we won't compromise on.
+            </h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3 md:gap-7">
+            {principles.map((p) => (
+              <div key={p.number} className="relative rounded-[24px] border border-[#152E24]/[0.06] bg-white p-8 transition-all hover:border-[#C69B3E]/30 hover:shadow-[0_24px_60px_-40px_rgba(21,46,36,0.2)]">
+                <div className="font-serif text-[68px] font-bold leading-none text-[#C69B3E]/25">{p.number}</div>
+                <h3 className="mt-3 font-serif text-xl font-semibold text-[#152E24] md:text-2xl">{p.title}</h3>
+                <p className="mt-3 text-[14px] leading-relaxed text-[#152E24]/55">{p.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* STATS — dark numeric showcase */}
+      <section className="relative overflow-hidden bg-[#152E24] py-24 text-white md:py-32">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(198,155,62,0.10),transparent)]" />
+        <div className="container relative z-10">
+          <div className="mx-auto mb-16 max-w-2xl text-center md:mb-20">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">By the Numbers</p>
+            <h2 className="mt-4 font-serif text-3xl font-bold leading-tight md:text-5xl">
+              The track record speaks.
+            </h2>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+            {stats.map((s) => (
+              <div key={s.label} className="group rounded-[24px] border border-white/[0.06] bg-white/[0.03] p-7 text-center backdrop-blur-sm transition-all hover:border-[#D4AC50]/30 hover:bg-white/[0.05] md:p-9">
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="font-serif text-5xl font-bold text-white transition-transform duration-500 group-hover:scale-105 md:text-6xl">{s.value}</span>
+                  <span className="text-2xl font-bold text-[#D4AC50]">{s.suffix}</span>
+                </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative overflow-hidden bg-[#FAF8F5] py-24 md:py-32">
+        <div className="container">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">Start a Brief</p>
+            <h2 className="mt-5 font-serif text-4xl font-bold leading-[1.02] text-[#152E24] md:text-6xl lg:text-7xl">
+              Talk to the<br/><span className="freehold-text-gradient italic">conviction desk.</span>
+            </h2>
+            <p className="mx-auto mt-7 max-w-lg text-lg leading-relaxed text-[#152E24]/55">
+              A 30-minute call with a senior advisor. We'll map the goal, the budget, and the next two moves.
+            </p>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
+              <Button size="lg" className="freehold-gradient h-14 rounded-xl px-8 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#152E24]" asChild>
+                <Link href="/contact">Schedule Consultation <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
+              <Button size="lg" variant="outline" className="h-14 rounded-xl border-[#152E24]/10 bg-white px-8 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#152E24] hover:bg-white/80" asChild>
+                <Link href="/properties">Portfolio Access</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

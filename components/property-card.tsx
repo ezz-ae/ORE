@@ -1,8 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { MapPin, BedDouble, Bath, Maximize, TrendingUp, ArrowRight, Building2 } from "lucide-react"
+import { MapPin, BedDouble, Bath, Maximize, TrendingUp, ArrowUpRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import type { Property } from "@/lib/types/project"
@@ -11,7 +10,7 @@ import { isFiniteNumber, shouldShow } from "@/lib/utils/safeDisplay"
 
 const formatRoiLabel = (value?: number | null) => {
   if (!isFiniteNumber(value) || value <= 0) return null
-  return `~${value.toFixed(1)} yr ROI`
+  return `${value.toFixed(1)} yr ROI`
 }
 
 interface PropertyCardProps {
@@ -24,7 +23,7 @@ export function PropertyCard({ property, compact = false, layout = "grid" }: Pro
   const formatPrice = (price: number, currency: Property["currency"]) => {
     const locale = currency === "AED" ? "en-AE" : "en-US"
     return new Intl.NumberFormat(locale, {
-      style: 'currency',
+      style: "currency",
       currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -32,184 +31,133 @@ export function PropertyCard({ property, compact = false, layout = "grid" }: Pro
   }
 
   const imageSrc = property.images?.[0] || "/logo.png"
-  const imageClass = property.images?.[0]
-    ? "object-cover transition-transform duration-500 group-hover:scale-105"
-    : "object-contain bg-muted p-6"
+  const hasRealImage = Boolean(property.images?.[0])
   const bedLabel =
-    property.specifications.bedrooms === 0
-      ? "Studio"
-      : `${property.specifications.bedrooms} Bed`
+    property.specifications.bedrooms === 0 ? "Studio" : `${property.specifications.bedrooms} Bed`
   const bathLabel = `${property.specifications.bathrooms} Bath${
     property.specifications.bathrooms === 1 ? "" : "s"
   }`
   const roiLabel = formatRoiLabel(property.roi ?? property.investmentMetrics.roi)
   const rentalYield =
     typeof property.rentalYield === "number" ? property.rentalYield : property.investmentMetrics.rentalYield
-  const roiValue = typeof property.roi === "number" ? property.roi : property.investmentMetrics.roi
-  const paymentPlanDescription = property.paymentPlan?.description || null
   const projectUrl = `/properties/${property.slug}`
   const isList = layout === "list"
-  const specItems = [
-    { icon: BedDouble, label: bedLabel },
-    { icon: Bath, label: bathLabel },
-    shouldShow(property.specifications.sizeSqft)
-      ? { icon: Maximize, label: `${property.specifications.sizeSqft.toLocaleString()} sqft` }
-      : null,
-    property.type
-      ? { icon: Building2, label: property.type === "off-plan" ? "Off-Plan" : property.type === "secondary" ? "Secondary" : "Commercial" }
-      : null,
-  ].filter(Boolean) as Array<{ icon: typeof BedDouble; label: string }>
+  const typeLabel =
+    property.type === "off-plan" ? "Off-Plan" : property.type === "secondary" ? "Secondary" : "Commercial"
 
   return (
     <Link href={projectUrl} className="group block" prefetch={false}>
-      <Card
+      <article
         className={cn(
-          "overflow-hidden rounded-[28px] border-[#152E24]/10 bg-white shadow-[0_20px_60px_-40px_rgba(21,46,36,0.24)] transition-all duration-300 hover:-translate-y-1 hover:border-[#C69B3E]/20 hover:shadow-[0_32px_90px_-45px_rgba(21,46,36,0.32)]",
-          isList && "sm:grid sm:grid-cols-[280px_minmax(0,1fr)] sm:items-stretch",
+          "relative overflow-hidden rounded-[24px] bg-[#0F1F18] text-white transition-all duration-300",
+          "shadow-[0_24px_80px_-40px_rgba(0,0,0,0.55)] ring-1 ring-white/[0.04]",
+          "hover:-translate-y-1 hover:ring-[#C69B3E]/30 hover:shadow-[0_36px_100px_-40px_rgba(0,0,0,0.65)]",
+          isList && "sm:grid sm:grid-cols-[300px_minmax(0,1fr)]",
         )}
       >
+        {/* Image — full-bleed, taller, with cinematic gradient */}
         <div
           className={cn(
-            `relative overflow-hidden bg-[#F5F1E8] ${compact ? "aspect-[16/9]" : "aspect-[4/3]"}`,
-            isList && "aspect-auto h-[240px] sm:h-full sm:min-h-[320px]",
+            "relative overflow-hidden bg-[#0A1F17]",
+            compact ? "aspect-[16/10]" : "aspect-[5/4]",
+            isList && "aspect-auto h-full min-h-[260px] sm:min-h-[320px]",
           )}
         >
           <Image
             src={imageSrc}
             alt={property.title}
             fill
-            className={imageClass}
+            sizes="(min-width: 1280px) 380px, (min-width: 640px) 50vw, 100vw"
+            className={cn(
+              "object-cover transition-transform duration-700 group-hover:scale-[1.06]",
+              !hasRealImage && "object-contain p-10 opacity-60",
+            )}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-          <div className={`absolute left-3 z-10 flex flex-wrap gap-1.5 ${compact ? "top-2.5" : "top-3"}`}>
-            <Badge
-              variant="secondary"
-              className={`border-none bg-white/90 text-[#152E24] backdrop-blur-md shadow-sm ${compact ? "text-[10px] px-2 py-0.5" : "text-[11px]"}`}
-            >
-              {property.type === "off-plan" ? "Off-Plan" : property.type === "secondary" ? "Secondary" : "Commercial"}
-            </Badge>
+          {/* Cinematic vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0F1F18] via-[#0F1F18]/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[#0F1F18]/60" />
+
+          {/* Top chips */}
+          <div className={cn("absolute left-4 top-4 z-10 flex flex-wrap gap-1.5", compact && "left-3 top-3")}>
+            <span className="rounded-full border border-white/15 bg-black/30 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
+              {typeLabel}
+            </span>
             {property.investmentMetrics.goldenVisaEligible && (
-              <Badge className={`border-none bg-[#C69B3E] text-[#152E24] shadow-sm ${compact ? "text-[10px] px-2 py-0.5" : "text-[11px]"}`}>
+              <span className="rounded-full border border-[#D4AC50]/30 bg-[#D4AC50]/20 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#F0D792] backdrop-blur-md">
                 Golden Visa
-              </Badge>
+              </span>
+            )}
+          </div>
+
+          {/* Floating price tag — bottom-left of image */}
+          <div className="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#F0D792]">From</p>
+              <p className="mt-0.5 truncate text-[22px] font-bold leading-none text-white sm:text-[26px]">
+                {formatPrice(property.price, property.currency)}
+              </p>
+            </div>
+            {roiLabel && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-200 backdrop-blur-md">
+                <TrendingUp className="h-3 w-3" />
+                {roiLabel}
+              </span>
             )}
           </div>
         </div>
 
+        {/* Body — dark with gold edge */}
         <div className="flex min-w-0 flex-col">
-          <CardContent
-            className={cn(
-              compact ? "p-3.5 text-[#152E24]" : "p-5 text-[#152E24]",
-              isList && "flex flex-1 flex-col justify-between gap-5 p-5 sm:p-6",
-            )}
-          >
-            <div>
-              <div className={cn("mb-2 flex items-start justify-between gap-2", isList && "mb-3 gap-4") }>
-                <div className="min-w-0">
-                  <h3
-                    className={cn(
-                      `font-serif font-bold text-[#152E24] transition-colors group-hover:text-[#C69B3E] ${compact ? "text-base line-clamp-2" : "text-lg line-clamp-1"}`,
-                      isList && "text-xl line-clamp-2 sm:text-2xl",
-                    )}
-                  >
-                    {property.title}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-[#152E24]/55 sm:text-[12px]">
-                    <MapPin className="h-3 w-3 text-[#C69B3E]/70" />
-                    <span className="line-clamp-1">{property.location.area}, Dubai</span>
-                  </div>
-                </div>
-                {roiLabel && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      `shrink-0 border-[#C69B3E]/20 bg-[#C69B3E]/5 text-[#A56F12] font-semibold ${compact ? "text-[9px] h-4 px-1.5" : "text-[10px] h-5"}`,
-                      isList && "rounded-full px-2.5 py-1 text-[10px] sm:text-[11px]",
-                    )}
-                  >
-                    <TrendingUp className="mr-0.5 h-3 w-3" />
-                    {roiLabel}
-                  </Badge>
-                )}
-              </div>
-
-              {!isList && (
-                <div className={`flex items-center border-y border-[#152E24]/10 text-[11px] text-[#152E24]/55 ${compact ? "mb-3 gap-3 py-2" : "mb-4 gap-4 py-2.5"}`}>
-                  {specItems.slice(0, 3).map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-1.5">
-                      <Icon className="h-3.5 w-3.5 text-[#152E24]/45" />
-                      <span>{label}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className={cn(isList && "grid gap-4 lg:grid-cols-[minmax(0,1fr)_230px]") }>
-                <div>
-                  <div className={cn(`${compact ? "text-lg" : "text-xl"} font-bold tracking-tight text-[#152E24]`, isList && "text-2xl sm:text-3xl")}>
-                    {formatPrice(property.price, property.currency)}
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#152E24]/62">
-                    {rentalYield && (
-                      <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">
-                        <span className="font-semibold">{rentalYield}%</span>
-                        <span>yield</span>
-                      </span>
-                    )}
-                    {roiValue && (
-                      <span className="flex items-center gap-1.5 rounded-full bg-[#C69B3E]/10 px-2.5 py-1 text-[#8B5E11]">
-                        <span className="font-semibold">{roiValue}</span>
-                        <span>yr ROI</span>
-                      </span>
-                    )}
-                    {property.constructionProgress != null && property.constructionProgress > 0 && (
-                      <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
-                        <span className="font-semibold">{property.constructionProgress}%</span>
-                        <span>built</span>
-                      </span>
-                    )}
-                  </div>
-                  {paymentPlanDescription && (
-                    <div className="mt-3 inline-flex max-w-full items-center rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700">
-                      <span className="line-clamp-2">{paymentPlanDescription}</span>
-                    </div>
-                  )}
-                </div>
-
-                {isList && (
-                  <div className="grid gap-2 rounded-2xl border border-[#152E24]/8 bg-[#FAF8F5] p-4">
-                    {specItems.slice(0, 4).map(({ icon: Icon, label }) => (
-                      <div key={label} className="flex items-center gap-2.5 text-sm text-[#152E24]/72">
-                        <Icon className="h-4 w-4 text-[#C69B3E]/80" />
-                        <span className="font-medium">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-
-          <CardFooter className={cn(compact ? "p-3.5 pt-0" : "p-5 pt-0", isList && "border-t border-[#152E24]/10 p-5 pt-4 sm:px-6") }>
-            <div
+          <div className={cn("p-5", compact && "p-4", isList && "p-6")}>
+            <h3
               className={cn(
-                `w-full rounded-xl border border-[#C69B3E]/20 bg-[#C69B3E]/[0.05] font-semibold uppercase tracking-[0.1em] text-[#A56F12] transition-all group-hover:border-[#C69B3E] group-hover:bg-[#C69B3E] ${compact ? "px-3 py-2 text-[10px]" : "px-4 py-2.5 text-[11px]"}`,
-                isList ? "flex items-center justify-between gap-4 px-4 py-3 text-left" : "text-center group-hover:text-[#152E24]",
+                "font-serif font-semibold leading-tight text-white transition-colors group-hover:text-[#F0D792]",
+                compact ? "text-[15px] line-clamp-2" : "text-[17px] line-clamp-2",
+                isList && "text-[22px]",
               )}
             >
-              <div>
-                <span className={cn("block", isList && "text-[10px] group-hover:text-[#152E24]/75")}>Explore Unit</span>
-                {isList && (
-                  <span className="mt-1 block text-sm font-medium normal-case tracking-normal text-[#152E24]/65 group-hover:text-[#152E24]">
-                    View pricing, availability, payment plan, and full property context.
-                  </span>
-                )}
-              </div>
-              {isList && <ArrowRight className="h-4 w-4 shrink-0 text-[#A56F12] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[#152E24]" />}
+              {property.title}
+            </h3>
+
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-white/45">
+              <MapPin className="h-3 w-3 text-[#D4AC50]" />
+              <span className="line-clamp-1">{property.location.area}, Dubai</span>
             </div>
-          </CardFooter>
+
+            {/* Spec strip */}
+            <div className="mt-4 flex items-center gap-4 border-t border-white/[0.06] pt-3.5 text-[11px] text-white/55">
+              <span className="flex items-center gap-1.5">
+                <BedDouble className="h-3.5 w-3.5 text-white/35" />
+                {bedLabel}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Bath className="h-3.5 w-3.5 text-white/35" />
+                {bathLabel}
+              </span>
+              {shouldShow(property.specifications.sizeSqft) && (
+                <span className="flex items-center gap-1.5">
+                  <Maximize className="h-3.5 w-3.5 text-white/35" />
+                  {property.specifications.sizeSqft.toLocaleString()} sqft
+                </span>
+              )}
+            </div>
+
+            {/* Yield chip (only when present) */}
+            {rentalYield ? (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-300">
+                <span className="font-semibold">{rentalYield}%</span>
+                <span className="text-emerald-200/70">avg rental yield</span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Footer CTA — gold sweep on hover */}
+          <div className="mt-auto flex items-center justify-between border-t border-white/[0.05] px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60 transition-colors group-hover:text-[#F0D792]">
+            <span>View Property</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#F0D792]" />
+          </div>
         </div>
-      </Card>
+      </article>
     </Link>
   )
 }
