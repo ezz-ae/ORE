@@ -13,7 +13,7 @@ const nav = [
 
 export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-[#070b0f] text-white">
+    <main className="fixed inset-0 z-[100] min-h-screen overflow-y-auto bg-[#070b0f] text-white">
       <div className="border-b border-white/10 bg-black/30 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
           <Link href="/freehold-intelligence" className="font-serif text-2xl font-semibold text-white">
