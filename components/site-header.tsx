@@ -78,9 +78,6 @@ export function SiteHeader() {
           <span className="block text-[18px] font-semibold tracking-[0.12em] text-[#152E24] sm:text-[20px]">
             FREEHOLD
           </span>
-          <span className="block text-[9px] font-semibold uppercase tracking-[0.28em] text-[#B88A2A]">
-            Property UAE
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -189,9 +186,6 @@ export function SiteHeader() {
                   <Link href="/" onClick={() => setIsOpen(false)} className="shrink-0">
                     <span className="block text-[20px] font-semibold tracking-[0.12em] text-[#152E24]">
                       FREEHOLD
-                    </span>
-                    <span className="block text-[9px] font-semibold uppercase tracking-[0.28em] text-[#B88A2A]">
-                      Property UAE
                     </span>
                   </Link>
                 </div>

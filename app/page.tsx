@@ -49,7 +49,7 @@ export default async function Home() {
         <FeaturedProperties />
       </div>
 
-      <div className="relative bg-[#FAF8F5] py-20 md:py-24">
+      <div className="relative bg-[#F2EFE8] py-20 md:py-24">
         <MarketSnapshot />
       </div>
 
@@ -67,12 +67,12 @@ export default async function Home() {
             <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] p-8 transition-all hover:bg-white/[0.06] md:col-span-8 md:p-10">
               <div className="relative z-10 flex h-full flex-col justify-between">
                 <div>
-                  <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white text-[#152E24] shadow-lg md:h-16 md:w-16">
+                  <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-[#C69B3E]/15 text-[#D4AC50] md:h-16 md:w-16">
                     <SparklesIcon />
                   </div>
                   <h3 className="font-serif mb-4 text-2xl font-bold text-white md:text-4xl">Project sales, leasing, and investment advisory</h3>
                   <p className="max-w-xl text-sm leading-relaxed text-white/45 md:text-base">
-                    Freehold Property UAE supports residential and commercial sales, leasing, project marketing, investments, consultancy, and valuation coordination.
+                    Freehold supports residential and commercial sales, leasing, project marketing, investments, consultancy, and valuation coordination.
                   </p>
                 </div>
                 <div className="mt-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#D4AC50] transition-all group-hover:gap-5">
@@ -120,7 +120,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#FAF8F5] py-20 md:py-28">
+      <section className="relative overflow-hidden bg-[#F2EFE8] py-20 md:py-28">
         <div className="container relative z-10">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
             <div className="relative z-10">
@@ -129,7 +129,7 @@ export default async function Home() {
                 Sell, buy, rent, or invest with <span className="text-[#C69B3E] italic">clear advice.</span>
               </h2>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-[#152E24]/45 md:text-lg">
-                Speak with Freehold Property UAE for project sales, secondary market advice, rentals, commercial property, or owner valuation support.
+                Speak with Freehold for project sales, secondary market advice, rentals, commercial property, or owner valuation support.
               </p>
 
               <div className="mt-10 space-y-7 md:mt-12">
@@ -138,7 +138,7 @@ export default async function Home() {
                   ["02", "Owner sales and leasing support", "Build a valuation, media, buyer profile, and launch plan before going to market."],
                 ].map(([number, title, body]) => (
                   <div className="flex items-start gap-5" key={title}>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#152E24]/[0.06] bg-white shadow-sm">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#152E24]/10 bg-white/60 shadow-sm">
                       <span className="font-serif text-lg font-bold text-[#152E24]">{number}</span>
                     </div>
                     <div>
@@ -152,17 +152,17 @@ export default async function Home() {
 
             <div className="relative">
               <div className="absolute -inset-8 -z-10 rounded-3xl bg-gradient-to-tr from-[#C69B3E]/10 via-transparent to-[#152E24]/[0.04] opacity-50 blur-2xl" />
-              <div className="relative z-10 rounded-2xl border border-[#152E24]/[0.06] bg-white p-8 shadow-[0_24px_64px_-16px_rgba(21,46,36,0.06)] md:p-10">
+              <div className="relative z-10 rounded-2xl border border-[#152E24]/[0.06] bg-white/80 p-8 shadow-[0_24px_64px_-16px_rgba(21,46,36,0.06)] backdrop-blur md:p-10">
                 <h3 className="mb-1.5 text-xl font-bold text-[#152E24] md:text-2xl">Request Callback</h3>
                 <p className="mb-8 text-[11px] font-medium uppercase tracking-[0.15em] text-[#152E24]/30">Business Bay office</p>
                 <form className="space-y-5">
                   <div className="space-y-2">
                     <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#152E24]/35">Full Name</label>
-                    <input type="text" name="name" required placeholder="John Doe" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#FAF8F5] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
+                    <input type="text" name="name" required placeholder="John Doe" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#F2EFE8] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#152E24]/35">WhatsApp or Phone</label>
-                    <input type="tel" name="phone" required placeholder="+971 50 417 3622" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#FAF8F5] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
+                    <input type="tel" name="phone" required placeholder="+971 50 417 3622" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#F2EFE8] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
                   </div>
                   <Button type="submit" className="mt-4 h-13 w-full rounded-xl border-0 freehold-gradient text-[11px] font-semibold uppercase tracking-[0.12em] md:mt-6 md:h-14">
                     Request Consultation
@@ -175,7 +175,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="border-t border-[#152E24]/[0.04] bg-[#FAF8F5] py-20 md:py-24">
+      <div className="border-t border-[#152E24]/[0.04] bg-[#F2EFE8] py-20 md:py-24">
         <BlogSection />
       </div>
 
@@ -191,9 +191,6 @@ export default async function Home() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3 md:mt-14">
             <Button size="lg" className="h-13 w-full rounded-xl bg-white px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition-all hover:bg-white/90 sm:h-14 sm:w-auto sm:px-10" asChild>
               <Link href="/contact">Schedule Consultation</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="h-13 w-full rounded-xl border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 transition-all hover:border-[#D4AC50]/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:px-10" asChild>
-              <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
             </Button>
           </div>
         </div>
