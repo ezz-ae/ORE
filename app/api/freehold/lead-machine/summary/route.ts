@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { getLeadMachineSummary } from "@/src/features/freehold-intelligence/lead-machine"
+import { executeTool } from "@/lib/freehold/mcp/execute-tool"
 
 export async function GET() {
-  return NextResponse.json({ summary: getLeadMachineSummary() })
+  const response = await executeTool({ tool: "lead_machine_summary", role: "owner" })
+  return NextResponse.json(response)
 }

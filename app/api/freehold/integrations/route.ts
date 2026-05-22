@@ -1,19 +1,9 @@
 // app/api/freehold/integrations/route.ts
 
 import { NextResponse } from 'next/server';
-import { getAllIntegrations } from '@/lib/freehold/mcp/mock-integrations';
-import { McpResponseEnvelope } from '@/types/freehold-mcp';
+import { executeTool } from '@/lib/freehold/mcp/execute-tool';
 
 export async function GET() {
-  const integrations = getAllIntegrations();
-
-  const response: McpResponseEnvelope<any> = {
-    requestId: crypto.randomUUID(),
-    status: 'success',
-    data: integrations,
-    evidence: [`Retrieved ${integrations.length} integrations`],
-    generatedAt: new Date().toISOString(),
-  };
-
+  const response = await executeTool({ tool: 'integration_summary', role: 'owner' });
   return NextResponse.json(response);
 }
