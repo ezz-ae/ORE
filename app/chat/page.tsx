@@ -48,18 +48,18 @@ export default function ChatPage() {
 
   const shortlistStats = useMemo(() => {
     if (!resultProperties.length) return null
-    const prices = resultProperties.map((p) => p.price).filter((v) => Number.isFinite(v))
+    const prices = resultProperties.map((p: any) => p.price).filter((v: unknown): v is number => Number.isFinite(v as number))
     const minPrice = prices.length ? Math.min(...prices) : 0
     const maxPrice = prices.length ? Math.max(...prices) : 0
     const avgRoi =
-      resultProperties.reduce((sum, p) => sum + (p.investmentMetrics?.roi || 0), 0) /
+      resultProperties.reduce((sum: number, p: any) => sum + (p.investmentMetrics?.roi || 0), 0) /
       Math.max(resultProperties.length, 1)
-    const areaCounts = resultProperties.reduce<Record<string, number>>((acc, p) => {
+    const areaCounts = resultProperties.reduce<Record<string, number>>((acc: Record<string, number>, p: any) => {
       const area = p.location?.area || "Dubai"
       acc[area] = (acc[area] || 0) + 1
       return acc
     }, {})
-    const topArea = Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Dubai"
+    const topArea = Object.entries(areaCounts).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || "Dubai"
     return {
       minPrice,
       maxPrice,
@@ -109,35 +109,35 @@ export default function ChatPage() {
 
   return (
     <div
-      className="flex overflow-hidden bg-[#0A0D10] lg:h-[100dvh]"
+      className="flex overflow-hidden bg-white lg:bg-[#0A0D10] lg:h-[100dvh]"
       style={{ height: isMobileView ? viewportHeight : undefined }}
     >
       {/* ── Main chat column ── */}
       <div className="flex flex-1 flex-col min-w-0 h-[100dvh] lg:h-auto">
 
         {/* Slim header */}
-        <header className="flex-none border-b border-white/[0.06] bg-[#06080A]/80 backdrop-blur">
+        <header className="flex-none border-b border-[#152E24]/10 lg:border-white/[0.06] bg-white/95 lg:bg-[#06080A]/80 backdrop-blur">
           <div className="flex h-12 items-center justify-between px-4">
             <div className="flex items-center gap-3">
               <Link
                 href="/"
-                className="text-white/40 hover:text-white/70 transition-colors text-base leading-none"
+                className="text-[#152E24]/60 lg:text-white/40 hover:text-[#152E24] lg:hover:text-white/70 transition-colors text-base leading-none"
                 aria-label="Back to home"
               >
                 ←
               </Link>
               <div className="h-5 w-px bg-white/10" />
-              <span className="text-[13px] font-medium text-white/80">Freehold AI</span>
+              <span className="text-[13px] font-medium text-[#152E24] lg:text-white/80">Freehold AI</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
             </div>
-            <span className="text-[11px] text-white/30">Dubai Real Estate Intelligence</span>
+            <span className="text-[11px] text-[#152E24]/30 lg:text-white/30">Dubai Real Estate Intelligence</span>
           </div>
         </header>
 
         {/* Messages area */}
         <div
           ref={scrollViewportRef}
-          className="flex-1 overflow-y-auto overscroll-contain scroll-smooth"
+          className="flex-1 overflow-y-auto overscroll-contain scroll-smooth bg-[#FAF8F5] lg:bg-transparent"
         >
           <div className="mx-auto w-full max-w-2xl px-4 py-6 space-y-6 pb-8">
 
@@ -148,10 +148,10 @@ export default function ChatPage() {
                   <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[#D4AF37]/10 ring-8 ring-[#D4AF37]/5">
                     <Sparkles className="h-8 w-8 text-[#D4AF37]" />
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-white">
+                  <h2 className="text-2xl font-bold tracking-tight text-[#152E24] lg:text-white">
                     How can Freehold guide you?
                   </h2>
-                  <p className="mx-auto max-w-sm text-sm text-white/40">
+                  <p className="mx-auto max-w-sm text-sm text-[#152E24]/55 lg:text-white/50">
                     Build shortlists, compare Dubai opportunities, decode market signals, and frame the right next step for your brief.
                   </p>
                 </div>
@@ -161,7 +161,7 @@ export default function ChatPage() {
                     <button
                       key={index}
                       onClick={() => handleSendMessage(question)}
-                      className="rounded-2xl border border-white/[0.06] bg-[#0E1216] p-4 text-left text-[13px] text-white/70 transition-all hover:border-[#D4AF37]/25 hover:text-white/90 hover:bg-[#0E1216]/80"
+                      className="rounded-2xl border border-[#152E24]/10 lg:border-white/[0.06] bg-white lg:bg-[#0E1216] p-4 text-left text-[13px] text-[#152E24]/70 lg:text-white/60 transition-all hover:border-[#C69B3E]/25 lg:hover:border-[#D4AF37]/25 hover:text-[#152E24] lg:hover:text-white/80 lg:hover:bg-[#0E1216]/80"
                     >
                       {question}
                     </button>
@@ -190,10 +190,10 @@ export default function ChatPage() {
         </div>
 
         {/* Input bar */}
-        <div className="flex-none border-t border-white/[0.06] bg-[#06080A] px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        <div className="flex-none border-t border-[#152E24]/[0.06] lg:border-white/[0.06] bg-white lg:bg-[#06080A] px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className="mx-auto w-full max-w-2xl space-y-2">
             {error && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-400">
+              <div className="rounded-xl border border-red-200 lg:border-red-500/30 bg-red-50 lg:bg-red-500/10 px-4 py-2 text-xs text-red-600 lg:text-red-400">
                 {error}
               </div>
             )}
