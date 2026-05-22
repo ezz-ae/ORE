@@ -3,10 +3,8 @@ import Link from "next/link"
 import {
   ArrowRight,
   BarChart3,
-  Building2,
   Clock3,
   MapPinned,
-  ShieldCheck,
   Sparkles,
   TrendingDown,
   TrendingUp,
@@ -81,22 +79,10 @@ export function IntelligenceBlock({ data }: Props) {
   const leadDiscount = below_market[0]
   const pulseMetrics = [
     {
-      label: "Live inventory",
-      value: safeNum(Number(pulse.total_projects)),
-      icon: Building2,
-      accent: "text-white",
-    },
-    {
       label: "Avg rental yield",
       value: safePercent(Number(pulse.avg_yield)),
       icon: TrendingUp,
       accent: "text-[#D4AC50]",
-    },
-    {
-      label: "Verified listings",
-      value: safeNum(Number(pulse.verified_listings)),
-      icon: ShieldCheck,
-      accent: "text-emerald-300",
     },
     {
       label: "Avg entry ticket",
