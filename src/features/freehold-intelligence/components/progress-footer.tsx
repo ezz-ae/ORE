@@ -5,7 +5,7 @@ import type { Milestone } from "../types"
 export function ProgressFooter({ milestone }: { milestone?: Milestone | null }) {
   if (!milestone) return null
   return (
-    <footer className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
+    <footer className="mt-8 border border-white/10 bg-white/[0.03] p-4 text-sm text-white/70">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-[#D4AF37]">Page progress footer</p>

@@ -18,7 +18,7 @@ const tones: Record<string, string> = {
 export function StatusPill({ value, className }: { value?: string | null; className?: string }) {
   const key = value || "planned"
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium capitalize", tones[key] ?? tones.planned, className)}>
+    <span className={cn("inline-flex items-center border px-2.5 py-1 text-xs font-medium capitalize", tones[key] ?? tones.planned, className)}>
       {key.replaceAll("_", " ")}
     </span>
   )
