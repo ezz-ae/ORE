@@ -11,6 +11,16 @@ const safeQuery = async <T,>(sql: string, params: unknown[] = [], fallback: T[] 
   }
 }
 
+const serializeTemporalFields = <T extends Record<string, unknown>>(row: T): T => {
+  const copy = { ...row }
+  for (const key of ["deadline", "created_at", "resolved_at"] as const) {
+    if (copy[key] instanceof Date) {
+      copy[key] = copy[key].toISOString() as T[typeof key]
+    }
+  }
+  return copy
+}
+
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   const rows = await safeQuery<DashboardSnapshot>("SELECT * FROM freehold_private_dashboard", [], [fallbackDashboard])
   return rows[0] ?? fallbackDashboard
@@ -60,7 +70,7 @@ export async function getSystem(systemId: string): Promise<SystemModule | null> 
 
 export async function getMilestones(): Promise<Milestone[]> {
   const rows = await safeQuery<Milestone>("SELECT * FROM freehold_milestone_progress ORDER BY deadline", [], fallbackMilestones)
-  return rows.length ? rows : fallbackMilestones
+  return (rows.length ? rows : fallbackMilestones).map(serializeTemporalFields)
 }
 
 export async function getMilestone(code: string): Promise<Milestone | null> {
@@ -75,20 +85,22 @@ export async function getRbacMatrix(): Promise<RbacRow[]> {
 export async function getReviewItems(kind?: "comment" | "task"): Promise<ReviewItem[]> {
   const filter = kind ? "WHERE kind = $1" : ""
   const params = kind ? [kind] : []
-  return safeQuery<ReviewItem>(`
+  const rows = await safeQuery<ReviewItem>(`
     SELECT item_id, kind, page_ref, body, author, assignee, status, converted_from, created_at, resolved_at
     FROM freehold_comments_tasks
     ${filter}
     ORDER BY created_at DESC, item_id DESC
     LIMIT 100
   `, params)
+  return rows.map(serializeTemporalFields)
 }
 
 export async function getAuditEvents(): Promise<AuditEvent[]> {
-  return safeQuery<AuditEvent>(`
+  const rows = await safeQuery<AuditEvent>(`
     SELECT log_id, actor, role_id, action, target_table, target_id, created_at
     FROM freehold_audit_log
     ORDER BY created_at DESC
     LIMIT 50
   `)
+  return rows.map(serializeTemporalFields)
 }
