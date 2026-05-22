@@ -1,18 +1,44 @@
-import { getReviewItems } from "@/src/features/freehold-intelligence/data-access"
-import { CommentsPanel } from "@/src/features/freehold-intelligence/components/comments-panel"
-import { DeveloperNotes } from "@/src/features/freehold-intelligence/components/developer-notes"
+import { CheckSquare } from 'lucide-react'
+import { getReviewItems } from '@/src/features/freehold-intelligence/data-access'
+import { CommentsPanel } from '@/src/features/freehold-intelligence/components/comments-panel'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 export default async function ReviewRequestsPage() {
-  const comments = await getReviewItems("comment")
+  const comments = await getReviewItems('comment')
+
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+
       <section>
-        <p className="text-xs uppercase tracking-[0.35em] text-[#D4AF37]">Stakeholder review loop</p>
-        <h1 className="mt-3 font-serif text-5xl font-semibold">Review requests</h1>
-        <p className="mt-4 max-w-3xl text-white/65">Comments are intentionally lightweight; once a decision or action is required, convert them into tasks.</p>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <CheckSquare className="h-3.5 w-3.5" /> Reviews
+        </div>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+          Decisions waiting on
+          <br />
+          <span className="text-white/40">a human.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+          Comments stay lightweight. The moment a decision or action is required, convert them into tasks — the AI tracks the conversion and the success event.
+        </p>
       </section>
-      <CommentsPanel pageRef="freehold-intelligence/review-requests" items={comments} />
-      <DeveloperNotes title="Review Requests" notes={["This page writes to freehold_comments_tasks with kind='comment'.", "Conversion creates a second row with kind='task' and converted_from pointing to the original comment."]} />
+
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Ask about approvals, reviews, blockers…"
+          suggestions={[
+            'What needs my approval today?',
+            'Show landing reviews pending.',
+            'Which approvals are time-sensitive?',
+          ]}
+        />
+      </section>
+
+      <section className="mt-20">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Review queue</div>
+        <h2 className="mt-2 mb-6 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Comments and pending decisions</h2>
+        <CommentsPanel pageRef="freehold-intelligence/review-requests" items={comments} />
+      </section>
     </div>
   )
 }

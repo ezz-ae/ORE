@@ -1,289 +1,220 @@
 import Link from 'next/link'
-import {
-  ArrowRight,
-  Bot,
-  CheckCircle2,
-  Clock3,
-  LockKeyhole,
-  MessageSquare,
-  Send,
-  Sparkles,
-  TriangleAlert,
-  Zap,
-} from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import {
   currentServerUser,
-  getRoleScope,
   serverSummary,
-  type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
-import { ProgressFooter } from '@/src/features/freehold-intelligence/components/progress-footer'
-import { getMilestones } from '@/src/features/freehold-intelligence/data-access'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const priorityBorder: Record<ServerActionCard['priority'], string> = {
-  critical: 'border-l-red-400/60',
-  high:     'border-l-[#D4AF37]/60',
-  medium:   'border-l-sky-400/50',
-  low:      'border-l-white/20',
-}
-const priorityBg: Record<ServerActionCard['priority'], string> = {
-  critical: 'border-red-400/25 bg-red-500/[0.07]',
-  high:     'border-[#D4AF37]/25 bg-[#D4AF37]/[0.06]',
-  medium:   'border-sky-300/20 bg-sky-400/[0.06]',
-  low:      'border-white/10 bg-white/[0.03]',
-}
+const HERO_IMAGE = '/images/property-beach-villa.jpg'
+const STORY_IMAGES = ['/images/property-city-loft.jpg', '/images/property-lakefront-modern.jpg']
 
-function ActionCard({ item }: { item: ServerActionCard }) {
-  return (
-    <article className={`border border-l-2 p-4 ${priorityBorder[item.priority]} ${priorityBg[item.priority]}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
-            {item.app} · {item.type.replace('_', ' ')}
-          </div>
-          <h3 className="mt-1.5 text-sm font-semibold leading-snug text-white">{item.title}</h3>
-        </div>
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/35">{item.priority}</span>
-      </div>
-      <p className="mt-2.5 text-xs leading-5 text-white/60">{item.body}</p>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/35">
-        <span>Owner: {item.owner}</span>
-        <span>Status: {item.status}</span>
-        {item.due && <span className="text-[#D4AF37]/70">Due: {item.due}</span>}
-      </div>
-    </article>
-  )
+function greetingFor(hour: number) {
+  if (hour < 5)  return 'Working late'
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  if (hour < 22) return 'Good evening'
+  return 'Still up'
 }
 
-export default async function FreeholdIntelligencePage() {
-  const [milestones, serverRes, blockRes] = await Promise.all([
-    getMilestones(),
+export default async function FreeholdIntelligenceHome() {
+  const [serverRes, blockRes] = await Promise.all([
     executeTool({ tool: 'server_summary', role: 'owner' }),
     executeTool({ tool: 'launch_blockers', role: 'owner' }),
   ])
 
-  const activeMilestone = milestones.find((m) => m.status === 'in_progress') ?? milestones[0]
-  const roleScope = getRoleScope(currentServerUser.role)
-  const liveServer = serverRes.data
+  const live = serverRes.data
   const openBlockers: number = blockRes.data?.criticalCount ?? 0
+  const totalProjects = live?.publicData?.totalProjects
+  const openTasks = live?.privateServer?.openTasks
+  const auditEvents = live?.privateServer?.auditEvents24h
 
-  const statsRow = [
-    { label: 'Live projects',     value: liveServer?.publicData?.totalProjects?.toLocaleString() ?? '—' },
-    { label: 'Active users',      value: liveServer?.privateServer?.activeUsers ?? '—' },
-    { label: 'Open tasks',        value: liveServer?.privateServer?.openTasks ?? '—' },
-    { label: 'Launch blockers',   value: openBlockers, accent: openBlockers > 0 ? 'text-red-300' : 'text-emerald-300' },
-    { label: 'Milestones done',   value: `${liveServer?.privateServer?.milestonesDone ?? '—'} / ${liveServer?.privateServer?.milestonesTotal ?? '—'}` },
-    { label: 'Audit 24h',         value: liveServer?.privateServer?.auditEvents24h ?? '—' },
-  ]
+  const hour = new Date().getHours()
+  const greeting = greetingFor(hour)
+  const date = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
 
-  const allActionCards = [
+  // Pick the single most important story
+  const allStories = [
     ...serverSummary.urgentTasks,
     ...serverSummary.blockedItems,
     ...serverSummary.pendingApprovals,
   ]
+  const hero = allStories.find((s) => s.priority === 'critical') ?? allStories[0]
+  const supporting = allStories.filter((s) => s.id !== hero?.id).slice(0, 2)
+
+  const apps = [
+    {
+      href: '/freehold-intelligence/lead-machine',
+      label: 'Lead Machine',
+      blurb: 'Listings, landings, ad requests, approvals.',
+      hint: 'Operate',
+      accent: 'from-[#D4AF37]/20 via-[#D4AF37]/[0.08] to-transparent',
+    },
+    {
+      href: '/freehold-intelligence/crm',
+      label: 'CRM Intelligence',
+      blurb: 'Refined leads, intent scoring, agent signals.',
+      hint: 'Operate',
+      accent: 'from-emerald-500/20 via-emerald-500/[0.06] to-transparent',
+    },
+    {
+      href: '/freehold-intelligence/notebook',
+      label: 'Notebook',
+      blurb: 'Conversations, briefs, exports, drafts.',
+      hint: 'Create',
+      accent: 'from-sky-500/20 via-sky-500/[0.06] to-transparent',
+    },
+  ]
 
   return (
-    <div className="grid min-h-full gap-0 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-20">
 
-      {/* ── Main column ─────────────────────────────────────────── */}
-      <section className="min-w-0 px-4 py-5 sm:px-6 lg:px-8">
+      {/* ─────────────────────────── GREETING ─────────────────────────── */}
+      <section>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/35">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
+          {date} · {currentServerUser.accountLevel} session
+        </div>
+        <h1 className="mt-5 text-[44px] font-semibold leading-[1.02] tracking-tight text-white sm:text-6xl">
+          {greeting},
+          <br />
+          <span className="text-white/40">{currentServerUser.name.split(' ')[0]}.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[19px] leading-[1.55] text-white/65 sm:text-[21px] sm:leading-[1.55]">
+          {serverSummary.summaryText}
+        </p>
+      </section>
 
-        {/* Session bar */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-white/[0.03] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center border border-[#D4AF37]/35 bg-[#D4AF37]/10">
-              <Bot className="h-4 w-4 text-[#D4AF37]" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">AI Home</div>
-              <div className="text-xs text-white/40">Role-aware private operating session</div>
-            </div>
+      {/* ─────────────────────────── AI PROMPT ─────────────────────────── */}
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Ask anything about your business"
+          suggestions={serverSummary.askableQuestions.slice(0, 4)}
+        />
+      </section>
+
+      {/* ─────────────────────────── HERO STORY ─────────────────────────── */}
+      {hero && (
+        <section className="mt-20">
+          <div className="mb-5 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <Sparkles className="h-3 w-3" /> Today, in one move
           </div>
-          <div className="flex items-center gap-2 text-xs text-emerald-300">
-            <LockKeyhole className="h-3.5 w-3.5" />
-            {currentServerUser.accountLevel} access
-          </div>
-        </div>
-
-        {/* Live stats row */}
-        <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {statsRow.map(({ label, value, accent }) => (
-            <div key={label} className="border border-white/10 bg-white/[0.025] p-3">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">{label}</div>
-              <div className={`mt-1.5 text-xl font-semibold tabular-nums ${(accent as string | undefined) ?? 'text-white'}`}>
-                {String(value)}
+          <Link
+            href="/freehold-intelligence/review-requests"
+            className="group relative block overflow-hidden rounded-[28px] border border-white/[0.06]"
+          >
+            <div
+              className="aspect-[4/5] bg-cover bg-center transition duration-700 group-hover:scale-[1.02] sm:aspect-[16/10]"
+              style={{ backgroundImage: `url(${HERO_IMAGE})` }}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06080A] via-[#06080A]/40 to-transparent" />
+            <div className="absolute inset-0 flex flex-col justify-end p-8 sm:p-12">
+              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]">
+                {hero.app} · {hero.priority} priority
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Greeting */}
-        <div className="border border-[#D4AF37]/15 bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.10),transparent_28rem)] p-5 sm:p-6">
-          <div className="flex items-start gap-4">
-            <div className="grid h-11 w-11 shrink-0 place-items-center border border-[#D4AF37]/35 bg-[#D4AF37]/10">
-              <Sparkles className="h-5 w-5 text-[#D4AF37]" />
-            </div>
-            <div className="max-w-4xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">Generated 24-hour briefing</p>
-              <h1 className="mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">{serverSummary.greeting}</h1>
-              <p className="mt-3 text-sm leading-7 text-white/60">{serverSummary.summaryText}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link href="/freehold-intelligence/review-requests" className="inline-flex items-center gap-2 border border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] px-3 py-1.5 text-xs font-semibold text-[#F8E7AE] transition hover:bg-[#D4AF37]/15">
-                  Review approvals <ArrowRight className="h-3 w-3" />
-                </Link>
-                <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-2 border border-white/10 px-3 py-1.5 text-xs text-white/55 transition hover:text-white">
-                  <Zap className="h-3 w-3 text-[#D4AF37]" /> Integration status
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action cards + Ask panel */}
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-              <TriangleAlert className="h-4 w-4 text-[#D4AF37]" />
-              Urgent operating cards
-              <span className="ml-1 text-xs font-normal text-white/35">({allActionCards.length})</span>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {allActionCards.map((item) => <ActionCard key={item.id} item={item} />)}
-            </div>
-          </div>
-
-          <aside>
-            <div className="border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <MessageSquare className="h-4 w-4 text-[#D4AF37]" />
-                Ask the server
-              </div>
-              <div className="mt-4 grid gap-2">
-                {serverSummary.askableQuestions.map((q) => (
-                  <button key={q} className="border border-white/10 bg-black/15 px-3 py-2.5 text-left text-xs leading-5 text-white/60 transition hover:border-[#D4AF37]/35 hover:text-white">
-                    {q}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-4 flex gap-2 border border-white/10 bg-black/20 p-2">
-                <input
-                  className="min-w-0 flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/25"
-                  placeholder="Ask within your role scope..."
-                />
-                <button className="grid h-9 w-9 shrink-0 place-items-center bg-[#D4AF37] text-[#07110D]">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-3 text-[11px] text-white/30">
-                Scope: {roleScope.slice(0, 3).join(', ')}…
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        {/* Secondary alerts */}
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {[...serverSummary.crmAlerts, ...serverSummary.leadMachineAlerts, ...serverSummary.notebookRecentOutputs].map((item) => (
-            <ActionCard key={item.id} item={item} />
-          ))}
-        </div>
-
-        {/* Role scope */}
-        <div className="mt-5 border border-white/10 bg-white/[0.03] p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-white">Role answer scope</div>
-              <p className="mt-0.5 text-xs text-white/40">
-                The AI answers only within this account level until real auth and approvals are connected.
+              <h2 className="mt-3 max-w-2xl text-3xl font-semibold leading-[1.1] tracking-tight text-white sm:text-[40px]">
+                {hero.title}
+              </h2>
+              <p className="mt-4 max-w-xl text-[15px] leading-[1.6] text-white/75 sm:text-base">
+                {hero.body}
               </p>
+              <div className="mt-7 inline-flex items-center gap-2 self-start rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#06080A] transition group-hover:gap-3">
+                Resolve now <ArrowUpRight className="h-4 w-4" />
+              </div>
             </div>
-            <Link href="/freehold-intelligence/security" className="inline-flex items-center gap-1.5 shrink-0 text-xs text-[#D4AF37]">
-              Security model <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {roleScope.map((scope) => (
-              <span key={scope} className="border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/55">{scope}</span>
+          </Link>
+        </section>
+      )}
+
+      {/* ─────────────────────────── ALSO TODAY ─────────────────────────── */}
+      {supporting.length > 0 && (
+        <section className="mt-16">
+          <div className="mb-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Also today</div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {supporting.map((s, i) => (
+              <Link
+                key={s.id}
+                href="/freehold-intelligence/review-requests"
+                className="group relative block overflow-hidden rounded-[24px] border border-white/[0.06]"
+              >
+                <div
+                  className="aspect-[4/5] bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
+                  style={{ backgroundImage: `url(${STORY_IMAGES[i % STORY_IMAGES.length]})` }}
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06080A] via-[#06080A]/60 to-transparent" />
+                <div className="absolute inset-0 flex flex-col justify-end p-6">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/70">
+                    {s.app}
+                  </div>
+                  <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-white/65">
+                    {s.body}
+                  </p>
+                </div>
+              </Link>
             ))}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className="mt-6">
-          <ProgressFooter milestone={activeMilestone} />
+      {/* ─────────────────────────── ESSAY / EDITORIAL ─────────────────────────── */}
+      <section className="mt-20">
+        <div className="mb-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">A note for today</div>
+        <div className="rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
+          <p className="text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">
+            {serverSummary.recommendedActions[0]?.body || 'Approving the landing review queue first unlocks campaign packaging and removes the highest-value blocker.'}
+          </p>
+          <p className="mt-5 text-[15px] leading-[1.7] text-white/55">
+            The strongest CRM signal today is delayed response, not lead volume. Push the high-intent follow-ups before assigning new ones, and let the Lead Machine package the campaign-ready Palm and Hills listings while you do.
+          </p>
         </div>
       </section>
 
-      {/* ── Right sidebar ────────────────────────────────────────── */}
-      <aside className="border-l border-white/10 bg-[#07110D]/85 p-4 xl:min-h-full">
-        <div className="grid gap-4">
-
-          {/* Today's actions */}
-          <section className="border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Clock3 className="h-4 w-4 text-[#D4AF37]" />
-              Today's recommended actions
-            </div>
-            <div className="mt-4 grid gap-3">
-              {serverSummary.recommendedActions.map((item) => (
-                <div key={item.id} className="border border-white/10 bg-black/15 p-3">
-                  <div className="text-sm font-semibold text-white">{item.title}</div>
-                  <p className="mt-1.5 text-xs leading-5 text-white/50">{item.body}</p>
-                  <div className="mt-2 text-[11px] text-white/30">{item.app} · {item.owner}</div>
+      {/* ─────────────────────────── APPS (App Store style) ─────────────────────────── */}
+      <section className="mt-20">
+        <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Open in app</div>
+        <h2 className="mb-6 text-2xl font-semibold tracking-tight text-white">Where to go from here</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {apps.map((app) => (
+            <Link
+              key={app.href}
+              href={app.href}
+              className="group relative overflow-hidden rounded-3xl border border-white/[0.06] bg-[#0A0D10] p-6 transition hover:border-[#D4AF37]/25"
+            >
+              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${app.accent} opacity-70 transition group-hover:opacity-100`} />
+              <div className="relative">
+                <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/45">{app.hint}</div>
+                <div className="mt-8 text-lg font-semibold tracking-tight text-white">{app.label}</div>
+                <p className="mt-1 text-[13px] leading-snug text-white/55">{app.blurb}</p>
+                <div className="mt-5 inline-flex items-center gap-1 text-[12px] font-medium text-[#D4AF37] transition group-hover:gap-2">
+                  Open <ArrowUpRight className="h-3 w-3" />
                 </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Pending approvals */}
-          <section className="border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
-                Pending approvals
               </div>
-              <span className="border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2 py-0.5 text-[10px] font-semibold text-[#F8E7AE]">
-                {serverSummary.pendingApprovals.length}
-              </span>
-            </div>
-            <div className="mt-4 grid gap-2">
-              {serverSummary.pendingApprovals.map((item) => (
-                <Link
-                  key={item.id}
-                  href="/freehold-intelligence/review-requests"
-                  className="block border border-white/10 bg-black/15 p-3 text-xs text-white/60 transition hover:border-[#D4AF37]/30 hover:text-white"
-                >
-                  <div className="font-semibold text-white">{item.title}</div>
-                  <div className="mt-0.5 text-white/40">{item.app} · {item.owner}</div>
-                </Link>
-              ))}
-            </div>
-            <Link href="/freehold-intelligence/review-requests" className="mt-3 flex items-center justify-center gap-2 border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2.5 text-xs font-semibold text-[#F8E7AE]">
-              Open review queue <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </section>
-
-          {/* Quick links */}
-          <section className="border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Quick access</div>
-            <div className="grid gap-1.5">
-              {[
-                ['/freehold-intelligence/apps/lead-machine', 'Lead Machine'],
-                ['/freehold-intelligence/crm', 'CRM Intelligence'],
-                ['/freehold-intelligence/integrations', 'Integrations'],
-                ['/freehold-intelligence/milestones', 'Milestones'],
-                ['/freehold-intelligence/server-status', 'Server Status'],
-              ].map(([href, label]) => (
-                <Link key={href} href={href} className="flex items-center justify-between border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-white/50 transition hover:border-[#D4AF37]/20 hover:text-white">
-                  {label} <ArrowRight className="h-3 w-3 text-white/25" />
-                </Link>
-              ))}
-            </div>
-          </section>
-
+          ))}
         </div>
-      </aside>
+      </section>
 
+      {/* ─────────────────────────── AMBIENT FOOTER ─────────────────────────── */}
+      <footer className="mt-24 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-white/[0.05] pt-8 text-[12px] text-white/30">
+        <span className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+          Server live
+        </span>
+        {totalProjects != null && <span>{Number(totalProjects).toLocaleString()} projects</span>}
+        {openTasks != null && <span>{openTasks} open tasks</span>}
+        <span className={openBlockers > 0 ? 'text-red-300/70' : ''}>
+          {openBlockers} critical {openBlockers === 1 ? 'blocker' : 'blockers'}
+        </span>
+        {auditEvents != null && <span>{auditEvents} audit · 24h</span>}
+      </footer>
     </div>
   )
 }

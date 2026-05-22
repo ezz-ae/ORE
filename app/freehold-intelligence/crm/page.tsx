@@ -1,303 +1,157 @@
 import Link from 'next/link'
-import {
-  ArrowRight,
-  Bot,
-  MessageSquareText,
-  PhoneCall,
-  Send,
-  ShieldAlert,
-  TimerReset,
-  TrendingUp,
-  Users,
-  Zap,
-} from 'lucide-react'
+import { ArrowUpRight, PhoneCall, MessageCircle, Users } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
-import { getMilestones } from '@/src/features/freehold-intelligence/data-access'
-import { ProgressFooter } from '@/src/features/freehold-intelligence/components/progress-footer'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const tabs = ['Today', 'Leads', 'Pipeline', 'Agents', 'Sources', 'Follow-ups', 'AI Summary', 'Tasks']
+const PORTRAIT_TINTS = [
+  'from-[#D4AF37]/35 via-[#D4AF37]/10 to-transparent',
+  'from-emerald-500/30 via-emerald-500/10 to-transparent',
+  'from-sky-500/30 via-sky-500/10 to-transparent',
+  'from-rose-500/30 via-rose-500/10 to-transparent',
+  'from-violet-500/30 via-violet-500/10 to-transparent',
+]
 
-function urgencyBadge(urgency: string) {
-  switch (urgency) {
-    case 'critical': return 'border-red-300/30 bg-red-500/10 text-red-200'
-    case 'high':     return 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#F8E7AE]'
-    case 'medium':   return 'border-sky-300/25 bg-sky-400/10 text-sky-200'
-    default:         return 'border-white/10 bg-white/[0.04] text-white/55'
-  }
+function urgencyTone(urgency: string) {
+  if (urgency === 'critical') return { label: 'Critical', dot: 'bg-red-400', text: 'text-red-300' }
+  if (urgency === 'high')     return { label: 'High',     dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]' }
+  if (urgency === 'medium')   return { label: 'Medium',   dot: 'bg-sky-400', text: 'text-sky-200' }
+  return { label: 'Low', dot: 'bg-white/30', text: 'text-white/55' }
 }
 
-function IntentBar({ score }: { score: number }) {
-  const color = score >= 85 ? 'bg-emerald-400' : score >= 70 ? 'bg-[#D4AF37]' : 'bg-sky-400'
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-[11px] text-white/35">
-        <span>Intent score</span>
-        <span className="tabular-nums font-semibold text-white/60">{score}</span>
-      </div>
-      <div className="h-1.5 bg-white/[0.07]">
-        <div className={`h-full transition-all ${color}`} style={{ width: `${score}%` }} />
-      </div>
-    </div>
-  )
+function initials(name: string) {
+  return name
+    .split(' ')
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 }
 
 export default async function FreeholdCrmPage() {
-  const milestones = await getMilestones()
-  const m4 = milestones.find((m) => m.code === 'M4') ?? milestones[0]
-
   const hotLeads = crmLeads.filter((l) => l.urgency === 'critical' || l.urgency === 'high')
-  const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
+  const ranked = [...crmLeads].sort((a, b) => b.intentScore - a.intentScore)
 
   return (
-    <div className="min-h-full px-4 py-5 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+      {/* Header */}
+      <section>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <Users className="h-3.5 w-3.5" /> CRM Intelligence
+        </div>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+          The people
+          <br />
+          <span className="text-white/40">waiting for you.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+          {hotLeads.length} {hotLeads.length === 1 ? 'lead needs' : 'leads need'} action today. Quality matters more than volume — the AI ranks by intent, duplicate risk and response delay before suggesting the next move.
+        </p>
+      </section>
 
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <section className="border border-white/10 bg-white/[0.03] p-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">CRM Intelligence</p>
-            <h1 className="mt-3 text-3xl font-semibold text-white">HubSpot-refined sales workspace</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">
-              Lead quality, urgency, duplicate risk, agent delays and next-best-action — shaped from HubSpot data. Prioritises signals over raw CRM tables.
-            </p>
-          </div>
+      {/* AI Prompt */}
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Ask about leads, agents, follow-ups…"
+          suggestions={[
+            'Which leads need urgent follow-up?',
+            'Which agent is delayed on hot leads?',
+            'Draft a follow-up for Rami.',
+            'Compare lead quality by source.',
+          ]}
+        />
+      </section>
+
+      {/* Section title */}
+      <section className="mt-20">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Today's queue</div>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          Ranked by what matters now
+        </h2>
+
+        <div className="mt-8 grid gap-6">
+          {ranked.map((lead, i) => {
+            const tone = urgencyTone(lead.urgency)
+            const tint = PORTRAIT_TINTS[i % PORTRAIT_TINTS.length]
+            return (
+              <article
+                key={lead.id}
+                className="overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0A0D10]"
+              >
+                {/* Top section: portrait + identity */}
+                <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-7 sm:p-8">
+                  <div className={`relative grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full border border-white/[0.06] bg-gradient-to-br ${tint}`}>
+                    <span className="text-2xl font-semibold tracking-tight text-white">{initials(lead.name)}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h3 className="text-2xl font-semibold tracking-tight text-white sm:text-[28px]">{lead.name}</h3>
+                      <span className={`flex items-center gap-1.5 text-[12px] font-medium ${tone.text}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                        {tone.label} intent · {lead.intentScore}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-white/45">
+                      <span>{lead.stage}</span>
+                      <span className="text-white/20">·</span>
+                      <span>{lead.source}</span>
+                      <span className="text-white/20">·</span>
+                      <span>{lead.assignedAgent}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI take */}
+                <div className="border-t border-white/[0.06] px-6 py-5 sm:px-8 sm:py-6">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">What the AI sees</div>
+                  <p className="mt-2 text-[15px] leading-[1.65] text-white/80">
+                    {lead.aiSummary}
+                  </p>
+                </div>
+
+                {/* Suggested message */}
+                <div className="border-t border-white/[0.06] bg-white/[0.015] px-6 py-5 sm:px-8 sm:py-6">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">Suggested WhatsApp</div>
+                  <p className="mt-2 text-[15px] italic leading-[1.6] text-white/75">
+                    "{lead.suggestedMessage}"
+                  </p>
+                </div>
+
+                {/* Next move */}
+                <div className="flex flex-col gap-3 border-t border-white/[0.06] px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">Next move</div>
+                    <div className="mt-1 text-[14px] font-medium text-white/85">{lead.nextBestAction}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#06080A] transition hover:gap-2">
+                      <PhoneCall className="h-3.5 w-3.5" /> Call now
+                    </button>
+                    <button className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/75 transition hover:border-[#D4AF37]/30 hover:text-white">
+                      <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                    </button>
+                  </div>
+                </div>
+
+                {/* Risk strip (only when present) */}
+                {(lead.duplicateRisk || lead.wrongNumberRisk) && (
+                  <div className="border-t border-white/[0.06] bg-orange-500/[0.04] px-6 py-3 text-[12px] text-orange-200/85 sm:px-8">
+                    {lead.duplicateRisk && <span className="mr-4">⚠︎ Duplicate risk — review before assignment.</span>}
+                    {lead.wrongNumberRisk && <span>⚠︎ Wrong number risk — verify contact.</span>}
+                  </div>
+                )}
+              </article>
+            )
+          })}
         </div>
       </section>
 
-      {/* ── Summary stats ──────────────────────────────────────── */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border border-white/10 bg-white/[0.03] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Total leads</div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-semibold text-white">{crmLeads.length}</span>
-            <span className="text-xs text-white/35">today</span>
-          </div>
-        </div>
-        <div className="border border-red-300/20 bg-red-500/[0.05] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Needs action</div>
-          <div className="mt-2 text-3xl font-semibold text-red-300">{hotLeads.length}</div>
-        </div>
-        <div className="border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Avg intent</div>
-          <div className="mt-2 text-3xl font-semibold text-[#D4AF37]">{avgIntent}</div>
-        </div>
-        <div className="border border-white/10 bg-white/[0.03] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Duplicate risk</div>
-          <div className="mt-2 text-3xl font-semibold text-[#F8E7AE]">
-            {crmLeads.filter((l) => l.duplicateRisk).length}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Tabs ───────────────────────────────────────────────── */}
-      <div className="mt-5 flex gap-1 overflow-x-auto border-b border-white/10 pb-0">
-        {tabs.map((tab, i) => (
-          <button
-            key={tab}
-            className={`shrink-0 border-b-2 px-4 py-2.5 text-xs font-medium transition ${
-              i === 0
-                ? 'border-b-[#D4AF37] text-white'
-                : 'border-b-transparent text-white/45 hover:border-b-white/20 hover:text-white/70'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-
-        {/* ── Lead cards ─────────────────────────────────────────── */}
-        <section className="grid gap-4">
-          {crmLeads.map((lead) => (
-            <article key={lead.id} className="border border-white/10 bg-white/[0.03]">
-              {/* Lead header */}
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.07] p-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-white">{lead.name}</h2>
-                    <span className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${urgencyBadge(lead.urgency)}`}>
-                      {lead.stage}
-                    </span>
-                    {lead.duplicateRisk && (
-                      <span className="border border-orange-300/25 bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-orange-200">
-                        Dup risk
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-sm leading-5 text-white/55">{lead.aiSummary}</p>
-                </div>
-                <div className="shrink-0 text-right text-xs text-white/40">
-                  <div className="font-medium text-white/60">{lead.assignedAgent}</div>
-                  <div>{lead.source}</div>
-                  <div className="mt-0.5 text-white/30">{lead.phone}</div>
-                </div>
-              </div>
-
-              {/* Intent bar */}
-              <div className="border-b border-white/[0.07] px-4 py-3">
-                <IntentBar score={lead.intentScore} />
-              </div>
-
-              {/* Three panels */}
-              <div className="grid gap-0 md:grid-cols-3">
-                <div className="border-r border-white/[0.07] p-4">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                    <TimerReset className="h-3.5 w-3.5 text-[#D4AF37]" />
-                    Next best action
-                  </div>
-                  <p className="mt-2 text-sm leading-5 text-white/70">{lead.nextBestAction}</p>
-                </div>
-                <div className="border-r border-white/[0.07] p-4">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                    <MessageSquareText className="h-3.5 w-3.5 text-[#D4AF37]" />
-                    Suggested WhatsApp
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-white/60 italic">"{lead.suggestedMessage}"</p>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                    <ShieldAlert className="h-3.5 w-3.5 text-[#D4AF37]" />
-                    Risk signals
-                  </div>
-                  <div className="mt-2 grid gap-1.5 text-xs">
-                    <div className={`flex items-center gap-1.5 ${lead.duplicateRisk ? 'text-orange-200' : 'text-white/40'}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${lead.duplicateRisk ? 'bg-orange-400' : 'bg-white/20'}`} />
-                      Duplicate: {lead.duplicateRisk ? 'Review required' : 'Clear'}
-                    </div>
-                    <div className={`flex items-center gap-1.5 ${lead.wrongNumberRisk ? 'text-red-200' : 'text-white/40'}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${lead.wrongNumberRisk ? 'bg-red-400' : 'bg-white/20'}`} />
-                      Wrong number: {lead.wrongNumberRisk ? 'Risk' : 'Clear'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-3">
-                <div className="flex flex-wrap gap-2">
-                  <button className="border border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] px-3 py-1.5 text-xs font-semibold text-[#F8E7AE] transition hover:bg-[#D4AF37]/15">
-                    <PhoneCall className="mr-1.5 inline h-3 w-3" />Call now
-                  </button>
-                  <button className="border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-[#D4AF37]/25 hover:text-white">
-                    Send WhatsApp
-                  </button>
-                  <button className="border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-[#D4AF37]/25 hover:text-white">
-                    Open in CRM
-                  </button>
-                  <button className="border border-white/10 px-3 py-1.5 text-xs text-white/50 transition hover:border-[#D4AF37]/25 hover:text-white">
-                    Create task
-                  </button>
-                </div>
-                <div className="text-xs text-white/30">
-                  Last contact: {new Date(lead.lastContactAt).toLocaleDateString()}
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        {/* ── AI sidebar ─────────────────────────────────────────── */}
-        <aside className="space-y-4">
-          <div className="border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Bot className="h-4 w-4 text-[#D4AF37]" />
-              CRM AI summary
-            </div>
-            <div className="mt-3 border border-[#D4AF37]/15 bg-black/20 p-3">
-              <p className="text-sm leading-6 text-white/70">
-                Three leads need attention today. Rami should be called first (critical intent, waiting for comparison). Sara needs duplicate review before assignment. Michael needs a two-project comparison sent before the session ends.
-              </p>
-            </div>
-            <div className="mt-4 grid gap-1.5">
-              {[
-                'Which leads need urgent follow-up?',
-                'Which agent is delayed on hot leads?',
-                'Draft a follow-up message for Rami.',
-                'Compare lead quality by source.',
-                'Show me today\'s sales queue.',
-              ].map((prompt) => (
-                <button key={prompt} className="border border-white/10 bg-black/20 px-3 py-2.5 text-left text-xs leading-5 text-white/55 transition hover:border-[#D4AF37]/30 hover:text-white">
-                  {prompt}
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 flex gap-2 border border-white/10 bg-black/20 p-2">
-              <input
-                className="min-w-0 flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/25"
-                placeholder="Ask about leads, agents, follow-ups..."
-              />
-              <button className="grid h-9 w-9 shrink-0 place-items-center bg-[#D4AF37] text-[#07110D]">
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-            <button className="mt-3 flex w-full items-center justify-center gap-2 bg-[#D4AF37] px-4 py-3 text-sm font-semibold text-[#07110D] transition hover:bg-[#D4AF37]/90">
-              <PhoneCall className="h-4 w-4" />
-              Build today's sales queue
-            </button>
-          </div>
-
-          {/* Agent summary */}
-          <div className="border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Users className="h-4 w-4 text-[#D4AF37]" />
-              Agent load today
-            </div>
-            <div className="mt-3 grid gap-2">
-              {[
-                { name: 'Noura', leads: 1, delayed: false },
-                { name: 'Omar', leads: 1, delayed: false },
-                { name: 'Layla', leads: 1, delayed: true },
-              ].map(({ name, leads, delayed }) => (
-                <div key={name} className="flex items-center justify-between border border-white/10 bg-black/15 px-3 py-2.5">
-                  <span className="text-sm text-white">{name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/40">{leads} lead{leads !== 1 ? 's' : ''}</span>
-                    {delayed && (
-                      <span className="border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-1.5 py-0.5 text-[10px] text-[#F8E7AE]">delayed</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Lead sources */}
-          <div className="border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <TrendingUp className="h-4 w-4 text-[#D4AF37]" />
-              Lead sources
-            </div>
-            <div className="mt-3 grid gap-2">
-              {[
-                { source: 'Palm investor landing', count: 1, quality: 92 },
-                { source: 'Market tracker', count: 1, quality: 78 },
-                { source: 'WhatsApp organic', count: 1, quality: 84 },
-              ].map(({ source, count, quality }) => (
-                <div key={source} className="border border-white/10 bg-black/15 p-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-white/70">{source}</span>
-                    <span className="tabular-nums font-semibold text-[#D4AF37]">{quality}</span>
-                  </div>
-                  <div className="mt-1.5 h-1 bg-white/[0.07]">
-                    <div className="h-full bg-[#D4AF37]" style={{ width: `${quality}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border border-white/10 bg-white/[0.03] p-4">
-            <Link href="/freehold-intelligence/notebook" className="flex items-center justify-between text-sm text-[#D4AF37]">
-              Open Notebook to draft messages <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </aside>
-      </div>
-
-      <div className="mt-6">
-        <ProgressFooter milestone={m4} />
-      </div>
+      <footer className="mt-20 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/[0.05] pt-8 text-[12px] text-white/35">
+        <span>{crmLeads.length} {crmLeads.length === 1 ? 'lead' : 'leads'} today</span>
+        <span className="text-red-300/70">{hotLeads.length} need action</span>
+        <Link href="/freehold-intelligence/notebook" className="text-[#D4AF37] inline-flex items-center gap-1">
+          Open Notebook <ArrowUpRight className="h-3 w-3" />
+        </Link>
+      </footer>
     </div>
   )
 }

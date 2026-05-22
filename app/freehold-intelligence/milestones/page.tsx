@@ -1,159 +1,108 @@
 import Link from 'next/link'
-import { ArrowRight, CalendarDays, CheckCircle2, Circle, Clock, Flag, TrendingUp } from 'lucide-react'
+import { ArrowUpRight, Flag } from 'lucide-react'
 import { getMilestones } from '@/src/features/freehold-intelligence/data-access'
-import { ProgressFooter } from '@/src/features/freehold-intelligence/components/progress-footer'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-function healthCfg(health?: string | null) {
+function healthTone(health?: string | null) {
   switch (health) {
-    case 'complete': case 'on_track':
-      return { dot: 'bg-emerald-400', bar: 'bg-emerald-400', text: 'text-emerald-200', chip: 'border-emerald-300/25 bg-emerald-400/10 text-emerald-200' }
-    case 'at_risk':
-      return { dot: 'bg-[#D4AF37]',   bar: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]', chip: 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#F8E7AE]' }
-    case 'overdue':
-      return { dot: 'bg-red-400',     bar: 'bg-red-400',     text: 'text-red-200',   chip: 'border-red-300/25 bg-red-500/10 text-red-200' }
-    default:
-      return { dot: 'bg-white/20',    bar: 'bg-white/20',    text: 'text-white/50',  chip: 'border-white/15 bg-white/5 text-white/50' }
+    case 'complete':
+    case 'on_track': return { dot: 'bg-emerald-400', text: 'text-emerald-300', bar: 'bg-emerald-400' }
+    case 'at_risk':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#F8E7AE]',  bar: 'bg-[#D4AF37]'  }
+    case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
+    default:         return { dot: 'bg-white/25',   text: 'text-white/55',   bar: 'bg-white/25'   }
   }
 }
 
-function statusCfg(status: string) {
+function statusLabel(status: string) {
   switch (status) {
-    case 'live': case 'done':
-      return { label: 'Done',        color: 'text-emerald-200' }
-    case 'in_progress':
-      return { label: 'In progress', color: 'text-[#D4AF37]'  }
-    case 'blocked':
-      return { label: 'Blocked',     color: 'text-red-200'    }
-    default:
-      return { label: 'Planned',     color: 'text-white/50'   }
+    case 'done':
+    case 'live':        return 'Done'
+    case 'in_progress': return 'In progress'
+    case 'blocked':     return 'Blocked'
+    default:            return 'Planned'
   }
 }
 
 export default async function MilestonesPage() {
   const milestones = await getMilestones()
-  const active = milestones.find((m) => m.status === 'in_progress') ?? milestones[0]
-  const doneCount = milestones.filter((m) => m.status === 'done' || m.status === 'live').length
-  const activeCount = milestones.filter((m) => m.status === 'in_progress').length
-  const totalProgress = Math.round(milestones.reduce((s, m) => s + (m.progress_pct ?? 0), 0) / milestones.length)
+  const done = milestones.filter((m) => m.status === 'done' || m.status === 'live').length
+  const overall = Math.round(milestones.reduce((s, m) => s + (m.progress_pct ?? 0), 0) / Math.max(1, milestones.length))
 
   return (
-    <div className="min-h-full px-4 py-5 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
 
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <section className="border border-white/10 bg-white/[0.03] p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">M0 → M9</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">Milestone execution model</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">
-          Delivery plan anchored to 2026-09-30. Each milestone carries a success event, owner and progress snapshot.
+      <section>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <Flag className="h-3.5 w-3.5" /> Milestones
+        </div>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+          The road
+          <br />
+          <span className="text-white/40">to September.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+          <span className="text-white">{overall}% overall</span> across {milestones.length} milestones, with {done} {done === 1 ? 'complete' : 'completed'}. Each milestone carries an owner, a deadline and a clear success event.
         </p>
       </section>
 
-      {/* ── Summary stats ──────────────────────────────────────── */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border border-white/10 bg-white/[0.03] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Total</div>
-          <div className="mt-2 text-3xl font-semibold text-white">{milestones.length}</div>
-        </div>
-        <div className="border border-emerald-300/20 bg-emerald-400/[0.05] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Completed</div>
-          <div className="mt-2 text-3xl font-semibold text-emerald-300">{doneCount}</div>
-        </div>
-        <div className="border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">In progress</div>
-          <div className="mt-2 text-3xl font-semibold text-[#D4AF37]">{activeCount}</div>
-        </div>
-        <div className="border border-white/10 bg-white/[0.03] p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">Overall progress</div>
-          <div className="mt-2 text-3xl font-semibold text-white">{totalProgress}%</div>
-        </div>
-      </div>
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Ask about milestones, deadlines, owners…"
+          suggestions={[
+            'Which milestones are at risk?',
+            'What is M5 waiting on?',
+            'Show milestones due in 30 days.',
+          ]}
+        />
+      </section>
 
-      {/* ── Overall bar ────────────────────────────────────────── */}
-      <div className="mt-4 border border-white/10 bg-white/[0.03] p-4">
-        <div className="mb-2 flex items-center justify-between text-xs text-white/40">
-          <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-[#D4AF37]" /> Overall delivery</span>
-          <span>{totalProgress}%</span>
-        </div>
-        <div className="h-2 bg-white/[0.07]">
-          <div className="h-full bg-[#D4AF37] transition-all" style={{ width: `${totalProgress}%` }} />
-        </div>
-        <div className="mt-2 flex justify-between text-[11px] text-white/30">
-          <span>M0 · Start</span>
-          <span>Deadline · 2026-09-30</span>
-        </div>
-      </div>
+      <section className="mt-20">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All milestones</div>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">M0 → M9</h2>
 
-      {/* ── Milestone list ─────────────────────────────────────── */}
-      <div className="mt-5 grid gap-3">
-        {milestones.map((milestone) => {
-          const hc = healthCfg(milestone.health)
-          const sc = statusCfg(milestone.status)
-          const pct = milestone.progress_pct ?? 0
-          return (
-            <Link
-              key={milestone.code}
-              href={`/freehold-intelligence/milestones/${milestone.code}`}
-              className="group block border border-white/10 bg-white/[0.025] p-5 transition hover:border-[#D4AF37]/35 hover:bg-white/[0.04]"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  {/* Code badge */}
-                  <div className="grid h-11 w-11 shrink-0 place-items-center border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] text-sm font-bold text-[#D4AF37]">
-                    {milestone.code}
+        <ol className="mt-8 grid gap-3">
+          {milestones.map((m) => {
+            const tone = healthTone(m.health)
+            const pct = m.progress_pct ?? 0
+            return (
+              <li key={m.code}>
+                <Link
+                  href={`/freehold-intelligence/milestones/${m.code}`}
+                  className="group flex items-stretch gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#0E1216] sm:p-6"
+                >
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-sm font-semibold tracking-tight text-[#D4AF37]">
+                    {m.code}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white group-hover:text-white">{milestone.title}</h2>
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-white/45">
-                      <span className="flex items-center gap-1">
-                        <Flag className="h-3 w-3" />
-                        {milestone.owner ?? 'Unassigned'}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="text-lg font-semibold tracking-tight text-white">{m.title}</h3>
+                      <span className={`flex items-center gap-1.5 text-[12px] ${tone.text}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                        {statusLabel(m.status)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
-                        {milestone.deadline}
-                      </span>
-                      {milestone.days_to_deadline != null && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {milestone.days_to_deadline}d remaining
-                        </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-white/45">
+                      <span>{m.owner ?? 'Unassigned'}</span>
+                      <span className="text-white/20">·</span>
+                      <span>{m.deadline}</span>
+                      {m.days_to_deadline != null && (
+                        <>
+                          <span className="text-white/20">·</span>
+                          <span>{m.days_to_deadline}d remaining</span>
+                        </>
                       )}
                     </div>
+                    <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className={`h-full transition-all ${tone.bar}`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${hc.chip}`}>
-                    {milestone.health ?? 'planned'}
-                  </span>
-                  <span className={`text-xs font-semibold ${sc.color}`}>{sc.label}</span>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mt-4">
-                <div className="mb-1.5 flex items-center justify-between text-[11px] text-white/35">
-                  <span>Progress</span>
-                  <span className="tabular-nums">{pct}%</span>
-                </div>
-                <div className="h-1.5 bg-white/[0.07]">
-                  <div className={`h-full transition-all ${hc.bar}`} style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between">
-                {milestone.description && (
-                  <p className="text-xs leading-5 text-white/40 line-clamp-1">{milestone.description}</p>
-                )}
-                <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-white/20 transition group-hover:translate-x-1 group-hover:text-[#D4AF37]" />
-              </div>
-            </Link>
-          )
-        })}
-      </div>
-
-      <div className="mt-6">
-        <ProgressFooter milestone={active} />
-      </div>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 self-center text-white/25 transition group-hover:text-[#D4AF37]" />
+                </Link>
+              </li>
+            )
+          })}
+        </ol>
+      </section>
     </div>
   )
 }
