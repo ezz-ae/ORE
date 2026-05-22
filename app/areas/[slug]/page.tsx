@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { MapPin, ShieldCheck } from "lucide-react"
 import { ProjectCard } from "@/components/project-card"
 import { PropertyCard } from "@/components/property-card"
@@ -21,6 +21,9 @@ export async function generateStaticParams() {
 export default async function AreaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params
   const slug = typeof rawSlug === "string" ? rawSlug.trim() : ""
+  if (slug.startsWith("freehold-")) {
+    redirect(`/areas/${slug.slice("freehold-".length)}`)
+  }
 
   if (!slug || !isAuthorizedAreaSlug(slug)) {
     notFound()

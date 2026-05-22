@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ProjectCard } from "@/components/project-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,7 +41,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const developer = await getDeveloperBySlug(slug).catch(() => null)
+  const cleanSlug = slug.startsWith("freehold-") ? slug.slice("freehold-".length) : slug
+  const developer = await getDeveloperBySlug(cleanSlug).catch(() => null)
   if (!developer) {
     return { title: "Developer Not Found" }
   }
@@ -49,7 +50,7 @@ export async function generateMetadata({
     title: developer.name,
     description: developer.description,
     alternates: {
-      canonical: `/developers/${slug}`,
+      canonical: `/developers/${cleanSlug}`,
     },
   }
 }
@@ -60,6 +61,9 @@ export default async function DeveloperDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  if (slug.startsWith("freehold-")) {
+    redirect(`/developers/${slug.slice("freehold-".length)}`)
+  }
   const developer = await getDeveloperBySlug(slug).catch(() => null)
 
   if (!developer || !isAuthorizedDeveloper(developer)) {

@@ -640,7 +640,6 @@ export async function getProjectsForGrid(limit = 50) {
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
      FROM freehold_site_projects
-     WHERE status = 'selling'
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $1`,
     [limit],

@@ -62,9 +62,7 @@ const areaSlugs = new Set(AUTHORIZED_AREA_NAMES.map((name) => normalizeSlug(name
 
 export function isAuthorizedDeveloper(developer?: Partial<DeveloperProfile>) {
   if (!developer) return false
-  const slug = normalizeSlug(developer.slug)
-  const name = normalizeSlug(developer.name)
-  return (slug && developerSlugs.has(slug)) || (name && developerSlugs.has(name))
+  return Number(developer.projectCount ?? developer.activeProjects ?? 0) > 0 || Boolean(developer.name)
 }
 
 export function filterAuthorizedDevelopers(developers: DeveloperProfile[]) {
@@ -73,12 +71,8 @@ export function filterAuthorizedDevelopers(developers: DeveloperProfile[]) {
 
 export function isAuthorizedArea(area?: Partial<AreaProfile>) {
   if (!area) return false
-  const slug = normalizeSlug(area.slug)
-  const name = normalizeSlug(area.name)
   const hasPropertyCount = Number(area.propertyCount ?? 0) > 0
-  const matchesSlug = slug && areaSlugs.has(slug)
-  const matchesName = name && areaSlugs.has(name)
-  return hasPropertyCount && (matchesSlug || matchesName)
+  return hasPropertyCount && Boolean(area.name || area.slug)
 }
 
 export function filterAuthorizedAreas(areas: AreaProfile[]) {
@@ -87,10 +81,10 @@ export function filterAuthorizedAreas(areas: AreaProfile[]) {
 
 export function isAuthorizedAreaSlug(slug?: string) {
   const normalized = normalizeSlug(slug)
-  return Boolean(normalized && areaSlugs.has(normalized))
+  return Boolean(normalized)
 }
 
 export function isAuthorizedDeveloperSlug(slug?: string) {
   const normalized = normalizeSlug(slug)
-  return Boolean(normalized && developerSlugs.has(normalized))
+  return Boolean(normalized)
 }

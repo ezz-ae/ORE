@@ -10,13 +10,13 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Dubai Properties for Sale",
-  description: "Browse over 3500+ luxury properties and investment opportunities in Dubai. Filter by location, price, and property type to find your perfect home.",
+  description: "Browse 900+ real project-backed properties and investment opportunities across the UAE. Filter by location, price, and property type to find your perfect home.",
   alternates: {
     canonical: "/properties",
   },
   openGraph: {
     title: "Dubai Properties for Sale | Freehold Real Estate",
-    description: "Browse over 3500+ luxury properties and investment opportunities in Dubai.",
+    description: "Browse 900+ real project-backed properties and investment opportunities across the UAE.",
     images: ["/og-image.png"],
   },
 }
