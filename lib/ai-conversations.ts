@@ -31,7 +31,7 @@ export async function getLatestConversation(userId: string) {
   await ensureAuthTables()
   const rows = await query<AiConversationRecord>(
     `SELECT id, user_id, title, pinned, messages, created_at, updated_at
-     FROM gc_ai_conversations
+     FROM freehold_site_ai_conversations
      WHERE user_id = $1
      ORDER BY updated_at DESC
      LIMIT 1`,
@@ -44,7 +44,7 @@ export async function getConversationById(id: string) {
   await ensureAuthTables()
   const rows = await query<AiConversationRecord>(
     `SELECT id, user_id, title, pinned, messages, created_at, updated_at
-     FROM gc_ai_conversations
+     FROM freehold_site_ai_conversations
      WHERE id = $1
      LIMIT 1`,
     [id],
@@ -58,7 +58,7 @@ export async function createConversation(userId: string, firstMessage?: AiMessag
   const messages = firstMessage ? [firstMessage] : []
   const title = buildTitle(firstMessage?.content)
   const rows = await query<AiConversationRecord>(
-    `INSERT INTO gc_ai_conversations (id, user_id, title, pinned, messages)
+    `INSERT INTO freehold_site_ai_conversations (id, user_id, title, pinned, messages)
      VALUES ($1, $2, $3, false, $4)
      RETURNING id, user_id, title, pinned, messages, created_at, updated_at`,
     [id, userId, title, JSON.stringify(messages)],
@@ -72,7 +72,7 @@ export async function appendConversationMessage(conversationId: string, message:
   if (!conversation) return null
   const updatedMessages = trimMessages([...(conversation.messages || []), message])
   const rows = await query<AiConversationRecord>(
-    `UPDATE gc_ai_conversations
+    `UPDATE freehold_site_ai_conversations
      SET messages = $1, updated_at = now()
      WHERE id = $2
      RETURNING id, user_id, title, pinned, messages, created_at, updated_at`,
@@ -93,7 +93,7 @@ export async function listConversations(userId: string, limit = 5) {
   await ensureAuthTables()
   return query<AiConversationRecord>(
     `SELECT id, user_id, title, pinned, messages, created_at, updated_at
-     FROM gc_ai_conversations
+     FROM freehold_site_ai_conversations
      WHERE user_id = $1
      ORDER BY pinned DESC, updated_at DESC
      LIMIT $2`,
@@ -104,7 +104,7 @@ export async function listConversations(userId: string, limit = 5) {
 export async function setConversationPinned(conversationId: string, pinned: boolean) {
   await ensureAuthTables()
   const rows = await query<AiConversationRecord>(
-    `UPDATE gc_ai_conversations
+    `UPDATE freehold_site_ai_conversations
      SET pinned = $1
      WHERE id = $2
      RETURNING id, user_id, title, pinned, messages, created_at, updated_at`,

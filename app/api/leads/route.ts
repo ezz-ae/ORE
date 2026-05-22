@@ -37,22 +37,22 @@ export async function POST(req: NextRequest) {
     const device = body.device && typeof body.device === "object" ? body.device : {}
 
     await ensureLeadsTable()
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS budget text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_source text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_medium text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_campaign text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_term text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_content text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS utm_id text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS referrer text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS device jsonb`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS geo_country text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS geo_region text`)
-    await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS geo_city text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS budget text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_source text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_medium text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_campaign text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_term text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_content text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS referrer text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS device jsonb`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_country text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_region text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_city text`)
 
     const leadId = randomUUID()
     await query(
-      `INSERT INTO gc_leads (
+      `INSERT INTO freehold_site_leads (
         id, name, phone, email, source, project_slug, landing_slug, interest, message, budget, status,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
         referrer, device, geo_country, geo_region, geo_city, created_at, updated_at

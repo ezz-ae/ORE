@@ -60,7 +60,7 @@ Extract these fields from the brochure text:
 }
 
 Rules:
-- slug should be URL-safe and start with "gc-".
+- slug should be URL-safe and start with "freehold-".
 - priceFrom/priceTo should be numbers in AED (no commas).
 - roi should be a number (percent) without the % sign.
 - If any field is not found, return null or an empty string/array.

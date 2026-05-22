@@ -97,7 +97,7 @@ const toSlug = (value: string) =>
   value
     .toLowerCase()
     .trim()
-    .replace(/^gc-/, "")
+    .replace(/^freehold-/, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
 
@@ -155,7 +155,7 @@ const heuristicAction = (message: string): BrokerAction => {
 
   const name = extractField(message, "name") || extractField(message, "project")
   const explicitSlug = extractField(message, "slug")
-  const slug = explicitSlug ? `gc-${toSlug(explicitSlug)}` : name ? `gc-${toSlug(name)}` : undefined
+  const slug = explicitSlug ? `freehold-${toSlug(explicitSlug)}` : name ? `freehold-${toSlug(name)}` : undefined
 
   if (isPrioritize) {
     return { intent: "prioritize_leads", query: message }
@@ -250,7 +250,7 @@ Schema:
 }
 
 Only choose create/update intents if the user clearly wants the CRM changed.
-If the project slug is missing but the project name is clear, generate a slug starting with "gc-".
+If the project slug is missing but the project name is clear, generate a slug starting with "freehold-".
 Conversation:
 ${history.slice(-6).map((entry) => `${entry.role}: ${entry.content}`).join("\n")}
 user: ${message}`
@@ -482,7 +482,7 @@ export async function POST(req: NextRequest) {
         : "I could not find matching inventory for that request."
     } else if (action.intent === "create_project" || action.intent === "update_project") {
       const fields = action.fields || {}
-      const slug = fields.slug || action.projectSlug || (fields.name ? `gc-${toSlug(fields.name)}` : "")
+      const slug = fields.slug || action.projectSlug || (fields.name ? `freehold-${toSlug(fields.name)}` : "")
       const name = fields.name || action.projectName || ""
 
       if (!slug || !name) {

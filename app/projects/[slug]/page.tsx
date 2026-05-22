@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ProjectPdfDownload } from "@/components/project-pdf-download"
 import Image from "next/image"
 import Link from "next/link"
@@ -163,6 +163,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  if (slug.startsWith("gc-")) {
+    redirect(`/projects/freehold-${slug.slice(3)}`)
+  }
   const project = await getProject(slug)
   const adjacent = project ? await getAdjacentProjectSlugs(project.slug) : { prev_slug: null, next_slug: null }
   const prevSlug = adjacent.prev_slug
@@ -211,6 +214,9 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  if (slug.startsWith("gc-")) {
+    redirect(`/projects/freehold-${slug.slice(3)}`)
+  }
   const project = await getProject(slug)
   let prevSlug: string | null = null
   let nextSlug: string | null = null

@@ -35,7 +35,7 @@ async function run() {
 
   while (true) {
     const { rows } = await client.query(
-      `SELECT id, slug, payload FROM gc_projects ORDER BY id LIMIT $1 OFFSET $2`,
+      `SELECT id, slug, payload FROM freehold_site_projects ORDER BY id LIMIT $1 OFFSET $2`,
       [batchSize, offset],
     )
 
@@ -67,7 +67,7 @@ async function run() {
       }
 
       await client.query(
-        `UPDATE gc_projects
+        `UPDATE freehold_site_projects
          SET hero_image = $1,
              og_image = $1,
              payload = $2

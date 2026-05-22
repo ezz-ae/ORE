@@ -67,7 +67,7 @@ export function EvidenceDrawer({ requestId, sources = [], runId, timestamp, chil
                 <FileCheck className="h-4 w-4" /> Data Sources
               </div>
               <div className="space-y-2">
-                {(sources.length > 0 ? sources : ["gc_projects", "gc_market_scores_v1", "pf_listings_aggregated"]).map((source) => (
+                {(sources.length > 0 ? sources : ["freehold_site_projects", "freehold_site_market_scores_v1", "pf_listings_aggregated"]).map((source) => (
                   <div key={source} className="flex items-center gap-2 p-3 rounded-md bg-card border text-sm">
                     <div className="h-2 w-2 rounded-full bg-green-500" />
                     <span className="font-mono text-xs">{source}</span>

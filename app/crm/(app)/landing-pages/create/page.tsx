@@ -11,7 +11,7 @@ type ProjectOptionRow = {
 export default async function CreateLandingPageScreen() {
   const rows = await query<ProjectOptionRow>(
     `SELECT slug, name, area
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE status = 'selling'
      ORDER BY COALESCE(market_score, NULLIF(payload->>'sortScore', '')::numeric) DESC NULLS LAST
      LIMIT 500`,

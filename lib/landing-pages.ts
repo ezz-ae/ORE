@@ -418,7 +418,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
 
 const ensureLandingPagesSchema = async () => {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_project_landing_pages (
+    CREATE TABLE IF NOT EXISTS freehold_site_project_landing_pages (
       id text PRIMARY KEY,
       slug text UNIQUE,
       project_slug text,
@@ -442,33 +442,33 @@ const ensureLandingPagesSchema = async () => {
     )
   `)
 
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS id text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS slug text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS project_slug text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS headline text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS title text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS subheadline text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS subtitle text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS hero_image text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS cta_text text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS status text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS publish_status text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS publish_from timestamptz`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS publish_to timestamptz`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS sections_json jsonb`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS sections jsonb`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS content_json jsonb`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS seo_title text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS seo_description text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS og_image text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS meta_title text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS meta_description text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS meta_pixel_id text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS google_tag_id text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS google_conversion_id text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS tiktok_pixel_id text`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()`)
-  await query(`ALTER TABLE gc_project_landing_pages ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS id text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS slug text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS project_slug text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS headline text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS title text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS subheadline text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS subtitle text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS hero_image text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS cta_text text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS status text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_status text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_from timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_to timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS sections_json jsonb`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS sections jsonb`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS content_json jsonb`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS seo_title text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS seo_description text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS og_image text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS meta_title text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS meta_description text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS meta_pixel_id text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS google_tag_id text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS google_conversion_id text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS tiktok_pixel_id text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`)
 }
 
 const ensureLandingPagesSchemaOnce = async () => {
@@ -559,7 +559,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
 
   const rows = await query<ProjectRow>(
     `SELECT id, slug, name, area, developer_name, status, hero_image, price_from_aed, price_to_aed, rental_yield, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
         OR lower(payload->>'pfSlug') = $1
@@ -609,7 +609,7 @@ export async function getLandingPageBySlug(
   const normalizedSlug = slug.trim().toLowerCase()
   const rows = await query<LandingPageRow>(
     `SELECT *
-     FROM gc_project_landing_pages
+     FROM freehold_site_project_landing_pages
      WHERE lower(slug) = $1
      LIMIT 1`,
     [normalizedSlug],
@@ -666,7 +666,7 @@ export async function getLandingPageForEditor(slug: string): Promise<LandingPage
   const normalizedSlug = slug.trim().toLowerCase()
   const rows = await query<LandingPageRow>(
     `SELECT *
-     FROM gc_project_landing_pages
+     FROM freehold_site_project_landing_pages
      WHERE lower(slug) = $1
      LIMIT 1`,
     [normalizedSlug],
@@ -721,13 +721,13 @@ export async function getLandingPagesForDashboard(limit = 100): Promise<LandingP
     }
   >(
     `SELECT slug, project_slug, headline, status, publish_status, publish_from, publish_to, updated_at, created_at
-     FROM gc_project_landing_pages
+     FROM freehold_site_project_landing_pages
      ORDER BY COALESCE(updated_at, created_at) DESC NULLS LAST
      LIMIT $1`,
     [safeLimit],
   )
 
-  const leadColumns = await getTableColumns("gc_leads")
+  const leadColumns = await getTableColumns("freehold_site_leads")
   const leadSlugExpression = leadColumns.has("landing_slug")
     ? leadColumns.has("source")
       ? "COALESCE(NULLIF(landing_slug, ''), NULLIF(REGEXP_REPLACE(source, '^lp:', '', 'g'), ''))"
@@ -741,13 +741,13 @@ export async function getLandingPagesForDashboard(limit = 100): Promise<LandingP
         `SELECT
            ${leadSlugExpression} AS slug,
            COUNT(*)::int AS total
-         FROM gc_leads
+         FROM freehold_site_leads
          WHERE ${leadSlugExpression} IS NOT NULL
          GROUP BY 1`,
       )
     : []
 
-  const analyticsColumns = await getTableColumns("gc_lp_analytics")
+  const analyticsColumns = await getTableColumns("freehold_site_lp_analytics")
   const analytics =
     analyticsColumns.has("landing_slug") && analyticsColumns.has("event_name")
       ? await query<{ slug: string; page_views: number; form_submissions: number }>(
@@ -755,7 +755,7 @@ export async function getLandingPagesForDashboard(limit = 100): Promise<LandingP
              landing_slug AS slug,
              COUNT(*) FILTER (WHERE event_name = 'page_view')::int AS page_views,
              COUNT(*) FILTER (WHERE event_name = 'form_submit')::int AS form_submissions
-           FROM gc_lp_analytics
+           FROM freehold_site_lp_analytics
            WHERE landing_slug IS NOT NULL
              AND landing_slug <> ''
            GROUP BY landing_slug`,

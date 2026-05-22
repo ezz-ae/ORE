@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     await ensureLeadActivityTable()
 
     const leads = await query<LeadRecord>(
-      `SELECT id, assigned_broker_id FROM gc_leads WHERE id = $1 LIMIT 1`,
+      `SELECT id, assigned_broker_id FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [leadId],
     )
     const lead = leads[0]
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       }
       params.push(leadId)
       await query(
-        `UPDATE gc_leads SET ${updates.join(", ")} WHERE id = $${params.length}`,
+        `UPDATE freehold_site_leads SET ${updates.join(", ")} WHERE id = $${params.length}`,
         params,
       )
     }
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         note || (status ? `Status updated to ${status}` : null)
       const type = activityType || (note ? "note" : "status_update")
       await query(
-        `INSERT INTO gc_lead_activity (id, lead_id, activity_type, description, created_by)
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
          VALUES ($1, $2, $3, $4, $5)`,
         [
           randomUUID(),

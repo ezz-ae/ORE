@@ -24,7 +24,7 @@ export async function GET() {
              payload->'investmentFlags'->>'safeYield'     AS safe_yield,
              payload->'investmentFlags'->>'flipOpportunity' AS flip,
              payload->>'hotness'     AS hotness
-      FROM gc_projects
+      FROM freehold_site_projects
       WHERE hero_image IS NOT NULL
         AND price_from_aed > 0
       ORDER BY COALESCE(market_score, NULLIF(payload->>'sortScore', '')::float) DESC NULLS LAST
@@ -35,7 +35,7 @@ export async function GET() {
     sql`
       SELECT name, slug, area_type, avg_yield, avg_score,
              project_count, image, payload->>'heroVideo' AS video
-      FROM gc_area_profiles
+      FROM freehold_site_area_profiles
       WHERE avg_yield > 4 AND project_count >= 5 AND image IS NOT NULL
       ORDER BY avg_yield DESC
       LIMIT 4
@@ -54,7 +54,7 @@ export async function GET() {
           payload->>'mediaSource' IN (
             'propertyfinder-cdn','offplan-dubai-cdn','developer-cdn'
           ) THEN 1 END)                                        AS verified_listings
-      FROM gc_projects
+      FROM freehold_site_projects
     `,
 
     // 4. BELOW MARKET — priceIntelligence.vsCohortPct between -5% and -50%
@@ -63,7 +63,7 @@ export async function GET() {
              hero_image,
              (payload->'priceIntelligence'->>'vsCohortPct')::float AS vs_cohort,
              (payload->'priceIntelligence'->>'pricePerSqft')::float AS psf
-      FROM gc_projects
+      FROM freehold_site_projects
       WHERE (payload->'priceIntelligence'->>'vsCohortPct')::float BETWEEN -50 AND -5
         AND price_from_aed > 0
         AND hero_image IS NOT NULL

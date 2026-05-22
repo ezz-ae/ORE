@@ -269,7 +269,7 @@ export async function getLeadershipLeadRecipients() {
   await ensureUsersTable()
   const rows = await query<LeadershipRecipient>(
     `SELECT name, email, phone, org_title AS "orgTitle"
-     FROM gc_users
+     FROM freehold_site_users
      WHERE regexp_replace(lower(COALESCE(org_title, role, '')), '\s+', '_', 'g') IN ('ceo', 'general_manager')`,
   )
 

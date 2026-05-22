@@ -3,11 +3,11 @@ Repo: https://github.com/ezz-ae/GC-realestate
 Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)
 
 ━━━ NEON TABLES (live, query directly) ━━━━━━━━━━━━━━━━━━━━━━━━
-  gc_projects           3,655 rows  — full project schema + llm_context
-  gc_area_profiles         10 rows  — area images, yields, descriptions
-  gc_developer_profiles    64 rows  — logos, track records, honesty index
+  freehold_site_projects           3,655 rows  — full project schema + llm_context
+  freehold_site_area_profiles         10 rows  — area images, yields, descriptions
+  freehold_site_developer_profiles    64 rows  — logos, track records, honesty index
 
-  Key columns on gc_projects:
+  Key columns on freehold_site_projects:
     id, name, slug, area, developer_id, developer_name
     status, featured, price_from_aed, price_to_aed
     rental_yield, market_score, risk_class
@@ -30,19 +30,19 @@ Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)
          price_from_aed, rental_yield, market_score,
          risk_class, golden_visa_eligible, price_tier,
          handover_date, hero_image, og_image
-  FROM gc_projects
+  FROM freehold_site_projects
   WHERE status = 'selling'
   ORDER BY market_score DESC
   LIMIT 50;
 
   -- Full project page
-  SELECT payload FROM gc_projects WHERE slug = $1;
+  SELECT payload FROM freehold_site_projects WHERE slug = $1;
 
   -- ⚠️  BEDROOM + AREA + PRICE filter (AI chat — USE THIS PATTERN)
   -- Example: "2BR in Dubai Marina under AED 2M"
   SELECT name, area, developer_name, price_from_aed,
          hero_image, market_score, rental_yield, payload
-  FROM gc_projects
+  FROM freehold_site_projects
   WHERE area ILIKE '%Dubai Marina%'
     AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(payload->'units') u
@@ -82,14 +82,14 @@ Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)
   WHERE payload->>'city' = 'Ras Al Khaimah'
 
   -- AI chat context (Gemini RAG)
-  SELECT llm_context FROM gc_projects
+  SELECT llm_context FROM freehold_site_projects
   WHERE area ILIKE $1 ORDER BY market_score DESC LIMIT 10;
 
   -- Area hub
-  SELECT * FROM gc_area_profiles ORDER BY avg_yield DESC;
+  SELECT * FROM freehold_site_area_profiles ORDER BY avg_yield DESC;
 
   -- Developer page
-  SELECT payload FROM gc_developer_profiles WHERE slug = $1;
+  SELECT payload FROM freehold_site_developer_profiles WHERE slug = $1;
 
   -- ⚠️  RULE: NEVER return "bedrooms: 0" — always query units[] as above
   -- ⚠️  RULE: NEVER say "no results found" without running the SQL first

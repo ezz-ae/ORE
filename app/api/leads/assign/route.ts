@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     await ensureLeadActivityTable()
 
     await query(
-      `UPDATE gc_leads
+      `UPDATE freehold_site_leads
        SET assigned_broker_id = $1,
            status = COALESCE(status, 'contacted')
        WHERE id = $2`,
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     )
 
     await query(
-      `INSERT INTO gc_lead_activity (id, lead_id, activity_type, description, created_by)
+      `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
        VALUES ($1, $2, $3, $4, $5)`,
       [randomUUID(), leadId, "assignment", `Assigned to ${brokerId}`, user.id],
     )

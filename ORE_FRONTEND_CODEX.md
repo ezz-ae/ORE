@@ -1,6 +1,6 @@
 # ORE — FRONTEND CODEX FIX PACKAGE
 # Generated: 2026-03-22
-# Database: Neon PostgreSQL (gc_projects, gc_developer_profiles, gc_area_profiles, gc_blog_posts, gc_project_landing_pages)
+# Database: Neon PostgreSQL (freehold_site_projects, freehold_site_developer_profiles, freehold_site_area_profiles, freehold_site_blog_posts, freehold_site_project_landing_pages)
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Table | Rows |
 |-------|------|
-| gc_projects | 975 |
-| gc_developer_profiles | 26 |
-| gc_area_profiles | 26 |
-| gc_blog_posts | 96 |
-| gc_project_landing_pages | 1025 |
+| freehold_site_projects | 975 |
+| freehold_site_developer_profiles | 26 |
+| freehold_site_area_profiles | 26 |
+| freehold_site_blog_posts | 96 |
+| freehold_site_project_landing_pages | 1025 |
 
 ---
 
@@ -131,7 +131,7 @@ IF payload.deliveryDate IS NULL AND handover_date IS NULL:
 ### Fix 2.9 — Location Fallback
 ```
 IF payload.locationFull IS NULL:
-  → Use the `area` column from gc_projects as fallback
+  → Use the `area` column from freehold_site_projects as fallback
 ```
 
 ### Fix 2.10 — Trending/Hotness Badge
@@ -144,7 +144,7 @@ IF payload.hotness IS NULL OR = 0:
 ### Fix 2.11 — Developer Logo on Project Card
 ```
 IF payload.developerLogo IS NULL:
-  → Pull logo from gc_developer_profiles WHERE name = project.developer_name
+  → Pull logo from freehold_site_developer_profiles WHERE name = project.developer_name
   → If still null: show first-letter avatar (e.g. "E" for Emaar in a colored circle)
   → NEVER show a broken image icon
 ```
@@ -265,7 +265,7 @@ IF payload.description IS NULL:
 ```
 IF payload.projects IS NULL OR = 0:
   → HIDE that area from the areas listing page
-  → Query: SELECT * FROM gc_area_profiles WHERE (payload::json->>'projects')::int > 0
+  → Query: SELECT * FROM freehold_site_area_profiles WHERE (payload::json->>'projects')::int > 0
 ```
 
 ---
@@ -275,7 +275,7 @@ IF payload.projects IS NULL OR = 0:
 ### 5.1 — Developers Page: Only show these 26 developers
 ```sql
 -- Use this query for developers listing
-SELECT * FROM gc_developer_profiles 
+SELECT * FROM freehold_site_developer_profiles 
 WHERE (payload::json->>'projects')::int > 0 
 ORDER BY (payload::json->>'projects')::int DESC;
 ```
@@ -310,7 +310,7 @@ ORDER BY (payload::json->>'projects')::int DESC;
 
 ### 5.2 — Areas Page: Only show areas with projects > 0
 ```sql
-SELECT * FROM gc_area_profiles 
+SELECT * FROM freehold_site_area_profiles 
 WHERE (payload::json->>'projects')::int > 0 
 ORDER BY (payload::json->>'projects')::int DESC;
 ```
@@ -349,10 +349,10 @@ ORDER BY (payload::json->>'projects')::int DESC;
 
 ## SECTION 6: BLOG CLEANUP
 
-**4 Driven Properties blog posts have been DELETED from gc_blog_posts.**
+**4 Driven Properties blog posts have been DELETED from freehold_site_blog_posts.**
 The frontend should not hardcode or cache any blog slugs. Always query:
 ```sql
-SELECT * FROM gc_blog_posts ORDER BY published_at DESC;
+SELECT * FROM freehold_site_blog_posts ORDER BY published_at DESC;
 ```
 Any blog post referencing "Driven", "Drivien", "our CEO", or "our company" has been removed from the database. If the frontend caches blog data, purge the cache after deploy.
 

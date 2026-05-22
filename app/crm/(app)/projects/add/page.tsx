@@ -41,7 +41,7 @@ export default function DashboardAddProjectPage() {
   }
 
   const slugify = (value: string) =>
-    `gc-${value
+    `freehold-${value
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "")}`
@@ -264,7 +264,7 @@ export default function DashboardAddProjectPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input placeholder="Project Name" value={form.name} onChange={handleChange("name")} />
-              <Input placeholder="Slug (gc-project-name)" value={form.slug} onChange={handleChange("slug")} />
+              <Input placeholder="Slug (freehold-project-name)" value={form.slug} onChange={handleChange("slug")} />
               <Input placeholder="Area" value={form.area} onChange={handleChange("area")} />
               <Input placeholder="Developer" value={form.developer} onChange={handleChange("developer")} />
               <Input placeholder="Status" value={form.status} onChange={handleChange("status")} />

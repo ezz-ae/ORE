@@ -198,7 +198,7 @@ const persistAiLead = async (input: {
   await ensureLeadsTable()
   const existing = await query<PublicLeadRow>(
     `SELECT id, ai_ack_sent_at, ai_ack_project_slug, ai_broker_notified_at
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE ($1 <> '' AND phone = $1) OR ($2 <> '' AND email = $2)
      ORDER BY created_at DESC
      LIMIT 1`,
@@ -212,7 +212,7 @@ const persistAiLead = async (input: {
 
   if (existing[0]) {
     await query(
-      `UPDATE gc_leads
+      `UPDATE freehold_site_leads
        SET name = COALESCE(NULLIF($2, ''), name),
            phone = COALESCE(NULLIF($3, ''), phone),
            email = COALESCE(NULLIF($4, ''), email),
@@ -237,7 +237,7 @@ const persistAiLead = async (input: {
 
   const leadId = randomUUID()
   await query(
-    `INSERT INTO gc_leads (
+    `INSERT INTO freehold_site_leads (
       id, name, phone, email, source, project_slug, interest, message, status, created_at, updated_at
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'new', now(), now())`,
@@ -288,7 +288,7 @@ const maybeSendLeadAck = async (input: {
   if (!result.sent) return false
 
   await query(
-    `UPDATE gc_leads
+    `UPDATE freehold_site_leads
      SET ai_ack_sent_at = now(),
          ai_ack_project_slug = $2,
          updated_at = now()
@@ -360,7 +360,7 @@ const maybeNotifyInternalTeam = async (input: {
   if (!emailResult.sent && !whatsappResult.sent) return false
 
   await query(
-    `UPDATE gc_leads
+    `UPDATE freehold_site_leads
      SET ai_broker_notified_at = now(),
          updated_at = now()
      WHERE id = $1`,

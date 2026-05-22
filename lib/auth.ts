@@ -6,7 +6,7 @@ import { ensureUsersTable, type UserProfileRecord } from "@/lib/ore"
 
 const scryptAsync = promisify(scrypt)
 
-export const SESSION_COOKIE = "gc_session"
+export const SESSION_COOKIE = "freehold_site_session"
 const SESSION_TTL_DAYS = 7
 
 export interface SessionUser {
@@ -68,16 +68,16 @@ export const canDeleteCrmRecords = (role?: string | null, orgTitle?: string | nu
 export async function ensureAuthTables() {
   await ensureUsersTable()
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_user_sessions (
+    CREATE TABLE IF NOT EXISTS freehold_site_user_sessions (
       id text PRIMARY KEY,
-      user_id text REFERENCES gc_users(id) ON DELETE CASCADE,
+      user_id text REFERENCES freehold_site_users(id) ON DELETE CASCADE,
       token_hash text NOT NULL,
       created_at timestamptz DEFAULT now(),
       expires_at timestamptz NOT NULL
     )
   `)
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_activity_log (
+    CREATE TABLE IF NOT EXISTS freehold_site_activity_log (
       id text PRIMARY KEY,
       user_id text,
       action text,
@@ -86,9 +86,9 @@ export async function ensureAuthTables() {
     )
   `)
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_ai_conversations (
+    CREATE TABLE IF NOT EXISTS freehold_site_ai_conversations (
       id text PRIMARY KEY,
-      user_id text REFERENCES gc_users(id) ON DELETE CASCADE,
+      user_id text REFERENCES freehold_site_users(id) ON DELETE CASCADE,
       title text,
       pinned boolean DEFAULT false,
       messages jsonb,
@@ -101,7 +101,7 @@ export async function ensureAuthTables() {
 export async function logActivity(action: string, userId?: string | null, metadata?: Record<string, unknown>) {
   await ensureAuthTables()
   await query(
-    `INSERT INTO gc_activity_log (id, user_id, action, metadata)
+    `INSERT INTO freehold_site_activity_log (id, user_id, action, metadata)
      VALUES ($1, $2, $3, $4)`,
     [randomBytes(16).toString("hex"), userId || null, action, metadata || null],
   )
@@ -125,7 +125,7 @@ export async function getUserByEmailForAuth(email: string) {
   const rows = await query<UserAuthRecord>(
     `SELECT id, name, email, role, phone, commission_rate, language, ai_tone, ai_verbosity,
             org_title, notifications, password_hash, password_reset_token_hash, password_reset_expires
-     FROM gc_users
+     FROM freehold_site_users
      WHERE email = $1
      LIMIT 1`,
     [email],
@@ -135,13 +135,13 @@ export async function getUserByEmailForAuth(email: string) {
 
 export async function touchUserLogin(userId: string) {
   await ensureUsersTable()
-  await query(`UPDATE gc_users SET last_login_at = now() WHERE id = $1`, [userId])
+  await query(`UPDATE freehold_site_users SET last_login_at = now() WHERE id = $1`, [userId])
 }
 
 export async function setPasswordResetToken(userId: string, token: string, expiresAt: Date) {
   await ensureUsersTable()
   await query(
-    `UPDATE gc_users
+    `UPDATE freehold_site_users
      SET password_reset_token_hash = $1,
          password_reset_expires = $2
      WHERE id = $3`,
@@ -153,7 +153,7 @@ export async function updatePasswordFromReset(token: string, passwordHash: strin
   await ensureUsersTable()
   const tokenHash = hashToken(token)
   const rows = await query<UserAuthRecord>(
-    `UPDATE gc_users
+    `UPDATE freehold_site_users
      SET password_hash = $1,
          password_reset_token_hash = NULL,
          password_reset_expires = NULL
@@ -171,7 +171,7 @@ export async function createSession(userId: string) {
   const tokenHash = hashToken(token)
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000)
   await query(
-    `INSERT INTO gc_user_sessions (id, user_id, token_hash, expires_at)
+    `INSERT INTO freehold_site_user_sessions (id, user_id, token_hash, expires_at)
      VALUES ($1, $2, $3, $4)`,
     [randomBytes(16).toString("hex"), userId, tokenHash, expiresAt.toISOString()],
   )
@@ -180,7 +180,7 @@ export async function createSession(userId: string) {
 
 export async function destroySession(token: string) {
   await ensureAuthTables()
-  await query(`DELETE FROM gc_user_sessions WHERE token_hash = $1`, [hashToken(token)])
+  await query(`DELETE FROM freehold_site_user_sessions WHERE token_hash = $1`, [hashToken(token)])
 }
 
 export async function getSessionUserFromToken(token?: string | null): Promise<SessionUser | null> {
@@ -189,8 +189,8 @@ export async function getSessionUserFromToken(token?: string | null): Promise<Se
   const rows = await query<SessionUser & { expires_at: string }>(
     `SELECT u.id, u.name, u.email, u.role, u.org_title, u.phone, u.commission_rate, u.language, u.ai_tone, u.ai_verbosity,
             u.notifications, s.expires_at
-     FROM gc_user_sessions s
-     JOIN gc_users u ON u.id = s.user_id
+     FROM freehold_site_user_sessions s
+     JOIN freehold_site_users u ON u.id = s.user_id
      WHERE s.token_hash = $1
      LIMIT 1`,
     [hashToken(token)],

@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto"
 
 async function ensureLeadsTable() {
   await query(
-    `CREATE TABLE IF NOT EXISTS gc_leads (
+    `CREATE TABLE IF NOT EXISTS freehold_site_leads (
       id text PRIMARY KEY,
       name text NOT NULL,
       phone text NOT NULL,
@@ -17,7 +17,7 @@ async function ensureLeadsTable() {
       created_at timestamptz DEFAULT now()
     )`,
   )
-  await query(`ALTER TABLE gc_leads ADD COLUMN IF NOT EXISTS assigned_broker_id text`)
+  await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS assigned_broker_id text`)
 }
 
 export async function POST(req: Request) {
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (name && phone) {
       await ensureLeadsTable()
       await query(
-        `INSERT INTO gc_leads (id, name, phone, email, source, project_slug)
+        `INSERT INTO freehold_site_leads (id, name, phone, email, source, project_slug)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [randomUUID(), name, phone, email || null, source || "project-download", slug],
       )

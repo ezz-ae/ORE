@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 
 const ensureAnalyticsSchema = async () => {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_lp_analytics (
+    CREATE TABLE IF NOT EXISTS freehold_site_lp_analytics (
       id text PRIMARY KEY,
       landing_slug text,
       project_slug text,
@@ -31,7 +31,7 @@ const ensureAnalyticsSchema = async () => {
     )
   `)
   await query(`
-    ALTER TABLE gc_lp_analytics
+    ALTER TABLE freehold_site_lp_analytics
       ADD COLUMN IF NOT EXISTS landing_slug text,
       ADD COLUMN IF NOT EXISTS project_slug text,
       ADD COLUMN IF NOT EXISTS event_name text,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const device = body.device && typeof body.device === "object" ? body.device : {}
 
     await query(
-      `INSERT INTO gc_lp_analytics (
+      `INSERT INTO freehold_site_lp_analytics (
         id, landing_slug, project_slug, event_name, event_value, session_id, path, referrer,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
         device, geo_country, geo_region, geo_city, meta, created_at

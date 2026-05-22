@@ -65,7 +65,7 @@ export async function PATCH(
     }
 
     await query(
-      `UPDATE gc_project_landing_pages
+      `UPDATE freehold_site_project_landing_pages
        SET headline = $2,
            title = $2,
            subheadline = $3,

@@ -109,7 +109,7 @@ export default function DashboardAddProjectPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input placeholder="Project Name" value={form.name} onChange={handleChange("name")} />
-              <Input placeholder="Slug (gc-project-name)" value={form.slug} onChange={handleChange("slug")} />
+              <Input placeholder="Slug (freehold-project-name)" value={form.slug} onChange={handleChange("slug")} />
               <Input placeholder="Area" value={form.area} onChange={handleChange("area")} />
               <Input placeholder="Developer" value={form.developer} onChange={handleChange("developer")} />
               <Input placeholder="Price From (AED)" value={form.priceFrom} onChange={handleChange("priceFrom")} />

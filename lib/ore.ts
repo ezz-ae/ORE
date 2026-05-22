@@ -639,7 +639,7 @@ const mapDeveloperRow = (row: DeveloperRow): DeveloperProfile => {
 export async function getProjectsForGrid(limit = 50) {
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE status = 'selling'
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $1`,
@@ -657,7 +657,7 @@ export async function getAdjacentProjectSlugs(slug: string) {
                lag(slug) OVER (ORDER BY ${SORT_SCORE_ORDER}) AS prev_slug,
                lead(slug) OVER (ORDER BY ${SORT_SCORE_ORDER}) AS next_slug,
                row_number() OVER (ORDER BY ${SORT_SCORE_ORDER}) AS idx
-        FROM gc_projects
+        FROM freehold_site_projects
         WHERE status = 'selling'
       )
       SELECT prev_slug, next_slug
@@ -674,7 +674,7 @@ export async function getProjectBySlug(slug: string) {
   const cleanSlug = slug.trim().toLowerCase()
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
         OR lower(payload->>'slugified') = $1
@@ -688,7 +688,7 @@ export async function getProjectBySlug(slug: string) {
 export async function getProperties(limit = 12) {
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE status = 'selling'
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $1`,
@@ -700,7 +700,7 @@ export async function getProperties(limit = 12) {
 export async function getFeaturedProperties(limit = 3) {
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE status = 'selling'
        AND featured = true
      ORDER BY ${SORT_SCORE_ORDER}
@@ -818,7 +818,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
   if (usesFeaturedFirstPage) {
     const featuredRows = await query<ProjectListingRow>(
       `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-       FROM gc_projects
+       FROM freehold_site_projects
        WHERE featured = true
        ORDER BY ${SORT_SCORE_ORDER}
        LIMIT $1`,
@@ -830,7 +830,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
     if (remaining > 0) {
       const fallbackRows = await query<ProjectListingRow>(
         `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-         FROM gc_projects
+         FROM freehold_site_projects
          WHERE (featured IS DISTINCT FROM true)
          ORDER BY ${SORT_SCORE_ORDER}
          LIMIT $1`,
@@ -840,7 +840,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
     }
 
     const countRows = await query<{ total: number }>(
-      `SELECT COUNT(*)::int AS total FROM gc_projects`,
+      `SELECT COUNT(*)::int AS total FROM freehold_site_projects`,
     )
     const total = countRows[0]?.total ?? rows.length
     return {
@@ -878,7 +878,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
   }
 
   const countRows = await query<{ total: number }>(
-    `SELECT COUNT(*)::int AS total FROM gc_projects ${whereClause}`,
+    `SELECT COUNT(*)::int AS total FROM freehold_site_projects ${whereClause}`,
     values,
   )
   const total = countRows[0]?.total || 0
@@ -886,7 +886,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
   values.push(pageSize, offset)
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      ${whereClause}
      ORDER BY ${orderBy}
      LIMIT $${values.length - 1} OFFSET $${values.length}`,
@@ -902,7 +902,7 @@ export async function getPropertyListing(filters: PropertyListingFilters) {
 export async function getPropertiesByArea(area: string, limit = 12) {
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE ${LISTING_AREA_SQL} ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -915,7 +915,7 @@ export async function getPropertyBySlug(slug: string) {
   const cleanSlug = slug.trim().toLowerCase()
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
         OR lower(payload->>'slugified') = $1
@@ -930,7 +930,7 @@ export async function getPropertyBySlug(slug: string) {
 export async function getAreas() {
   const rows = await query<AreaRow>(
     `SELECT slug, name, area_type, avg_score, median_price_aed, project_count, avg_yield, image, hero_video, payload 
-     FROM gc_area_profiles 
+     FROM freehold_site_area_profiles 
      WHERE (payload->>'projectCount')::int > 0 OR project_count > 0
      ORDER BY (payload->>'projectCount')::int DESC NULLS LAST, avg_yield DESC`,
   )
@@ -942,7 +942,7 @@ export async function getAreaBySlug(slug: string) {
   if (!cleanSlug) return null
   const rows = await query<AreaRow>(
     `SELECT slug, name, area_type, avg_score, median_price_aed, project_count, avg_yield, image, hero_video, payload
-     FROM gc_area_profiles
+     FROM freehold_site_area_profiles
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
         OR lower(REGEXP_REPLACE(payload->>'slug', '[^a-z0-9]+', '-', 'g')) = $1
@@ -957,7 +957,7 @@ export async function getAreaBySlug(slug: string) {
 export async function getDevelopers() {
   const rows = await query<DeveloperRow>(
     `SELECT id, slug, name, tier, avg_score, honesty_index, risk_discount, logo, banner_image, payload 
-     FROM gc_developer_profiles 
+     FROM freehold_site_developer_profiles 
      WHERE (payload->>'projectCount')::int > 0 OR (payload->>'activeProjects')::int > 0
      ORDER BY (payload->>'projectCount')::int DESC NULLS LAST, avg_score DESC`,
   )
@@ -969,7 +969,7 @@ export async function getDeveloperBySlug(slug: string) {
   if (!cleanSlug) return null
   const rows = await query<DeveloperRow>(
     `SELECT id, slug, name, tier, avg_score, honesty_index, risk_discount, logo, banner_image, payload
-     FROM gc_developer_profiles
+     FROM freehold_site_developer_profiles
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
         OR lower(REGEXP_REPLACE(payload->>'slug', '[^a-z0-9]+', '-', 'g')) = $1
@@ -985,7 +985,7 @@ export async function searchProjects(queryText: string, limit = 5) {
   const q = `%${queryText}%`
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE name ILIKE $1 OR area ILIKE $1 OR developer_name ILIKE $1 OR slug ILIKE $1 OR payload->>'slug' ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -996,7 +996,7 @@ export async function searchProjects(queryText: string, limit = 5) {
 
 export async function getTopROIProjects(limit = 5) {
   const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload FROM gc_projects ORDER BY rental_yield DESC LIMIT $1`,
+    `SELECT id, slug, payload FROM freehold_site_projects ORDER BY rental_yield DESC LIMIT $1`,
     [limit],
   )
   return rows.map((row) => normalizeProjectPayload(row))
@@ -1005,7 +1005,7 @@ export async function getTopROIProjects(limit = 5) {
 export async function getGoldenVisaProjects(limit = 5) {
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE golden_visa_eligible = true
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $1`,
@@ -1017,7 +1017,7 @@ export async function getGoldenVisaProjects(limit = 5) {
 export async function getProjectsByArea(area: string, limit = 5) {
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE area ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -1029,7 +1029,7 @@ export async function getProjectsByArea(area: string, limit = 5) {
 export async function getProjectsByDeveloper(developerName: string, limit = 6) {
   const rows = await query<ProjectRow>(
     `SELECT id, slug, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE developer_name ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -1041,7 +1041,7 @@ export async function getProjectsByDeveloper(developerName: string, limit = 6) {
 export async function getPropertiesByDeveloper(developerName: string, limit = 6) {
   const rows = await query<ProjectListingRow>(
     `SELECT id, slug, payload, name, area, status, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE developer_name ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -1053,7 +1053,7 @@ export async function getPropertiesByDeveloper(developerName: string, limit = 6)
 export async function getProjectsBySlugs(slugs: string[]) {
   if (slugs.length === 0) return []
   const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload FROM gc_projects WHERE slug = ANY($1::text[]) OR payload->>'slug' = ANY($1::text[])`,
+    `SELECT id, slug, payload FROM freehold_site_projects WHERE slug = ANY($1::text[]) OR payload->>'slug' = ANY($1::text[])`,
     [slugs],
   )
   return rows.map((row) => normalizeProjectPayload(row))
@@ -1062,7 +1062,7 @@ export async function getProjectsBySlugs(slugs: string[]) {
 export async function getLlmContextByArea(area: string, limit = 8) {
   const rows = await query<{ llm_context: string }>(
     `SELECT llm_context
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE area ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
      LIMIT $2`,
@@ -1118,7 +1118,7 @@ export async function getDeveloperStats(developerName: string): Promise<Develope
           / COUNT(*) FILTER (WHERE status = 'completed')::float
         ) * 100
       END AS on_time_rate
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE developer_name ILIKE $1`,
     [`%${developerName}%`],
   )
@@ -1138,7 +1138,7 @@ export async function getDeveloperStats(developerName: string): Promise<Develope
 
   const areaRows = await query<{ area: string; count: number }>(
     `SELECT area, COUNT(*)::int AS count
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE developer_name ILIKE $1 AND area IS NOT NULL
      GROUP BY area
      ORDER BY count DESC
@@ -1148,7 +1148,7 @@ export async function getDeveloperStats(developerName: string): Promise<Develope
 
   const flagshipRows = await query<{ id: string; slug: string; name: string; market_score: number | null }>(
     `SELECT id, slug, name, market_score
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE developer_name ILIKE $1
      ORDER BY market_score DESC NULLS LAST
      LIMIT 3`,
@@ -1341,7 +1341,7 @@ export interface BlogPost extends BlogPostSummary {
 export async function getBlogPosts(limit = 12, offset = 0) {
   const rows = await query<BlogPostSummary>(
     `SELECT id, slug, title, excerpt, hero_image, category, author, published_at, read_time, featured
-     FROM gc_blog_posts
+     FROM freehold_site_blog_posts
      ORDER BY featured DESC NULLS LAST, published_at DESC NULLS LAST, created_at DESC
      LIMIT $1 OFFSET $2`,
     [limit, offset],
@@ -1352,7 +1352,7 @@ export async function getBlogPosts(limit = 12, offset = 0) {
 export async function getFeaturedBlogPosts(limit = 6) {
   const rows = await query<BlogPostSummary>(
     `SELECT id, slug, title, excerpt, hero_image, category, author, published_at, read_time, featured
-     FROM gc_blog_posts
+     FROM freehold_site_blog_posts
      WHERE featured = true
      ORDER BY published_at DESC NULLS LAST, created_at DESC
      LIMIT $1`,
@@ -1394,7 +1394,7 @@ const HOMEPAGE_BLOG_EXCLUDES = [
 export async function getHomepageBlogPosts(limit = 6) {
   const primaryRows = await query<BlogPostSummary>(
     `SELECT id, slug, title, excerpt, hero_image, category, author, published_at, read_time, featured
-     FROM gc_blog_posts
+     FROM freehold_site_blog_posts
      WHERE hero_image IS NOT NULL
        AND hero_image <> ''
        AND (
@@ -1417,7 +1417,7 @@ export async function getHomepageBlogPosts(limit = 6) {
   const remaining = limit - primaryRows.length
   const fallbackRows = await query<BlogPostSummary>(
     `SELECT id, slug, title, excerpt, hero_image, category, author, published_at, read_time, featured
-     FROM gc_blog_posts
+     FROM freehold_site_blog_posts
      WHERE hero_image IS NOT NULL
        AND hero_image <> ''
        AND NOT (
@@ -1436,7 +1436,7 @@ export async function getHomepageBlogPosts(limit = 6) {
 export async function getBlogPostBySlug(slug: string) {
   const rows = await query<BlogPost>(
     `SELECT id, slug, title, excerpt, body, hero_image, category, author, published_at, read_time, tags, payload
-     FROM gc_blog_posts
+     FROM freehold_site_blog_posts
      WHERE slug = $1
      LIMIT 1`,
     [slug],
@@ -1446,7 +1446,7 @@ export async function getBlogPostBySlug(slug: string) {
 
 export async function ensureLeadsTable() {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_leads (
+    CREATE TABLE IF NOT EXISTS freehold_site_leads (
       id text PRIMARY KEY,
       name text,
       phone text,
@@ -1458,7 +1458,7 @@ export async function ensureLeadsTable() {
     )
   `)
   await query(`
-    ALTER TABLE gc_leads
+    ALTER TABLE freehold_site_leads
       ADD COLUMN IF NOT EXISTS assigned_broker_id text,
       ADD COLUMN IF NOT EXISTS status text,
       ADD COLUMN IF NOT EXISTS priority text,
@@ -1486,9 +1486,9 @@ export interface LeadActivityRecord {
 
 export async function ensureLeadActivityTable() {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_lead_activity (
+    CREATE TABLE IF NOT EXISTS freehold_site_lead_activity (
       id text PRIMARY KEY,
-      lead_id text REFERENCES gc_leads(id) ON DELETE CASCADE,
+      lead_id text REFERENCES freehold_site_leads(id) ON DELETE CASCADE,
       activity_type text,
       description text,
       created_by text,
@@ -1531,7 +1531,7 @@ export async function getLeadById(id: string) {
   const rows = await query<LeadRecord>(
     `SELECT id, name, phone, email, source, project_slug, assigned_broker_id, status, priority,
             last_contact_at, country, budget_aed, interest, created_at
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE id = $1
      LIMIT 1`,
     [id],
@@ -1543,7 +1543,7 @@ export async function getLeadActivity(leadId: string) {
   await ensureLeadActivityTable()
   return query<LeadActivityRecord>(
     `SELECT id, lead_id, activity_type, description, created_by, created_at
-     FROM gc_lead_activity
+     FROM freehold_site_lead_activity
      WHERE lead_id = $1
      ORDER BY created_at DESC`,
     [leadId],
@@ -1556,7 +1556,7 @@ export async function getLeads(role: "admin" | "broker", brokerId?: string) {
     const rows = await query<LeadRecord>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id, status, priority,
               last_contact_at, country, budget_aed, interest, created_at
-       FROM gc_leads
+       FROM freehold_site_leads
        WHERE assigned_broker_id = $1
        ORDER BY created_at DESC`,
       [brokerId],
@@ -1567,7 +1567,7 @@ export async function getLeads(role: "admin" | "broker", brokerId?: string) {
   const rows = await query<LeadRecord>(
     `SELECT id, name, phone, email, source, project_slug, assigned_broker_id, status, priority,
             last_contact_at, country, budget_aed, interest, created_at
-     FROM gc_leads
+     FROM freehold_site_leads
      ORDER BY created_at DESC`,
   )
   return rows.map(applyLeadDefaults)
@@ -1600,7 +1600,7 @@ export async function searchCrmLeads(
   const rows = await query<LeadRecord>(
     `SELECT l.id, l.name, l.phone, l.email, l.source, l.project_slug, l.assigned_broker_id, l.status, l.priority,
             l.last_contact_at, l.country, l.budget_aed, l.interest, l.created_at
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${whereClause}
      ORDER BY l.created_at DESC
      LIMIT $${values.length}`,
@@ -1634,7 +1634,7 @@ export async function getRecentLeads(limit = 5, role: "admin" | "broker" = "admi
   const rows = await query<LeadRecord>(
     `SELECT l.id, l.name, l.phone, l.email, l.source, l.project_slug, l.assigned_broker_id, l.status, l.priority,
             l.last_contact_at, l.country, l.budget_aed, l.interest, l.created_at
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
      ORDER BY l.created_at DESC
      LIMIT $${params.length}`,
@@ -1653,7 +1653,7 @@ export async function getDashboardOverviewData(
 
   const [todays] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
        AND l.created_at >= CURRENT_DATE`,
     params,
@@ -1661,7 +1661,7 @@ export async function getDashboardOverviewData(
 
   const [assignedThisWeek] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
        AND l.assigned_broker_id IS NOT NULL
        AND l.created_at >= date_trunc('week', now())`,
@@ -1670,7 +1670,7 @@ export async function getDashboardOverviewData(
 
   const [activeInquiries] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
        AND l.created_at >= now() - interval '30 days'`,
     params,
@@ -1678,7 +1678,7 @@ export async function getDashboardOverviewData(
 
   const [scheduledViewings] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
        AND l.source ILIKE ANY(ARRAY['%view%', '%tour%', '%meeting%', '%showing%'])`,
     params,
@@ -1686,8 +1686,8 @@ export async function getDashboardOverviewData(
 
   const [pipeline] = await query<{ total: number }>(
     `SELECT COALESCE(SUM(p.price_from_aed), 0)::bigint AS total
-     FROM gc_leads l
-     JOIN gc_projects p ON p.slug = l.project_slug
+     FROM freehold_site_leads l
+     JOIN freehold_site_projects p ON p.slug = l.project_slug
      WHERE ${filter.clause}
        AND l.created_at >= now() - interval '30 days'`,
     params,
@@ -1695,7 +1695,7 @@ export async function getDashboardOverviewData(
 
   const [unassigned] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
        AND l.assigned_broker_id IS NULL`,
     params,
@@ -1706,7 +1706,7 @@ export async function getDashboardOverviewData(
   const hotLeadRows = await query<LeadRecord>(
     `SELECT l.id, l.name, l.phone, l.email, l.source, l.project_slug, l.assigned_broker_id, l.status, l.priority,
             l.last_contact_at, l.country, l.budget_aed, l.interest, l.created_at
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
      ORDER BY l.created_at DESC
      LIMIT 40`,
@@ -1732,7 +1732,7 @@ export async function getDashboardOverviewData(
     payload: Project
   }>(
     `SELECT id, slug, name, area, market_score, rental_yield, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      ORDER BY market_score DESC NULLS LAST
      LIMIT 5`,
   )
@@ -1774,7 +1774,7 @@ export async function getDashboardAnalyticsData(
 
   const leadSources = await query<LeadSourceSummary>(
     `SELECT COALESCE(l.source, 'Unknown') AS source, COUNT(*)::int AS count
-     FROM gc_leads l
+     FROM freehold_site_leads l
      WHERE ${filter.clause}
      GROUP BY l.source
      ORDER BY count DESC`,
@@ -1783,8 +1783,8 @@ export async function getDashboardAnalyticsData(
 
   const areaPerformance = await query<AreaPerformanceSummary>(
     `SELECT COALESCE(p.area, 'General enquiry') AS area, COUNT(*)::int AS count
-     FROM gc_leads l
-     LEFT JOIN gc_projects p ON p.slug = l.project_slug
+     FROM freehold_site_leads l
+     LEFT JOIN freehold_site_projects p ON p.slug = l.project_slug
      WHERE ${filter.clause}
      GROUP BY p.area
      ORDER BY count DESC
@@ -1797,8 +1797,8 @@ export async function getDashboardAnalyticsData(
        COALESCE(l.assigned_broker_id, 'unassigned') AS "brokerId",
        COALESCE(u.name, u.email, l.assigned_broker_id, 'Unassigned') AS "brokerName",
        COUNT(*)::int AS count
-     FROM gc_leads l
-     LEFT JOIN gc_users u ON u.id = l.assigned_broker_id
+     FROM freehold_site_leads l
+     LEFT JOIN freehold_site_users u ON u.id = l.assigned_broker_id
      WHERE ${filter.clause}
      GROUP BY l.assigned_broker_id, u.name, u.email
      ORDER BY count DESC`,
@@ -1815,7 +1815,7 @@ export async function getDashboardAnalyticsData(
     payload: Project
   }>(
     `SELECT id, slug, name, area, market_score, rental_yield, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      ORDER BY market_score DESC NULLS LAST
      LIMIT 6`,
   )
@@ -1832,14 +1832,14 @@ export async function getDashboardAnalyticsData(
 
   const [pipeline] = await query<{ total: number }>(
     `SELECT COALESCE(SUM(p.price_from_aed), 0)::bigint AS total
-     FROM gc_leads l
-     LEFT JOIN gc_projects p ON p.slug = l.project_slug
+     FROM freehold_site_leads l
+     LEFT JOIN freehold_site_projects p ON p.slug = l.project_slug
      WHERE ${filter.clause}
        AND l.created_at >= now() - interval '30 days'`,
     params,
   )
 
-  const analyticsColumns = await getTableColumns("gc_lp_analytics")
+  const analyticsColumns = await getTableColumns("freehold_site_lp_analytics")
   const analyticsEventColumn = analyticsColumns.has("event_name")
     ? "event_name"
     : analyticsColumns.has("event")
@@ -1854,7 +1854,7 @@ export async function getDashboardAnalyticsData(
     `SELECT 1 AS exists
      FROM information_schema.tables
      WHERE table_schema = 'public'
-       AND table_name = 'gc_project_landing_pages'
+       AND table_name = 'freehold_site_project_landing_pages'
      LIMIT 1`,
   )
 
@@ -1864,13 +1864,13 @@ export async function getDashboardAnalyticsData(
           `SELECT
              COUNT(*) FILTER (WHERE ${analyticsEventColumn} IN ('page_view', 'pageview', 'view'))::int AS page_views,
              COUNT(*) FILTER (WHERE ${analyticsEventColumn} IN ('form_submit', 'lead_submit', 'submit'))::int AS form_submissions
-           FROM gc_lp_analytics`,
+           FROM freehold_site_lp_analytics`,
         )
       : [{ page_views: 0, form_submissions: 0 }]
 
   const [landingCount] =
     landingPageTableExists.length > 0
-      ? await query<{ count: number }>(`SELECT COUNT(*)::int AS count FROM gc_project_landing_pages`)
+      ? await query<{ count: number }>(`SELECT COUNT(*)::int AS count FROM freehold_site_project_landing_pages`)
       : [{ count: 0 }]
 
   return {
@@ -1887,7 +1887,7 @@ export async function getDashboardAnalyticsData(
 
 export async function ensureProjectsTable() {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_projects (
+    CREATE TABLE IF NOT EXISTS freehold_site_projects (
       id text PRIMARY KEY,
       slug text UNIQUE,
       name text,
@@ -1907,7 +1907,7 @@ export async function ensureProjectsTable() {
     )
   `)
   await query(`
-    ALTER TABLE gc_projects
+    ALTER TABLE freehold_site_projects
       ADD COLUMN IF NOT EXISTS developer_name text,
       ADD COLUMN IF NOT EXISTS hero_image text,
       ADD COLUMN IF NOT EXISTS price_from_aed numeric,
@@ -2110,7 +2110,7 @@ export async function getDashboardProjects(filters: DashboardProjectFilters) {
   }
 
   const countRows = await query<{ total: number }>(
-    `SELECT COUNT(*)::int AS total FROM gc_projects ${whereClause}`,
+    `SELECT COUNT(*)::int AS total FROM freehold_site_projects ${whereClause}`,
     values,
   )
   const total = countRows[0]?.total || 0
@@ -2130,7 +2130,7 @@ export async function getDashboardProjects(filters: DashboardProjectFilters) {
     payload: Project
   }>(
     `SELECT id, slug, name, area, status, developer_name, price_from_aed, price_to_aed, market_score, rental_yield, payload
-     FROM gc_projects ${whereClause}
+     FROM freehold_site_projects ${whereClause}
      ORDER BY ${orderBy}
      LIMIT $${values.length - 1} OFFSET $${values.length}`,
     values,
@@ -2175,7 +2175,7 @@ export async function getDashboardProjectBySlug(slug: string) {
     payload: Project
   }>(
     `SELECT id, slug, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, featured, payload
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
      LIMIT 1`,
@@ -2226,7 +2226,7 @@ export async function upsertDashboardProject(input: DashboardProjectInput) {
     featured: boolean | null
     payload: Project
   }>(
-    `INSERT INTO gc_projects (
+    `INSERT INTO freehold_site_projects (
         id, slug, name, area, status, developer_name, hero_image,
         price_from_aed, price_to_aed, market_score, rental_yield,
         golden_visa_eligible, featured, payload, updated_at
@@ -2278,14 +2278,14 @@ export async function getDashboardProjectFilters() {
   await ensureProjectsTable()
   const areas = await query<{ area: string | null }>(
     `SELECT DISTINCT COALESCE(NULLIF(payload->'location'->>'area', ''), NULLIF(payload->>'area', ''), area) AS area
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE COALESCE(NULLIF(payload->'location'->>'area', ''), NULLIF(payload->>'area', ''), area) IS NOT NULL
      ORDER BY area ASC
      LIMIT 120`,
   )
   const developers = await query<{ developer_name: string | null }>(
     `SELECT DISTINCT COALESCE(NULLIF(payload->'developer'->>'name', ''), NULLIF(payload->>'developer', ''), developer_name) AS developer_name
-     FROM gc_projects
+     FROM freehold_site_projects
      WHERE COALESCE(NULLIF(payload->'developer'->>'name', ''), NULLIF(payload->>'developer', ''), developer_name) IS NOT NULL
      ORDER BY developer_name ASC
      LIMIT 120`,
@@ -2314,7 +2314,7 @@ export interface UserProfileRecord {
 
 export async function ensureUsersTable() {
   await query(`
-    CREATE TABLE IF NOT EXISTS gc_users (
+    CREATE TABLE IF NOT EXISTS freehold_site_users (
       id text PRIMARY KEY,
       name text,
       email text UNIQUE,
@@ -2323,7 +2323,7 @@ export async function ensureUsersTable() {
     )
   `)
   await query(`
-    ALTER TABLE gc_users
+    ALTER TABLE freehold_site_users
       ADD COLUMN IF NOT EXISTS phone text,
       ADD COLUMN IF NOT EXISTS org_title text,
       ADD COLUMN IF NOT EXISTS commission_rate numeric,
@@ -2344,7 +2344,7 @@ export async function getUserProfileByEmail(email: string) {
   const rows = await query<UserProfileRecord>(
     `SELECT id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity,
             notifications, last_login_at, created_at
-     FROM gc_users
+     FROM freehold_site_users
      WHERE email = $1
      LIMIT 1`,
     [email],
@@ -2357,7 +2357,7 @@ export async function getUserProfileById(id: string) {
   const rows = await query<UserProfileRecord>(
     `SELECT id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity,
             notifications, last_login_at, created_at
-     FROM gc_users
+     FROM freehold_site_users
      WHERE id = $1
      LIMIT 1`,
     [id],
@@ -2380,7 +2380,7 @@ export async function getUserAccessList() {
   await ensureUsersTable()
   return query<UserAccessRecord>(
     `SELECT id, name, email, role, org_title, ai_access, last_login_at, created_at
-     FROM gc_users
+     FROM freehold_site_users
      ORDER BY created_at DESC`,
   )
 }
@@ -2388,7 +2388,7 @@ export async function getUserAccessList() {
 export async function setUserAiAccess(id: string, aiAccess: boolean) {
   await ensureUsersTable()
   const rows = await query<UserAccessRecord>(
-    `UPDATE gc_users
+    `UPDATE freehold_site_users
      SET ai_access = $2
      WHERE id = $1
      RETURNING id, name, email, role, org_title, ai_access`,
@@ -2400,7 +2400,7 @@ export async function setUserAiAccess(id: string, aiAccess: boolean) {
 export async function deleteUserAccess(id: string) {
   await ensureUsersTable()
   const rows = await query<UserAccessRecord>(
-    `DELETE FROM gc_users
+    `DELETE FROM freehold_site_users
      WHERE id = $1
      RETURNING id, name, email, role, ai_access`,
     [id],
@@ -2420,29 +2420,29 @@ export async function getBrokerPerformanceSummary(brokerId: string): Promise<Bro
   await ensureLeadsTable()
   const [total] = await query<{ count: number }>(
     `SELECT COUNT(*)::int AS count
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE assigned_broker_id = $1`,
     [brokerId],
   )
 
   const [pipeline] = await query<{ total: number }>(
     `SELECT COALESCE(SUM(p.price_from_aed), 0)::bigint AS total
-     FROM gc_leads l
-     JOIN gc_projects p ON p.slug = l.project_slug
+     FROM freehold_site_leads l
+     JOIN freehold_site_projects p ON p.slug = l.project_slug
      WHERE l.assigned_broker_id = $1`,
     [brokerId],
   )
 
   const [lastLead] = await query<{ last: string | null }>(
     `SELECT MAX(created_at) AS last
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE assigned_broker_id = $1`,
     [brokerId],
   )
 
   const [lastContact] = await query<{ last: string | null }>(
     `SELECT MAX(last_contact_at) AS last
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE assigned_broker_id = $1`,
     [brokerId],
   )
@@ -2450,7 +2450,7 @@ export async function getBrokerPerformanceSummary(brokerId: string): Promise<Bro
   const recentLeads = await query<LeadRecord>(
     `SELECT id, name, phone, email, source, project_slug, assigned_broker_id, status, priority,
             last_contact_at, country, budget_aed, interest, created_at
-     FROM gc_leads
+     FROM freehold_site_leads
      WHERE assigned_broker_id = $1
      ORDER BY created_at DESC
      LIMIT 200`,
@@ -2486,7 +2486,7 @@ export async function upsertUserProfile(profile: {
 }) {
   await ensureUsersTable()
   const rows = await query<UserProfileRecord>(
-    `INSERT INTO gc_users (id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity, notifications, password_hash)
+    `INSERT INTO freehold_site_users (id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity, notifications, password_hash)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      ON CONFLICT (email)
      DO UPDATE SET
@@ -2499,7 +2499,7 @@ export async function upsertUserProfile(profile: {
        ai_tone = EXCLUDED.ai_tone,
        ai_verbosity = EXCLUDED.ai_verbosity,
        notifications = EXCLUDED.notifications,
-       password_hash = COALESCE(EXCLUDED.password_hash, gc_users.password_hash)
+       password_hash = COALESCE(EXCLUDED.password_hash, freehold_site_users.password_hash)
      RETURNING id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity,
                notifications, last_login_at, created_at`,
     [
