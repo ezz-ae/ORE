@@ -80,7 +80,7 @@ export default function DashboardPage() {
             <h2 className="fh-panel-title">Hot Projects</h2>
             <div className="mt-4 grid gap-3">
               {hotProjects.map((project) => (
-                <Link className="fh-card" href={`/market/${project.id}`} key={project.id}>
+                <Link className="fh-card" href={`/freehold-intelligence/apps/market/${project.id}`} key={project.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="m-0 text-sm font-bold">{project.projectName}</h3>

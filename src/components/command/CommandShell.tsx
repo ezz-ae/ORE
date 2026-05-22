@@ -19,10 +19,10 @@ import {
 import { cnCommand } from "@/src/lib/freehold-format"
 
 const navItems = [
-  { href: "/dashboard", label: "Command Dashboard", icon: Gauge },
-  { href: "/market", label: "Market Database", icon: Database },
+  { href: "/freehold-intelligence", label: "Control Apps", icon: Gauge },
+  { href: "/freehold-intelligence/apps/market", label: "Market Database", icon: Database },
   { href: "/ads-studio", label: "Ads Studio", icon: Megaphone },
-  { href: "/crm", label: "CRM Core", icon: Users },
+  { href: "/freehold-intelligence/apps/crm", label: "CRM Core", icon: Users },
   { href: "/notebook", label: "Market Notebook", icon: BookOpen },
   { href: "/cloud", label: "Market Cloud", icon: Cloud },
   { href: "/agent-network", label: "Agent Network", icon: Network },
@@ -36,7 +36,7 @@ export function CommandShell({ children }: { children: React.ReactNode }) {
     <div className="freehold-command">
       <div className="fh-shell">
         <aside className="fh-sidebar">
-          <Link href="/dashboard" className="fh-brand" aria-label="Freehold Intelligence Command Center">
+          <Link href="/freehold-intelligence" className="fh-brand" aria-label="Freehold Intelligence Command Center">
             <div className="fh-brand-mark">FI</div>
             <div>
               <p className="fh-brand-title">Freehold Intelligence Command Center</p>
@@ -58,8 +58,8 @@ export function CommandShell({ children }: { children: React.ReactNode }) {
           <div className="fh-sidebar-note">
             <ShieldCheck size={16} aria-hidden="true" />
             <p className="mt-2">
-              Internal intelligence data. The system works without external services and only uses Gemini server-side if
-              a key is configured.
+              Internal control-room data. Public market URLs now route here instead of exposing operator apps on the
+              public site.
             </p>
           </div>
         </aside>

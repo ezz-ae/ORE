@@ -44,10 +44,10 @@ const footerLinks = [
   {
     title: "Market",
     links: [
-      { href: "/market/trends", label: "Market Analysis" },
-      { href: "/market/areas", label: "Area Guide" },
-      { href: "/market/golden-visa", label: "Golden Visa" },
-      { href: "/market/regulations", label: "Regulations" },
+      { href: "/projects", label: "Projects" },
+      { href: "/areas", label: "Area Profiles" },
+      { href: "/developers", label: "Developers" },
+      { href: "/tools", label: "Investment Tools" },
     ],
   },
   {

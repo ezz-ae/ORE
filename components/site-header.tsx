@@ -40,17 +40,6 @@ const mainLinks = [
   { href: "/developers", label: "Developers", description: "Track records and delivery stats." },
   { href: "/blog", label: "Blog", description: "Investor insights and reports." },
   { href: "/chat", label: "AI Assistant", description: "Get a curated shortlist fast." },
-  { href: "/market/trends", label: "Market Analysis", description: "Live market reports and forecasts." },
-]
-
-const marketLinks = [
-  { href: "/market/trends", label: "Market Analysis", description: "Reports, analytics, and forecasts." },
-  { href: "/market", label: "Market Hub", description: "Overview of Dubai market intelligence." },
-  { href: "/market/why-dubai", label: "Why Dubai", description: "Investment case and macro advantages." },
-  { href: "/market/areas", label: "Areas Guide", description: "Area-by-area comparison and insights." },
-  { href: "/market/golden-visa", label: "Golden Visa", description: "Residency rules and eligibility." },
-  { href: "/market/financing", label: "Financing", description: "Mortgage and payment plan options." },
-  { href: "/market/regulations", label: "Regulations", description: "Legal framework for buyers." },
 ]
 
 const toolsLinks = [
@@ -105,27 +94,6 @@ export function SiteHeader() {
                 <NavigationMenuContent className={megaMenuWide}>
                   <div className="grid gap-1 p-3 md:grid-cols-2 bg-white rounded-xl">
                     {mainLinks.map((item) => (
-                      <NavigationMenuLink asChild key={item.href}>
-                        <Link
-                          href={item.href}
-                          className="rounded-lg border border-transparent p-3 transition hover:bg-[#152E24]/[0.03]"
-                        >
-                          <div className="text-sm font-semibold text-[#152E24]">{item.label}</div>
-                          <div className="text-[11px] text-[#152E24]/40 mt-0.5">{item.description}</div>
-                        </Link>
-                      </NavigationMenuLink>
-                    ))}
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent hover:bg-[#152E24]/[0.04] text-[#152E24]/60 hover:text-[#152E24] font-medium text-[13px] h-9 px-3">
-                  Market Intelligence
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className={megaMenuWide}>
-                  <div className="grid gap-1 p-3 md:grid-cols-2 bg-white rounded-xl">
-                    {marketLinks.map((item) => (
                       <NavigationMenuLink asChild key={item.href}>
                         <Link
                           href={item.href}
@@ -232,7 +200,6 @@ export function SiteHeader() {
                   <div className="p-6 space-y-8 pb-24">
                     {[
                       { title: "Properties", links: mainLinks },
-                      { title: "Market", links: marketLinks },
                       { title: "Investment Tools", links: toolsLinks },
                       { title: "Our Firm", links: companyLinks }
                     ].map((section) => (

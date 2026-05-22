@@ -50,7 +50,7 @@ export function MarketSnapshot() {
             </p>
           </div>
           <Button variant="outline" size="sm" className="gap-2 rounded-lg border-[#152E24]/10 text-[#152E24]/60 hover:bg-[#152E24]/[0.03] text-[11px] font-semibold uppercase tracking-[0.1em]" asChild>
-            <Link href="/market/trends">
+            <Link href="/freehold-intelligence/apps/market">
               Full Report
               <ArrowUpRightIcon className="h-3.5 w-3.5" />
             </Link>
@@ -101,7 +101,7 @@ export function MarketSnapshot() {
                 </p>
               </div>
               <Button className="ore-gradient shrink-0 rounded-lg" asChild>
-                <Link href="/market/why-dubai">Learn More</Link>
+                <Link href="/freehold-intelligence/apps/market">Learn More</Link>
               </Button>
             </div>
           </CardContent>

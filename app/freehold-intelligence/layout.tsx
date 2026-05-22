@@ -1,7 +1,10 @@
 import Link from "next/link"
 
 const nav = [
-  ["Control Room", "/freehold-intelligence"],
+  ["Apps", "/freehold-intelligence"],
+  ["Market", "/freehold-intelligence/apps/market"],
+  ["CRM", "/freehold-intelligence/apps/crm"],
+  ["Dashboard", "/freehold-intelligence/apps/dashboard"],
   ["Milestones", "/freehold-intelligence/milestones"],
   ["Review Requests", "/freehold-intelligence/review-requests"],
   ["Tasks", "/freehold-intelligence/tasks"],

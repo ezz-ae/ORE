@@ -193,7 +193,7 @@ export default async function Home() {
               <Link href="/contact">Schedule Consultation</Link>
             </Button>
             <Button size="lg" variant="outline" className="h-13 w-full rounded-xl border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 transition-all hover:border-[#D4AC50]/30 hover:bg-white/[0.06] hover:text-white sm:h-14 sm:w-auto sm:px-10" asChild>
-              <Link href="/market">Market Intelligence</Link>
+              <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
             </Button>
           </div>
         </div>

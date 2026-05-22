@@ -1060,7 +1060,7 @@ export default async function ProjectPage({
                         </Button>
                       )}
                       <Button variant="outline" className={brandOutlineButtonClass} asChild>
-                        <Link href="/market/trends">Market Trends & Reports</Link>
+                        <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
                       </Button>
                     </div>
                   </CardContent>

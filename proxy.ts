@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const marketPublicGuideRoutes = new Set(["areas", "financing", "golden-visa", "regulations", "trends", "why-dubai"])
+
 export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
   const { pathname } = url
+
+  if (pathname === "/market" || pathname.startsWith("/market/")) {
+    const [, , segment] = pathname.split("/")
+    url.pathname = segment && !marketPublicGuideRoutes.has(segment)
+      ? `/freehold-intelligence/apps/market/${segment}`
+      : "/freehold-intelligence/apps/market"
+    return NextResponse.redirect(url, { status: 307 })
+  }
 
   // crm.orerealestate.ae → orerealestate.ae/crm
   if (hostname.startsWith("crm.")) {

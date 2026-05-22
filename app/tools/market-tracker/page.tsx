@@ -61,7 +61,7 @@ export default function MarketTrackerPage() {
 
             <div className="mt-10 text-center">
               <Button className="ore-gradient" asChild>
-                <Link href="/market/trends">View Full Market Insights</Link>
+                <Link href="/freehold-intelligence/apps/market">View Control Room Market App</Link>
               </Button>
             </div>
           </div>

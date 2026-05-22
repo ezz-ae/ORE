@@ -33,7 +33,7 @@ export function ProjectTable({ projects }: { projects: Project[] }) {
           {projects.map((project) => (
             <tr key={project.id}>
               <td>
-                <Link className="fh-strong" href={`/market/${project.id}`}>
+                <Link className="fh-strong" href={`/freehold-intelligence/apps/market/${project.id}`}>
                   {project.projectName}
                 </Link>
                 <div className="fh-muted">{project.emirate}</div>
@@ -51,7 +51,7 @@ export function ProjectTable({ projects }: { projects: Project[] }) {
               <td>{project.confidence}%</td>
               <td>
                 <div className="fh-button-row">
-                  <Link className="fh-btn" href={`/market/${project.id}`}>
+                  <Link className="fh-btn" href={`/freehold-intelligence/apps/market/${project.id}`}>
                     <ArrowRight size={14} aria-hidden="true" />
                     View
                   </Link>

@@ -207,7 +207,7 @@ export default function ContactPage() {
                   <Link href="/properties">Browse Properties</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="/market">Dubai Market Insights</Link>
+                  <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
                   <Link href="/chat">Ask AI Assistant</Link>

@@ -115,7 +115,7 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
                 className="h-13 w-full rounded-full border-white/15 bg-white/[0.04] px-8 text-[11px] font-bold uppercase tracking-[0.15em] text-white hover:bg-white/10 hover:border-white/25 sm:h-14 sm:w-auto sm:px-10"
                 asChild
               >
-                <Link href="/market">Market Intelligence</Link>
+                <Link href="/freehold-intelligence/apps/market">Control Room Market App</Link>
               </Button>
             </div>
 

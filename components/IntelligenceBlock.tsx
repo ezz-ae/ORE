@@ -226,7 +226,7 @@ export function IntelligenceBlock({ data }: Props) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Link href={leadArea ? `/areas/${leadArea.slug}` : "/market/areas"} className={`${metricCardClassName} group block`}>
+                <Link href={leadArea ? `/areas/${leadArea.slug}` : "/areas"} className={`${metricCardClassName} group block`}>
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">
                       Yield leader
