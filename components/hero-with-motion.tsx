@@ -40,19 +40,6 @@ export function HeroWithMotion({ heroPrompts }: HeroWithMotionProps) {
       <div className="container relative z-10 py-20 md:py-28">
         <div className="mx-auto max-w-3xl text-center">
 
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8 flex justify-center"
-          >
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#C69B3E]/25 bg-[#C69B3E]/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50] animate-pulse" />
-              Freehold Private Advisory
-            </span>
-          </motion.div>
-
           {/* Headline — tight and focused */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

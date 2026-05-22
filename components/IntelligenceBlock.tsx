@@ -3,13 +3,12 @@ import Link from "next/link"
 import {
   ArrowRight,
   BarChart3,
-  Clock3,
   MapPinned,
-  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react"
 import { isPositiveNumber, safeNum, safePercent } from "@/lib/utils/safeDisplay"
+import { LiveMarketBadge } from "@/components/live-market-badge"
 
 type MarketData = Awaited<ReturnType<typeof import("@/lib/intelligence-block").getIntelligenceBlockData>>
 type Props = { data: MarketData }
@@ -32,18 +31,6 @@ const formatDeltaLabel = (value?: number | null) => {
   return `${Math.abs(numeric).toFixed(0)}% below cohort`
 }
 
-const formatUpdatedAt = (value?: string) => {
-  if (!value) return "Updated live"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "Updated live"
-  return new Intl.DateTimeFormat("en-AE", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date)
-}
-
 const metricCardClassName =
   "rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 backdrop-blur-sm shadow-[0_20px_60px_-40px_rgba(0,0,0,0.8)] sm:p-5"
 
@@ -61,7 +48,7 @@ export function IntelligenceBlock({ data }: Props) {
     )
   }
 
-  const { trending, best_areas, pulse, below_market, generated_at } = data
+  const { trending, best_areas, pulse, below_market } = data
 
   if (!pulse || !trending || !best_areas || !below_market) {
     return (
@@ -101,10 +88,7 @@ export function IntelligenceBlock({ data }: Props) {
         <div className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-4 shadow-[0_30px_120px_-60px_rgba(0,0,0,0.85)] backdrop-blur-sm sm:rounded-[36px] sm:p-6 md:p-8 lg:p-10">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start md:gap-8">
             <div className="space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4AC50]/20 bg-[#D4AC50]/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F0D792] sm:px-4 sm:py-2 sm:text-[11px] sm:tracking-[0.18em]">
-                <Sparkles className="h-3.5 w-3.5" />
-                Live Market Intelligence
-              </div>
+              <LiveMarketBadge />
 
               <div className="max-w-3xl">
                 <h2 className="font-serif text-[2rem] font-bold leading-[1.02] text-white sm:text-4xl md:text-5xl">
@@ -116,10 +100,6 @@ export function IntelligenceBlock({ data }: Props) {
               </div>
 
               <div className="flex flex-col items-stretch gap-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/35 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:text-[11px] sm:tracking-[0.14em]">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-2">
-                  <Clock3 className="h-3.5 w-3.5 text-[#D4AC50]" />
-                  Refreshed {formatUpdatedAt(generated_at)}
-                </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-2">
                   <MapPinned className="h-3.5 w-3.5 text-[#D4AC50]" />
                   {safeNum(Number(pulse.area_count))} areas under active watch

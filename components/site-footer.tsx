@@ -32,31 +32,38 @@ const FacebookIcon = () => (
 
 const footerLinks = [
   {
-    title: "Platform",
+    title: "Explore",
     links: [
       { href: "/", label: "Home" },
       { href: "/properties", label: "Properties" },
       { href: "/projects", label: "Projects" },
-      { href: "/chat", label: "AI Assistant" },
-      { href: "/areas", label: "Area Profiles" },
+      { href: "/areas", label: "Areas" },
+      { href: "/developers", label: "Developers" },
+      { href: "/search", label: "Search" },
+      { href: "/map", label: "Map View" },
     ],
   },
   {
-    title: "Market",
+    title: "Investment Tools",
     links: [
-      { href: "/projects", label: "Projects" },
-      { href: "/areas", label: "Area Profiles" },
-      { href: "/developers", label: "Developers" },
-      { href: "/tools", label: "Investment Tools" },
+      { href: "/tools", label: "Tools Hub" },
+      { href: "/tools/roi-calculator", label: "ROI Calculator" },
+      { href: "/tools/payment-simulator", label: "Payment Simulator" },
+      { href: "/tools/comparator", label: "Project Comparator" },
+      { href: "/tools/market-tracker", label: "Market Tracker" },
+      { href: "/tools/ai-discovery", label: "AI Discovery" },
+      { href: "/chat", label: "AI Assistant" },
     ],
   },
   {
     title: "Company",
     links: [
       { href: "/about", label: "About" },
-      { href: "/contact", label: "Contact" },
+      { href: "/services", label: "Services" },
       { href: "/blog", label: "Insights" },
-      { href: "/privacy", label: "Privacy" },
+      { href: "/contact", label: "Contact" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/terms", label: "Terms & Conditions" },
     ],
   },
 ]
