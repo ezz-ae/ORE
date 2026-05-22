@@ -1,201 +1,183 @@
-// app/freehold-intelligence/integrations/page.tsx
+import {
+  Sparkles,
+  ArrowUpRight,
+  BarChart3,
+  Database,
+  Megaphone,
+  MessageSquare,
+  Server,
+  Users2,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react'
+import { executeTool } from '@/lib/freehold/mcp/execute-tool'
+import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-'use client';
+type IntMeta = { category: string; icon: LucideIcon; copy: string }
 
-import React, { useEffect, useState } from 'react';
-import { IntegrationStatusCard } from '@/components/integrations/integration-status-card';
-import { LaunchBlockerCard } from '@/components/integrations/launch-blocker-card';
-import { RequirementCard } from '@/components/integrations/requirement-card';
-import { McpResponseEnvelope } from '@/types/freehold-mcp';
-
-interface Integration {
-  id: string;
-  name: string;
-  status: 'connected' | 'disconnected' | 'pending';
-  description: string;
+const META: Record<string, IntMeta> = {
+  hubspot:      { category: 'CRM',            icon: Users2,        copy: 'Lead capture, contact sync, pipeline automation.' },
+  'meta-ads':   { category: 'Paid Ads',       icon: Megaphone,     copy: 'Meta & Instagram campaigns and pixel events.' },
+  'google-ads': { category: 'Paid Ads',       icon: Megaphone,     copy: 'Google search and display — budget and bidding.' },
+  whatsapp:     { category: 'Messaging',      icon: MessageSquare, copy: 'Automated and agent-triggered WhatsApp flows.' },
+  tracking:     { category: 'Analytics',      icon: BarChart3,     copy: 'Meta Pixel, GA4, GTM, conversion attribution.' },
+  neon:         { category: 'Infrastructure', icon: Database,      copy: 'Neon PostgreSQL — the private data layer.' },
+  vercel:       { category: 'Infrastructure', icon: Server,        copy: 'Vercel deployment pipeline and health.' },
 }
 
-interface LaunchBlocker {
-  id: string;
-  integrationId: string;
-  message: string;
-  severity: 'critical' | 'warning' | 'info';
-  resolutionSteps: string[];
+function statusCfg(status: string) {
+  switch (status) {
+    case 'connected':       return { label: 'Connected',     dot: 'bg-emerald-400', text: 'text-emerald-300' }
+    case 'partial':         return { label: 'Partial',       dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]'   }
+    case 'needs_access':    return { label: 'Needs access',  dot: 'bg-orange-400',  text: 'text-orange-200' }
+    case 'blocked':
+    case 'disconnected':
+    case 'not_connected':   return { label: 'Not connected', dot: 'bg-red-400',     text: 'text-red-300'    }
+    default:                return { label: 'Pending',       dot: 'bg-sky-400',     text: 'text-sky-200'    }
+  }
 }
 
-export default function IntegrationDashboard() {
-  const [integrations, setIntegrations] = useState<Integration[]>([]);
-  const [blockers, setBlockers] = useState<LaunchBlocker[]>([]);
-  const [canLaunch, setCanLaunch] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default async function IntegrationsPage() {
+  const [intRes, blockRes] = await Promise.all([
+    executeTool({ tool: 'integration_summary', role: 'owner' }),
+    executeTool({ tool: 'launch_blockers', role: 'owner' }),
+  ])
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch integrations
-        const intRes = await fetch('/api/freehold/integrations');
-        const intData = (await intRes.json()) as McpResponseEnvelope<Integration[]>;
-        if (intData.status === 'success' && intData.data) {
-          setIntegrations(intData.data);
-        }
+  const integrations: any[] = intRes.data?.integrations || getAllIntegrations()
+  const blockers: any[] = blockRes.data?.blockers || getLaunchBlockers()
+  const critical = blockers.filter((b) => b.severity === 'critical')
+  const connectedCount = integrations.filter((i: any) => i.status === 'connected').length
 
-        // Fetch launch blockers
-        const blockRes = await fetch('/api/freehold/integrations/launch-blockers');
-        const blockData = (await blockRes.json()) as McpResponseEnvelope<any>;
-        if (blockData.status === 'success' && blockData.data) {
-          setBlockers(blockData.data.blockers || []);
-          setCanLaunch(blockData.data.canLaunch || false);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleConnect = (integrationId: string) => {
-    // In a real implementation, this would initiate OAuth flow
-    console.log(`Connecting to ${integrationId}`);
-    alert(`OAuth flow would start for ${integrationId}`);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-gray-600">Loading integration dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-            Error: {error}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const criticalBlockers = blockers.filter(b => b.severity === 'critical');
-  const warnings = blockers.filter(b => b.severity === 'warning');
+  // Group by category
+  const grouped = integrations.reduce<Record<string, any[]>>((acc, i) => {
+    const cat = META[i.id]?.category || 'Other'
+    ;(acc[cat] = acc[cat] || []).push(i)
+    return acc
+  }, {})
+  const categoryOrder = ['CRM', 'Paid Ads', 'Messaging', 'Analytics', 'Infrastructure', 'Other']
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Integration Dashboard</h1>
-          <p className="text-gray-600">Manage your Freehold Intelligence integrations</p>
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+
+      {/* Header */}
+      <section>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <Zap className="h-3.5 w-3.5" /> Connections
         </div>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+          What's plugged in,
+          <br />
+          <span className="text-white/40">what isn't.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+          <span className="text-white">{connectedCount} of {integrations.length}</span> external systems are connected. Ads and external writes stay disabled until critical access is granted.
+        </p>
+      </section>
 
-        {/* Launch Status */}
-        <div className={`mb-8 p-4 rounded-lg border ${canLaunch ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{canLaunch ? '🚀' : '⛔'}</span>
-            <div>
-              <h2 className="text-lg font-semibold">
-                {canLaunch ? 'Ready to Launch' : `${criticalBlockers.length} Critical Issue(s) Blocking Launch`}
-              </h2>
-              <p className={`text-sm ${canLaunch ? 'text-green-700' : 'text-red-700'}`}>
-                {canLaunch
-                  ? 'All critical requirements have been met'
-                  : 'Please resolve the issues below before launching'}
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* AI prompt */}
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Ask about connections, access, billing…"
+          suggestions={[
+            'What is blocking Meta launch?',
+            'Show all integration blockers.',
+            'How do I connect HubSpot?',
+            'Which systems are healthy?',
+          ]}
+        />
+      </section>
 
-        {/* Critical Blockers */}
-        {criticalBlockers.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">🔴 Critical Issues</h2>
-            <div className="space-y-4">
-              {criticalBlockers.map(blocker => (
-                <LaunchBlockerCard key={blocker.id} card={blocker} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Warnings */}
-        {warnings.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">⚠️ Warnings</h2>
-            <div className="space-y-4">
-              {warnings.map(blocker => (
-                <LaunchBlockerCard key={blocker.id} card={blocker} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Integration Cards */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Integration Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {integrations.map(integration => (
-              <IntegrationStatusCard
-                key={integration.id}
-                card={{
-                  type: 'IntegrationStatusCard',
-                  integrationId: integration.id,
-                  name: integration.name,
-                  status: integration.status,
-                  details: integration.description,
-                  connectUrl: `/api/freehold/integrations/${integration.id}/oauth/start`,
-                }}
-                onConnect={handleConnect}
-              />
+      {/* Critical blockers */}
+      {critical.length > 0 && (
+        <section className="mt-20">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-red-300/85">Must clear before launch</div>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+            {critical.length} {critical.length === 1 ? 'thing is' : 'things are'} holding back the server
+          </h2>
+          <div className="mt-7 grid gap-4">
+            {critical.map((b: any) => (
+              <div
+                key={b.id}
+                className="rounded-[24px] border border-red-400/15 bg-red-500/[0.04] p-6 sm:p-7"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-red-300/85">
+                      {String(b.integrationId || b.integration_id || 'system').replace(/-/g, ' ')}
+                    </div>
+                    <h3 className="mt-2 text-lg font-semibold text-white">{b.title || b.message}</h3>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-red-200">
+                    Critical
+                  </span>
+                </div>
+                {(b.description || b.resolutionSteps?.[0]) && (
+                  <p className="mt-3 text-[15px] leading-[1.6] text-white/65">
+                    {b.description || b.resolutionSteps?.[0]}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Integrations grouped */}
+      <section className="mt-20">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All connections</div>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">By category</h2>
+
+        <div className="mt-8 grid gap-12">
+          {categoryOrder
+            .filter((cat) => grouped[cat])
+            .map((cat) => (
+              <div key={cat}>
+                <div className="mb-4 text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">{cat}</div>
+                <div className="grid gap-3">
+                  {grouped[cat].map((integration: any) => {
+                    const meta = META[integration.id]
+                    const Icon = meta?.icon ?? Server
+                    const st = statusCfg(integration.status)
+                    return (
+                      <div
+                        key={integration.id}
+                        className="flex items-center gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20"
+                      >
+                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                          <Icon className="h-5 w-5 text-white/90" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[15px] font-semibold text-white">{integration.name}</div>
+                          <div className="mt-0.5 text-[13px] leading-snug text-white/50">{meta?.copy || integration.description}</div>
+                        </div>
+                        <div className={`flex shrink-0 items-center gap-1.5 text-[12px] ${st.text}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
+                          {st.label}
+                        </div>
+                        {integration.status !== 'connected' && (
+                          <button className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                            Connect <ArrowUpRight className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
         </div>
+      </section>
 
-        {/* API Testing Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">API Testing</h2>
-          <div className="bg-white border rounded-lg p-4">
-            <p className="text-gray-600 mb-4">
-              Test the API endpoints using curl or your favorite API client:
-            </p>
-            <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto text-gray-800">
-{`# List all integrations
-curl http://localhost:3000/api/freehold/integrations
-
-# Get specific integration
-curl http://localhost:3000/api/freehold/integrations/hubspot
-
-# Get integration requirements
-curl http://localhost:3000/api/freehold/integrations/hubspot/requirements
-
-# Get sync logs
-curl http://localhost:3000/api/freehold/integrations/hubspot/sync-logs
-
-# Test integration
-curl -X POST http://localhost:3000/api/freehold/integrations/hubspot/test
-
-# Get launch blockers
-curl http://localhost:3000/api/freehold/integrations/launch-blockers
-
-# List MCP tools
-curl http://localhost:3000/api/freehold/mcp/tools
-
-# Call MCP tool
-curl -X POST http://localhost:3000/api/freehold/mcp/call \\
-  -H "Content-Type: application/json" \\
-  -d '{"toolName": "server-summary", "args": {}}'`}
-            </pre>
-          </div>
+      {/* AI take footer */}
+      <section className="mt-20 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+          <Sparkles className="h-3 w-3" /> AI take
         </div>
-      </div>
+        <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">
+          The fastest path to launch is to confirm the Meta billing owner. Once that's cleared, conversion event mapping is a single check on the tracking side, and Dubai Hills can move into a paid campaign immediately.
+        </p>
+      </section>
     </div>
-  );
+  )
 }

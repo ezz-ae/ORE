@@ -1,103 +1,95 @@
-import { Copy, FileText, FolderClock, MessageSquarePlus, Pin, Save, Search, Send, Sparkles } from "lucide-react"
-import { notebookConversations } from "@/src/features/freehold-intelligence/server-session"
-
-const outputActions = ["Save output", "Copy output", "Convert to task", "Send for review", "Create PDF", "Create brochure", "Create offer", "Create ad request", "Attach to project", "Add to memory"]
-const outputTypes = ["brochure", "PDF", "sales offer", "WhatsApp message", "email", "ad copy", "caption", "landing copy", "image prompt", "video prompt", "comparison", "follow-up script"]
+import { BookOpen, Pin } from 'lucide-react'
+import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 export default function NotebookPage() {
   const conversation = notebookConversations[0]
 
   return (
-    <div className="grid min-h-full lg:grid-cols-[280px_minmax(0,1fr)_340px]">
-      <aside className="border-r border-white/10 bg-[#07110D]/85 p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <FolderClock className="h-4 w-4 text-[#D4AF37]" />
-          Notebook memory
-        </div>
-        <div className="mt-4 flex gap-2 border border-white/10 bg-black/20 p-2">
-          <Search className="h-4 w-4 text-white/35" />
-          <input className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/30" placeholder="Search project, lead, tag..." />
-        </div>
-        <div className="mt-4 grid gap-2">
-          {notebookConversations.map((item) => (
-            <button key={item.id} className="border border-[#D4AF37]/25 bg-[#D4AF37]/10 p-3 text-left">
-              <div className="text-sm font-semibold text-white">{item.title}</div>
-              <div className="mt-1 text-xs text-white/45">{item.savedOutputs.length} saved outputs</div>
-            </button>
-          ))}
-        </div>
-        <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Output filters</div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {outputTypes.slice(0, 8).map((type) => (
-            <span key={type} className="border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] text-white/50">{type}</span>
-          ))}
-        </div>
-      </aside>
+    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
 
-      <section className="min-w-0 px-4 py-5 sm:px-6">
-        <div className="border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">Generative workspace</p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">Notebook</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">Create sales and marketing assets with project, area, developer, campaign and CRM context according to permission level.</p>
+      <section>
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <BookOpen className="h-3.5 w-3.5" /> Notebook
         </div>
-
-        <div className="mt-5 grid gap-4">
-          {conversation.messages.map((message, index) => (
-            <div key={`${message.role}-${index}`} className={`max-w-3xl border p-4 ${message.role === "assistant" ? "border-[#D4AF37]/25 bg-[#D4AF37]/10" : "ml-auto border-white/10 bg-white/[0.04]"}`}>
-              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/40">
-                {message.role === "assistant" ? <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" /> : <MessageSquarePlus className="h-3.5 w-3.5 text-white/45" />}
-                {message.role}
-              </div>
-              <p className="text-sm leading-6 text-white/70">{message.content}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-5 border border-white/10 bg-black/20 p-3">
-          <textarea className="min-h-28 w-full resize-none bg-transparent p-2 text-sm text-white outline-none placeholder:text-white/30" placeholder="Generate an offer, comparison, WhatsApp message, ad copy, brochure, PDF outline, prompt or follow-up script..." />
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              {["Project context", "Lead context", "Campaign context"].map((item) => (
-                <button key={item} className="border border-white/10 px-3 py-1.5 text-xs text-white/50">{item}</button>
-              ))}
-            </div>
-            <button className="flex items-center gap-2 bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-[#07110D]">
-              <Send className="h-4 w-4" />
-              Generate
-            </button>
-          </div>
-        </div>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+          Generate, then
+          <br />
+          <span className="text-white/40">save what's worth saving.</span>
+        </h1>
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+          Brochures, sales offers, WhatsApp drafts, ad copy, landing copy and follow-up scripts — all grounded in real project, lead and campaign context.
+        </p>
       </section>
 
-      <aside className="border-l border-white/10 bg-[#07110D]/85 p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <FileText className="h-4 w-4 text-[#D4AF37]" />
-          Saved outputs
-        </div>
-        <div className="mt-4 grid gap-3">
-          {conversation.savedOutputs.map((output) => (
-            <article key={output.id} className="border border-white/10 bg-white/[0.03] p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.14em] text-[#D4AF37]">{output.type}</div>
-                  <h2 className="mt-1 text-sm font-semibold text-white">{output.title}</h2>
+      <section className="mt-12">
+        <AiPrompt
+          placeholder="Generate an offer, comparison, WhatsApp message, ad copy…"
+          suggestions={[
+            'Draft a WhatsApp for the hottest lead.',
+            'Comparison: Palm vs Hills for investor.',
+            'Three ad angles for Dubai Hills.',
+            'Offer letter for Business Bay.',
+          ]}
+        />
+      </section>
+
+      {conversation && (
+        <>
+          <section className="mt-20">
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Recent thread</div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{conversation.title}</h2>
+
+            <div className="mt-6 grid gap-3">
+              {conversation.messages.map((message, i) => (
+                <div
+                  key={i}
+                  className={
+                    message.role === 'assistant'
+                      ? 'rounded-3xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-5 py-4 text-[15px] leading-relaxed text-white/85'
+                      : 'rounded-3xl border border-white/[0.06] bg-white/[0.025] px-5 py-4 text-[15px] leading-relaxed text-white/85'
+                  }
+                >
+                  <div className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+                    {message.role === 'assistant' ? 'Freehold AI' : 'You'}
+                  </div>
+                  {message.content}
                 </div>
-                {output.pinned ? <Pin className="h-3.5 w-3.5 text-[#D4AF37]" /> : null}
-              </div>
-              <p className="mt-2 text-xs leading-5 text-white/55">{output.content}</p>
-              <div className="mt-3 flex gap-2">
-                <button className="grid h-8 w-8 place-items-center border border-white/10 text-white/50"><Copy className="h-3.5 w-3.5" /></button>
-                <button className="grid h-8 w-8 place-items-center border border-white/10 text-white/50"><Save className="h-3.5 w-3.5" /></button>
-              </div>
-            </article>
-          ))}
-        </div>
-        <div className="mt-5 grid gap-2">
-          {outputActions.slice(0, 7).map((action) => (
-            <button key={action} className="border border-white/10 bg-black/15 px-3 py-2 text-left text-xs text-white/55 hover:border-[#D4AF37]/35 hover:text-white">{action}</button>
-          ))}
-        </div>
-      </aside>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-20">
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Saved outputs</div>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">From this conversation</h2>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {conversation.savedOutputs.map((output) => (
+                <article
+                  key={output.id}
+                  className="rounded-3xl border border-white/[0.06] bg-[#0A0D10] p-6 transition hover:border-[#D4AF37]/25"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+                      {output.type.replace(/_/g, ' ')}
+                    </div>
+                    {output.pinned && <Pin className="h-3.5 w-3.5 text-[#D4AF37]" />}
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-white">{output.title}</h3>
+                  <p className="mt-3 line-clamp-4 text-[14px] leading-[1.6] text-white/60">{output.content}</p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {output.tags.slice(0, 4).map((t) => (
+                      <span key={t} className="rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-white/50">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 // types/freehold-mcp.ts
 
-export type Role = 'admin' | 'user' | 'agent'; // Example roles, extend as needed
+export type Role = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_agent' | 'data_manager' | 'viewer' | 'user' | 'agent';
 
 export interface Tool {
   id: string;
@@ -9,18 +9,21 @@ export interface Tool {
   requiresApproval: boolean;
   allowedRoles: Role[];
   canWriteExternal: boolean;
-  // Add other tool-specific properties as needed
+  aliases?: string[];
+  category?: string;
 }
 
 export interface McpResponseEnvelope<T> {
   requestId: string;
   tool?: string;
   layer?: string;
-  status: 'success' | 'error' | 'pendingApproval';
+  status: 'success' | 'partial' | 'error' | 'pendingApproval';
   data?: T;
   evidence?: string[];
   warnings?: string[];
   nextActions?: string[];
+  fallbackStatus?: string;
+  permissionAwareToolAccess?: Record<string, unknown>;
   generatedAt: string;
 }
 
@@ -28,7 +31,7 @@ export interface IntegrationStatusCard {
   type: 'IntegrationStatusCard';
   integrationId: string;
   name: string;
-  status: 'connected' | 'disconnected' | 'pending';
+  status: 'connected' | 'disconnected' | 'pending' | 'partial' | 'needs_access' | 'not_connected';
   lastSync?: string;
   details?: string;
   connectUrl?: string;
@@ -69,7 +72,7 @@ export interface LeadMachineCard {
 export interface MatrixCard {
   type: 'MatrixCard';
   title: string;
-  data: Record<string, any>; // Flexible for various matrix data
+  data: Record<string, any>;
   visualizationType?: 'table' | 'chart';
 }
 
