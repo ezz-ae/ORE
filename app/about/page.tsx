@@ -79,7 +79,7 @@ export default function AboutPage() {
               <div className="relative overflow-hidden rounded-[28px] border border-white/[0.08] bg-white/[0.04] p-8 backdrop-blur-xl md:p-10">
                 <Quote className="h-8 w-8 text-[#D4AC50]/60" />
                 <blockquote className="mt-6 font-serif text-xl leading-relaxed text-white md:text-2xl">
-                  "Navigating Dubai's growth corridors with institutional rigor."
+                  &quot;Navigating Dubai&apos;s growth corridors with institutional rigor.&quot;
                 </blockquote>
                 <div className="mt-8 flex items-center gap-4 border-t border-white/[0.06] pt-6">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#D4AC50]/25 bg-gradient-to-br from-[#D4AC50]/20 to-transparent">

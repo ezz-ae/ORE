@@ -115,7 +115,7 @@ export default function CrmReportsPage() {
               </div>
               <div className="mt-3 text-[14px] font-semibold text-white">Golden Visa buyers</div>
               <div className="mt-2 text-[12px] leading-relaxed text-white/55">
-                12 leads this month tagged "GV-eligible" — 4 already at Viewing stage.
+                12 leads this month tagged &quot;GV-eligible&quot; — 4 already at Viewing stage.
               </div>
             </div>
 
