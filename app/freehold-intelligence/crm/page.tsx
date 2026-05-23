@@ -112,7 +112,7 @@ export default async function FreeholdCrmPage() {
                 <div className="border-t border-white/[0.06] bg-white/[0.015] px-6 py-5 sm:px-8 sm:py-6">
                   <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">Suggested WhatsApp</div>
                   <p className="mt-2 text-[15px] italic leading-[1.6] text-white/75">
-                    "{lead.suggestedMessage}"
+                    &quot;{lead.suggestedMessage}&quot;
                   </p>
                 </div>
 
