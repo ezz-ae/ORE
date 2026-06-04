@@ -92,6 +92,14 @@ export const mockIntegrations: Integration[] = [
     lastSync: new Date(Date.now() - 7200000).toISOString(),
     syncStatus: 'success',
   },
+  {
+    id: 'github',
+    name: 'GitHub',
+    status: 'connected',
+    description: 'Repository, CI/CD pipeline, and deployment tracking',
+    lastSync: new Date(Date.now() - 1800000).toISOString(),
+    syncStatus: 'success',
+  },
 ];
 
 export const mockIntegrationDetails: Record<string, IntegrationDetails> = {
@@ -334,4 +342,32 @@ export function getAllIntegrations(): Integration[] {
 
 export function getLaunchBlockers(): LaunchBlocker[] {
   return mockLaunchBlockers;
+}
+
+export const mockGithubData = {
+  repo: 'ezz-ae/ore',
+  branch: 'claude/vibrant-davinci-8bWh1',
+  defaultBranch: 'main',
+  lastCommit: {
+    sha: '4516f12',
+    message: 'Intelligence server — full build completion',
+    author: 'trendinerdxb-2027',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+  },
+  deployments: [
+    { id: 'dpl_001', status: 'ready', env: 'production', url: 'www.freeholdproperty.ae', createdAt: new Date(Date.now() - 1800000).toISOString() },
+    { id: 'dpl_002', status: 'ready', env: 'preview', url: 'ore-qo9tchftt-ee.vercel.app', createdAt: new Date(Date.now() - 3600000).toISOString() },
+  ],
+  ciChecks: [
+    { name: 'Build', status: 'success', duration: '1m 42s' },
+    { name: 'Type check', status: 'success', duration: '28s' },
+    { name: 'Lint', status: 'success', duration: '14s' },
+  ],
+  openPRs: 0,
+  openIssues: 0,
+  recentActivity: [
+    { type: 'push', message: 'Intelligence server — full build completion', author: 'trendinerdxb-2027', ago: '1h ago' },
+    { type: 'push', message: 'Server polish — full settings UI and dashboard app page', author: 'trendinerdxb-2027', ago: '3h ago' },
+    { type: 'push', message: 'Design overhaul — distinct cards, layered text pages', author: 'trendinerdxb-2027', ago: '5h ago' },
+  ],
 }

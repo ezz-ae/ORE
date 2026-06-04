@@ -8,6 +8,7 @@ const tabs = [
   { label: 'Listings', href: '/freehold-intelligence/lead-machine/listings' },
   { label: 'Landings', href: '/freehold-intelligence/lead-machine/landings' },
   { label: 'Ad Requests', href: '/freehold-intelligence/lead-machine/ad-requests' },
+  { label: 'Requirements', href: '/freehold-intelligence/lead-machine/requirements' },
 ]
 
 export default function LeadMachineLayout({ children }: { children: React.ReactNode }) {

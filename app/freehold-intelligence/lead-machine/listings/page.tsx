@@ -97,14 +97,17 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link
-            href={`/freehold-intelligence/review-requests?project=${listing.projectId}`}
+            href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#06080A] transition hover:gap-2.5"
           >
             Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
-          <button className="rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white">
-            Ask AI about this
-          </button>
+          <Link
+            href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
+            className="rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
+          >
+            View details
+          </Link>
         </div>
       </div>
     </article>

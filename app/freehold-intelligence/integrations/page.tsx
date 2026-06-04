@@ -1,8 +1,10 @@
+import Link from 'next/link'
 import {
   Sparkles,
   ArrowUpRight,
   BarChart3,
   Database,
+  GitBranch,
   Megaphone,
   MessageSquare,
   Server,
@@ -16,7 +18,7 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type IntMeta = { category: string; icon: LucideIcon; copy: string }
 
-const META: Record<string, IntMeta> = {
+const META: Record<string, IntMeta & { href?: string }> = {
   hubspot:      { category: 'CRM',            icon: Users2,        copy: 'Lead capture, contact sync, pipeline automation.' },
   'meta-ads':   { category: 'Paid Ads',       icon: Megaphone,     copy: 'Meta & Instagram campaigns and pixel events.' },
   'google-ads': { category: 'Paid Ads',       icon: Megaphone,     copy: 'Google search and display — budget and bidding.' },
@@ -24,6 +26,7 @@ const META: Record<string, IntMeta> = {
   tracking:     { category: 'Analytics',      icon: BarChart3,     copy: 'Meta Pixel, GA4, GTM, conversion attribution.' },
   neon:         { category: 'Infrastructure', icon: Database,      copy: 'Neon PostgreSQL — the private data layer.' },
   vercel:       { category: 'Infrastructure', icon: Server,        copy: 'Vercel deployment pipeline and health.' },
+  github:       { category: 'Infrastructure', icon: GitBranch,     copy: 'Repository, CI/CD pipeline, and deployment tracking.', href: '/freehold-intelligence/integrations/github' },
 }
 
 function statusCfg(status: string) {
@@ -155,11 +158,15 @@ export default async function IntegrationsPage() {
                           <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                           {st.label}
                         </div>
-                        {integration.status !== 'connected' && (
+                        {meta?.href ? (
+                          <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                            View <ArrowUpRight className="h-3 w-3" />
+                          </Link>
+                        ) : integration.status !== 'connected' ? (
                           <button className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                             Connect <ArrowUpRight className="h-3 w-3" />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     )
                   })}

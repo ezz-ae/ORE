@@ -94,7 +94,7 @@ export default async function FreeholdCrmPage() {
                       </div>
                       <div className="min-w-0 flex-1 pt-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-xl font-semibold tracking-tight text-white sm:text-2xl lg:text-[26px]">{lead.name}</h3>
+                          <Link href={`/freehold-intelligence/crm/leads/${lead.id}`} className="text-xl font-semibold tracking-tight text-white transition hover:text-[#D4AF37] sm:text-2xl lg:text-[26px]">{lead.name}</Link>
                           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.badge}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                             {tone.label} · {lead.intentScore}
@@ -133,12 +133,18 @@ export default async function FreeholdCrmPage() {
                         <div className="mt-1 text-[13px] font-medium text-white/80 lg:text-[14px]">{lead.nextBestAction}</div>
                       </div>
                       <div className="flex gap-2">
-                        <button className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-white/90">
+                        <Link
+                          href={`/freehold-intelligence/crm/leads/${lead.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-white/90"
+                        >
                           <PhoneCall className="h-3.5 w-3.5" /> Call
-                        </button>
-                        <button className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white">
+                        </Link>
+                        <Link
+                          href={`/freehold-intelligence/crm/leads/${lead.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
+                        >
                           <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                        </button>
+                        </Link>
                       </div>
                     </div>
 
