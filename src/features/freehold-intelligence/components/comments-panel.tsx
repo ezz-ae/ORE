@@ -1,44 +1,81 @@
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+"use client"
+
 import type { ReviewItem } from "../types"
 import { convertCommentToTask, createReviewComment } from "../actions"
 import { StatusPill } from "./status-pill"
+import { ArrowRight, MessageSquare } from "lucide-react"
 
 export function CommentsPanel({ pageRef, items }: { pageRef: string; items: ReviewItem[] }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-      <div className="mb-4">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#D4AF37]">Review requests</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">Comments → tasks</h2>
-        <p className="mt-2 text-sm text-white/60">Capture stakeholder feedback and convert anything actionable into a trackable task.</p>
+    <div className="space-y-5">
+      {/* Add comment form */}
+      <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+        <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <MessageSquare className="h-3.5 w-3.5" /> Add a comment
+        </div>
+        <form action={createReviewComment} className="space-y-3">
+          <input type="hidden" name="page_ref" value={pageRef} />
+          <input
+            name="author"
+            placeholder="Your name"
+            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+          />
+          <textarea
+            name="body"
+            placeholder="Add a review comment or decision request…"
+            rows={3}
+            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition resize-none"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-white/90"
+          >
+            Add comment <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </form>
       </div>
 
-      <form action={createReviewComment} className="space-y-3">
-        <input type="hidden" name="page_ref" value={pageRef} />
-        <input name="author" placeholder="Author" className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/35" />
-        <Textarea name="body" placeholder="Add a review comment or decision request…" className="border-white/10 bg-black/30 text-white placeholder:text-white/35" />
-        <Button className="bg-[#D4AF37] text-black hover:bg-[#C69B3E]">Add comment</Button>
-      </form>
+      {/* Comment list */}
+      {items.length === 0 ? (
+        <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center">
+          <p className="text-[14px] text-white/40">No comments yet on this page.</p>
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {items.map((item) => (
+            <div
+              key={item.item_id}
+              className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+                  #{item.item_id} · {item.author || "Anonymous"} · <span className="text-white/20">{item.page_ref}</span>
+                </div>
+                <StatusPill value={item.status} />
+              </div>
 
-      <div className="mt-6 space-y-3">
-        {items.length === 0 ? <p className="text-sm text-white/50">No comments yet.</p> : null}
-        {items.map((item) => (
-          <div key={item.item_id} className="rounded-xl border border-white/10 bg-black/20 p-4">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm text-white/50">#{item.item_id} · {item.author || "Anonymous"} · {item.page_ref}</div>
-              <StatusPill value={item.status} />
+              <p className="mt-3 text-[14px] leading-relaxed text-white/85">{item.body}</p>
+
+              {item.kind === "comment" && (
+                <form action={convertCommentToTask} className="mt-4 flex flex-wrap items-center gap-3 border-t border-white/[0.05] pt-3.5">
+                  <input type="hidden" name="item_id" value={item.item_id} />
+                  <input
+                    name="assignee"
+                    placeholder="Assign to…"
+                    className="rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+                  />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#F8E7AE] transition hover:border-[#D4AF37]/35 hover:bg-[#D4AF37]/10"
+                  >
+                    Convert to task
+                  </button>
+                </form>
+              )}
             </div>
-            <p className="text-sm leading-6 text-white/80">{item.body}</p>
-            {item.kind === "comment" ? (
-              <form action={convertCommentToTask} className="mt-3 flex flex-wrap gap-2">
-                <input type="hidden" name="item_id" value={item.item_id} />
-                <input name="assignee" placeholder="Assignee" className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/35" />
-                <Button variant="outline" className="border-white/15 bg-transparent text-white hover:bg-white/10">Convert to task</Button>
-              </form>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </section>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

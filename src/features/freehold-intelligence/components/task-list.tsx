@@ -1,27 +1,54 @@
-import { Button } from "@/components/ui/button"
+"use client"
+
 import type { ReviewItem } from "../types"
 import { closeTask } from "../actions"
 import { StatusPill } from "./status-pill"
+import { CheckCircle2, User } from "lucide-react"
 
 export function TaskList({ tasks }: { tasks: ReviewItem[] }) {
+  if (tasks.length === 0) {
+    return (
+      <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center">
+        <p className="text-[14px] text-white/40">No tasks yet. Convert comments into tasks from Review Requests.</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-3">
-      {tasks.length === 0 ? <p className="text-white/50">No tasks yet. Convert comments into tasks from Review Requests.</p> : null}
+    <div className="grid gap-3">
       {tasks.map((task) => (
-        <div key={task.item_id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-white/50">Task #{task.item_id} · {task.page_ref || "General"}</div>
+        <div
+          key={task.item_id}
+          className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+              <span>Task #{task.item_id}</span>
+              {task.page_ref && <><span>·</span><span className="text-white/20">{task.page_ref}</span></>}
+            </div>
             <StatusPill value={task.status} />
           </div>
-          <p className="text-white">{task.body}</p>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-white/55">
-            <span>Assignee: {task.assignee || "Unassigned"}</span>
-            {task.status !== "resolved" ? (
+
+          <p className="mt-3 text-[14px] leading-relaxed text-white/85">{task.body}</p>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.05] pt-3.5">
+            <div className="flex items-center gap-2 text-[12px] text-white/40">
+              <User className="h-3.5 w-3.5" />
+              {task.assignee || "Unassigned"}
+            </div>
+
+            {task.status !== "resolved" && (
               <form action={closeTask}>
                 <input type="hidden" name="item_id" value={task.item_id} />
-                <Button className="bg-[#D4AF37] text-black hover:bg-[#C69B3E]">Mark resolved</Button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Mark resolved
+                </button>
               </form>
-            ) : null}
+            )}
           </div>
         </div>
       ))}
