@@ -317,3 +317,104 @@ export function createMockAiAnswer(prompt: string, role: ServerRole = currentSer
     cards: serverSummary.recommendedActions,
   }
 }
+
+// ─── Lead Operations ──────────────────────────────────────────────────────────
+
+export type CRMActivityEvent = {
+  id: string
+  leadId: string
+  leadName: string
+  type: "call" | "whatsapp" | "note" | "stage_change" | "assignment" | "follow_up" | "system"
+  actor: string
+  content: string
+  outcome?: "connected" | "no_answer" | "callback_requested" | "not_interested" | "progressed"
+  durationMin?: number
+  createdAt: string
+}
+
+export type CRMFollowUpItem = {
+  leadId: string
+  leadName: string
+  phone: string
+  assignedAgent: string
+  urgency: "critical" | "high" | "medium" | "low"
+  intentScore: number
+  stage: string
+  source: string
+  lastContactAt: string
+  dueAt: string
+  overdueHours: number
+  nextBestAction: string
+  duplicateRisk: boolean
+  wrongNumberRisk: boolean
+}
+
+export type CRMAgentCapacity = {
+  id: string
+  name: string
+  initials: string
+  role: string
+  totalLeads: number
+  hotLeads: number
+  overdueFollowUps: number
+  utilization: number
+  status: "available" | "at_capacity" | "overloaded"
+  specialty: string
+  recentWins: number
+}
+
+export type CRMInboxLead = {
+  id: string
+  name: string
+  phone: string
+  email: string
+  source: string
+  intentScore: number
+  urgency: "critical" | "high" | "medium" | "low"
+  arrivedAt: string
+  assignedAgent?: string
+  status: "unassigned" | "assigned" | "contacted"
+  aiNote: string
+}
+
+export const crmActivityLog: CRMActivityEvent[] = [
+  { id: "act_001", leadId: "lead_001", leadName: "Rami Haddad", type: "call", actor: "Noura", content: "Discussed Palm payment plan options and investment timeline.", outcome: "connected", durationMin: 12, createdAt: "2026-06-04T09:15:00+04:00" },
+  { id: "act_002", leadId: "lead_001", leadName: "Rami Haddad", type: "whatsapp", actor: "Noura", content: "Sent Palm payment plan comparison — 60/40 breakdown with yield projection.", createdAt: "2026-06-04T09:30:00+04:00" },
+  { id: "act_003", leadId: "lead_005", leadName: "Priya Nair", type: "note", actor: "Sara M.", content: "Budget confirmed at AED 2.5M. Golden Visa path is primary driver. Creek Beach and Emaar Beachfront shortlisted.", createdAt: "2026-06-04T08:45:00+04:00" },
+  { id: "act_004", leadId: "lead_002", leadName: "Sara Khan", type: "stage_change", actor: "Omar", content: "Stage moved: New → Follow-up after duplicate risk review.", createdAt: "2026-06-03T17:00:00+04:00" },
+  { id: "act_005", leadId: "lead_002", leadName: "Sara Khan", type: "call", actor: "Omar", content: "Call attempt — no answer. Second attempt scheduled.", outcome: "no_answer", durationMin: 0, createdAt: "2026-06-03T14:30:00+04:00" },
+  { id: "act_006", leadId: "lead_003", leadName: "Michael Reed", type: "whatsapp", actor: "Layla", content: "Sent two-project comparison: JVC vs Dubai Hills with payment plans and handover dates.", createdAt: "2026-06-03T11:20:00+04:00" },
+  { id: "act_007", leadId: "lead_003", leadName: "Michael Reed", type: "follow_up", actor: "system", content: "Automated reminder: 14 days since last direct contact. Escalated to high priority.", createdAt: "2026-06-03T09:00:00+04:00" },
+  { id: "act_008", leadId: "lead_006", leadName: "James Whitfield", type: "call", actor: "Rami T.", content: "Call attempt — no response. WhatsApp sent 48h ago with no read receipt.", outcome: "no_answer", durationMin: 0, createdAt: "2026-06-02T15:00:00+04:00" },
+  { id: "act_009", leadId: "lead_006", leadName: "James Whitfield", type: "note", actor: "Rami T.", content: "Flagged as possible wrong number. WhatsApp delivered but unread for 5 days. Recommend verification before next attempt.", createdAt: "2026-06-02T15:05:00+04:00" },
+  { id: "act_010", leadId: "lead_004", leadName: "Abdullah Al-Mansoori", type: "assignment", actor: "system", content: "Lead assigned to Ahmad K. from unassigned pool. Source: Dubai Hills landing.", createdAt: "2026-06-01T10:00:00+04:00" },
+  { id: "act_011", leadId: "lead_004", leadName: "Abdullah Al-Mansoori", type: "call", actor: "Ahmad K.", content: "First contact call connected. Confirmed interest in Dubai Hills. Budget AED 1.8M. Wants 70/30 plan.", outcome: "connected", durationMin: 8, createdAt: "2026-06-01T10:30:00+04:00" },
+  { id: "act_012", leadId: "lead_001", leadName: "Rami Haddad", type: "stage_change", actor: "Noura", content: "Stage moved: Qualified → Hot after payment plan discussion confirmed serious intent.", createdAt: "2026-05-28T14:00:00+04:00" },
+  { id: "act_013", leadId: "lead_005", leadName: "Priya Nair", type: "call", actor: "Sara M.", content: "Initial qualification call. Confirmed Golden Visa goal and AED 2.5M+ budget.", outcome: "connected", durationMin: 22, createdAt: "2026-05-27T16:00:00+04:00" },
+  { id: "act_014", leadId: "lead_003", leadName: "Michael Reed", type: "assignment", actor: "system", content: "Lead reassigned from Ahmad K. to Layla due to capacity constraint.", createdAt: "2026-05-24T11:00:00+04:00" },
+]
+
+export const crmFollowUpQueue: CRMFollowUpItem[] = [
+  { leadId: "lead_001", leadName: "Rami Haddad", phone: "+971500000001", assignedAgent: "Noura", urgency: "critical", intentScore: 92, stage: "Hot", source: "Palm investor landing", lastContactAt: "2026-05-21T16:20:00+04:00", dueAt: "2026-05-24T16:20:00+04:00", overdueHours: 276, nextBestAction: "Call now, then send payment plan comparison.", duplicateRisk: false, wrongNumberRisk: false },
+  { leadId: "lead_005", leadName: "Priya Nair", phone: "+971500000005", assignedAgent: "Sara M.", urgency: "high", intentScore: 88, stage: "Qualified", source: "Golden Visa inquiry form", lastContactAt: "2026-05-21T14:45:00+04:00", dueAt: "2026-05-24T14:45:00+04:00", overdueHours: 278, nextBestAction: "Confirm Golden Visa eligibility threshold, then present Creek Beach and Emaar Beachfront.", duplicateRisk: false, wrongNumberRisk: false },
+  { leadId: "lead_003", leadName: "Michael Reed", phone: "+971500000003", assignedAgent: "Layla", urgency: "high", intentScore: 84, stage: "Follow-up", source: "WhatsApp", lastContactAt: "2026-05-20T20:15:00+04:00", dueAt: "2026-05-23T20:15:00+04:00", overdueHours: 302, nextBestAction: "Send two-project comparison with handover timeline.", duplicateRisk: false, wrongNumberRisk: false },
+  { leadId: "lead_002", leadName: "Sara Khan", phone: "+971500000002", assignedAgent: "Omar", urgency: "high", intentScore: 78, stage: "New", source: "Market tracker", lastContactAt: "2026-05-21T12:05:00+04:00", dueAt: "2026-05-24T12:05:00+04:00", overdueHours: 280, nextBestAction: "Review duplicate risk before assignment.", duplicateRisk: true, wrongNumberRisk: false },
+  { leadId: "lead_004", leadName: "Abdullah Al-Mansoori", phone: "+971500000004", assignedAgent: "Ahmad K.", urgency: "medium", intentScore: 71, stage: "New", source: "Dubai Hills landing", lastContactAt: "2026-05-21T09:30:00+04:00", dueAt: "2026-05-24T09:30:00+04:00", overdueHours: 283, nextBestAction: "Send Dubai Hills brochure with payment plan and handover date.", duplicateRisk: false, wrongNumberRisk: false },
+  { leadId: "lead_006", leadName: "James Whitfield", phone: "+971500000006", assignedAgent: "Rami T.", urgency: "medium", intentScore: 59, stage: "Follow-up", source: "Secondary market mailer", lastContactAt: "2026-05-19T11:00:00+04:00", dueAt: "2026-05-22T11:00:00+04:00", overdueHours: 324, nextBestAction: "Verify contact number before next follow-up attempt.", duplicateRisk: false, wrongNumberRisk: true },
+]
+
+export const crmAgentRoster: CRMAgentCapacity[] = [
+  { id: "agent_noura", name: "Noura", initials: "NO", role: "Senior Investment Advisor", totalLeads: 8, hotLeads: 2, overdueFollowUps: 1, utilization: 80, status: "at_capacity", specialty: "Palm · Off-plan · High-net-worth", recentWins: 3 },
+  { id: "agent_omar", name: "Omar", initials: "OM", role: "Sales Advisor", totalLeads: 6, hotLeads: 1, overdueFollowUps: 2, utilization: 62, status: "available", specialty: "Market tracker · JLT · JVC", recentWins: 2 },
+  { id: "agent_layla", name: "Layla", initials: "LA", role: "Investment Advisor", totalLeads: 5, hotLeads: 1, overdueFollowUps: 1, utilization: 50, status: "available", specialty: "Family districts · Dubai Hills · JVC", recentWins: 1 },
+  { id: "agent_ahmad", name: "Ahmad K.", initials: "AK", role: "Senior Advisor", totalLeads: 12, hotLeads: 3, overdueFollowUps: 1, utilization: 92, status: "overloaded", specialty: "Off-plan · Damac · Sobha", recentWins: 4 },
+  { id: "agent_sara", name: "Sara M.", initials: "SM", role: "Investment Advisor", totalLeads: 9, hotLeads: 2, overdueFollowUps: 0, utilization: 81, status: "at_capacity", specialty: "Beachfront · Golden Visa", recentWins: 3 },
+  { id: "agent_rami_t", name: "Rami T.", initials: "RT", role: "Brokerage Associate", totalLeads: 7, hotLeads: 1, overdueFollowUps: 3, utilization: 72, status: "at_capacity", specialty: "Secondary · Marina · JVC", recentWins: 2 },
+]
+
+export const crmInboxLeads: CRMInboxLead[] = [
+  { id: "inbox_001", name: "Fatima Al-Rashidi", phone: "+971500000101", email: "fatima.r@example.com", source: "Emaar Beachfront landing", intentScore: 81, urgency: "high", arrivedAt: "2026-06-04T07:12:00+04:00", status: "unassigned", aiNote: "Asking about beachfront ROI and family-suitable units. Likely Golden Visa eligible at budget mentioned." },
+  { id: "inbox_002", name: "Dominic Okafor", phone: "+971500000102", email: "d.okafor@example.com", source: "Meta Ads — Palm Q2", intentScore: 74, urgency: "medium", arrivedAt: "2026-06-04T04:38:00+04:00", status: "unassigned", aiNote: "Clicked Palm ad. Form filled at 04:38 — likely international timezone. First outreach should be WhatsApp, not a call." },
+  { id: "inbox_003", name: "Anita Sharma", phone: "+971500000103", email: "anita.s@example.com", source: "WhatsApp inbound", intentScore: 68, urgency: "medium", arrivedAt: "2026-06-03T22:55:00+04:00", assignedAgent: "Layla", status: "assigned", aiNote: "Enquired about JVC vs Dubai Hills for end-user with kids. School proximity is a deciding factor." },
+  { id: "inbox_004", name: "Mohammed Al-Farsi", phone: "+971500000104", email: "m.alfarsi@example.com", source: "Referral — Ahmad K.", intentScore: 91, urgency: "critical", arrivedAt: "2026-06-03T19:45:00+04:00", assignedAgent: "Ahmad K.", status: "assigned", aiNote: "Referral from Ahmad's existing client. AED 3M+ budget. Wants Palm or Creek — fast decision maker. Priority contact." },
+]
