@@ -102,10 +102,10 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
             Preview <ExternalLink className="h-3.5 w-3.5" />
           </Link>
           <Link
-            href={`/freehold-intelligence/review-requests?project=${landing.projectId}`}
+            href={listing ? `/freehold-intelligence/lead-machine/listings/${listing.id}` : '/freehold-intelligence/lead-machine/listings'}
             className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
           >
-            Edit <ArrowUpRight className="h-3.5 w-3.5" />
+            Open listing <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

@@ -217,6 +217,27 @@ export const leadMachineListings: LeadMachineListing[] = [
 
 export const leadMachineLandings: LeadMachineLanding[] = [
   {
+    id: "landing_bay_draft",
+    projectId: "freehold-business-bay-0008",
+    landingUrl: "/lp/business-bay-entry-preview",
+    status: "Draft",
+    completion: 28,
+    heroStatus: "Missing",
+    projectInfoStatus: "Ready",
+    paymentPlanStatus: "Missing",
+    locationStatus: "Ready",
+    leadFormStatus: "Missing",
+    whatsappStatus: "Missing",
+    agentCardStatus: "Ready",
+    trackingStatus: "Missing",
+    seoStatus: "Needs Review",
+    mobileStatus: "Needs Review",
+    imageQuality: "Weak",
+    reviewerStatus: "Blocked — missing payment plan",
+    aiReviewSummary: "Landing is in early draft. Cannot proceed to review until payment plan is added, hero media is replaced, and lead form is connected.",
+    recommendedEdits: ["Add verified Binghatti payment plan", "Replace hero with high-quality render", "Connect lead form and WhatsApp flow", "Add Meta pixel tracking"],
+  },
+  {
     id: "landing_palm_investor",
     projectId: "freehold-palm-jumeirah-0033",
     landingUrl: "/lp/palm-investor-preview",
@@ -261,6 +282,24 @@ export const leadMachineLandings: LeadMachineLanding[] = [
 ]
 
 export const leadMachineAdRequests: LeadMachineAdRequest[] = [
+  {
+    id: "adreq_palm_001",
+    projectId: "freehold-palm-jumeirah-0033",
+    platform: "Meta",
+    campaignObjective: "Lead generation",
+    campaignAngle: "Palm Jumeirah — AED 3.2M, 60/40 plan, 5.8% yield. Last 12 units at this price.",
+    buyerIntent: "High-net-worth investor comparing Palm supply vs other beachfront projects",
+    budget: "AED 750/day",
+    creativeRequirement: "Two static creatives with supply-scarcity frame and one video walkthrough",
+    landingId: "landing_palm_investor",
+    leadForm: "Premium investor lead form",
+    whatsappFlow: "Senior advisor handoff with payment-plan send",
+    status: "Blocked",
+    blockers: ["Meta billing owner — account not confirmed", "Landing approval pending owner sign-off"],
+    approvalStatus: "Blocked — waiting billing access",
+    owner: "Marketing",
+    linkedMilestoneId: "M5",
+  },
   {
     id: "adreq_hills_001",
     projectId: "freehold-dubai-hills-0012",

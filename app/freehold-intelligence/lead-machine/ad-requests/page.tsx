@@ -94,10 +94,10 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
       <div className="px-7 pb-7 pt-5 sm:px-8">
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href={`/freehold-intelligence/review-requests?project=${request.projectId}`}
+            href={listing ? `/freehold-intelligence/lead-machine/listings/${listing.id}` : '/freehold-intelligence/lead-machine/listings'}
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#06080A] transition hover:gap-2.5"
           >
-            Review request <ArrowUpRight className="h-3.5 w-3.5" />
+            Open listing workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <span className="text-[12px] text-white/35">{request.approvalStatus}</span>
         </div>
