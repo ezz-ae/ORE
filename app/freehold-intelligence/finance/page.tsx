@@ -136,6 +136,105 @@ export default function FinancePage() {
         </div>
       </section>
 
+      {/* ── Spend Trend ── */}
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Spend Trend</div>
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+          {(() => {
+            const maxValue = 43000
+            const chartWidth = 600
+            const chartHeight = 180
+            const labelSpace = 20
+            const maxBarArea = 140
+            const groupWidth = chartWidth / historyRows.length // 120px per group
+            const barWidth = 40
+            const barGap = 8
+
+            return (
+              <>
+                <svg
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  preserveAspectRatio="none"
+                  style={{ width: '100%', height: '180px', display: 'block' }}
+                >
+                  {historyRows.map((row, i) => {
+                    const groupX = i * groupWidth
+                    const centerX = groupX + groupWidth / 2
+                    const budgetBarHeight = (row.budgetAED / maxValue) * maxBarArea
+                    const spentBarHeight = (row.spentAED / maxValue) * maxBarArea
+                    const budgetBarX = centerX - barGap / 2 - barWidth
+                    const spentBarX = centerX + barGap / 2
+                    const isCurrent = row.month === 'May 2026'
+                    // Short month label: "Jan", "Feb", etc.
+                    const shortMonth = row.month.split(' ')[0]
+
+                    return (
+                      <g key={i}>
+                        {/* Budget bar */}
+                        <rect
+                          x={budgetBarX}
+                          y={chartHeight - labelSpace - budgetBarHeight}
+                          width={barWidth}
+                          height={budgetBarHeight}
+                          fill="#FFFFFF"
+                          fillOpacity="0.06"
+                          rx="3"
+                        />
+                        {/* Spent bar */}
+                        <rect
+                          x={spentBarX}
+                          y={chartHeight - labelSpace - spentBarHeight}
+                          width={barWidth}
+                          height={spentBarHeight}
+                          fill="#D4AF37"
+                          fillOpacity={isCurrent ? '1' : '0.7'}
+                          rx="3"
+                        />
+                        {/* "Current" annotation for May 2026 */}
+                        {isCurrent && (
+                          <text
+                            x={spentBarX + barWidth / 2}
+                            y={chartHeight - labelSpace - spentBarHeight - 6}
+                            textAnchor="middle"
+                            fill="#D4AF37"
+                            fontSize="9"
+                            fontWeight="500"
+                          >
+                            Current
+                          </text>
+                        )}
+                        {/* Month label */}
+                        <text
+                          x={centerX}
+                          y={chartHeight - 4}
+                          textAnchor="middle"
+                          fill="rgba(255,255,255,0.3)"
+                          fontSize="11"
+                        >
+                          {shortMonth}
+                        </text>
+                      </g>
+                    )
+                  })}
+                </svg>
+
+                {/* Stat chips */}
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm">
+                    <span className="text-white/40">Avg Monthly Spend: </span>
+                    <span className="font-medium text-white/80 tabular-nums">AED 37,388</span>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm">
+                    <span className="text-white/40">YTD Spend: </span>
+                    <span className="font-medium text-white/80 tabular-nums">AED 186,940</span>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      </section>
+
       {/* ── Monthly Spend History ── */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Monthly Spend History</div>

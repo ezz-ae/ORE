@@ -34,6 +34,109 @@ function SourceBadge({ type }: { type: string }) {
   )
 }
 
+// ── Daily Traffic Sparkline ─────────────────────────────────────────────────
+function SparklineChart({ daily }: { daily: { pageViews: number; uniqueVisitors: number }[] }) {
+  const W = 600
+  const H = 120
+  const PAD_B = 4 // bottom padding so baseline is visible
+
+  const maxPV = Math.max(...daily.map((d) => d.pageViews))
+  const maxUV = Math.max(...daily.map((d) => d.uniqueVisitors))
+  const maxVal = Math.max(maxPV, maxUV)
+
+  const toX = (i: number) => (i / (daily.length - 1)) * W
+  const toY = (v: number) => H - PAD_B - ((v / maxVal) * (H - PAD_B - 8))
+
+  const pvPoints = daily.map((d, i) => `${toX(i)},${toY(d.pageViews)}`).join(' ')
+  const uvPoints = daily.map((d, i) => `${toX(i)},${toY(d.uniqueVisitors)}`).join(' ')
+
+  return (
+    <div>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        className="w-full"
+        style={{ height: 120 }}
+        aria-hidden="true"
+      >
+        {/* x-axis baseline */}
+        <line x1="0" y1={H - PAD_B} x2={W} y2={H - PAD_B} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+
+        {/* Page views line */}
+        <polyline
+          points={pvPoints}
+          fill="none"
+          stroke="rgba(255,255,255,0.6)"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+
+        {/* Unique visitors line */}
+        <polyline
+          points={uvPoints}
+          fill="none"
+          stroke="#D4AF37"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+
+      {/* Legend */}
+      <div className="mt-3 flex items-center gap-5">
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-white/60" />
+          <span className="text-xs text-white/40">Page Views</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: '#D4AF37' }} />
+          <span className="text-xs text-white/40">Unique Visitors</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Traffic Sources Bar Chart ────────────────────────────────────────────────
+const SOURCE_BAR_COLOR: Record<string, string> = {
+  organic:  'bg-emerald-500',
+  paid:     'bg-blue-500',
+  social:   'bg-violet-500',
+  direct:   'bg-white/40',
+  referral: 'bg-amber-500',
+  email:    'bg-orange-500',
+}
+
+function SourcesBarChart({ sources }: { sources: { name: string; type: string; sessions: number }[] }) {
+  const maxSessions = Math.max(...sources.map((s) => s.sessions))
+  return (
+    <div className="space-y-2.5">
+      {sources.map((src) => {
+        const pct = (src.sessions / maxSessions) * 100
+        return (
+          <div key={src.name} className="flex items-center gap-3">
+            <div className="w-full max-w-[calc(100%-120px)] flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-white/70 truncate">{src.name}</span>
+                <span className="ml-3 shrink-0 text-xs tabular-nums text-white/45">
+                  {src.sessions.toLocaleString('en-US')}
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${SOURCE_BAR_COLOR[src.type] ?? 'bg-white/40'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function AnalyticsPage() {
   const a = siteAnalytics
 
@@ -90,6 +193,22 @@ export default function AnalyticsPage() {
           <div className="mt-1 text-xs text-white/35">Avg duration</div>
         </div>
       </div>
+
+      {/* ── Daily Traffic Chart ── */}
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Daily Traffic · 30 Days</div>
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+          <SparklineChart daily={a.daily} />
+        </div>
+      </section>
+
+      {/* ── Sources Bar Chart ── */}
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Sessions by Source</div>
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+          <SourcesBarChart sources={a.sources} />
+        </div>
+      </section>
 
       {/* ── Traffic Sources ── */}
       <section>
