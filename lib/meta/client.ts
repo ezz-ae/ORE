@@ -15,6 +15,10 @@ import type {
   MetaCampaignStatus,
   MetaOptimizationGoal,
   LaunchCampaignResult,
+  MetaLeadForm,
+  MetaFormLead,
+  CreateLeadFormPayload,
+  MetaAdCreativeDetail,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -241,6 +245,104 @@ export async function createAd(params: {
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
     fields: 'id,name,status,creative{id,name}',
+  })
+  return res.data ?? []
+}
+
+// ─── Lead Gen Forms ───────────────────────────────────────────────────────────
+
+export async function listLeadForms(): Promise<MetaLeadForm[]> {
+  const { adAccountId } = creds()
+  const res = await apiFetch<{ data: MetaLeadForm[] }>(`/${adAccountId}/leadgen_forms`, undefined, {
+    fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
+    limit:  '50',
+  })
+  return res.data ?? []
+}
+
+export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
+  return apiFetch<MetaLeadForm>(`/${formId}`, undefined, {
+    fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions',
+  })
+}
+
+export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ id: string }> {
+  const { adAccountId } = creds()
+  const questions = payload.questions.map((q) => ({
+    type:    q.type,
+    ...(q.label   ? { label:   q.label   } : {}),
+    ...(q.key     ? { key:     q.key     } : {}),
+    ...(q.options ? { options: q.options } : {}),
+  }))
+
+  return apiPost(`/${adAccountId}/leadgen_forms`, {
+    name:               payload.name,
+    locale:             'en_US',
+    follow_up_action_url: payload.landingUrl,
+    questions,
+    privacy_policy: {
+      url:       payload.privacyPolicyUrl,
+      link_text: 'Privacy Policy',
+    },
+    ...(payload.thankYouTitle
+      ? { thank_you_page: { title: payload.thankYouTitle, body: payload.thankYouBody ?? '' } }
+      : {}),
+  })
+}
+
+export async function getFormLeads(formId: string): Promise<MetaFormLead[]> {
+  const res = await apiFetch<{ data: MetaFormLead[] }>(`/${formId}/leads`, undefined, {
+    fields: 'id,created_time,field_data,ad_id,adset_id,campaign_id',
+    limit:  '200',
+  })
+  return res.data ?? []
+}
+
+// ─── Ad Set Updates ───────────────────────────────────────────────────────────
+
+export async function updateAdSet(
+  adSetId: string,
+  params: {
+    status?:         MetaCampaignStatus
+    name?:           string
+    dailyBudgetAED?: number
+    targeting?:      CampaignTargeting
+  },
+): Promise<{ success: boolean }> {
+  const body: Record<string, unknown> = {}
+  if (params.status)         body.status = params.status
+  if (params.name)           body.name   = params.name
+  if (params.dailyBudgetAED) body.daily_budget = params.dailyBudgetAED * 100
+  if (params.targeting) {
+    body.targeting = {
+      geo_locations: {
+        countries: params.targeting.countries,
+        ...(params.targeting.cityKeys.length > 0
+          ? { cities: params.targeting.cityKeys.map((k) => ({ key: k })) }
+          : {}),
+      },
+      age_min: params.targeting.ageMin,
+      age_max: params.targeting.ageMax,
+      publisher_platforms: params.targeting.publisherPlatforms,
+      ...(params.targeting.interests.length > 0 ? { interests: params.targeting.interests } : {}),
+    }
+  }
+  return apiPost(`/${adSetId}`, body)
+}
+
+export async function getAdSet(adSetId: string): Promise<MetaAdSet> {
+  return apiFetch<MetaAdSet>(`/${adSetId}`, undefined, {
+    fields: 'id,name,status,daily_budget,optimization_goal,billing_event,targeting',
+  })
+}
+
+// ─── Creative Library ─────────────────────────────────────────────────────────
+
+export async function listAdCreatives(): Promise<MetaAdCreativeDetail[]> {
+  const { adAccountId } = creds()
+  const res = await apiFetch<{ data: MetaAdCreativeDetail[] }>(`/${adAccountId}/adcreatives`, undefined, {
+    fields: 'id,name,status,body,title,object_story_spec',
+    limit:  '50',
   })
   return res.data ?? []
 }

@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { ArrowUpRight, ExternalLink, Globe } from 'lucide-react'
+import { ArrowUpRight, ExternalLink, Globe, Zap, AlertCircle } from 'lucide-react'
 import {
   leadMachineLandings,
   leadMachineListings,
+  leadMachineAdRequests,
   type LeadMachineLanding,
 } from '@/src/features/freehold-intelligence/lead-machine'
 
@@ -31,9 +32,18 @@ function CheckRow({ label, status }: { label: string; status: string }) {
   )
 }
 
+function adReqStatusStyle(s: string) {
+  if (s === 'Running')          return 'text-emerald-300 border-emerald-400/20 bg-emerald-400/10'
+  if (s === 'Approved' || s === 'Ready to Launch') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
+  if (s === 'Pending Review')   return 'text-sky-300 border-sky-400/20 bg-sky-400/10'
+  if (s === 'Blocked')          return 'text-red-300 border-red-400/20 bg-red-400/10'
+  return 'text-white/40 border-white/[0.08] bg-white/[0.03]'
+}
+
 function LandingCard({ landing }: { landing: LeadMachineLanding }) {
-  const listing = leadMachineListings.find((l) => l.projectId === landing.projectId)
-  const style = statusStyle(landing.status)
+  const listing    = leadMachineListings.find((l) => l.projectId === landing.projectId)
+  const linkedReqs = leadMachineAdRequests.filter((r) => r.landingId === landing.id)
+  const style      = statusStyle(landing.status)
 
   return (
     <article className="overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0A0D10] transition hover:border-[#D4AF37]/25">
@@ -90,6 +100,47 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
         <div className="mx-7 mb-0 mt-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-4 py-3.5 sm:mx-8">
           <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">AI take</div>
           <p className="mt-1.5 text-[13px] leading-[1.55] text-white/65">{landing.aiReviewSummary}</p>
+        </div>
+      )}
+
+      {/* Linked campaigns */}
+      {linkedReqs.length > 0 ? (
+        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.06] pt-5 sm:mx-8">
+          <div className="mb-3 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+            <Zap className="h-3 w-3 text-[#D4AF37]/50" /> Linked campaigns
+          </div>
+          <div className="space-y-2">
+            {linkedReqs.map((req) => (
+              <Link
+                key={req.id}
+                href={`/freehold-intelligence/lead-machine/ad-requests`}
+                className="group flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 transition hover:border-[#D4AF37]/20"
+              >
+                <div className="min-w-0">
+                  <div className="text-[12px] font-medium text-white/80 truncate group-hover:text-white">
+                    {req.campaignAngle.slice(0, 55)}{req.campaignAngle.length > 55 ? '…' : ''}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-white/35">{req.platform} · {req.budget}</div>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${adReqStatusStyle(req.status)}`}>
+                  {req.status}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.06] pt-5 sm:mx-8">
+          <div className="flex items-center gap-2 text-[12px] text-white/25">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            No active campaigns linked to this landing.{' '}
+            <Link
+              href="/freehold-intelligence/lead-machine/campaigns/new"
+              className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+            >
+              Start one
+            </Link>
+          </div>
         </div>
       )}
 

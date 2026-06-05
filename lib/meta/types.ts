@@ -129,3 +129,119 @@ export interface LaunchCampaignResult {
   creativeId: string
   status: 'ACTIVE' | 'PAUSED'
 }
+
+// ─── Lead Gen Forms ───────────────────────────────────────────────────────────
+
+export type MetaFormQuestionType =
+  | 'FULL_NAME'
+  | 'PHONE'
+  | 'EMAIL'
+  | 'CITY'
+  | 'STATE'
+  | 'COUNTRY'
+  | 'CUSTOM'
+  | 'WORK_EMAIL'
+  | 'COMPANY_NAME'
+
+export interface MetaFormQuestion {
+  type: MetaFormQuestionType
+  key?: string
+  label?: string
+  options?: { value: string; label: string }[]
+}
+
+export interface MetaLeadForm {
+  id: string
+  name: string
+  status: 'ACTIVE' | 'ARCHIVED' | 'DELETED'
+  leads_count: number
+  created_time: string
+  locale?: string
+  follow_up_action_url?: string
+  questions?: { type: string; label: string; id: string }[]
+}
+
+export interface MetaFormLead {
+  id: string
+  created_time: string
+  field_data: { name: string; values: string[] }[]
+  ad_id?: string
+  adset_id?: string
+  campaign_id?: string
+}
+
+export interface CreateLeadFormPayload {
+  name: string
+  listingId: string
+  listingName: string
+  landingUrl: string
+  questions: MetaFormQuestion[]
+  privacyPolicyUrl: string
+  thankYouTitle?: string
+  thankYouBody?: string
+}
+
+// ─── Creatives ────────────────────────────────────────────────────────────────
+
+export interface MetaAdCreativeDetail {
+  id: string
+  name: string
+  status?: string
+  body?: string
+  title?: string
+  object_story_spec?: {
+    link_data?: {
+      link?: string
+      message?: string
+      name?: string
+      description?: string
+      picture?: string
+      call_to_action?: { type: string }
+    }
+  }
+}
+
+// ─── Targeting Templates ──────────────────────────────────────────────────────
+
+export type TargetingUseCase =
+  | 'investor'
+  | 'end_user'
+  | 'golden_visa'
+  | 'secondary'
+  | 'international'
+  | 'custom'
+
+export interface TargetingTemplate {
+  id: string
+  name: string
+  description: string
+  audience: string
+  estimatedReach: string
+  useCase: TargetingUseCase
+  targeting: CampaignTargeting
+}
+
+// ─── Creative Generation ──────────────────────────────────────────────────────
+
+export type CreativeAngle = 'investor' | 'end_user' | 'golden_visa' | 'urgency' | 'yield' | 'lifestyle'
+export type CreativeTone  = 'direct' | 'aspirational' | 'premium'
+
+export interface GenerateCreativePayload {
+  listingId: string
+  listingName: string
+  area: string
+  developer: string
+  startingPrice: number | null
+  paymentPlan: string | null
+  angle: CreativeAngle
+  tone: CreativeTone
+  cta: MetaCta
+}
+
+export interface GeneratedCreativeVariant {
+  id: string
+  primaryText: string
+  headline: string
+  description: string
+  cta: MetaCta
+}
