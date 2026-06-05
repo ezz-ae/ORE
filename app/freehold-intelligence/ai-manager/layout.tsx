@@ -10,6 +10,7 @@ const tabs = [
   { label: 'Developers',  href: '/freehold-intelligence/ai-manager/developers' },
   { label: 'Pages',       href: '/freehold-intelligence/ai-manager/pages' },
   { label: 'Topics',      href: '/freehold-intelligence/ai-manager/topics' },
+  { label: 'Insights',    href: '/freehold-intelligence/ai-manager/insights' },
 ]
 
 export default function AiManagerLayout({ children }: { children: React.ReactNode }) {

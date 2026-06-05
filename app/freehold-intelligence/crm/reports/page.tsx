@@ -1,6 +1,34 @@
+'use client'
+
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+
+// Static lead-source data (30-day window)
+const LEAD_SOURCES = [
+  { label: 'Meta Ads',        count: 248, bar: 'bg-emerald-400' },
+  { label: 'Google Ads',      count: 167, bar: 'bg-blue-400'    },
+  { label: 'WhatsApp',        count:  65, bar: 'bg-green-400'   },
+  { label: 'Direct/Organic',  count:  41, bar: 'bg-violet-400'  },
+  { label: 'Referral',        count:  28, bar: 'bg-amber-400'   },
+]
+const MAX_LEAD_SOURCE = 248
+
+// Static monthly lead totals
+const MONTHLY_LEADS = [
+  { month: 'Jan', leads: 398, current: false },
+  { month: 'Feb', leads: 421, current: false },
+  { month: 'Mar', leads: 449, current: false },
+  { month: 'Apr', leads: 462, current: false },
+  { month: 'May', leads: 415, current: true  },
+]
+const MAX_MONTHLY_LEADS = 462
+// SVG bar chart constants
+const SVG_W = 400
+const SVG_H = 80
+const BAR_W = 48
+const BAR_GAP = 32
+const BAR_TOTAL = BAR_W + BAR_GAP
 
 // Historical monthly trend — illustrative seeded data (no live revenue store in V1)
 const MONTHLY = [
@@ -74,6 +102,92 @@ export default function CrmReportsPage() {
               </div>
             ))}
           </div>
+
+          {/* Lead Sources (30d) — static bar chart */}
+          <section className="mt-14">
+            <div className="mb-5 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-[#D4AF37]" />
+              <h2 className="text-[18px] font-semibold text-white">Lead Sources (30d)</h2>
+              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-[10px] text-sky-300">Static · paid channels</span>
+            </div>
+            <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
+              <div className="space-y-5">
+                {LEAD_SOURCES.map((src) => (
+                  <div key={src.label}>
+                    <div className="flex items-center justify-between text-[13px] mb-2">
+                      <span className="font-medium text-white/80">{src.label}</span>
+                      <span className="text-white/45">{src.count} leads</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.04]">
+                      <div
+                        className={`h-full rounded-full ${src.bar}`}
+                        style={{ width: `${(src.count / MAX_LEAD_SOURCE) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Monthly Lead Trend — SVG bar chart */}
+          <section className="mt-14">
+            <div className="mb-5 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-[#D4AF37]" />
+              <h2 className="text-[18px] font-semibold text-white">Monthly Lead Trend</h2>
+              <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-[10px] text-amber-300">Jan – May</span>
+            </div>
+            <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
+              <div className="overflow-x-auto">
+                <svg
+                  width={SVG_W}
+                  height={SVG_H + 28}
+                  viewBox={`0 0 ${SVG_W} ${SVG_H + 28}`}
+                  className="min-w-[360px]"
+                >
+                  {MONTHLY_LEADS.map((m, i) => {
+                    const barH = Math.round((m.leads / MAX_MONTHLY_LEADS) * SVG_H)
+                    const x = i * BAR_TOTAL
+                    const y = SVG_H - barH
+                    return (
+                      <g key={m.month}>
+                        <rect
+                          x={x}
+                          y={y}
+                          width={BAR_W}
+                          height={barH}
+                          rx={6}
+                          fill={m.current ? '#D4AF37' : 'rgba(255,255,255,0.10)'}
+                        />
+                        <text
+                          x={x + BAR_W / 2}
+                          y={SVG_H + 18}
+                          textAnchor="middle"
+                          fontSize={10}
+                          fill="rgba(255,255,255,0.40)"
+                          fontFamily="inherit"
+                        >
+                          {m.month}
+                        </text>
+                        {m.current && (
+                          <text
+                            x={x + BAR_W / 2}
+                            y={y - 6}
+                            textAnchor="middle"
+                            fontSize={9}
+                            fill="#D4AF37"
+                            fontFamily="inherit"
+                          >
+                            {m.leads}
+                          </text>
+                        )}
+                      </g>
+                    )
+                  })}
+                </svg>
+              </div>
+            </div>
+          </section>
 
           {/* Source breakdown — live */}
           <section className="mt-14">

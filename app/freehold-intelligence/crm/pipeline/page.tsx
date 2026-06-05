@@ -1,7 +1,18 @@
+'use client'
+
 import Link from 'next/link'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+
+// Static pipeline value data per stage
+const PIPELINE_VALUE_DATA = [
+  { stage: 'New',       leads: 12, value: 'AED 12.6M', label: 'pipeline',  dot: 'bg-sky-400'     },
+  { stage: 'Follow-up', leads:  8, value: 'AED 9.4M',  label: 'pipeline',  dot: 'bg-amber-400'   },
+  { stage: 'Qualified', leads:  5, value: 'AED 7.2M',  label: 'pipeline',  dot: 'bg-violet-400'  },
+  { stage: 'Hot',       leads:  6, value: 'AED 11.2M', label: 'pipeline',  dot: 'bg-red-400'     },
+  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-emerald-400' },
+]
 
 const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
 
@@ -63,8 +74,29 @@ export default function CrmPipelinePage() {
             {totalLeads} active lead{totalLeads !== 1 ? 's' : ''} · AED 50.2M pipeline · MTD won AED 9.8M. Stage transitions tracked nightly from HubSpot.
           </p>
 
-          {/* Kanban */}
+          {/* Pipeline Value strip */}
           <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {PIPELINE_VALUE_DATA.map((item) => (
+              <div
+                key={item.stage}
+                className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
+                  <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45 truncate">
+                    {item.stage}
+                  </span>
+                </div>
+                <div className="text-[22px] font-semibold text-white leading-none">{item.leads}</div>
+                <div className="mt-0.5 text-[10px] text-white/40">lead{item.leads !== 1 ? 's' : ''}</div>
+                <div className="mt-3 text-[13px] font-semibold text-white/80">{item.value}</div>
+                <div className="text-[10px] text-white/35">{item.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Kanban */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {stages.map((stage) => (
               <div key={stage.name} className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10">
                 <div className="flex items-center gap-2">
