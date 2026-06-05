@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { BookOpen, Plus, Sparkles, Calendar, Check } from 'lucide-react'
+import { BookOpen, Plus, Sparkles, Calendar, Check, CheckCircle } from 'lucide-react'
 
 type TopicStatus = 'Published' | 'Draft' | 'Scheduled' | 'Idea'
 type TopicCategory = 'Market News' | 'Area Guide' | 'Investment' | 'Legal' | 'Lifestyle'
@@ -107,6 +107,7 @@ const topics: TopicRow[] = [
 ]
 
 const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Scheduled', 'Idea']
+const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'Area Guide', 'Investment', 'Legal', 'Lifestyle']
 
 function categoryBadge(cat: TopicCategory) {
   if (cat === 'Market News') return 'text-sky-400 bg-sky-500/10 border-sky-500/20'
@@ -132,7 +133,38 @@ function seoColor(score: number) {
 
 export default function TopicsPage() {
   const [activeFilter, setActiveFilter] = useState<TopicStatus | 'All'>('All')
-  const filtered = activeFilter === 'All' ? topics : topics.filter((t) => t.status === activeFilter)
+  const [categoryFilter, setCategoryFilter] = useState<TopicCategory | 'All'>('All')
+  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({})
+  const [flash, setFlash] = useState<string | null>(null)
+
+  function getStatus(topic: TopicRow): TopicStatus {
+    return topicStatuses[topic.title] ?? topic.status
+  }
+
+  function triggerFlash(msg: string) {
+    setFlash(msg)
+    setTimeout(() => setFlash(null), 2500)
+  }
+
+  function handlePublish(topic: TopicRow) {
+    setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Published' }))
+    triggerFlash(`Published: "${topic.title.slice(0, 45)}"`)
+  }
+
+  function handleGenerate(topic: TopicRow) {
+    setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Draft' }))
+    triggerFlash(`Generated draft: "${topic.title.slice(0, 40)}"`)
+  }
+
+  const filtered = useMemo(() => {
+    return topics.filter((t) => {
+      const status = getStatus(t)
+      if (activeFilter !== 'All' && status !== activeFilter) return false
+      if (categoryFilter !== 'All' && t.category !== categoryFilter) return false
+      return true
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilter, categoryFilter, topicStatuses])
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -152,7 +184,7 @@ export default function TopicsPage() {
         </button>
       </div>
 
-      {/* Filter pills */}
+      {/* Status filter pills */}
       <div className="mt-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
@@ -165,6 +197,23 @@ export default function TopicsPage() {
             }`}
           >
             {f}
+          </button>
+        ))}
+      </div>
+      {/* Category filter */}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {CATEGORY_FILTERS.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategoryFilter(c as TopicCategory | 'All')}
+            className={[
+              'rounded-full px-2.5 py-0.5 text-[11px] font-medium transition border',
+              categoryFilter === c
+                ? 'border-white/25 bg-white/[0.06] text-white/80'
+                : 'border-white/[0.06] text-white/30 hover:text-white/55',
+            ].join(' ')}
+          >
+            {c}
           </button>
         ))}
       </div>
@@ -206,10 +255,18 @@ export default function TopicsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
-            {filtered.map((topic, i) => (
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-white/30">
+                  No topics match these filters.
+                </td>
+              </tr>
+            ) : filtered.map((topic, i) => {
+              const effectiveStatus = getStatus(topic)
+              return (
               <tr key={i} className="group transition hover:bg-white/[0.02]">
                 <td className="px-4 py-3.5">
-                  <span className="text-sm font-medium text-white/80 leading-snug">{topic.title}</span>
+                  <span className="text-sm font-medium leading-snug text-white/80">{topic.title}</span>
                 </td>
                 <td className="px-4 py-3.5">
                   <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${categoryBadge(topic.category)}`}>
@@ -217,10 +274,10 @@ export default function TopicsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(topic.status)}`}>
-                    {topic.status === 'Published' && <Check className="h-3 w-3" />}
-                    {topic.status === 'Scheduled' && <Calendar className="h-3 w-3" />}
-                    {topic.status}
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(effectiveStatus)}`}>
+                    {effectiveStatus === 'Published' && <Check className="h-3 w-3" />}
+                    {effectiveStatus === 'Scheduled' && <Calendar className="h-3 w-3" />}
+                    {effectiveStatus}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-xs text-white/40">
@@ -241,23 +298,36 @@ export default function TopicsPage() {
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
-                    <button className="text-xs text-white/40 transition hover:text-white/70">
-                      Edit
-                    </button>
-                    {topic.status !== 'Published' && (
-                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20">
-                        <Sparkles className="h-3 w-3" />
-                        {topic.status === 'Idea' ? 'Generate' : 'Publish'}
-                      </button>
+                    {effectiveStatus === 'Published' ? (
+                      <span className="flex items-center gap-1 text-[11px] text-emerald-400">
+                        <CheckCircle className="h-3 w-3" /> Live
+                      </span>
+                    ) : (
+                      <>
+                        <button className="text-xs text-white/40 transition hover:text-white/70">Edit</button>
+                        <button
+                          onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
+                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          {effectiveStatus === 'Idea' ? 'Generate' : 'Publish'}
+                        </button>
+                      </>
                     )}
                   </div>
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
 
+      {flash && (
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl">
+          {flash}
+        </div>
+      )}
     </div>
   )
 }
