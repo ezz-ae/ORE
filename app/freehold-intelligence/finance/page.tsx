@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 
 function fmt(n: number) {
@@ -77,6 +78,19 @@ function ProgressBar({ label, spent, budget, utilization, color }: {
 
 export default function FinancePage() {
   const f = financeSummary
+
+  const [invoiceFilter, setInvoiceFilter] = useState<'All' | 'paid' | 'processing' | 'overdue'>('All')
+  const [platformFilter, setPlatformFilter] = useState<'All' | 'meta' | 'google'>('All')
+
+  const filteredInvoices = useMemo(
+    () => invoiceFilter === 'All' ? f.invoices : f.invoices.filter((inv) => inv.status === invoiceFilter),
+    [f.invoices, invoiceFilter],
+  )
+
+  const filteredCampaigns = useMemo(
+    () => platformFilter === 'All' ? f.topSpendCampaigns : f.topSpendCampaigns.filter((c) => c.platform === platformFilter),
+    [f.topSpendCampaigns, platformFilter],
+  )
 
   // Only total rows for history table (exclude per-platform May rows to avoid duplication)
   const historyRows = f.monthlyHistory.filter((r) => r.platform === 'total')
@@ -283,7 +297,30 @@ export default function FinancePage() {
 
       {/* ── Top Spend Campaigns ── */}
       <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Top Spend Campaigns</div>
+        <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Top Spend Campaigns</div>
+          <div className="flex gap-1.5">
+            {(['All', 'meta', 'google'] as const).map((p) => {
+              const isActive = platformFilter === p
+              let activeClass = 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+              if (isActive && p === 'meta') activeClass = 'border border-blue-400/35 bg-blue-400/10 text-blue-300'
+              if (isActive && p === 'google') activeClass = 'border border-emerald-400/35 bg-emerald-400/10 text-emerald-300'
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPlatformFilter(p)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                    isActive
+                      ? activeClass
+                      : 'border border-white/[0.08] text-white/40 hover:text-white/65'
+                  }`}
+                >
+                  {p === 'All' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -297,19 +334,25 @@ export default function FinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {f.topSpendCampaigns.map((c, i) => (
-                  <tr key={i} className="transition hover:bg-white/[0.02]">
-                    <td className="px-5 py-4 font-medium text-white/75 max-w-[260px]">
-                      <span className="block truncate">{c.name}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <PlatformBadge platform={c.platform} />
-                    </td>
-                    <td className="px-5 py-4 text-right tabular-nums text-white/80">{fmt(c.spendAED)}</td>
-                    <td className="px-5 py-4 text-right tabular-nums text-white/70">{c.leads}</td>
-                    <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">AED {c.cpl}</td>
+                {filteredCampaigns.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-[13px] text-white/30">No items match this filter.</td>
                   </tr>
-                ))}
+                ) : (
+                  filteredCampaigns.map((c, i) => (
+                    <tr key={i} className="transition hover:bg-white/[0.02]">
+                      <td className="px-5 py-4 font-medium text-white/75 max-w-[260px]">
+                        <span className="block truncate">{c.name}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <PlatformBadge platform={c.platform} />
+                      </td>
+                      <td className="px-5 py-4 text-right tabular-nums text-white/80">{fmt(c.spendAED)}</td>
+                      <td className="px-5 py-4 text-right tabular-nums text-white/70">{c.leads}</td>
+                      <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">AED {c.cpl}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -318,7 +361,24 @@ export default function FinancePage() {
 
       {/* ── Invoices ── */}
       <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Invoices</div>
+        <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Invoices</div>
+          <div className="flex gap-1.5">
+            {(['All', 'paid', 'processing', 'overdue'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setInvoiceFilter(s)}
+                className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                  invoiceFilter === s
+                    ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border border-white/[0.08] text-white/40 hover:text-white/65'
+                }`}
+              >
+                {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -333,20 +393,26 @@ export default function FinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {f.invoices.map((inv) => (
-                  <tr key={inv.id} className="transition hover:bg-white/[0.02]">
-                    <td className="px-5 py-4 font-mono text-xs text-white/55">{inv.id}</td>
-                    <td className="px-5 py-4">
-                      <PlatformBadge platform={inv.platform} />
-                    </td>
-                    <td className="px-5 py-4 text-white/60">{inv.period}</td>
-                    <td className="px-5 py-4 text-right tabular-nums font-medium text-white/85">{fmt(inv.amountAED)}</td>
-                    <td className="px-5 py-4 text-xs text-white/45">{inv.dueDate}</td>
-                    <td className="px-5 py-4">
-                      <StatusBadge status={inv.status} />
-                    </td>
+                {filteredInvoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-8 text-center text-[13px] text-white/30">No items match this filter.</td>
                   </tr>
-                ))}
+                ) : (
+                  filteredInvoices.map((inv) => (
+                    <tr key={inv.id} className="transition hover:bg-white/[0.02]">
+                      <td className="px-5 py-4 font-mono text-xs text-white/55">{inv.id}</td>
+                      <td className="px-5 py-4">
+                        <PlatformBadge platform={inv.platform} />
+                      </td>
+                      <td className="px-5 py-4 text-white/60">{inv.period}</td>
+                      <td className="px-5 py-4 text-right tabular-nums font-medium text-white/85">{fmt(inv.amountAED)}</td>
+                      <td className="px-5 py-4 text-xs text-white/45">{inv.dueDate}</td>
+                      <td className="px-5 py-4">
+                        <StatusBadge status={inv.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
