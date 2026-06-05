@@ -23,6 +23,7 @@ export async function processAiChatMessage(input: {
 }) {
   const { message, conversationHistory, isMobile } = input
   const resultLimit = 3
+  const requestId = `req_${randomUUID().slice(0, 8)}`
   
   const hasPropertyIntent = (text: string) => {
     const t = text.toLowerCase()
@@ -30,8 +31,14 @@ export async function processAiChatMessage(input: {
            (t.includes("property") || t.includes("project") || t.includes("unit") || t.includes("apartment") || t.includes("villa") || t.includes("options"))
   }
 
+  const hasUnitIntent = (text: string) => {
+    const t = text.toLowerCase()
+    return /\b\d+\s*br\b/.test(t) || /\b\d+\s*bed(room)?s?\b/.test(t) || t.includes("unit")
+  }
+
   const wantsProperties = hasPropertyIntent(message)
-  let relevantProjects = wantsProperties ? await searchProjects(message, resultLimit) : []
+  const wantsUnitDistribution = hasUnitIntent(message)
+  let relevantProjects = wantsProperties || wantsUnitDistribution ? await searchProjects(message, resultLimit) : []
   
   const formattedProjects = relevantProjects.map(p => {
     return `Project: ${p.name}
@@ -69,10 +76,16 @@ Highlights: ${(p.highlights || []).join(', ')}`
     ]
   })
   
-  const result = await chat.sendMessage([{ text: message }])
-  const aiReply = result.response.text()
-
-  const requestId = `req_${randomUUID().slice(0, 8)}`
+  let aiReply: string
+  try {
+    const result = await chat.sendMessage([{ text: message }])
+    aiReply = result.response.text()
+  } catch (error) {
+    console.error("Public chat AI fallback:", error)
+    aiReply = wantsProperties
+      ? "Freehold can still prepare a shortlist from the live inventory. Review the matched options below, then share your budget, preferred area, and handover timing so a Freehold advisor can refine the brief."
+      : "Freehold can help with Dubai real estate strategy, market yield, area selection, and investment planning. Share your target budget, preferred area, and timeline, and I will turn it into a practical Freehold investment brief."
+  }
   
   return {
     reply: aiReply,
@@ -87,7 +100,7 @@ Highlights: ${(p.highlights || []).join(', ')}`
     compiler_output: {
       output_type: wantsProperties ? "table_spec" : "text",
       table_spec: {
-        signals: []
+        signals: wantsUnitDistribution ? [{ signal: "unit_distribution_signal" }] : []
       }
     }
   }
