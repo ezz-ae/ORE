@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, MessageSquare, AlertCircle, CheckCircle2, XCircle, ArrowUpRight, Zap } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -59,8 +62,14 @@ const AUTOMATION_FLOWS = [
 ]
 
 export default function WhatsAppIntegrationPage() {
-  const met = REQUIREMENTS.filter((r) => r.met).length
-  const critical = REQUIREMENTS.filter((r) => r.critical && !r.met).length
+  const [checked, setChecked] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
+  )
+  function toggle(id: string) {
+    setChecked((prev: Record<string, boolean>) => ({ ...prev, [id]: !prev[id] }))
+  }
+  const metCount      = Object.values(checked).filter(Boolean).length
+  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -79,7 +88,7 @@ export default function WhatsAppIntegrationPage() {
           </span>
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-          WhatsApp Business<br /><span className="text-white/35">blocked by {critical} item{critical !== 1 ? 's' : ''}.</span>
+          WhatsApp Business<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
           WhatsApp is the primary follow-up channel. Without it, lead messages are sent manually — no automation, no delivery receipts, and no CRM activity logging on outbound messages.
@@ -87,35 +96,45 @@ export default function WhatsAppIntegrationPage() {
       </section>
 
       {/* Blocker banner */}
-      <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <div>
-            <div className="text-[13px] font-semibold text-white">Lead follow-up automation is disabled</div>
-            <p className="mt-1 text-[13px] text-white/60">
-              Agents are sending WhatsApp messages manually with no read receipt tracking, no delivery confirmation, and no activity sync to the CRM timeline. The 24h follow-up automation cannot run until this integration is live.
-            </p>
+      {criticalUnmet > 0 && (
+        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <div>
+              <div className="text-[13px] font-semibold text-white">Lead follow-up automation is disabled</div>
+              <p className="mt-1 text-[13px] text-white/60">
+                Agents are sending WhatsApp messages manually with no read receipt tracking, no delivery confirmation, and no activity sync to the CRM timeline. The 24h follow-up automation cannot run until this integration is live.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Requirements */}
       <section className="mt-12">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Access requirements</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{met}/{REQUIREMENTS.length} requirements met</h2>
+        <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
+        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
+          />
+        </div>
         <div className="mt-5 space-y-2">
           {REQUIREMENTS.map((req) => (
-            <div
+            <button
               key={req.id}
-              className={`flex items-start gap-4 rounded-[18px] border p-5 ${
-                req.met
+              type="button"
+              onClick={() => toggle(req.id)}
+              className={`w-full text-left flex items-start gap-4 rounded-[18px] border p-5 ${
+                checked[req.id]
                   ? 'border-emerald-400/15 bg-emerald-400/[0.03]'
                   : req.critical
                     ? 'border-red-400/15 bg-red-400/[0.03]'
                     : 'border-white/[0.06] bg-[#0A0D10]'
               }`}
             >
-              {req.met
+              {checked[req.id]
                 ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                 : req.critical
                   ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
@@ -126,11 +145,11 @@ export default function WhatsAppIntegrationPage() {
                 <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
               </div>
               <span className={`shrink-0 text-[11px] font-medium ${
-                req.met ? 'text-emerald-300' : req.critical ? 'text-red-300' : 'text-white/35'
+                checked[req.id] ? 'text-emerald-300' : req.critical ? 'text-red-300' : 'text-white/35'
               }`}>
-                {req.met ? 'Met' : req.critical ? 'Critical' : 'Optional'}
+                {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </section>

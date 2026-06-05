@@ -67,17 +67,19 @@ export default function HubSpotIntegrationPage() {
       </section>
 
       {/* Critical blocker banner */}
-      <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-          <div>
-            <div className="text-[13px] font-semibold text-white">Lead sync is disabled</div>
-            <p className="mt-1 text-[13px] text-white/60">
-              All CRM data is currently mocked inside Freehold only. No leads are being written to HubSpot, no stage changes are syncing, and no activity history is building in the contact timeline.
-            </p>
+      {criticalUnmet > 0 && (
+        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <div>
+              <div className="text-[13px] font-semibold text-white">Lead sync is disabled</div>
+              <p className="mt-1 text-[13px] text-white/60">
+                All CRM data is currently mocked inside Freehold only. No leads are being written to HubSpot, no stage changes are syncing, and no activity history is building in the contact timeline.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Requirements */}
       <section className="mt-12">

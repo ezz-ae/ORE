@@ -39,7 +39,7 @@ export default function GoogleIntegrationPage() {
     () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
   )
   function toggle(id: string) {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+    setChecked((prev: Record<string, boolean>) => ({ ...prev, [id]: !prev[id] }))
   }
   const metCount      = Object.values(checked).filter(Boolean).length
   const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
@@ -87,11 +87,17 @@ export default function GoogleIntegrationPage() {
       {/* Requirements checklist */}
       <section className="mt-8">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Requirements</div>
+        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
+          />
+        </div>
         <div className="space-y-2">
           {REQUIREMENTS.map((req) => (
-            <div key={req.id} className="flex items-start gap-3 rounded-[16px] border border-white/[0.06] bg-[#0A0D10] p-4">
+            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-emerald-400/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.06] bg-[#0A0D10]'}`}>
               <div className="mt-0.5 shrink-0">
-                {req.met
+                {checked[req.id]
                   ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                   : req.critical
                     ? <XCircle className="h-4 w-4 text-red-400/70" />
@@ -100,14 +106,14 @@ export default function GoogleIntegrationPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-[13px] font-semibold ${req.met ? 'text-white' : 'text-white/70'}`}>{req.label}</span>
-                  {req.critical && !req.met && (
+                  <span className={`text-[13px] font-semibold ${checked[req.id] ? 'text-white' : 'text-white/70'}`}>{req.label}</span>
+                  {req.critical && !checked[req.id] && (
                     <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[9px] font-medium text-red-400">Required</span>
                   )}
                 </div>
                 <p className="mt-0.5 text-[12px] text-white/40">{req.note}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </section>
