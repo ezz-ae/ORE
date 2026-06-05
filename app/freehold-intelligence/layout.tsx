@@ -36,14 +36,19 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#111318] text-[#F7F2E7] antialiased">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#0B0F1A] text-[#F7F2E7] antialiased">
       <style>{`
         body > div > header,
         body > div > footer { display: none !important; }
         html { scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+        .fi-content {
+          background:
+            radial-gradient(ellipse 90% 40% at 50% 0%, rgba(212,175,55,0.06) 0%, transparent 55%),
+            radial-gradient(ellipse 60% 30% at 100% 100%, rgba(212,175,55,0.03) 0%, transparent 50%);
+        }
       `}</style>
 
       {/* ── Command bar ── */}
@@ -148,7 +153,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-[300px] bg-[#111318] border-r border-white/[0.07] flex flex-col">
+          <aside className="absolute inset-y-0 left-0 w-[300px] bg-[#0B0F1A] border-r border-white/[0.07] flex flex-col">
             <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/[0.07] px-5">
               <div className="flex items-center gap-2 text-[15px] font-semibold text-white">
                 <Sparkles className="h-4 w-4 text-[#D4AF37]" />
@@ -210,7 +215,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
       )}
 
       {/* ── Workspace content ── */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="fi-content flex-1 overflow-y-auto">
         {children}
       </main>
     </div>

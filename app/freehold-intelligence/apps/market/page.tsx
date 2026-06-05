@@ -98,7 +98,7 @@ export default function MarketIntelligencePage() {
 
         <div className="grid grid-cols-2 gap-3 lg:shrink-0 lg:grid-cols-4">
           {topStats.map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[26px] font-semibold leading-none text-white">{s.value}</div>
               <div className="mt-1 text-[12px] text-white/35">{s.label}</div>
             </div>
@@ -182,7 +182,7 @@ export default function MarketIntelligencePage() {
 
       {/* Table */}
       <section className="mt-5">
-        <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#131B2B]">
           {/* Table header */}
           <div className="hidden grid-cols-[2fr_1fr_1fr_0.8fr_2fr_auto] gap-4 border-b border-white/[0.05] px-6 py-3.5 lg:grid">
             {[

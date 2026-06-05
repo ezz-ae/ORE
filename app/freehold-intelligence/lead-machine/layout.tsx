@@ -21,7 +21,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
 
   return (
     <>
-      <div className="sticky top-[56px] z-30 border-b border-white/[0.08] bg-[#111318]/80 backdrop-blur-xl">
+      <div className="sticky top-[56px] z-30 border-b border-white/[0.08] bg-[#0B0F1A]/80 backdrop-blur-xl">
         <div className="mx-auto max-w-5xl overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
             {tabs.map((tab) => {

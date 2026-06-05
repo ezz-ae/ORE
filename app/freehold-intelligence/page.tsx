@@ -4,425 +4,351 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Users, Zap, TrendingUp, Bot, DollarSign, Package,
-  AlertCircle, CheckCircle2, ArrowUpRight, X, Sparkles,
+  AlertCircle, CheckCircle2, ArrowUpRight, X,
+  Activity, Clock,
 } from 'lucide-react'
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const WEEKLY_LEADS = [
-  { day: 'Mon', leads: 52 },
-  { day: 'Tue', leads: 61 },
-  { day: 'Wed', leads: 48 },
-  { day: 'Thu', leads: 74 },
-  { day: 'Fri', leads: 83 },
-  { day: 'Sat', leads: 57 },
-  { day: 'Sun', leads: 40 },
+  { day: 'M', leads: 52 },
+  { day: 'T', leads: 61 },
+  { day: 'W', leads: 48 },
+  { day: 'T', leads: 74 },
+  { day: 'F', leads: 83 },
+  { day: 'S', leads: 57 },
+  { day: 'S', leads: 40 },
 ]
 const MAX_LEADS = Math.max(...WEEKLY_LEADS.map((d) => d.leads))
 const TODAY_IDX = (new Date().getDay() + 6) % 7
 
 const ACTIVITY = [
-  { time: '09:14',    label: 'New lead received',      detail: 'Palm Jumeirah — Meta Ads',                  type: 'lead'    },
-  { time: '08:52',    label: 'Campaign paused',         detail: 'Off Plan Dubai 2025 — Google Search',        type: 'warning' },
-  { time: '08:30',    label: 'Landing page published',  detail: 'JVC Investor Apartments · /lp/jvc-investor', type: 'success' },
-  { time: 'Yesterday',label: '88 leads generated',     detail: 'Dubai Hills Yield Campaign — 24h window',    type: 'lead'    },
-  { time: 'Yesterday',label: 'Invoice issued',          detail: 'INV-META-0526 · AED 18,420',                 type: 'info'    },
-  { time: '2d ago',   label: 'Data quality alert',      detail: 'Marina Luxury Residences — adReadiness 12%',type: 'warning' },
+  { time: '09:14',     label: 'New lead',           detail: 'Palm Jumeirah — Meta Ads',         type: 'lead'    },
+  { time: '08:52',     label: 'Campaign paused',     detail: 'Off Plan Dubai 2025 — Google',     type: 'warning' },
+  { time: '08:30',     label: 'Landing published',   detail: 'JVC Investor · /lp/jvc-investor',  type: 'success' },
+  { time: 'Yesterday', label: '88 leads',            detail: 'Dubai Hills Yield — 24h',          type: 'lead'    },
+  { time: 'Yesterday', label: 'Invoice issued',      detail: 'INV-META-0526 · AED 18,420',       type: 'info'    },
+  { time: '2d ago',    label: 'Data quality alert',  detail: 'Marina Luxury — adReadiness 12%',  type: 'warning' },
 ]
 
-const today = new Date().toLocaleDateString('en-AE', {
-  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-})
-
-type ActivityFilter = 'all' | 'lead' | 'warning' | 'success' | 'info'
+type ActivityFilter = 'all' | 'lead' | 'warning'
 
 export default function IntelligenceDashboard() {
-  const stats = getInventoryStats()
-
-  const lowAdReadiness  = inventoryProperties.filter((p) => p.adReadiness < 40)
-  const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')
-  const noImages        = inventoryProperties.filter((p) => !p.hasImages)
-  const avgDataQuality  = Math.round(
-    inventoryProperties.reduce((s, p) => s + p.dataQuality, 0) / inventoryProperties.length
-  )
+  const stats            = getInventoryStats()
+  const lowAdReadiness   = inventoryProperties.filter((p) => p.adReadiness < 40)
+  const missingLandings  = inventoryProperties.filter((p) => p.landingStatus === 'missing')
+  const noImages         = inventoryProperties.filter((p) => !p.hasImages)
+  const avgDataQuality   = Math.round(inventoryProperties.reduce((s, p) => s + p.dataQuality, 0) / inventoryProperties.length)
   const totalVisitors30d = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
 
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
-  function dismissPriority(id: string) {
-    setDismissedIds((prev: Set<string>) => new Set([...prev, id]))
-  }
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  function dismiss(id: string) { setDismissed((p) => new Set([...p, id])) }
 
-  const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
-  const filteredActivity = activityFilter === 'all'
-    ? ACTIVITY
-    : ACTIVITY.filter((a) => a.type === activityFilter)
+  const [actFilter, setActFilter] = useState<ActivityFilter>('all')
+  const filteredActivity = actFilter === 'all' ? ACTIVITY : ACTIVITY.filter((a) => a.type === actFilter)
 
-  const alertCount = [
-    ...lowAdReadiness.filter((p) => !dismissedIds.has(p.id)),
-    ...missingLandings.filter((p) => !dismissedIds.has(p.id)),
-    ...noImages.filter((p) => !missingLandings.includes(p) && !dismissedIds.has(p.id)),
-  ].length
+  const priorities = [
+    ...lowAdReadiness.filter((p) => !dismissed.has(p.id)).map((p) => ({
+      id: p.id, name: p.name,
+      note: `Ad readiness ${p.adReadiness}% — needs creative & copy`,
+      sev: 'amber' as const, action: 'Fix', href: '/freehold-intelligence/inventory',
+    })),
+    ...missingLandings.filter((p) => !dismissed.has(p.id)).map((p) => ({
+      id: p.id, name: p.name,
+      note: `No landing page${p.linkedCampaigns > 0 ? ` — ${p.linkedCampaigns} campaign(s) paused` : ''}`,
+      sev: 'red' as const, action: 'Create', href: '/freehold-intelligence/inventory',
+    })),
+    ...noImages.filter((p) => !missingLandings.includes(p) && !dismissed.has(p.id)).map((p) => ({
+      id: p.id, name: p.name,
+      note: 'No images — blocks ad creative generation',
+      sev: 'amber' as const, action: 'Upload', href: '/freehold-intelligence/inventory',
+    })),
+  ]
 
-  const workspaces = [
-    {
-      label: 'CRM',
-      desc:  'Lead pipeline & agent management',
-      href:  '/freehold-intelligence/crm',
-      icon:  Users,
-      headline: '415',
-      unit: 'leads',
-      metrics: ['12 urgent · needs follow-up', '3 agents available', 'AED 18.7 avg cost per lead'],
-      alert: true,
-    },
-    {
-      label: 'Lead Machine',
-      desc:  'Campaigns & inbound generation',
-      href:  '/freehold-intelligence/lead-machine',
-      icon:  Zap,
-      headline: '6',
-      unit: 'campaigns',
-      metrics: ['415 leads generated this month', 'AED 31,290 total spend', 'All campaigns running'],
-      alert: false,
-    },
-    {
-      label: 'Analytics',
-      desc:  'Traffic, conversions & performance',
-      href:  '/freehold-intelligence/analytics',
-      icon:  TrendingUp,
-      headline: `${(totalVisitors30d / 1000).toFixed(1)}k`,
-      unit: 'visitors',
-      metrics: ['Last 30 days across all pages', `${stats.total} landing pages tracked`, 'Conversion pipeline live'],
-      alert: false,
-    },
-    {
-      label: 'AI Manager',
-      desc:  'Content intelligence & enrichment',
-      href:  '/freehold-intelligence/ai-manager',
-      icon:  Bot,
-      headline: String(avgDataQuality),
-      unit: '/ 100',
-      metrics: [`Average data quality · ${stats.total} properties`, '3 listings need enrichment', 'Area & developer pages active'],
-      alert: avgDataQuality < 70,
-    },
-    {
-      label: 'Finance',
-      desc:  'Ad spend, billing & budget',
-      href:  '/freehold-intelligence/finance',
-      icon:  DollarSign,
-      headline: '73%',
-      unit: 'budget used',
-      metrics: ['AED 31,290 spent this month', 'AED 42,840 allocated budget', 'INV-META-0526 pending'],
-      alert: false,
-    },
-    {
-      label: 'Inventory',
-      desc:  'Properties & landing pages',
-      href:  '/freehold-intelligence/inventory',
-      icon:  Package,
-      headline: String(stats.total),
-      unit: 'properties',
-      metrics: [
-        `${stats.live} live · ${stats.missingLanding} missing landing pages`,
-        `${lowAdReadiness.length} below 40% ad readiness`,
-        `${noImages.length} without images`,
-      ],
-      alert: stats.missingLanding > 0 || lowAdReadiness.length > 0,
-    },
-  ] as const
+  const now    = new Date()
+  const dateStr = now.toLocaleDateString('en-AE', { weekday: 'short', day: 'numeric', month: 'short' })
+  const timeStr = now.toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit', hour12: false })
 
   return (
-    <div className="px-6 lg:px-10 pb-24 pt-10 space-y-14">
+    <div className="px-5 lg:px-8 pb-16 pt-5 space-y-5">
 
-      {/* ── Header ── */}
-      <div className="flex flex-wrap items-start justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2 text-[13px] text-white/35 font-medium">
-            <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]/60" />
-            {today}
-          </div>
-          <h1 className="mt-4 text-[40px] sm:text-[56px] font-semibold tracking-tight text-white leading-[1.0]">
-            Intelligence<br />
-            <span className="text-white/25">Command Center</span>
-          </h1>
+      {/* ── Status strip ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 py-1">
+        <div className="flex items-center gap-3 text-[13px] text-white/40">
+          <span className="font-medium text-white/65">{dateStr}</span>
+          <span className="text-white/15">·</span>
+          <span>{timeStr} GST</span>
+          <span className="text-white/15">·</span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_6px_rgba(212,175,55,0.8)]" />
+            6 live
+          </span>
         </div>
-
-        <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] px-5 py-3.5 text-[14px] font-medium text-white/55">
-          <span className="h-2 w-2 rounded-full bg-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.55)]" />
-          {workspaces.length} workspaces live
-          {alertCount > 0 && (
-            <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-[12px] font-semibold text-red-400">
-              {alertCount} alerts
-            </span>
-          )}
-        </div>
+        {priorities.length > 0 && (
+          <Link href="/freehold-intelligence/inventory"
+            className="flex items-center gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-1 text-[12px] font-medium text-amber-300 transition hover:border-amber-400/35">
+            <AlertCircle className="h-3 w-3" />
+            {priorities.length} items need attention
+          </Link>
+        )}
       </div>
 
-      {/* ── Workspace launchers ── */}
-      <section>
-        <div className="mb-7 text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">
-          Workspaces
-        </div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {workspaces.map((ws) => {
-            const Icon = ws.icon
-            return (
-              <Link
-                key={ws.href}
-                href={ws.href}
-                className={[
-                  'group relative rounded-2xl border p-7 transition-all duration-200',
-                  'hover:border-white/[0.16] hover:bg-white/[0.03]',
-                  ws.alert
-                    ? 'border-amber-500/20 bg-[#1C1A14]'
-                    : 'border-white/[0.08] bg-[#1A1F2A]',
-                ].join(' ')}
-              >
-                {/* Workspace label */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.05]">
-                      <Icon className="h-[18px] w-[18px] text-[#D4AF37]" />
-                    </div>
-                    <div>
-                      <div className="text-[16px] font-semibold text-white">{ws.label}</div>
-                      <div className="text-[13px] text-white/40 leading-snug">{ws.desc}</div>
-                    </div>
-                  </div>
-                  {ws.alert && (
-                    <AlertCircle className="h-[17px] w-[17px] shrink-0 text-amber-400/70 mt-0.5" />
-                  )}
-                </div>
+      {/* ── Bento grid ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
 
-                {/* Headline metric */}
-                <div className="mt-6 flex items-baseline gap-2">
-                  <span className="text-[44px] font-semibold leading-none tabular-nums text-white tracking-tight">
-                    {ws.headline}
-                  </span>
-                  <span className="text-[17px] font-medium text-white/30">{ws.unit}</span>
-                </div>
-
-                {/* Supporting metrics */}
-                <div className="mt-4 space-y-2">
-                  {ws.metrics.map((m, i) => (
-                    <div key={i} className="text-[13px] leading-snug text-white/45">
-                      {m}
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA */}
-                <div className="mt-6 flex items-center gap-1.5 text-[13px] font-medium text-[#D4AF37]/40 transition group-hover:text-[#D4AF37]">
-                  Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* ── Lead trend ── */}
-      <section>
-        <div className="mb-7 text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">
-          Lead Trend — This Week
-        </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-7">
-          <div className="flex items-end justify-between gap-6 mb-8">
-            <div>
-              <div className="text-[40px] font-semibold tabular-nums text-white leading-none">415</div>
-              <div className="mt-2 text-[15px] text-white/45">leads generated this week</div>
+        {/* CRM */}
+        <Link href="/freehold-intelligence/crm"
+          className="group rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37]/20 bg-[#D4AF37]/10">
+                <Users className="h-[15px] w-[15px] text-[#D4AF37]" />
+              </div>
+              <span className="text-[14px] font-semibold text-white">CRM</span>
             </div>
-            <div className="text-right">
-              <div className="text-[18px] font-semibold text-[#D4AF37]">+11%</div>
-              <div className="text-[13px] text-white/40">vs last week</div>
+            <AlertCircle className="h-3.5 w-3.5 text-amber-400/60 mt-0.5" />
+          </div>
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span className="text-[38px] font-semibold leading-none tabular-nums text-white tracking-tight">415</span>
+            <span className="text-[13px] text-white/30 mb-0.5">leads</span>
+          </div>
+          <div className="mt-2.5 space-y-1.5">
+            <div className="text-[12px] text-white/45">12 urgent · 3 agents available</div>
+            <div className="text-[12px] text-white/30">AED 18.7 avg CPL</div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-[12px] text-[#D4AF37]/40 group-hover:text-[#D4AF37] transition">
+            Open workspace <ArrowUpRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        {/* Lead Machine */}
+        <Link href="/freehold-intelligence/lead-machine"
+          className="group rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37]/20 bg-[#D4AF37]/10">
+              <Zap className="h-[15px] w-[15px] text-[#D4AF37]" />
             </div>
+            <span className="text-[14px] font-semibold text-white">Lead Machine</span>
           </div>
-          <div className="overflow-x-auto">
-            <svg viewBox="0 0 600 96" className="w-full min-w-[340px]" preserveAspectRatio="xMidYMid meet">
-              {WEEKLY_LEADS.map((d, i) => {
-                const barW    = 56
-                const gap     = (600 - WEEKLY_LEADS.length * barW) / (WEEKLY_LEADS.length + 1)
-                const x       = gap + i * (barW + gap)
-                const barH    = (d.leads / MAX_LEADS) * 68
-                const y       = 72 - barH
-                const isToday = i === TODAY_IDX
-                return (
-                  <g key={d.day}>
-                    <rect x={x} y={y} width={barW} height={barH} rx="7"
-                      fill={isToday ? '#D4AF37' : 'rgba(255,255,255,0.07)'}
-                    />
-                    <text x={x + barW / 2} y={90} textAnchor="middle" fontSize="12"
-                      fill="rgba(255,255,255,0.28)" fontFamily="system-ui,sans-serif">
-                      {d.day}
-                    </text>
-                    <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="12"
-                      fill={isToday ? '#D4AF37' : 'rgba(255,255,255,0.38)'} fontFamily="system-ui,sans-serif">
-                      {d.leads}
-                    </text>
-                  </g>
-                )
-              })}
-            </svg>
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span className="text-[38px] font-semibold leading-none tabular-nums text-white tracking-tight">6</span>
+            <span className="text-[13px] text-white/30 mb-0.5">campaigns</span>
           </div>
+          <div className="mt-2.5 space-y-1.5">
+            <div className="text-[12px] text-white/45">415 leads / month</div>
+            <div className="text-[12px] text-white/30">AED 31,290 spend</div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-[12px] text-[#D4AF37]/40 group-hover:text-[#D4AF37] transition">
+            Open workspace <ArrowUpRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        {/* Lead trend chart */}
+        <div className="col-span-2 lg:col-span-1 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[13px] font-medium text-white/50">Lead trend · 7 days</span>
+          </div>
+          <div className="flex items-baseline gap-1.5 mb-4">
+            <span className="text-[28px] font-semibold tabular-nums text-white">415</span>
+            <span className="text-[13px] text-[#D4AF37] font-medium">+11%</span>
+          </div>
+          <svg viewBox="0 0 280 52" className="w-full" preserveAspectRatio="xMidYMid meet">
+            {WEEKLY_LEADS.map((d, i) => {
+              const bw = 28, gap = (280 - 7 * bw) / 8
+              const x  = gap + i * (bw + gap)
+              const bh = (d.leads / MAX_LEADS) * 44
+              const y  = 48 - bh
+              return (
+                <g key={i}>
+                  <rect x={x} y={y} width={bw} height={bh} rx="4"
+                    fill={i === TODAY_IDX ? '#D4AF37' : 'rgba(255,255,255,0.07)'} />
+                  <text x={x + bw/2} y={51} textAnchor="middle" fontSize="8"
+                    fill="rgba(255,255,255,0.22)" fontFamily="system-ui,sans-serif">{d.day}</text>
+                </g>
+              )
+            })}
+          </svg>
         </div>
-      </section>
 
-      {/* ── Priorities + Activity ── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-
-        {/* Today's Priorities */}
-        <section>
-          <div className="mb-7 text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">
-            Today's Priorities
+        {/* Analytics */}
+        <Link href="/freehold-intelligence/analytics"
+          className="group rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-white/[0.05]">
+              <TrendingUp className="h-[15px] w-[15px] text-[#D4AF37]" />
+            </div>
+            <span className="text-[14px] font-semibold text-white">Analytics</span>
           </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] divide-y divide-white/[0.06]">
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span className="text-[38px] font-semibold leading-none tabular-nums text-white tracking-tight">
+              {(totalVisitors30d / 1000).toFixed(1)}k
+            </span>
+            <span className="text-[13px] text-white/30 mb-0.5">visitors</span>
+          </div>
+          <div className="mt-2.5 text-[12px] text-white/40">30 days · {stats.total} pages</div>
+          <div className="mt-4 flex items-center gap-1 text-[12px] text-[#D4AF37]/40 group-hover:text-[#D4AF37] transition">
+            Open workspace <ArrowUpRight className="h-3 w-3" />
+          </div>
+        </Link>
 
-            {lowAdReadiness.map((p) => !dismissedIds.has(p.id) && (
-              <div key={p.id} className="flex items-start gap-4 p-6">
-                <AlertCircle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-400" />
+        {/* Finance */}
+        <Link href="/freehold-intelligence/finance"
+          className="group rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-white/[0.05]">
+              <DollarSign className="h-[15px] w-[15px] text-[#D4AF37]" />
+            </div>
+            <span className="text-[14px] font-semibold text-white">Finance</span>
+          </div>
+          <div className="mt-5 flex items-baseline gap-1.5">
+            <span className="text-[38px] font-semibold leading-none tabular-nums text-white tracking-tight">73%</span>
+            <span className="text-[13px] text-white/30 mb-0.5">budget</span>
+          </div>
+          <div className="mt-2.5 space-y-1.5">
+            <div className="text-[12px] text-white/45">AED 31,290 / 42,840</div>
+            <div className="text-[12px] text-white/30">INV-META-0526 pending</div>
+          </div>
+          <div className="mt-4 flex items-center gap-1 text-[12px] text-[#D4AF37]/40 group-hover:text-[#D4AF37] transition">
+            Open workspace <ArrowUpRight className="h-3 w-3" />
+          </div>
+        </Link>
+
+        {/* AI Manager + Inventory stacked */}
+        <div className="col-span-2 lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-4">
+          <Link href="/freehold-intelligence/ai-manager"
+            className="group flex items-center justify-between rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-white/[0.05]">
+                <Bot className="h-[15px] w-[15px] text-[#D4AF37]" />
+              </div>
+              <div>
+                <div className="text-[13px] font-semibold text-white">AI Manager</div>
+                <div className="text-[11px] text-white/35">Data quality</div>
+              </div>
+            </div>
+            <div className={`text-[24px] font-semibold tabular-nums ${avgDataQuality >= 70 ? 'text-[#D4AF37]' : 'text-amber-400'}`}>
+              {avgDataQuality}
+            </div>
+          </Link>
+
+          <Link href="/freehold-intelligence/inventory"
+            className="group flex items-center justify-between rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-white/[0.05]">
+                <Package className="h-[15px] w-[15px] text-[#D4AF37]" />
+              </div>
+              <div>
+                <div className="text-[13px] font-semibold text-white">Inventory</div>
+                <div className="text-[11px] text-white/35">{stats.live} live · {stats.missingLanding} missing</div>
+              </div>
+            </div>
+            <div className="text-[24px] font-semibold tabular-nums text-white">
+              {stats.total}
+            </div>
+          </Link>
+        </div>
+
+      </div>
+
+      {/* ── Priority queue + Live activity ── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+
+        {/* Priority queue */}
+        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-white/55">
+              <AlertCircle className="h-3.5 w-3.5 text-amber-400/70" />
+              Priority queue
+            </div>
+            <span className="text-[12px] text-white/25">{priorities.length} open</span>
+          </div>
+          <div className="divide-y divide-white/[0.05]">
+            {priorities.slice(0, 4).map((p) => (
+              <div key={p.id} className="flex items-center gap-3 px-5 py-3">
+                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${p.sev === 'red' ? 'bg-red-400' : 'bg-amber-400'}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium text-white/85 truncate">{p.name}</p>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">
-                    Ad readiness {p.adReadiness}% — needs creative & copy
-                  </p>
+                  <div className="text-[13px] font-medium text-white/80 truncate">{p.name}</div>
+                  <div className="text-[12px] text-white/35 truncate">{p.note}</div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href="/freehold-intelligence/inventory"
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] px-3 py-1.5 text-[13px] text-white/55 hover:text-white/85 transition"
-                  >
-                    Fix
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Link href={p.href}
+                    className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[12px] text-white/45 hover:text-white/75 transition">
+                    {p.action}
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => dismissPriority(p.id)}
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] p-1.5 text-white/30 hover:text-white/65 transition"
-                  >
-                    <X className="h-3.5 w-3.5" />
+                  <button type="button" onClick={() => dismiss(p.id)}
+                    className="p-1 text-white/20 hover:text-white/50 transition">
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               </div>
             ))}
-
-            {missingLandings.map((p) => !dismissedIds.has(p.id) && (
-              <div key={p.id} className="flex items-start gap-4 p-6">
-                <AlertCircle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-red-400" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium text-white/85 truncate">{p.name}</p>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">
-                    No landing page — {p.linkedCampaigns === 0 ? 'no active campaigns' : `${p.linkedCampaigns} campaign(s) paused`}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href="/freehold-intelligence/inventory"
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] px-3 py-1.5 text-[13px] text-white/55 hover:text-white/85 transition"
-                  >
-                    Create
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => dismissPriority(p.id)}
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] p-1.5 text-white/30 hover:text-white/65 transition"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+            {priorities.length === 0 && (
+              <div className="px-5 py-4 flex items-center gap-3">
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]/60" />
+                <span className="text-[13px] text-white/55">All clear — no open priorities</span>
               </div>
-            ))}
-
-            {noImages.filter((p) => !missingLandings.includes(p)).map((p) => !dismissedIds.has(p.id) && (
-              <div key={p.id} className="flex items-start gap-4 p-6">
-                <AlertCircle className="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-400" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium text-white/85 truncate">{p.name}</p>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-white/45">
-                    No images uploaded — blocks ad creative generation
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href="/freehold-intelligence/inventory"
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] px-3 py-1.5 text-[13px] text-white/55 hover:text-white/85 transition"
-                  >
-                    Upload
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => dismissPriority(p.id)}
-                    className="rounded-lg border border-white/[0.09] bg-white/[0.05] p-1.5 text-white/30 hover:text-white/65 transition"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            <div className="flex items-start gap-4 p-6">
-              <CheckCircle2 className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#D4AF37]/65" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-medium text-white/85">Sobha Hartland II Villas — fully ready</p>
-                <p className="mt-1.5 text-[13px] text-white/45">Ad readiness 88% · 2 active campaigns · 67 leads (30d)</p>
+            )}
+            <div className="px-5 py-3 flex items-center gap-3">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/50" />
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium text-white/65">Sobha Hartland II Villas — ready</div>
+                <div className="text-[12px] text-white/30">88% readiness · 2 campaigns · 67 leads (30d)</div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Recent Activity */}
-        <section>
-          <div className="mb-7 flex items-center justify-between gap-4">
-            <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">
-              Recent Activity
+        {/* Live activity */}
+        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-white/55">
+              <Activity className="h-3.5 w-3.5" />
+              Live activity
             </div>
-            <div className="flex items-center gap-1.5">
-              {(['all', 'lead', 'warning', 'success'] as ActivityFilter[]).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setActivityFilter(f)}
+            <div className="flex items-center gap-1">
+              {(['all', 'lead', 'warning'] as ActivityFilter[]).map((f) => (
+                <button key={f} type="button" onClick={() => setActFilter(f)}
                   className={[
-                    'rounded-lg border px-3 py-1.5 text-[12px] font-medium capitalize transition',
-                    activityFilter === f
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                      : 'border-white/[0.07] text-white/35 hover:text-white/55',
-                  ].join(' ')}
-                >
+                    'rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize transition',
+                    actFilter === f
+                      ? 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                      : 'border-white/[0.07] text-white/30 hover:text-white/55',
+                  ].join(' ')}>
                   {f}
                 </button>
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] divide-y divide-white/[0.06]">
+          <div className="divide-y divide-white/[0.05]">
             {filteredActivity.map((item, i) => (
-              <div key={i} className="flex items-start gap-4 p-6">
-                <div className="mt-2 shrink-0">
-                  {item.type === 'lead'    && <span className="flex h-2 w-2 rounded-full bg-[#D4AF37]" />}
-                  {item.type === 'success' && <span className="flex h-2 w-2 rounded-full bg-white/45" />}
-                  {item.type === 'warning' && <span className="flex h-2 w-2 rounded-full bg-amber-400" />}
-                  {item.type === 'info'    && <span className="flex h-2 w-2 rounded-full bg-white/20" />}
+              <div key={i} className="flex items-center gap-3 px-5 py-3">
+                <div className="shrink-0">
+                  {item.type === 'lead'    && <span className="flex h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />}
+                  {item.type === 'warning' && <span className="flex h-1.5 w-1.5 rounded-full bg-amber-400" />}
+                  {item.type === 'success' && <span className="flex h-1.5 w-1.5 rounded-full bg-white/40" />}
+                  {item.type === 'info'    && <span className="flex h-1.5 w-1.5 rounded-full bg-white/15" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium text-white/80">{item.label}</p>
-                  <p className="mt-1 text-[13px] text-white/40">{item.detail}</p>
+                  <span className="text-[13px] font-medium text-white/75">{item.label}</span>
+                  <span className="text-white/20 mx-1.5">·</span>
+                  <span className="text-[12px] text-white/35">{item.detail}</span>
                 </div>
-                <span className="shrink-0 text-[12px] text-white/25">{item.time}</span>
+                <span className="shrink-0 text-[11px] text-white/25 tabular-nums whitespace-nowrap">{item.time}</span>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       </div>
 
       {/* ── AI prompt ── */}
-      <section>
-        <AiPrompt
-          placeholder="Ask about performance, leads, campaigns…"
-          suggestions={[
-            'What needs attention first today?',
-            'How did this week compare to last?',
-            'Which properties have the lowest ad readiness?',
-            "Summarise today's lead pipeline.",
-          ]}
-        />
-      </section>
+      <AiPrompt
+        placeholder="Ask about performance, leads, campaigns…"
+        suggestions={[
+          'What needs attention first today?',
+          'How did this week compare to last?',
+          "Summarise today's lead pipeline.",
+        ]}
+      />
 
     </div>
   )

@@ -78,7 +78,7 @@ export default function TargetingPage() {
           { icon: MapPin,  title: 'Geo-precise',        body: 'City-level targeting within the UAE. Dubai and Abu Dhabi broken out from each other.' },
           { icon: Sliders, title: 'Fully editable',     body: 'All templates are starting points — override any field in the campaign wizard.' },
         ].map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
             <Icon className="h-4 w-4 text-[#D4AF37]/60 mb-2" />
             <div className="text-[13px] font-semibold text-white">{title}</div>
             <p className="mt-1 text-[12px] text-white/40 leading-relaxed">{body}</p>
@@ -160,7 +160,7 @@ export default function TargetingPage() {
               const campaignUrl = `/freehold-intelligence/lead-machine/campaigns/new?template=${tmpl.id}`
 
               return (
-                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6">
                   {/* Top */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>

@@ -213,7 +213,7 @@ export default function IntegrationsPage() {
                   return (
                     <div
                       key={integration.id}
-                      className="flex items-center gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/20"
+                      className="flex items-center gap-5 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20"
                     >
                       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
                         <Icon className="h-5 w-5 text-white/90" />

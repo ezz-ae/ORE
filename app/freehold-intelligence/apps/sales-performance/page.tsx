@@ -125,7 +125,7 @@ export default function SalesPerformancePage() {
           { label: 'Risk flags',      value: riskLeads,            color: riskLeads > 0 ? 'text-red-300' : 'text-[#D4AF37]' },
           { label: 'Avg. response',   value: `${avgResponse.toFixed(1)}h`, color: avgResponse <= TEAM_TARGET_RESPONSE ? 'text-[#D4AF37]' : 'text-orange-300' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+          <div key={stat.label} className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] p-4">
             <div className={`text-[26px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-[12px] text-white/35">{stat.label}</div>
           </div>
@@ -155,7 +155,7 @@ export default function SalesPerformancePage() {
           ))}
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -237,7 +237,7 @@ export default function SalesPerformancePage() {
 
         <div className="mt-5 space-y-2">
           {riskLeadsList.map((lead) => (
-            <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+            <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[14px] font-semibold text-white/85">{lead.name}</span>
@@ -278,7 +278,7 @@ export default function SalesPerformancePage() {
         </div>
         <div className="mt-5 space-y-2">
           {fuQueue.slice(0, 4).map((fu) => (
-            <div key={fu.leadId} className="flex items-center justify-between gap-4 rounded-[16px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4">
+            <div key={fu.leadId} className="flex items-center justify-between gap-4 rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-5 py-4">
               <div className="min-w-0">
                 <div className="text-[13px] font-semibold text-white/85">{fu.leadName}</div>
                 <div className="mt-0.5 text-[12px] text-white/40">

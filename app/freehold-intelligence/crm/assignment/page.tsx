@@ -51,7 +51,7 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub?: string
 }) {
   return (
-    <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+    <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
       <div className="flex items-center gap-2 text-white/35">
         <Icon className="h-3.5 w-3.5" />
         <span className="text-[12px] font-medium uppercase tracking-[0.18em]">{label}</span>
@@ -119,7 +119,7 @@ function LeadCard({
   }
 
   return (
-    <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition-all hover:border-white/[0.10]">
+    <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition-all hover:border-white/[0.10]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -342,7 +342,7 @@ export default function AssignmentPage() {
 
           {/* Queue cards */}
           {filteredQueue.length === 0 && (
-            <div className="rounded-[20px] border border-white/[0.04] bg-[#1A1F2A] px-6 py-10 text-center">
+            <div className="rounded-[20px] border border-white/[0.04] bg-[#131B2B] px-6 py-10 text-center">
               <CheckCircle2 className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
               <p className="mt-3 text-[14px] text-white/35">
                 {activeUrgency === 'all' ? 'All leads have been assigned.' : `No ${activeUrgency} leads in queue.`}
@@ -373,7 +373,7 @@ export default function AssignmentPage() {
                 {recentlyCompleted.map((lead) => (
                   <div
                     key={lead.id}
-                    className="flex items-center gap-3 rounded-[14px] border border-white/[0.04] bg-[#1A1F2A] px-4 py-3"
+                    className="flex items-center gap-3 rounded-[14px] border border-white/[0.04] bg-[#131B2B] px-4 py-3"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/60" />
                     <span className="text-[13px] text-white/60">{lead.name}</span>
@@ -394,7 +394,7 @@ export default function AssignmentPage() {
               <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.2em] text-white/25">
                 Already assigned
               </div>
-              <div className="overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#131B2B]">
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-white/[0.05]">
@@ -429,7 +429,7 @@ export default function AssignmentPage() {
 
         {/* ── Sidebar: Agent roster ── */}
         <div className="space-y-4">
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">
               Agent roster
             </div>
@@ -441,7 +441,7 @@ export default function AssignmentPage() {
           </div>
 
           {/* Quick legend */}
-          <div className="rounded-[18px] border border-white/[0.04] bg-[#1A1F2A]/60 px-4 py-4">
+          <div className="rounded-[18px] border border-white/[0.04] bg-[#131B2B]/60 px-4 py-4">
             <div className="mb-3 text-[9px] font-medium uppercase tracking-[0.2em] text-white/20">Status legend</div>
             <div className="space-y-2">
               {[

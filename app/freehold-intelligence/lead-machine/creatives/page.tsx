@@ -117,7 +117,7 @@ export default function CreativesPage() {
               { label: 'With image',        value: creatives.filter((c) => c.object_story_spec?.link_data?.picture).length },
               { label: 'Named creatives',   value: creatives.filter((c) => c.name && c.name !== 'Unnamed').length },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3">
                 <div className="text-[20px] font-semibold text-white">{s.value}</div>
                 <div className="text-[12px] text-white/35">{s.label}</div>
               </div>
@@ -154,7 +154,7 @@ export default function CreativesPage() {
               const pageUrl  = ld?.link
 
               return (
-                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
                   {/* Image preview */}
                   {imgUrl ? (
                     <div className="relative h-40 w-full overflow-hidden bg-white/[0.03]">

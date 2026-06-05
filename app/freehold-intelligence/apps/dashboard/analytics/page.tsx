@@ -120,7 +120,7 @@ export default function DashboardAnalyticsPage() {
           { label: 'Avg deal',    value: 'AED 2.4M',  delta: '+12%',  tone: 'text-[#D4AF37]' },
           { label: 'Revenue MTD', value: 'AED 32M',   delta: '+16%',  tone: 'text-[#D4AF37]' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{kpi.label}</div>
             <div className="mt-3 text-[28px] font-semibold text-white">{kpi.value}</div>
             <div className={`mt-1 text-[12px] ${kpi.tone}`}>{kpi.delta} vs last month</div>
@@ -138,7 +138,7 @@ export default function DashboardAnalyticsPage() {
           {FUNNEL.map((stage, i) => {
             const delta = i === 0 ? null : Math.round(((stage.value - stage.prev) / stage.prev) * 100)
             return (
-              <div key={stage.stage} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div key={stage.stage} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-4 min-w-0">
                     <span className="text-[13px] text-white/30 w-4 tabular-nums">{i + 1}</span>
@@ -175,7 +175,7 @@ export default function DashboardAnalyticsPage() {
             <span className="ml-3 text-[12px] text-white/35">({filteredSources.length} of {SOURCE_BREAKDOWN.length} sources)</span>
           )}
         </h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -215,7 +215,7 @@ export default function DashboardAnalyticsPage() {
           <Clock className="h-3.5 w-3.5" /> Monthly trend
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Leads & revenue</h2>
-        <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
+        <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
           <div className="grid grid-cols-5 gap-3 sm:gap-5">
             {MONTHLY.map((m) => (
               <div key={m.month} className="flex flex-col items-center gap-3">

@@ -51,7 +51,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
   const style      = statusStyle(landing.status)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">

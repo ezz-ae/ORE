@@ -97,7 +97,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* Stats row */}
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
           <p className="text-[28px] font-semibold text-white">{leadMachineListings.length}</p>
           <p className="text-[12px] text-white/35 mt-1">Active listings</p>
         </div>
@@ -151,7 +151,7 @@ export default function LeadMachineOverviewPage() {
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-4 border-b border-white/[0.05] px-6 py-3">
             <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Project</div>
@@ -191,7 +191,7 @@ export default function LeadMachineOverviewPage() {
           <Link
             key={href}
             href={href}
-            className="group flex items-start gap-4 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
+            className="group flex items-start gap-4 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/25"
           >
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition group-hover:border-[#D4AF37]/20">
               <Icon className="h-4 w-4 text-white/70" />
@@ -213,7 +213,7 @@ export default function LeadMachineOverviewPage() {
       {/* Landing & ad status table */}
       <section className="mt-8">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Campaign readiness by listing</div>
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <div className="divide-y divide-white/[0.04]">
             {leadMachineListings.map(listing => (
               <div key={listing.id} className="flex items-center gap-4 px-6 py-4">

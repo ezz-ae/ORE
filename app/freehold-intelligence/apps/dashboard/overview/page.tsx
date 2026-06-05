@@ -66,7 +66,7 @@ export default async function DashboardOverviewPage() {
           { label: 'Blocked',     value: blocked,        tone: 'text-red-400' },
           { label: 'Agents avail',value: available,      tone: 'text-[#D4AF37]' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
             <div className={`text-[28px] font-semibold ${kpi.tone}`}>{kpi.value}</div>
             <div className="mt-0.5 text-[12px] uppercase tracking-[0.14em] text-white/35">{kpi.label}</div>
           </div>
@@ -88,7 +88,7 @@ export default async function DashboardOverviewPage() {
           {INFRA.map((item) => {
             const t = infraLabel(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div key={item.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="min-w-0">
                   <div className="text-[14px] font-semibold text-white">{item.label}</div>
                   <div className="mt-0.5 text-[12px] text-white/45">{item.note}</div>
@@ -109,7 +109,7 @@ export default async function DashboardOverviewPage() {
           <TrendingUp className="h-3.5 w-3.5" /> Apps
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Live status matrix</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">

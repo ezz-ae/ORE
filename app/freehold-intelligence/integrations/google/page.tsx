@@ -95,7 +95,7 @@ export default function GoogleIntegrationPage() {
         </div>
         <div className="space-y-2">
           {REQUIREMENTS.map((req) => (
-            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#1A1F2A]'}`}>
+            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#131B2B]'}`}>
               <div className="mt-0.5 shrink-0">
                 {checked[req.id]
                   ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
@@ -121,7 +121,7 @@ export default function GoogleIntegrationPage() {
       {/* Setup steps */}
       <section className="mt-10">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Setup guide</div>
-        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="space-y-3">
             {SETUP_STEPS.map((step, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -159,7 +159,7 @@ export default function GoogleIntegrationPage() {
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
           Environment variables required
         </div>
-        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
           <div className="divide-y divide-white/[0.04]">
             {ENV_VARS.map((v) => (
               <div key={v.key} className="flex items-start gap-4 px-5 py-3.5">
@@ -188,7 +188,7 @@ export default function GoogleIntegrationPage() {
             { title: 'Audience management',    body: 'Customer Match lists, in-market segments, and remarketing audiences.' },
             { title: 'Ad extensions',          body: 'Sitelinks, callouts, call, location, and lead form extensions synced from your account.' },
           ].map(({ title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[13px] font-semibold text-white">{title}</div>
               <p className="mt-1 text-[12px] leading-relaxed text-white/40">{body}</p>
             </div>

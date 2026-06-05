@@ -80,7 +80,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">
-            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 transition hover:border-[#D4AF37]/25">
+            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 transition hover:border-[#D4AF37]/25">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
                 <Phone className="h-4 w-4" />
               </div>
@@ -89,7 +89,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <p className="mt-0.5 text-[13px] font-medium text-white group-hover:text-[#D4AF37] transition-colors">{lead.phone}</p>
               </div>
             </a>
-            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 transition hover:border-sky-400/25">
+            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 transition hover:border-sky-400/25">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10 text-white/55">
                 <Mail className="h-4 w-4" />
               </div>
@@ -98,7 +98,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <p className="mt-0.5 text-[13px] font-medium text-white group-hover:text-white/55 transition-colors truncate">{lead.email}</p>
               </div>
             </a>
-            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
               <div className="flex items-center gap-2 text-[12px] text-white/35 uppercase tracking-[0.14em]">
                 <Target className="h-3 w-3" /> Intent score
               </div>
@@ -142,7 +142,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Suggested WhatsApp */}
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Bell className="h-3.5 w-3.5" /> Suggested message
@@ -171,7 +171,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <aside className="space-y-4">
 
           {/* Lead metadata */}
-          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
             <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Lead details</p>
             <div className="space-y-3">
               {[
@@ -191,13 +191,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Quick actions */}
-          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
             <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Actions</p>
             <QuickActions leadId={lead.id} leadName={lead.name} currentStage={lead.stage} />
           </div>
 
           {/* Activity */}
-          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Clock className="h-3 w-3" /> Activity

@@ -260,7 +260,7 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
 
 function StatCard({ value, label, valueColor }: { value: number | string; label: string; valueColor?: string }) {
   return (
-    <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+    <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
       <div className={`text-[30px] font-semibold leading-none ${valueColor ?? 'text-white'}`}>{value}</div>
       <div className="mt-1.5 text-[13px] text-white/40">{label}</div>
     </div>
@@ -313,7 +313,7 @@ function EventCard({
       </div>
 
       {/* Card */}
-      <div className="mb-4 min-w-0 flex-1 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+      <div className="mb-4 min-w-0 flex-1 rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
         {/* Top row */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={`rounded-full border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${cfg.badgeColor}`}>
@@ -459,7 +459,7 @@ export default function CrmActivityPage() {
   }, [sortedAll])
 
   return (
-    <div className="min-h-screen bg-[#111318] px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
+    <div className="min-h-screen bg-[#0B0F1A] px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
       <div className="mx-auto max-w-6xl">
 
         {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -501,7 +501,7 @@ export default function CrmActivityPage() {
           {/* ── Timeline ──────────────────────────────────────────────────── */}
           <div>
             {grouped.length === 0 ? (
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-8 py-12 text-center text-white/30">
+              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-8 py-12 text-center text-white/30">
                 No events match this filter.
               </div>
             ) : (
@@ -536,13 +536,13 @@ export default function CrmActivityPage() {
           {/* ── Sidebar ───────────────────────────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="sticky top-8 space-y-6">
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
                 <BreakdownList
                   title="By agent"
                   items={byAgent}
                 />
               </div>
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
                 <BreakdownList
                   title="By type"
                   items={byType}
@@ -550,7 +550,7 @@ export default function CrmActivityPage() {
               </div>
 
               {/* Quick legend */}
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
                 <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.2em] text-white/30">Legend</div>
                 <div className="space-y-2.5">
                   {(Object.entries(TYPE_CONFIG) as [CRMActivityEvent['type'], EventConfig][]).map(([, cfg]) => {

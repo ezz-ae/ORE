@@ -104,7 +104,7 @@ export default function DashboardAiAssistantPage() {
               className={`group flex items-start gap-3 rounded-[18px] border p-4 text-left transition ${
                 activeAction === action.label
                   ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.04]'
-                  : 'border-white/[0.08] bg-[#1A1F2A] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
+                  : 'border-white/[0.08] bg-[#131B2B] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
               }`}
             >
               {loading && activeAction === action.label
@@ -174,7 +174,7 @@ export default function DashboardAiAssistantPage() {
               <Link
                 key={conv.id}
                 href={`/freehold-intelligence/notebook/${conv.id}`}
-                className="group flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4 transition hover:border-[#D4AF37]/25"
+                className="group flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#131B2B] px-5 py-4 transition hover:border-[#D4AF37]/25"
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-white/25 transition group-hover:text-[#D4AF37]/60" />

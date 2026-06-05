@@ -373,7 +373,7 @@ export default function SettingsPage() {
                 <label className="block text-xs font-medium text-white/40 mb-3">Dashboard Theme</label>
                 <div className="flex gap-3">
                   {[
-                    { label: 'Dark (current)', bg: 'bg-[#111318]', ring: 'ring-[#D4AF37] ring-2' },
+                    { label: 'Dark (current)', bg: 'bg-[#0B0F1A]', ring: 'ring-[#D4AF37] ring-2' },
                     { label: 'Darker',         bg: 'bg-black',     ring: 'ring-white/10' },
                     { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-white/10' },
                   ].map((t) => (

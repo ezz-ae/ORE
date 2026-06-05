@@ -133,7 +133,7 @@ function priorityTone(p: string) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
   if (p === 'high')     return { ring: 'border-[#D4AF37]/25', bg: 'bg-[#D4AF37]/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-[#D4AF37]', label: 'High' }
   if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
-  return                       { ring: 'border-white/[0.08]', bg: 'bg-[#1A1F2A]', text: 'text-white/50', dot: 'bg-white/30', label: 'Low' }
+  return                       { ring: 'border-white/[0.08]', bg: 'bg-[#131B2B]', text: 'text-white/50', dot: 'bg-white/30', label: 'Low' }
 }
 
 function statusChip(status: string) {
@@ -253,7 +253,7 @@ export default function TasksPage() {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
+    'w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -275,7 +275,7 @@ export default function TasksPage() {
 
       {/* Stat strip */}
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.open}</p>
           <p className="text-[12px] text-white/35 mt-1">Open</p>
         </div>
@@ -351,7 +351,7 @@ export default function TasksPage() {
       {/* Task cards */}
       <section className="mt-6 space-y-4">
         {filtered.length === 0 && (
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-10 text-center text-[13px] text-white/30">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-6 py-10 text-center text-[13px] text-white/30">
             No tasks match the current filters.
           </div>
         )}
@@ -434,7 +434,7 @@ export default function TasksPage() {
       </section>
 
       {/* Create task form */}
-      <section className="mt-8 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+      <section className="mt-8 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Plus className="h-3.5 w-3.5" /> Create a task
@@ -466,12 +466,12 @@ export default function TasksPage() {
               value={formAssignee}
               onChange={e => setFormAssignee(e.target.value)}
               placeholder="Assign to…"
-              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
             <select
               value={formPriority}
               onChange={e => setFormPriority(e.target.value as Task['priority'])}
-              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white/70 outline-none focus:border-[#D4AF37]/30 transition appearance-none cursor-pointer"
+              className="rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-4 py-2.5 text-[13px] text-white/70 outline-none focus:border-[#D4AF37]/30 transition appearance-none cursor-pointer"
             >
               <option value="critical">Critical</option>
               <option value="high">High</option>
@@ -482,7 +482,7 @@ export default function TasksPage() {
               value={formDue}
               onChange={e => setFormDue(e.target.value)}
               placeholder="Due date"
-              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
             <button
               type="submit"

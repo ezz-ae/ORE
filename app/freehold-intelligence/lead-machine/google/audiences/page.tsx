@@ -95,7 +95,7 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
   const typeLabel = TYPE_LABEL[audience.type] ?? audience.type
 
   return (
-    <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#4285F4]/20">
+    <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#4285F4]/20">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -280,7 +280,7 @@ export default function GoogleAudiencesPage() {
               { label: 'Total reach',          value: totalReach > 0 ? fmtReach(totalReach) : '—',
                                                                                   color: 'text-white'           },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
@@ -324,7 +324,7 @@ export default function GoogleAudiencesPage() {
           ) : (
             audiences.length > 0 ? (
               /* filtered but no results for this type */
-              <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-12 text-center">
+              <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#131B2B] px-6 py-12 text-center">
                 <Users className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
                 <div className="text-[15px] font-semibold text-white">
                   No {FILTER_TABS.find((t) => t.value === filter)?.label.toLowerCase()} audiences
@@ -368,7 +368,7 @@ export default function GoogleAudiencesPage() {
               {STATIC_IN_MARKET.map((item) => (
                 <div
                   key={item.name}
-                  className="flex items-start justify-between gap-4 rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-5"
+                  className="flex items-start justify-between gap-4 rounded-[16px] border border-white/[0.08] bg-[#131B2B] p-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

@@ -206,7 +206,7 @@ export default function GenerateRsaPage() {
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -238,7 +238,7 @@ export default function GenerateRsaPage() {
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/50 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#131B2B] text-white/50 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   <div className="text-[12px] font-semibold">{a.label}</div>
@@ -262,7 +262,7 @@ export default function GenerateRsaPage() {
                     'flex-1 rounded-[12px] border py-2.5 text-[12px] font-medium transition',
                     tone === t.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/45 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#131B2B] text-white/45 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   {t.label}
@@ -363,7 +363,7 @@ export default function GenerateRsaPage() {
                 return (
                   <div
                     key={v.id}
-                    className="rounded-[22px] border border-white/[0.07] bg-[#1A1F2A] p-5"
+                    className="rounded-[22px] border border-white/[0.07] bg-[#131B2B] p-5"
                   >
                     {/* Variant header */}
                     <div className="mb-4 flex items-start justify-between gap-3">

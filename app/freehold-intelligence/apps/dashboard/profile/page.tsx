@@ -62,7 +62,7 @@ export default function DashboardProfilePage() {
         <div className="space-y-5">
 
           {/* Account card */}
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/25 to-[#D4AF37]/5 text-[20px] font-semibold text-[#D4AF37]">
                 {currentServerUser.name.slice(0, 2).toUpperCase()}
@@ -80,7 +80,7 @@ export default function DashboardProfilePage() {
           </div>
 
           {/* Role scope */}
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
             <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <Shield className="h-3 w-3" /> Role scope
             </div>
@@ -96,7 +96,7 @@ export default function DashboardProfilePage() {
           </div>
 
           {/* Assigned modules */}
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
             <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <CheckCircle2 className="h-3 w-3" /> Assigned modules
             </div>
@@ -111,13 +111,13 @@ export default function DashboardProfilePage() {
 
           {/* Flash toast */}
           {flash && (
-            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#111318]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
+            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#0B0F1A]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
               Preferences saved
             </div>
           )}
 
           {/* Notifications card */}
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Bell className="h-3 w-3" /> Notification preferences
@@ -170,7 +170,7 @@ export default function DashboardProfilePage() {
 
         {/* Sidebar: team */}
         <aside className="space-y-4">
-          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="flex items-center gap-2 mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <Users className="h-3 w-3" /> Sales team
             </div>

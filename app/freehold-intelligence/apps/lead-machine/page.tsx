@@ -32,7 +32,7 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-white/10 lg:rounded-[28px]">
+    <article className="group overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#131B2B] transition hover:border-white/10 lg:rounded-[28px]">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.015]"
@@ -156,15 +156,15 @@ export default async function LeadMachinePage() {
 
           {/* Mobile stats */}
           <div className="mt-8 grid grid-cols-3 gap-3 lg:hidden">
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-white">{leadMachineListings.length}</div>
               <div className="text-[12px] text-white/40">Active</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-[#D4AF37]">{readyCount}</div>
               <div className="text-[12px] text-white/40">Ready</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-red-400">{blockedCount}</div>
               <div className="text-[12px] text-white/40">Blocked</div>
             </div>
@@ -213,7 +213,7 @@ export default async function LeadMachinePage() {
           <div className="sticky top-20 space-y-3">
 
             {/* Readiness scorecard */}
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <BarChart2 className="h-3 w-3" /> Readiness
               </div>
@@ -248,7 +248,7 @@ export default async function LeadMachinePage() {
             </div>
 
             {/* Quick links */}
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-4">
               <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">In Lead Machine</div>
               <div className="space-y-1">
                 {[

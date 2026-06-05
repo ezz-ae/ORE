@@ -20,7 +20,7 @@ function severityTone(s: string) {
   if (s === 'critical') return { ring: 'border-red-400/25',      bg: 'bg-red-400/[0.06]',      text: 'text-red-300',      dot: 'bg-red-400',    label: 'Critical', active: 'border-red-400/40 bg-red-400/15 text-red-300' }
   if (s === 'high')     return { ring: 'border-[#D4AF37]/25',    bg: 'bg-[#D4AF37]/[0.05]',   text: 'text-[#F8E7AE]',    dot: 'bg-[#D4AF37]', label: 'High',     active: 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#F8E7AE]' }
   if (s === 'medium')   return { ring: 'border-sky-400/20',      bg: 'bg-sky-400/[0.05]',      text: 'text-sky-200',      dot: 'bg-sky-400',   label: 'Medium',   active: 'border-sky-400/40 bg-sky-400/15 text-sky-200' }
-  return                       { ring: 'border-white/[0.08]',    bg: 'bg-[#1A1F2A]',           text: 'text-white/50',     dot: 'bg-white/30',  label: 'Low',      active: 'border-white/20 bg-white/[0.06] text-white/65' }
+  return                       { ring: 'border-white/[0.08]',    bg: 'bg-[#131B2B]',           text: 'text-white/50',     dot: 'bg-white/30',  label: 'Low',      active: 'border-white/20 bg-white/[0.06] text-white/65' }
 }
 
 function statusIcon(s: string) {
@@ -92,7 +92,7 @@ export default function RequirementsPage() {
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{leadMachineRequirements.filter(r => r.severity === 'high').length}</p>
           <p className="mt-1 text-[12px] text-[#D4AF37]/60">High</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{totalOpen}</p>
           <p className="mt-1 text-[12px] text-white/35">Total open</p>
         </div>

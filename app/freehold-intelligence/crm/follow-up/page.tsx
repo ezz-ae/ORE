@@ -116,7 +116,7 @@ export default function FollowUpQueuePage() {
 
           {/* Stats strip */}
           <div className="mt-8 grid grid-cols-4 gap-3">
-            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[26px] font-semibold text-white">{stats.total}</div>
               <div className="mt-0.5 text-[13px] text-white/40">Overdue</div>
             </div>
@@ -124,7 +124,7 @@ export default function FollowUpQueuePage() {
               <div className="text-[26px] font-semibold text-red-400">{stats.critical}</div>
               <div className="mt-0.5 text-[13px] text-white/40">Critical</div>
             </div>
-            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[26px] font-semibold text-white">{stats.avgOverdue}<span className="text-[14px] font-normal text-white/40">h</span></div>
               <div className="mt-0.5 text-[13px] text-white/40">Avg delay</div>
             </div>
@@ -149,10 +149,10 @@ export default function FollowUpQueuePage() {
               <select
                 value={activeAgent}
                 onChange={(e) => setActiveAgent(e.target.value)}
-                className="rounded-full border border-white/[0.08] bg-[#1A1F2A] px-3.5 py-1 text-[12px] text-white/60 outline-none transition hover:border-white/20 hover:text-white focus:border-white/20"
+                className="rounded-full border border-white/[0.08] bg-[#131B2B] px-3.5 py-1 text-[12px] text-white/60 outline-none transition hover:border-white/20 hover:text-white focus:border-white/20"
               >
                 {allAgents.map((a) => (
-                  <option key={a} value={a} className="bg-[#1A1F2A]">{a === 'All' ? 'All agents' : a}</option>
+                  <option key={a} value={a} className="bg-[#131B2B]">{a === 'All' ? 'All agents' : a}</option>
                 ))}
               </select>
             </div>
@@ -170,7 +170,7 @@ export default function FollowUpQueuePage() {
               visible.map((item) => {
                 const tone = urgencyTone(item.urgency)
                 return (
-                  <div key={item.leadId} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 sm:p-6">
+                  <div key={item.leadId} className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -247,7 +247,7 @@ export default function FollowUpQueuePage() {
               </div>
             )}
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Overdue by agent</div>
               <div className="space-y-2">
                 {Object.entries(byAgent).sort((a, b) => b[1] - a[1]).map(([agent, count]) => (
@@ -275,7 +275,7 @@ export default function FollowUpQueuePage() {
       {/* Flash banner */}
       {flash && (
         <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2">
-          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-[#1A1F2A]/95 px-5 py-3 shadow-2xl backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-[#131B2B]/95 px-5 py-3 shadow-2xl backdrop-blur-sm">
             <CheckCircle className="h-4 w-4 text-[#D4AF37]" />
             <span className="text-[13px] font-medium text-white">{flash}</span>
             <button onClick={() => setFlash(null)} className="ml-1 text-white/40 transition hover:text-white">

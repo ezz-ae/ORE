@@ -158,7 +158,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           { label: 'Status',        value: form.status,                   color: statusColor      },
           { label: 'Synced leads',  value: leads.length,                  color: 'text-white'     },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
@@ -195,13 +195,13 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           </div>
 
           {leads.length === 0 ? (
-            <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-12 text-center">
+            <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-6 py-12 text-center">
               <Users className="mx-auto h-8 w-8 text-white/15 mb-3" />
               <div className="text-[14px] text-white/40">No leads synced yet</div>
               <p className="mt-1 text-[12px] text-white/25">Attach this form to a campaign to start capturing leads.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+            <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
               <div className="divide-y divide-white/[0.04]">
                 {leads.map((lead) => {
                   const name  = getField(lead, 'name')
@@ -248,7 +248,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         <aside className="space-y-4">
           {/* Questions */}
           {form.questions && form.questions.length > 0 && (
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Questions</div>
               <div className="space-y-2">
                 {form.questions.map((q, i) => (
@@ -264,7 +264,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
           {/* Landing URL */}
           {form.follow_up_action_url && (
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Landing page</div>
               <a
                 href={form.follow_up_action_url}
@@ -278,7 +278,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           )}
 
           {/* Form ID */}
-          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="mb-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Form ID</div>
             <code className="text-[12px] text-white/50 break-all">{form.id}</code>
             <p className="mt-2 text-[13px] text-white/30">Use this ID when attaching the form to a campaign ad set.</p>

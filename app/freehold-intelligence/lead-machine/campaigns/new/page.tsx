@@ -270,7 +270,7 @@ export default function NewCampaignPage() {
         })}
       </div>
 
-      <div className="mt-10 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
+      <div className="mt-10 rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
 
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (

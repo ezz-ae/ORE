@@ -95,7 +95,7 @@ export default function NotebookPage() {
 
       {/* Stats */}
       <section className="mt-8 grid grid-cols-3 gap-3">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{notebookConversations.length}</p>
           <p className="mt-1 text-[12px] text-white/35">Conversations</p>
         </div>
@@ -103,7 +103,7 @@ export default function NotebookPage() {
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{allOutputs.length}</p>
           <p className="mt-1 text-[12px] text-[#D4AF37]/60">Saved outputs</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{totalMessages}</p>
           <p className="mt-1 text-[12px] text-white/35">Messages</p>
         </div>
@@ -198,7 +198,7 @@ export default function NotebookPage() {
                 <Link
                   key={conv.id}
                   href={`/freehold-intelligence/notebook/${conv.id}`}
-                  className="group flex items-start gap-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/20 sm:p-6"
+                  className="group flex items-start gap-5 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 sm:p-6"
                 >
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition group-hover:border-[#D4AF37]/20">
                     <Sparkles className="h-4 w-4 text-white/50" />
@@ -281,7 +281,7 @@ export default function NotebookPage() {
             No outputs match these filters.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
             <div className="divide-y divide-white/[0.04]">
               {filteredOutputs.map(output => (
                 <Link

@@ -218,7 +218,7 @@ export default function GoogleKeywordsPage() {
                         : 'text-red-400',
               },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
@@ -228,7 +228,7 @@ export default function GoogleKeywordsPage() {
           </div>
 
           {/* ── Match type filter tabs ── */}
-          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] p-1 w-fit">
+          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-white/[0.08] bg-[#131B2B] p-1 w-fit">
             {(['ALL', 'BROAD', 'PHRASE', 'EXACT'] as MatchFilter[]).map((f) => {
               const label =
                 f === 'ALL'
@@ -252,7 +252,7 @@ export default function GoogleKeywordsPage() {
 
           {/* ── Keywords table ── */}
           {filtered.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+            <div className="mt-4 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                 <span>Keyword</span>
@@ -323,7 +323,7 @@ export default function GoogleKeywordsPage() {
             </div>
           ) : (
             /* ── Empty state ── */
-            <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-14 text-center">
+            <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#131B2B] px-6 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
               <div className="text-[16px] font-semibold text-white">No keywords found</div>
               <p className="mt-2 text-[13px] text-white/40">
@@ -339,7 +339,7 @@ export default function GoogleKeywordsPage() {
             <section className="mt-8">
               <button
                 onClick={() => setNegsOpen((o) => !o)}
-                className="flex w-full items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4 text-left transition hover:border-white/[0.10]"
+                className="flex w-full items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-5 py-4 text-left transition hover:border-white/[0.10]"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-[13px] font-semibold text-white">Negative keywords</span>
@@ -355,7 +355,7 @@ export default function GoogleKeywordsPage() {
               </button>
 
               {negsOpen && (
-                <div className="mt-1 overflow-hidden rounded-[16px] border border-white/[0.08] bg-[#1A1F2A]">
+                <div className="mt-1 overflow-hidden rounded-[16px] border border-white/[0.08] bg-[#131B2B]">
                   {/* Column headers */}
                   <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                     <span>Keyword</span>
@@ -398,7 +398,7 @@ export default function GoogleKeywordsPage() {
               {UAE_REAL_ESTATE_KEYWORD_THEMES.map((theme) => (
                 <div
                   key={theme.id}
-                  className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5"
+                  className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5"
                 >
                   {/* Theme header */}
                   <div className="flex items-start justify-between gap-3">
@@ -455,9 +455,9 @@ export default function GoogleKeywordsPage() {
                         Add to campaign
                       </button>
                       {/* Tooltip */}
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-white/[0.08] bg-[#1A1F2A] px-2.5 py-1.5 text-[13px] text-white/50 shadow-xl group-hover:block">
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-white/[0.08] bg-[#131B2B] px-2.5 py-1.5 text-[13px] text-white/50 shadow-xl group-hover:block">
                         Select campaign first
-                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-white/[0.08] bg-[#1A1F2A]" />
+                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-white/[0.08] bg-[#131B2B]" />
                       </div>
                     </div>
                   </div>

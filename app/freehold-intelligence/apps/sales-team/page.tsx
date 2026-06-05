@@ -119,7 +119,7 @@ export default function SalesTeamPage() {
           { label: 'Hot leads', value: totalHot,               color: 'text-red-300'     },
           { label: 'Overdue',   value: totalOverdue,           color: totalOverdue > 3 ? 'text-red-300' : 'text-[#D4AF37]' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
             <div className={`text-[28px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
@@ -166,7 +166,7 @@ export default function SalesTeamPage() {
 
         <div className="mt-4 space-y-3">
           {filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] py-14 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.08] bg-[#131B2B] py-14 text-center">
               <p className="text-[13px] text-white/35">No agents match this filter</p>
               <button
                 onClick={() => setStatusFilter('All')}
@@ -185,7 +185,7 @@ export default function SalesTeamPage() {
               )
 
               return (
-                <div key={agent.id} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+                <div key={agent.id} className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
 
                   {/* Top row */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -276,7 +276,7 @@ export default function SalesTeamPage() {
       {/* Leaderboard */}
       <section className="mt-12">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Win ranking</div>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -347,7 +347,7 @@ export default function SalesTeamPage() {
           </div>
           <div className="space-y-2">
             {unassigned.map((lead) => (
-              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[14px] font-semibold text-white">{lead.name}</span>

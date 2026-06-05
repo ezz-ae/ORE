@@ -129,7 +129,7 @@ export default function GenerateCreativePage() {
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -161,7 +161,7 @@ export default function GenerateCreativePage() {
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/50 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#131B2B] text-white/50 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   <div className="text-[12px] font-semibold">{a.label}</div>
@@ -185,7 +185,7 @@ export default function GenerateCreativePage() {
                     'flex-1 rounded-[12px] border py-2.5 text-[12px] font-medium transition',
                     tone === t.value
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/45 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#131B2B] text-white/45 hover:text-white/70',
                   ].join(' ')}
                 >
                   {t.label}
@@ -203,7 +203,7 @@ export default function GenerateCreativePage() {
               <select
                 value={cta}
                 onChange={(e) => setCta(e.target.value as MetaCta)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
               >
                 {CTAS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -273,7 +273,7 @@ export default function GenerateCreativePage() {
               </div>
 
               {variants.map((v, i) => (
-                <div key={v.id} className="rounded-[20px] border border-white/[0.07] bg-[#1A1F2A] p-5">
+                <div key={v.id} className="rounded-[20px] border border-white/[0.07] bg-[#131B2B] p-5">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                       Variant {i + 1}

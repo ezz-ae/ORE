@@ -135,7 +135,7 @@ export default function CrmReportsPage() {
               { label: 'Connect rate',   value: `${connectRate}%`,    delta: `${connected}/${callsLogged} calls`, tone: connectRate >= 50 ? 'text-[#D4AF37]' : 'text-orange-300' },
               { label: 'Revenue MTD',    value: 'AED 32M',           delta: '+16% vs Apr',                tone: 'text-[#D4AF37]' },
             ].map((kpi) => (
-              <div key={kpi.label} className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div key={kpi.label} className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{kpi.label}</div>
                 <div className="mt-3 text-[28px] font-semibold text-white">{kpi.value}</div>
                 <div className={`mt-1 text-[12px] ${kpi.tone}`}>{kpi.delta}</div>
@@ -236,7 +236,7 @@ export default function CrmReportsPage() {
               <h2 className="text-[18px] font-semibold text-white">Lead sources</h2>
               <span className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">Live</span>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
               <div className="space-y-5">
                 {sources.map((src) => (
                   <div key={src.source}>
@@ -284,10 +284,10 @@ export default function CrmReportsPage() {
                 onChange={(e) => setAgentFilter(e.target.value)}
                 className="rounded-full border border-white/[0.08] bg-transparent px-3 py-1 text-[13px] text-white/40 outline-none transition hover:border-white/20 hover:text-white/65"
               >
-                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-[#111318]">{a === 'All' ? 'All agents' : a}</option>)}
+                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-[#0B0F1A]">{a === 'All' ? 'All agents' : a}</option>)}
               </select>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
               {filteredLeads.length === 0 ? (
                 <div className="py-8 text-center text-[13px] text-white/35">No leads match these filters.</div>
               ) : (
@@ -321,7 +321,7 @@ export default function CrmReportsPage() {
               <h2 className="text-[18px] font-semibold text-white">Monthly revenue</h2>
               <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-[12px] text-white/55">Seeded data — live in V1.1</span>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
               <div className="grid grid-cols-5 gap-3 sm:gap-5">
                 {MONTHLY.map((m) => (
                   <div key={m.month} className="flex flex-col items-center gap-3">
@@ -362,7 +362,7 @@ export default function CrmReportsPage() {
               <div className="mt-1 text-[12px] text-white/55">{sources[0]?.count ?? 0} leads · highest volume</div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Users className="h-3 w-3" /> Cohort watch
               </div>
@@ -372,7 +372,7 @@ export default function CrmReportsPage() {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Activity this week</div>
               <div className="mt-3 space-y-2 text-[13px] text-white/70">
                 <div className="flex justify-between">
@@ -390,7 +390,7 @@ export default function CrmReportsPage() {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Next report</div>
               <div className="mt-3 text-[14px] text-white/80">Weekly · Mondays 09:00 GST</div>
               <div className="mt-1 text-[12px] text-white/45">Sent to owner + sales leads.</div>

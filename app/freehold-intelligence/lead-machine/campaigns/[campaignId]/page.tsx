@@ -239,7 +239,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   { label: 'Leads',       value: leads,                        icon: Users },
                   { label: 'CPL',         value: cpl,                          icon: DollarSign },
                 ].map((m) => (
-                  <div key={m.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+                  <div key={m.label} className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] p-4">
                     <div className="text-[13px] text-white/35">{m.label}</div>
                     <div className="mt-2 text-[20px] font-semibold text-white leading-tight">{m.value}</div>
                   </div>
@@ -254,7 +254,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               )}
             </section>
           ) : (
-            <div className="mt-8 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 text-center text-[13px] text-white/35">
+            <div className="mt-8 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5 text-center text-[13px] text-white/35">
               No insights yet — data appears after the campaign has delivered impressions.
             </div>
           )}
@@ -266,7 +266,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               <h2 className="mt-2 text-xl font-semibold text-white">{data.adSets.length} ad set{data.adSets.length !== 1 ? 's' : ''}</h2>
               <div className="mt-5 space-y-3">
                 {data.adSets.map((adSet) => (
-                  <div key={adSet.id} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+                  <div key={adSet.id} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-[14px] font-semibold text-white">{adSet.name}</div>

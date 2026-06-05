@@ -52,7 +52,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         {metrics.map((m) => {
           const Icon = m.icon
           return (
-            <div key={m.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={m.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Icon className="h-3 w-3" /> {m.label}
               </div>
@@ -65,7 +65,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
       </section>
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Clock className="h-3 w-3" /> Latest activity
           </div>
@@ -90,7 +90,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         />
       </section>
 
-      <section className="mt-8 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+      <section className="mt-8 rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-6">
         <div className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
           <Blocks className="h-3 w-3" /> Navigate
         </div>

@@ -44,7 +44,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
     <>
       {/* Flash toast */}
       {flash && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#111318]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#0B0F1A]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
           {flash}
         </div>
       )}
@@ -56,7 +56,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
           <h2 className="mt-2 text-xl font-semibold text-white">Urgent items</h2>
           <div className="mt-5 space-y-3">
             {visibleUrgent.map((task) => (
-              <div key={task.id} className="flex items-start gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div key={task.id} className="flex items-start gap-4 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
                 <AlertCircle className={`mt-0.5 h-4 w-4 shrink-0 ${task.priority === 'critical' ? 'text-red-400' : 'text-[#D4AF37]'}`} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-semibold text-white">{task.title}</div>

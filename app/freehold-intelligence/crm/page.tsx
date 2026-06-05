@@ -6,19 +6,11 @@ import { ArrowUpRight, PhoneCall, MessageCircle, Users, TrendingUp, AlertCircle,
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const PORTRAIT_TINTS = [
-  'from-[#D4AF37]/35 via-[#D4AF37]/10 to-transparent',
-  'from-emerald-500/30 via-emerald-500/10 to-transparent',
-  'from-sky-500/30 via-sky-500/10 to-transparent',
-  'from-rose-500/30 via-rose-500/10 to-transparent',
-  'from-violet-500/30 via-violet-500/10 to-transparent',
-]
-
 function urgencyTone(urgency: string) {
-  if (urgency === 'critical') return { label: 'Critical', dot: 'bg-red-400', text: 'text-red-300', badge: 'bg-red-400/10 border-red-400/25 text-red-300' }
-  if (urgency === 'high')     return { label: 'High',     dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', badge: 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#F8E7AE]' }
-  if (urgency === 'medium')   return { label: 'Medium',   dot: 'bg-sky-400', text: 'text-sky-200', badge: 'bg-sky-500/10 border-sky-400/25 text-sky-200' }
-  return { label: 'Low', dot: 'bg-white/30', text: 'text-white/55', badge: 'bg-white/[0.04] border-white/10 text-white/55' }
+  if (urgency === 'critical') return { label: 'Critical', dot: 'bg-red-400',      text: 'text-red-300',    badge: 'bg-red-400/10 border-red-400/25 text-red-300'       }
+  if (urgency === 'high')     return { label: 'High',     dot: 'bg-[#D4AF37]',    text: 'text-[#F8E7AE]', badge: 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#F8E7AE]' }
+  if (urgency === 'medium')   return { label: 'Medium',   dot: 'bg-white/50',     text: 'text-white/65',  badge: 'bg-white/[0.06] border-white/[0.12] text-white/60'   }
+  return                             { label: 'Low',      dot: 'bg-white/20',     text: 'text-white/40',  badge: 'bg-white/[0.03] border-white/[0.08] text-white/40'   }
 }
 
 function initials(name: string) {
@@ -83,15 +75,15 @@ export default function FreeholdCrmPage() {
 
           {/* Mobile stats */}
           <div className="mt-8 grid grid-cols-3 gap-3 lg:hidden">
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-white">{crmLeads.length}</div>
               <div className="text-[12px] text-white/40">Total</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-red-400">{hotLeads.length}</div>
               <div className="text-[12px] text-white/40">Hot</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-4 text-center">
               <div className="text-[22px] font-semibold text-[#D4AF37]">{avgIntent}</div>
               <div className="text-[12px] text-white/40">Avg intent</div>
             </div>
@@ -165,11 +157,11 @@ export default function FreeholdCrmPage() {
               <div className="mt-5 grid gap-5">
                 {ranked.map((lead, i) => {
                   const tone = urgencyTone(lead.urgency)
-                  const tint = PORTRAIT_TINTS[i % PORTRAIT_TINTS.length]
+                  const tint = 'from-[#D4AF37]/20 via-[#D4AF37]/05 to-transparent'
                   return (
                     <article
                       key={lead.id}
-                      className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-white/10 lg:rounded-[28px]"
+                      className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#131B2B] transition hover:border-white/10 lg:rounded-[28px]"
                     >
                       {/* Top: avatar + identity */}
                       <div className="flex gap-5 p-5 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
@@ -263,7 +255,7 @@ export default function FreeholdCrmPage() {
           <div className="sticky top-20 space-y-3">
 
             {/* Stats panel */}
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Pipeline today</div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
@@ -286,7 +278,7 @@ export default function FreeholdCrmPage() {
             </div>
 
             {/* Intent score bars */}
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-3 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Intent ranking
               </div>

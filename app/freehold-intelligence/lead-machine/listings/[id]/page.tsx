@@ -97,7 +97,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         {scoreItems.map((item) => {
           const t = scoreTone(item.score)
           return (
-            <div key={item.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={item.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</p>
               <p className={`mt-1.5 text-[28px] font-semibold leading-none tabular-nums ${t.text}`}>{item.score}</p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
@@ -109,7 +109,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* Component checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
         <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Component readiness
         </div>
@@ -151,7 +151,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Landing status */}
       {landing && (
         <section className="mt-5">
-          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
             <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-white/55" />
@@ -184,7 +184,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       {/* Ad Request */}
       {adRequest && (
-        <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-[#D4AF37]" />

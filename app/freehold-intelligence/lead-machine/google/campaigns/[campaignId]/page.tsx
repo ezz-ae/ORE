@@ -76,7 +76,7 @@ function StatCard({
   accent?: string
 }) {
   return (
-    <div className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+    <div className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] p-4">
       <div className="text-[12px] text-white/35">{label}</div>
       <div className={`mt-2 text-[20px] font-semibold leading-tight tabular-nums ${accent ?? 'text-white'}`}>
         {value}
@@ -485,7 +485,7 @@ export default function GoogleCampaignDetailPage({
                 {adGroups.length !== 1 ? 's' : ''}
               </h2>
 
-              <div className="mt-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="mt-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_80px_80px_80px_72px_72px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                   <span>Name</span>
@@ -562,7 +562,7 @@ export default function GoogleCampaignDetailPage({
                 )}
               </h2>
 
-              <div className="mt-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="mt-5 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_90px_130px_72px_72px_80px_60px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                   <span>Keyword</span>
@@ -660,7 +660,7 @@ export default function GoogleCampaignDetailPage({
                   return (
                     <div
                       key={ad.id}
-                      className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5"
+                      className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5"
                     >
                       {/* Top bar: ad strength + status dot */}
                       <div className="flex flex-wrap items-center justify-between gap-2">

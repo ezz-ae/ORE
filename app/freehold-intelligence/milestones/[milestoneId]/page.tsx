@@ -48,18 +48,18 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
       </section>
 
       <section className="mt-12 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Owner</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.owner}</div>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Deadline</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.deadline}</div>
           {milestone.days_to_deadline != null && (
             <div className="mt-1 text-[12px] text-white/45">{milestone.days_to_deadline}d remaining</div>
           )}
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Health</div>
           <div className={`mt-2 flex items-center gap-1.5 text-lg font-semibold capitalize ${tone.text}`}>
             <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
@@ -68,7 +68,7 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
         </div>
       </section>
 
-      <section className="mt-8 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-6">
+      <section className="mt-8 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-6">
         <div className="flex items-center justify-between text-[12px] text-white/55">
           <span>Progress</span>
           <span className="tabular-nums font-semibold text-white">{pct}%</span>

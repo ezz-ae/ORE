@@ -33,7 +33,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
+    <article className="group overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/25">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"

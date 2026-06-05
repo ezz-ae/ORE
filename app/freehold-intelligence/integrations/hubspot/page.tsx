@@ -102,7 +102,7 @@ export default function HubSpotIntegrationPage() {
                   ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]'
                   : req.critical
                     ? 'border-red-400/15 bg-red-400/[0.03]'
-                    : 'border-white/[0.08] bg-[#1A1F2A]'
+                    : 'border-white/[0.08] bg-[#131B2B]'
               }`}
             >
               {checked[req.id]
@@ -131,7 +131,7 @@ export default function HubSpotIntegrationPage() {
         <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
         <div className="mt-5 space-y-2">
           {CHECKLIST.map((step, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4">
+            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-5 py-4">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-white/40">
                 {i + 1}
               </span>
@@ -145,7 +145,7 @@ export default function HubSpotIntegrationPage() {
       <section className="mt-14">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Data mapping</div>
         <h2 className="mt-2 text-xl font-semibold text-white">What syncs once connected</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -179,7 +179,7 @@ export default function HubSpotIntegrationPage() {
       </section>
 
       {/* CRM link */}
-      <section className="mt-10 flex items-center justify-between rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+      <section className="mt-10 flex items-center justify-between rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
         <div>
           <div className="text-[13px] font-semibold text-white">View CRM leads affected</div>
           <p className="mt-0.5 text-[12px] text-white/45">6 active leads are tracked in Freehold only — no HubSpot record yet.</p>

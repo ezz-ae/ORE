@@ -127,11 +127,11 @@ export default function CrmInboxPage() {
               <div className="text-[28px] font-semibold text-[#D4AF37]">{unassignedCount}</div>
               <div className="mt-0.5 text-[13px] text-white/40">Unassigned</div>
             </div>
-            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[28px] font-semibold text-white">{assignedCount}</div>
               <div className="mt-0.5 text-[13px] text-white/40">Assigned</div>
             </div>
-            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[28px] font-semibold text-[#D4AF37]">{contactedCount}</div>
               <div className="mt-0.5 text-[13px] text-white/40">Contacted</div>
             </div>
@@ -218,7 +218,7 @@ export default function CrmInboxPage() {
                 return (
                   <div
                     key={lead.id}
-                    className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4"
+                    className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#131B2B] px-5 py-4"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -254,7 +254,7 @@ export default function CrmInboxPage() {
                 )
               })}
               {tableLeads.length === 0 && (
-                <div className="rounded-[18px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-8 text-center text-[13px] text-white/30">
+                <div className="rounded-[18px] border border-white/[0.05] bg-[#131B2B] px-5 py-8 text-center text-[13px] text-white/30">
                   No leads match this filter.
                 </div>
               )}
@@ -267,7 +267,7 @@ export default function CrmInboxPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Available agents</div>
               <div className="space-y-3">
                 {available.map((agent) => (

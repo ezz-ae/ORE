@@ -82,7 +82,7 @@ export default function ControlRoomDashboardAppPage() {
             <Link
               key={app.href}
               href={app.href}
-              className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-7 transition hover:border-[#D4AF37]/25 hover:bg-white/[0.03]"
+              className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131B2B] p-7 transition hover:border-[#D4AF37]/25 hover:bg-white/[0.03]"
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.07] to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="relative flex flex-col gap-6">

@@ -101,7 +101,7 @@ export default async function FormsPage() {
             { label: 'Total forms',  value: forms.length, color: 'text-white'       },
             { label: 'Total leads',  value: totalLeads,  color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
               <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
             </div>
@@ -120,7 +120,7 @@ export default async function FormsPage() {
                 <Link
                   key={form.id}
                   href={`/freehold-intelligence/lead-machine/forms/${form.id}`}
-                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
+                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/25"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -174,7 +174,7 @@ export default async function FormsPage() {
             { icon: CheckCircle2, title: 'CRM sync',      body: 'Leads flow into your CRM and WhatsApp sequence the moment the form is submitted.' },
             { icon: Users, title: 'Native experience',    body: 'Forms open inside Meta — no redirect, no page load. 3× higher completion rate than external pages.' },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <Icon className="h-5 w-5 text-[#D4AF37]/60 mb-3" />
               <div className="text-[13px] font-semibold text-white">{title}</div>
               <p className="mt-1 text-[12px] leading-relaxed text-white/45">{body}</p>

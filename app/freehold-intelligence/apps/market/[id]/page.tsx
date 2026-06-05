@@ -55,7 +55,7 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
 
       {/* Key metrics grid */}
       <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <CreditCard className="h-3 w-3" /> Price from
           </div>
@@ -63,19 +63,19 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
             AED {Number(project.startingPrice).toLocaleString()}
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Calendar className="h-3 w-3" /> Handover
           </div>
           <p className="mt-2 text-[22px] font-semibold text-white">{project.handover}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Building2 className="h-3 w-3" /> Unit types
           </div>
           <p className="mt-2 text-[15px] font-semibold text-white">{project.unitTypes.join(' · ')}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Target className="h-3 w-3" /> Readiness
           </div>
@@ -89,7 +89,7 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
       </section>
 
       {/* Payment plan */}
-      <section className="mt-5 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+      <section className="mt-5 rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
         <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
           <CreditCard className="h-3 w-3" /> Payment plan
         </div>
@@ -105,21 +105,21 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
           <p className="mt-3 text-[14px] leading-[1.65] text-white/85">{project.adAngle}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Users className="h-3 w-3" /> Buyer profile
           </div>
           <p className="mt-3 text-[14px] leading-[1.65] text-white/75">{project.buyerProfile}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <TrendingUp className="h-3 w-3" /> ROI note
           </div>
           <p className="mt-3 text-[14px] leading-[1.65] text-white/75">{project.roiNote}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <MapPin className="h-3 w-3" /> Tags
           </div>

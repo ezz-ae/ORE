@@ -145,7 +145,7 @@ export default function CrmBoardPage() {
   }
 
   return (
-    <div className="flex h-full min-h-screen flex-col bg-[#111318]">
+    <div className="flex h-full min-h-screen flex-col bg-[#0B0F1A]">
 
       {/* Page header */}
       <div className="border-b border-white/[0.05] px-6 py-5 lg:px-8">

@@ -67,14 +67,14 @@ export default function NewListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-white/50">Type</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#111318] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <select className="w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select type…</option>
                 {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-white/50">Status</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#111318] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <select className="w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select status…</option>
                 {STATUSES.map((s) => <option key={s}>{s}</option>)}
               </select>

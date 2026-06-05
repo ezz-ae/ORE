@@ -27,10 +27,10 @@ interface Props {
 }
 
 function severityClass(severity: string, resolved: boolean) {
-  if (resolved) return 'border-white/[0.08] bg-[#1A1F2A] opacity-60'
+  if (resolved) return 'border-white/[0.08] bg-[#131B2B] opacity-60'
   if (severity === 'critical') return 'border-red-400/20 bg-red-400/[0.05]'
   if (severity === 'high')     return 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]'
-  return 'border-white/[0.08] bg-[#1A1F2A]'
+  return 'border-white/[0.08] bg-[#131B2B]'
 }
 
 function severityTextClass(severity: string, resolved: boolean) {
@@ -183,7 +183,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
         <div className="mt-6 space-y-4">
           {/* Existing comments */}
           {localComments.map((comment) => (
-            <div key={comment.id} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+            <div key={comment.id} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-6">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[12px] text-white/45 capitalize">
                   {comment.type}
@@ -198,7 +198,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
           ))}
 
           {/* Add comment form */}
-          <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-3">
               Add note
             </div>
@@ -228,7 +228,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
 
       {/* Flash toast */}
       {flash && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/30 bg-[#111318]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/30 bg-[#0B0F1A]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
           {flash}
         </div>
       )}

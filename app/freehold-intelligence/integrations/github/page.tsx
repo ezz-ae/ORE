@@ -87,28 +87,28 @@ export default function GithubIntegrationPage() {
 
       {/* Stats row */}
       <section className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">CI status</p>
           <p className={`mt-2 text-[22px] font-semibold ${allCiPassed ? 'text-[#D4AF37]' : 'text-red-300'}`}>
             {allCiPassed ? 'Passing' : 'Failing'}
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Deployments</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.deployments.length}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Open PRs</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.openPRs}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Open issues</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.openIssues}</p>
         </div>
       </section>
 
       {/* Branch + last commit */}
-      <section className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+      <section className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
         <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
           <GitBranch className="h-3.5 w-3.5" /> Active branch
         </div>
@@ -137,7 +137,7 @@ export default function GithubIntegrationPage() {
       </section>
 
       {/* CI Checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
         <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           CI checks
         </div>
@@ -174,7 +174,7 @@ export default function GithubIntegrationPage() {
       </section>
 
       {/* Deployments */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
         <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Deployments
         </div>
@@ -208,7 +208,7 @@ export default function GithubIntegrationPage() {
       </section>
 
       {/* Recent activity */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
         <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Recent activity
         </div>

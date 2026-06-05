@@ -73,7 +73,7 @@ export default function DashboardProjectsPage() {
           { label: 'Review pending',    value: pending,    tone: 'text-[#D4AF37]' },
           { label: 'Open requirements', value: totalReqs,  tone: 'text-white/55' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
             <div className={`text-[28px] font-semibold ${kpi.tone}`}>{kpi.value}</div>
             <div className="mt-0.5 text-[13px] text-white/40">{kpi.label}</div>
           </div>
@@ -126,7 +126,7 @@ export default function DashboardProjectsPage() {
         </p>
 
         {filtered.length === 0 ? (
-          <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-10 text-center text-[13px] text-white/35">
+          <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-6 py-10 text-center text-[13px] text-white/35">
             No projects match these filters.{' '}
             <button onClick={() => { setAdFilter('All'); setReviewFilter('All') }} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Clear</button>
           </div>
@@ -137,7 +137,7 @@ export default function DashboardProjectsPage() {
               const ad   = adTone(listing.adReadiness)
               const rev  = reviewTone(listing.reviewStatus)
               return (
-                <div key={listing.id} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 sm:p-6">
+                <div key={listing.id} className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">

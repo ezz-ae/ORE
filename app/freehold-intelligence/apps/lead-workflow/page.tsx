@@ -60,7 +60,7 @@ function RuleRow({ rule }: { rule: Rule }) {
   const conf = RULE_STATUS_CONFIG[rule.status]
   const Icon = conf.icon
   return (
-    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-white/[0.08] bg-[#1A1F2A]' : rule.status === 'pending' ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.04] bg-white/[0.01]'}`}>
+    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-white/[0.08] bg-[#131B2B]' : rule.status === 'pending' ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.04] bg-white/[0.01]'}`}>
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${conf.classes.split(' ')[0]}`} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-white/80">{rule.trigger}</div>
@@ -128,7 +128,7 @@ export default function LeadWorkflowPage() {
           { label: 'Unassigned leads',  value: unassigned,   color: unassigned > 0 ? 'text-red-300' : 'text-white' },
           { label: 'Overdue follow-ups', value: overdue,     color: overdue > 0 ? 'text-orange-300' : 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-[13px] text-white/40">{stat.label}</div>
           </div>
@@ -246,7 +246,7 @@ export default function LeadWorkflowPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4 transition hover:border-[#D4AF37]/25"
+            className="group flex items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-5 py-4 transition hover:border-[#D4AF37]/25"
           >
             <div>
               <div className="text-[13px] font-semibold text-white/85 transition group-hover:text-white">{item.label}</div>

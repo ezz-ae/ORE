@@ -120,7 +120,7 @@ export default function ScreentimePage() {
           { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-[#D4AF37]' },
           { label: 'Peak hour',     value: peakLabel,         color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
@@ -173,7 +173,7 @@ export default function ScreentimePage() {
       <section className="mt-12">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Agent activity</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">CRM events by agent</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -245,7 +245,7 @@ export default function ScreentimePage() {
       <section className="mt-12">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Hour distribution</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">When the team is most active</h2>
-        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
           {HOURS.map((h) => {
             const count = hourTotals[h]
             const max   = Math.max(...HOURS.map((hh) => hourTotals[hh]))

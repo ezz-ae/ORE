@@ -135,7 +135,7 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
               <li key={m.code}>
                 <Link
                   href={`/freehold-intelligence/milestones/${m.code}`}
-                  className="group flex items-stretch gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#0E1216] sm:p-6"
+                  className="group flex items-stretch gap-5 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#1A2338] sm:p-6"
                 >
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-sm font-semibold tracking-tight text-[#D4AF37]">
                     {m.code}

@@ -114,7 +114,7 @@ export default function CrmPipelinePage() {
                     'rounded-[20px] border p-5 text-left transition',
                     isSelected
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                      : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/10',
+                      : 'border-white/[0.08] bg-[#131B2B] hover:border-white/10',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function CrmPipelinePage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
+                    className="group rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/25"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -190,7 +190,7 @@ export default function CrmPipelinePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Conversion rate
               </div>
@@ -198,7 +198,7 @@ export default function CrmPipelinePage() {
               <div className="mt-1 text-[12px] text-[#D4AF37]">+4pp vs last month</div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Clock className="h-3 w-3" /> Avg. time-to-close
               </div>

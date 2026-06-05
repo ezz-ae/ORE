@@ -247,7 +247,7 @@ export default function GoogleCampaignNewPage() {
               <select
                 value={form.listingId}
                 onChange={(e) => onListingChange(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -272,7 +272,7 @@ export default function GoogleCampaignNewPage() {
               value={form.campaignName}
               onChange={(e) => patch({ campaignName: e.target.value })}
               placeholder="e.g. Palm Jumeirah Investor — Search"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[13px] text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[13px] text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
 
@@ -294,7 +294,7 @@ export default function GoogleCampaignNewPage() {
                     'rounded-[14px] border p-4 text-left transition',
                     form.type === t.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                      : 'border-white/[0.07] bg-[#1A1F2A] hover:border-white/20',
+                      : 'border-white/[0.07] bg-[#131B2B] hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export default function GoogleCampaignNewPage() {
               value={form.finalUrl}
               onChange={(e) => patch({ finalUrl: e.target.value })}
               placeholder="https://your-landing-page.com/property"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[13px] text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[13px] text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
         </section>
@@ -334,7 +334,7 @@ export default function GoogleCampaignNewPage() {
               min={50}
               value={form.dailyBudgetAED}
               onChange={(e) => patch({ dailyBudgetAED: Number(e.target.value) })}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-[13px] text-white/30">Minimum AED 50/day. Monthly cap = daily × 30.4</p>
             <div className="mt-3 flex gap-2">
@@ -345,7 +345,7 @@ export default function GoogleCampaignNewPage() {
                   className={`rounded-[10px] border px-3 py-1.5 text-[12px] transition ${
                     form.dailyBudgetAED === v
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/10 text-white'
-                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/40 hover:text-white/70'
+                      : 'border-white/[0.07] bg-[#131B2B] text-white/40 hover:text-white/70'
                   }`}
                 >
                   AED {v}
@@ -367,7 +367,7 @@ export default function GoogleCampaignNewPage() {
                     'w-full rounded-[14px] border p-4 text-left transition',
                     form.biddingStrategy === s.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                      : 'border-white/[0.07] bg-[#1A1F2A] hover:border-white/20',
+                      : 'border-white/[0.07] bg-[#131B2B] hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between">
@@ -394,7 +394,7 @@ export default function GoogleCampaignNewPage() {
                 min={10}
                 value={form.targetCpaAED}
                 onChange={(e) => patch({ targetCpaAED: Number(e.target.value) })}
-                className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
               />
               <p className="mt-1 text-[13px] text-white/30">Target cost per lead acquisition in AED</p>
             </div>
@@ -408,7 +408,7 @@ export default function GoogleCampaignNewPage() {
               type="date"
               value={form.startDate}
               onChange={(e) => patch({ startDate: e.target.value })}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-[13px] text-white/30">Leave blank to start from today</p>
           </div>
@@ -439,7 +439,7 @@ export default function GoogleCampaignNewPage() {
                       'rounded-[14px] border p-4 text-left transition',
                       selected
                         ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                        : 'border-white/[0.07] bg-[#1A1F2A] hover:border-white/20',
+                        : 'border-white/[0.07] bg-[#131B2B] hover:border-white/20',
                     ].join(' ')}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -474,7 +474,7 @@ export default function GoogleCampaignNewPage() {
               onChange={(e) => patch({ customKeywords: e.target.value })}
               rows={6}
               placeholder={'[buy villa dubai]\n"off plan property"\nbuy apartment dubai hills'}
-              className="w-full resize-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[12px] font-mono text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full resize-none rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[12px] font-mono text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-[13px] text-white/30">
               [exact] · &quot;phrase&quot; · broad match. Google match type syntax.
@@ -486,7 +486,7 @@ export default function GoogleCampaignNewPage() {
       {/* ── Step 4: Ad Copy ───────────────────────────────────────────────── */}
       {step === 4 && (
         <section className="mt-10 space-y-6">
-          <div className="rounded-[16px] border border-white/[0.05] bg-[#1A1F2A] px-4 py-3.5 text-[12px] text-white/50">
+          <div className="rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-4 py-3.5 text-[12px] text-white/50">
             Google RSA: up to 15 headlines (30 chars each) and 4 descriptions (90 chars each). Google rotates them automatically.
             <Link
               href="/freehold-intelligence/lead-machine/google/ads/generate"
@@ -512,7 +512,7 @@ export default function GoogleCampaignNewPage() {
                       onChange={(e) => updateHeadline(i, e.target.value)}
                       placeholder={`Headline ${i + 1}${i < 3 ? ' (recommended)' : ''}`}
                       maxLength={35}
-                      className={`w-full rounded-[12px] border bg-[#1A1F2A] px-4 py-2.5 pr-12 text-[13px] text-white placeholder-white/20 focus:outline-none ${
+                      className={`w-full rounded-[12px] border bg-[#131B2B] px-4 py-2.5 pr-12 text-[13px] text-white placeholder-white/20 focus:outline-none ${
                         over ? 'border-red-400/40 focus:border-red-400/60' : 'border-white/[0.08] focus:border-[#4285F4]/40'
                       }`}
                     />
@@ -543,7 +543,7 @@ export default function GoogleCampaignNewPage() {
                       placeholder={`Description ${i + 1}`}
                       rows={2}
                       maxLength={95}
-                      className={`w-full resize-none rounded-[12px] border bg-[#1A1F2A] px-4 py-2.5 pr-12 text-[13px] text-white placeholder-white/20 focus:outline-none ${
+                      className={`w-full resize-none rounded-[12px] border bg-[#131B2B] px-4 py-2.5 pr-12 text-[13px] text-white placeholder-white/20 focus:outline-none ${
                         over ? 'border-red-400/40' : 'border-white/[0.08] focus:border-[#4285F4]/40'
                       }`}
                     />
@@ -574,7 +574,7 @@ export default function GoogleCampaignNewPage() {
             { label: 'Descriptions',     value: `${form.descriptions.filter(Boolean).length} descriptions` },
             { label: 'Landing URL',      value: form.finalUrl || '(none set)' },
           ].map((row) => (
-            <div key={row.label} className="flex items-start gap-4 rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
+            <div key={row.label} className="flex items-start gap-4 rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3">
               <span className="w-28 shrink-0 text-[13px] text-white/35">{row.label}</span>
               <span className="text-[13px] text-white font-medium truncate">{row.value}</span>
             </div>

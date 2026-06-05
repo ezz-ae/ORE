@@ -96,7 +96,7 @@ export default async function PlatformManagerPage() {
           { label: 'Developers',  value: snapshot.total_developers,                        color: 'text-white'       },
           { label: 'Audit events (24h)', value: snapshot.audit_events_24h,                color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
             <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
@@ -111,7 +111,7 @@ export default async function PlatformManagerPage() {
           {INFRA.map((item) => {
             const st = statusConfig(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Database className="h-4 w-4 shrink-0 text-white/30" />
                   <div className="min-w-0">

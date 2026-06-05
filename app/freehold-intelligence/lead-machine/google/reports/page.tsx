@@ -248,7 +248,7 @@ export default function GoogleReportsPage() {
               ].map((kpi) => (
                 <div
                   key={kpi.label}
-                  className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-4"
+                  className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-4 py-4"
                 >
                   <div className="text-[20px] font-semibold leading-none text-white">
                     {kpi.value}
@@ -265,7 +265,7 @@ export default function GoogleReportsPage() {
               <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 By campaign — sorted by spend
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
                 {/* Table header */}
                 <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-white/[0.08] px-5 py-2.5">
                   {['Campaign', 'Type', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Spend'].map((h) => (
@@ -314,7 +314,7 @@ export default function GoogleReportsPage() {
               <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 By device
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="space-y-5">
                   {[...report.byDevice]
                     .sort((a, b) => b.impressions - a.impressions)
@@ -354,7 +354,7 @@ export default function GoogleReportsPage() {
               <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 Daily spend trend — last {last14Days.length} days
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
                 <div className="space-y-2">
                   {last14Days.map((day) => {
                     const barPct = Math.round((day.costMicros / maxDaySpend) * 100)
@@ -411,11 +411,11 @@ export default function GoogleReportsPage() {
             </div>
 
             {filteredTerms.length === 0 ? (
-              <div className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-8 text-center text-[13px] text-white/30">
+              <div className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-5 py-8 text-center text-[13px] text-white/30">
                 No search terms match the selected filter.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
                 {/* Table header */}
                 <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-white/[0.08] px-5 py-2.5">
                   {['Term', 'Match', 'Campaign', 'Ad Group', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Status'].map((h) => (

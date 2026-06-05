@@ -324,7 +324,7 @@ export default function TopicsPage() {
       </div>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#131B2B] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

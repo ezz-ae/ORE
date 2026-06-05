@@ -34,7 +34,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   const platform = platformStyle(request.platform)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">

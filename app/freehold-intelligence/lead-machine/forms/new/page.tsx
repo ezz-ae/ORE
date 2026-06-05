@@ -218,7 +218,7 @@ export default function NewFormPage() {
             <select
               value={form.listingId}
               onChange={(e) => onListingChange(e.target.value)}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
             >
               <option value="">Select listing…</option>
               {leadMachineListings.map((l) => (
@@ -233,7 +233,7 @@ export default function NewFormPage() {
               value={form.formName}
               onChange={(e) => setForm((p) => ({ ...p, formName: e.target.value }))}
               placeholder="e.g. Palm Jumeirah — Lead Form"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -243,7 +243,7 @@ export default function NewFormPage() {
               value={form.landingUrl}
               onChange={(e) => setForm((p) => ({ ...p, landingUrl: e.target.value }))}
               placeholder="https://… (used for thank-you redirect)"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -252,7 +252,7 @@ export default function NewFormPage() {
             <input
               value={form.privacyPolicyUrl}
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function NewFormPage() {
                     key={q.type}
                     onClick={() => toggleStandard(q.type)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#131B2B] hover:border-white/15'
                     } ${required ? 'cursor-not-allowed opacity-80' : ''}`}
                   >
                     {selected
@@ -304,7 +304,7 @@ export default function NewFormPage() {
                     key={preset.key}
                     onClick={() => toggleCustom(preset.key)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#131B2B] hover:border-white/15'
                     }`}
                   >
                     {selected
@@ -340,7 +340,7 @@ export default function NewFormPage() {
               value={form.thankYouTitle}
               onChange={(e) => setForm((p) => ({ ...p, thankYouTitle: e.target.value }))}
               placeholder="Thank you — we'll be in touch."
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -351,7 +351,7 @@ export default function NewFormPage() {
               onChange={(e) => setForm((p) => ({ ...p, thankYouBody: e.target.value }))}
               rows={3}
               placeholder="A senior advisor will contact you within 24 hours…"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition resize-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition resize-none"
             />
           </div>
 
@@ -392,7 +392,7 @@ export default function NewFormPage() {
               ],
             },
           ].map((section) => (
-            <div key={section.title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={section.title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="mb-3 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">{section.title}</div>
               <div className="space-y-2">
                 {section.rows.map(([label, value]) => (

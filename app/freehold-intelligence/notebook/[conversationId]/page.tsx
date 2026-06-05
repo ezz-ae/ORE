@@ -43,7 +43,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
               className={
                 message.role === 'assistant'
                   ? 'rounded-[20px] border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-5 py-5'
-                  : 'rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-5'
+                  : 'rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-5'
               }
             >
               <div className="mb-2.5 flex items-center gap-2">
@@ -84,7 +84,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
             {conversation.savedOutputs.map((output) => (
               <article
                 key={output.id}
-                className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6 transition hover:border-[#D4AF37]/25"
+                className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6 transition hover:border-[#D4AF37]/25"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-[12px] font-medium uppercase tracking-[0.14em] text-white/45">

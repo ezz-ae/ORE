@@ -65,7 +65,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 function SitelinkCard({ ext }: { ext: GoogleSitelinkExtension }) {
   return (
-    <div className="rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-[#4285F4]/20">
+    <div className="rounded-[16px] border border-white/[0.08] bg-[#0B0F1A] p-4 transition hover:border-[#4285F4]/20">
       <div className="text-[13px] font-semibold text-white">{ext.linkText}</div>
       {ext.description1 && (
         <div className="mt-1 text-[12px] text-white/50">{ext.description1}</div>
@@ -92,7 +92,7 @@ function CalloutCard({ ext }: { ext: GoogleCalloutExtension }) {
 
 function CallCard({ ext }: { ext: GoogleCallExtension }) {
   return (
-    <div className="flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-[#D4AF37]/20">
+    <div className="flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#0B0F1A] p-4 transition hover:border-[#D4AF37]/20">
       <Phone className="h-5 w-5 shrink-0 text-[#D4AF37]/60" />
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-white">
@@ -110,7 +110,7 @@ function CallCard({ ext }: { ext: GoogleCallExtension }) {
 
 function LocationCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LOCATION' }> }) {
   return (
-    <div className="flex items-start gap-4 rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-orange-400/20">
+    <div className="flex items-start gap-4 rounded-[16px] border border-white/[0.08] bg-[#0B0F1A] p-4 transition hover:border-orange-400/20">
       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-400/60" />
       <div className="min-w-0">
         <div className="text-[13px] font-semibold text-white">{ext.businessName}</div>
@@ -124,7 +124,7 @@ function LocationCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LOCATION
 
 function LeadFormCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LEAD_FORM' }> }) {
   return (
-    <div className="rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-violet-400/20">
+    <div className="rounded-[16px] border border-white/[0.08] bg-[#0B0F1A] p-4 transition hover:border-violet-400/20">
       <div className="text-[13px] font-semibold text-white">{ext.headline}</div>
       <p className="mt-1 text-[12px] leading-relaxed text-white/45">{ext.description}</p>
       {ext.fields.length > 0 && (
@@ -413,7 +413,7 @@ export default function GoogleExtensionsPage() {
               <ExtensionGroup key={type} type={type} extensions={exts} />
             ))
           ) : (
-            <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-12 text-center">
+            <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#131B2B] px-6 py-12 text-center">
               <MessageSquare className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
               <div className="text-[15px] font-semibold text-white">No extensions found</div>
               <p className="mt-2 text-[13px] text-white/40">

@@ -125,7 +125,7 @@ export default function CrmAgentsPage() {
                 const st = STATUS_CONFIG[agent.status]
                 const wasContacted = contacted.has(agent.id)
                 return (
-                  <div key={agent.id} className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-white/10 sm:p-7">
+                  <div key={agent.id} className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-white/10 sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[15px] font-semibold text-[#D4AF37]">
@@ -223,7 +223,7 @@ export default function CrmAgentsPage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Team load
               </div>
@@ -232,7 +232,7 @@ export default function CrmAgentsPage() {
             </div>
 
             {topPerformer && (
-              <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Top performer</div>
                 <div className="mt-3 text-[18px] font-semibold text-white">{topPerformer.name}</div>
                 <div className="mt-1 text-[12px] text-white/50">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
@@ -249,7 +249,7 @@ export default function CrmAgentsPage() {
               </div>
             )}
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Avg. time-to-close</div>
               <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
               <div className="mt-1 text-[12px] text-white/50">target: &lt;21 days</div>
@@ -260,7 +260,7 @@ export default function CrmAgentsPage() {
 
       {/* Flash banner */}
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#131B2B] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

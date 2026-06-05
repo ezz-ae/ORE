@@ -135,7 +135,7 @@ export default function DataEngineeringPage() {
           { label: 'Urgent gaps',      value: urgentTotal,       color: urgentTotal > 0 ? 'text-red-300' : 'text-[#D4AF37]' },
           { label: 'Listings tracked', value: LISTINGS.length,   color: 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-[13px] text-white/40">{stat.label}</div>
           </div>
@@ -178,14 +178,14 @@ export default function DataEngineeringPage() {
         </p>
 
         {filteredListings.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-10 text-center text-[13px] text-white/35">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-6 py-10 text-center text-[13px] text-white/35">
             No listings match this filter.{' '}
             <button onClick={() => setCompletenessFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Show all</button>
           </div>
         ) : (
           <div className="mt-5 space-y-5">
             {filteredListings.map((listing) => (
-              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#1A1F2A]'}`}>
+              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#131B2B]'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
@@ -239,7 +239,7 @@ export default function DataEngineeringPage() {
       <section className="mt-14">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Area profiles</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Coverage by area</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -279,7 +279,7 @@ export default function DataEngineeringPage() {
 
       {/* Media quality note */}
       <section className="mt-10 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Image className="h-3 w-3" /> Media quality
           </div>
@@ -287,7 +287,7 @@ export default function DataEngineeringPage() {
             Palm and Hills have production-grade hero images. Business Bay has a placeholder — needs a real render or developer-supplied photo before landing can go live.
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
           <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <FileText className="h-3 w-3" /> Brochures
           </div>

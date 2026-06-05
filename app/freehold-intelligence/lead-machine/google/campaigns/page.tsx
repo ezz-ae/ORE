@@ -262,7 +262,7 @@ export default function GoogleCampaignsPage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4"
+                className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4"
               >
                 <div className={`text-[26px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
@@ -304,7 +304,7 @@ export default function GoogleCampaignsPage() {
                 return (
                   <div
                     key={campaign.id}
-                    className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#4285F4]/20"
+                    className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#4285F4]/20"
                   >
                     {/* Row 1: type badge + name + status dot */}
                     <div className="flex flex-wrap items-center gap-2.5">

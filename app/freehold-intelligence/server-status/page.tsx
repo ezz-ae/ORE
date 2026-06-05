@@ -56,7 +56,7 @@ export default async function ServerStatusPage() {
           {INFRA.map((i) => {
             const t = statusTone(i.status)
             return (
-              <div key={i.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div key={i.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
                 <div className="min-w-0">
                   <div className="text-[15px] font-semibold text-white">{i.label}</div>
                   <div className="mt-0.5 text-[13px] text-white/50">{i.note}</div>
@@ -74,7 +74,7 @@ export default async function ServerStatusPage() {
       <section className="mt-20">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Audit</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">What happened recently</h2>
-        <div className="mt-7 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-7 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#131B2B]">
           {audit.length === 0 ? (
             <div className="px-6 py-12 text-center text-[14px] text-white/45">
               No audit events yet. They'll appear here as actor-tagged actions land.

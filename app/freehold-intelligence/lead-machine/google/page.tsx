@@ -152,7 +152,7 @@ export default function GoogleOverviewPage() {
               { label: '30d Spend',    value: fmtMicros(spend), color: 'text-white'       },
               { label: '30d Conversions', value: Math.round(convs), color: 'text-[#FBBC04]' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+              <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
                 <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
                 <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
               </div>
@@ -166,7 +166,7 @@ export default function GoogleOverviewPage() {
               { label: 'Clicks',       value: clicks.toLocaleString()   },
               { label: 'Avg CTR',      value: imps > 0 ? fmtPct(clicks / imps) : '—' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-white/[0.05] bg-[#1A1F2A] px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-white/[0.05] bg-[#131B2B] px-4 py-3">
                 <div className="text-[18px] font-semibold text-white">{s.value}</div>
                 <div className="text-[12px] text-white/30">{s.label}</div>
               </div>
@@ -179,7 +179,7 @@ export default function GoogleOverviewPage() {
               <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
                 Channel breakdown
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
                 <div className="divide-y divide-white/[0.04]">
                   {['SEARCH', 'PERFORMANCE_MAX', 'DISPLAY', 'VIDEO'].map((type) => {
                     const rows   = report.byCampaign.filter((c) => c.type === type)
@@ -226,7 +226,7 @@ export default function GoogleOverviewPage() {
                     <Link
                       key={c.id}
                       href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
-                      className="group flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3.5 transition hover:border-[#4285F4]/25"
+                      className="group flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-4 py-3.5 transition hover:border-[#4285F4]/25"
                     >
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
                         {c.type.replace('_', ' ')}
@@ -260,7 +260,7 @@ export default function GoogleOverviewPage() {
               <Link
                 key={href}
                 href={href}
-                className="group rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#4285F4]/25"
+                className="group rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#4285F4]/25"
               >
                 <Icon className="mb-2 h-4 w-4 text-[#4285F4]/60" />
                 <div className="text-[13px] font-semibold text-white">{title}</div>

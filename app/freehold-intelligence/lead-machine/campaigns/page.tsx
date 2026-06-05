@@ -119,7 +119,7 @@ export default async function CampaignsPage() {
             { label: 'Total spend', value: fmtSpend(String(totalSpend)),  color: 'text-white' },
             { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
               <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
             </div>

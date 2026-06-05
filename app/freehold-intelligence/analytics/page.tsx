@@ -20,12 +20,12 @@ function formatDuration(seconds: number): string {
 
 function SourceBadge({ type }: { type: string }) {
   const styles: Record<string, string> = {
-    organic:  'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
-    paid:     'border-blue-500/20 bg-blue-500/10 text-blue-400',
-    social:   'border-violet-500/20 bg-violet-500/10 text-white/55',
-    direct:   'border-white/[0.08] bg-white/[0.04] text-white/45',
-    referral: 'border-amber-500/20 bg-amber-500/10 text-amber-400',
-    email:    'border-orange-500/20 bg-orange-500/10 text-orange-400',
+    organic:  'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]',
+    paid:     'border-[#D4AF37]/15 bg-[#D4AF37]/[0.07] text-[#F8E7AE]',
+    social:   'border-white/[0.10] bg-white/[0.05] text-white/60',
+    direct:   'border-white/[0.08] bg-white/[0.03] text-white/45',
+    referral: 'border-white/[0.10] bg-white/[0.05] text-white/55',
+    email:    'border-white/[0.10] bg-white/[0.05] text-white/55',
   }
   const label = type.charAt(0).toUpperCase() + type.slice(1)
   return (

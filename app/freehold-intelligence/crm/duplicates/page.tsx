@@ -104,7 +104,7 @@ const CLUSTERS: DuplicateCluster[] = [
 const CONFIDENCE_CONFIG = {
   high:   { label: 'High confidence', border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
   medium: { label: 'Medium confidence', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
-  low:    { label: 'Low confidence', border: 'border-white/[0.08]',   bg: 'bg-[#1A1F2A]',          text: 'text-white/40',    dot: 'bg-white/25' },
+  low:    { label: 'Low confidence', border: 'border-white/[0.08]',   bg: 'bg-[#131B2B]',          text: 'text-white/40',    dot: 'bg-white/25' },
 }
 
 function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPrimary: boolean }) {
@@ -196,7 +196,7 @@ export default function CrmDuplicatesPage() {
           { label: 'At-risk leads',       value: atRisk,                  color: 'text-orange-300' },
           { label: 'Merged this session', value: mergedCount,             color: 'text-[#D4AF37]' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-[13px] text-white/40">{stat.label}</div>
           </div>
@@ -306,7 +306,7 @@ export default function CrmDuplicatesPage() {
       </section>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#131B2B] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}
@@ -321,7 +321,7 @@ export default function CrmDuplicatesPage() {
             { step: '02', title: 'Timeline merges', body: 'All calls, notes, WhatsApp events, and stage changes from both records are combined into one timeline.' },
             { step: '03', title: 'Duplicate archived', body: 'The duplicate record is marked as merged and removed from active queues. Nothing is deleted.' },
           ].map((item) => (
-            <div key={item.step} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div key={item.step} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
               <div className="text-[13px] font-semibold text-[#D4AF37]/60">{item.step}</div>
               <div className="mt-2 text-[14px] font-semibold text-white">{item.title}</div>
               <p className="mt-1.5 text-[12px] text-white/50">{item.body}</p>

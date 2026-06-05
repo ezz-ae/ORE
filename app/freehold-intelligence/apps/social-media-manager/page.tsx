@@ -248,7 +248,7 @@ export default function SocialMediaManagerPage() {
                     }
                     const st = ANGLE_STATUS[effectiveStatus]
                     return (
-                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.08] bg-[#1A1F2A]'}`}>
+                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.08] bg-[#131B2B]'}`}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="text-[13px] font-semibold text-white">{angle.title}</div>
                           <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${PLATFORM_CLASSES[angle.platform] ?? 'border-white/10 text-white/40'}`}>
@@ -279,7 +279,7 @@ export default function SocialMediaManagerPage() {
           {WEEK.map((day) => (
             <div
               key={day.day}
-              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-white/[0.08] bg-[#1A1F2A]' : 'border-white/[0.03] bg-transparent'}`}
+              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-white/[0.08] bg-[#131B2B]' : 'border-white/[0.03] bg-transparent'}`}
             >
               <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-white/30">{day.day}</div>
               {day.post && (
@@ -325,7 +325,7 @@ export default function SocialMediaManagerPage() {
 
       {/* Flash toast */}
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[#D4AF37]/25 bg-[#131B2B] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {flash}
           <button onClick={() => setFlash(null)} className="text-white/30 transition hover:text-white/60">

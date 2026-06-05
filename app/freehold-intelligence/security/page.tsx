@@ -76,7 +76,7 @@ export default function SecurityPage() {
       </section>
 
       {/* Progress bar */}
-      <section className="mt-10 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+      <section className="mt-10 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
         <div className="flex items-center justify-between">
           <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
           <span className="text-[14px] font-semibold text-white">{pct}%</span>
@@ -153,7 +153,7 @@ export default function SecurityPage() {
       <section className="mt-14">
         <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Access model</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
@@ -228,7 +228,7 @@ export default function SecurityPage() {
             ))}
           </div>
         </div>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           {filteredAudit.length === 0 ? (
             <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events match this filter.</div>
           ) : (

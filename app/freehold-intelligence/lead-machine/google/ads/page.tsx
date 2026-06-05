@@ -145,7 +145,7 @@ export default function GoogleAdsLibraryPage() {
                     'rounded-[14px] border p-3 text-left transition',
                     filter === s
                       ? 'border-[#4285F4]/30 bg-[#4285F4]/[0.06]'
-                      : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/20',
+                      : 'border-white/[0.08] bg-[#131B2B] hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="text-[20px] font-semibold text-white">{count}</div>
@@ -164,7 +164,7 @@ export default function GoogleAdsLibraryPage() {
               const bar  = strengthBar(ad.adStrength)
               const cost = fmtMicros(ad.metrics?.costMicros ?? 0)
               return (
-                <div key={ad.id} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+                <div key={ad.id} className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-5">
                   {/* Top bar */}
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2.5">
