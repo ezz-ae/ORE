@@ -1,4 +1,7 @@
-import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus } from 'lucide-react'
+'use client'
+
+import { useState, useMemo } from 'react'
+import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus, X } from 'lucide-react'
 import Link from 'next/link'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
@@ -17,7 +20,7 @@ type Task = {
   convertedFrom?: string
 }
 
-const tasks: Task[] = [
+const INITIAL_TASKS: Task[] = [
   {
     id: 'task_001',
     priority: 'critical',
@@ -69,7 +72,7 @@ const tasks: Task[] = [
     app: 'CRM',
     appHref: '/freehold-intelligence/crm',
     dueDate: 'Today',
-    linkedTo: 'CRM · Today\'s queue',
+    linkedTo: "CRM · Today's queue",
   },
   {
     id: 'task_005',
@@ -140,20 +143,117 @@ function statusChip(status: string) {
   return                               { text: 'text-white/55', icon: <Clock className="h-3.5 w-3.5 text-white/30" />, label: 'Open' }
 }
 
-const openTasks = tasks.filter(t => t.status !== 'done')
-const criticalTasks = tasks.filter(t => t.priority === 'critical')
-const blockedTasks = tasks.filter(t => t.status === 'blocked')
-const dueTodayTasks = tasks.filter(t => t.dueDate === 'Today')
+const STATUS_OPTIONS = ['All', 'Open', 'In Progress', 'Blocked', 'Done'] as const
+const PRIORITY_OPTIONS = ['All', 'Critical', 'High', 'Medium', 'Low'] as const
 
-const PRIORITY_ORDER = ['critical', 'high', 'medium', 'low'] as const
+type StatusFilter = typeof STATUS_OPTIONS[number]
+type PriorityFilter = typeof PRIORITY_OPTIONS[number]
+
+const STATUS_MAP: Record<string, Task['status']> = {
+  'Open': 'open',
+  'In Progress': 'in_progress',
+  'Blocked': 'blocked',
+  'Done': 'done',
+}
+
+const PRIORITY_MAP: Record<string, Task['priority']> = {
+  'Critical': 'critical',
+  'High': 'high',
+  'Medium': 'medium',
+  'Low': 'low',
+}
 
 export default function TasksPage() {
-  const sorted = [...tasks].sort((a, b) => {
-    const order = { critical: 0, high: 1, medium: 2, low: 3 }
-    if (order[a.priority] !== order[b.priority]) return order[a.priority] - order[b.priority]
+  // --- core state ---
+  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS)
+  const [statuses, setStatuses] = useState<Record<string, Task['status']>>({})
+
+  // --- filter state ---
+  const [activeStatus, setActiveStatus] = useState<StatusFilter>('All')
+  const [activePriority, setActivePriority] = useState<PriorityFilter>('All')
+
+  // --- create form state ---
+  const [formTitle, setFormTitle] = useState('')
+  const [formDesc, setFormDesc] = useState('')
+  const [formAssignee, setFormAssignee] = useState('')
+  const [formPriority, setFormPriority] = useState<Task['priority']>('medium')
+  const [formDue, setFormDue] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  // --- effective status helper ---
+  function effectiveStatus(task: Task): Task['status'] {
+    return statuses[task.id] ?? task.status
+  }
+
+  // --- stats (live, from state) ---
+  const stats = useMemo(() => {
+    const open = tasks.filter(t => effectiveStatus(t) !== 'done').length
+    const critical = tasks.filter(t => t.priority === 'critical').length
+    const blocked = tasks.filter(t => effectiveStatus(t) === 'blocked').length
+    const dueToday = tasks.filter(t => t.dueDate === 'Today' && effectiveStatus(t) !== 'done').length
+    return { open, critical, blocked, dueToday }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, statuses])
+
+  // --- filtered + sorted list ---
+  const filtered = useMemo(() => {
+    const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
     const statusOrder = { blocked: 0, open: 1, in_progress: 2, done: 3 }
-    return statusOrder[a.status] - statusOrder[b.status]
-  })
+
+    return tasks
+      .filter(task => {
+        const es = effectiveStatus(task)
+        if (activeStatus !== 'All' && es !== STATUS_MAP[activeStatus]) return false
+        if (activePriority !== 'All' && task.priority !== PRIORITY_MAP[activePriority]) return false
+        return true
+      })
+      .sort((a, b) => {
+        const aEs = effectiveStatus(a)
+        const bEs = effectiveStatus(b)
+        // Done tasks always go to bottom
+        const aDone = aEs === 'done' ? 1 : 0
+        const bDone = bEs === 'done' ? 1 : 0
+        if (aDone !== bDone) return aDone - bDone
+        // Within non-done: blocked+critical first, then priority, then status
+        if (priorityOrder[a.priority] !== priorityOrder[b.priority])
+          return priorityOrder[a.priority] - priorityOrder[b.priority]
+        return statusOrder[aEs] - statusOrder[bEs]
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, statuses, activeStatus, activePriority])
+
+  const anyFilterActive = activeStatus !== 'All' || activePriority !== 'All'
+
+  function markDone(id: string) {
+    setStatuses(prev => ({ ...prev, [id]: 'done' }))
+  }
+
+  function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!formTitle.trim()) return
+    const newTask: Task = {
+      id: `task_${Date.now()}`,
+      priority: formPriority,
+      status: 'open',
+      title: formTitle.trim(),
+      description: formDesc.trim(),
+      owner: formAssignee.trim() || 'Owner',
+      assignee: formAssignee.trim() || 'Owner',
+      app: 'Tasks',
+      dueDate: formDue.trim() || undefined,
+    }
+    setTasks(prev => [newTask, ...prev])
+    setFormTitle('')
+    setFormDesc('')
+    setFormAssignee('')
+    setFormPriority('medium')
+    setFormDue('')
+    setShowSuccess(true)
+    setTimeout(() => setShowSuccess(false), 2500)
+  }
+
+  const inputClass =
+    'w-full rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -164,42 +264,109 @@ export default function TasksPage() {
           <CheckSquare className="h-3.5 w-3.5" /> Tasks
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-          {openTasks.length} tasks open.
+          {stats.open} tasks open.
           <br />
-          <span className="text-white/35">{dueTodayTasks.length} due today.</span>
+          <span className="text-white/35">{stats.dueToday} due today.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-white/60">
           Owned, dated and tracked. Created from review comments, blockers and internal decisions. Resolve critical and blocked items first.
         </p>
       </section>
 
-      {/* Stat tiles */}
+      {/* Stat strip */}
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
-          <p className="text-[26px] font-semibold text-white">{openTasks.length}</p>
+          <p className="text-[26px] font-semibold text-white">{stats.open}</p>
           <p className="text-[10px] text-white/35 mt-1">Open</p>
         </div>
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
-          <p className="text-[26px] font-semibold text-red-300">{criticalTasks.length}</p>
+          <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
           <p className="text-[10px] text-red-400/60 mt-1">Critical</p>
         </div>
         <div className="rounded-[18px] border border-orange-400/20 bg-orange-400/[0.05] p-4 text-center">
-          <p className="text-[26px] font-semibold text-orange-300">{blockedTasks.length}</p>
+          <p className="text-[26px] font-semibold text-orange-300">{stats.blocked}</p>
           <p className="text-[10px] text-orange-400/60 mt-1">Blocked</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
-          <p className="text-[26px] font-semibold text-[#F8E7AE]">{dueTodayTasks.length}</p>
+          <p className="text-[26px] font-semibold text-[#F8E7AE]">{stats.dueToday}</p>
           <p className="text-[10px] text-[#D4AF37]/60 mt-1">Due today</p>
         </div>
       </section>
 
+      {/* Filter pills */}
+      <section className="mt-6 flex flex-wrap items-center gap-2">
+        {/* Status pills */}
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_OPTIONS.map(s => {
+            const active = activeStatus === s
+            return (
+              <button
+                key={s}
+                onClick={() => setActiveStatus(s)}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                  active
+                    ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white/70'
+                }`}
+              >
+                {s}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="h-4 w-px bg-white/[0.08]" />
+
+        {/* Priority pills */}
+        <div className="flex flex-wrap gap-1.5">
+          {PRIORITY_OPTIONS.map(p => {
+            const active = activePriority === p
+            return (
+              <button
+                key={p}
+                onClick={() => setActivePriority(p)}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                  active
+                    ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white/70'
+                }`}
+              >
+                {p}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Clear */}
+        {anyFilterActive && (
+          <button
+            onClick={() => { setActiveStatus('All'); setActivePriority('All') }}
+            className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[11px] text-white/35 transition hover:border-white/20 hover:text-white/60"
+          >
+            <X className="h-3 w-3" /> Clear
+          </button>
+        )}
+      </section>
+
       {/* Task cards */}
-      <section className="mt-8 space-y-4">
-        {sorted.map(task => {
+      <section className="mt-6 space-y-4">
+        {filtered.length === 0 && (
+          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center text-[13px] text-white/30">
+            No tasks match the current filters.
+          </div>
+        )}
+
+        {filtered.map(task => {
+          const es = effectiveStatus(task)
+          const isDone = es === 'done'
           const tone = priorityTone(task.priority)
-          const st = statusChip(task.status)
+          const st = statusChip(es)
+
           return (
-            <div key={task.id} className={`rounded-[22px] border p-6 ${tone.ring} ${tone.bg}`}>
+            <div
+              key={task.id}
+              className={`rounded-[22px] border p-6 transition-opacity ${isDone ? 'opacity-50' : ''} ${tone.ring} ${tone.bg}`}
+            >
               {/* Top row */}
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -210,13 +377,19 @@ export default function TasksPage() {
                   <span className="text-[11px] text-white/30">{task.app}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[12px]">
-                  {st.icon}
-                  <span className={st.text}>{st.label}</span>
+                  {isDone
+                    ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    : st.icon}
+                  <span className={isDone ? 'text-emerald-300' : st.text}>
+                    {isDone ? 'Done' : st.label}
+                  </span>
                 </div>
               </div>
 
               {/* Title + desc */}
-              <h3 className="mt-3 text-[15px] font-semibold text-white">{task.title}</h3>
+              <h3 className={`mt-3 text-[15px] font-semibold ${isDone ? 'line-through text-white/40' : 'text-white'}`}>
+                {task.title}
+              </h3>
               <p className="mt-1.5 text-[13px] leading-relaxed text-white/65">{task.description}</p>
 
               {/* Meta row */}
@@ -235,8 +408,11 @@ export default function TasksPage() {
                   {task.linkedTo && <span>→ <span className="text-white/45">{task.linkedTo}</span></span>}
                 </div>
 
-                {task.status !== 'done' && (
-                  <button className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10">
+                {!isDone && (
+                  <button
+                    onClick={() => markDone(task.id)}
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Mark done
                   </button>
@@ -257,35 +433,65 @@ export default function TasksPage() {
         })}
       </section>
 
-      {/* Add task */}
+      {/* Create task form */}
       <section className="mt-8 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-        <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
-          <Plus className="h-3.5 w-3.5" /> Create a task
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <Plus className="h-3.5 w-3.5" /> Create a task
+          </div>
+          {showSuccess && (
+            <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Task created
+            </span>
+          )}
         </div>
-        <div className="space-y-3">
+
+        <form onSubmit={handleCreate} className="space-y-3">
           <input
+            value={formTitle}
+            onChange={e => setFormTitle(e.target.value)}
             placeholder="Task title"
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+            className={inputClass}
+            required
           />
           <textarea
+            value={formDesc}
+            onChange={e => setFormDesc(e.target.value)}
             placeholder="Describe the task, expected outcome, and what success looks like…"
             rows={3}
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition resize-none"
+            className={`${inputClass} resize-none`}
           />
           <div className="flex flex-wrap items-center gap-3">
             <input
+              value={formAssignee}
+              onChange={e => setFormAssignee(e.target.value)}
               placeholder="Assign to…"
-              className="rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
+            <select
+              value={formPriority}
+              onChange={e => setFormPriority(e.target.value as Task['priority'])}
+              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white/70 outline-none focus:border-[#D4AF37]/30 transition appearance-none cursor-pointer"
+            >
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
             <input
+              value={formDue}
+              onChange={e => setFormDue(e.target.value)}
               placeholder="Due date"
-              className="rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
-            <button className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-white/90">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-white/90"
+            >
               Create task
             </button>
           </div>
-        </div>
+        </form>
       </section>
 
       {/* AI take */}
