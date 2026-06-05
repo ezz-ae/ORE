@@ -1,9 +1,43 @@
-import { Lock, ShieldAlert, UserCheck } from 'lucide-react'
-import { currentServerUser, getRoleScope } from '@/src/features/freehold-intelligence/server-session'
+import { Lock, ShieldAlert, ShieldCheck, UserCheck, Eye, EyeOff, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+import { currentServerUser, getRoleScope, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
+const HARDENING_CHECKLIST = [
+  { label: 'Private shell isolation',       done: true,  note: 'Intelligence routes separated from public routes.' },
+  { label: 'Role-aware AI scope',           done: true,  note: 'AI answers filtered by role — out-of-scope queries silently suppressed.' },
+  { label: 'MCP tool gating',              done: true,  note: '9 tools registered; execution requires role validation.' },
+  { label: 'Audit event logging',           done: true,  note: 'Actor-tagged action log for critical write operations.' },
+  { label: 'Production auth middleware',    done: false, note: 'Route protection still requires final NextAuth/JWTwiring.' },
+  { label: 'Session expiry + refresh',      done: false, note: 'Not yet enforced in private shell session model.' },
+  { label: 'RBAC database enforcement',     done: false, note: 'Role gates active in UI; database-level RBAC not yet live.' },
+  { label: 'Rate limiting on AI endpoints', done: false, note: 'No request throttling on AI routes in current V1.' },
+]
+
+const ROLE_MATRIX = [
+  { role: 'Owner',         canView: true,  canEdit: true,  canApprove: true,  canAdmin: true,  scope: 'All modules' },
+  { role: 'Admin',         canView: true,  canEdit: true,  canApprove: true,  canAdmin: true,  scope: 'Operations, users, tasks' },
+  { role: 'Marketing',     canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Ads, landings, campaigns' },
+  { role: 'Sales Manager', canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Leads, CRM, team, follow-ups' },
+  { role: 'Sales Agent',   canView: true,  canEdit: false, canApprove: false, canAdmin: false, scope: 'Assigned leads only' },
+  { role: 'Data Manager',  canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Projects, fields, readiness' },
+  { role: 'Viewer',        canView: true,  canEdit: false, canApprove: false, canAdmin: false, scope: 'Read-only, approved content' },
+]
+
+function Check({ ok }: { ok: boolean }) {
+  return ok
+    ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+    : <EyeOff className="h-4 w-4 text-white/20" />
+}
+
 export default function SecurityPage() {
-  const scope = getRoleScope(currentServerUser.role)
+  const scope   = getRoleScope(currentServerUser.role)
+  const done    = HARDENING_CHECKLIST.filter((i) => i.done).length
+  const total   = HARDENING_CHECKLIST.length
+  const pct     = Math.round((done / total) * 100)
+
+  const recentAudit = [...crmActivityLog]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6)
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
@@ -12,58 +46,159 @@ export default function SecurityPage() {
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Lock className="h-3.5 w-3.5" /> Security
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
-          The server only answers
-          <br />
-          <span className="text-white/40">in your scope.</span>
+        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+          Access model<br />
+          <span className="text-white/40">and hardening status.</span>
         </h1>
         <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
-          The AI is role-aware. Anything outside your scope is silently filtered, with the option to suggest an approver. Production middleware is the final hardening before wider exposure.
+          {done} of {total} hardening steps complete. Production auth middleware is the critical remaining item before wider exposure.
         </p>
+      </section>
+
+      {/* Progress */}
+      <section className="mt-10 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
+          <span className="text-[14px] font-semibold text-white">{pct}%</span>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className={`h-full rounded-full ${pct >= 70 ? 'bg-emerald-400' : pct >= 40 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-2 text-[12px] text-white/35">
+          <CheckCircle2 className="h-3 w-3 text-emerald-400" /> {done} complete
+          <span className="mx-1">·</span>
+          <AlertCircle className="h-3 w-3 text-red-400" /> {total - done} pending
+        </div>
+      </section>
+
+      {/* Hardening checklist */}
+      <section className="mt-12">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">Production readiness</h2>
+        <div className="mt-5 space-y-2">
+          {HARDENING_CHECKLIST.map((item) => (
+            <div
+              key={item.label}
+              className={`flex items-start gap-4 rounded-[18px] border p-5 ${
+                item.done
+                  ? 'border-emerald-400/10 bg-emerald-400/[0.03]'
+                  : 'border-red-400/15 bg-red-400/[0.03]'
+              }`}
+            >
+              {item.done
+                ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+              }
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-white">{item.label}</div>
+                <p className="mt-0.5 text-[12px] text-white/50">{item.note}</p>
+              </div>
+              <span className={`shrink-0 text-[11px] font-medium ${item.done ? 'text-emerald-300' : 'text-red-300'}`}>
+                {item.done ? 'Done' : 'Pending'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Role matrix */}
+      <section className="mt-14">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Access model</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-white/[0.05]">
+                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Role</th>
+                <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">View</th>
+                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Edit</th>
+                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Approve</th>
+                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Admin</th>
+                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Scope</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.05]">
+              {ROLE_MATRIX.map((row) => (
+                <tr
+                  key={row.role}
+                  className={`transition hover:bg-white/[0.02] ${row.role.toLowerCase().replace(' ', '_') === currentServerUser.role ? 'bg-[#D4AF37]/[0.04]' : ''}`}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white/85">{row.role}</span>
+                      {row.role.toLowerCase().replace(' ', '_') === currentServerUser.role && (
+                        <span className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-medium text-[#D4AF37]">You</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-center"><div className="flex justify-center"><Check ok={row.canView} /></div></td>
+                  <td className="hidden px-4 py-4 text-center sm:table-cell"><div className="flex justify-center"><Check ok={row.canEdit} /></div></td>
+                  <td className="hidden px-4 py-4 text-center md:table-cell"><div className="flex justify-center"><Check ok={row.canApprove} /></div></td>
+                  <td className="hidden px-4 py-4 text-center lg:table-cell"><div className="flex justify-center"><Check ok={row.canAdmin} /></div></td>
+                  <td className="px-6 py-4 text-[12px] text-white/45">{row.scope}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Current session scope */}
+      <section className="mt-14">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Current session</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">AI scope — {currentServerUser.role.replace('_', ' ')}</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {scope.map((s) => (
+            <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-emerald-400/[0.05] px-3.5 py-1.5 text-[12px] text-emerald-300/80">
+              <Eye className="h-3 w-3" /> {s}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* Recent audit events (proxied from activity log) */}
+      <section className="mt-14">
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">Recent actor-tagged events</h2>
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+          {recentAudit.length === 0 ? (
+            <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events logged yet.</div>
+          ) : (
+            <ul className="divide-y divide-white/[0.05]">
+              {recentAudit.map((event) => (
+                <li key={event.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-[13px]">
+                  <div className="min-w-0">
+                    <span className="text-white/80">{event.actor}</span>
+                    <span className="text-white/25"> · </span>
+                    <span className="text-[#D4AF37]/75">{event.type.replace('_', ' ')}</span>
+                    <span className="text-white/25"> · </span>
+                    <span className="text-white/50">{event.leadName}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-white/30">
+                    <Clock className="h-3 w-3" />
+                    {new Date(event.createdAt).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       <section className="mt-12">
         <AiPrompt
           placeholder="Ask about access, roles, audit, scope…"
           suggestions={[
-            'Who can approve external writes?',
-            'Show last 24h audit events.',
-            'What can an Admin not do?',
+            'What is the highest-risk security gap right now?',
+            'Who can approve external write operations?',
+            'What can a Sales Agent not access in this system?',
           ]}
         />
       </section>
 
-      <section className="mt-20">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Current session</div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-red-400/15 bg-red-500/[0.04] p-5">
-            <ShieldAlert className="h-5 w-5 text-red-300" />
-            <div className="mt-5 text-base font-semibold text-white">Auth middleware required</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-white/55">The private shell is isolated, but production route protection still needs to be finalized.</p>
-          </div>
-          <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-5">
-            <UserCheck className="h-5 w-5 text-[#D4AF37]" />
-            <div className="mt-5 text-base font-semibold capitalize text-white">{currentServerUser.role.replace('_', ' ')}</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-white/55">Account level: {currentServerUser.accountLevel}</p>
-          </div>
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-5">
-            <Lock className="h-5 w-5 text-[#D4AF37]" />
-            <div className="mt-5 text-base font-semibold text-white">Permission-aware AI</div>
-            <p className="mt-1.5 text-[13px] leading-snug text-white/55">Restricted questions return scoped answers and suggest an approver path.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">AI scope for this role</div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {scope.map((s) => (
-            <span key={s} className="rounded-full border border-white/[0.08] bg-white/[0.02] px-3.5 py-1.5 text-[13px] text-white/65">
-              {s}
-            </span>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

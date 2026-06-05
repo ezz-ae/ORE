@@ -2,9 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
   ArrowLeft, ArrowUpRight, Phone, Mail, MessageSquare, Brain,
-  AlertTriangle, Clock, User, Target, Zap, Copy, BookOpen
+  AlertTriangle, Clock, User, Target, Zap, Copy, BookOpen,
+  PhoneCall, FileText, ArrowLeftRight, Bell,
 } from 'lucide-react'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function urgencyTone(u: string) {
@@ -30,6 +31,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
+
+  const leadActivity = crmActivityLog
+    .filter((e) => e.leadId === id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  function activityIcon(type: string) {
+    if (type === 'call')         return { Icon: PhoneCall,      color: 'text-emerald-300', bg: 'bg-emerald-400/10' }
+    if (type === 'whatsapp')     return { Icon: MessageSquare,  color: 'text-[#D4AF37]',   bg: 'bg-[#D4AF37]/10' }
+    if (type === 'note')         return { Icon: FileText,       color: 'text-sky-300',     bg: 'bg-sky-400/10' }
+    if (type === 'stage_change') return { Icon: ArrowLeftRight, color: 'text-violet-300',  bg: 'bg-violet-400/10' }
+    if (type === 'assignment')   return { Icon: User,           color: 'text-rose-300',    bg: 'bg-rose-400/10' }
+    if (type === 'follow_up')    return { Icon: Bell,           color: 'text-orange-300',  bg: 'bg-orange-400/10' }
+    return { Icon: Zap, color: 'text-white/45', bg: 'bg-white/[0.04]' }
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -215,32 +230,49 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Activity */}
           <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-            <div className="flex items-center gap-2 mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
-              <Clock className="h-3 w-3" /> Activity
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+                <Clock className="h-3 w-3" /> Activity
+              </div>
+              <Link href="/freehold-intelligence/crm/activity" className="text-[10px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]">
+                All activity
+              </Link>
             </div>
-            <div className="space-y-3">
-              <div className="flex gap-3 text-[13px]">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]" />
-                <div>
-                  <p className="text-white/70">Lead created via {lead.source}</p>
-                  <p className="mt-0.5 text-[11px] text-white/30">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+            {leadActivity.length > 0 ? (
+              <div className="space-y-3">
+                {leadActivity.slice(0, 5).map((event) => {
+                  const { Icon, color, bg } = activityIcon(event.type)
+                  return (
+                    <div key={event.id} className="flex gap-3">
+                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${bg}`}>
+                        <Icon className={`h-3 w-3 ${color}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] text-white/70 leading-snug">{event.content}</p>
+                        <p className="mt-0.5 text-[10px] text-white/30">{event.actor} · {new Date(event.createdAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-3 text-[13px]">
+                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]" />
+                  <div>
+                    <p className="text-white/70">Lead created via {lead.source}</p>
+                    <p className="mt-0.5 text-[11px] text-white/30">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 text-[13px]">
+                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />
+                  <div>
+                    <p className="text-white/50">Assigned to {lead.assignedAgent}</p>
+                    <p className="mt-0.5 text-[11px] text-white/30">Auto-assigned</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-3 text-[13px]">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />
-                <div>
-                  <p className="text-white/50">Assigned to {lead.assignedAgent}</p>
-                  <p className="mt-0.5 text-[11px] text-white/30">Auto-assigned</p>
-                </div>
-              </div>
-              <div className="flex gap-3 text-[13px]">
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />
-                <div>
-                  <p className="text-white/50">AI scored intent: {lead.intentScore}/100</p>
-                  <p className="mt-0.5 text-[11px] text-white/30">From signal analysis</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
         </aside>
