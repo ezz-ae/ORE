@@ -7,6 +7,38 @@ import {
 } from 'lucide-react'
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
 
+// 7-day lead trend (Mon–Sun, current week)
+const WEEKLY_LEADS = [
+  { day: 'Mon', leads: 52, spend: 980  },
+  { day: 'Tue', leads: 61, spend: 1140 },
+  { day: 'Wed', leads: 48, spend: 920  },
+  { day: 'Thu', leads: 74, spend: 1380 },
+  { day: 'Fri', leads: 83, spend: 1520 },
+  { day: 'Sat', leads: 57, spend: 1050 },
+  { day: 'Sun', leads: 40, spend: 780  },
+]
+const MAX_LEADS = Math.max(...WEEKLY_LEADS.map((d) => d.leads))
+const SVG_W = 420
+const SVG_H = 72
+const BAR_W = 38
+const BAR_GAP = (SVG_W - WEEKLY_LEADS.length * BAR_W) / (WEEKLY_LEADS.length + 1)
+
+function leadsPoints() {
+  return WEEKLY_LEADS.map((d, i) => {
+    const x = BAR_GAP + i * (BAR_W + BAR_GAP) + BAR_W / 2
+    const y = SVG_H - (d.leads / MAX_LEADS) * (SVG_H - 8) - 4
+    return `${x},${y}`
+  }).join(' ')
+}
+
+// Week-over-week comparison
+const WOW = [
+  { label: 'Leads',      thisWeek: 415, lastWeek: 374, unit: '',      positive: true  },
+  { label: 'Spend',      thisWeek: 7770, lastWeek: 8420, unit: 'AED ', positive: true },
+  { label: 'CPL',        thisWeek: 18.7, lastWeek: 22.5, unit: 'AED ', positive: true  },
+  { label: 'Campaigns',  thisWeek: 6,   lastWeek: 5,   unit: '',      positive: true  },
+]
+
 const today = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
   year: 'numeric',
@@ -185,6 +217,80 @@ export default function IntelligenceDashboard() {
           </div>
         </div>
       </section>
+
+      {/* ── 7-Day Lead Trend + Week-over-Week ── */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+        {/* Bar + line chart */}
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-widest text-white/40">Lead trend · this week</div>
+            <span className="text-[11px] text-emerald-400/70">415 total</span>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <svg viewBox={`0 0 ${SVG_W} ${SVG_H + 20}`} className="w-full min-w-[280px]" preserveAspectRatio="xMidYMid meet">
+              {/* Bars */}
+              {WEEKLY_LEADS.map((d, i) => {
+                const x = BAR_GAP + i * (BAR_W + BAR_GAP)
+                const barH = (d.leads / MAX_LEADS) * (SVG_H - 8)
+                const y = SVG_H - barH
+                const isToday = i === 4
+                return (
+                  <g key={d.day}>
+                    <rect
+                      x={x} y={y} width={BAR_W} height={barH}
+                      rx="4"
+                      fill={isToday ? '#D4AF37' : 'rgba(255,255,255,0.07)'}
+                    />
+                    <text x={x + BAR_W / 2} y={SVG_H + 14} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.3)" fontFamily="sans-serif">
+                      {d.day}
+                    </text>
+                    <text x={x + BAR_W / 2} y={y - 3} textAnchor="middle" fontSize="9" fill={isToday ? '#D4AF37' : 'rgba(255,255,255,0.45)'} fontFamily="sans-serif">
+                      {d.leads}
+                    </text>
+                  </g>
+                )
+              })}
+              {/* Trend line */}
+              <polyline
+                points={leadsPoints()}
+                fill="none"
+                stroke="#D4AF37"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeOpacity="0.5"
+                strokeDasharray="3 3"
+              />
+            </svg>
+          </div>
+        </div>
+
+        {/* Week-over-week table */}
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5 lg:w-64">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Week vs last week</div>
+          <div className="mt-4 divide-y divide-white/[0.04]">
+            {WOW.map((row) => {
+              const diff  = row.thisWeek - row.lastWeek
+              const pct   = Math.abs(Math.round((diff / row.lastWeek) * 100))
+              const up    = diff >= 0
+              const good  = row.positive ? up : !up
+              return (
+                <div key={row.label} className="flex items-center justify-between py-2.5">
+                  <span className="text-xs text-white/45">{row.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold tabular-nums text-white/85">
+                      {row.unit}{row.thisWeek.toLocaleString()}
+                    </span>
+                    <span className={`text-[11px] font-medium ${good ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {up ? '+' : '-'}{pct}%
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* ── Today's Priorities + Quick Actions ── */}
       <div className="grid gap-6 lg:grid-cols-2">
