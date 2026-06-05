@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -49,16 +50,27 @@ const SOURCE_COLORS: Record<string, string> = {
   'Secondary market mailer':  'bg-rose-400',
 }
 
+type DateRange = '7d' | '30d' | '90d' | 'MTD'
+const DATE_RANGES: DateRange[] = ['7d', '30d', '90d', 'MTD']
+type IntentFilter = 'All' | 'High' | 'Medium' | 'Low'
+const INTENT_FILTERS: IntentFilter[] = ['All', 'High', 'Medium', 'Low']
+
+const ALL_AGENTS = ['All', ...Array.from(new Set(crmLeads.map((l) => l.assignedAgent)))]
+
 export default function CrmReportsPage() {
+  const [dateRange, setDateRange] = useState<DateRange>('30d')
+  const [intentFilter, setIntentFilter] = useState<IntentFilter>('All')
+  const [agentFilter, setAgentFilter] = useState('All')
+
   // Compute live source breakdown from real lead data
-  const sourceMap = crmLeads.reduce<Record<string, number>>((acc, l) => {
+  const sourceMap = useMemo(() => crmLeads.reduce<Record<string, number>>((acc, l) => {
     acc[l.source] = (acc[l.source] || 0) + 1
     return acc
-  }, {})
+  }, {}), [])
 
-  const sources = Object.entries(sourceMap)
+  const sources = useMemo(() => Object.entries(sourceMap)
     .map(([source, count]) => ({ source, count }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => b.count - a.count), [sourceMap])
 
   const maxSource = Math.max(...sources.map((s) => s.count))
 
@@ -69,9 +81,19 @@ export default function CrmReportsPage() {
   const connected    = crmActivityLog.filter((e) => e.outcome === 'connected').length
   const connectRate  = callsLogged > 0 ? Math.round((connected / callsLogged) * 100) : 0
 
-  // Intent score distribution
+  // Intent score distribution — filtered
   const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
   const highIntent = crmLeads.filter((l) => l.intentScore >= 80).length
+
+  const filteredLeads = useMemo(() => {
+    return crmLeads.filter((l) => {
+      if (agentFilter !== 'All' && l.assignedAgent !== agentFilter) return false
+      if (intentFilter === 'High' && l.intentScore < 80) return false
+      if (intentFilter === 'Medium' && (l.intentScore < 60 || l.intentScore >= 80)) return false
+      if (intentFilter === 'Low' && l.intentScore >= 60) return false
+      return true
+    })
+  }, [agentFilter, intentFilter])
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
@@ -86,6 +108,24 @@ export default function CrmReportsPage() {
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-white/55">
             Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending.
           </p>
+
+          {/* Date range pills */}
+          <div className="mt-8 flex items-center gap-2">
+            {DATE_RANGES.map((r) => (
+              <button
+                key={r}
+                onClick={() => setDateRange(r)}
+                className={[
+                  'rounded-full px-3.5 py-1.5 text-[12px] font-medium transition',
+                  dateRange === r
+                    ? 'bg-[#D4AF37] text-[#06080A]'
+                    : 'border border-white/[0.08] text-white/45 hover:border-white/20 hover:text-white/70',
+                ].join(' ')}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
 
           {/* KPI tiles — live where available */}
           <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -218,30 +258,59 @@ export default function CrmReportsPage() {
 
           {/* Intent score breakdown */}
           <section className="mt-14">
-            <div className="mb-5 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-[#D4AF37]" />
-              <h2 className="text-[18px] font-semibold text-white">Intent distribution</h2>
-            </div>
-            <div className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
-              <div className="grid gap-4 sm:grid-cols-2">
-                {crmLeads.map((lead) => (
-                  <div key={lead.id} className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="truncate text-[13px] font-medium text-white/80">{lead.name}</div>
-                      <div className="text-[11px] text-white/40">{lead.stage} · {lead.assignedAgent}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
-                        <div
-                          className={`h-full rounded-full ${lead.intentScore >= 85 ? 'bg-emerald-400' : lead.intentScore >= 70 ? 'bg-[#D4AF37]' : 'bg-orange-400'}`}
-                          style={{ width: `${lead.intentScore}%` }}
-                        />
-                      </div>
-                      <span className="w-6 text-right text-[12px] font-semibold text-white/70">{lead.intentScore}</span>
-                    </div>
-                  </div>
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-[#D4AF37]" />
+                <h2 className="text-[18px] font-semibold text-white">Intent distribution</h2>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {INTENT_FILTERS.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setIntentFilter(f)}
+                    className={[
+                      'rounded-full px-3 py-1 text-[11px] font-medium transition',
+                      intentFilter === f
+                        ? 'bg-[#D4AF37] text-[#06080A]'
+                        : 'border border-white/[0.08] text-white/40 hover:text-white/65',
+                    ].join(' ')}
+                  >
+                    {f}
+                  </button>
                 ))}
               </div>
+              <select
+                value={agentFilter}
+                onChange={(e) => setAgentFilter(e.target.value)}
+                className="rounded-full border border-white/[0.08] bg-transparent px-3 py-1 text-[11px] text-white/40 outline-none transition hover:border-white/20 hover:text-white/65"
+              >
+                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-[#06080A]">{a === 'All' ? 'All agents' : a}</option>)}
+              </select>
+            </div>
+            <div className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
+              {filteredLeads.length === 0 ? (
+                <div className="py-8 text-center text-[13px] text-white/35">No leads match these filters.</div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {filteredLeads.map((lead) => (
+                    <div key={lead.id} className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-medium text-white/80">{lead.name}</div>
+                        <div className="text-[11px] text-white/40">{lead.stage} · {lead.assignedAgent}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
+                          <div
+                            className={`h-full rounded-full ${lead.intentScore >= 85 ? 'bg-emerald-400' : lead.intentScore >= 70 ? 'bg-[#D4AF37]' : 'bg-orange-400'}`}
+                            style={{ width: `${lead.intentScore}%` }}
+                          />
+                        </div>
+                        <span className="w-6 text-right text-[12px] font-semibold text-white/70">{lead.intentScore}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 

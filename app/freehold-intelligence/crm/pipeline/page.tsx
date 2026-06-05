@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState, useMemo } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -33,32 +34,38 @@ const STAGE_DELTA: Record<string, string> = {
 }
 
 export default function CrmPipelinePage() {
+  const [activeStage, setActiveStage] = useState<string | null>(null)
+
   // Compute real stage counts from live lead data
-  const stageCounts = crmLeads.reduce<Record<string, typeof crmLeads>>(
+  const stageCounts = useMemo(() => crmLeads.reduce<Record<string, typeof crmLeads>>(
     (acc, lead) => {
       ;(acc[lead.stage] = acc[lead.stage] || []).push(lead)
       return acc
     },
     {},
-  )
+  ), [])
 
-  const stages = STAGE_ORDER.map((name) => ({
+  const stages = useMemo(() => STAGE_ORDER.map((name) => ({
     name,
     leads: stageCounts[name] || [],
     count: (stageCounts[name] || []).length,
     ...(STAGE_CONFIG[name] ?? { tone: 'text-white/50', dot: 'bg-white/30', dotBg: 'bg-white/10', value: '—' }),
     delta: STAGE_DELTA[name] ?? '',
-  }))
+  })), [stageCounts])
 
   const totalLeads = stages.reduce((s, st) => s + st.count, 0)
-  const hotLeads   = stages.find((s) => s.name === 'Hot')?.leads ?? []
-  const qualLeads  = stages.find((s) => s.name === 'Qualified')?.leads ?? []
 
-  // Spotlight: hot and qualified (most action-relevant stages)
-  const spotlight = [
-    { label: 'Hot', leads: hotLeads },
-    { label: 'Qualified', leads: qualLeads },
-  ].filter((s) => s.leads.length > 0)
+  // If a stage is selected, show only that stage; otherwise default to Hot + Qualified
+  const spotlight = useMemo(() => {
+    if (activeStage) {
+      const stage = stages.find((s) => s.name === activeStage)
+      return stage && stage.leads.length > 0 ? [{ label: stage.name, leads: stage.leads }] : []
+    }
+    return stages
+      .filter((s) => s.name === 'Hot' || s.name === 'Qualified')
+      .filter((s) => s.leads.length > 0)
+      .map((s) => ({ label: s.name, leads: s.leads }))
+  }, [activeStage, stages])
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
@@ -95,22 +102,47 @@ export default function CrmPipelinePage() {
             ))}
           </div>
 
-          {/* Kanban */}
+          {/* Kanban — click to filter spotlight below */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {stages.map((stage) => (
-              <div key={stage.name} className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 rounded-full ${stage.dot}`} />
-                  <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">{stage.name}</div>
-                </div>
-                <div className="mt-3 text-[32px] font-semibold text-white">{stage.count}</div>
-                <div className="mt-1 text-[12px] font-medium text-white/55">{stage.value}</div>
-                <div className={`mt-3 text-[11px] ${stage.tone}`}>{stage.delta}</div>
-              </div>
-            ))}
+            {stages.map((stage) => {
+              const isSelected = activeStage === stage.name
+              return (
+                <button
+                  key={stage.name}
+                  onClick={() => setActiveStage(isSelected ? null : stage.name)}
+                  className={[
+                    'rounded-[20px] border p-5 text-left transition',
+                    isSelected
+                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
+                      : 'border-white/[0.06] bg-[#0A0D10] hover:border-white/10',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${stage.dot}`} />
+                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">{stage.name}</div>
+                  </div>
+                  <div className="mt-3 text-[32px] font-semibold text-white">{stage.count}</div>
+                  <div className="mt-1 text-[12px] font-medium text-white/55">{stage.value}</div>
+                  <div className={`mt-3 text-[11px] ${stage.tone}`}>{stage.delta}</div>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Lead snapshots — hot & qualified only */}
+          {activeStage && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-[12px] text-white/40">Showing</span>
+              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-[11px] font-medium text-[#D4AF37]">{activeStage}</span>
+              <button
+                onClick={() => setActiveStage(null)}
+                className="text-[12px] text-white/30 transition hover:text-white/60"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {/* Lead snapshots — filtered by selected stage, or Hot + Qualified by default */}
           {spotlight.map(({ label, leads }) => (
             <section key={label} className="mt-14">
               <div className="mb-4 flex items-center justify-between">
@@ -180,7 +212,7 @@ export default function CrmPipelinePage() {
               </div>
               <div className="mt-3 text-[15px] font-semibold text-white">Follow-up → Qualified</div>
               <div className="mt-2 text-[12px] leading-relaxed text-white/55">
-                {(stageCounts['Follow-up'] || []).length} lead{(stageCounts['Follow-up'] || []).length !== 1 ? 's' : ''} in Follow-up without stage progression this week.
+                {(stageCounts['Follow-up'] ?? []).length} lead{(stageCounts['Follow-up'] ?? []).length !== 1 ? 's' : ''} in Follow-up without stage progression this week.
               </div>
             </div>
           </div>
