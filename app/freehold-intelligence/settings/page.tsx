@@ -88,13 +88,13 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       aria-pressed={on}
       className={[
         'relative h-6 w-11 rounded-full border transition-all duration-200',
-        on ? 'border-emerald-400/40 bg-emerald-500/20' : 'border-white/[0.12] bg-white/[0.04]',
+        on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.12] bg-white/[0.04]',
       ].join(' ')}
     >
       <span
         className={[
           'absolute top-0.5 h-5 w-5 rounded-full border transition-all duration-200',
-          on ? 'left-5 border-emerald-400/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30',
+          on ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30',
         ].join(' ')}
       />
     </button>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
             className={[
               'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition',
               saved
-                ? 'border border-emerald-400/30 bg-emerald-500/10 text-[#D4AF37]'
+                ? 'border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border border-white/[0.08] bg-white/[0.04] text-white/70 hover:border-[#D4AF37]/30 hover:text-white',
             ].join(' ')}
           >

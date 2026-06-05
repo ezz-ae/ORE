@@ -191,7 +191,7 @@ export default function CrmInboxPage() {
                           </div>
                           <button
                             onClick={() => handleContacted(lead.id)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/[0.06] px-3.5 py-2 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.12] active:scale-95"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3.5 py-2 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.12] active:scale-95"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" /> Mark contacted
                           </button>
@@ -240,7 +240,7 @@ export default function CrmInboxPage() {
                           <span className="text-[12px] font-medium text-white/50">Assigned</span>
                           <button
                             onClick={() => handleContacted(lead.id)}
-                            className="rounded-full border border-emerald-400/20 bg-[#D4AF37]/[0.05] px-2.5 py-1 text-[13px] text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.12] active:scale-95"
+                            className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] px-2.5 py-1 text-[13px] text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.12] active:scale-95"
                           >
                             Mark contacted
                           </button>

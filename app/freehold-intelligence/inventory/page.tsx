@@ -21,7 +21,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
     case 'off_plan':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'under_construction':
@@ -49,7 +49,7 @@ function statusLabel(status: PropertyStatus): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':

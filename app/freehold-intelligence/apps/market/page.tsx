@@ -14,7 +14,7 @@ const ALL_AREAS = Array.from(new Set(projects.map((p) => p.area))).sort()
 const ALL_STATUSES: StatusFilter[] = ['All', 'Ready', 'Off-plan', 'Under construction', 'Secondary', 'Rental']
 
 function statusTone(s: string) {
-  if (s === 'Ready')             return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s === 'Ready')             return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'Under construction') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   return                                 { dot: 'bg-sky-400',     text: 'text-sky-200',    bg: 'bg-sky-400/10 border-sky-400/20' }
 }

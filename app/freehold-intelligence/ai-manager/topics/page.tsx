@@ -111,14 +111,14 @@ const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'A
 
 function categoryBadge(cat: TopicCategory) {
   if (cat === 'Market News') return 'text-white/55 bg-sky-500/10 border-sky-500/20'
-  if (cat === 'Area Guide')  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (cat === 'Area Guide')  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (cat === 'Investment')  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (cat === 'Legal')       return 'text-white/55 bg-violet-500/10 border-violet-500/20'
   return 'text-white/55 bg-rose-500/10 border-rose-500/20'
 }
 
 function statusBadge(status: TopicStatus) {
-  if (status === 'Published')  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Published')  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (status === 'Scheduled')  return 'text-white/55 bg-sky-500/10 border-sky-500/20'
   if (status === 'Idea')       return 'text-white/40 bg-white/[0.04] border-white/[0.08]'
   return 'text-white/50 bg-white/[0.04] border-white/10'
@@ -224,7 +224,7 @@ export default function TopicsPage() {
           <span className="text-white/40">Total </span>
           <span className="font-semibold text-white/90">{topics.length}</span>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Published </span>
           <span className="font-semibold text-[#D4AF37]">{topics.filter((t) => t.status === 'Published').length}</span>
         </div>
@@ -324,7 +324,7 @@ export default function TopicsPage() {
       </div>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

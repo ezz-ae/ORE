@@ -103,7 +103,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
                     setApproved((prev) => new Set([...prev, item.id]))
                     setFlash(`"${item.title}" approved`)
                   }}
-                  className="shrink-0 rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-3 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                  className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                 >
                   Approve
                 </button>

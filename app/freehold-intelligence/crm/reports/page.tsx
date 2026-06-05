@@ -234,7 +234,7 @@ export default function CrmReportsPage() {
             <div className="mb-5 flex items-center gap-2">
               <Target className="h-4 w-4 text-[#D4AF37]" />
               <h2 className="text-[18px] font-semibold text-white">Lead sources</h2>
-              <span className="rounded-full border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">Live</span>
+              <span className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">Live</span>
             </div>
             <div className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
               <div className="space-y-5">

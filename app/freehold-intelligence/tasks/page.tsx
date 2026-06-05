@@ -411,7 +411,7 @@ export default function TasksPage() {
                 {!isDone && (
                   <button
                     onClick={() => markDone(task.id)}
-                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Mark done

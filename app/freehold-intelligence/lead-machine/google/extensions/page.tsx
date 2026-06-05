@@ -92,7 +92,7 @@ function CalloutCard({ ext }: { ext: GoogleCalloutExtension }) {
 
 function CallCard({ ext }: { ext: GoogleCallExtension }) {
   return (
-    <div className="flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-emerald-400/20">
+    <div className="flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#111318] p-4 transition hover:border-[#D4AF37]/20">
       <Phone className="h-5 w-5 shrink-0 text-[#D4AF37]/60" />
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-white">
@@ -100,7 +100,7 @@ function CallCard({ ext }: { ext: GoogleCallExtension }) {
         </div>
       </div>
       {ext.callOnly && (
-        <span className="shrink-0 rounded-full border border-emerald-400/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[12px] font-medium text-[#D4AF37]">
+        <span className="shrink-0 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[12px] font-medium text-[#D4AF37]">
           Call-only
         </span>
       )}

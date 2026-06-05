@@ -152,8 +152,8 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
     Icon: PhoneCall,
     label: 'Call',
     iconColor: 'text-[#D4AF37]',
-    iconBg: 'bg-[#D4AF37]/10 border-emerald-400/20',
-    badgeColor: 'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]',
+    iconBg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20',
+    badgeColor: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
   },
   whatsapp: {
     Icon: MessageCircle,
@@ -237,7 +237,7 @@ function formatTimestamp(iso: string): string {
 function OutcomeChip({ outcome }: { outcome?: string }) {
   if (!outcome) return null
   const map: Record<string, string> = {
-    connected:         'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]',
+    connected:         'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
     no_answer:         'border-white/10 bg-white/[0.04] text-white/40',
     progressed:        'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
     callback_requested:'border-sky-400/20 bg-sky-400/10 text-white/55',

@@ -17,7 +17,7 @@ function urgencyBadgeClass(u: string) {
 }
 
 function agentStatusClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'bg-[#D4AF37]/10 border-emerald-400/25 text-[#D4AF37]'
+  if (status === 'available')   return 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#D4AF37]'
   if (status === 'at_capacity') return 'bg-amber-400/10 border-amber-400/25 text-amber-400'
   return 'bg-white/[0.04] border-white/10 text-white/40'
 }
@@ -76,7 +76,7 @@ function AgentButton({
       className={[
         'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all',
         agent.status === 'available'
-          ? 'border-emerald-400/20 bg-[#D4AF37]/[0.06] text-[#D4AF37] hover:border-emerald-400/40 hover:bg-[#D4AF37]/10'
+          ? 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-[#D4AF37] hover:border-emerald-400/40 hover:bg-[#D4AF37]/10'
           : agent.status === 'at_capacity'
           ? 'border-amber-400/20 bg-amber-400/[0.04] text-amber-400/80 hover:border-amber-400/35 hover:bg-amber-400/08'
           : 'cursor-not-allowed border-white/[0.05] bg-white/[0.02] text-white/25',
@@ -108,7 +108,7 @@ function LeadCard({
 
   if (justAssigned) {
     return (
-      <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition-all">
+      <div className="flex items-center gap-3 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition-all">
         <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
         <div>
           <span className="text-[14px] font-medium text-white">{lead.name}</span>

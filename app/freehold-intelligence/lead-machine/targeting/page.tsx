@@ -9,7 +9,7 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const USE_CASE_CONFIG: Record<TargetingUseCase, { label: string; color: string; badge: string }> = {
   investor:       { label: 'Investor',       color: 'text-[#D4AF37]',   badge: 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'   },
-  end_user:       { label: 'End user',       color: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]' },
+  end_user:       { label: 'End user',       color: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]' },
   golden_visa:    { label: 'Golden Visa',    color: 'text-white/55',     badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200'           },
   secondary:      { label: 'Secondary',      color: 'text-white/55',  badge: 'border-violet-400/20 bg-violet-400/10 text-white/55'  },
   international:  { label: 'International',  color: 'text-white/55',    badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200'        },

@@ -27,7 +27,7 @@ const developers: DeveloperRow[] = [
 ]
 
 function statusBadge(status: DeveloperRow['profileStatus']) {
-  if (status === 'Complete')   return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Complete')   return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (status === 'Incomplete') return 'text-white/55 bg-rose-500/10 border-rose-500/20'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
@@ -86,7 +86,7 @@ export default function DeveloperProfilesPage() {
           <span className="text-white/40">Total </span>
           <span className="font-semibold text-white/90">{developers.length}</span>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Complete </span>
           <span className="font-semibold text-[#D4AF37]">{developers.filter((d) => d.profileStatus === 'Complete').length}</span>
         </div>

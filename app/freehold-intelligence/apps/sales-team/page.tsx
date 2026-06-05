@@ -12,7 +12,7 @@ import {
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
-  available:   { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10', label: 'Available'   },
+  available:   { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'Available'   },
   at_capacity: { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'At capacity' },
   overloaded:  { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Overloaded'  },
 }

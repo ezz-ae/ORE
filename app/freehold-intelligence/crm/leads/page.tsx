@@ -20,7 +20,7 @@ function scoreColor(n: number) {
 
 function stageColor(stage: string) {
   if (stage === 'Hot')       return 'text-red-300 border-red-400/20 bg-red-400/10'
-  if (stage === 'Qualified') return 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/10'
+  if (stage === 'Qualified') return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (stage === 'Follow-up') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (stage === 'New')       return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
   return 'text-white/50 border-white/10 bg-white/[0.04]'

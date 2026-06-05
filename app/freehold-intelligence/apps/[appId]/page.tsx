@@ -5,7 +5,7 @@ import { getServerApp } from '@/src/features/freehold-intelligence/server-sessio
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
-  if (s === 'live')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20', label: 'Live' }
+  if (s === 'live')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20', label: 'Live' }
   if (s === 'in_progress') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',   bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20',   label: 'In progress' }
   if (s === 'blocked')     return { dot: 'bg-red-400',     text: 'text-red-300',     bg: 'bg-red-400/10 border-red-400/20',         label: 'Blocked' }
   return                          { dot: 'bg-sky-400',     text: 'text-sky-200',     bg: 'bg-sky-400/10 border-sky-400/20',         label: 'Planned' }

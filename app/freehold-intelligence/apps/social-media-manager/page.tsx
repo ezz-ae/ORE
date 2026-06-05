@@ -43,7 +43,7 @@ const WEEK = [
 ]
 
 const ANGLE_STATUS = {
-  approved:        { label: 'Approved',         classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20' },
+  approved:        { label: 'Approved',         classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
   pending_approval:{ label: 'Pending approval', classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
   draft:           { label: 'Draft',            classes: 'bg-white/[0.06] text-white/50 border-white/10' },
 }
@@ -147,7 +147,7 @@ export default function SocialMediaManagerPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleApproval(ap.id, ap.title, 'approved')}
-                        className="rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-3 py-1 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                        className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                       >
                         Approve
                       </button>
@@ -325,7 +325,7 @@ export default function SocialMediaManagerPage() {
 
       {/* Flash toast */}
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {flash}
           <button onClick={() => setFlash(null)} className="text-white/30 transition hover:text-white/60">

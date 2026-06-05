@@ -5,7 +5,7 @@ import { projects } from '@/src/data/projects'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
-  if (s === 'Ready') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s === 'Ready') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'Under construction') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   return { dot: 'bg-sky-400', text: 'text-sky-200', bg: 'bg-sky-400/10 border-sky-400/20' }
 }

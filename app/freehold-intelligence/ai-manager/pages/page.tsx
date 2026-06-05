@@ -34,7 +34,7 @@ function typeBadge(type: PageRow['type']) {
 }
 
 function statusBadge(status: PageRow['status']) {
-  if (status === 'Published') return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Published') return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (status === 'Review')    return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
@@ -96,7 +96,7 @@ export default function WebsitePagesPage() {
           <span className="text-white/40">Total </span>
           <span className="font-semibold text-white/90">{websitePages.length}</span>
         </div>
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Published </span>
           <span className="font-semibold text-[#D4AF37]">{websitePages.filter((p) => p.status === 'Published').length}</span>
         </div>

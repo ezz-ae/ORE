@@ -469,7 +469,7 @@ export default function GenerateLandingPage() {
 
       {/* Success / preview ready */}
       {generated && (
-        <div className="mt-6 rounded-[20px] border border-emerald-400/20 bg-[#D4AF37]/[0.05] p-5">
+        <div className="mt-6 rounded-[20px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-5">
           <div className="flex items-center gap-2 text-[#D4AF37]">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/15">
               <Check className="h-4 w-4" />

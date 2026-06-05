@@ -28,7 +28,7 @@ async function getForms(): Promise<FormsResponse> {
 }
 
 function statusConfig(s: string) {
-  if (s === 'ACTIVE')   return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10', label: 'Active'   }
+  if (s === 'ACTIVE')   return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'Active'   }
   if (s === 'ARCHIVED') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'Archived' }
   return                       { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       label: 'Deleted'  }
 }

@@ -281,7 +281,7 @@ export default function CrmDuplicatesPage() {
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => handleMerge(cluster.id, cluster.primary.name)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-[#D4AF37]/[0.08] px-4 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.08] px-4 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 active:scale-95"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Merge into primary
                     </button>
@@ -306,7 +306,7 @@ export default function CrmDuplicatesPage() {
       </section>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

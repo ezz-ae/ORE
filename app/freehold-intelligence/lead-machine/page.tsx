@@ -101,7 +101,7 @@ export default function LeadMachineOverviewPage() {
           <p className="text-[28px] font-semibold text-white">{leadMachineListings.length}</p>
           <p className="text-[12px] text-white/35 mt-1">Active listings</p>
         </div>
-        <div className="rounded-[18px] border border-emerald-400/20 bg-[#D4AF37]/[0.05] p-4 text-center">
+        <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
           <p className="text-[28px] font-semibold text-[#D4AF37]">{summary.landingPagesReady}</p>
           <p className="text-[12px] text-[#D4AF37]/60 mt-1">Landings ready</p>
         </div>

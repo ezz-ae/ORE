@@ -161,7 +161,7 @@ export default function FollowUpQueuePage() {
           {/* Lead cards */}
           <div className="mt-6 space-y-3">
             {visible.length === 0 ? (
-              <div className="rounded-[22px] border border-emerald-400/20 bg-[#D4AF37]/[0.03] p-10 text-center">
+              <div className="rounded-[22px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-10 text-center">
                 <CheckCircle className="mx-auto h-10 w-10 text-[#D4AF37]/60" />
                 <div className="mt-4 text-[20px] font-semibold text-[#D4AF37]">Queue clear</div>
                 <p className="mt-2 text-[14px] text-white/45">All follow-ups actioned. Great work.</p>
@@ -209,7 +209,7 @@ export default function FollowUpQueuePage() {
                       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col sm:items-end">
                         <button
                           onClick={() => markDone(item.leadId)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/[0.06] px-4 py-2 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/50 hover:bg-[#D4AF37]/10"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-4 py-2 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/50 hover:bg-[#D4AF37]/10"
                         >
                           <CheckCircle className="h-3.5 w-3.5" /> Mark Done
                         </button>

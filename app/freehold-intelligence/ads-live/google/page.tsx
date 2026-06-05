@@ -192,7 +192,7 @@ export default function GoogleAdsPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
                         c.status === 'Active'
-                          ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
+                          ? 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       }`}
                     >

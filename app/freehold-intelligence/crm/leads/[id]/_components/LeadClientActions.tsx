@@ -118,7 +118,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
       </div>
 
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
           {flash}
         </div>
       )}

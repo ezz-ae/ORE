@@ -22,7 +22,7 @@ const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string; v
   'Follow-up': { tone: 'text-white/55',    dot: 'bg-violet-400',   dotBg: 'bg-violet-400/20',   value: 'AED 9.4M'  },
   'Qualified': { tone: 'text-[#D4AF37]',     dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 7.2M'  },
   'Hot':       { tone: 'text-red-300',       dot: 'bg-red-400',      dotBg: 'bg-red-400/20',      value: 'AED 11.2M' },
-  'Won':       { tone: 'text-emerald-200',   dot: 'bg-[#D4AF37]',  dotBg: 'bg-emerald-500/20',  value: 'AED 9.8M'  },
+  'Won':       { tone: 'text-[#D4AF37]',   dot: 'bg-[#D4AF37]',  dotBg: 'bg-[#D4AF37]/20',  value: 'AED 9.8M'  },
 }
 
 const STAGE_DELTA: Record<string, string> = {

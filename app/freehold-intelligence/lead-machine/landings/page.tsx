@@ -14,7 +14,7 @@ type StatusFilter = 'All' | 'Approved' | 'Pending Review' | 'Draft'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
-  if (s.includes('approved')) return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s.includes('approved')) return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s.includes('review') || s.includes('pending')) return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s.includes('draft')) return { dot: 'bg-white/30', badge: 'text-white/55 bg-white/[0.04] border-white/10' }
   return { dot: 'bg-white/20', badge: 'text-white/40 bg-white/[0.03] border-white/[0.08]' }
@@ -38,7 +38,7 @@ function CheckRow({ label, status }: { label: string; status: string }) {
 }
 
 function adReqStatusStyle(s: string) {
-  if (s === 'Running')          return 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/10'
+  if (s === 'Running')          return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (s === 'Approved' || s === 'Ready to Launch') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (s === 'Pending Review')   return 'text-white/55 border-sky-400/20 bg-sky-400/10'
   if (s === 'Blocked')          return 'text-red-300 border-red-400/20 bg-red-400/10'

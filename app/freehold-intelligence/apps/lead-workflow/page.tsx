@@ -45,7 +45,7 @@ const FOLLOWUP_RULES: Rule[] = [
 ]
 
 const RULE_STATUS_CONFIG: Record<RuleStatus, { label: string; icon: React.ElementType; classes: string }> = {
-  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/[0.07]' },
+  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]' },
   pending: { label: 'Pending',  icon: Clock,        classes: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]'      },
   planned: { label: 'Planned',  icon: AlertCircle,  classes: 'text-white/55 border-sky-400/20 bg-sky-400/[0.07]'            },
 }

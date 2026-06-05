@@ -27,7 +27,7 @@ function fmtPct(n: number) {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
+  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
   VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
   SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',

@@ -107,7 +107,7 @@ const insights: Insight[] = [
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
-  Opportunity: { label: 'Opportunity', className: 'bg-emerald-500/10 border border-emerald-500/25 text-[#D4AF37]' },
+  Opportunity: { label: 'Opportunity', className: 'bg-[#D4AF37]/10 border border-emerald-500/25 text-[#D4AF37]' },
   Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-white/55' },
 }
 
@@ -127,7 +127,7 @@ function seoColor(score: number) {
 }
 
 function statusBadge(status: string) {
-  if (status === 'Good')       return 'bg-emerald-500/10 border border-emerald-500/20 text-[#D4AF37]'
+  if (status === 'Good')       return 'bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37]'
   if (status === 'Needs work') return 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
   return 'bg-white/[0.05] border border-white/10 text-white/50'
 }
@@ -208,7 +208,7 @@ export default function InsightsPage() {
       </div>
 
       {generated && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-[#D4AF37]">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3 text-sm text-[#D4AF37]">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Report generated — insights refreshed from latest data.
         </div>

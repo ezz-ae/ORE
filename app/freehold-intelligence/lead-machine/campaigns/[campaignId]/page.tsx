@@ -44,7 +44,7 @@ interface ApiState {
 
 function statusBadge(status: string) {
   switch (status) {
-    case 'ACTIVE':   return 'border-emerald-400/25 bg-[#D4AF37]/10 text-[#D4AF37]'
+    case 'ACTIVE':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'PAUSED':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'DELETED':  return 'border-red-400/25 bg-red-400/10 text-red-300'
     default:         return 'border-white/10 bg-white/[0.04] text-white/45'
@@ -203,7 +203,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('ACTIVE')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
                     <Play className="h-3 w-3" /> Activate
                   </button>

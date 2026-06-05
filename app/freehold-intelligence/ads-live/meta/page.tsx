@@ -110,7 +110,7 @@ export default function MetaAdsPage() {
 
         <div className="mt-7 flex flex-col items-end gap-2 sm:mt-10">
           {/* Connected badge */}
-          <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[13px] font-medium text-[#D4AF37]">
+          <span className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[13px] font-medium text-[#D4AF37]">
             <CheckCircle2 className="h-3 w-3" />
             Connected
           </span>
@@ -220,7 +220,7 @@ export default function MetaAdsPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
                         c.status === 'Active'
-                          ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
+                          ? 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       }`}
                     >
@@ -266,7 +266,7 @@ export default function MetaAdsPage() {
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium ${
                     s.status === 'Active'
-                      ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
+                      ? 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                   }`}
                 >

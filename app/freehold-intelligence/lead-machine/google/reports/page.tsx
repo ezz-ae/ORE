@@ -39,7 +39,7 @@ function fmtNum(n: number): string {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
+  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
   VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
   SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',
@@ -47,7 +47,7 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
 
 const STATUS_BADGE: Record<SearchTermStatus, string> = {
   NONE:           'text-white/40 border border-white/[0.12] bg-white/[0.03]',
-  ADDED:          'text-[#D4AF37] border border-emerald-400/25 bg-[#D4AF37]/[0.07]',
+  ADDED:          'text-[#D4AF37] border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07]',
   EXCLUDED:       'text-red-400 border border-red-400/25 bg-red-400/[0.07]',
   ADDED_EXCLUDED: 'text-orange-300 border border-orange-400/25 bg-orange-400/[0.07]',
 }

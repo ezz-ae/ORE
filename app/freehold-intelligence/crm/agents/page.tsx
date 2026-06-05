@@ -7,7 +7,7 @@ import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-sess
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
-  available:    { label: 'Available',    classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20' },
+  available:    { label: 'Available',    classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
   at_capacity:  { label: 'At capacity',  classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25'       },
   overloaded:   { label: 'Overloaded',   classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
@@ -136,7 +136,7 @@ export default function CrmAgentsPage() {
                             <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
                             <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${st.classes}`}>{st.label}</span>
                             {wasContacted && (
-                              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">
+                              <span className="flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">
                                 <CheckCircle className="h-3 w-3" /> Contacted
                               </span>
                             )}
@@ -260,7 +260,7 @@ export default function CrmAgentsPage() {
 
       {/* Flash banner */}
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

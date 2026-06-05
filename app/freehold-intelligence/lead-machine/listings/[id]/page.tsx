@@ -27,7 +27,7 @@ function statusChip(s: string) {
   const green = ['Ready', 'Approved', 'Landing Active', 'Campaign Running', 'Ready for Ads']
   const gold = ['Needs Review', 'Pending Review', 'Paused']
   const red = ['Blocked', 'Missing Data', 'Needs Landing', 'Missing', 'Needs Assets']
-  if (green.some(g => s.includes(g) || s === g)) return 'border-emerald-400/25 bg-[#D4AF37]/10 text-[#D4AF37]'
+  if (green.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
   if (gold.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'
   if (red.some(r => s.includes(r) || s === r)) return 'border-red-400/25 bg-red-400/10 text-red-300'
   return 'border-white/10 bg-white/[0.04] text-white/55'

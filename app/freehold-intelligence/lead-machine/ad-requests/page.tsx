@@ -14,8 +14,8 @@ type PlatformFilter = 'All' | 'Meta' | 'Google'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
-  if (s === 'running') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
-  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s === 'running') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
+  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'pending review') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-white/55 bg-white/[0.04] border-white/10' }
   if (s === 'blocked' || s === 'needs changes') return { dot: 'bg-red-400', badge: 'text-red-400 bg-red-400/10 border-red-400/20' }

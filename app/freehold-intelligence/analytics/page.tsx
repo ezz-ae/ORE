@@ -20,7 +20,7 @@ function formatDuration(seconds: number): string {
 
 function SourceBadge({ type }: { type: string }) {
   const styles: Record<string, string> = {
-    organic:  'border-emerald-500/20 bg-emerald-500/10 text-[#D4AF37]',
+    organic:  'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
     paid:     'border-blue-500/20 bg-blue-500/10 text-blue-400',
     social:   'border-violet-500/20 bg-violet-500/10 text-white/55',
     direct:   'border-white/[0.08] bg-white/[0.04] text-white/45',
@@ -101,7 +101,7 @@ function SparklineChart({ daily }: { daily: { pageViews: number; uniqueVisitors:
 
 // ── Traffic Sources Bar Chart ────────────────────────────────────────────────
 const SOURCE_BAR_COLOR: Record<string, string> = {
-  organic:  'bg-emerald-500',
+  organic:  'bg-[#D4AF37]',
   paid:     'bg-blue-500',
   social:   'bg-violet-500',
   direct:   'bg-white/40',

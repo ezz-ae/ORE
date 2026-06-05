@@ -83,7 +83,7 @@ const initialColumns: Column[] = [
 function sourceBadge(source: LeadSource) {
   if (source === 'Meta')      return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
   if (source === 'Google')    return 'text-white/55 bg-sky-500/10 border-sky-500/20'
-  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
 }
 
 function sourceIcon(source: LeadSource) {
@@ -227,7 +227,7 @@ export default function CrmBoardPage() {
                         {lead.note && (
                           <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold ${
                             lead.note === 'WON'
-                              ? 'bg-emerald-500/20 text-[#D4AF37]'
+                              ? 'bg-[#D4AF37]/20 text-[#D4AF37]'
                               : 'bg-rose-500/20 text-white/55'
                           }`}>
                             {lead.note}

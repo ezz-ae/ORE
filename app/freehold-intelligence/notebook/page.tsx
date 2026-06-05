@@ -14,7 +14,7 @@ function outputTypeIcon(type: string) {
 }
 
 function statusTone(status: string) {
-  if (status === 'approved') return 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/10'
+  if (status === 'approved') return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (status === 'sent_for_review') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (status === 'saved') return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
   return 'text-white/45 border-white/10 bg-white/[0.03]'

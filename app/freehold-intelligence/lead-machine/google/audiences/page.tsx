@@ -33,7 +33,7 @@ const TYPE_BADGE: Record<GoogleAudienceType, string> = {
   CUSTOMER_MATCH:   'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20',
   IN_MARKET:        'bg-sky-400/10 text-white/55 border-sky-400/20',
   AFFINITY:         'bg-violet-400/10 text-white/55 border-violet-400/20',
-  REMARKETING:      'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
+  REMARKETING:      'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   SIMILAR_AUDIENCE: 'bg-rose-400/10 text-white/55 border-rose-400/20',
   COMBINED:         'bg-white/[0.04] text-white/40 border-white/[0.08]',
 }
@@ -113,7 +113,7 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
         <span
           className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${
             audience.status === 'OPEN'
-              ? 'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
+              ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
               : 'border-red-400/20 bg-red-400/10 text-red-300'
           }`}
         >

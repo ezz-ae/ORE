@@ -13,7 +13,7 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
       Meta
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
+    <span className="inline-flex items-center rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
       Google
     </span>
   )
@@ -22,7 +22,7 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'paid') {
     return (
-      <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
+      <span className="inline-flex items-center rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
         Paid
       </span>
     )
@@ -145,7 +145,7 @@ export default function FinancePage() {
             spent={f.currentMonthSpendGoogle}
             budget={f.googleBudgetAED}
             utilization={f.budgetUtilizationGoogle}
-            color="bg-emerald-500"
+            color="bg-[#D4AF37]"
           />
         </div>
       </section>

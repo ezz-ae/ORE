@@ -7,7 +7,7 @@ import { mockGithubData } from '@/lib/freehold/mcp/mock-integrations'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function ciTone(s: string) {
-  if (s === 'success') return { icon: CheckCircle2, text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s === 'success') return { icon: CheckCircle2, text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'failure') return { icon: AlertCircle, text: 'text-red-300', bg: 'bg-red-400/10 border-red-400/20' }
   return { icon: Circle, text: 'text-[#F8E7AE]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
 }
@@ -60,7 +60,7 @@ export default function GithubIntegrationPage() {
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[13px] font-medium text-[#D4AF37]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[13px] font-medium text-[#D4AF37]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
             Connected
           </span>
@@ -161,7 +161,7 @@ export default function GithubIntegrationPage() {
                       type="button"
                       onClick={() => handleRerun(check.name)}
                       disabled={rerunning !== null}
-                      className="rounded-[8px] border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[13px] text-white/45 transition hover:border-emerald-400/20 hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-[8px] border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[13px] text-white/45 transition hover:border-[#D4AF37]/20 hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {rerunning === check.name ? 'Running…' : 'Re-run'}
                     </button>

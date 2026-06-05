@@ -22,7 +22,7 @@ const contentData: Record<string, { status: ListingStatus; seo: number; words: n
 }
 
 function statusBadge(status: ListingStatus) {
-  if (status === 'Published')    return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Published')    return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
   if (status === 'Needs Review') return 'text-white/55 bg-rose-500/10 border-rose-500/20'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
@@ -67,7 +67,7 @@ export default function AiManagerListingsPage() {
             Listings
           </h1>
           <div className="mt-2 flex flex-wrap gap-3">
-            <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs">
+            <span className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1 text-xs">
               <span className="text-white/40">Published </span>
               <span className="font-semibold text-[#D4AF37]">{counts.Published}</span>
             </span>

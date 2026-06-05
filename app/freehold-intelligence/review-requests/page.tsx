@@ -112,7 +112,7 @@ function priorityTone(p: ReviewPriority) {
 }
 
 function typeTone(t: ReviewType) {
-  if (t === 'approval')       return 'bg-[#D4AF37]/10 border-emerald-400/20 text-emerald-200'
+  if (t === 'approval')       return 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-emerald-200'
   if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
   if (t === 'decision')       return 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-[#F8E7AE]'
   if (t === 'correction')     return 'bg-sky-400/10 border-sky-400/20 text-sky-200'
@@ -205,7 +205,7 @@ export default function ReviewRequestsPage() {
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
           <p className="text-[12px] text-red-400/60 mt-1">Blockers</p>
         </div>
-        <div className="rounded-[18px] border border-emerald-400/20 bg-[#D4AF37]/[0.06] p-4 text-center">
+        <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#D4AF37]">{stats.approvals}</p>
           <p className="text-[12px] text-[#D4AF37]/60 mt-1">Approvals</p>
         </div>
@@ -288,7 +288,7 @@ export default function ReviewRequestsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => resolve(item.id, 'approved')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
+                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
                     >
                       <ThumbsUp className="h-3.5 w-3.5" />
                       Approve
@@ -323,7 +323,7 @@ export default function ReviewRequestsPage() {
           <MessageSquare className="h-3.5 w-3.5" /> Add a review comment
         </div>
         {commentFlash && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm text-[#D4AF37]">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm text-[#D4AF37]">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Comment added to the review queue.
           </div>
