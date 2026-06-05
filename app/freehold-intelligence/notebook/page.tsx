@@ -1,5 +1,8 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { BookOpen, Pin, Sparkles, ArrowUpRight, MessageSquare, FileText, Megaphone, GitBranch, Hash } from 'lucide-react'
+import { BookOpen, Pin, Sparkles, ArrowUpRight, MessageSquare, FileText, Megaphone, GitBranch, Hash, Search, X } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
@@ -29,7 +32,49 @@ const allOutputs = notebookConversations.flatMap(c => c.savedOutputs)
 const pinnedOutputs = allOutputs.filter(o => o.pinned)
 const totalMessages = notebookConversations.reduce((s, c) => s + c.messages.length, 0)
 
+type OutputType = 'All' | 'ad_copy' | 'script' | 'comparison' | 'brochure' | 'pdf' | 'message'
+type OutputStatus = 'All' | 'approved' | 'sent_for_review' | 'saved' | 'draft'
+
+const OUTPUT_TYPES: { key: OutputType; label: string }[] = [
+  { key: 'All',        label: 'All'        },
+  { key: 'ad_copy',    label: 'Ad copy'    },
+  { key: 'comparison', label: 'Comparison' },
+  { key: 'brochure',   label: 'Brochure'   },
+  { key: 'script',     label: 'Script'     },
+  { key: 'message',    label: 'Message'    },
+]
+
+const STATUS_FILTERS: { key: OutputStatus; label: string }[] = [
+  { key: 'All',             label: 'All'            },
+  { key: 'approved',        label: 'Approved'       },
+  { key: 'sent_for_review', label: 'In review'      },
+  { key: 'saved',           label: 'Saved'          },
+  { key: 'draft',           label: 'Draft'          },
+]
+
 export default function NotebookPage() {
+  const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<OutputType>('All')
+  const [statusFilter, setStatusFilter] = useState<OutputStatus>('All')
+
+  const filteredConversations = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const base = [...notebookConversations].reverse()
+    if (!q) return base
+    return base.filter((c) =>
+      c.title.toLowerCase().includes(q) ||
+      c.messages.some((m) => m.content.toLowerCase().includes(q))
+    )
+  }, [query])
+
+  const filteredOutputs = useMemo(() => {
+    return allOutputs.filter((o) => {
+      if (typeFilter !== 'All' && o.type !== typeFilter) return false
+      if (statusFilter !== 'All' && o.status !== statusFilter) return false
+      return true
+    })
+  }, [typeFilter, statusFilter])
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -52,15 +97,15 @@ export default function NotebookPage() {
       <section className="mt-8 grid grid-cols-3 gap-3">
         <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{notebookConversations.length}</p>
-          <p className="text-[10px] text-white/35 mt-1">Conversations</p>
+          <p className="mt-1 text-[10px] text-white/35">Conversations</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{allOutputs.length}</p>
-          <p className="text-[10px] text-[#D4AF37]/60 mt-1">Saved outputs</p>
+          <p className="mt-1 text-[10px] text-[#D4AF37]/60">Saved outputs</p>
         </div>
         <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{totalMessages}</p>
-          <p className="text-[10px] text-white/35 mt-1">Messages</p>
+          <p className="mt-1 text-[10px] text-white/35">Messages</p>
         </div>
       </section>
 
@@ -80,7 +125,7 @@ export default function NotebookPage() {
       {/* Pinned outputs */}
       {pinnedOutputs.length > 0 && (
         <section className="mt-12">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80 mb-4">
+          <div className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
             <Pin className="h-3 w-3" /> Pinned outputs
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -115,91 +160,156 @@ export default function NotebookPage() {
         </section>
       )}
 
-      {/* All conversations */}
+      {/* Conversations — with search */}
       <section className="mt-12">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Threads</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">{notebookConversations.length} conversations</h2>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
+              {filteredConversations.length} of {notebookConversations.length} conversation{notebookConversations.length !== 1 ? 's' : ''}
+            </h2>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {[...notebookConversations].reverse().map(conv => {
-            const lastMsg = conv.messages[conv.messages.length - 1]
-            const outputCount = conv.savedOutputs.length
-            return (
-              <Link
-                key={conv.id}
-                href={`/freehold-intelligence/notebook/${conv.id}`}
-                className="group flex items-start gap-5 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20 sm:p-6"
-              >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition group-hover:border-[#D4AF37]/20">
-                  <Sparkles className="h-4 w-4 text-white/50" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="truncate text-[14px] font-semibold text-white">{conv.title}</h3>
-                    <div className="flex shrink-0 items-center gap-2 text-[11px] text-white/30">
-                      <span>{relativeTime(conv.updatedAt)}</span>
-                      <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:text-[#D4AF37]" />
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/25" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search conversations…"
+            className="w-full rounded-[14px] border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-10 text-[13px] text-white placeholder-white/25 outline-none transition focus:border-[#D4AF37]/30 focus:bg-white/[0.05]"
+          />
+          {query && (
+            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {filteredConversations.length === 0 ? (
+          <div className="py-12 text-center text-[14px] text-white/30">No conversations match your search.</div>
+        ) : (
+          <div className="space-y-3">
+            {filteredConversations.map(conv => {
+              const lastMsg = conv.messages[conv.messages.length - 1]
+              const outputCount = conv.savedOutputs.length
+              return (
+                <Link
+                  key={conv.id}
+                  href={`/freehold-intelligence/notebook/${conv.id}`}
+                  className="group flex items-start gap-5 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20 sm:p-6"
+                >
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition group-hover:border-[#D4AF37]/20">
+                    <Sparkles className="h-4 w-4 text-white/50" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="truncate text-[14px] font-semibold text-white">{conv.title}</h3>
+                      <div className="flex shrink-0 items-center gap-2 text-[11px] text-white/30">
+                        <span>{relativeTime(conv.updatedAt)}</span>
+                        <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:text-[#D4AF37]" />
+                      </div>
+                    </div>
+
+                    <p className="mt-1 line-clamp-1 text-[12px] text-white/45">
+                      {lastMsg.role === 'assistant' ? 'AI: ' : 'You: '}{lastMsg.content.slice(0, 120)}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-white/30">
+                      <span>{conv.messages.length} messages</span>
+                      {outputCount > 0 && (
+                        <span className="text-[#D4AF37]/60">{outputCount} saved output{outputCount !== 1 ? 's' : ''}</span>
+                      )}
+                      {conv.relatedProjectIds.length > 0 && (
+                        <span>{conv.relatedProjectIds.length} project{conv.relatedProjectIds.length !== 1 ? 's' : ''}</span>
+                      )}
+                      {conv.relatedLeadIds.length > 0 && (
+                        <span>{conv.relatedLeadIds.length} lead{conv.relatedLeadIds.length !== 1 ? 's' : ''}</span>
+                      )}
                     </div>
                   </div>
-
-                  <p className="mt-1 line-clamp-1 text-[12px] text-white/45">
-                    {lastMsg.role === 'assistant' ? 'AI: ' : 'You: '}{lastMsg.content.slice(0, 120)}
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-white/30">
-                    <span>{conv.messages.length} messages</span>
-                    {outputCount > 0 && (
-                      <span className="text-[#D4AF37]/60">{outputCount} saved output{outputCount !== 1 ? 's' : ''}</span>
-                    )}
-                    {conv.relatedProjectIds.length > 0 && (
-                      <span>{conv.relatedProjectIds.length} project{conv.relatedProjectIds.length !== 1 ? 's' : ''}</span>
-                    )}
-                    {conv.relatedLeadIds.length > 0 && (
-                      <span>{conv.relatedLeadIds.length} lead{conv.relatedLeadIds.length !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </section>
 
-      {/* All saved outputs */}
+      {/* All saved outputs — with type + status filters */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">All saved outputs</div>
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-          <div className="divide-y divide-white/[0.04]">
-            {allOutputs.map(output => (
-              <Link
-                key={output.id}
-                href={`/freehold-intelligence/notebook/${output.conversationId}`}
-                className="flex items-center gap-4 px-6 py-4 transition hover:bg-white/[0.02]"
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+            {filteredOutputs.length} of {allOutputs.length} saved output{allOutputs.length !== 1 ? 's' : ''}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {OUTPUT_TYPES.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTypeFilter(key)}
+                className={[
+                  'rounded-full px-3 py-1 text-[11px] font-medium transition',
+                  typeFilter === key
+                    ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border border-white/[0.08] text-white/40 hover:text-white/65',
+                ].join(' ')}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] text-white/40">
-                  {outputTypeIcon(output.type)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[13px] font-medium text-white/85">{output.title}</span>
-                    {output.pinned && <Pin className="h-3 w-3 shrink-0 text-[#D4AF37]" />}
-                  </div>
-                  <p className="mt-0.5 line-clamp-1 text-[11px] text-white/40">{output.content.slice(0, 100)}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`hidden rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize sm:inline-flex ${statusTone(output.status)}`}>
-                    {output.status.replace(/_/g, ' ')}
-                  </span>
-                  <span className="text-[11px] text-white/25">{relativeTime(output.createdAt)}</span>
-                </div>
-              </Link>
+                {label}
+              </button>
             ))}
           </div>
         </div>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {STATUS_FILTERS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={[
+                'rounded-full px-3 py-1 text-[11px] font-medium transition',
+                statusFilter === key
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-white/35 hover:text-white/60',
+              ].join(' ')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {filteredOutputs.length === 0 ? (
+          <div className="rounded-[22px] border border-white/[0.05] py-12 text-center text-[14px] text-white/30">
+            No outputs match these filters.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+            <div className="divide-y divide-white/[0.04]">
+              {filteredOutputs.map(output => (
+                <Link
+                  key={output.id}
+                  href={`/freehold-intelligence/notebook/${output.conversationId}`}
+                  className="flex items-center gap-4 px-6 py-4 transition hover:bg-white/[0.02]"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] text-white/40">
+                    {outputTypeIcon(output.type)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-[13px] font-medium text-white/85">{output.title}</span>
+                      {output.pinned && <Pin className="h-3 w-3 shrink-0 text-[#D4AF37]" />}
+                    </div>
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-white/40">{output.content.slice(0, 100)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`hidden rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize sm:inline-flex ${statusTone(output.status)}`}>
+                      {output.status.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-[11px] text-white/25">{relativeTime(output.createdAt)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
     </div>
