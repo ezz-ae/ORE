@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react'
 
 const GOOGLE_BLUE = '#4285F4'
 
@@ -57,7 +58,24 @@ const searchTerms = [
   { term: 'golden visa dubai property',       impressions: 980,  clicks: 52,  ctr: '5.31%', avgCpc: 'AED 2.67' },
 ]
 
+type SortCol = 'spend' | 'leads' | 'cpl' | 'impressions'
+
 export default function GoogleAdsPage() {
+  const [sortCol, setSortCol] = useState<SortCol>('leads')
+  const [sortAsc, setSortAsc] = useState(false)
+
+  const sortedCampaigns = useMemo(() => {
+    return [...campaigns].sort((a, b) => {
+      const diff = a[sortCol] - b[sortCol]
+      return sortAsc ? diff : -diff
+    })
+  }, [sortCol, sortAsc])
+
+  function handleSort(col: SortCol) {
+    if (sortCol === col) setSortAsc((v) => !v)
+    else { setSortCol(col); setSortAsc(false) }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -121,13 +139,35 @@ export default function GoogleAdsPage() {
           <div className="min-w-[680px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Table header */}
             <div className="grid grid-cols-[2fr_80px_70px_80px_90px_70px_60px_70px] gap-4 border-b border-white/[0.05] px-5 py-3">
-              {['Campaign', 'Type', 'Status', 'Spend', 'Impr.', 'Clicks', 'Leads', 'CPL'].map((h) => (
-                <div key={h} className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/30">{h}</div>
+              {[
+                { label: 'Campaign',  col: null                    },
+                { label: 'Type',      col: null                    },
+                { label: 'Status',    col: null                    },
+                { label: 'Spend',     col: 'spend' as SortCol      },
+                { label: 'Impr.',     col: 'impressions' as SortCol },
+                { label: 'Clicks',    col: null                    },
+                { label: 'Leads',     col: 'leads' as SortCol      },
+                { label: 'CPL',       col: 'cpl' as SortCol        },
+              ].map(({ label, col }) => (
+                <button
+                  key={label}
+                  onClick={() => col && handleSort(col)}
+                  className={[
+                    'flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.16em] transition',
+                    col ? 'cursor-pointer text-white/30 hover:text-white/60' : 'cursor-default text-white/30',
+                    col && sortCol === col ? 'text-white/60' : '',
+                  ].join(' ')}
+                >
+                  {label}
+                  {col && sortCol === col && (
+                    sortAsc ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />
+                  )}
+                </button>
               ))}
             </div>
             {/* Rows */}
             <div className="divide-y divide-white/[0.04]">
-              {campaigns.map((c) => (
+              {sortedCampaigns.map((c) => (
                 <div
                   key={c.name}
                   className="grid grid-cols-[2fr_80px_70px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
