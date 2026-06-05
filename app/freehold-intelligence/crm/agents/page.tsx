@@ -1,56 +1,20 @@
-import { UserCheck, Phone, MessageSquare, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
+import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle } from 'lucide-react'
+import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const AGENTS = [
-  {
-    name: 'Ahmad K.',
-    role: 'Senior Advisor',
-    initials: 'AK',
-    leads: 12,
-    hot: 3,
-    won: 4,
-    avgClose: '14d',
-    revenue: 'AED 11.2M',
-    status: 'Active',
-    statusTone: 'emerald',
-    specialty: 'Off-plan · Damac · Sobha',
-  },
-  {
-    name: 'Sara M.',
-    role: 'Investment Advisor',
-    initials: 'SM',
-    leads: 9,
-    hot: 2,
-    won: 3,
-    avgClose: '17d',
-    revenue: 'AED 8.5M',
-    status: 'Active',
-    statusTone: 'emerald',
-    specialty: 'Beachfront · Golden Visa',
-  },
-  {
-    name: 'Rami T.',
-    role: 'Brokerage Associate',
-    initials: 'RT',
-    leads: 7,
-    hot: 1,
-    won: 2,
-    avgClose: '22d',
-    revenue: 'AED 4.8M',
-    status: 'Follow-up delayed',
-    statusTone: 'amber',
-    specialty: 'Secondary · Marina · JVC',
-  },
-]
-
-const TONE_CLASSES: Record<string, string> = {
-  emerald: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/25',
-  amber: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25',
+const STATUS_CONFIG = {
+  available:    { label: 'Available',    classes: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20' },
+  at_capacity:  { label: 'At capacity',  classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25'       },
+  overloaded:   { label: 'Overloaded',   classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
 
 export default function CrmAgentsPage() {
-  const totalLeads = AGENTS.reduce((s, a) => s + a.leads, 0)
-  const totalWon = AGENTS.reduce((s, a) => s + a.won, 0)
-  const totalRevenue = AGENTS.reduce((s, a) => s + parseFloat(a.revenue.replace(/[^0-9.]/g, '')), 0)
+  const agents = crmAgentRoster
+  const totalLeads   = agents.reduce((s, a) => s + a.totalLeads, 0)
+  const totalOverdue = agents.reduce((s, a) => s + a.overdueFollowUps, 0)
+  const overloaded   = agents.filter((a) => a.status === 'overloaded')
+  const topPerformer = [...agents].sort((a, b) => b.recentWins - a.recentWins)[0]
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
@@ -63,60 +27,105 @@ export default function CrmAgentsPage() {
             Sales team<br/><span className="text-white/35">performance.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-white/55">
-            {AGENTS.length} active advisors · {totalLeads} live leads · MTD revenue AED {totalRevenue.toFixed(1)}M. Watch follow-up cadence and time-to-close.
+            {agents.length} active advisors · {totalLeads} live leads · {totalOverdue} overdue follow-up{totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.
           </p>
 
-          <div className="mt-12 space-y-4">
-            {AGENTS.map((agent) => (
-              <div key={agent.name} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10 sm:p-7">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[15px] font-semibold text-[#D4AF37]">
-                      {agent.initials}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${TONE_CLASSES[agent.statusTone]}`}>{agent.status}</span>
+          {overloaded.length > 0 && (
+            <div className="mt-7 flex items-start gap-3 rounded-[18px] border border-red-400/20 bg-red-400/[0.04] p-4">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+              <p className="text-[13px] text-white/65">
+                <span className="font-semibold text-white">{overloaded.map((a) => a.name).join(', ')}</span>
+                {' '}
+                {overloaded.length === 1 ? 'is' : 'are'} overloaded. Redistribute before assigning new leads.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-10 space-y-4">
+            {agents.map((agent) => {
+              const st = STATUS_CONFIG[agent.status]
+              return (
+                <div key={agent.id} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10 sm:p-7">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[15px] font-semibold text-[#D4AF37]">
+                        {agent.initials}
                       </div>
-                      <div className="mt-1 text-[12px] text-white/45">{agent.role} · {agent.specialty}</div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.classes}`}>{st.label}</span>
+                        </div>
+                        <div className="mt-1 text-[12px] text-white/45">{agent.role} · {agent.specialty}</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-5 sm:gap-6">
+                      <div className="text-center">
+                        <div className="text-[22px] font-semibold text-white">{agent.totalLeads}</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Leads</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-[22px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-white/40'}`}>{agent.hotLeads}</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Hot</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`text-[22px] font-semibold ${agent.overdueFollowUps > 0 ? 'text-orange-400' : 'text-white/40'}`}>{agent.overdueFollowUps}</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Overdue</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[22px] font-semibold text-emerald-300">{agent.recentWins}</div>
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Wins</div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-5 sm:gap-7">
-                    <div>
-                      <div className="text-[22px] font-semibold text-white">{agent.leads}</div>
-                      <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Leads</div>
+                  {/* Utilization bar */}
+                  <div className="mt-5 border-t border-white/[0.05] pt-4">
+                    <div className="flex items-center justify-between text-[11px] text-white/40">
+                      <span>Utilization</span>
+                      <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-[#D4AF37]' : 'text-emerald-300'}>
+                        {agent.utilization}%
+                      </span>
                     </div>
-                    <div>
-                      <div className="text-[22px] font-semibold text-red-400">{agent.hot}</div>
-                      <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Hot</div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-[#D4AF37]' : 'bg-emerald-400'}`}
+                        style={{ width: `${agent.utilization}%` }}
+                      />
                     </div>
-                    <div>
-                      <div className="text-[22px] font-semibold text-emerald-300">{agent.won}</div>
-                      <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Won</div>
-                    </div>
-                    <div>
-                      <div className="text-[22px] font-semibold text-white">{agent.avgClose}</div>
-                      <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Avg.</div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <Link
+                        href="/freehold-intelligence/crm/assignment"
+                        className="text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                      >
+                        View assignments
+                      </Link>
+                      <div className="flex items-center gap-2">
+                        <button className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06]">
+                          <Phone className="h-3 w-3" /> Call
+                        </button>
+                        <button className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06]">
+                          <MessageSquare className="h-3 w-3" /> Message
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="mt-5 flex items-center justify-between border-t border-white/[0.05] pt-4">
-                  <div className="text-[12px] text-white/55">MTD Revenue · <span className="font-semibold text-white/80">{agent.revenue}</span></div>
-                  <div className="flex items-center gap-2">
-                    <button className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06]">
-                      <Phone className="h-3 w-3" /> Call
-                    </button>
-                    <button className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06]">
-                      <MessageSquare className="h-3 w-3" /> Message
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
+
+          <section className="mt-14">
+            <AiPrompt
+              placeholder="Ask about agent performance, capacity, follow-ups…"
+              suggestions={[
+                'Which agent needs coaching right now?',
+                'Who should I reassign overloaded leads to?',
+                'What is the team average follow-up delay?',
+              ]}
+            />
+          </section>
         </div>
 
         {/* Sidebar */}
@@ -124,24 +133,34 @@ export default function CrmAgentsPage() {
           <div className="sticky top-[112px] space-y-5">
             <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
               <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
-                <TrendingUp className="h-3 w-3" /> Team MTD
+                <TrendingUp className="h-3 w-3" /> Team load
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">AED {totalRevenue.toFixed(1)}M</div>
-              <div className="mt-1 text-[12px] text-emerald-300">{totalWon} closes this month</div>
+              <div className="mt-3 text-[34px] font-semibold text-white">{totalLeads}</div>
+              <div className="mt-1 text-[12px] text-white/45">leads across {agents.length} agents</div>
             </div>
+
+            {topPerformer && (
+              <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
+                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Top performer</div>
+                <div className="mt-3 text-[18px] font-semibold text-white">{topPerformer.name}</div>
+                <div className="mt-1 text-[12px] text-white/50">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
+              </div>
+            )}
+
+            {overloaded.length > 0 && (
+              <div className="rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent p-5">
+                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Coaching flag</div>
+                <div className="mt-3 text-[14px] font-semibold text-white">{overloaded[0].name} — overloaded</div>
+                <div className="mt-2 text-[12px] leading-relaxed text-white/55">
+                  {overloaded[0].utilization}% utilization · {overloaded[0].overdueFollowUps} overdue. Redistribute before assigning new leads.
+                </div>
+              </div>
+            )}
 
             <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Top Performer</div>
-              <div className="mt-3 text-[18px] font-semibold text-white">Ahmad K.</div>
-              <div className="mt-1 text-[12px] text-white/50">AED 11.2M MTD · 4 closes</div>
-            </div>
-
-            <div className="rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Coaching Flag</div>
-              <div className="mt-3 text-[14px] font-semibold text-white">Rami T. — 22d avg close</div>
-              <div className="mt-2 text-[12px] leading-relaxed text-white/55">
-                Above team target (21d). Pair on next 2 viewings with Ahmad K.
-              </div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Avg. time-to-close</div>
+              <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
+              <div className="mt-1 text-[12px] text-white/50">target: &lt;21 days</div>
             </div>
           </div>
         </aside>

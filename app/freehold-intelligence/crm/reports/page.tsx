@@ -1,13 +1,8 @@
-import { TrendingUp, BarChart3, Target, Users } from 'lucide-react'
+import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
+import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const SOURCE_BREAKDOWN = [
-  { source: 'WhatsApp inbound', leads: 47, conversion: 28, color: 'bg-emerald-400' },
-  { source: 'Property page form', leads: 32, conversion: 22, color: 'bg-[#D4AF37]' },
-  { source: 'Meta Ads (warm)', leads: 24, conversion: 19, color: 'bg-sky-400' },
-  { source: 'Referral', leads: 18, conversion: 41, color: 'bg-violet-400' },
-  { source: 'Cold outbound', leads: 12, conversion: 7, color: 'bg-rose-400' },
-]
-
+// Historical monthly trend — illustrative seeded data (no live revenue store in V1)
 const MONTHLY = [
   { month: 'Jan', revenue: 18.4, deals: 6 },
   { month: 'Feb', revenue: 22.1, deals: 8 },
@@ -15,11 +10,41 @@ const MONTHLY = [
   { month: 'Apr', revenue: 27.5, deals: 10 },
   { month: 'May', revenue: 32.0, deals: 12 },
 ]
-
-const MAX_LEADS = Math.max(...SOURCE_BREAKDOWN.map((s) => s.leads))
 const MAX_REV = Math.max(...MONTHLY.map((m) => m.revenue))
 
+const SOURCE_COLORS: Record<string, string> = {
+  'Palm investor landing':    'bg-[#D4AF37]',
+  'Market tracker':           'bg-sky-400',
+  'WhatsApp':                 'bg-emerald-400',
+  'Dubai Hills landing':      'bg-violet-400',
+  'Golden Visa inquiry form': 'bg-amber-400',
+  'Secondary market mailer':  'bg-rose-400',
+}
+
 export default function CrmReportsPage() {
+  // Compute live source breakdown from real lead data
+  const sourceMap = crmLeads.reduce<Record<string, number>>((acc, l) => {
+    acc[l.source] = (acc[l.source] || 0) + 1
+    return acc
+  }, {})
+
+  const sources = Object.entries(sourceMap)
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const maxSource = Math.max(...sources.map((s) => s.count))
+
+  // Live stats from real data
+  const totalLeads   = crmLeads.length
+  const critical     = crmLeads.filter((l) => l.urgency === 'critical').length
+  const callsLogged  = crmActivityLog.filter((e) => e.type === 'call').length
+  const connected    = crmActivityLog.filter((e) => e.outcome === 'connected').length
+  const connectRate  = callsLogged > 0 ? Math.round((connected / callsLogged) * 100) : 0
+
+  // Intent score distribution
+  const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
+  const highIntent = crmLeads.filter((l) => l.intentScore >= 80).length
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
@@ -31,41 +56,45 @@ export default function CrmReportsPage() {
             Lead intelligence<br/><span className="text-white/35">at a glance.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-white/55">
-            Source mix, conversion velocity, and monthly revenue trend. Pulled nightly from HubSpot · WhatsApp Business · Meta Ads.
+            Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending.
           </p>
 
-          {/* KPI tiles */}
+          {/* KPI tiles — live where available */}
           <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
-              { label: 'Leads MTD', value: '133', delta: '+18%', tone: 'text-emerald-300' },
-              { label: 'Conversion', value: '23%', delta: '+4pp', tone: 'text-emerald-300' },
-              { label: 'Avg. Deal', value: 'AED 2.4M', delta: '+12%', tone: 'text-emerald-300' },
-              { label: 'Revenue', value: 'AED 32M', delta: '+16%', tone: 'text-emerald-300' },
+              { label: 'Active leads',   value: String(totalLeads),   delta: `${critical} critical`,       tone: critical > 0 ? 'text-red-300' : 'text-emerald-300' },
+              { label: 'High intent',    value: String(highIntent),   delta: `${avgIntent} avg score`,     tone: 'text-[#D4AF37]' },
+              { label: 'Connect rate',   value: `${connectRate}%`,    delta: `${connected}/${callsLogged} calls`, tone: connectRate >= 50 ? 'text-emerald-300' : 'text-orange-300' },
+              { label: 'Revenue MTD',    value: 'AED 32M',           delta: '+16% vs Apr',                tone: 'text-emerald-300' },
             ].map((kpi) => (
               <div key={kpi.label} className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
                 <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">{kpi.label}</div>
                 <div className="mt-3 text-[28px] font-semibold text-white">{kpi.value}</div>
-                <div className={`mt-1 text-[12px] ${kpi.tone}`}>{kpi.delta} vs last month</div>
+                <div className={`mt-1 text-[12px] ${kpi.tone}`}>{kpi.delta}</div>
               </div>
             ))}
           </div>
 
-          {/* Source breakdown */}
+          {/* Source breakdown — live */}
           <section className="mt-14">
             <div className="mb-5 flex items-center gap-2">
               <Target className="h-4 w-4 text-[#D4AF37]" />
-              <h2 className="text-[18px] font-semibold text-white">Lead Sources</h2>
+              <h2 className="text-[18px] font-semibold text-white">Lead sources</h2>
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-2 py-0.5 text-[10px] text-emerald-300">Live</span>
             </div>
             <div className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
               <div className="space-y-5">
-                {SOURCE_BREAKDOWN.map((src) => (
+                {sources.map((src) => (
                   <div key={src.source}>
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="font-medium text-white/80">{src.source}</span>
-                      <span className="text-white/45">{src.leads} leads · <span className="text-emerald-300">{src.conversion}% conv.</span></span>
+                      <span className="text-white/45">{src.count} lead{src.count !== 1 ? 's' : ''}</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.04]">
-                      <div className={`h-full ${src.color}`} style={{ width: `${(src.leads / MAX_LEADS) * 100}%` }} />
+                      <div
+                        className={`h-full rounded-full ${SOURCE_COLORS[src.source] ?? 'bg-white/30'}`}
+                        style={{ width: `${(src.count / maxSource) * 100}%` }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -73,11 +102,41 @@ export default function CrmReportsPage() {
             </div>
           </section>
 
-          {/* Monthly trend */}
+          {/* Intent score breakdown */}
+          <section className="mt-14">
+            <div className="mb-5 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-[#D4AF37]" />
+              <h2 className="text-[18px] font-semibold text-white">Intent distribution</h2>
+            </div>
+            <div className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {crmLeads.map((lead) => (
+                  <div key={lead.id} className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="truncate text-[13px] font-medium text-white/80">{lead.name}</div>
+                      <div className="text-[11px] text-white/40">{lead.stage} · {lead.assignedAgent}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div
+                          className={`h-full rounded-full ${lead.intentScore >= 85 ? 'bg-emerald-400' : lead.intentScore >= 70 ? 'bg-[#D4AF37]' : 'bg-orange-400'}`}
+                          style={{ width: `${lead.intentScore}%` }}
+                        />
+                      </div>
+                      <span className="w-6 text-right text-[12px] font-semibold text-white/70">{lead.intentScore}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Monthly trend — seeded */}
           <section className="mt-14">
             <div className="mb-5 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-[#D4AF37]" />
-              <h2 className="text-[18px] font-semibold text-white">Monthly Revenue</h2>
+              <h2 className="text-[18px] font-semibold text-white">Monthly revenue</h2>
+              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-[10px] text-sky-300">Seeded data — live in V1.1</span>
             </div>
             <div className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
               <div className="grid grid-cols-5 gap-3 sm:gap-5">
@@ -98,29 +157,58 @@ export default function CrmReportsPage() {
               </div>
             </div>
           </section>
+
+          <section className="mt-14">
+            <AiPrompt
+              placeholder="Ask about lead volume, conversion, agent performance…"
+              suggestions={[
+                'Which source has the highest conversion rate?',
+                'How many leads came in this week vs last?',
+                'Summarise the call connect rate by agent.',
+              ]}
+            />
+          </section>
         </div>
 
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
             <div className="rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.06] to-transparent p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Top Channel</div>
-              <div className="mt-3 text-[16px] font-semibold text-white">Referral</div>
-              <div className="mt-1 text-[12px] text-white/55">41% conversion — 2× team average</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Top channel</div>
+              <div className="mt-3 text-[16px] font-semibold text-white">{sources[0]?.source ?? '—'}</div>
+              <div className="mt-1 text-[12px] text-white/55">{sources[0]?.count ?? 0} leads · highest volume</div>
             </div>
 
             <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
               <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
-                <Users className="h-3 w-3" /> Cohort Watch
+                <Users className="h-3 w-3" /> Cohort watch
               </div>
               <div className="mt-3 text-[14px] font-semibold text-white">Golden Visa buyers</div>
               <div className="mt-2 text-[12px] leading-relaxed text-white/55">
-                12 leads this month tagged &quot;GV-eligible&quot; — 4 already at Viewing stage.
+                1 lead tagged GV-eligible · AED 2.5M+ budget · at Qualified stage.
               </div>
             </div>
 
             <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Next Report</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Activity this week</div>
+              <div className="mt-3 space-y-2 text-[13px] text-white/70">
+                <div className="flex justify-between">
+                  <span>Calls logged</span>
+                  <span className="font-semibold text-white">{callsLogged}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Connected</span>
+                  <span className="font-semibold text-emerald-300">{connected}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Connect rate</span>
+                  <span className={`font-semibold ${connectRate >= 50 ? 'text-emerald-300' : 'text-orange-300'}`}>{connectRate}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Next report</div>
               <div className="mt-3 text-[14px] text-white/80">Weekly · Mondays 09:00 GST</div>
               <div className="mt-1 text-[12px] text-white/45">Sent to owner + sales leads.</div>
             </div>
