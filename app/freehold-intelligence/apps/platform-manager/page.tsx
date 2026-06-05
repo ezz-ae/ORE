@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowLeft, Globe, CheckCircle2, AlertCircle, Clock, Database, Zap, ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, Globe, Database, ArrowUpRight } from 'lucide-react'
 import { getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { RouteSections } from './_components/RouteSections'
 
 type RouteStatus = 'live' | 'pending' | 'planned' | 'down'
 
@@ -56,23 +57,12 @@ function statusConfig(s: RouteStatus) {
   return                      { dot: 'bg-red-400',     text: 'text-red-300',    label: 'Down'    }
 }
 
-function StatusIcon({ s }: { s: RouteStatus }) {
-  if (s === 'live')    return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-  if (s === 'pending') return <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />
-  if (s === 'planned') return <Clock className="h-3.5 w-3.5 text-sky-400" />
-  return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-}
-
 export default async function PlatformManagerPage() {
   const snapshot = await getDashboardSnapshot()
 
-  const liveRoutes   = ROUTES.filter((r) => r.status === 'live').length
+  const liveRoutes    = ROUTES.filter((r) => r.status === 'live').length
   const pendingRoutes = ROUTES.filter((r) => r.status === 'pending').length
-  const liveInfra    = INFRA.filter((i) => i.status === 'live').length
-
-  const pages = ROUTES.filter((r) => r.type === 'page')
-  const apis  = ROUTES.filter((r) => r.type === 'api')
-  const gates = ROUTES.filter((r) => r.type === 'layout')
+  const liveInfra     = INFRA.filter((i) => i.status === 'live').length
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -139,73 +129,12 @@ export default async function PlatformManagerPage() {
         </div>
       </section>
 
-      {/* Route table — pages */}
+      {/* Route sections with status filter */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Route audit — pages</div>
-        <h2 className="mt-1.5 text-lg font-semibold text-white">{pages.length} page routes</h2>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-          <div className="divide-y divide-white/[0.04]">
-            {pages.map((route) => {
-              const st = statusConfig(route.status)
-              return (
-                <div key={route.path} className="flex items-center gap-4 px-5 py-3.5">
-                  <StatusIcon s={route.status} />
-                  <div className="min-w-0 flex-1">
-                    <code className="text-[12px] font-mono text-white/70 truncate block">{route.path}</code>
-                    <p className="mt-0.5 text-[11px] text-white/35 truncate">{route.note}</p>
-                  </div>
-                  <span className={`hidden shrink-0 text-[11px] font-medium sm:block ${st.text}`}>{st.label}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Route table — API */}
-      <section className="mt-8">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Route audit — API</div>
-        <h2 className="mt-1.5 text-lg font-semibold text-white">{apis.length} API routes</h2>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-          <div className="divide-y divide-white/[0.04]">
-            {apis.map((route) => {
-              const st = statusConfig(route.status)
-              return (
-                <div key={route.path} className="flex items-center gap-4 px-5 py-3.5">
-                  <StatusIcon s={route.status} />
-                  <div className="min-w-0 flex-1">
-                    <code className="text-[12px] font-mono text-[#D4AF37]/70 truncate block">{route.path}</code>
-                    <p className="mt-0.5 text-[11px] text-white/35">{route.note}</p>
-                  </div>
-                  <span className={`hidden shrink-0 text-[11px] font-medium sm:block ${st.text}`}>{st.label}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Gates */}
-      <section className="mt-8">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Security gates</div>
-        <div className="mt-4 space-y-2">
-          {gates.map((gate) => {
-            const st = statusConfig(gate.status)
-            return (
-              <div key={gate.path} className="flex items-start gap-3 rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-4">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-white">{gate.path}</div>
-                  <p className="mt-0.5 text-[12px] text-white/50">{gate.note}</p>
-                </div>
-                <span className={`shrink-0 text-[11px] font-medium ${st.text}`}>{st.label}</span>
-              </div>
-            )
-          })}
-        </div>
+        <RouteSections routes={ROUTES} />
         <Link
           href="/freehold-intelligence/security"
-          className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+          className="mt-6 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
         >
           Full security report <ArrowUpRight className="h-3 w-3" />
         </Link>

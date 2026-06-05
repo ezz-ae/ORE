@@ -1,3 +1,7 @@
+'use client'
+
+import { useState, useMemo } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, GitBranch, CheckCircle2, AlertCircle, ArrowUpRight, Zap, Clock } from 'lucide-react'
 import { crmInboxLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
@@ -12,6 +16,9 @@ type Rule = {
   status: RuleStatus
   note?: string
 }
+
+type StatusFilter = 'All' | 'active' | 'pending' | 'planned'
+type StepFilter   = 'All' | 'intake' | 'routing' | 'followup'
 
 const INTAKE_RULES: Rule[] = [
   { id: 'ir1', trigger: 'Landing page form submission', action: 'Create CRM lead with source tag, score intent, assign urgency', status: 'active' },
@@ -43,6 +50,12 @@ const RULE_STATUS_CONFIG: Record<RuleStatus, { label: string; icon: React.Elemen
   planned: { label: 'Planned',  icon: AlertCircle,  classes: 'text-sky-300 border-sky-400/20 bg-sky-400/[0.07]'            },
 }
 
+const ALL_RULES = [...INTAKE_RULES, ...ROUTING_RULES, ...FOLLOWUP_RULES]
+const activeRules  = ALL_RULES.filter((r) => r.status === 'active').length
+const pendingRules = ALL_RULES.filter((r) => r.status === 'pending').length
+const unassigned   = crmInboxLeads.filter((l) => l.status === 'unassigned').length
+const overdue      = crmFollowUpQueue.filter((f) => f.overdueHours > 0).length
+
 function RuleRow({ rule }: { rule: Rule }) {
   const conf = RULE_STATUS_CONFIG[rule.status]
   const Icon = conf.icon
@@ -62,10 +75,26 @@ function RuleRow({ rule }: { rule: Rule }) {
 }
 
 export default function LeadWorkflowPage() {
-  const unassigned = crmInboxLeads.filter((l) => l.status === 'unassigned').length
-  const overdue    = crmFollowUpQueue.filter((f) => f.overdueHours > 0).length
-  const activeRules  = [...INTAKE_RULES, ...ROUTING_RULES, ...FOLLOWUP_RULES].filter((r) => r.status === 'active').length
-  const pendingRules = [...INTAKE_RULES, ...ROUTING_RULES, ...FOLLOWUP_RULES].filter((r) => r.status === 'pending').length
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+  const [stepFilter,   setStepFilter]   = useState<StepFilter>('All')
+
+  const filteredIntake = useMemo(() => {
+    const base = (stepFilter === 'All' || stepFilter === 'intake') ? INTAKE_RULES : []
+    return statusFilter === 'All' ? base : base.filter((r) => r.status === statusFilter)
+  }, [statusFilter, stepFilter])
+
+  const filteredRouting = useMemo(() => {
+    const base = (stepFilter === 'All' || stepFilter === 'routing') ? ROUTING_RULES : []
+    return statusFilter === 'All' ? base : base.filter((r) => r.status === statusFilter)
+  }, [statusFilter, stepFilter])
+
+  const filteredFollowup = useMemo(() => {
+    const base = (stepFilter === 'All' || stepFilter === 'followup') ? FOLLOWUP_RULES : []
+    return statusFilter === 'All' ? base : base.filter((r) => r.status === statusFilter)
+  }, [statusFilter, stepFilter])
+
+  const totalFiltered = filteredIntake.length + filteredRouting.length + filteredFollowup.length
+  const totalRules = INTAKE_RULES.length + ROUTING_RULES.length + FOLLOWUP_RULES.length
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -106,6 +135,39 @@ export default function LeadWorkflowPage() {
         ))}
       </div>
 
+      {/* Filter pills */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        {([
+          { key: 'All', label: 'All' }, { key: 'active', label: 'Active' },
+          { key: 'pending', label: 'Pending' }, { key: 'planned', label: 'Planned' },
+        ] as { key: StatusFilter; label: string }[]).map(({ key, label }) => (
+          <button key={key} onClick={() => setStatusFilter(key)}
+            className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              statusFilter === key
+                ? key === 'active'  ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                  : key === 'pending' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : key === 'planned' ? 'border-sky-400/40 bg-sky-400/10 text-sky-300'
+                  : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+            ].join(' ')}>{label}</button>
+        ))}
+        <span className="self-center text-white/15">|</span>
+        {([
+          { key: 'All', label: 'All steps' }, { key: 'intake', label: 'Intake' },
+          { key: 'routing', label: 'Routing' }, { key: 'followup', label: 'Follow-up' },
+        ] as { key: StepFilter; label: string }[]).map(({ key, label }) => (
+          <button key={key} onClick={() => setStepFilter(key)}
+            className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              stepFilter === key
+                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+            ].join(' ')}>{label}</button>
+        ))}
+      </div>
+      <p className="mt-2 text-[12px] text-white/30">
+        {totalFiltered === totalRules ? `${totalRules} rules` : `${totalFiltered} of ${totalRules} rules`}
+      </p>
+
       {/* Pending blockers */}
       {pendingRules > 0 && (
         <div className="mt-6 flex items-start gap-3 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5">
@@ -121,34 +183,58 @@ export default function LeadWorkflowPage() {
       )}
 
       {/* Intake rules */}
-      <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 1</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Intake rules</h2>
-        <p className="mt-1 text-[13px] text-white/45">What happens the moment a lead arrives from any channel.</p>
-        <div className="mt-5 space-y-2">
-          {INTAKE_RULES.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
-        </div>
-      </section>
+      {(stepFilter === 'All' || stepFilter === 'intake') && (
+        <section className="mt-12">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 1</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Intake rules</h2>
+          <p className="mt-1 text-[13px] text-white/45">What happens the moment a lead arrives from any channel.</p>
+          {filteredIntake.length === 0 ? (
+            <div className="mt-5 rounded-[16px] border border-white/[0.04] bg-white/[0.01] px-5 py-8 text-center text-[12px] text-white/30">
+              No intake rules match these filters.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-2">
+              {filteredIntake.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Routing rules */}
-      <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 2</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Routing logic</h2>
-        <p className="mt-1 text-[13px] text-white/45">How leads are matched to agents based on intent, source, and availability.</p>
-        <div className="mt-5 space-y-2">
-          {ROUTING_RULES.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
-        </div>
-      </section>
+      {(stepFilter === 'All' || stepFilter === 'routing') && (
+        <section className="mt-12">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 2</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Routing logic</h2>
+          <p className="mt-1 text-[13px] text-white/45">How leads are matched to agents based on intent, source, and availability.</p>
+          {filteredRouting.length === 0 ? (
+            <div className="mt-5 rounded-[16px] border border-white/[0.04] bg-white/[0.01] px-5 py-8 text-center text-[12px] text-white/30">
+              No routing rules match these filters.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-2">
+              {filteredRouting.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Follow-up automation */}
-      <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 3</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Follow-up automation</h2>
-        <p className="mt-1 text-[13px] text-white/45">Time-based escalation and automated outreach rules.</p>
-        <div className="mt-5 space-y-2">
-          {FOLLOWUP_RULES.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
-        </div>
-      </section>
+      {(stepFilter === 'All' || stepFilter === 'followup') && (
+        <section className="mt-12">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 3</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">Follow-up automation</h2>
+          <p className="mt-1 text-[13px] text-white/45">Time-based escalation and automated outreach rules.</p>
+          {filteredFollowup.length === 0 ? (
+            <div className="mt-5 rounded-[16px] border border-white/[0.04] bg-white/[0.01] px-5 py-8 text-center text-[12px] text-white/30">
+              No follow-up rules match these filters.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-2">
+              {filteredFollowup.map((rule) => <RuleRow key={rule.id} rule={rule} />)}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Live queue links */}
       <section className="mt-12 grid gap-3 sm:grid-cols-3">

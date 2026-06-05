@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Database, CheckCircle2, AlertCircle, Image, FileText, ArrowUpRight } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -14,6 +17,8 @@ type ListingData = {
   urgent: string[]
   href: string
 }
+
+type CompletenessFilter = 'All' | 'strong' | 'moderate' | 'critical'
 
 const DATA_FIELDS = [
   'Project name', 'Developer', 'Area', 'Property type',
@@ -77,6 +82,11 @@ const AREA_PROFILES = [
   { area: 'JVC', fieldsComplete: 4, totalFields: 9, status: 'needs_work' },
 ]
 
+const totalFields  = LISTINGS.length * DATA_FIELDS.length
+const filledFields = LISTINGS.flatMap((l) => Object.values(l.fields)).filter((v) => v === true).length
+const avgComplete  = Math.round(LISTINGS.reduce((s, l) => s + l.completeness, 0) / LISTINGS.length)
+const urgentTotal  = LISTINGS.flatMap((l) => l.urgent).length
+
 function FieldDot({ status }: { status: FieldStatus }) {
   if (status === true)      return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
   if (status === 'partial') return <div className="h-3.5 w-3.5 rounded-full border border-[#D4AF37]/60 bg-[#D4AF37]/20" />
@@ -84,10 +94,14 @@ function FieldDot({ status }: { status: FieldStatus }) {
 }
 
 export default function DataEngineeringPage() {
-  const totalFields   = LISTINGS.length * DATA_FIELDS.length
-  const filledFields  = LISTINGS.flatMap((l) => Object.values(l.fields)).filter((v) => v === true).length
-  const avgComplete   = Math.round(LISTINGS.reduce((s, l) => s + l.completeness, 0) / LISTINGS.length)
-  const urgentTotal   = LISTINGS.flatMap((l) => l.urgent).length
+  const [completenessFilter, setCompletenessFilter] = useState<CompletenessFilter>('All')
+
+  const filteredListings = useMemo(() => {
+    if (completenessFilter === 'All')      return LISTINGS
+    if (completenessFilter === 'strong')   return LISTINGS.filter((l) => l.completeness >= 80)
+    if (completenessFilter === 'moderate') return LISTINGS.filter((l) => l.completeness >= 60 && l.completeness < 80)
+    return LISTINGS.filter((l) => l.completeness < 60) // critical
+  }, [completenessFilter])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -132,55 +146,93 @@ export default function DataEngineeringPage() {
       <section className="mt-12">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Field matrix</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Listing data completeness</h2>
-        <div className="mt-5 space-y-5">
-          {LISTINGS.map((listing) => (
-            <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.06] bg-[#0A0D10]'}`}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
-                  <h3 className="mt-1 text-[16px] font-semibold text-white">{listing.name}</h3>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-[13px] font-semibold ${listing.completeness >= 80 ? 'text-emerald-300' : listing.completeness >= 60 ? 'text-[#D4AF37]' : 'text-red-300'}`}>
-                    {listing.completeness}%
-                  </span>
-                  <Link href={listing.href} className="inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
-                    Open <ArrowUpRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
 
-              {/* Progress bar */}
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                <div
-                  className={`h-full rounded-full ${listing.completeness >= 80 ? 'bg-emerald-400' : listing.completeness >= 60 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
-                  style={{ width: `${listing.completeness}%` }}
-                />
-              </div>
-
-              {/* Field grid */}
-              <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
-                {DATA_FIELDS.map((field) => (
-                  <div key={field} className="flex items-center gap-2">
-                    <FieldDot status={listing.fields[field] ?? false} />
-                    <span className={`text-[12px] ${listing.fields[field] === true ? 'text-white/65' : 'text-white/35'}`}>{field}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Urgent gaps */}
-              {listing.urgent.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {listing.urgent.map((gap) => (
-                    <span key={gap} className="inline-flex items-center gap-1.5 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2.5 py-1 text-[11px] text-red-300">
-                      <AlertCircle className="h-3 w-3" /> {gap}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {([
+            { key: 'All',      label: 'All' },
+            { key: 'strong',   label: 'Strong (≥80%)' },
+            { key: 'moderate', label: 'Moderate' },
+            { key: 'critical', label: 'Critical (<60%)' },
+          ] as { key: CompletenessFilter; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setCompletenessFilter(key)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                completenessFilter === key
+                  ? key === 'critical' ? 'border-red-400/40 bg-red-400/10 text-red-300'
+                    : key === 'moderate' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : key === 'strong' ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                    : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+              ].join(' ')}
+            >
+              {label}
+            </button>
           ))}
         </div>
+        <p className="mt-2 text-[12px] text-white/30">
+          {filteredListings.length === LISTINGS.length
+            ? `${LISTINGS.length} listings`
+            : `${filteredListings.length} of ${LISTINGS.length} listings`}
+        </p>
+
+        {filteredListings.length === 0 ? (
+          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center text-[13px] text-white/35">
+            No listings match this filter.{' '}
+            <button onClick={() => setCompletenessFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Show all</button>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-5">
+            {filteredListings.map((listing) => (
+              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.06] bg-[#0A0D10]'}`}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
+                    <h3 className="mt-1 text-[16px] font-semibold text-white">{listing.name}</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[13px] font-semibold ${listing.completeness >= 80 ? 'text-emerald-300' : listing.completeness >= 60 ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+                      {listing.completeness}%
+                    </span>
+                    <Link href={listing.href} className="inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+                      Open <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div
+                    className={`h-full rounded-full ${listing.completeness >= 80 ? 'bg-emerald-400' : listing.completeness >= 60 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
+                    style={{ width: `${listing.completeness}%` }}
+                  />
+                </div>
+
+                {/* Field grid */}
+                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {DATA_FIELDS.map((field) => (
+                    <div key={field} className="flex items-center gap-2">
+                      <FieldDot status={listing.fields[field] ?? false} />
+                      <span className={`text-[12px] ${listing.fields[field] === true ? 'text-white/65' : 'text-white/35'}`}>{field}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Urgent gaps */}
+                {listing.urgent.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {listing.urgent.map((gap) => (
+                      <span key={gap} className="inline-flex items-center gap-1.5 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2.5 py-1 text-[11px] text-red-300">
+                        <AlertCircle className="h-3 w-3" /> {gap}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Area profiles */}
