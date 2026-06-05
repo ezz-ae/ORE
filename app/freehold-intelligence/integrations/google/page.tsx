@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Search, AlertCircle, CheckCircle2, ArrowUpRight, XCircle, ExternalLink } from 'lucide-react'
 
@@ -32,8 +35,14 @@ const SETUP_STEPS = [
 ]
 
 export default function GoogleIntegrationPage() {
-  const met      = REQUIREMENTS.filter((r) => r.met).length
-  const critical = REQUIREMENTS.filter((r) => r.critical && !r.met).length
+  const [checked, setChecked] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
+  )
+  function toggle(id: string) {
+    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+  const metCount      = Object.values(checked).filter(Boolean).length
+  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -55,7 +64,7 @@ export default function GoogleIntegrationPage() {
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
           Google Ads<br />
-          <span className="text-white/35">{met}/{REQUIREMENTS.length} requirements met.</span>
+          <span className="text-white/35">{metCount}/{REQUIREMENTS.length} requirements met.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[15px] leading-[1.65] text-white/55">
           Connect Google Ads to manage Search, Performance Max, Display and Video campaigns directly from Freehold. All campaign data, keyword performance, and search term reports sync automatically.
@@ -63,12 +72,12 @@ export default function GoogleIntegrationPage() {
       </section>
 
       {/* Critical blockers */}
-      {critical > 0 && (
+      {criticalUnmet > 0 && (
         <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">{critical} critical requirement{critical !== 1 ? 's' : ''} missing</div>
+              <div className="text-[13px] font-semibold text-white">{criticalUnmet} critical requirement{criticalUnmet !== 1 ? 's' : ''} missing</div>
               <p className="mt-1 text-[13px] text-white/60">Google Ads campaigns cannot be created or managed until all critical items below are resolved.</p>
             </div>
           </div>

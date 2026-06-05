@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users2, AlertCircle, CheckCircle2, ArrowUpRight, XCircle, RefreshCw, GitMerge } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -30,8 +33,14 @@ const SYNC_SCHEMA = [
 ]
 
 export default function HubSpotIntegrationPage() {
-  const met = REQUIREMENTS.filter((r) => r.met).length
-  const critical = REQUIREMENTS.filter((r) => r.critical && !r.met).length
+  const [checked, setChecked] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
+  )
+  function toggle(id: string) {
+    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+  const metCount      = Object.values(checked).filter(Boolean).length
+  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -50,7 +59,7 @@ export default function HubSpotIntegrationPage() {
           </span>
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-          HubSpot CRM<br /><span className="text-white/35">blocked by {critical} item{critical !== 1 ? 's' : ''}.</span>
+          HubSpot CRM<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
           HubSpot is the lead sync backbone. Without it, lead data lives only inside Freehold — no contact timeline, no pipeline history, no cross-channel attribution.
@@ -73,20 +82,28 @@ export default function HubSpotIntegrationPage() {
       {/* Requirements */}
       <section className="mt-12">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Access requirements</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{met}/{REQUIREMENTS.length} requirements met</h2>
+        <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
+        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
+          />
+        </div>
         <div className="mt-5 space-y-2">
           {REQUIREMENTS.map((req) => (
-            <div
+            <button
               key={req.id}
-              className={`flex items-start gap-4 rounded-[18px] border p-5 ${
-                req.met
+              type="button"
+              onClick={() => toggle(req.id)}
+              className={`w-full text-left flex items-start gap-4 rounded-[18px] border p-5 ${
+                checked[req.id]
                   ? 'border-emerald-400/15 bg-emerald-400/[0.03]'
                   : req.critical
                     ? 'border-red-400/15 bg-red-400/[0.03]'
                     : 'border-white/[0.06] bg-[#0A0D10]'
               }`}
             >
-              {req.met
+              {checked[req.id]
                 ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                 : req.critical
                   ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
@@ -97,11 +114,11 @@ export default function HubSpotIntegrationPage() {
                 <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
               </div>
               <span className={`shrink-0 text-[11px] font-medium ${
-                req.met ? 'text-emerald-300' : req.critical ? 'text-red-300' : 'text-white/35'
+                checked[req.id] ? 'text-emerald-300' : req.critical ? 'text-red-300' : 'text-white/35'
               }`}>
-                {req.met ? 'Met' : req.critical ? 'Critical' : 'Optional'}
+                {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </section>
