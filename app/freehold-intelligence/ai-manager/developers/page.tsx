@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useState } from 'react'
 import { Building2, Plus, Sparkles, Check } from 'lucide-react'
 
 interface DeveloperRow {
@@ -38,7 +38,13 @@ function seoColor(score: number) {
   return 'text-rose-400'
 }
 
+type FilterKey = 'All' | DeveloperRow['profileStatus']
+const FILTERS: FilterKey[] = ['All', 'Complete', 'Incomplete', 'Draft']
+
 export default function DeveloperProfilesPage() {
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
+  const filtered = activeFilter === 'All' ? developers : developers.filter((d) => d.profileStatus === activeFilter)
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -55,6 +61,23 @@ export default function DeveloperProfilesPage() {
           <Plus className="h-4 w-4" />
           Add Developer
         </button>
+      </div>
+
+      {/* Filter pills */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setActiveFilter(f)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
+              activeFilter === f
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
       {/* Stats row */}
@@ -90,7 +113,7 @@ export default function DeveloperProfilesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
-            {developers.map((dev) => (
+            {filtered.map((dev) => (
               <tr key={dev.name} className="group transition hover:bg-white/[0.02]">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-3">

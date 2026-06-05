@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useState } from 'react'
 import { FileText, Sparkles, Globe, Check, AlertCircle } from 'lucide-react'
 
 interface PageRow {
@@ -45,7 +45,16 @@ function seoColor(score: number) {
   return 'text-rose-400'
 }
 
+type FilterKey = 'All' | PageRow['type'] | PageRow['status']
+const FILTERS: FilterKey[] = ['All', 'Landing', 'Blog', 'Static', 'Legal', 'Published', 'Review', 'Draft']
+
 export default function WebsitePagesPage() {
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
+  const filtered = websitePages.filter((p) => {
+    if (activeFilter === 'All') return true
+    return p.type === activeFilter || p.status === activeFilter
+  })
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -62,6 +71,23 @@ export default function WebsitePagesPage() {
           <Sparkles className="h-4 w-4" />
           AI Review All
         </button>
+      </div>
+
+      {/* Filter pills */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setActiveFilter(f)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
+              activeFilter === f
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
       </div>
 
       {/* Stats */}
@@ -97,7 +123,7 @@ export default function WebsitePagesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
-            {websitePages.map((page) => (
+            {filtered.map((page) => (
               <tr key={page.url} className="group transition hover:bg-white/[0.02]">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">

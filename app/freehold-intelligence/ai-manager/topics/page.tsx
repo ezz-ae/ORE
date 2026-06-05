@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, Plus, Sparkles, Calendar, Check } from 'lucide-react'
 
@@ -130,6 +131,9 @@ function seoColor(score: number) {
 }
 
 export default function TopicsPage() {
+  const [activeFilter, setActiveFilter] = useState<TopicStatus | 'All'>('All')
+  const filtered = activeFilter === 'All' ? topics : topics.filter((t) => t.status === activeFilter)
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -150,13 +154,14 @@ export default function TopicsPage() {
 
       {/* Filter pills */}
       <div className="mt-6 flex flex-wrap gap-2">
-        {FILTERS.map((f, i) => (
+        {FILTERS.map((f) => (
           <button
             key={f}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-              i === 0
-                ? 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
-                : 'border border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80'
+            onClick={() => setActiveFilter(f as TopicStatus | 'All')}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
+              activeFilter === f
+                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
             }`}
           >
             {f}
@@ -201,7 +206,7 @@ export default function TopicsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
-            {topics.map((topic, i) => (
+            {filtered.map((topic, i) => (
               <tr key={i} className="group transition hover:bg-white/[0.02]">
                 <td className="px-4 py-3.5">
                   <span className="text-sm font-medium text-white/80 leading-snug">{topic.title}</span>
