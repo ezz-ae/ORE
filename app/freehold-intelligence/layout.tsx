@@ -69,6 +69,7 @@ const NAV: NavItem[] = [
       { label: 'Developers',  href: `${BASE}/ai-manager/developers` },
       { label: 'Pages',       href: `${BASE}/ai-manager/pages` },
       { label: 'Topics',      href: `${BASE}/ai-manager/topics` },
+      { label: 'Insights',    href: `${BASE}/ai-manager/insights` },
     ],
   },
   {
@@ -82,6 +83,8 @@ const NAV: NavItem[] = [
       { label: 'Pipeline',    href: `${BASE}/crm/pipeline` },
       { label: 'Inbox',       href: `${BASE}/crm/inbox` },
       { label: 'Follow-up',   href: `${BASE}/crm/follow-up` },
+      { label: 'Assignment',  href: `${BASE}/crm/assignment` },
+      { label: 'Activity',    href: `${BASE}/crm/activity` },
       { label: 'Agents',      href: `${BASE}/crm/agents` },
       { label: 'Reports',     href: `${BASE}/crm/reports` },
     ],
