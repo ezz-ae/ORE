@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Megaphone } from 'lucide-react'
 import {
@@ -5,6 +8,9 @@ import {
   leadMachineListings,
   type LeadMachineAdRequest,
 } from '@/src/features/freehold-intelligence/lead-machine'
+
+type StatusFilter = 'All' | 'Running' | 'Pending Review' | 'Blocked' | 'Paused'
+type PlatformFilter = 'All' | 'Meta' | 'Google'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
@@ -106,7 +112,27 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   )
 }
 
+const STATUS_PILLS: StatusFilter[] = ['All', 'Running', 'Pending Review', 'Blocked', 'Paused']
+const PLATFORM_PILLS: PlatformFilter[] = ['All', 'Meta', 'Google']
+
 export default function AdRequestsPage() {
+  const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('All')
+
+  const filtered = useMemo(() => {
+    let items = leadMachineAdRequests
+    if (statusFilter !== 'All') {
+      items = items.filter((r) => {
+        if (statusFilter === 'Blocked') return r.status === 'Blocked' || r.status === 'Needs Changes'
+        return r.status === statusFilter
+      })
+    }
+    if (platformFilter !== 'All') {
+      items = items.filter((r) => r.platform === platformFilter)
+    }
+    return items
+  }, [statusFilter, platformFilter])
+
   const pending = leadMachineAdRequests.filter((r) => r.status === 'Pending Review').length
   const running = leadMachineAdRequests.filter((r) => r.status === 'Running').length
   const blocked = leadMachineAdRequests.filter((r) => r.status === 'Blocked' || r.status === 'Needs Changes').length
@@ -134,27 +160,69 @@ export default function AdRequestsPage() {
         </p>
       </section>
 
-      <section className="mt-16">
-        <div>
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            {leadMachineAdRequests.length} request{leadMachineAdRequests.length !== 1 ? 's' : ''}
-          </h2>
+      <section className="mt-10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              {filtered.length === leadMachineAdRequests.length
+                ? 'All'
+                : `${filtered.length} of ${leadMachineAdRequests.length}`}
+            </div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              {filtered.length} request{filtered.length !== 1 ? 's' : ''}
+            </h2>
+          </div>
+        </div>
+
+        {/* Filter pills */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {STATUS_PILLS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                statusFilter === s
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+              ].join(' ')}
+            >
+              {s}
+            </button>
+          ))}
+          <span className="self-center text-white/15">|</span>
+          {PLATFORM_PILLS.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPlatformFilter(p)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                platformFilter === p
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+              ].join(' ')}
+            >
+              {p}
+            </button>
+          ))}
         </div>
 
         <div className="mt-8 grid gap-8">
-          {leadMachineAdRequests.map((request) => (
+          {filtered.map((request) => (
             <AdRequestCard key={request.id} request={request} />
           ))}
         </div>
 
-        {leadMachineAdRequests.length === 0 && (
+        {filtered.length === 0 && (
           <div className="mt-8 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-12 text-center sm:px-10">
             <Megaphone className="mx-auto h-8 w-8 text-white/20" />
-            <p className="mt-4 text-[15px] text-white/40">No ad requests yet.</p>
-            <p className="mt-1 text-[13px] text-white/25">
-              Open a listing workspace to draft the first campaign request.
-            </p>
+            <p className="mt-4 text-[15px] text-white/40">No requests match these filters.</p>
+            <button
+              onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
+              className="mt-3 rounded-full border border-white/[0.08] px-4 py-1.5 text-[12px] text-white/45 transition hover:text-white/70"
+            >
+              Clear filters
+            </button>
           </div>
         )}
       </section>

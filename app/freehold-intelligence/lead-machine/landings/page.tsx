@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, ExternalLink, Globe, Zap, AlertCircle } from 'lucide-react'
 import {
@@ -6,6 +9,8 @@ import {
   leadMachineAdRequests,
   type LeadMachineLanding,
 } from '@/src/features/freehold-intelligence/lead-machine'
+
+type StatusFilter = 'All' | 'Approved' | 'Pending Review' | 'Draft'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
@@ -164,9 +169,18 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
   )
 }
 
+const STATUS_FILTERS: StatusFilter[] = ['All', 'Approved', 'Pending Review', 'Draft']
+
 export default function LandingsPage() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+
   const approved = leadMachineLandings.filter((l) => l.status === 'Approved').length
   const pending = leadMachineLandings.filter((l) => l.status === 'Pending Review').length
+
+  const filteredLandings = useMemo(() => {
+    if (statusFilter === 'All') return leadMachineLandings
+    return leadMachineLandings.filter((l) => l.status === statusFilter)
+  }, [statusFilter])
 
   return (
     <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
@@ -194,15 +208,47 @@ export default function LandingsPage() {
         <div>
           <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            {leadMachineLandings.length} pages
+            {statusFilter === 'All'
+              ? `${leadMachineLandings.length} pages`
+              : `${filteredLandings.length} of ${leadMachineLandings.length} pages`}
           </h2>
         </div>
 
-        <div className="mt-8 grid gap-8">
-          {leadMachineLandings.map((landing) => (
-            <LandingCard key={landing.id} landing={landing} />
+        {/* Status filter pills */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setStatusFilter(filter)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                statusFilter === filter
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65',
+              ].join(' ')}
+            >
+              {filter}
+            </button>
           ))}
         </div>
+
+        {filteredLandings.length === 0 ? (
+          <div className="mt-12 flex flex-col items-center gap-4 text-center">
+            <p className="text-[15px] text-white/40">No landing pages match this filter.</p>
+            <button
+              onClick={() => setStatusFilter('All')}
+              className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13px] text-white/60 transition hover:border-[#D4AF37]/30 hover:text-white"
+            >
+              Clear filter
+            </button>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-8">
+            {filteredLandings.map((landing) => (
+              <LandingCard key={landing.id} landing={landing} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

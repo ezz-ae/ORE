@@ -1,5 +1,8 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, LayoutList } from 'lucide-react'
+import { ArrowUpRight, LayoutList, Search, X } from 'lucide-react'
 import {
   leadMachineListings,
   type LeadMachineListing,
@@ -114,11 +117,45 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
   )
 }
 
+type ReadinessFilter = 'All' | 'Ready' | 'Needs Review' | 'Blocked'
+
+const FILTER_OPTIONS: ReadinessFilter[] = ['All', 'Ready', 'Needs Review', 'Blocked']
+
 export default function ListingsPage() {
   const total = leadMachineListings.length
   const ready = leadMachineListings.filter(
     (l) => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80,
   ).length
+
+  const [query, setQuery] = useState('')
+  const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>('All')
+
+  const filtered = useMemo(() => {
+    let items = leadMachineListings
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      items = items.filter((l) =>
+        l.projectName.toLowerCase().includes(q) ||
+        l.area.toLowerCase().includes(q) ||
+        l.developer.toLowerCase().includes(q)
+      )
+    }
+    if (readinessFilter === 'Ready') {
+      items = items.filter((l) => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80)
+    } else if (readinessFilter === 'Needs Review') {
+      items = items.filter((l) => l.landingStatus === 'Needs Review')
+    } else if (readinessFilter === 'Blocked') {
+      items = items.filter((l) => l.blockerStatus === 'Needs Access' || l.blockerStatus === 'Needs Data')
+    }
+    return items
+  }, [query, readinessFilter])
+
+  const isFiltered = filtered.length !== total
+
+  function clearFilters() {
+    setQuery('')
+    setReadinessFilter('All')
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
@@ -147,16 +184,69 @@ export default function ListingsPage() {
           <div>
             <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              {total} listings
+              {isFiltered
+                ? <>{filtered.length} of {total} listings</>
+                : <>{total} listings</>
+              }
             </h2>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-8">
-          {leadMachineListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+        {/* Search bar */}
+        <div className="relative mt-6">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by project, area, or developer…"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Readiness filter pills */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {FILTER_OPTIONS.map((option) => (
+            <button
+              key={option}
+              onClick={() => setReadinessFilter(option)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                readinessFilter === option
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+              }`}
+            >
+              {option}
+            </button>
           ))}
         </div>
+
+        {filtered.length === 0 ? (
+          <div className="mt-16 flex flex-col items-center gap-5 text-center">
+            <p className="text-[15px] text-white/45">No listings match these filters</p>
+            <button
+              onClick={clearFilters}
+              className="rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-8">
+            {filtered.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

@@ -1,5 +1,8 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders } from 'lucide-react'
+import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders, Search, X } from 'lucide-react'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import type { TargetingUseCase } from '@/lib/meta/types'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -30,7 +33,27 @@ function countryName(code: string): string {
   return map[code] ?? code
 }
 
+type UseCaseFilter = 'All' | 'investor' | 'end_user' | 'golden_visa' | 'secondary' | 'international' | 'custom'
+
 export default function TargetingPage() {
+  const [useCaseFilter, setUseCaseFilter] = useState<UseCaseFilter>('All')
+  const [query, setQuery] = useState('')
+
+  const filtered = useMemo(() => {
+    let items = TARGETING_TEMPLATES
+    if (useCaseFilter !== 'All') {
+      items = items.filter((t) => t.useCase === useCaseFilter)
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      items = items.filter((t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q)
+      )
+    }
+    return items
+  }, [useCaseFilter, query])
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -63,87 +86,153 @@ export default function TargetingPage() {
         ))}
       </div>
 
+      {/* Search + Filter */}
+      <div className="mt-8">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search templates by name or description…"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white/60"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Use-case filter pills */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => setUseCaseFilter('All')}
+            className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+              useCaseFilter === 'All'
+                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+            }`}
+          >
+            All
+          </button>
+          {(Object.keys(USE_CASE_CONFIG) as TargetingUseCase[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setUseCaseFilter(key)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                useCaseFilter === key
+                  ? USE_CASE_CONFIG[key].badge
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+              }`}
+            >
+              {USE_CASE_CONFIG[key].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Templates */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Templates</div>
-        <div className="mt-4 space-y-4">
-          {TARGETING_TEMPLATES.map((tmpl) => {
-            const uc = USE_CASE_CONFIG[tmpl.useCase]
-            const campaignUrl = `/freehold-intelligence/lead-machine/campaigns/new?template=${tmpl.id}`
+        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+          Templates &mdash; {filtered.length} of {TARGETING_TEMPLATES.length}
+        </div>
 
-            return (
-              <div key={tmpl.id} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6">
-                {/* Top */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h3 className="text-[17px] font-semibold text-white">{tmpl.name}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${uc.badge}`}>{uc.label}</span>
+        {filtered.length === 0 ? (
+          <div className="mt-8 flex flex-col items-center gap-4 py-16 text-center">
+            <p className="text-[15px] text-white/40">No templates match</p>
+            <button
+              onClick={() => { setUseCaseFilter('All'); setQuery('') }}
+              className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-white/55 transition hover:text-white/80"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {filtered.map((tmpl) => {
+              const uc = USE_CASE_CONFIG[tmpl.useCase]
+              const campaignUrl = `/freehold-intelligence/lead-machine/campaigns/new?template=${tmpl.id}`
+
+              return (
+                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6">
+                  {/* Top */}
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h3 className="text-[17px] font-semibold text-white">{tmpl.name}</h3>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${uc.badge}`}>{uc.label}</span>
+                      </div>
+                      <p className="mt-1.5 text-[13px] text-white/55">{tmpl.description}</p>
                     </div>
-                    <p className="mt-1.5 text-[13px] text-white/55">{tmpl.description}</p>
+                    <Link
+                      href={campaignUrl}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] shrink-0"
+                    >
+                      Use template <ArrowUpRight className="h-3 w-3" />
+                    </Link>
                   </div>
-                  <Link
-                    href={campaignUrl}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] shrink-0"
-                  >
-                    Use template <ArrowUpRight className="h-3 w-3" />
-                  </Link>
-                </div>
 
-                {/* Params grid */}
-                <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Age range</div>
-                    <div className="text-[14px] font-semibold text-white">{tmpl.targeting.ageMin}–{tmpl.targeting.ageMax}</div>
+                  {/* Params grid */}
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Age range</div>
+                      <div className="text-[14px] font-semibold text-white">{tmpl.targeting.ageMin}–{tmpl.targeting.ageMax}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Est. reach</div>
+                      <div className="text-[14px] font-semibold text-emerald-300">{tmpl.estimatedReach}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Countries</div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {tmpl.targeting.countries.map((c) => (
+                          <span key={c} className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-white/60">
+                            {countryName(c)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Cities</div>
+                      <div className="text-[13px] text-white/60">
+                        {tmpl.targeting.cityKeys.length > 0
+                          ? tmpl.targeting.cityKeys.map((k) => cityName(k)).join(', ')
+                          : 'All cities'
+                        }
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Est. reach</div>
-                    <div className="text-[14px] font-semibold text-emerald-300">{tmpl.estimatedReach}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Countries</div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {tmpl.targeting.countries.map((c) => (
-                        <span key={c} className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-white/60">
-                          {countryName(c)}
+
+                  {/* Interests */}
+                  <div className="mt-4">
+                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Interests</div>
+                    <div className="flex flex-wrap gap-2">
+                      {tmpl.targeting.interests.map((interest) => (
+                        <span key={interest.id} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/55">
+                          {interest.name}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Cities</div>
-                    <div className="text-[13px] text-white/60">
-                      {tmpl.targeting.cityKeys.length > 0
-                        ? tmpl.targeting.cityKeys.map((k) => cityName(k)).join(', ')
-                        : 'All cities'
-                      }
-                    </div>
+
+                  {/* Platforms */}
+                  <div className="mt-3 flex items-center gap-2 text-[12px] text-white/35">
+                    <Globe className="h-3 w-3" />
+                    {tmpl.targeting.publisherPlatforms.join(' + ')}
+                    <span className="text-white/15">·</span>
+                    <span className="text-white/40">{tmpl.audience}</span>
                   </div>
                 </div>
-
-                {/* Interests */}
-                <div className="mt-4">
-                  <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Interests</div>
-                  <div className="flex flex-wrap gap-2">
-                    {tmpl.targeting.interests.map((interest) => (
-                      <span key={interest.id} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/55">
-                        {interest.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Platforms */}
-                <div className="mt-3 flex items-center gap-2 text-[12px] text-white/35">
-                  <Globe className="h-3 w-3" />
-                  {tmpl.targeting.publisherPlatforms.join(' + ')}
-                  <span className="text-white/15">·</span>
-                  <span className="text-white/40">{tmpl.audience}</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* Custom targeting note */}

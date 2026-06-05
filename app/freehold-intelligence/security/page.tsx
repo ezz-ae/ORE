@@ -1,13 +1,15 @@
-import { Lock, ShieldAlert, ShieldCheck, UserCheck, Eye, EyeOff, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
+'use client'
+
+import { useState, useMemo } from 'react'
+import { Lock, ShieldAlert, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import { currentServerUser, getRoleScope, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const HARDENING_CHECKLIST = [
   { label: 'Private shell isolation',       done: true,  note: 'Intelligence routes separated from public routes.' },
   { label: 'Role-aware AI scope',           done: true,  note: 'AI answers filtered by role — out-of-scope queries silently suppressed.' },
   { label: 'MCP tool gating',              done: true,  note: '9 tools registered; execution requires role validation.' },
   { label: 'Audit event logging',           done: true,  note: 'Actor-tagged action log for critical write operations.' },
-  { label: 'Production auth middleware',    done: false, note: 'Route protection still requires final NextAuth/JWTwiring.' },
+  { label: 'Production auth middleware',    done: false, note: 'Route protection still requires final NextAuth/JWT wiring.' },
   { label: 'Session expiry + refresh',      done: false, note: 'Not yet enforced in private shell session model.' },
   { label: 'RBAC database enforcement',     done: false, note: 'Role gates active in UI; database-level RBAC not yet live.' },
   { label: 'Rate limiting on AI endpoints', done: false, note: 'No request throttling on AI routes in current V1.' },
@@ -23,6 +25,15 @@ const ROLE_MATRIX = [
   { role: 'Viewer',        canView: true,  canEdit: false, canApprove: false, canAdmin: false, scope: 'Read-only, approved content' },
 ]
 
+const scope = getRoleScope(currentServerUser.role)
+
+const allAuditEvents = [...crmActivityLog]
+  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+const allEventTypes = Array.from(new Set(allAuditEvents.map((e) => e.type)))
+
+type ChecklistFilter = 'All' | 'Done' | 'Pending'
+
 function Check({ ok }: { ok: boolean }) {
   return ok
     ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
@@ -30,14 +41,23 @@ function Check({ ok }: { ok: boolean }) {
 }
 
 export default function SecurityPage() {
-  const scope   = getRoleScope(currentServerUser.role)
-  const done    = HARDENING_CHECKLIST.filter((i) => i.done).length
-  const total   = HARDENING_CHECKLIST.length
-  const pct     = Math.round((done / total) * 100)
+  const done  = HARDENING_CHECKLIST.filter((i) => i.done).length
+  const total = HARDENING_CHECKLIST.length
+  const pct   = Math.round((done / total) * 100)
 
-  const recentAudit = [...crmActivityLog]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6)
+  const [checklistFilter, setChecklistFilter] = useState<ChecklistFilter>('All')
+  const [auditTypeFilter, setAuditTypeFilter] = useState<string>('All')
+
+  const filteredChecklist = useMemo(() => {
+    if (checklistFilter === 'Done')    return HARDENING_CHECKLIST.filter((i) => i.done)
+    if (checklistFilter === 'Pending') return HARDENING_CHECKLIST.filter((i) => !i.done)
+    return HARDENING_CHECKLIST
+  }, [checklistFilter])
+
+  const filteredAudit = useMemo(() => {
+    if (auditTypeFilter === 'All') return allAuditEvents.slice(0, 12)
+    return allAuditEvents.filter((e) => e.type === auditTypeFilter).slice(0, 12)
+  }, [auditTypeFilter])
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
@@ -55,7 +75,7 @@ export default function SecurityPage() {
         </p>
       </section>
 
-      {/* Progress */}
+      {/* Progress bar */}
       <section className="mt-10 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
@@ -76,10 +96,30 @@ export default function SecurityPage() {
 
       {/* Hardening checklist */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Production readiness</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">Production readiness</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {(['All', 'Done', 'Pending'] as ChecklistFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setChecklistFilter(f)}
+                className={[
+                  'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                  checklistFilter === f
+                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                ].join(' ')}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-5 space-y-2">
-          {HARDENING_CHECKLIST.map((item) => (
+          {filteredChecklist.map((item) => (
             <div
               key={item.label}
               className={`flex items-start gap-4 rounded-[18px] border p-5 ${
@@ -101,6 +141,11 @@ export default function SecurityPage() {
               </span>
             </div>
           ))}
+          {filteredChecklist.length === 0 && (
+            <div className="rounded-[18px] border border-white/[0.06] px-5 py-10 text-center text-[13px] text-white/35">
+              No items match this filter.
+            </div>
+          )}
         </div>
       </section>
 
@@ -159,21 +204,41 @@ export default function SecurityPage() {
         </div>
       </section>
 
-      {/* Recent audit events (proxied from activity log) */}
+      {/* Audit log */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Recent actor-tagged events</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">Recent actor-tagged events</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {(['All', ...allEventTypes] as string[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setAuditTypeFilter(t)}
+                className={[
+                  'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                  auditTypeFilter === t
+                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                ].join(' ')}
+              >
+                {t === 'All' ? 'All' : t.replace(/_/g, ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-          {recentAudit.length === 0 ? (
-            <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events logged yet.</div>
+          {filteredAudit.length === 0 ? (
+            <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events match this filter.</div>
           ) : (
             <ul className="divide-y divide-white/[0.05]">
-              {recentAudit.map((event) => (
+              {filteredAudit.map((event) => (
                 <li key={event.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-[13px]">
                   <div className="min-w-0">
                     <span className="text-white/80">{event.actor}</span>
                     <span className="text-white/25"> · </span>
-                    <span className="text-[#D4AF37]/75">{event.type.replace('_', ' ')}</span>
+                    <span className="text-[#D4AF37]/75">{event.type.replace(/_/g, ' ')}</span>
                     <span className="text-white/25"> · </span>
                     <span className="text-white/50">{event.leadName}</span>
                   </div>
@@ -186,17 +251,6 @@ export default function SecurityPage() {
             </ul>
           )}
         </div>
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about access, roles, audit, scope…"
-          suggestions={[
-            'What is the highest-risk security gap right now?',
-            'Who can approve external write operations?',
-            'What can a Sales Agent not access in this system?',
-          ]}
-        />
       </section>
 
     </div>
