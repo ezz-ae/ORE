@@ -11,6 +11,7 @@ const tabs = [
   { label: 'Forms',        href: '/freehold-intelligence/lead-machine/forms' },
   { label: 'Targeting',    href: '/freehold-intelligence/lead-machine/targeting' },
   { label: 'Creatives',    href: '/freehold-intelligence/lead-machine/creatives' },
+  { label: 'Google Ads',   href: '/freehold-intelligence/lead-machine/google' },
   { label: 'Ad Requests',  href: '/freehold-intelligence/lead-machine/ad-requests' },
   { label: 'Requirements', href: '/freehold-intelligence/lead-machine/requirements' },
 ]
