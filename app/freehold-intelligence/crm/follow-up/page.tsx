@@ -1,7 +1,12 @@
+'use client'
+
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Clock, PhoneCall, MessageCircle, AlertCircle } from 'lucide-react'
+import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
 import { crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+
+type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { label: 'Critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300', dot: 'bg-red-400' }
@@ -15,22 +20,90 @@ function overdueLabel(hours: number) {
   return `${Math.floor(hours / 24)}d overdue`
 }
 
-export default function FollowUpQueuePage() {
-  const queue = [...crmFollowUpQueue].sort((a, b) => b.overdueHours - a.overdueHours)
-  const critical = queue.filter((l) => l.urgency === 'critical').length
-  const riskLeads = queue.filter((l) => l.duplicateRisk || l.wrongNumberRisk).length
-  const avgOverdue = Math.round(queue.reduce((s, l) => s + l.overdueHours, 0) / queue.length)
+const allAgents = ['All', ...Array.from(new Set(crmFollowUpQueue.map((l) => l.assignedAgent)))]
 
-  const byAgent = queue.reduce<Record<string, number>>((acc, l) => {
-    acc[l.assignedAgent] = (acc[l.assignedAgent] ?? 0) + 1
-    return acc
-  }, {})
+const urgencyPills: Urgency[] = ['All', 'Critical', 'High', 'Medium', 'Low']
+
+const urgencyPillStyle: Record<Urgency, string> = {
+  All:      'border-white/[0.08] text-white/60 hover:border-white/20 hover:text-white',
+  Critical: 'border-red-400/25 text-red-300/70 hover:border-red-400/50 hover:text-red-300',
+  High:     'border-[#D4AF37]/25 text-[#D4AF37]/70 hover:border-[#D4AF37]/50 hover:text-[#D4AF37]',
+  Medium:   'border-sky-400/25 text-sky-300/70 hover:border-sky-400/50 hover:text-sky-300',
+  Low:      'border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/60',
+}
+
+const urgencyActiveStyle: Record<Urgency, string> = {
+  All:      'border-white/25 bg-white/[0.06] text-white',
+  Critical: 'border-red-400/40 bg-red-400/10 text-red-300',
+  High:     'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]',
+  Medium:   'border-sky-400/40 bg-sky-400/10 text-sky-300',
+  Low:      'border-white/20 bg-white/[0.04] text-white/60',
+}
+
+export default function FollowUpQueuePage() {
+  const [activeUrgency, setActiveUrgency] = useState<Urgency>('All')
+  const [activeAgent, setActiveAgent] = useState<string>('All')
+  const [done, setDone] = useState<Set<string>>(new Set())
+  const [snoozed, setSnoozed] = useState<Set<string>>(new Set())
+  const [flash, setFlash] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!flash) return
+    const t = setTimeout(() => setFlash(null), 2500)
+    return () => clearTimeout(t)
+  }, [flash])
+
+  const sortedQueue = useMemo(
+    () => [...crmFollowUpQueue].sort((a, b) => b.overdueHours - a.overdueHours),
+    [],
+  )
+
+  const visible = useMemo(() => {
+    return sortedQueue.filter((item) => {
+      if (done.has(item.leadId) || snoozed.has(item.leadId)) return false
+      if (activeUrgency !== 'All' && item.urgency !== activeUrgency.toLowerCase()) return false
+      if (activeAgent !== 'All' && item.assignedAgent !== activeAgent) return false
+      return true
+    })
+  }, [sortedQueue, done, snoozed, activeUrgency, activeAgent])
+
+  const stats = useMemo(() => {
+    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId))
+    const total = active.length
+    const critical = active.filter((l) => l.urgency === 'critical').length
+    const avgOverdue = total > 0 ? Math.round(active.reduce((s, l) => s + l.overdueHours, 0) / total) : 0
+    return { total, critical, avgOverdue, doneCount: done.size }
+  }, [sortedQueue, done, snoozed])
+
+  const byAgent = useMemo(() => {
+    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId))
+    return active.reduce<Record<string, number>>((acc, l) => {
+      acc[l.assignedAgent] = (acc[l.assignedAgent] ?? 0) + 1
+      return acc
+    }, {})
+  }, [sortedQueue, done, snoozed])
+
+  const riskLeads = useMemo(
+    () => sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId) && (l.duplicateRisk || l.wrongNumberRisk)).length,
+    [sortedQueue, done, snoozed],
+  )
+
+  function markDone(id: string) {
+    setDone((prev) => new Set([...prev, id]))
+    setFlash('Marked done')
+  }
+
+  function snooze(id: string) {
+    setSnoozed((prev) => new Set([...prev, id]))
+    setFlash('Snoozed 24h')
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
         <div className="min-w-0">
 
+          {/* Header */}
           <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Clock className="h-3.5 w-3.5" /> Follow-up Queue
           </div>
@@ -38,86 +111,131 @@ export default function FollowUpQueuePage() {
             Overdue<br /><span className="text-white/35">right now.</span>
           </h1>
           <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/55">
-            {queue.length} leads past their follow-up window. Sorted by delay — longest first.
+            {stats.total} leads past their follow-up window. Sorted by delay — longest first.
           </p>
 
-          <div className="mt-8 grid grid-cols-3 gap-3">
+          {/* Stats strip */}
+          <div className="mt-8 grid grid-cols-4 gap-3">
             <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="text-[28px] font-semibold text-white">{queue.length}</div>
+              <div className="text-[26px] font-semibold text-white">{stats.total}</div>
               <div className="mt-0.5 text-[11px] text-white/40">Overdue</div>
             </div>
             <div className="rounded-[18px] border border-red-400/15 bg-red-400/[0.04] p-5">
-              <div className="text-[28px] font-semibold text-red-400">{critical}</div>
+              <div className="text-[26px] font-semibold text-red-400">{stats.critical}</div>
               <div className="mt-0.5 text-[11px] text-white/40">Critical</div>
             </div>
             <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="text-[28px] font-semibold text-white">{avgOverdue}<span className="text-[16px] font-normal text-white/40">h</span></div>
+              <div className="text-[26px] font-semibold text-white">{stats.avgOverdue}<span className="text-[14px] font-normal text-white/40">h</span></div>
               <div className="mt-0.5 text-[11px] text-white/40">Avg delay</div>
+            </div>
+            <div className="rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.04] p-5">
+              <div className="text-[26px] font-semibold text-emerald-300">{stats.doneCount}</div>
+              <div className="mt-0.5 text-[11px] text-white/40">Done this session</div>
             </div>
           </div>
 
-          <div className="mt-10 space-y-3">
-            {queue.map((item) => {
-              const tone = urgencyTone(item.urgency)
-              return (
-                <div key={item.leadId} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 sm:p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
+          {/* Filters */}
+          <div className="mt-8 flex flex-wrap items-center gap-2">
+            {urgencyPills.map((pill) => (
+              <button
+                key={pill}
+                onClick={() => setActiveUrgency(pill)}
+                className={`rounded-full border px-3.5 py-1 text-[12px] font-medium transition ${activeUrgency === pill ? urgencyActiveStyle[pill] : urgencyPillStyle[pill]}`}
+              >
+                {pill}
+              </button>
+            ))}
+            <div className="ml-auto">
+              <select
+                value={activeAgent}
+                onChange={(e) => setActiveAgent(e.target.value)}
+                className="rounded-full border border-white/[0.08] bg-[#0A0D10] px-3.5 py-1 text-[12px] text-white/60 outline-none transition hover:border-white/20 hover:text-white focus:border-white/20"
+              >
+                {allAgents.map((a) => (
+                  <option key={a} value={a} className="bg-[#0A0D10]">{a === 'All' ? 'All agents' : a}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Lead cards */}
+          <div className="mt-6 space-y-3">
+            {visible.length === 0 ? (
+              <div className="rounded-[22px] border border-emerald-400/20 bg-emerald-400/[0.03] p-10 text-center">
+                <CheckCircle className="mx-auto h-10 w-10 text-emerald-300/60" />
+                <div className="mt-4 text-[20px] font-semibold text-emerald-300">Queue clear</div>
+                <p className="mt-2 text-[14px] text-white/45">All follow-ups actioned. Great work.</p>
+              </div>
+            ) : (
+              visible.map((item) => {
+                const tone = urgencyTone(item.urgency)
+                return (
+                  <div key={item.leadId} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 sm:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/freehold-intelligence/crm/leads/${item.leadId}`}
+                            className="text-[18px] font-semibold tracking-tight text-white transition hover:text-[#D4AF37]"
+                          >
+                            {item.leadName}
+                          </Link>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.badge}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                            {tone.label}
+                          </span>
+                          <span className="text-[11px] font-medium text-red-300/70">{overdueLabel(item.overdueHours)}</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] text-white/40">
+                          <span>{item.stage}</span>
+                          <span className="text-white/20">·</span>
+                          <span>{item.source}</span>
+                          <span className="text-white/20">·</span>
+                          <span>Intent {item.intentScore}</span>
+                          <span className="text-white/20">·</span>
+                          <span>{item.assignedAgent}</span>
+                        </div>
+                        <p className="mt-3 text-[13px] leading-relaxed text-white/65">{item.nextBestAction}</p>
+                        {(item.duplicateRisk || item.wrongNumberRisk) && (
+                          <div className="mt-2 flex items-center gap-1.5 text-[12px] text-orange-200/70">
+                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              {item.duplicateRisk && 'Duplicate risk — resolve before contacting. '}
+                              {item.wrongNumberRisk && 'Wrong number risk — verify first.'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col sm:items-end">
+                        <button
+                          onClick={() => markDone(item.leadId)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/50 hover:bg-emerald-400/10"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" /> Mark Done
+                        </button>
+                        <button
+                          onClick={() => snooze(item.leadId)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] px-4 py-2 text-[12px] font-medium text-[#D4AF37]/80 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10 hover:text-[#D4AF37]"
+                        >
+                          <Bell className="h-3.5 w-3.5" /> Snooze 24h
+                        </button>
                         <Link
                           href={`/freehold-intelligence/crm/leads/${item.leadId}`}
-                          className="text-[18px] font-semibold tracking-tight text-white transition hover:text-[#D4AF37]"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
                         >
-                          {item.leadName}
+                          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                         </Link>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.badge}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                          {tone.label}
-                        </span>
-                        <span className="text-[11px] font-medium text-red-300/70">{overdueLabel(item.overdueHours)}</span>
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] text-white/40">
-                        <span>{item.stage}</span>
-                        <span className="text-white/20">·</span>
-                        <span>{item.source}</span>
-                        <span className="text-white/20">·</span>
-                        <span>Intent {item.intentScore}</span>
-                        <span className="text-white/20">·</span>
-                        <span>{item.assignedAgent}</span>
-                      </div>
-                      <p className="mt-3 text-[13px] leading-relaxed text-white/65">{item.nextBestAction}</p>
-                      {(item.duplicateRisk || item.wrongNumberRisk) && (
-                        <div className="mt-2 flex items-center gap-1.5 text-[12px] text-orange-200/70">
-                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          <span>
-                            {item.duplicateRisk && 'Duplicate risk — resolve before contacting. '}
-                            {item.wrongNumberRisk && 'Wrong number risk — verify first.'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 sm:shrink-0">
-                      <Link
-                        href={`/freehold-intelligence/crm/leads/${item.leadId}`}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-white/90"
-                      >
-                        <PhoneCall className="h-3.5 w-3.5" /> Call
-                      </Link>
-                      <Link
-                        href={`/freehold-intelligence/crm/leads/${item.leadId}`}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
-                      >
-                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                      </Link>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
 
         </div>
 
+        {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
 
@@ -153,6 +271,19 @@ export default function FollowUpQueuePage() {
           </div>
         </aside>
       </div>
+
+      {/* Flash banner */}
+      {flash && (
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2">
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-[#0A0D10]/95 px-5 py-3 shadow-2xl backdrop-blur-sm">
+            <CheckCircle className="h-4 w-4 text-emerald-300" />
+            <span className="text-[13px] font-medium text-white">{flash}</span>
+            <button onClick={() => setFlash(null)} className="ml-1 text-white/40 transition hover:text-white">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
