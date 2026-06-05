@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const tabs = [
   { label: 'Overview', href: '/freehold-intelligence/lead-machine' },
   { label: 'Listings', href: '/freehold-intelligence/lead-machine/listings' },
+  { label: 'Campaigns', href: '/freehold-intelligence/lead-machine/campaigns' },
   { label: 'Landings', href: '/freehold-intelligence/lead-machine/landings' },
   { label: 'Ad Requests', href: '/freehold-intelligence/lead-machine/ad-requests' },
   { label: 'Requirements', href: '/freehold-intelligence/lead-machine/requirements' },
