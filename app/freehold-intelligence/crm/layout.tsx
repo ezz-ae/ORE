@@ -26,7 +26,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
             {tabs.map((tab) => {
               const isActive =
                 tab.href === '/freehold-intelligence/crm'
-                  ? pathname === '/freehold-intelligence/crm'
+                  ? pathname === '/freehold-intelligence/crm' || pathname.startsWith('/freehold-intelligence/crm/leads')
                   : pathname.startsWith(tab.href)
 
               return (
