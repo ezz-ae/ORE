@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, GitBranch, GitCommit, CheckCircle2, Circle, AlertCircle, ExternalLink, Clock, RefreshCw, Code2 } from 'lucide-react'
 import { mockGithubData } from '@/lib/freehold/mcp/mock-integrations'
@@ -23,8 +26,30 @@ function timeAgo(iso: string) {
 }
 
 export default function GithubIntegrationPage() {
-  const gh = mockGithubData
-  const allCiPassed = gh.ciChecks.every((c) => c.status === 'success')
+  const [checks, setChecks]       = useState(mockGithubData.ciChecks)
+  const [rerunning, setRerunning] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshedAt, setRefreshedAt] = useState<Date | null>(null)
+
+  const gh          = mockGithubData
+  const allCiPassed = checks.every((c) => c.status === 'success')
+
+  const handleRerun = useCallback((name: string) => {
+    setRerunning(name)
+    setChecks((prev) => prev.map((c) => c.name === name ? { ...c, status: 'pending' } : c))
+    setTimeout(() => {
+      setChecks((prev) => prev.map((c) => c.name === name ? { ...c, status: 'success' } : c))
+      setRerunning(null)
+    }, 2200)
+  }, [])
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true)
+    setTimeout(() => {
+      setRefreshing(false)
+      setRefreshedAt(new Date())
+    }, 1200)
+  }, [])
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -39,7 +64,18 @@ export default function GithubIntegrationPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             Connected
           </span>
-          <span className="text-[11px] text-white/30">Last synced {timeAgo(gh.lastCommit.timestamp)}</span>
+          <span className="text-[11px] text-white/30">
+            {refreshedAt ? `Refreshed just now` : `Last synced ${timeAgo(gh.lastCommit.timestamp)}`}
+          </span>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-[11px] text-white/50 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
           GitHub
@@ -106,7 +142,7 @@ export default function GithubIntegrationPage() {
           CI checks
         </div>
         <div className="divide-y divide-white/[0.04]">
-          {gh.ciChecks.map((check) => {
+          {checks.map((check) => {
             const t = ciTone(check.status)
             const Icon = t.icon
             return (
@@ -117,7 +153,19 @@ export default function GithubIntegrationPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[12px] text-white/35">{check.duration}</span>
-                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] capitalize ${t.bg} ${t.text}`}>{check.status}</span>
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] capitalize ${t.bg} ${t.text}`}>
+                    {rerunning === check.name ? 'running…' : check.status}
+                  </span>
+                  {(check.status === 'failure' || rerunning === check.name) && (
+                    <button
+                      type="button"
+                      onClick={() => handleRerun(check.name)}
+                      disabled={rerunning !== null}
+                      className="rounded-[8px] border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[11px] text-white/45 transition hover:border-emerald-400/20 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {rerunning === check.name ? 'Running…' : 'Re-run'}
+                    </button>
+                  )}
                 </div>
               </div>
             )
