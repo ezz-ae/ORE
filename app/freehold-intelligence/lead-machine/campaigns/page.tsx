@@ -73,12 +73,20 @@ export default async function CampaignsPage() {
           </h1>
         </section>
 
-        <Link
-          href="/freehold-intelligence/lead-machine/campaigns/new"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] sm:mt-10"
-        >
-          <Plus className="h-4 w-4" /> New campaign
-        </Link>
+        <div className="mt-4 flex items-center gap-2 sm:mt-8">
+          <Link
+            href="/freehold-intelligence/lead-machine/campaigns/launch"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2.5 text-[13px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+          >
+            <Zap className="h-3.5 w-3.5" /> Launch Campaign
+          </Link>
+          <Link
+            href="/freehold-intelligence/lead-machine/campaigns/new"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 transition hover:border-white/20 hover:text-white/75"
+          >
+            <Plus className="h-3.5 w-3.5" /> Manual
+          </Link>
+        </div>
       </div>
 
       {/* Config error state */}

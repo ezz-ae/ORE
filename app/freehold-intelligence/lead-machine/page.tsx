@@ -90,9 +90,23 @@ export default function LeadMachineOverviewPage() {
           <br />
           <span className="text-white/35">{criticalReqs.length} blockers standing in the way.</span>
         </h1>
-        <p className="mt-5 max-w-2xl text-[16px] leading-[1.65] text-white/60">
+        <p className="mt-4 max-w-2xl text-[14px] leading-[1.65] text-white/50">
           Full pipeline from raw listing data to live paid traffic. Resolve blockers in priority order — the fastest path to launch is tracked here.
         </p>
+        <div className="mt-5 flex items-center gap-3">
+          <Link
+            href="/freehold-intelligence/lead-machine/campaigns/launch"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2.5 text-[13px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+          >
+            <Zap className="h-3.5 w-3.5" /> Launch Campaign
+          </Link>
+          <Link
+            href="/freehold-intelligence/lead-machine/campaigns"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/45 transition hover:border-white/20 hover:text-white/70"
+          >
+            View All Campaigns <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </section>
 
       {/* Stats row */}
