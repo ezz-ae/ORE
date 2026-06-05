@@ -58,14 +58,14 @@ export default async function CampaignsPage() {
     .reduce((s, c) => s + parseInt(getLeads(c)), 0)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Megaphone className="h-3.5 w-3.5" /> Meta Campaigns
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Live campaigns<br />
             <span className="text-white/35">
               {isConfigError ? 'not connected.' : `${campaigns.length} total.`}

@@ -61,17 +61,17 @@ export default function DashboardAiAssistantPage() {
   )
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps/dashboard" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Dashboard App
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Bot className="h-3.5 w-3.5" /> AI Assistant
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Your command layer.<br /><span className="text-white/35">Ask anything.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[17px] leading-[1.65] text-white/60">
@@ -94,7 +94,7 @@ export default function DashboardAiAssistantPage() {
 
       {/* Quick action prompts */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Quick actions</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Quick actions</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Common command tasks</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {QUICK_ACTIONS.map((action) => (
@@ -157,7 +157,7 @@ export default function DashboardAiAssistantPage() {
       <section className="mt-14">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Recent</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Recent</div>
             <h2 className="mt-2 text-xl font-semibold text-white">Notebook conversations</h2>
           </div>
           <Link

@@ -52,7 +52,7 @@ export default function FreeholdCrmPage() {
   const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-12">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
 
         {/* ══════════════════ MAIN ══════════════════ */}
@@ -60,10 +60,10 @@ export default function FreeholdCrmPage() {
 
           {/* Header */}
           <section>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
               <Users className="h-3.5 w-3.5" /> CRM Intelligence
             </div>
-            <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
               The people
               <br />
               <span className="text-white/35">waiting for you.</span>
@@ -146,7 +146,7 @@ export default function FreeholdCrmPage() {
           {/* Section title */}
           <section className="mt-8">
             <div className="flex items-center justify-between">
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
                 {ranked.length} of {crmLeads.length} lead{crmLeads.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -188,7 +188,7 @@ export default function FreeholdCrmPage() {
 
                       {/* AI take */}
                       <div className="border-t border-white/[0.05] px-5 py-5 sm:px-6 lg:px-8">
-                        <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">What the AI sees</div>
+                        <div className="text-[12px] font-medium uppercase tracking-wider text-white/30">What the AI sees</div>
                         <p className="mt-2 text-[14px] leading-[1.65] text-white/75 lg:text-[15px]">
                           {lead.aiSummary}
                         </p>
@@ -196,7 +196,7 @@ export default function FreeholdCrmPage() {
 
                       {/* Suggested message */}
                       <div className="border-t border-white/[0.05] bg-[#D4AF37]/[0.025] px-5 py-5 sm:px-6 lg:px-8">
-                        <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/70">Suggested WhatsApp</div>
+                        <div className="text-[12px] font-medium uppercase tracking-wider text-[#D4AF37]/70">Suggested WhatsApp</div>
                         <p className="mt-2 text-[14px] italic leading-[1.6] text-white/70 lg:text-[15px]">
                           &ldquo;{lead.suggestedMessage}&rdquo;
                         </p>
@@ -205,7 +205,7 @@ export default function FreeholdCrmPage() {
                       {/* Next move + actions */}
                       <div className="flex flex-col gap-3 border-t border-white/[0.05] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 lg:py-5">
                         <div>
-                          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">Next move</div>
+                          <div className="text-[12px] font-medium uppercase tracking-wider text-white/30">Next move</div>
                           <div className="mt-1 text-[13px] font-medium text-white/80 lg:text-[14px]">{lead.nextBestAction}</div>
                         </div>
                         <div className="flex gap-2">

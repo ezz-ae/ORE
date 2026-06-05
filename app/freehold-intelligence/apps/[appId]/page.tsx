@@ -26,7 +26,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
   ]
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
@@ -42,7 +42,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
             <span className="text-[13px] text-white/30">{app.linkedMilestoneId}</span>
           )}
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {app.name}
         </h1>
         <p className="mt-5 max-w-2xl text-[17px] leading-[1.65] text-white/65">{app.description}</p>

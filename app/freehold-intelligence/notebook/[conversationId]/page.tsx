@@ -14,7 +14,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
   if (!conversation) notFound()
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/notebook" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Notebook
@@ -22,7 +22,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <BookOpen className="h-3.5 w-3.5" /> Conversation
         </div>
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[44px]">
@@ -35,7 +35,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
 
       {/* Conversation thread */}
       <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Conversation</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Conversation</div>
         <div className="mt-5 grid gap-3">
           {conversation.messages.map((message, i) => (
             <div
@@ -77,7 +77,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
       {/* Saved outputs */}
       {conversation.savedOutputs.length > 0 && (
         <section className="mt-16">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Saved outputs</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Saved outputs</div>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">From this conversation</h2>
 
           <div className="mt-6 grid gap-4">

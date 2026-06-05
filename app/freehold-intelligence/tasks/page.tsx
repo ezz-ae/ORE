@@ -256,14 +256,14 @@ export default function TasksPage() {
     'w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <CheckSquare className="h-3.5 w-3.5" /> Tasks
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {stats.open} tasks open.
           <br />
           <span className="text-white/35">{stats.dueToday} due today.</span>
@@ -496,7 +496,7 @@ export default function TasksPage() {
 
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] px-6 py-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80 mb-3">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80 mb-3">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="text-[15px] font-medium leading-[1.65] text-white/85">

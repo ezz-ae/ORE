@@ -86,15 +86,15 @@ export default function CrmInboxPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
         <div className="min-w-0">
 
           {/* Eyebrow */}
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Inbox className="h-3.5 w-3.5" /> Inbox
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             New leads<br /><span className="text-white/35">arriving.</span>
           </h1>
           <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/55">
@@ -148,7 +148,7 @@ export default function CrmInboxPage() {
           {/* Unassigned cards — shown when filter includes unassigned leads */}
           {(activeFilter === 'All' || activeFilter === 'Unassigned') && unassignedLeads.length > 0 && (
             <section className="mt-12">
-              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-red-300/70">
+              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-red-300/70">
                 <AlertCircle className="h-3.5 w-3.5" /> Needs assignment
               </div>
               <div className="mt-4 space-y-3">
@@ -206,7 +206,7 @@ export default function CrmInboxPage() {
 
           {/* All leads table */}
           <section className="mt-12">
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
               {activeFilter === 'All' ? 'All leads · last 48h' : `${activeFilter} leads`}
               <span className="ml-2 text-white/25">({tableLeads.length})</span>
             </div>

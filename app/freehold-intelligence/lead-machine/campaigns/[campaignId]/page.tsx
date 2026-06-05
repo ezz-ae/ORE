@@ -129,7 +129,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
     : '—'
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All campaigns
@@ -227,7 +227,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Metrics */}
           {insights ? (
             <section className="mt-10">
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
                 Performance · {insights.date_start} → {insights.date_stop}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -262,7 +262,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Ad sets */}
           {data?.adSets && data.adSets.length > 0 && (
             <section className="mt-14">
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Ad sets</div>
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Ad sets</div>
               <h2 className="mt-2 text-xl font-semibold text-white">{data.adSets.length} ad set{data.adSets.length !== 1 ? 's' : ''}</h2>
               <div className="mt-5 space-y-3">
                 {data.adSets.map((adSet) => (

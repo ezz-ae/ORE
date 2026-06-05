@@ -48,17 +48,17 @@ export default function DashboardProjectsPage() {
   }, [adFilter, reviewFilter])
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps/dashboard" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Dashboard App
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <FolderKanban className="h-3.5 w-3.5" /> Projects Admin
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Project inventory<br /><span className="text-white/35">and readiness.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[17px] leading-[1.65] text-white/60">
@@ -81,7 +81,7 @@ export default function DashboardProjectsPage() {
       </section>
 
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Campaign projects</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Campaign projects</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Full inventory</h2>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">

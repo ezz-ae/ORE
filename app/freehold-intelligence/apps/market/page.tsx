@@ -78,12 +78,12 @@ export default function MarketIntelligencePage() {
   ]
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14 lg:pt-16">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8 lg:pt-16">
 
       {/* Header */}
       <section className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Database className="h-3.5 w-3.5" /> Market Intelligence
           </div>
           <h1 className="mt-4 text-[40px] font-semibold leading-[1.02] tracking-tight text-white sm:text-[52px]">

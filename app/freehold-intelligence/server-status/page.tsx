@@ -22,13 +22,13 @@ export default async function ServerStatusPage() {
   ])
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <ShieldCheck className="h-3.5 w-3.5" /> Server
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           Everything important
           <br />
           <span className="text-white/40">is alive.</span>
@@ -50,7 +50,7 @@ export default async function ServerStatusPage() {
       </section>
 
       <section className="mt-20">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Infrastructure</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Live components</h2>
         <div className="mt-7 grid gap-3">
           {INFRA.map((i) => {
@@ -72,7 +72,7 @@ export default async function ServerStatusPage() {
       </section>
 
       <section className="mt-20">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Audit</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Audit</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">What happened recently</h2>
         <div className="mt-7 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#131B2B]">
           {audit.length === 0 ? (

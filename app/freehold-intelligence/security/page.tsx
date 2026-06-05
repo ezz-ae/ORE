@@ -60,10 +60,10 @@ export default function SecurityPage() {
   }, [auditTypeFilter])
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Lock className="h-3.5 w-3.5" /> Security
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -98,7 +98,7 @@ export default function SecurityPage() {
       <section className="mt-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Hardening checklist</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Production readiness</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function SecurityPage() {
 
       {/* Role matrix */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Access model</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access model</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
@@ -193,7 +193,7 @@ export default function SecurityPage() {
 
       {/* Current session scope */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Current session</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Current session</div>
         <h2 className="mt-2 text-xl font-semibold text-white">AI scope — {currentServerUser.role.replace('_', ' ')}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {scope.map((s) => (
@@ -208,7 +208,7 @@ export default function SecurityPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Audit trail</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Recent actor-tagged events</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">

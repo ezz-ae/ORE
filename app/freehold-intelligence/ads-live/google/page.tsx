@@ -77,13 +77,13 @@ export default function GoogleAdsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
           <div
-            className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em]"
+            className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider"
             style={{ color: `${GOOGLE_BLUE}CC` }}
           >
             {/* Google G icon */}
@@ -92,7 +92,7 @@ export default function GoogleAdsPage() {
             </svg>
             Google Ads
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Google campaigns<br />
             <span className="text-white/35">search &amp; performance.</span>
           </h1>
@@ -134,7 +134,7 @@ export default function GoogleAdsPage() {
 
       {/* Campaigns table */}
       <section className="mt-10">
-        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Active Campaigns</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">Active Campaigns</div>
         <div className="overflow-x-auto">
           <div className="min-w-[680px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Table header */}
@@ -223,7 +223,7 @@ export default function GoogleAdsPage() {
 
       {/* Top search terms */}
       <section className="mt-10">
-        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Top Search Terms</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">Top Search Terms</div>
         <div className="overflow-x-auto">
           <div className="min-w-[560px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Header */}

@@ -55,7 +55,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -183,12 +183,12 @@ export default function LandingsPage() {
   }, [statusFilter])
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Globe className="h-3.5 w-3.5" /> Landing Pages
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           Landing Pages
         </h1>
         <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
@@ -206,7 +206,7 @@ export default function LandingsPage() {
 
       <section className="mt-16">
         <div>
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {statusFilter === 'All'
               ? `${leadMachineLandings.length} pages`

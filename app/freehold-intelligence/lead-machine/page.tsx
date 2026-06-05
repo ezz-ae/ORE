@@ -76,14 +76,14 @@ export default function LeadMachineOverviewPage() {
   const readyListings = leadMachineListings.filter(l => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Zap className="h-3.5 w-3.5" /> Lead Machine
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {readyListings.length > 0
             ? <>{readyListings.length} ready to launch.</>
             : <>Listings to campaigns.</>}
@@ -118,7 +118,7 @@ export default function LeadMachineOverviewPage() {
       {/* Critical blockers */}
       {criticalReqs.length > 0 && (
         <section className="mt-8">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-red-300/80 mb-3">Critical — blocks launch</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-red-300/80 mb-3">Critical — blocks launch</div>
           <div className="space-y-3">
             {criticalReqs.map(req => (
               <div key={req.id} className="flex items-start gap-4 rounded-[18px] border border-red-400/20 bg-red-400/[0.05] p-5">
@@ -143,7 +143,7 @@ export default function LeadMachineOverviewPage() {
       <section className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Readiness Matrix</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Readiness Matrix</div>
             <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">Score by listing</h2>
           </div>
           <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/70 hover:text-[#D4AF37]">
@@ -212,7 +212,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* Landing & ad status table */}
       <section className="mt-8">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Campaign readiness by listing</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">Campaign readiness by listing</div>
         <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <div className="divide-y divide-white/[0.04]">
             {leadMachineListings.map(listing => (
@@ -242,7 +242,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.035] px-6 py-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[15px] font-medium leading-[1.65] text-white/85">

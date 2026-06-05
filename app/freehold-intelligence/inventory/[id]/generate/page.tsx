@@ -60,7 +60,7 @@ function buildDefaults(prop: InventoryProperty): FormState {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35 mb-4">
+    <h2 className="text-[12px] font-medium uppercase tracking-wider text-white/35 mb-4">
       {children}
     </h2>
   )
@@ -118,7 +118,7 @@ export default function GenerateLandingPage() {
 
   if (!prop) {
     return (
-      <div className="mx-auto max-w-3xl px-4 pb-32 pt-20 sm:px-6 text-center">
+      <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 text-center">
         <div className="text-[48px] font-semibold text-white/10">404</div>
         <p className="mt-3 text-[16px] text-white/50">Property not found.</p>
         <Link
@@ -209,7 +209,7 @@ export default function GenerateLandingPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Back link */}
       <Link
@@ -221,10 +221,10 @@ export default function GenerateLandingPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Sparkles className="h-3.5 w-3.5" /> Landing Page Generator
         </div>
-        <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[40px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Generate Landing Page
         </h1>
         <p className="mt-2 text-[15px] text-white/50">

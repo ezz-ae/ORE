@@ -56,15 +56,15 @@ export default function AdsLivePage() {
   })
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Radio className="h-3.5 w-3.5" /> Ads Live
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Ads dashboard<br />
             <span className="text-white/35">all platforms.</span>
           </h1>
@@ -195,7 +195,7 @@ export default function AdsLivePage() {
       {/* Live campaigns */}
       <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
             Live Campaigns
           </div>
           <span className="flex items-center gap-1.5 text-[13px] text-[#D4AF37]/70">
@@ -265,7 +265,7 @@ export default function AdsLivePage() {
 
       {/* CPL trend chart */}
       <section className="mt-10">
-        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">CPL trend · last 4 weeks</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">CPL trend · last 4 weeks</div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
           <div className="flex items-center gap-6 mb-4 text-[12px]">
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>

@@ -103,14 +103,14 @@ export default function InventoryPage() {
     .sort((a, b) => b.adReadiness - a.adReadiness)
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <LayoutGrid className="h-3.5 w-3.5" /> Freehold Intelligence
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Inventory
         </h1>
 

@@ -45,7 +45,7 @@ export default function GoogleIntegrationPage() {
   const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Integrations
@@ -54,7 +54,7 @@ export default function GoogleIntegrationPage() {
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" /> Google Ads
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
@@ -62,7 +62,7 @@ export default function GoogleIntegrationPage() {
             Not connected
           </span>
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Google Ads<br />
           <span className="text-white/35">{metCount}/{REQUIREMENTS.length} requirements met.</span>
         </h1>
@@ -86,7 +86,7 @@ export default function GoogleIntegrationPage() {
 
       {/* Requirements checklist */}
       <section className="mt-8">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Requirements</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">Requirements</div>
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
           <div
             className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
@@ -120,7 +120,7 @@ export default function GoogleIntegrationPage() {
 
       {/* Setup steps */}
       <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Setup guide</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">Setup guide</div>
         <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
           <div className="space-y-3">
             {SETUP_STEPS.map((step, i) => (
@@ -156,7 +156,7 @@ export default function GoogleIntegrationPage() {
 
       {/* Environment variables */}
       <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">
           Environment variables required
         </div>
         <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
@@ -178,7 +178,7 @@ export default function GoogleIntegrationPage() {
 
       {/* What unlocks */}
       <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">What this unlocks</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">What this unlocks</div>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { title: 'Campaign management',   body: 'Create and manage Search, PMax, Display, and Video campaigns directly from Freehold.' },

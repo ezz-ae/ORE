@@ -13,13 +13,13 @@ export default function ServerAppsPage() {
   const apps = getVisibleServerApps(currentServerUser.role)
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Grid3x3 className="h-3.5 w-3.5" /> All apps
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           Every surface
           <br />
           <span className="text-white/40">in the server.</span>
@@ -41,7 +41,7 @@ export default function ServerAppsPage() {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.06] to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="relative">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/45">{app.linkedMilestoneId}</span>
+                  <span className="text-[12px] font-medium uppercase tracking-wider text-white/45">{app.linkedMilestoneId}</span>
                   <span className={`flex items-center gap-1.5 text-[13px] ${tone.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                     {tone.label}

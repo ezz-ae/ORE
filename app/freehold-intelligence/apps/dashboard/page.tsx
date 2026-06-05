@@ -58,10 +58,10 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ControlRoomDashboardAppPage() {
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           Dashboard App
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">

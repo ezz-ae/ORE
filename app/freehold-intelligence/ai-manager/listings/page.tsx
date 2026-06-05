@@ -54,16 +54,16 @@ export default function AiManagerListingsPage() {
   }), [])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/55/80">
         <Bot className="h-3.5 w-3.5" />
         AI Manager · Listings
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-white sm:text-[40px]">
+          <h1 className="text-2xl font-semibold tracking-tight text-white/90">
             Listings
           </h1>
           <div className="mt-2 flex flex-wrap gap-3">

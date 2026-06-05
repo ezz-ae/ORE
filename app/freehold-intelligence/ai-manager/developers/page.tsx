@@ -46,15 +46,15 @@ export default function DeveloperProfilesPage() {
   const filtered = activeFilter === 'All' ? developers : developers.filter((d) => d.profileStatus === activeFilter)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/55/80">
         <Building2 className="h-3.5 w-3.5" />
         AI Manager · Developers
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-white sm:text-[40px]">
+        <h1 className="text-2xl font-semibold tracking-tight text-white/90">
           Developer Profiles
         </h1>
         <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20">

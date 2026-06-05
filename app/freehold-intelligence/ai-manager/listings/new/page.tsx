@@ -21,7 +21,7 @@ export default function NewListingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Back + Header */}
       <Link
@@ -32,11 +32,11 @@ export default function NewListingPage() {
         Back to Listings
       </Link>
 
-      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80 mb-3">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/55/80 mb-3">
         <Sparkles className="h-3.5 w-3.5" />
         AI Manager · New Listing
       </div>
-      <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-white sm:text-[40px]">
+      <h1 className="text-2xl font-semibold tracking-tight text-white/90">
         Create New Listing
       </h1>
 

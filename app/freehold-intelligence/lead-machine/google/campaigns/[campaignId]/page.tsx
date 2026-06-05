@@ -60,7 +60,7 @@ const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+    <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
       {children}
     </div>
   )
@@ -257,7 +257,7 @@ export default function GoogleCampaignDetailPage({
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* ── Back link ──────────────────────────────────────────────────────── */}
       <Link
@@ -346,7 +346,7 @@ export default function GoogleCampaignDetailPage({
                 </div>
 
                 {/* Name */}
-                <h1 className="mt-3 text-[28px] font-semibold leading-tight tracking-tight text-white sm:text-[36px]">
+                <h1 className="mt-3 text-xl font-semibold tracking-tight text-white/90">
                   {campaign.name}
                 </h1>
 

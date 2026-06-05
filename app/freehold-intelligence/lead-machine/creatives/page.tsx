@@ -58,15 +58,15 @@ export default function CreativesPage() {
   const isConfigError = data.type === 'config'
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Palette className="h-3.5 w-3.5" /> Ad Creatives
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Creative library<br />
             <span className="text-white/35">
               {loading ? '…' : isConfigError ? 'not connected.' : `${creatives.length} total.`}
@@ -142,7 +142,7 @@ export default function CreativesPage() {
       {/* Creative grid */}
       {!loading && creatives.length > 0 && (
         <section className="mt-8">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">All creatives</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">All creatives</div>
           <div className="grid gap-4 sm:grid-cols-2">
             {creatives.map((creative) => {
               const ld       = creative.object_story_spec?.link_data

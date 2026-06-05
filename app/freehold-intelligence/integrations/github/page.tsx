@@ -52,7 +52,7 @@ export default function GithubIntegrationPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Integrations
       </Link>
@@ -77,7 +77,7 @@ export default function GithubIntegrationPage() {
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           GitHub
         </h1>
         <p className="mt-3 text-[16px] text-white/55">

@@ -92,7 +92,7 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
       {/* Pages */}
       {pages.length > 0 && (
         <section className="mt-10">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Route audit — pages</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Route audit — pages</div>
           <h2 className="mt-1.5 text-lg font-semibold text-white">{pages.length} page route{pages.length !== 1 ? 's' : ''}</h2>
           <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
             <div className="divide-y divide-white/[0.04]">
@@ -105,7 +105,7 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
       {/* APIs */}
       {apis.length > 0 && (
         <section className="mt-8">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Route audit — API</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Route audit — API</div>
           <h2 className="mt-1.5 text-lg font-semibold text-white">{apis.length} API route{apis.length !== 1 ? 's' : ''}</h2>
           <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
             <div className="divide-y divide-white/[0.04]">
@@ -118,7 +118,7 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
       {/* Gates */}
       {gates.length > 0 && (
         <section className="mt-8">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Security gates</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Security gates</div>
           <div className="mt-4 space-y-2">
             {gates.map((gate) => {
               const st = statusConfig(gate.status)

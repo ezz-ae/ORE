@@ -38,7 +38,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -138,12 +138,12 @@ export default function AdRequestsPage() {
   const blocked = leadMachineAdRequests.filter((r) => r.status === 'Blocked' || r.status === 'Needs Changes').length
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> Ad Requests
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           Ad Requests
         </h1>
         <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
@@ -163,7 +163,7 @@ export default function AdRequestsPage() {
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
               {filtered.length === leadMachineAdRequests.length
                 ? 'All'
                 : `${filtered.length} of ${leadMachineAdRequests.length}`}

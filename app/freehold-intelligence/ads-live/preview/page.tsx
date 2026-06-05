@@ -117,7 +117,7 @@ function MetaStoryPreview({ property, headline, description }: { property: Prope
         <div className="h-full w-3/5 rounded-full bg-white/70" />
       </div>
       {/* Overlay copy */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-8 pt-10">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-8 pt-6">
         <div className="text-[13px] font-bold leading-tight text-white">{headline}</div>
         <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">{description.slice(0, 70)}…</div>
         <button className="mt-3 w-full rounded-xl bg-white py-2 text-[13px] font-bold text-gray-900">
@@ -222,18 +222,18 @@ export default function AdPreviewPage() {
   const isMetaFormat = format === 'Meta Feed' || format === 'Meta Story'
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.07A1 1 0 0121 8.85v6.298a1 1 0 01-1.447.9L15 14M4 8h11a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V10a2 2 0 012-2z" />
             </svg>
             Ad Preview
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Ad preview<br />
             <span className="text-white/35">across formats.</span>
           </h1>
@@ -311,7 +311,7 @@ export default function AdPreviewPage() {
 
       {/* Ad copy editor */}
       <section className="mt-8">
-        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Ad Copy</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">Ad Copy</div>
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-[12px] text-white/50">Headline</label>

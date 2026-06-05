@@ -65,7 +65,7 @@ export default async function PlatformManagerPage() {
   const liveInfra     = INFRA.filter((i) => i.status === 'live').length
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link
         href="/freehold-intelligence/apps"
@@ -76,10 +76,10 @@ export default async function PlatformManagerPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Globe className="h-3.5 w-3.5" /> Platform Manager
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {liveRoutes} routes live.<br />
           <span className="text-white/35">{pendingRoutes} still pending.</span>
         </h1>
@@ -105,7 +105,7 @@ export default async function PlatformManagerPage() {
 
       {/* Infrastructure */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Infrastructure</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">{liveInfra} of {INFRA.length} components live</h2>
         <div className="mt-4 space-y-2">
           {INFRA.map((item) => {

@@ -202,7 +202,7 @@ export default function NewCampaignPage() {
   // ─── Success screen ────────────────────────────────────────────────────────
   if (launched) {
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-14 text-center sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 text-center sm:px-6">
         <CheckCircle2 className="mx-auto h-14 w-14 text-[#D4AF37]" />
         <h1 className="mt-6 text-[32px] font-semibold text-white">Campaign created</h1>
         <p className="mt-3 text-[16px] text-white/55">
@@ -231,14 +231,14 @@ export default function NewCampaignPage() {
   const selectedListing = leadMachineListings.find((l) => l.id === form.listingId)
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> New Meta Campaign
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white sm:text-[40px]">

@@ -96,13 +96,13 @@ export default function CrmReportsPage() {
   }, [agentFilter, intentFilter])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <TrendingUp className="h-3.5 w-3.5" /> Reports
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Lead intelligence<br/><span className="text-white/35">at a glance.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-white/55">

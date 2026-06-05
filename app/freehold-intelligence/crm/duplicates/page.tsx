@@ -174,13 +174,13 @@ export default function CrmDuplicatesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Copy className="h-3.5 w-3.5" /> Duplicates
         </div>
-        <h1 className="mt-5 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           Duplicate leads<br /><span className="text-white/35">{visibleClusters.length} cluster{visibleClusters.length !== 1 ? 's' : ''} remaining.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
@@ -220,7 +220,7 @@ export default function CrmDuplicatesPage() {
       <section className="mt-12">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Duplicate clusters</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Duplicate clusters</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Review and resolve</h2>
           </div>
           <div className="ml-auto flex gap-1.5">
@@ -313,7 +313,7 @@ export default function CrmDuplicatesPage() {
 
       {/* Resolution guide */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">How it works</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">How it works</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Merge behaviour</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[

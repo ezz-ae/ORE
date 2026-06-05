@@ -76,14 +76,14 @@ export default function NotebookPage() {
   }, [typeFilter, statusFilter])
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <BookOpen className="h-3.5 w-3.5" /> Notebook
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Generate, save,
           <br />
           <span className="text-white/35">send what matters.</span>
@@ -125,7 +125,7 @@ export default function NotebookPage() {
       {/* Pinned outputs */}
       {pinnedOutputs.length > 0 && (
         <section className="mt-12">
-          <div className="mb-4 flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+          <div className="mb-4 flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
             <Pin className="h-3 w-3" /> Pinned outputs
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -164,7 +164,7 @@ export default function NotebookPage() {
       <section className="mt-12">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Threads</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Threads</div>
             <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
               {filteredConversations.length} of {notebookConversations.length} conversation{notebookConversations.length !== 1 ? 's' : ''}
             </h2>
@@ -239,7 +239,7 @@ export default function NotebookPage() {
       {/* All saved outputs — with type + status filters */}
       <section className="mt-12">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
             {filteredOutputs.length} of {allOutputs.length} saved output{allOutputs.length !== 1 ? 's' : ''}
           </div>
           <div className="flex flex-wrap gap-1.5">

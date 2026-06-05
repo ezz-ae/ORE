@@ -41,14 +41,14 @@ export default async function FormsPage() {
   const totalLeads    = forms.reduce((s, f) => s + (f.leads_count ?? 0), 0)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <FileText className="h-3.5 w-3.5" /> Lead Forms
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Lead gen forms<br />
             <span className="text-white/35">
               {isConfigError ? 'not connected.' : `${forms.length} total.`}
@@ -112,7 +112,7 @@ export default async function FormsPage() {
       {/* Forms list */}
       {forms.length > 0 && (
         <section className="mt-12">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All forms</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All forms</div>
           <div className="mt-4 space-y-3">
             {forms.map((form) => {
               const st = statusConfig(form.status)

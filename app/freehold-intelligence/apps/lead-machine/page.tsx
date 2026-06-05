@@ -41,7 +41,7 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-5 sm:p-7 lg:p-8">
           <div className="min-w-0">
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
               {listing.area} · {listing.developer}
             </div>
             <h3 className="mt-1.5 text-xl font-semibold leading-tight text-white sm:text-2xl lg:text-[28px]">
@@ -82,7 +82,7 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
 
         {listing.missingRequirements.length > 0 && (
           <div className="mt-5 border-t border-white/[0.05] pt-4">
-            <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">Holding it back</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-white/30">Holding it back</div>
             <ul className="mt-2 grid gap-1 text-[13px] text-white/60">
               {listing.missingRequirements.map((req) => (
                 <li key={req} className="flex items-start gap-2 before:mt-[7px] before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-[#D4AF37]/60">
@@ -125,16 +125,16 @@ export default async function LeadMachinePage() {
   const blockedCount = leadMachineListings.filter(l => l.blockerStatus !== 'Ready').length
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-12">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
 
         {/* ══════════════════ MAIN ══════════════════ */}
         <div className="min-w-0">
           <section>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
               <Zap className="h-3.5 w-3.5" /> Lead Machine
             </div>
-            <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
               Listings,
               <br />
               <span className="text-white/35">on their way to launch.</span>
@@ -182,7 +182,7 @@ export default async function LeadMachinePage() {
           <section className="mt-12">
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Featured</div>
+                <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Featured</div>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Today's curated set</h2>
               </div>
               <Link href="/freehold-intelligence/lead-machine/listings" className="hidden sm:inline-flex sm:items-center sm:gap-1.5 text-[12px] font-medium text-[#D4AF37]/70 hover:text-[#D4AF37]">
@@ -199,7 +199,7 @@ export default async function LeadMachinePage() {
 
           {/* AI take */}
           <section className="mt-12 rounded-[24px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.035] px-6 py-7 lg:rounded-[28px] lg:px-9 lg:py-9">
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
               <Sparkles className="h-3 w-3" /> AI take
             </div>
             <p className="mt-3 text-[15px] font-medium leading-[1.65] text-white/85 lg:text-[17px]">

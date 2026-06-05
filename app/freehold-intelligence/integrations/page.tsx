@@ -92,14 +92,14 @@ export default function IntegrationsPage() {
   const totalVisible = visibleCategories.reduce((s, cat) => s + (filteredGrouped[cat]?.length || 0), 0)
 
   return (
-    <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Zap className="h-3.5 w-3.5" /> Connections
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           What's plugged in,
           <br />
           <span className="text-white/40">what isn't.</span>
@@ -112,7 +112,7 @@ export default function IntegrationsPage() {
       {/* Critical blockers */}
       {critical.length > 0 && (
         <section className="mt-20">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-red-300/85">Must clear before launch</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-red-300/85">Must clear before launch</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
             {critical.length} {critical.length === 1 ? 'thing is' : 'things are'} holding back the server
           </h2>
@@ -124,7 +124,7 @@ export default function IntegrationsPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-red-300/85">
+                    <div className="text-[12px] font-medium uppercase tracking-wider text-red-300/85">
                       {String(b.integrationId || b.integration_id || 'system').replace(/-/g, ' ')}
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-white">{b.title || b.message}</h3>
@@ -148,7 +148,7 @@ export default function IntegrationsPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All connections</div>
+            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All connections</div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {totalVisible} of {integrations.length} integrations
             </h2>
@@ -204,7 +204,7 @@ export default function IntegrationsPage() {
         ) : (
           visibleCategories.map((cat) => (
             <div key={cat}>
-              <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">{cat}</div>
+              <div className="mb-4 text-[12px] font-medium uppercase tracking-wider text-white/35">{cat}</div>
               <div className="grid gap-3">
                 {filteredGrouped[cat].map((integration: any) => {
                   const meta = META[integration.id]
@@ -246,7 +246,7 @@ export default function IntegrationsPage() {
 
       {/* AI take footer */}
       <section className="mt-20 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">

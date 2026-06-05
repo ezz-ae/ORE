@@ -151,7 +151,7 @@ export default function CrmBoardPage() {
       <div className="border-b border-white/[0.05] px-6 py-5 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
               <Users className="h-3.5 w-3.5" />
               CRM · Kanban Board
             </div>

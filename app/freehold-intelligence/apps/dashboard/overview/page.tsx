@@ -38,17 +38,17 @@ export default async function DashboardOverviewPage() {
   const available = crmAgentRoster.filter((a) => a.status === 'available').length
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps/dashboard" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Dashboard App
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <LayoutDashboard className="h-3.5 w-3.5" /> Operating Overview
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Today at a glance<br /><span className="text-white/35">across every surface.</span>
         </h1>
         <p className="mt-5 max-w-2xl text-[17px] leading-[1.65] text-white/60">
@@ -80,7 +80,7 @@ export default async function DashboardOverviewPage() {
 
       {/* Infrastructure */}
       <section className="mt-14">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/40">
           <ShieldCheck className="h-3.5 w-3.5" /> Infrastructure
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Live components</h2>
@@ -105,7 +105,7 @@ export default async function DashboardOverviewPage() {
 
       {/* App health matrix */}
       <section className="mt-14">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/40">
           <TrendingUp className="h-3.5 w-3.5" /> Apps
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Live status matrix</h2>

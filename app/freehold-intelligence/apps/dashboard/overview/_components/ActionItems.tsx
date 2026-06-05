@@ -52,7 +52,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
       {/* Urgent items */}
       {visibleUrgent.length > 0 && (
         <section className="mt-14">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Today</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Today</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Urgent items</h2>
           <div className="mt-5 space-y-3">
             {visibleUrgent.map((task) => (
@@ -86,7 +86,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
       {/* Pending approvals */}
       {visibleApprovals.length > 0 && (
         <section className="mt-14">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Awaiting you</div>
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Awaiting you</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Pending approvals</h2>
           <div className="mt-5 space-y-3">
             {visibleApprovals.map((item) => (

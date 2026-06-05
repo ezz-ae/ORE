@@ -99,15 +99,15 @@ export default function FollowUpQueuePage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
         <div className="min-w-0">
 
           {/* Header */}
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Clock className="h-3.5 w-3.5" /> Follow-up Queue
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Overdue<br /><span className="text-white/35">right now.</span>
           </h1>
           <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/55">

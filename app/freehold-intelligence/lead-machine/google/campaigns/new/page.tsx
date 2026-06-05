@@ -162,7 +162,7 @@ export default function GoogleCampaignNewPage() {
 
   if (success) {
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-16 sm:px-6 text-center">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#4285F4]/10 border border-[#4285F4]/25">
           <Check className="h-7 w-7 text-[#4285F4]" />
         </div>
@@ -189,7 +189,7 @@ export default function GoogleCampaignNewPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link
         href="/freehold-intelligence/lead-machine/google/campaigns"
@@ -200,10 +200,10 @@ export default function GoogleCampaignNewPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
           <Search className="h-3.5 w-3.5" /> New Campaign
         </div>
-        <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[40px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Google Ads campaign<br />
           <span className="text-white/35">5 steps to launch.</span>
         </h1>

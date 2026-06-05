@@ -104,7 +104,7 @@ export default function DataEngineeringPage() {
   }, [completenessFilter])
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
@@ -112,14 +112,14 @@ export default function DataEngineeringPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Database className="h-3.5 w-3.5" /> Data Engineering
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[12px] font-medium text-[#D4AF37]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" /> In progress
           </span>
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Project data<br /><span className="text-white/35">{avgComplete}% complete.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
@@ -144,7 +144,7 @@ export default function DataEngineeringPage() {
 
       {/* Completeness matrix */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Field matrix</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Field matrix</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Listing data completeness</h2>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -237,7 +237,7 @@ export default function DataEngineeringPage() {
 
       {/* Area profiles */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Area profiles</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Area profiles</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Coverage by area</h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">

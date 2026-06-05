@@ -170,17 +170,17 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
+      <div className="flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-wider text-white/55/80">
         <Bot className="h-3.5 w-3.5" />
         AI Manager · Insights
       </div>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[30px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[40px]">
+          <h1 className="text-2xl font-semibold tracking-tight text-white/90">
             AI System Insights
           </h1>
           <p className="mt-2 max-w-xl text-sm text-white/50">

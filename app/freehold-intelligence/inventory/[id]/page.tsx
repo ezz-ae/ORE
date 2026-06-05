@@ -96,7 +96,7 @@ export default function PropertyDetailPage() {
 
   if (!prop) {
     return (
-      <div className="mx-auto max-w-3xl px-4 pb-32 pt-20 sm:px-6 text-center">
+      <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 text-center">
         <div className="text-[48px] font-semibold text-white/10">404</div>
         <p className="mt-3 text-[16px] text-white/50">Property not found.</p>
         <Link
@@ -115,7 +115,7 @@ export default function PropertyDetailPage() {
       : formatPrice(prop.startingPriceAED)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Back link */}
       <Link

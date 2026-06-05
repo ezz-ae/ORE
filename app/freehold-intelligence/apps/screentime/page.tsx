@@ -86,17 +86,17 @@ export default function ScreentimePage() {
   ]
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Activity className="h-3.5 w-3.5" /> Screentime
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Operator activity<br />
           <span className="text-white/35">patterns &amp; gaps.</span>
         </h1>
@@ -129,7 +129,7 @@ export default function ScreentimePage() {
 
       {/* Activity heatmap */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Activity heatmap</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Activity heatmap</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">Hour × day distribution</h2>
         <div className="mt-5 overflow-x-auto">
           <div className="min-w-[520px]">
@@ -171,7 +171,7 @@ export default function ScreentimePage() {
 
       {/* Per-agent breakdown — sortable */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Agent activity</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Agent activity</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">CRM events by agent</h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
@@ -243,7 +243,7 @@ export default function ScreentimePage() {
 
       {/* Hour distribution bar chart */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Hour distribution</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Hour distribution</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">When the team is most active</h2>
         <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
           {HOURS.map((h) => {

@@ -95,7 +95,7 @@ export default function GenerateCreativePage() {
   const campaignNewUrl = `/freehold-intelligence/lead-machine/campaigns/new?listingId=${listingId}`
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link
         href="/freehold-intelligence/lead-machine/creatives"
@@ -106,10 +106,10 @@ export default function GenerateCreativePage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Wand2 className="h-3.5 w-3.5" /> AI Copy Generator
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Generate ad copy<br />
           <span className="text-white/35">angle + tone → variants.</span>
         </h1>

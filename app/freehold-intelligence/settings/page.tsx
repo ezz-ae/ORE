@@ -111,7 +111,7 @@ function SectionHead({ icon: Icon, accent, title, sub }: {
 }) {
   return (
     <div className="mb-6">
-      <div className={`flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] ${accent}`}>
+      <div className={`flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider ${accent}`}>
         <Icon className="h-3.5 w-3.5" />
         {title}
       </div>
@@ -168,7 +168,7 @@ export default function SettingsPage() {
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
           <div>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/35 mb-3">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/35 mb-3">
               <SettingsIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> System Settings
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-white/90">Settings</h1>

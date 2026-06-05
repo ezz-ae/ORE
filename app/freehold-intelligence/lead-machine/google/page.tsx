@@ -74,15 +74,15 @@ export default function GoogleOverviewPage() {
   const imps    = campaigns.reduce((s, c) => s + (c.metrics?.impressions ?? 0), 0)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" /> Google Ads
           </div>
-          <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
             Google Ads<br />
             <span className="text-white/35">
               {loading ? '…' : configErr ? 'not connected.' : `${campaigns.length} campaigns.`}
@@ -176,7 +176,7 @@ export default function GoogleOverviewPage() {
           {/* Channel breakdown */}
           {report && report.byCampaign.length > 0 && (
             <section className="mt-10">
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">
                 Channel breakdown
               </div>
               <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
@@ -208,7 +208,7 @@ export default function GoogleOverviewPage() {
           {campaigns.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+                <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
                   Top campaigns — 30d spend
                 </div>
                 <Link

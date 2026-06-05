@@ -101,7 +101,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 pb-32 pt-16 sm:px-6 text-center">
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 text-center">
         <div className="text-[14px] text-white/40">Loading form…</div>
       </div>
     )
@@ -109,7 +109,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   if (error) {
     return (
-      <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6">
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
         <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
           <ArrowLeft className="h-3.5 w-3.5" /> All forms
         </Link>
@@ -129,7 +129,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   const statusColor = form.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/40'
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All forms
@@ -137,7 +137,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <FileText className="h-3.5 w-3.5" /> Lead Form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
@@ -171,7 +171,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         <div className="min-w-0">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Lead submissions</div>
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Lead submissions</div>
               <h2 className="mt-1 text-lg font-semibold text-white">{leads.length} synced</h2>
             </div>
             <div className="flex gap-2">

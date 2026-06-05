@@ -76,7 +76,7 @@ export default function SalesTeamPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link
         href="/freehold-intelligence/apps"
@@ -87,10 +87,10 @@ export default function SalesTeamPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Users className="h-3.5 w-3.5" /> Sales Team
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {crmAgentRoster.length} agents.<br />
           <span className="text-white/35">{totalHot} hot leads active.</span>
         </h1>
@@ -129,7 +129,7 @@ export default function SalesTeamPage() {
       {/* Agent roster */}
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
             Roster
             {statusFilter !== 'All' && (
               <span className="ml-2 normal-case tracking-normal text-white/25">
@@ -275,7 +275,7 @@ export default function SalesTeamPage() {
 
       {/* Leaderboard */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Win ranking</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Win ranking</div>
         <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">
             <thead>
@@ -335,7 +335,7 @@ export default function SalesTeamPage() {
         <section className="mt-12">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Unassigned inbox</div>
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Unassigned inbox</div>
               <h2 className="mt-1 text-lg font-semibold text-white">{unassigned.length} leads waiting for assignment</h2>
             </div>
             <Link

@@ -65,7 +65,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   ]
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All listings
       </Link>

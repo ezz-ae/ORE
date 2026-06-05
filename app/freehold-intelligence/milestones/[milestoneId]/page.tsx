@@ -28,7 +28,7 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
   const pageRef = `freehold-intelligence/milestones/${milestone.code}`
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
 
       <Link href="/freehold-intelligence/milestones" className="inline-flex items-center gap-1.5 text-[12px] text-white/45 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -36,10 +36,10 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Flag className="h-3.5 w-3.5" /> {milestone.code}
         </div>
-        <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
           {milestone.title}
         </h1>
         <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
@@ -49,18 +49,18 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
 
       <section className="mt-12 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Owner</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Owner</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.owner}</div>
         </div>
         <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Deadline</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Deadline</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.deadline}</div>
           {milestone.days_to_deadline != null && (
             <div className="mt-1 text-[12px] text-white/45">{milestone.days_to_deadline}d remaining</div>
           )}
         </div>
         <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Health</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Health</div>
           <div className={`mt-2 flex items-center gap-1.5 text-lg font-semibold capitalize ${tone.text}`}>
             <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
             {(milestone.health ?? 'planned').replace('_', ' ')}
@@ -80,13 +80,13 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
 
       {milestone.success_event && (
         <section className="mt-12 rounded-3xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-7 py-7 sm:px-10 sm:py-9">
-          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">Success event</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider text-[#D4AF37]/85">Success event</div>
           <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">{milestone.success_event}</p>
         </section>
       )}
 
       <section className="mt-16">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Comments and decisions</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Comments and decisions</div>
         <h2 className="mt-2 mb-6 text-2xl font-semibold tracking-tight text-white">Review on this milestone</h2>
         <CommentsPanel pageRef={pageRef} items={comments.filter((c) => c.page_ref === pageRef)} />
       </section>

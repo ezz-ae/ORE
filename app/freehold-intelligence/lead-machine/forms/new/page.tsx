@@ -156,7 +156,7 @@ export default function NewFormPage() {
 
   if (created) {
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-32 pt-16 sm:px-6 text-center">
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#D4AF37]/15 mb-6">
           <Check className="h-8 w-8 text-[#D4AF37]" />
         </div>
@@ -181,7 +181,7 @@ export default function NewFormPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <Link
@@ -192,7 +192,7 @@ export default function NewFormPage() {
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <FileText className="h-3.5 w-3.5" /> New lead form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white">

@@ -170,7 +170,7 @@ export default function GenerateRsaPage() {
   const angleConfig = ANGLES.find((a) => a.value === angle)!
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Back link */}
       <Link
@@ -182,10 +182,10 @@ export default function GenerateRsaPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
           <Wand2 className="h-3.5 w-3.5" /> RSA Generator
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Generate RSA copy<br />
           <span className="text-white/35">headlines + descriptions.</span>
         </h1>

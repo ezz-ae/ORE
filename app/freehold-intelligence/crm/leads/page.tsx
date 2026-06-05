@@ -69,14 +69,14 @@ export default function CrmLeadsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Target className="h-3.5 w-3.5" /> CRM · All Leads
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           {crmLeads.length} leads tracked.<br />
           <span className="text-white/35">{hot} need action now.</span>
         </h1>

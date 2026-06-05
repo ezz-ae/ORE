@@ -43,7 +43,7 @@ export default function HubSpotIntegrationPage() {
   const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Integrations
@@ -51,14 +51,14 @@ export default function HubSpotIntegrationPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Users2 className="h-3.5 w-3.5" /> HubSpot CRM
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> Not connected
           </span>
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           HubSpot CRM<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
@@ -83,7 +83,7 @@ export default function HubSpotIntegrationPage() {
 
       {/* Requirements */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Access requirements</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access requirements</div>
         <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
           <div
@@ -127,7 +127,7 @@ export default function HubSpotIntegrationPage() {
 
       {/* Setup guide */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Setup guide</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Setup guide</div>
         <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
         <div className="mt-5 space-y-2">
           {CHECKLIST.map((step, i) => (
@@ -143,7 +143,7 @@ export default function HubSpotIntegrationPage() {
 
       {/* Sync schema */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Data mapping</div>
+        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Data mapping</div>
         <h2 className="mt-2 text-xl font-semibold text-white">What syncs once connected</h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
           <table className="w-full text-[13px]">

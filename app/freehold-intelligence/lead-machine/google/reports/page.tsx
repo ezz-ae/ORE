@@ -152,14 +152,14 @@ export default function GoogleReportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
           <BarChart2 className="h-3.5 w-3.5" /> Reports
         </div>
-        <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
           Performance reports<br />
           <span className="text-white/35">{rangeLabel[range]} window.</span>
         </h1>
@@ -234,7 +234,7 @@ export default function GoogleReportsPage() {
         <>
           {/* ── KPI summary cards ───────────────────────────────────────────── */}
           <section className="mt-10">
-            <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+            <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
               Summary — {rangeLabel[range]}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -262,7 +262,7 @@ export default function GoogleReportsPage() {
           {/* ── By Campaign table ───────────────────────────────────────────── */}
           {sortedCampaigns.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
                 By campaign — sorted by spend
               </div>
               <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
@@ -311,7 +311,7 @@ export default function GoogleReportsPage() {
           {/* ── By Device breakdown ─────────────────────────────────────────── */}
           {report.byDevice.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
                 By device
               </div>
               <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
@@ -351,7 +351,7 @@ export default function GoogleReportsPage() {
           {/* ── Daily trend ─────────────────────────────────────────────────── */}
           {last14Days.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
                 Daily spend trend — last {last14Days.length} days
               </div>
               <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
@@ -383,7 +383,7 @@ export default function GoogleReportsPage() {
           {/* ── Search Terms ────────────────────────────────────────────────── */}
           <section className="mt-10">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
                 Search terms — top 50 by impressions
               </div>
               {/* Status filter */}
