@@ -7,7 +7,7 @@ import {
   Bot, AlertCircle, CheckCircle2, ArrowUpRight, Calendar, Activity, X,
 } from 'lucide-react'
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
-import AiPrompt from '@/components/freehold/ai-prompt'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 // 7-day lead trend (Mon–Sun, current week)
 const WEEKLY_LEADS = [
@@ -403,9 +403,26 @@ export default function IntelligenceDashboard() {
         <div className="mb-4 flex items-center gap-3">
           <div className="text-xs font-medium uppercase tracking-widest text-white/40">Recent Activity</div>
           <Activity className="h-3.5 w-3.5 text-white/25" />
+          <div className="ml-auto flex items-center gap-1.5">
+            {(['all', 'lead', 'warning', 'success', 'info'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setActivityFilter(f)}
+                className={[
+                  'rounded-full border px-2.5 py-0.5 text-[10px] font-medium capitalize transition',
+                  activityFilter === f
+                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.07] bg-transparent text-white/35 hover:text-white/55',
+                ].join(' ')}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] divide-y divide-white/[0.04]">
-          {recentActivity.map((item, i) => (
+          {filteredActivity.map((item, i) => (
             <div key={i} className="flex items-start gap-4 p-4">
               <div className="mt-0.5 shrink-0">
                 {item.type === 'lead' && <span className="flex h-2 w-2 rounded-full bg-[#D4AF37]" />}
@@ -421,6 +438,18 @@ export default function IntelligenceDashboard() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section>
+        <AiPrompt
+          placeholder="Ask about performance, leads, campaigns…"
+          suggestions={[
+            'What needs attention first today?',
+            'How did this week compare to last?',
+            'Which properties have the lowest ad readiness?',
+            "Summarise today's lead pipeline.",
+          ]}
+        />
       </section>
 
     </div>

@@ -1,5 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, UserCog, Shield, Users, ArrowUpRight, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, UserCog, Shield, Users, ArrowUpRight, CheckCircle2, Bell } from 'lucide-react'
 import { currentServerUser, getRoleScope, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
@@ -14,6 +17,25 @@ const ACCOUNT_LEVELS: Record<string, { label: string; description: string }> = {
 export default function DashboardProfilePage() {
   const scope = getRoleScope(currentServerUser.role)
   const accountLevel = ACCOUNT_LEVELS[currentServerUser.accountLevel]
+
+  const [notifications, setNotifications] = useState({
+    emailAlerts:    true,
+    whatsappAlerts: true,
+    dailyDigest:    false,
+    weeklyReport:   true,
+    leadAlerts:     true,
+    systemAlerts:   false,
+  })
+
+  function toggleNotif(key: keyof typeof notifications) {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const [flash, setFlash] = useState(false)
+  function saveNotifications() {
+    setFlash(true)
+    setTimeout(() => setFlash(false), 2000)
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -83,6 +105,54 @@ export default function DashboardProfilePage() {
                 <span key={mod} className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.08] px-3 py-1 text-[12px] font-medium text-[#D4AF37]/80">
                   {mod.replace(/-/g, ' ')}
                 </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Flash toast */}
+          {flash && (
+            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#06080A]/95 px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl backdrop-blur">
+              Preferences saved
+            </div>
+          )}
+
+          {/* Notifications card */}
+          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+                <Bell className="h-3 w-3" /> Notification preferences
+              </div>
+              <button
+                type="button"
+                onClick={saveNotifications}
+                className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1 text-[11px] font-medium text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15"
+              >
+                Save
+              </button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {([
+                { key: 'emailAlerts',    label: 'Email alerts',           note: 'Hot leads and critical system alerts'       },
+                { key: 'whatsappAlerts', label: 'WhatsApp alerts',        note: 'Instant messages for urgent lead events'    },
+                { key: 'dailyDigest',    label: 'Daily digest',           note: 'Morning summary of the previous day'        },
+                { key: 'weeklyReport',   label: 'Weekly report',          note: 'Sunday performance summary across all apps' },
+                { key: 'leadAlerts',     label: 'New lead notifications', note: 'Alert on each inbound lead in the CRM'      },
+                { key: 'systemAlerts',   label: 'System alerts',          note: 'Infra status changes, auth events'          },
+              ] as { key: keyof typeof notifications; label: string; note: string }[]).map(({ key, label, note }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleNotif(key)}
+                  className="flex w-full items-center justify-between gap-4 rounded-[14px] border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-left transition hover:border-white/10"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium text-white/80">{label}</div>
+                    <div className="text-[11px] text-white/35">{note}</div>
+                  </div>
+                  <div className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${notifications[key] ? 'bg-[#D4AF37]' : 'bg-white/[0.08]'}`}>
+                    <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${notifications[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                  </div>
+                </button>
               ))}
             </div>
           </div>
