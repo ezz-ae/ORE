@@ -3,9 +3,12 @@ import { notFound } from 'next/navigation'
 import {
   ArrowLeft, Phone, Mail, Brain,
   AlertTriangle, Clock, User, Target, Zap,
-  PhoneCall, FileText, ArrowLeftRight, Bell,
+  PhoneCall, FileText, ArrowLeftRight, Bell, MessageSquare,
+  BarChart3, Globe, ArrowUpRight,
 } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
 
@@ -36,6 +39,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const leadActivity = crmActivityLog
     .filter((e) => e.leadId === id)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // Resolve attribution
+  const sourceCampaign = financeSummary.topSpendCampaigns.find((c) => c.campaignId === lead.campaignId) ?? null
+  const sourceLanding  = leadMachineLandings.find((l) => l.id === lead.landingId) ?? null
+  const sourceListing  = sourceCampaign?.projectId
+    ? leadMachineListings.find((l) => l.projectId === sourceCampaign.projectId) ?? null
+    : null
 
   function activityIcon(type: string) {
     if (type === 'call')         return { Icon: PhoneCall,      color: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10' }
@@ -175,11 +185,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Lead details</p>
             <div className="space-y-3">
               {[
-                { label: 'Source', value: lead.source },
-                { label: 'Stage', value: lead.stage },
-                { label: 'Agent', value: lead.assignedAgent },
-                { label: 'Campaign', value: lead.campaignId || 'Organic' },
-                { label: 'Landing', value: lead.landingId || 'Direct' },
+                { label: 'Source',       value: lead.source },
+                { label: 'Stage',        value: lead.stage },
+                { label: 'Agent',        value: lead.assignedAgent },
                 { label: 'Last contact', value: new Date(lead.lastContactAt).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' }) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-start justify-between gap-3">
@@ -188,6 +196,81 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Attribution card */}
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div className="mb-4 flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
+              <BarChart3 className="h-3 w-3" /> Attribution
+            </div>
+
+            {sourceCampaign ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-[11px] text-white/25 uppercase tracking-[0.15em] mb-1.5">Campaign</div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[12px] font-medium text-white/80 leading-snug">{sourceCampaign.name}</span>
+                    <span className={`shrink-0 rounded-full border px-1.5 py-px text-[11px] font-medium ${
+                      sourceCampaign.platform === 'meta'
+                        ? 'border-blue-400/25 bg-blue-400/10 text-blue-300'
+                        : 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    }`}>
+                      {sourceCampaign.platform === 'meta' ? 'Meta' : 'Google'}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex gap-3 text-[11px] text-white/35">
+                    <span>AED {sourceCampaign.spendAED.toLocaleString()} spent</span>
+                    <span>·</span>
+                    <span>AED {sourceCampaign.cpl.toFixed(0)} CPL</span>
+                  </div>
+                </div>
+
+                {sourceListing && (
+                  <div>
+                    <div className="text-[11px] text-white/25 uppercase tracking-[0.15em] mb-1.5">Property</div>
+                    <Link
+                      href={`/freehold-intelligence/lead-machine/listings/${sourceListing.id}`}
+                      className="group flex items-center justify-between gap-2 text-[12px] text-[#D4AF37]/65 transition hover:text-[#D4AF37]"
+                    >
+                      <span className="leading-snug">{sourceListing.projectName}</span>
+                      <ArrowUpRight className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition" />
+                    </Link>
+                    <div className="mt-0.5 text-[11px] text-white/30">{sourceListing.area} · {sourceListing.developer}</div>
+                  </div>
+                )}
+
+                {sourceLanding && (
+                  <div>
+                    <div className="text-[11px] text-white/25 uppercase tracking-[0.15em] mb-1.5">Landing page</div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-3 w-3 shrink-0 text-white/25" />
+                      <span className="font-mono text-[11px] text-white/55">{sourceLanding.landingUrl}</span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-white/30">{sourceLanding.status} · {sourceLanding.completion}% complete</div>
+                  </div>
+                )}
+
+                <Link
+                  href="/freehold-intelligence/lead-machine/campaigns/attribution"
+                  className="flex items-center gap-1 text-[11px] text-[#D4AF37]/45 transition hover:text-[#D4AF37]"
+                >
+                  View full attribution <ArrowUpRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3 text-[12px] text-white/40">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-white/30">Campaign</span>
+                  <span className="text-white/55">{lead.campaignId === 'organic' ? 'Organic' : lead.campaignId || 'Direct'}</span>
+                </div>
+                {lead.landingId && lead.landingId !== 'direct_whatsapp' && (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-white/30">Landing</span>
+                    <span className="font-mono text-[11px] text-white/45">{lead.landingId}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick actions */}

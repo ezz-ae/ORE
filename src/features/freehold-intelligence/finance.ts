@@ -44,7 +44,17 @@ export interface FinanceSummary {
   budgetUtilizationGoogle: number
   monthlyHistory: MonthlyBudget[]
   invoices: Invoice[]
-  topSpendCampaigns: { name: string; platform: 'meta' | 'google'; spendAED: number; leads: number; cpl: number }[]
+  topSpendCampaigns: {
+    name: string
+    platform: 'meta' | 'google'
+    spendAED: number
+    leads: number
+    cpl: number
+    campaignId: string
+    projectId: string | null
+    landingId: string | null
+    status: 'Running' | 'Paused' | 'Blocked'
+  }[]
 }
 
 export const financeSummary: FinanceSummary = {
@@ -79,11 +89,11 @@ export const financeSummary: FinanceSummary = {
   ],
 
   topSpendCampaigns: [
-    { name: 'Palm Jumeirah Investor — META',         platform: 'meta',   spendAED: 7_820, leads: 94,  cpl: 83.2 },
-    { name: 'Dubai Hills Yield — META',              platform: 'meta',   spendAED: 6_140, leads: 88,  cpl: 69.8 },
-    { name: 'Golden Visa Buyers — META',             platform: 'meta',   spendAED: 4_460, leads: 66,  cpl: 67.6 },
-    { name: 'Palm Jumeirah Investor — Search',       platform: 'google', spendAED: 5_210, leads: 62,  cpl: 84.0 },
-    { name: 'Dubai Property Investment — PMax',      platform: 'google', spendAED: 4_380, leads: 58,  cpl: 75.5 },
-    { name: 'Off Plan Dubai 2025 — Search',          platform: 'google', spendAED: 3_280, leads: 47,  cpl: 69.8 },
+    { name: 'Palm Jumeirah Investor — META',    platform: 'meta',   spendAED: 7_820, leads: 94, cpl: 83.2, campaignId: 'cmp_palm_q2',      projectId: 'freehold-palm-jumeirah-0033', landingId: 'landing_palm_investor', status: 'Running' },
+    { name: 'Dubai Hills Yield — META',         platform: 'meta',   spendAED: 6_140, leads: 88, cpl: 69.8, campaignId: 'cmp_hills_q2',     projectId: 'freehold-dubai-hills-0012',   landingId: 'landing_hills_yield',   status: 'Running' },
+    { name: 'Golden Visa Buyers — META',        platform: 'meta',   spendAED: 4_460, leads: 66, cpl: 67.6, campaignId: 'cmp_gv_2026',      projectId: null,                          landingId: 'landing_golden_visa',   status: 'Running' },
+    { name: 'Palm Jumeirah Investor — Search',  platform: 'google', spendAED: 5_210, leads: 62, cpl: 84.0, campaignId: 'cmp_palm_search',  projectId: 'freehold-palm-jumeirah-0033', landingId: 'landing_palm_investor', status: 'Paused'  },
+    { name: 'Dubai Property Investment — PMax', platform: 'google', spendAED: 4_380, leads: 58, cpl: 75.5, campaignId: 'cmp_pmax_2026',    projectId: null,                          landingId: null,                    status: 'Running' },
+    { name: 'Off Plan Dubai 2025 — Search',     platform: 'google', spendAED: 3_280, leads: 47, cpl: 69.8, campaignId: 'cmp_offplan_2026', projectId: null,                          landingId: null,                    status: 'Running' },
   ],
 }

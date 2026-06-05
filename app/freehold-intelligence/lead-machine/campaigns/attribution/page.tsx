@@ -13,51 +13,6 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type PlatformFilter = 'All' | 'Meta' | 'Google'
 
-// Static attribution: campaign name → ids + status
-const CAMPAIGN_ATTR: Record<string, {
-  campaignId: string
-  projectId: string | null
-  landingId: string | null
-  status: 'Running' | 'Paused' | 'Blocked'
-}> = {
-  'Palm Jumeirah Investor — META': {
-    campaignId: 'cmp_palm_q2',
-    projectId: 'freehold-palm-jumeirah-0033',
-    landingId: 'landing_palm_investor',
-    status: 'Running',
-  },
-  'Dubai Hills Yield — META': {
-    campaignId: 'cmp_hills_q2',
-    projectId: 'freehold-dubai-hills-0012',
-    landingId: 'landing_hills_yield',
-    status: 'Running',
-  },
-  'Golden Visa Buyers — META': {
-    campaignId: 'cmp_gv_2026',
-    projectId: null,
-    landingId: 'landing_golden_visa',
-    status: 'Running',
-  },
-  'Palm Jumeirah Investor — Search': {
-    campaignId: 'cmp_palm_search',
-    projectId: 'freehold-palm-jumeirah-0033',
-    landingId: 'landing_palm_investor',
-    status: 'Paused',
-  },
-  'Dubai Property Investment — PMax': {
-    campaignId: 'cmp_pmax_2026',
-    projectId: null,
-    landingId: null,
-    status: 'Running',
-  },
-  'Off Plan Dubai 2025 — Search': {
-    campaignId: 'cmp_offplan_search',
-    projectId: null,
-    landingId: null,
-    status: 'Running',
-  },
-}
-
 function urgencyDot(u: string) {
   if (u === 'critical') return 'bg-red-400'
   if (u === 'high')     return 'bg-[#D4AF37]'
@@ -107,11 +62,10 @@ export default function CampaignAttributionPage() {
         return true
       })
       .map((c) => {
-        const attr    = CAMPAIGN_ATTR[c.name] ?? { campaignId: '', projectId: null, landingId: null, status: 'Running' as const }
-        const listing = attr.projectId ? leadMachineListings.find((l) => l.projectId === attr.projectId) ?? null : null
-        const landing = attr.landingId ? leadMachineLandings.find((l) => l.id === attr.landingId) ?? null : null
-        const leads   = attr.campaignId ? crmLeads.filter((l) => l.campaignId === attr.campaignId) : []
-        return { ...c, attr, listing, landing, crmLeads: leads }
+        const listing = c.projectId ? leadMachineListings.find((l) => l.projectId === c.projectId) ?? null : null
+        const landing = c.landingId ? leadMachineLandings.find((l) => l.id === c.landingId) ?? null : null
+        const leads   = crmLeads.filter((l) => l.campaignId === c.campaignId)
+        return { ...c, listing, landing, crmLeads: leads }
       })
   }, [platformFilter])
 
@@ -195,11 +149,11 @@ export default function CampaignAttributionPage() {
                     <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${plat.cls}`}>
                       {plat.label}
                     </span>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusStyle(campaign.attr.status)}`}>
-                      {campaign.attr.status === 'Running' && (
+                    <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusStyle(campaign.status)}`}>
+                      {campaign.status === 'Running' && (
                         <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                       )}
-                      {campaign.attr.status}
+                      {campaign.status}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1 text-[13px] font-medium ${info.color}`}>
