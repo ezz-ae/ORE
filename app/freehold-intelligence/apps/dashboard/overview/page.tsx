@@ -8,6 +8,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { ActionItems } from './_components/ActionItems'
 
 const INFRA = [
   { label: 'Neon database',     status: 'live',    note: 'freehold_site_projects — 7,015 rows' },
@@ -72,46 +73,10 @@ export default async function DashboardOverviewPage() {
         ))}
       </section>
 
-      {/* Urgent items */}
-      {serverSummary.urgentTasks.length > 0 && (
-        <section className="mt-14">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Today</div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Urgent items</h2>
-          <div className="mt-5 space-y-3">
-            {serverSummary.urgentTasks.map((task) => (
-              <div key={task.id} className="flex items-start gap-4 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-                <AlertCircle className={`mt-0.5 h-4 w-4 shrink-0 ${task.priority === 'critical' ? 'text-red-400' : 'text-[#D4AF37]'}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold text-white">{task.title}</div>
-                  <p className="mt-0.5 text-[13px] text-white/55">{task.body}</p>
-                  <div className="mt-1 text-[11px] text-white/30">{task.app} · {task.owner}</div>
-                </div>
-                {task.due && <span className="shrink-0 text-[11px] font-medium text-[#D4AF37]/70">{task.due}</span>}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Pending approvals */}
-      {serverSummary.pendingApprovals.length > 0 && (
-        <section className="mt-14">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Awaiting you</div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Pending approvals</h2>
-          <div className="mt-5 space-y-3">
-            {serverSummary.pendingApprovals.map((item) => (
-              <div key={item.id} className="flex items-start gap-4 rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-5">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/60" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-semibold text-white">{item.title}</div>
-                  <p className="mt-0.5 text-[13px] text-white/55">{item.body}</p>
-                  <div className="mt-1 text-[11px] text-white/30">{item.app} · {item.owner}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <ActionItems
+        urgentTasks={serverSummary.urgentTasks}
+        pendingApprovals={serverSummary.pendingApprovals}
+      />
 
       {/* Infrastructure */}
       <section className="mt-14">
