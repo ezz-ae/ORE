@@ -8,6 +8,7 @@ const tabs = [
   { label: 'Overview',     href: '/freehold-intelligence/lead-machine', exact: true },
   { label: 'Listings',     href: '/freehold-intelligence/lead-machine/listings' },
   { label: 'Campaigns',    href: '/freehold-intelligence/lead-machine/campaigns' },
+  { label: 'Attribution',  href: '/freehold-intelligence/lead-machine/campaigns/attribution' },
   { label: 'Landings',     href: '/freehold-intelligence/lead-machine/landings' },
   { label: 'Forms',        href: '/freehold-intelligence/lead-machine/forms' },
   { label: 'Targeting',    href: '/freehold-intelligence/lead-machine/targeting' },
