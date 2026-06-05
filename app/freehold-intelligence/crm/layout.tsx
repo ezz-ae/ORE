@@ -4,15 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const tabs = [
-  { label: 'Leads', href: '/freehold-intelligence/crm' },
-  { label: 'Inbox', href: '/freehold-intelligence/crm/inbox' },
-  { label: 'Follow-up', href: '/freehold-intelligence/crm/follow-up' },
+  { label: 'Leads',      href: '/freehold-intelligence/crm' },
+  { label: 'Board',      href: '/freehold-intelligence/crm/board' },
+  { label: 'Pipeline',   href: '/freehold-intelligence/crm/pipeline' },
+  { label: 'Inbox',      href: '/freehold-intelligence/crm/inbox' },
+  { label: 'Follow-up',  href: '/freehold-intelligence/crm/follow-up' },
   { label: 'Assignment', href: '/freehold-intelligence/crm/assignment' },
-  { label: 'Activity', href: '/freehold-intelligence/crm/activity' },
+  { label: 'Activity',   href: '/freehold-intelligence/crm/activity' },
   { label: 'Duplicates', href: '/freehold-intelligence/crm/duplicates' },
-  { label: 'Pipeline', href: '/freehold-intelligence/crm/pipeline' },
-  { label: 'Agents', href: '/freehold-intelligence/crm/agents' },
-  { label: 'Reports', href: '/freehold-intelligence/crm/reports' },
+  { label: 'Agents',     href: '/freehold-intelligence/crm/agents' },
+  { label: 'Reports',    href: '/freehold-intelligence/crm/reports' },
 ]
 
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
