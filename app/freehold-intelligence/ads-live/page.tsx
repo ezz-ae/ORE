@@ -5,6 +5,26 @@ import Link from 'next/link'
 import { ArrowUpRight, Radio } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 
+// 4-week CPL trend: Meta vs Google
+const CPL_TREND = [
+  { week: 'W1', meta: 91.2, google: 88.4 },
+  { week: 'W2', meta: 87.5, google: 84.0 },
+  { week: 'W3', meta: 80.1, google: 81.3 },
+  { week: 'W4', meta: 74.3, google: 77.1 },
+]
+const CPL_MAX = 100
+const CPL_W = 320
+const CPL_H = 64
+
+function cplPoints(key: 'meta' | 'google') {
+  const step = CPL_W / (CPL_TREND.length - 1)
+  return CPL_TREND.map((d, i) => {
+    const x = i * step
+    const y = CPL_H - (d[key] / CPL_MAX) * (CPL_H - 8)
+    return `${x},${y}`
+  }).join(' ')
+}
+
 type Platform = 'All' | 'Meta' | 'Google'
 
 function UtilBar({ pct }: { pct: number }) {
@@ -240,6 +260,49 @@ export default function AdsLivePage() {
               )
             })}
           </div>
+        </div>
+      </section>
+
+      {/* CPL trend chart */}
+      <section className="mt-10">
+        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">CPL trend · last 4 weeks</div>
+        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
+          <div className="flex items-center gap-6 mb-4 text-[12px]">
+            <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>
+            <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#4285F4' }} />Google</span>
+          </div>
+          <div className="overflow-x-auto">
+            <svg viewBox={`0 0 ${CPL_W} ${CPL_H + 24}`} className="w-full min-w-[240px]" preserveAspectRatio="none">
+              {/* Week labels */}
+              {CPL_TREND.map((d, i) => {
+                const x = i * (CPL_W / (CPL_TREND.length - 1))
+                return (
+                  <text key={d.week} x={x} y={CPL_H + 16} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.3)" fontFamily="sans-serif">
+                    {d.week}
+                  </text>
+                )
+              })}
+              {/* Meta line */}
+              <polyline points={cplPoints('meta')} fill="none" stroke="#1877F2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Google line */}
+              <polyline points={cplPoints('google')} fill="none" stroke="#4285F4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
+              {/* End point dots */}
+              {(['meta', 'google'] as const).map((key) => {
+                const last = CPL_TREND[CPL_TREND.length - 1]
+                const x = CPL_W
+                const y = CPL_H - (last[key] / CPL_MAX) * (CPL_H - 8)
+                return (
+                  <g key={key}>
+                    <circle cx={x} cy={y} r="3" fill={key === 'meta' ? '#1877F2' : '#4285F4'} />
+                    <text x={x - 4} y={y - 6} textAnchor="end" fontSize="9" fill={key === 'meta' ? '#1877F2' : '#4285F4'} fontFamily="sans-serif">
+                      AED {last[key]}
+                    </text>
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+          <p className="mt-2 text-[11px] text-white/25">Both platforms trending down — Meta dropped 18.5% over 4 weeks</p>
         </div>
       </section>
 
