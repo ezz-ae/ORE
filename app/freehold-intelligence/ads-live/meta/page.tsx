@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, CheckCircle2, Plus, Palette } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
 
 const META_BLUE = '#1877F2'
 
@@ -65,7 +66,27 @@ const adSets = [
   { name: 'Expat Professionals',   budget: 'AED 170/day', status: 'Paused', audience: '1.4M' },
 ]
 
+type StatusFilter = 'All' | 'Active' | 'Paused'
+type SortCol = 'spend' | 'leads' | 'cpl' | 'impressions'
+
 export default function MetaAdsPage() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+  const [sortCol, setSortCol] = useState<SortCol>('leads')
+  const [sortAsc, setSortAsc] = useState(false)
+
+  const visibleCampaigns = useMemo(() => {
+    const filtered = statusFilter === 'All' ? campaigns : campaigns.filter((c) => c.status === statusFilter)
+    return [...filtered].sort((a, b) => {
+      const diff = a[sortCol] - b[sortCol]
+      return sortAsc ? diff : -diff
+    })
+  }, [statusFilter, sortCol, sortAsc])
+
+  function handleSort(col: SortCol) {
+    if (sortCol === col) setSortAsc((v) => !v)
+    else { setSortCol(col); setSortAsc(false) }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -135,18 +156,58 @@ export default function MetaAdsPage() {
 
       {/* Campaigns table */}
       <section className="mt-10">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Active Campaigns</div>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Campaigns</div>
+          <div className="flex gap-1.5">
+            {(['All', 'Active', 'Paused'] as StatusFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={[
+                  'rounded-full px-3 py-1 text-[11px] font-medium transition',
+                  statusFilter === f
+                    ? 'border border-[#1877F2]/40 bg-[#1877F2]/15 text-[#6BA3F5]'
+                    : 'border border-white/[0.08] text-white/40 hover:text-white/65',
+                ].join(' ')}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <div className="min-w-[700px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Table header */}
             <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 border-b border-white/[0.05] px-5 py-3">
-              {['Campaign', 'Status', 'Daily Bdgt', 'Spend', 'Impr.', 'Clicks', 'Leads', 'CPL'].map((h) => (
-                <div key={h} className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/30">{h}</div>
+              {[
+                { label: 'Campaign', col: null },
+                { label: 'Status',   col: null },
+                { label: 'Daily Bdgt', col: null },
+                { label: 'Spend',    col: 'spend' as SortCol },
+                { label: 'Impr.',    col: 'impressions' as SortCol },
+                { label: 'Clicks',   col: null },
+                { label: 'Leads',    col: 'leads' as SortCol },
+                { label: 'CPL',      col: 'cpl' as SortCol },
+              ].map(({ label, col }) => (
+                <button
+                  key={label}
+                  onClick={() => col && handleSort(col)}
+                  className={[
+                    'flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.16em] transition',
+                    col ? 'text-white/30 hover:text-white/60 cursor-pointer' : 'text-white/30 cursor-default',
+                    col && sortCol === col ? 'text-white/60' : '',
+                  ].join(' ')}
+                >
+                  {label}
+                  {col && sortCol === col && (
+                    sortAsc ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />
+                  )}
+                </button>
               ))}
             </div>
             {/* Rows */}
             <div className="divide-y divide-white/[0.04]">
-              {campaigns.map((c) => (
+              {visibleCampaigns.map((c) => (
                 <div
                   key={c.name}
                   className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
