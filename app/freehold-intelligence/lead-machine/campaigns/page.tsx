@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, CheckCircle2, Pause, ArrowUpRight, Zap } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { CampaignList } from './_components/CampaignList'
 
 interface Campaign {
   id: string
@@ -33,20 +34,6 @@ async function getCampaigns(): Promise<CampaignsResponse> {
   } catch {
     return { error: 'Failed to reach Meta API', type: 'network' }
   }
-}
-
-function statusConfig(status: string) {
-  switch (status) {
-    case 'ACTIVE':   return { dot: 'bg-emerald-400', text: 'text-emerald-300', badge: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300', label: 'Active' }
-    case 'PAUSED':   return { dot: 'bg-[#D4AF37]',   text: 'text-[#D4AF37]',   badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',     label: 'Paused' }
-    case 'DELETED':  return { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10 text-red-300',             label: 'Deleted' }
-    default:         return { dot: 'bg-white/30',    text: 'text-white/45',    badge: 'border-white/10 bg-white/[0.04] text-white/45',            label: status }
-  }
-}
-
-function fmtBudget(fils: string | undefined) {
-  if (!fils) return '—'
-  return `AED ${(parseInt(fils) / 100).toLocaleString('en-AE', { minimumFractionDigits: 0 })}`
 }
 
 function fmtSpend(spend: string | undefined) {
