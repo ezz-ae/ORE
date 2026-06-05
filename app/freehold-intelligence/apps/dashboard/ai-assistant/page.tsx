@@ -1,5 +1,8 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Bot, ArrowUpRight, Zap, BookOpen } from 'lucide-react'
+import { ArrowLeft, Bot, ArrowUpRight, Zap, BookOpen, Loader2, X, Copy, CheckCircle2 } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
@@ -12,6 +15,15 @@ const QUICK_ACTIONS = [
   { label: 'Agent performance check', prompt: 'Which agent is behind on follow-ups and what is the recommended action?' },
 ]
 
+const QUICK_RESPONSES: Record<string, string> = {
+  'Brief me on today': `**Today's briefing — June 5, 2026**\n\n**CRM:** 3 high-intent leads need same-day follow-up. Ahmad K. is at 87% capacity. Noura has 2 leads stalled >48h.\n\n**Lead Machine:** Palm Jumeirah campaign is blocked on Meta billing — this is the single highest-impact action today. Dubai Hills is review-ready pending angle approval.\n\n**Approvals:** 2 critical items need your sign-off before any ads can launch — Palm landing page and Dubai Hills angle. Both are in Reviews.\n\n**Action priority:** (1) Confirm Meta billing owner → (2) Approve Palm landing → (3) Review overdue CRM leads.`,
+  'Draft WhatsApp for hot lead': `Hi Tariq 👋\n\nThis is Ahmad from Freehold Property — following up on your enquiry about Palm Jumeirah investor units.\n\nWe currently have 2 exclusive beachfront units available with an 80/20 payment plan, starting from AED 4.2M. One was just released this week.\n\nWould you have 10 minutes for a quick call today or tomorrow? I can share floor plans, ROI projections, and current market comparisons.\n\nLooking forward to connecting!`,
+  'Which campaigns are ready?': `**Campaign launch readiness — current snapshot:**\n\n🟡 **Palm Jumeirah Investor** — 84% ready. Blocked on Meta billing owner. Once billing is confirmed, this campaign can launch within 24h.\n\n🔴 **Business Bay Canal View** — 42% ready. Missing payment plan data, no hero image, audience not selected. Not ready for launch.\n\n🟢 **Dubai Hills Yield** — 92% ready. Awaiting angle approval only. Approve the investor yield corridor angle to proceed.\n\n**Recommendation:** Resolve Palm billing first — it unblocks the entire pipeline.`,
+  'Summarise follow-up queue': `**Overdue follow-up queue — priority order:**\n\n1. **Tariq Al-Farsi** (Palm investor, intent 94) — 52h since intake, no first contact. Move to Hot, assign to Noura immediately.\n\n2. **James Chen** (Golden Visa, intent 88) — 38h, wrong number flag not resolved. Verify via WhatsApp or email before agent reassignment.\n\n3. **Aisha Mohammed** (Dubai Hills buyer, intent 76) — 29h, agent Sara M. at capacity. Reassign to Ahmad K. for same-day follow-up.\n\n**Total overdue:** 3 leads requiring action today.`,
+  'Best ad angle for Palm': `**Strongest Palm Jumeirah angle — Q2 2026:**\n\n**Headline:** "The Last Beachfront at Palm Jumeirah — Starting AED 4.2M"\n\n**Hook:** Limited-edition investor units with an 80/20 payment plan. Own an iconic Palm address while the developer carries 80% of the cost to handover.\n\n**CTA:** "Get exclusive floor plans + ROI projection" → Lead form with WhatsApp confirmation.\n\n**Why this works:** The scarcity signal (limited units) + payment plan leverage + ROI framing targets GCC investors with capital to deploy. This angle has outperformed lifestyle creative by 34% in similar Dubai launches.`,
+  'Agent performance check': `**Agent performance review — current week:**\n\n**Noura Al-Rashid** ✅ On track. 11 active leads, 89% response rate, 3 wins this month. Top performer.\n\n**Ahmad K.** ⚠️ At capacity (87%). 2 leads at >36h follow-up gap. Recommend pausing new assignments until queue clears.\n\n**Sara M.** ✅ Performing well on Golden Visa leads. 2 clients at negotiation stage.\n\n**Recommended action:** Temporarily route new Palm/Hills leads to Noura. Free up Ahmad K. by snoozing 2 low-intent leads until next week.`,
+}
+
 function relativeTime(iso: string) {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
   if (mins < 60) return `${mins}m ago`
@@ -21,6 +33,29 @@ function relativeTime(iso: string) {
 }
 
 export default function DashboardAiAssistantPage() {
+  const [activeAction, setActiveAction] = useState<string | null>(null)
+  const [loading,      setLoading]      = useState(false)
+  const [response,     setResponse]     = useState<string | null>(null)
+  const [copied,       setCopied]       = useState(false)
+
+  function handleAction(label: string) {
+    setActiveAction(label)
+    setLoading(true)
+    setResponse(null)
+    setCopied(false)
+    setTimeout(() => {
+      setResponse(QUICK_RESPONSES[label] ?? 'No response available.')
+      setLoading(false)
+    }, 1400)
+  }
+
+  function handleCopy() {
+    if (!response) return
+    navigator.clipboard.writeText(response.replace(/\*\*/g, '').replace(/\*/g, ''))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const recentConvs = [...notebookConversations].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   )
@@ -65,9 +100,17 @@ export default function DashboardAiAssistantPage() {
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.label}
-              className="group flex items-start gap-3 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-left transition hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]"
+              onClick={() => handleAction(action.label)}
+              className={`group flex items-start gap-3 rounded-[18px] border p-4 text-left transition ${
+                activeAction === action.label
+                  ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.04]'
+                  : 'border-white/[0.06] bg-[#0A0D10] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
+              }`}
             >
-              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50 transition group-hover:text-[#D4AF37]" />
+              {loading && activeAction === action.label
+                ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37] animate-spin" />
+                : <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50 transition group-hover:text-[#D4AF37]" />
+              }
               <div>
                 <div className="text-[13px] font-semibold text-white/80 group-hover:text-white transition">{action.label}</div>
                 <p className="mt-0.5 text-[11px] leading-relaxed text-white/35 group-hover:text-white/50 transition">{action.prompt}</p>
@@ -75,6 +118,39 @@ export default function DashboardAiAssistantPage() {
             </button>
           ))}
         </div>
+
+        {(loading || response) && activeAction && (
+          <div className="mt-5 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">
+                <Loader2 className={`h-3 w-3 ${loading ? 'animate-spin' : 'hidden'}`} />
+                {loading ? 'Thinking…' : activeAction}
+              </div>
+              <div className="flex items-center gap-2">
+                {!loading && response && (
+                  <button onClick={handleCopy} className="flex items-center gap-1 text-[11px] text-white/35 hover:text-white/65 transition">
+                    {copied ? <CheckCircle2 className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                )}
+                <button onClick={() => { setActiveAction(null); setResponse(null) }} className="text-white/25 hover:text-white/55 transition">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            {loading ? (
+              <div className="space-y-2">
+                <div className="h-3 w-3/4 rounded-full bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-1/2 rounded-full bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-2/3 rounded-full bg-white/[0.06] animate-pulse" />
+              </div>
+            ) : (
+              <p className="whitespace-pre-line text-[13px] leading-[1.75] text-white/75">
+                {response?.replace(/\*\*/g, '').replace(/\*/g, '')}
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Recent conversations */}
