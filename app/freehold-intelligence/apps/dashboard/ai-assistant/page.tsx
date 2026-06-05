@@ -68,7 +68,7 @@ export default function DashboardAiAssistantPage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Bot className="h-3.5 w-3.5" /> AI Assistant
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -94,7 +94,7 @@ export default function DashboardAiAssistantPage() {
 
       {/* Quick action prompts */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Quick actions</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Quick actions</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Common command tasks</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {QUICK_ACTIONS.map((action) => (
@@ -104,7 +104,7 @@ export default function DashboardAiAssistantPage() {
               className={`group flex items-start gap-3 rounded-[18px] border p-4 text-left transition ${
                 activeAction === action.label
                   ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.04]'
-                  : 'border-white/[0.06] bg-[#0A0D10] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
+                  : 'border-white/[0.08] bg-[#1A1F2A] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
               }`}
             >
               {loading && activeAction === action.label
@@ -113,7 +113,7 @@ export default function DashboardAiAssistantPage() {
               }
               <div>
                 <div className="text-[13px] font-semibold text-white/80 group-hover:text-white transition">{action.label}</div>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-white/35 group-hover:text-white/50 transition">{action.prompt}</p>
+                <p className="mt-0.5 text-[13px] leading-relaxed text-white/35 group-hover:text-white/50 transition">{action.prompt}</p>
               </div>
             </button>
           ))}
@@ -122,14 +122,14 @@ export default function DashboardAiAssistantPage() {
         {(loading || response) && activeAction && (
           <div className="mt-5 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">
+              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">
                 <Loader2 className={`h-3 w-3 ${loading ? 'animate-spin' : 'hidden'}`} />
                 {loading ? 'Thinking…' : activeAction}
               </div>
               <div className="flex items-center gap-2">
                 {!loading && response && (
-                  <button onClick={handleCopy} className="flex items-center gap-1 text-[11px] text-white/35 hover:text-white/65 transition">
-                    {copied ? <CheckCircle2 className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                  <button onClick={handleCopy} className="flex items-center gap-1 text-[13px] text-white/35 hover:text-white/65 transition">
+                    {copied ? <CheckCircle2 className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 )}
@@ -157,7 +157,7 @@ export default function DashboardAiAssistantPage() {
       <section className="mt-14">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Recent</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Recent</div>
             <h2 className="mt-2 text-xl font-semibold text-white">Notebook conversations</h2>
           </div>
           <Link
@@ -174,21 +174,21 @@ export default function DashboardAiAssistantPage() {
               <Link
                 key={conv.id}
                 href={`/freehold-intelligence/notebook/${conv.id}`}
-                className="group flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#0A0D10] px-5 py-4 transition hover:border-[#D4AF37]/25"
+                className="group flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4 transition hover:border-[#D4AF37]/25"
               >
                 <div className="flex items-start gap-3 min-w-0">
                   <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-white/25 transition group-hover:text-[#D4AF37]/60" />
                   <div className="min-w-0">
                     <div className="text-[14px] font-semibold text-white/85 transition group-hover:text-white">{conv.title}</div>
                     <p className="mt-0.5 text-[12px] text-white/40 truncate">{lastMsg?.content.slice(0, 80)}…</p>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-white/30">
+                    <div className="mt-1 flex items-center gap-2 text-[13px] text-white/30">
                       <span>{conv.messages.length} messages</span>
                       <span>·</span>
                       <span>{conv.savedOutputs.length} saved outputs</span>
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 text-[11px] text-white/30">{relativeTime(conv.updatedAt)}</div>
+                <div className="shrink-0 text-[13px] text-white/30">{relativeTime(conv.updatedAt)}</div>
               </Link>
             )
           })}

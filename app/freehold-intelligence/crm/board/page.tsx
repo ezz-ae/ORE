@@ -30,7 +30,7 @@ const initialColumns: Column[] = [
     id: 'new',
     label: 'New Lead',
     dotColor: 'bg-sky-400',
-    headerColor: 'text-sky-400',
+    headerColor: 'text-white/55',
     leads: [
       { id: 'l1', name: 'Ahmed Al Rashid',  propertyInterest: 'Palm Jumeirah',  source: 'Meta',      timeAgo: '1h ago',  budget: 'AED 3–5M' },
       { id: 'l2', name: 'Sarah Johnson',    propertyInterest: 'Dubai Hills',    source: 'Google',    timeAgo: '3h ago',  budget: 'AED 1.5–2.5M' },
@@ -52,7 +52,7 @@ const initialColumns: Column[] = [
     id: 'qualified',
     label: 'Qualified',
     dotColor: 'bg-violet-400',
-    headerColor: 'text-violet-400',
+    headerColor: 'text-white/55',
     leads: [
       { id: 'l7', name: 'Elena Petrova',    propertyInterest: 'Marina Luxury',  source: 'Meta',      timeAgo: '4d ago',  budget: 'AED 5–10M' },
       { id: 'l8', name: 'James Wilson',     propertyInterest: 'Dubai Hills',    source: 'Google',    timeAgo: '5d ago',  budget: 'AED 2–3M' },
@@ -71,8 +71,8 @@ const initialColumns: Column[] = [
   {
     id: 'won-lost',
     label: 'Won / Lost',
-    dotColor: 'bg-emerald-400',
-    headerColor: 'text-emerald-400',
+    dotColor: 'bg-[#D4AF37]',
+    headerColor: 'text-[#D4AF37]',
     leads: [
       { id: 'l11', name: 'Carlos Mendez',   propertyInterest: 'Sobha Hartland', source: 'Google',    timeAgo: '10d ago', budget: 'AED 6M',  note: 'WON' },
       { id: 'l12', name: 'Noor Al Saeed',   propertyInterest: 'Dubai Hills',    source: 'Meta',      timeAgo: '12d ago', budget: 'AED 2M',  note: 'LOST' },
@@ -82,8 +82,8 @@ const initialColumns: Column[] = [
 
 function sourceBadge(source: LeadSource) {
   if (source === 'Meta')      return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
-  if (source === 'Google')    return 'text-sky-400 bg-sky-500/10 border-sky-500/20'
-  return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+  if (source === 'Google')    return 'text-white/55 bg-sky-500/10 border-sky-500/20'
+  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
 }
 
 function sourceIcon(source: LeadSource) {
@@ -145,13 +145,13 @@ export default function CrmBoardPage() {
   }
 
   return (
-    <div className="flex h-full min-h-screen flex-col bg-[#06080A]">
+    <div className="flex h-full min-h-screen flex-col bg-[#111318]">
 
       {/* Page header */}
       <div className="border-b border-white/[0.05] px-6 py-5 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
               <Users className="h-3.5 w-3.5" />
               CRM · Kanban Board
             </div>
@@ -187,7 +187,7 @@ export default function CrmBoardPage() {
                   <span className={`h-2 w-2 rounded-full ${col.dotColor}`} />
                   <span className={`text-sm font-semibold ${col.headerColor}`}>{col.label}</span>
                 </div>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-medium text-white/50">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-medium text-white/50">
                   {col.leads.length}
                 </span>
               </div>
@@ -217,7 +217,7 @@ export default function CrmBoardPage() {
                       draggable
                       onDragStart={() => handleDragStart(lead.id, col.id)}
                       onDragEnd={handleDragEnd}
-                      className={`cursor-grab select-none rounded-xl border border-white/[0.06] bg-white/[0.04] p-3.5 transition active:cursor-grabbing ${
+                      className={`cursor-grab select-none rounded-xl border border-white/[0.08] bg-white/[0.04] p-3.5 transition active:cursor-grabbing ${
                         isDragging ? 'opacity-50 scale-95' : 'hover:border-white/10 hover:bg-white/[0.06]'
                       }`}
                     >
@@ -225,10 +225,10 @@ export default function CrmBoardPage() {
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold leading-snug text-white/90">{lead.name}</p>
                         {lead.note && (
-                          <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold ${
                             lead.note === 'WON'
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'bg-rose-500/20 text-rose-400'
+                              ? 'bg-emerald-500/20 text-[#D4AF37]'
+                              : 'bg-rose-500/20 text-white/55'
                           }`}>
                             {lead.note}
                           </span>
@@ -243,11 +243,11 @@ export default function CrmBoardPage() {
 
                       {/* Footer */}
                       <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${sourceBadge(lead.source)}`}>
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium ${sourceBadge(lead.source)}`}>
                           {sourceIcon(lead.source)}
                           {lead.source}
                         </span>
-                        <span className="text-[10px] text-white/30">{lead.timeAgo}</span>
+                        <span className="text-[12px] text-white/30">{lead.timeAgo}</span>
                       </div>
                     </div>
                   )

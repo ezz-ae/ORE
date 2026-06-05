@@ -11,7 +11,7 @@ const contentTypes = [
     icon: Bot,
     summary: '28 listings',
     alert: '5 need updates',
-    alertColor: 'text-rose-400',
+    alertColor: 'text-white/55',
   },
   {
     label: 'Areas',
@@ -35,7 +35,7 @@ const contentTypes = [
     icon: FileText,
     summary: '34 pages',
     alert: '8 need AI review',
-    alertColor: 'text-rose-400',
+    alertColor: 'text-white/55',
   },
   {
     label: 'Topics',
@@ -100,7 +100,7 @@ export default function AiManagerPage() {
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
         <Bot className="h-3.5 w-3.5" />
         AI Manager
       </div>
@@ -124,9 +124,9 @@ export default function AiManagerPage() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10">
-                  <Icon className="h-4.5 w-4.5 text-rose-400" />
+                  <Icon className="h-4.5 w-4.5 text-white/55" />
                 </div>
-                <ArrowUpRight className="h-4 w-4 text-white/20 transition group-hover:text-rose-400/60" />
+                <ArrowUpRight className="h-4 w-4 text-white/20 transition group-hover:text-white/55/60" />
               </div>
               <div>
                 <div className="text-sm font-semibold text-white/90">{ct.label}</div>
@@ -144,7 +144,7 @@ export default function AiManagerPage() {
         {/* AI Activity feed */}
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Activity className="h-4 w-4 text-rose-400" />
+            <Activity className="h-4 w-4 text-white/55" />
             <h2 className="text-sm font-semibold text-white/90">AI Activity</h2>
           </div>
           <ul className="space-y-3">
@@ -153,7 +153,7 @@ export default function AiManagerPage() {
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-rose-400/60" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-white/70 leading-snug">{item.text}</p>
-                  <p className="mt-0.5 text-[11px] text-white/30">{item.time}</p>
+                  <p className="mt-0.5 text-[13px] text-white/30">{item.time}</p>
                 </div>
               </li>
             ))}
@@ -163,7 +163,7 @@ export default function AiManagerPage() {
         {/* Quick Generate */}
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
           <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-rose-400" />
+            <Sparkles className="h-4 w-4 text-white/55" />
             <h2 className="text-sm font-semibold text-white/90">Quick Generate</h2>
           </div>
           <p className="mb-4 text-xs text-white/40">
@@ -179,7 +179,7 @@ export default function AiManagerPage() {
           <button
             onClick={handleGenerate}
             disabled={!prompt.trim() || generating}
-            className="mt-3 flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20 disabled:opacity-40"
+            className="mt-3 flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20 disabled:opacity-40"
           >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {generating ? 'Generating…' : 'Generate'}
@@ -188,12 +188,12 @@ export default function AiManagerPage() {
           {result && (
             <div className="mt-4 rounded-xl border border-rose-500/15 bg-rose-500/[0.04] p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-rose-400/70">Generated</span>
+                <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/55/70">Generated</span>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1 text-[11px] text-white/35 transition hover:text-white/65"
+                  className="flex items-center gap-1 text-[13px] text-white/35 transition hover:text-white/65"
                 >
-                  {copied ? <CheckCircle className="h-3 w-3 text-emerald-400" /> : null}
+                  {copied ? <CheckCircle className="h-3 w-3 text-[#D4AF37]" /> : null}
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
@@ -201,13 +201,13 @@ export default function AiManagerPage() {
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setResult(null)}
-                  className="rounded-full border border-white/[0.08] px-3 py-1 text-[11px] text-white/40 transition hover:text-white/65"
+                  className="rounded-full border border-white/[0.08] px-3 py-1 text-[13px] text-white/40 transition hover:text-white/65"
                 >
                   Clear
                 </button>
                 <Link
                   href="/freehold-intelligence/notebook"
-                  className="rounded-full border border-rose-500/20 bg-rose-500/[0.08] px-3 py-1 text-[11px] text-rose-400 transition hover:bg-rose-500/15"
+                  className="rounded-full border border-rose-500/20 bg-rose-500/[0.08] px-3 py-1 text-[13px] text-white/55 transition hover:bg-rose-500/15"
                 >
                   Save to Notebook
                 </Link>

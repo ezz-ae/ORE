@@ -5,7 +5,7 @@ import { getServerApp } from '@/src/features/freehold-intelligence/server-sessio
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
-  if (s === 'live')        return { dot: 'bg-emerald-400', text: 'text-emerald-300', bg: 'bg-emerald-400/10 border-emerald-400/20', label: 'Live' }
+  if (s === 'live')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20', label: 'Live' }
   if (s === 'in_progress') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',   bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20',   label: 'In progress' }
   if (s === 'blocked')     return { dot: 'bg-red-400',     text: 'text-red-300',     bg: 'bg-red-400/10 border-red-400/20',         label: 'Blocked' }
   return                          { dot: 'bg-sky-400',     text: 'text-sky-200',     bg: 'bg-sky-400/10 border-sky-400/20',         label: 'Planned' }
@@ -34,12 +34,12 @@ export default async function GenericServerAppPage({ params }: { params: Promise
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.bg} ${tone.text}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.bg} ${tone.text}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             {tone.label}
           </span>
           {app.linkedMilestoneId && (
-            <span className="text-[11px] text-white/30">{app.linkedMilestoneId}</span>
+            <span className="text-[13px] text-white/30">{app.linkedMilestoneId}</span>
           )}
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -52,8 +52,8 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         {metrics.map((m) => {
           const Icon = m.icon
           return (
-            <div key={m.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div key={m.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Icon className="h-3 w-3" /> {m.label}
               </div>
               <p className={`mt-2 text-[28px] font-semibold leading-none tabular-nums ${m.alert && m.value > 0 ? 'text-red-400' : 'text-white'}`}>
@@ -65,14 +65,14 @@ export default async function GenericServerAppPage({ params }: { params: Promise
       </section>
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Clock className="h-3 w-3" /> Latest activity
           </div>
           <p className="mt-3 text-[14px] leading-relaxed text-white/75">{app.latestActivity}</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
             <CheckCircle2 className="h-3 w-3" /> Next action
           </div>
           <p className="mt-3 text-[14px] leading-relaxed text-white/85">{app.nextAction}</p>
@@ -90,8 +90,8 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         />
       </section>
 
-      <section className="mt-8 rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-6">
-        <div className="mb-4 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+      <section className="mt-8 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
           <Blocks className="h-3 w-3" /> Navigate
         </div>
         <div className="flex flex-wrap gap-3">

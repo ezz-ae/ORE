@@ -94,7 +94,7 @@ export default function MetaAdsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
           <div
-            className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em]"
+            className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em]"
             style={{ color: `${META_BLUE}CC` }}
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill={META_BLUE}>
@@ -110,7 +110,7 @@ export default function MetaAdsPage() {
 
         <div className="mt-7 flex flex-col items-end gap-2 sm:mt-10">
           {/* Connected badge */}
-          <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-3 py-1.5 text-[11px] font-medium text-emerald-300">
+          <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[13px] font-medium text-[#D4AF37]">
             <CheckCircle2 className="h-3 w-3" />
             Connected
           </span>
@@ -133,7 +133,7 @@ export default function MetaAdsPage() {
         </div>
         <div>
           <div className="text-[13px] font-semibold text-white">Freehold Property Dubai</div>
-          <div className="text-[11px] text-white/40">Facebook Page · Business Account connected</div>
+          <div className="text-[13px] text-white/40">Facebook Page · Business Account connected</div>
         </div>
       </div>
 
@@ -143,12 +143,12 @@ export default function MetaAdsPage() {
           { label: 'Spend',        value: 'AED 18,420' },
           { label: 'Reach',        value: '142,000' },
           { label: 'Impressions',  value: '380,000' },
-          { label: 'Leads',        value: '248',       color: 'text-emerald-300' },
+          { label: 'Leads',        value: '248',       color: 'text-[#D4AF37]' },
           { label: 'CPL',          value: 'AED 74.3' },
           { label: 'CTR',          value: '2.1%' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{k.label}</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/40">{k.label}</div>
             <div className={`mt-2 text-[20px] font-semibold leading-none ${k.color ?? 'text-white'}`}>{k.value}</div>
           </div>
         ))}
@@ -157,14 +157,14 @@ export default function MetaAdsPage() {
       {/* Campaigns table */}
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Campaigns</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Campaigns</div>
           <div className="flex gap-1.5">
             {(['All', 'Active', 'Paused'] as StatusFilter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
                 className={[
-                  'rounded-full px-3 py-1 text-[11px] font-medium transition',
+                  'rounded-full px-3 py-1 text-[13px] font-medium transition',
                   statusFilter === f
                     ? 'border border-[#1877F2]/40 bg-[#1877F2]/15 text-[#6BA3F5]'
                     : 'border border-white/[0.08] text-white/40 hover:text-white/65',
@@ -193,7 +193,7 @@ export default function MetaAdsPage() {
                   key={label}
                   onClick={() => col && handleSort(col)}
                   className={[
-                    'flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.16em] transition',
+                    'flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.16em] transition',
                     col ? 'text-white/30 hover:text-white/60 cursor-pointer' : 'text-white/30 cursor-default',
                     col && sortCol === col ? 'text-white/60' : '',
                   ].join(' ')}
@@ -213,14 +213,14 @@ export default function MetaAdsPage() {
                   className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-emerald-400' : 'bg-[#D4AF37]'}`} />
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-[#D4AF37]' : 'bg-[#D4AF37]'}`} />
                     <span className="truncate text-[13px] font-semibold text-white/90">{c.name}</span>
                   </div>
                   <div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
                         c.status === 'Active'
-                          ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
+                          ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       }`}
                     >
@@ -239,7 +239,7 @@ export default function MetaAdsPage() {
                   <div className="text-[12px] text-white/60">
                     {c.clicks > 0 ? c.clicks.toLocaleString() : '—'}
                   </div>
-                  <div className={`text-[13px] font-semibold ${c.leads > 0 ? 'text-emerald-300' : 'text-white/30'}`}>
+                  <div className={`text-[13px] font-semibold ${c.leads > 0 ? 'text-[#D4AF37]' : 'text-white/30'}`}>
                     {c.leads > 0 ? c.leads : '—'}
                   </div>
                   <div className="text-[12px] text-white/70">
@@ -254,7 +254,7 @@ export default function MetaAdsPage() {
 
       {/* Ad sets */}
       <section className="mt-10">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Ad Sets</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Ad Sets</div>
         <div className="grid gap-3 sm:grid-cols-3">
           {adSets.map((s) => (
             <div
@@ -264,9 +264,9 @@ export default function MetaAdsPage() {
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[13px] font-semibold text-white/90">{s.name}</span>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium ${
                     s.status === 'Active'
-                      ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
+                      ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                   }`}
                 >

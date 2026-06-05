@@ -27,10 +27,10 @@ function fmtPct(n: number) {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
+  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
-  VIDEO:           'bg-rose-400/10 text-rose-300 border-rose-400/20',
-  SHOPPING:        'bg-violet-400/10 text-violet-300 border-violet-400/20',
+  VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
+  SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',
 }
 
 export default function GoogleOverviewPage() {
@@ -79,7 +79,7 @@ export default function GoogleOverviewPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" /> Google Ads
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -147,14 +147,14 @@ export default function GoogleOverviewPage() {
           {/* KPI row */}
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Active',       value: active,          color: 'text-emerald-300' },
+              { label: 'Active',       value: active,          color: 'text-[#D4AF37]' },
               { label: 'Paused',       value: paused,          color: 'text-white/50'    },
               { label: '30d Spend',    value: fmtMicros(spend), color: 'text-white'       },
               { label: '30d Conversions', value: Math.round(convs), color: 'text-[#FBBC04]' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+              <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
                 <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-                <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+                <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
               </div>
             ))}
           </div>
@@ -166,9 +166,9 @@ export default function GoogleOverviewPage() {
               { label: 'Clicks',       value: clicks.toLocaleString()   },
               { label: 'Avg CTR',      value: imps > 0 ? fmtPct(clicks / imps) : '—' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-white/[0.05] bg-[#0A0D10] px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-white/[0.05] bg-[#1A1F2A] px-4 py-3">
                 <div className="text-[18px] font-semibold text-white">{s.value}</div>
-                <div className="text-[10px] text-white/30">{s.label}</div>
+                <div className="text-[12px] text-white/30">{s.label}</div>
               </div>
             ))}
           </div>
@@ -176,10 +176,10 @@ export default function GoogleOverviewPage() {
           {/* Channel breakdown */}
           {report && report.byCampaign.length > 0 && (
             <section className="mt-10">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
                 Channel breakdown
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
                 <div className="divide-y divide-white/[0.04]">
                   {['SEARCH', 'PERFORMANCE_MAX', 'DISPLAY', 'VIDEO'].map((type) => {
                     const rows   = report.byCampaign.filter((c) => c.type === type)
@@ -189,7 +189,7 @@ export default function GoogleOverviewPage() {
                     const clicks = rows.reduce((s, r) => s + r.clicks, 0)
                     return (
                       <div key={type} className="flex items-center gap-4 px-5 py-3.5">
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${CAMPAIGN_TYPE_COLOR[type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${CAMPAIGN_TYPE_COLOR[type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
                           {type.replace('_', ' ')}
                         </span>
                         <span className="flex-1 text-[13px] font-semibold text-white">{rows.length} campaign{rows.length !== 1 ? 's' : ''}</span>
@@ -208,7 +208,7 @@ export default function GoogleOverviewPage() {
           {campaigns.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+                <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                   Top campaigns — 30d spend
                 </div>
                 <Link
@@ -226,9 +226,9 @@ export default function GoogleOverviewPage() {
                     <Link
                       key={c.id}
                       href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
-                      className="group flex items-center gap-4 rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-4 py-3.5 transition hover:border-[#4285F4]/25"
+                      className="group flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3.5 transition hover:border-[#4285F4]/25"
                     >
-                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
                         {c.type.replace('_', ' ')}
                       </span>
                       <span className="flex-1 min-w-0 text-[13px] font-medium text-white/80 truncate group-hover:text-white">
@@ -238,7 +238,7 @@ export default function GoogleOverviewPage() {
                         <span className="text-white/40">{c.metrics?.clicks.toLocaleString() ?? 0} clicks</span>
                         <span className="text-white/40">{Math.round(c.metrics?.conversions ?? 0)} conv.</span>
                         <span className="font-medium text-white">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-white/20'}`} />
                       </div>
                     </Link>
                   ))
@@ -260,7 +260,7 @@ export default function GoogleOverviewPage() {
               <Link
                 key={href}
                 href={href}
-                className="group rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#4285F4]/25"
+                className="group rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#4285F4]/25"
               >
                 <Icon className="mb-2 h-4 w-4 text-[#4285F4]/60" />
                 <div className="text-[13px] font-semibold text-white">{title}</div>
@@ -274,7 +274,7 @@ export default function GoogleOverviewPage() {
 
       {/* Empty state */}
       {!loading && !configErr && !error && campaigns.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
           <Search className="mx-auto h-8 w-8 text-[#4285F4]/40 mb-4" />
           <div className="text-[18px] font-semibold text-white">No Google Ads campaigns yet</div>
           <p className="mt-2 text-[14px] text-white/40">Create your first Search or Performance Max campaign to start capturing leads from Google.</p>

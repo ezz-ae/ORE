@@ -39,15 +39,15 @@ function fmtNum(n: number): string {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
+  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
-  VIDEO:           'bg-rose-400/10 text-rose-300 border-rose-400/20',
-  SHOPPING:        'bg-violet-400/10 text-violet-300 border-violet-400/20',
+  VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
+  SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',
 }
 
 const STATUS_BADGE: Record<SearchTermStatus, string> = {
   NONE:           'text-white/40 border border-white/[0.12] bg-white/[0.03]',
-  ADDED:          'text-emerald-300 border border-emerald-400/25 bg-emerald-400/[0.07]',
+  ADDED:          'text-[#D4AF37] border border-emerald-400/25 bg-[#D4AF37]/[0.07]',
   EXCLUDED:       'text-red-400 border border-red-400/25 bg-red-400/[0.07]',
   ADDED_EXCLUDED: 'text-orange-300 border border-orange-400/25 bg-orange-400/[0.07]',
 }
@@ -156,7 +156,7 @@ export default function GoogleReportsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
           <BarChart2 className="h-3.5 w-3.5" /> Reports
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -221,7 +221,7 @@ export default function GoogleReportsPage() {
 
       {/* Empty state */}
       {!loading && !error && !report && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
           <BarChart2 className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
           <div className="text-[17px] font-semibold text-white">No report data</div>
           <p className="mt-2 text-[13px] text-white/40">
@@ -234,7 +234,7 @@ export default function GoogleReportsPage() {
         <>
           {/* ── KPI summary cards ───────────────────────────────────────────── */}
           <section className="mt-10">
-            <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+            <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
               Summary — {rangeLabel[range]}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -248,12 +248,12 @@ export default function GoogleReportsPage() {
               ].map((kpi) => (
                 <div
                   key={kpi.label}
-                  className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] px-4 py-4"
+                  className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-4"
                 >
                   <div className="text-[20px] font-semibold leading-none text-white">
                     {kpi.value}
                   </div>
-                  <div className="mt-1.5 text-[10px] text-white/35">{kpi.label}</div>
+                  <div className="mt-1.5 text-[12px] text-white/35">{kpi.label}</div>
                 </div>
               ))}
             </div>
@@ -262,14 +262,14 @@ export default function GoogleReportsPage() {
           {/* ── By Campaign table ───────────────────────────────────────────── */}
           {sortedCampaigns.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 By campaign — sorted by spend
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-white/[0.06] px-5 py-2.5">
+                <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-white/[0.08] px-5 py-2.5">
                   {['Campaign', 'Type', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Spend'].map((h) => (
-                    <div key={h} className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/30">
+                    <div key={h} className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/30">
                       {h}
                     </div>
                   ))}
@@ -288,7 +288,7 @@ export default function GoogleReportsPage() {
                         </div>
                         <div>
                           <span
-                            className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                            className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${
                               CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'
                             }`}
                           >
@@ -311,10 +311,10 @@ export default function GoogleReportsPage() {
           {/* ── By Device breakdown ─────────────────────────────────────────── */}
           {report.byDevice.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 By device
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
                 <div className="space-y-5">
                   {[...report.byDevice]
                     .sort((a, b) => b.impressions - a.impressions)
@@ -334,7 +334,7 @@ export default function GoogleReportsPage() {
                                 style={{ width: `${widthPct}%` }}
                               />
                             </div>
-                            <div className="flex w-48 shrink-0 justify-end gap-5 text-[11px] text-white/45">
+                            <div className="flex w-48 shrink-0 justify-end gap-5 text-[13px] text-white/45">
                               <span>{fmtNum(d.impressions)} impr.</span>
                               <span>{fmtPct(ctr)} CTR</span>
                               <span>{Math.round(d.conversions)} conv.</span>
@@ -351,16 +351,16 @@ export default function GoogleReportsPage() {
           {/* ── Daily trend ─────────────────────────────────────────────────── */}
           {last14Days.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 Daily spend trend — last {last14Days.length} days
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
                 <div className="space-y-2">
                   {last14Days.map((day) => {
                     const barPct = Math.round((day.costMicros / maxDaySpend) * 100)
                     return (
                       <div key={day.date} className="flex items-center gap-3">
-                        <span className="w-16 shrink-0 text-[11px] text-white/35">
+                        <span className="w-16 shrink-0 text-[13px] text-white/35">
                           {formatShortDate(day.date)}
                         </span>
                         <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
@@ -369,7 +369,7 @@ export default function GoogleReportsPage() {
                             style={{ width: `${barPct}%` }}
                           />
                         </div>
-                        <span className="w-24 shrink-0 text-right text-[11px] font-medium text-white/60">
+                        <span className="w-24 shrink-0 text-right text-[13px] font-medium text-white/60">
                           {fmtMicros(day.costMicros)}
                         </span>
                       </div>
@@ -383,7 +383,7 @@ export default function GoogleReportsPage() {
           {/* ── Search Terms ────────────────────────────────────────────────── */}
           <section className="mt-10">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 Search terms — top 50 by impressions
               </div>
               {/* Status filter */}
@@ -398,7 +398,7 @@ export default function GoogleReportsPage() {
                     key={f.value}
                     onClick={() => setStatusFilter(f.value)}
                     className={[
-                      'rounded-[8px] px-3 py-1.5 text-[11px] font-medium transition',
+                      'rounded-[8px] px-3 py-1.5 text-[13px] font-medium transition',
                       statusFilter === f.value
                         ? 'bg-[#4285F4] text-white'
                         : 'bg-white/[0.05] text-white/40 hover:bg-white/[0.1] hover:text-white/65',
@@ -411,15 +411,15 @@ export default function GoogleReportsPage() {
             </div>
 
             {filteredTerms.length === 0 ? (
-              <div className="rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-5 py-8 text-center text-[13px] text-white/30">
+              <div className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-8 text-center text-[13px] text-white/30">
                 No search terms match the selected filter.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10]">
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
                 {/* Table header */}
-                <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-white/[0.06] px-5 py-2.5">
+                <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-white/[0.08] px-5 py-2.5">
                   {['Term', 'Match', 'Campaign', 'Ad Group', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Status'].map((h) => (
-                    <div key={h} className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/30">
+                    <div key={h} className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/30">
                       {h}
                     </div>
                   ))}
@@ -443,23 +443,23 @@ export default function GoogleReportsPage() {
                           {displayTerm}
                         </div>
                         <div>
-                          <span className="rounded border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-white/40">
+                          <span className="rounded border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 text-[12px] text-white/40">
                             {t.matchType}
                           </span>
                         </div>
-                        <div className="truncate text-[11px] text-white/45" title={t.campaignName}>
+                        <div className="truncate text-[13px] text-white/45" title={t.campaignName}>
                           {t.campaignName}
                         </div>
-                        <div className="truncate text-[11px] text-white/40" title={t.adGroupName}>
+                        <div className="truncate text-[13px] text-white/40" title={t.adGroupName}>
                           {t.adGroupName}
                         </div>
-                        <div className="text-[11px] text-white/55">{fmtNum(t.impressions)}</div>
-                        <div className="text-[11px] text-white/55">{fmtNum(t.clicks)}</div>
-                        <div className="text-[11px] text-white/55">{fmtPct(t.ctr)}</div>
-                        <div className="text-[11px] text-white/55">{Math.round(t.conversions)}</div>
+                        <div className="text-[13px] text-white/55">{fmtNum(t.impressions)}</div>
+                        <div className="text-[13px] text-white/55">{fmtNum(t.clicks)}</div>
+                        <div className="text-[13px] text-white/55">{fmtPct(t.ctr)}</div>
+                        <div className="text-[13px] text-white/55">{Math.round(t.conversions)}</div>
                         <div>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                            className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
                               STATUS_BADGE[status] ?? STATUS_BADGE.NONE
                             }`}
                           >

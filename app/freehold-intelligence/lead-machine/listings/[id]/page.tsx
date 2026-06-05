@@ -11,13 +11,13 @@ import {
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function scoreTone(n: number) {
-  if (n >= 80) return { bar: 'bg-emerald-400', text: 'text-emerald-300' }
+  if (n >= 80) return { bar: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
   if (n >= 50) return { bar: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]' }
   return { bar: 'bg-red-400', text: 'text-red-300' }
 }
 
 function blockerTone(s: string) {
-  if (s === 'Clear') return { dot: 'bg-emerald-400', text: 'text-emerald-300', label: 'Clear' }
+  if (s === 'Clear') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Clear' }
   if (s === 'Needs Access') return { dot: 'bg-red-400', text: 'text-red-300', label: 'Needs access' }
   if (s === 'Needs Data') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Needs data' }
   return { dot: 'bg-red-400', text: 'text-red-300', label: 'Blocked' }
@@ -27,7 +27,7 @@ function statusChip(s: string) {
   const green = ['Ready', 'Approved', 'Landing Active', 'Campaign Running', 'Ready for Ads']
   const gold = ['Needs Review', 'Pending Review', 'Paused']
   const red = ['Blocked', 'Missing Data', 'Needs Landing', 'Missing', 'Needs Assets']
-  if (green.some(g => s.includes(g) || s === g)) return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+  if (green.some(g => s.includes(g) || s === g)) return 'border-emerald-400/25 bg-[#D4AF37]/10 text-[#D4AF37]'
   if (gold.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'
   if (red.some(r => s.includes(r) || s === r)) return 'border-red-400/25 bg-red-400/10 text-red-300'
   return 'border-white/10 bg-white/[0.04] text-white/55'
@@ -72,12 +72,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${bt.text} border-current/20`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${bt.text} border-current/20`}>
             <span className={`h-1.5 w-1.5 rounded-full ${bt.dot}`} />
             {bt.label}
           </span>
-          <span className="text-[11px] text-white/30">{listing.area} · {listing.developer}</span>
-          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusChip(listing.landingStatus)}`}>
+          <span className="text-[13px] text-white/30">{listing.area} · {listing.developer}</span>
+          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusChip(listing.landingStatus)}`}>
             {listing.landingStatus}
           </span>
         </div>
@@ -96,8 +96,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         {scoreItems.map((item) => {
           const t = scoreTone(item.score)
           return (
-            <div key={item.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</p>
+            <div key={item.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</p>
               <p className={`mt-1.5 text-[28px] font-semibold leading-none tabular-nums ${t.text}`}>{item.score}</p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                 <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${item.score}%` }} />
@@ -108,8 +108,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* Component checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Component readiness
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -118,7 +118,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             return (
               <div key={label} className="flex items-center justify-between gap-4 px-6 py-3.5">
                 <span className="text-[13px] text-white/70">{label}</span>
-                <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${isReady ? 'text-emerald-300' : 'text-[#F8E7AE]'}`}>
+                <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${isReady ? 'text-[#D4AF37]' : 'text-[#F8E7AE]'}`}>
                   {isReady
                     ? <CheckCircle2 className="h-3.5 w-3.5" />
                     : <Clock className="h-3.5 w-3.5" />}
@@ -133,7 +133,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Missing requirements */}
       {listing.missingRequirements.length > 0 && (
         <section className="mt-5 rounded-[22px] border border-red-400/15 bg-red-400/[0.04] p-6">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-red-300/80">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-red-300/80">
             <AlertCircle className="h-3.5 w-3.5" /> Blocking requirements
           </div>
           <ul className="mt-4 space-y-2">
@@ -150,10 +150,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Landing status */}
       {landing && (
         <section className="mt-5">
-          <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
             <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
               <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-sky-400" />
+                <Globe className="h-4 w-4 text-white/55" />
                 <span className="text-[13px] font-semibold text-white">Landing page</span>
               </div>
               <div className="flex items-center gap-3">
@@ -161,7 +161,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <div className="h-full rounded-full bg-sky-400" style={{ width: `${landing.completion}%` }} />
                 </div>
                 <span className="text-[12px] tabular-nums text-white/50">{landing.completion}%</span>
-                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${statusChip(landing.status)}`}>{landing.status}</span>
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] ${statusChip(landing.status)}`}>{landing.status}</span>
               </div>
             </div>
             <div className="px-6 py-4">
@@ -183,33 +183,33 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       {/* Ad Request */}
       {adRequest && (
-        <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-[#D4AF37]" />
               <span className="text-[13px] font-semibold text-white">Ad request</span>
             </div>
-            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${statusChip(adRequest.status)}`}>{adRequest.status}</span>
+            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] ${statusChip(adRequest.status)}`}>{adRequest.status}</span>
           </div>
           <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
             <div>
-              <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Platform</p>
+              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Platform</p>
               <p className="mt-1 text-[14px] font-medium text-white">{adRequest.platform}</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Budget</p>
+              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Budget</p>
               <p className="mt-1 text-[14px] font-medium text-white">{adRequest.budget}</p>
             </div>
             <div className="sm:col-span-2">
-              <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Campaign angle</p>
+              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Campaign angle</p>
               <p className="mt-1 text-[14px] text-white/80">{adRequest.campaignAngle}</p>
             </div>
             {adRequest.blockers.length > 0 && (
               <div className="sm:col-span-2">
-                <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Blockers</p>
+                <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Blockers</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {adRequest.blockers.map((b) => (
-                    <span key={b} className="rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[11px] text-red-300">{b}</span>
+                    <span key={b} className="rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[13px] text-red-300">{b}</span>
                   ))}
                 </div>
               </div>
@@ -226,12 +226,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             {requirements.map((req) => {
               const sev = req.severity === 'critical' ? 'text-red-300 border-red-400/20 bg-red-400/[0.05]'
                         : req.severity === 'high' ? 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]'
-                        : 'text-white/60 border-white/[0.06] bg-[#0A0D10]'
+                        : 'text-white/60 border-white/[0.08] bg-[#1A1F2A]'
               return (
                 <div key={req.id} className={`rounded-[18px] border p-5 ${sev}`}>
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-[13px] font-semibold">{req.title}</p>
-                    <span className="shrink-0 text-[11px] capitalize">{req.status.replace(/_/g, ' ')}</span>
+                    <span className="shrink-0 text-[13px] capitalize">{req.status.replace(/_/g, ' ')}</span>
                   </div>
                   <p className="mt-1.5 text-[13px] opacity-80">{req.description}</p>
                   <p className="mt-2 text-[12px] opacity-60">→ {req.nextAction}</p>
@@ -248,10 +248,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <h2 className="mb-4 text-[15px] font-semibold text-white">Comments ({comments.length})</h2>
           <div className="space-y-3">
             {comments.map((comment) => (
-              <div key={comment.id} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div key={comment.id} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/45 capitalize">{comment.type}</span>
-                  <span className="text-[11px] text-white/30">{comment.owner}</span>
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/45 capitalize">{comment.type}</span>
+                  <span className="text-[13px] text-white/30">{comment.owner}</span>
                 </div>
                 <p className="mt-3 text-[13px] leading-relaxed text-white/80">{comment.body}</p>
                 <p className="mt-2 text-[12px] text-white/40">Expected: {comment.expectedOutput}</p>

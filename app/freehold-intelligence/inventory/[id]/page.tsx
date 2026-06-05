@@ -26,7 +26,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
     case 'off_plan':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'under_construction':
@@ -34,7 +34,7 @@ function statusBadge(status: PropertyStatus) {
     case 'sold_out':
       return 'bg-red-400/10 text-red-300 border-red-400/20'
     case 'coming_soon':
-      return 'bg-violet-400/10 text-violet-300 border-violet-400/20'
+      return 'bg-violet-400/10 text-white/55 border-violet-400/20'
     default:
       return 'bg-white/[0.04] text-white/40 border-white/[0.08]'
   }
@@ -54,13 +54,13 @@ function statusLabel(status: PropertyStatus): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'missing':
-      return 'bg-rose-400/10 text-rose-300 border-rose-400/20'
+      return 'bg-rose-400/10 text-white/55 border-rose-400/20'
   }
 }
 
@@ -74,7 +74,7 @@ function landingLabel(status: LandingStatus): string {
 }
 
 function readinessBar(value: number) {
-  if (value >= 80) return 'bg-emerald-400'
+  if (value >= 80) return 'bg-[#D4AF37]'
   if (value >= 50) return 'bg-[#D4AF37]'
   return 'bg-red-400'
 }
@@ -128,10 +128,10 @@ export default function PropertyDetailPage() {
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(prop.status)}`}>
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(prop.status)}`}>
             {statusLabel(prop.status)}
           </span>
-          <span className="text-[11px] text-white/35 capitalize">{prop.type}</span>
+          <span className="text-[13px] text-white/35 capitalize">{prop.type}</span>
         </div>
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
           {prop.name}
@@ -158,8 +158,8 @@ export default function PropertyDetailPage() {
         <div className="space-y-5">
 
           {/* Property details */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5">
-            <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="mb-1 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               Property Details
             </p>
             <div className="mt-3">
@@ -186,18 +186,18 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Price & ROI */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5">
-            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               Pricing & Returns
             </p>
             <div className="mb-4">
-              <div className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Price range</div>
+              <div className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Price range</div>
               <div className="mt-1 text-[22px] font-semibold text-white tabular-nums">{priceRange}</div>
             </div>
             {prop.roi !== null && (
               <div>
-                <div className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Expected ROI</div>
-                <div className="mt-1 text-[28px] font-semibold text-emerald-300 tabular-nums leading-none">
+                <div className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Expected ROI</div>
+                <div className="mt-1 text-[28px] font-semibold text-[#D4AF37] tabular-nums leading-none">
                   {prop.roi.toFixed(1)}%
                 </div>
               </div>
@@ -210,8 +210,8 @@ export default function PropertyDetailPage() {
         <div className="space-y-5">
 
           {/* Performance metrics */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5">
-            <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               Performance (30 days)
             </p>
             <div className="grid grid-cols-3 gap-3">
@@ -224,7 +224,7 @@ export default function PropertyDetailPage() {
                   key={label}
                   className="rounded-[14px] border border-white/[0.05] bg-white/[0.02] p-3"
                 >
-                  <div className="text-[10px] text-white/35 uppercase tracking-[0.14em]">{label}</div>
+                  <div className="text-[12px] text-white/35 uppercase tracking-[0.14em]">{label}</div>
                   <div className="mt-1.5 text-[22px] font-semibold tabular-nums text-white">{value}</div>
                 </div>
               ))}
@@ -232,8 +232,8 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Readiness scores */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5">
-            <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5">
+            <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               Readiness Scores
             </p>
             <div className="space-y-4">
@@ -266,8 +266,8 @@ export default function PropertyDetailPage() {
 
           {/* Last updated */}
           <div className="rounded-[16px] border border-white/[0.05] bg-white/[0.02] px-4 py-3">
-            <span className="text-[11px] text-white/30">Last updated: </span>
-            <span className="text-[11px] text-white/55">{prop.lastUpdated}</span>
+            <span className="text-[13px] text-white/30">Last updated: </span>
+            <span className="text-[13px] text-white/55">{prop.lastUpdated}</span>
           </div>
 
         </div>
@@ -276,7 +276,7 @@ export default function PropertyDetailPage() {
       {/* Tags */}
       {prop.tags.length > 0 && (
         <section className="mt-8">
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Tag className="h-3 w-3" /> Tags
           </div>
           <div className="flex flex-wrap gap-2">
@@ -294,8 +294,8 @@ export default function PropertyDetailPage() {
 
       {/* Landing status */}
       <section className="mt-8">
-        <div className="rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5">
-          <div className="flex items-center gap-2 mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5">
+          <div className="flex items-center gap-2 mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Globe className="h-3.5 w-3.5" /> Landing Page
           </div>
 
@@ -323,7 +323,7 @@ export default function PropertyDetailPage() {
                   {prop.imageCount} image{prop.imageCount !== 1 ? 's' : ''} available
                 </span>
               ) : (
-                <span className="text-rose-300/70">No images</span>
+                <span className="text-white/55/70">No images</span>
               )}
             </div>
           </div>

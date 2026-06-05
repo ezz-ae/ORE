@@ -45,9 +45,9 @@ const FOLLOWUP_RULES: Rule[] = [
 ]
 
 const RULE_STATUS_CONFIG: Record<RuleStatus, { label: string; icon: React.ElementType; classes: string }> = {
-  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-emerald-300 border-emerald-400/20 bg-emerald-400/[0.07]' },
+  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/[0.07]' },
   pending: { label: 'Pending',  icon: Clock,        classes: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]'      },
-  planned: { label: 'Planned',  icon: AlertCircle,  classes: 'text-sky-300 border-sky-400/20 bg-sky-400/[0.07]'            },
+  planned: { label: 'Planned',  icon: AlertCircle,  classes: 'text-white/55 border-sky-400/20 bg-sky-400/[0.07]'            },
 }
 
 const ALL_RULES = [...INTAKE_RULES, ...ROUTING_RULES, ...FOLLOWUP_RULES]
@@ -60,16 +60,16 @@ function RuleRow({ rule }: { rule: Rule }) {
   const conf = RULE_STATUS_CONFIG[rule.status]
   const Icon = conf.icon
   return (
-    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-white/[0.06] bg-[#0A0D10]' : rule.status === 'pending' ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.04] bg-white/[0.01]'}`}>
+    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-white/[0.08] bg-[#1A1F2A]' : rule.status === 'pending' ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.04] bg-white/[0.01]'}`}>
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${conf.classes.split(' ')[0]}`} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-white/80">{rule.trigger}</div>
         <p className="mt-1 text-[12px] text-white/50">{rule.action}</p>
         {rule.note && (
-          <p className="mt-1.5 text-[11px] italic text-white/30">{rule.note}</p>
+          <p className="mt-1.5 text-[13px] italic text-white/30">{rule.note}</p>
         )}
       </div>
-      <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${conf.classes}`}>{conf.label}</span>
+      <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${conf.classes}`}>{conf.label}</span>
     </div>
   )
 }
@@ -105,10 +105,10 @@ export default function LeadWorkflowPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <GitBranch className="h-3.5 w-3.5" /> Lead Workflow
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[10px] font-medium text-sky-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[12px] font-medium text-white/55">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-400" /> Planned
           </span>
         </div>
@@ -123,14 +123,14 @@ export default function LeadWorkflowPage() {
       {/* Live status stats */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Active rules',      value: activeRules,  color: 'text-emerald-300' },
+          { label: 'Active rules',      value: activeRules,  color: 'text-[#D4AF37]' },
           { label: 'Pending rules',     value: pendingRules, color: 'text-[#D4AF37]' },
           { label: 'Unassigned leads',  value: unassigned,   color: unassigned > 0 ? 'text-red-300' : 'text-white' },
           { label: 'Overdue follow-ups', value: overdue,     color: overdue > 0 ? 'text-orange-300' : 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
-            <div className="mt-1.5 text-[11px] text-white/40">{stat.label}</div>
+            <div className="mt-1.5 text-[13px] text-white/40">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -142,11 +142,11 @@ export default function LeadWorkflowPage() {
           { key: 'pending', label: 'Pending' }, { key: 'planned', label: 'Planned' },
         ] as { key: StatusFilter; label: string }[]).map(({ key, label }) => (
           <button key={key} onClick={() => setStatusFilter(key)}
-            className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+            className={['rounded-full border px-3 py-1 text-[13px] font-medium transition',
               statusFilter === key
-                ? key === 'active'  ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                ? key === 'active'  ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : key === 'pending' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : key === 'planned' ? 'border-sky-400/40 bg-sky-400/10 text-sky-300'
+                  : key === 'planned' ? 'border-sky-400/40 bg-sky-400/10 text-white/55'
                   : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
             ].join(' ')}>{label}</button>
@@ -157,7 +157,7 @@ export default function LeadWorkflowPage() {
           { key: 'routing', label: 'Routing' }, { key: 'followup', label: 'Follow-up' },
         ] as { key: StepFilter; label: string }[]).map(({ key, label }) => (
           <button key={key} onClick={() => setStepFilter(key)}
-            className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+            className={['rounded-full border px-3 py-1 text-[13px] font-medium transition',
               stepFilter === key
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -185,7 +185,7 @@ export default function LeadWorkflowPage() {
       {/* Intake rules */}
       {(stepFilter === 'All' || stepFilter === 'intake') && (
         <section className="mt-12">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 1</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Step 1</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Intake rules</h2>
           <p className="mt-1 text-[13px] text-white/45">What happens the moment a lead arrives from any channel.</p>
           {filteredIntake.length === 0 ? (
@@ -203,7 +203,7 @@ export default function LeadWorkflowPage() {
       {/* Routing rules */}
       {(stepFilter === 'All' || stepFilter === 'routing') && (
         <section className="mt-12">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 2</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Step 2</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Routing logic</h2>
           <p className="mt-1 text-[13px] text-white/45">How leads are matched to agents based on intent, source, and availability.</p>
           {filteredRouting.length === 0 ? (
@@ -221,7 +221,7 @@ export default function LeadWorkflowPage() {
       {/* Follow-up automation */}
       {(stepFilter === 'All' || stepFilter === 'followup') && (
         <section className="mt-12">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Step 3</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Step 3</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Follow-up automation</h2>
           <p className="mt-1 text-[13px] text-white/45">Time-based escalation and automated outreach rules.</p>
           {filteredFollowup.length === 0 ? (
@@ -246,7 +246,7 @@ export default function LeadWorkflowPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center justify-between rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4 transition hover:border-[#D4AF37]/25"
+            className="group flex items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4 transition hover:border-[#D4AF37]/25"
           >
             <div>
               <div className="text-[13px] font-semibold text-white/85 transition group-hover:text-white">{item.label}</div>

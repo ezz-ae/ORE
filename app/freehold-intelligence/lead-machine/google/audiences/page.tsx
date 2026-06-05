@@ -31,10 +31,10 @@ function fmtSize(n: number): string {
 
 const TYPE_BADGE: Record<GoogleAudienceType, string> = {
   CUSTOMER_MATCH:   'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20',
-  IN_MARKET:        'bg-sky-400/10 text-sky-300 border-sky-400/20',
-  AFFINITY:         'bg-violet-400/10 text-violet-300 border-violet-400/20',
-  REMARKETING:      'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
-  SIMILAR_AUDIENCE: 'bg-rose-400/10 text-rose-300 border-rose-400/20',
+  IN_MARKET:        'bg-sky-400/10 text-white/55 border-sky-400/20',
+  AFFINITY:         'bg-violet-400/10 text-white/55 border-violet-400/20',
+  REMARKETING:      'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
+  SIMILAR_AUDIENCE: 'bg-rose-400/10 text-white/55 border-rose-400/20',
   COMBINED:         'bg-white/[0.04] text-white/40 border-white/[0.08]',
 }
 
@@ -95,12 +95,12 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
   const typeLabel = TYPE_LABEL[audience.type] ?? audience.type
 
   return (
-    <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#4285F4]/20">
+    <div className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#4285F4]/20">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${typeCls}`}
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[12px] font-medium ${typeCls}`}
           >
             {typeLabel}
           </span>
@@ -111,9 +111,9 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
 
         {/* Status badge */}
         <span
-          className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${
+          className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${
             audience.status === 'OPEN'
-              ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
+              ? 'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
               : 'border-red-400/20 bg-red-400/10 text-red-300'
           }`}
         >
@@ -132,8 +132,8 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
       {audience.matchRate != null && (
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-[11px] text-white/40">Match rate</span>
-            <span className="text-[11px] font-medium text-orange-300">
+            <span className="text-[13px] text-white/40">Match rate</span>
+            <span className="text-[13px] font-medium text-orange-300">
               {(audience.matchRate * 100).toFixed(0)}%
             </span>
           </div>
@@ -208,7 +208,7 @@ export default function GoogleAudiencesPage() {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
             <Users className="h-3.5 w-3.5" />
             Audiences
           </div>
@@ -280,11 +280,11 @@ export default function GoogleAudiencesPage() {
               { label: 'Total reach',          value: totalReach > 0 ? fmtReach(totalReach) : '—',
                                                                                   color: 'text-white'           },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
-                <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+                <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
               </div>
             ))}
           </div>
@@ -308,7 +308,7 @@ export default function GoogleAudiencesPage() {
                   ].join(' ')}
                 >
                   {label}
-                  <span className="ml-1.5 text-[10px] opacity-60">{count}</span>
+                  <span className="ml-1.5 text-[12px] opacity-60">{count}</span>
                 </button>
               )
             })}
@@ -324,7 +324,7 @@ export default function GoogleAudiencesPage() {
           ) : (
             audiences.length > 0 ? (
               /* filtered but no results for this type */
-              <div className="mt-8 rounded-[24px] border border-white/[0.06] bg-[#0A0D10] px-6 py-12 text-center">
+              <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-12 text-center">
                 <Users className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
                 <div className="text-[15px] font-semibold text-white">
                   No {FILTER_TABS.find((t) => t.value === filter)?.label.toLowerCase()} audiences
@@ -356,7 +356,7 @@ export default function GoogleAudiencesPage() {
           {/* ── In-Market Audiences (static) ── */}
           <section className="mt-12">
             <div className="mb-5">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 Recommended in-market audiences
               </div>
               <p className="mt-1.5 text-[13px] text-white/40">
@@ -368,11 +368,11 @@ export default function GoogleAudiencesPage() {
               {STATIC_IN_MARKET.map((item) => (
                 <div
                   key={item.name}
-                  className="flex items-start justify-between gap-4 rounded-[16px] border border-white/[0.06] bg-[#0A0D10] p-5"
+                  className="flex items-start justify-between gap-4 rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/10 px-2 py-0.5 text-[10px] font-medium text-sky-300">
+                      <span className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/10 px-2 py-0.5 text-[12px] font-medium text-white/55">
                         In-Market
                       </span>
                     </div>
@@ -381,7 +381,7 @@ export default function GoogleAudiencesPage() {
                       {item.description}
                     </p>
                   </div>
-                  <span className="mt-1 shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/35">
+                  <span className="mt-1 shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[13px] font-medium text-white/35">
                     Add
                   </span>
                 </div>
@@ -390,7 +390,7 @@ export default function GoogleAudiencesPage() {
           </section>
 
           {/* ── Customer Match info note ── */}
-          <div className="mt-8 flex items-start gap-3 rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-5 py-4">
+          <div className="mt-8 flex items-start gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-5 py-4">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
             <p className="text-[12px] leading-relaxed text-white/40">
               <span className="font-medium text-white/60">Customer Match</span> requires a minimum of 1,000 matched users to be active in campaigns. Uploaded lists may take up to 48 hours to process.

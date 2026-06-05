@@ -20,9 +20,9 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+      className="flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
     >
-      {copied ? <CheckCircle className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+      {copied ? <CheckCircle className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
   )
@@ -97,20 +97,20 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
               onClick={() => handleAction(action.key, action.label)}
               disabled={done}
               className={[
-                'flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-[13px] transition',
+                'flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-[13px] transition',
                 done
-                  ? 'text-emerald-400/60 border-emerald-400/15 cursor-default'
+                  ? 'text-[#D4AF37]/60 border-emerald-400/15 cursor-default'
                   : `text-white/55 ${action.accent}`,
               ].join(' ')}
             >
-              {done ? <CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> : <Icon className="h-3.5 w-3.5" />}
+              {done ? <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Icon className="h-3.5 w-3.5" />}
               {done ? action.label : action.label.replace('Moved to', 'Move to').replace('Queued for', 'Reassign').replace('Snoozed', 'Snooze')}
             </button>
           )
         })}
         <Link
           href="/freehold-intelligence/crm/pipeline"
-          className="flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-[13px] text-white/55 transition hover:border-white/20 hover:text-white"
+          className="flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-[13px] text-white/55 transition hover:border-white/20 hover:text-white"
         >
           <ArrowUpRight className="h-3.5 w-3.5" />
           View in pipeline
@@ -118,7 +118,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
       </div>
 
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
           {flash}
         </div>
       )}

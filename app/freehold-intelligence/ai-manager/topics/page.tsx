@@ -110,25 +110,25 @@ const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Sched
 const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'Area Guide', 'Investment', 'Legal', 'Lifestyle']
 
 function categoryBadge(cat: TopicCategory) {
-  if (cat === 'Market News') return 'text-sky-400 bg-sky-500/10 border-sky-500/20'
-  if (cat === 'Area Guide')  return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+  if (cat === 'Market News') return 'text-white/55 bg-sky-500/10 border-sky-500/20'
+  if (cat === 'Area Guide')  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
   if (cat === 'Investment')  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
-  if (cat === 'Legal')       return 'text-violet-400 bg-violet-500/10 border-violet-500/20'
-  return 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+  if (cat === 'Legal')       return 'text-white/55 bg-violet-500/10 border-violet-500/20'
+  return 'text-white/55 bg-rose-500/10 border-rose-500/20'
 }
 
 function statusBadge(status: TopicStatus) {
-  if (status === 'Published')  return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-  if (status === 'Scheduled')  return 'text-sky-400 bg-sky-500/10 border-sky-500/20'
+  if (status === 'Published')  return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Scheduled')  return 'text-white/55 bg-sky-500/10 border-sky-500/20'
   if (status === 'Idea')       return 'text-white/40 bg-white/[0.04] border-white/[0.08]'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
 
 function seoColor(score: number) {
   if (score === 0)   return 'text-white/25'
-  if (score >= 80)   return 'text-emerald-400'
+  if (score >= 80)   return 'text-[#D4AF37]'
   if (score >= 60)   return 'text-[#D4AF37]'
-  return 'text-rose-400'
+  return 'text-white/55'
 }
 
 export default function TopicsPage() {
@@ -170,7 +170,7 @@ export default function TopicsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
         <BookOpen className="h-3.5 w-3.5" />
         AI Manager · Topics
       </div>
@@ -178,7 +178,7 @@ export default function TopicsPage() {
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-white sm:text-[40px]">
           Topics &amp; Content Calendar
         </h1>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20">
+        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20">
           <Plus className="h-4 w-4" />
           Generate Topic
         </button>
@@ -192,7 +192,7 @@ export default function TopicsPage() {
             onClick={() => setActiveFilter(f as TopicStatus | 'All')}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                ? 'bg-rose-500/10 border-rose-500/30 text-white/55'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
             }`}
           >
@@ -207,10 +207,10 @@ export default function TopicsPage() {
             key={c}
             onClick={() => setCategoryFilter(c as TopicCategory | 'All')}
             className={[
-              'rounded-full px-2.5 py-0.5 text-[11px] font-medium transition border',
+              'rounded-full px-2.5 py-0.5 text-[13px] font-medium transition border',
               categoryFilter === c
                 ? 'border-white/25 bg-white/[0.06] text-white/80'
-                : 'border-white/[0.06] text-white/30 hover:text-white/55',
+                : 'border-white/[0.08] text-white/30 hover:text-white/55',
             ].join(' ')}
           >
             {c}
@@ -226,11 +226,11 @@ export default function TopicsPage() {
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Published </span>
-          <span className="font-semibold text-emerald-400">{topics.filter((t) => t.status === 'Published').length}</span>
+          <span className="font-semibold text-[#D4AF37]">{topics.filter((t) => t.status === 'Published').length}</span>
         </div>
         <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Scheduled </span>
-          <span className="font-semibold text-sky-400">{topics.filter((t) => t.status === 'Scheduled').length}</span>
+          <span className="font-semibold text-white/55">{topics.filter((t) => t.status === 'Scheduled').length}</span>
         </div>
         <div className="rounded-xl border border-white/[0.05] bg-white/[0.03] px-4 py-2.5 text-sm">
           <span className="text-white/40">Draft </span>
@@ -248,7 +248,7 @@ export default function TopicsPage() {
           <thead>
             <tr className="border-b border-white/[0.05]">
               {['Title', 'Category', 'Status', 'Scheduled', 'Words', 'SEO', 'Actions'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-white/30">
+                <th key={h} className="px-4 py-3 text-left text-[13px] font-medium uppercase tracking-widest text-white/30">
                   {h}
                 </th>
               ))}
@@ -269,12 +269,12 @@ export default function TopicsPage() {
                   <span className="text-sm font-medium leading-snug text-white/80">{topic.title}</span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${categoryBadge(topic.category)}`}>
+                  <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${categoryBadge(topic.category)}`}>
                     {topic.category}
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(effectiveStatus)}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(effectiveStatus)}`}>
                     {effectiveStatus === 'Published' && <Check className="h-3 w-3" />}
                     {effectiveStatus === 'Scheduled' && <Calendar className="h-3 w-3" />}
                     {effectiveStatus}
@@ -299,7 +299,7 @@ export default function TopicsPage() {
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     {effectiveStatus === 'Published' ? (
-                      <span className="flex items-center gap-1 text-[11px] text-emerald-400">
+                      <span className="flex items-center gap-1 text-[13px] text-[#D4AF37]">
                         <CheckCircle className="h-3 w-3" /> Live
                       </span>
                     ) : (
@@ -307,7 +307,7 @@ export default function TopicsPage() {
                         <button className="text-xs text-white/40 transition hover:text-white/70">Edit</button>
                         <button
                           onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
-                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20"
+                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[13px] font-medium text-white/55 transition hover:bg-rose-500/20"
                         >
                           <Sparkles className="h-3 w-3" />
                           {effectiveStatus === 'Idea' ? 'Generate' : 'Publish'}
@@ -324,7 +324,7 @@ export default function TopicsPage() {
       </div>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

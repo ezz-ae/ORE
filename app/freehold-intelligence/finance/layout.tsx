@@ -3,7 +3,7 @@
 export function FinanceLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="sticky top-[53px] z-30 border-b border-white/[0.06] bg-[#06080A]/80 backdrop-blur-xl">
+      <div className="sticky top-[56px] z-30 border-b border-white/[0.08] bg-[#111318]/80 backdrop-blur-xl">
         <div className="flex h-12 items-center justify-between px-6">
           {/* Left: section title */}
           <span className="text-[13px] font-medium text-white/90">Finance & Billing</span>

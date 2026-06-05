@@ -21,7 +21,7 @@ interface Milestone {
 function healthTone(health?: string | null) {
   switch (health) {
     case 'complete':
-    case 'on_track': return { dot: 'bg-emerald-400', text: 'text-emerald-300', bar: 'bg-emerald-400' }
+    case 'on_track': return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bar: 'bg-[#D4AF37]' }
     case 'at_risk':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#F8E7AE]',  bar: 'bg-[#D4AF37]'  }
     case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
     default:         return { dot: 'bg-white/25',   text: 'text-white/55',   bar: 'bg-white/25'   }
@@ -83,7 +83,7 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
             key={key}
             onClick={() => setHealthFilter(key)}
             className={[
-              'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              'rounded-full border px-3 py-1 text-[13px] font-medium transition',
               healthFilter === key
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -98,7 +98,7 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
             key={key}
             onClick={() => setStatusFilter(key)}
             className={[
-              'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              'rounded-full border px-3 py-1 text-[13px] font-medium transition',
               statusFilter === key
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -118,7 +118,7 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
       {/* List */}
       <ol className="mt-6 grid gap-3">
         {filtered.length === 0 ? (
-          <li className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-10 text-center text-[13px] text-white/35">
+          <li className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-6 py-10 text-center text-[13px] text-white/35">
             No milestones match these filters.{' '}
             <button
               onClick={() => { setHealthFilter('All'); setStatusFilter('All') }}
@@ -135,7 +135,7 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
               <li key={m.code}>
                 <Link
                   href={`/freehold-intelligence/milestones/${m.code}`}
-                  className="group flex items-stretch gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#0E1216] sm:p-6"
+                  className="group flex items-stretch gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/20 hover:bg-[#0E1216] sm:p-6"
                 >
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-sm font-semibold tracking-tight text-[#D4AF37]">
                     {m.code}

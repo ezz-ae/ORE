@@ -68,7 +68,7 @@ export default function FreeholdCrmPage() {
 
           {/* Header */}
           <section>
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
               <Users className="h-3.5 w-3.5" /> CRM Intelligence
             </div>
             <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
@@ -83,17 +83,17 @@ export default function FreeholdCrmPage() {
 
           {/* Mobile stats */}
           <div className="mt-8 grid grid-cols-3 gap-3 lg:hidden">
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
               <div className="text-[22px] font-semibold text-white">{crmLeads.length}</div>
-              <div className="text-[10px] text-white/40">Total</div>
+              <div className="text-[12px] text-white/40">Total</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
               <div className="text-[22px] font-semibold text-red-400">{hotLeads.length}</div>
-              <div className="text-[10px] text-white/40">Hot</div>
+              <div className="text-[12px] text-white/40">Hot</div>
             </div>
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
               <div className="text-[22px] font-semibold text-[#D4AF37]">{avgIntent}</div>
-              <div className="text-[10px] text-white/40">Avg intent</div>
+              <div className="text-[12px] text-white/40">Avg intent</div>
             </div>
           </div>
 
@@ -154,7 +154,7 @@ export default function FreeholdCrmPage() {
           {/* Section title */}
           <section className="mt-8">
             <div className="flex items-center justify-between">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 {ranked.length} of {crmLeads.length} lead{crmLeads.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -169,17 +169,17 @@ export default function FreeholdCrmPage() {
                   return (
                     <article
                       key={lead.id}
-                      className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#0A0D10] transition hover:border-white/10 lg:rounded-[28px]"
+                      className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-white/10 lg:rounded-[28px]"
                     >
                       {/* Top: avatar + identity */}
                       <div className="flex gap-5 p-5 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
-                        <div className={`relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br lg:h-20 lg:w-20 lg:rounded-3xl ${tint}`}>
+                        <div className={`relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br lg:h-20 lg:w-20 lg:rounded-3xl ${tint}`}>
                           <span className="text-xl font-semibold text-white lg:text-2xl">{initials(lead.name)}</span>
                         </div>
                         <div className="min-w-0 flex-1 pt-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <Link href={`/freehold-intelligence/crm/leads/${lead.id}`} className="text-xl font-semibold tracking-tight text-white transition hover:text-[#D4AF37] sm:text-2xl lg:text-[26px]">{lead.name}</Link>
-                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.badge}`}>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.badge}`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                               {tone.label} · {lead.intentScore}
                             </span>
@@ -196,7 +196,7 @@ export default function FreeholdCrmPage() {
 
                       {/* AI take */}
                       <div className="border-t border-white/[0.05] px-5 py-5 sm:px-6 lg:px-8">
-                        <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/30">What the AI sees</div>
+                        <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">What the AI sees</div>
                         <p className="mt-2 text-[14px] leading-[1.65] text-white/75 lg:text-[15px]">
                           {lead.aiSummary}
                         </p>
@@ -204,7 +204,7 @@ export default function FreeholdCrmPage() {
 
                       {/* Suggested message */}
                       <div className="border-t border-white/[0.05] bg-[#D4AF37]/[0.025] px-5 py-5 sm:px-6 lg:px-8">
-                        <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/70">Suggested WhatsApp</div>
+                        <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/70">Suggested WhatsApp</div>
                         <p className="mt-2 text-[14px] italic leading-[1.6] text-white/70 lg:text-[15px]">
                           &ldquo;{lead.suggestedMessage}&rdquo;
                         </p>
@@ -213,7 +213,7 @@ export default function FreeholdCrmPage() {
                       {/* Next move + actions */}
                       <div className="flex flex-col gap-3 border-t border-white/[0.05] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 lg:py-5">
                         <div>
-                          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/30">Next move</div>
+                          <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/30">Next move</div>
                           <div className="mt-1 text-[13px] font-medium text-white/80 lg:text-[14px]">{lead.nextBestAction}</div>
                         </div>
                         <div className="flex gap-2">
@@ -249,7 +249,7 @@ export default function FreeholdCrmPage() {
             )}
           </section>
 
-          <footer className="mt-16 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.05] pt-6 text-[11px] text-white/30">
+          <footer className="mt-16 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.05] pt-6 text-[13px] text-white/30">
             <span>{crmLeads.length} {crmLeads.length === 1 ? 'lead' : 'leads'} today</span>
             <span className="text-red-300/60">{hotLeads.length} need action</span>
             <Link href="/freehold-intelligence/notebook" className="inline-flex items-center gap-1 text-[#D4AF37]/70 hover:text-[#D4AF37]">
@@ -263,31 +263,31 @@ export default function FreeholdCrmPage() {
           <div className="sticky top-20 space-y-3">
 
             {/* Stats panel */}
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Pipeline today</div>
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Pipeline today</div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <div className="text-[28px] font-semibold text-white">{crmLeads.length}</div>
-                  <div className="text-[10px] text-white/35">Total</div>
+                  <div className="text-[12px] text-white/35">Total</div>
                 </div>
                 <div className="text-center">
                   <div className="text-[28px] font-semibold text-red-400">{hotLeads.length}</div>
-                  <div className="text-[10px] text-white/35">Hot</div>
+                  <div className="text-[12px] text-white/35">Hot</div>
                 </div>
                 <div className="text-center">
                   <div className="text-[28px] font-semibold text-[#D4AF37]">{avgIntent}</div>
-                  <div className="text-[10px] text-white/35">Avg intent</div>
+                  <div className="text-[12px] text-white/35">Avg intent</div>
                 </div>
               </div>
               <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/[0.06]">
                 <div className="h-full bg-[#D4AF37]" style={{ width: `${Math.round((hotLeads.length / crmLeads.length) * 100)}%` }} />
               </div>
-              <p className="mt-2 text-[11px] text-white/35">{Math.round((hotLeads.length / crmLeads.length) * 100)}% need action today</p>
+              <p className="mt-2 text-[13px] text-white/35">{Math.round((hotLeads.length / crmLeads.length) * 100)}% need action today</p>
             </div>
 
             {/* Intent score bars */}
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="mb-3 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Intent ranking
               </div>
               <div className="space-y-2.5">
@@ -300,7 +300,7 @@ export default function FreeholdCrmPage() {
                         style={{ width: `${lead.intentScore}%` }}
                       />
                     </div>
-                    <div className="w-6 text-right text-[11px] font-medium tabular-nums text-white/55">{lead.intentScore}</div>
+                    <div className="w-6 text-right text-[13px] font-medium tabular-nums text-white/55">{lead.intentScore}</div>
                   </div>
                 ))}
               </div>

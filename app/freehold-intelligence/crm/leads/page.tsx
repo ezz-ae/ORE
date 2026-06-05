@@ -13,14 +13,14 @@ function urgencyConfig(u: string) {
 }
 
 function scoreColor(n: number) {
-  if (n >= 85) return 'text-emerald-300'
+  if (n >= 85) return 'text-[#D4AF37]'
   if (n >= 65) return 'text-[#D4AF37]'
   return 'text-red-300'
 }
 
 function stageColor(stage: string) {
   if (stage === 'Hot')       return 'text-red-300 border-red-400/20 bg-red-400/10'
-  if (stage === 'Qualified') return 'text-emerald-300 border-emerald-400/20 bg-emerald-400/10'
+  if (stage === 'Qualified') return 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/10'
   if (stage === 'Follow-up') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (stage === 'New')       return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
   return 'text-white/50 border-white/10 bg-white/[0.04]'
@@ -73,7 +73,7 @@ export default function CrmLeadsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Target className="h-3.5 w-3.5" /> CRM · All Leads
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -90,9 +90,9 @@ export default function CrmLeadsPage() {
           { label: 'Avg intent',   value: avgIntent,       color: 'text-[#D4AF37]'                                },
           { label: 'Risk flags',   value: withRisk,        color: withRisk > 0 ? 'text-orange-300' : 'text-white' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
             <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
         ))}
       </div>
@@ -111,12 +111,12 @@ export default function CrmLeadsPage() {
 
       {/* Stage filter */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] text-white/35 shrink-0">Stage:</span>
+        <span className="text-[13px] text-white/35 shrink-0">Stage:</span>
         {ALL_STAGES.map((stage) => (
           <button
             key={stage}
             onClick={() => setActiveStage(stage)}
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition ${
+            className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium transition ${
               activeStage === stage
                 ? stage === 'All'
                   ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
@@ -131,12 +131,12 @@ export default function CrmLeadsPage() {
 
       {/* Agent filter */}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="text-[11px] text-white/35 shrink-0">Agent:</span>
+        <span className="text-[13px] text-white/35 shrink-0">Agent:</span>
         {ALL_AGENTS.map((agent) => (
           <button
             key={agent}
             onClick={() => setActiveAgent(agent)}
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition ${
+            className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium transition ${
               activeAgent === agent
                 ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70 hover:border-white/20'
@@ -148,7 +148,7 @@ export default function CrmLeadsPage() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/40 transition hover:text-white/70"
+            className="ml-1 flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/40 transition hover:text-white/70"
           >
             <X className="h-3 w-3" /> Clear
           </button>
@@ -156,21 +156,21 @@ export default function CrmLeadsPage() {
       </div>
 
       {/* Result count */}
-      <p className="mt-3 text-[11px] text-white/30">
+      <p className="mt-3 text-[13px] text-white/30">
         {filtered.length} of {crmLeads.length} leads
         {hasFilters && <span className="ml-1.5 text-[#D4AF37]/60">· filtered</span>}
       </p>
 
       {/* Lead table */}
       <section className="mt-4">
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           {/* Table header */}
           <div className="hidden grid-cols-[2fr_1fr_80px_100px_120px_40px] items-center gap-4 border-b border-white/[0.05] px-6 py-3 sm:grid">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Lead</div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Stage</div>
-            <div className="text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Score</div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Source</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Lead</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Stage</div>
+            <div className="text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Score</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Source</div>
             <div />
           </div>
 
@@ -204,7 +204,7 @@ export default function CrmLeadsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-0.5 text-[11px] text-white/35 truncate sm:hidden">
+                        <div className="mt-0.5 text-[13px] text-white/35 truncate sm:hidden">
                           {lead.stage} · {lead.assignedAgent} · score {lead.intentScore}
                         </div>
                       </div>
@@ -212,7 +212,7 @@ export default function CrmLeadsPage() {
 
                     {/* Stage */}
                     <div className="hidden flex-1 sm:flex">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${stageColor(lead.stage)}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${stageColor(lead.stage)}`}>
                         {lead.stage}
                       </span>
                     </div>
@@ -237,7 +237,7 @@ export default function CrmLeadsPage() {
 
                     {/* Source */}
                     <div className="hidden flex-1 sm:block">
-                      <span className="line-clamp-1 text-[11px] text-white/35">{lead.source}</span>
+                      <span className="line-clamp-1 text-[13px] text-white/35">{lead.source}</span>
                     </div>
 
                     {/* Arrow */}
@@ -251,7 +251,7 @@ export default function CrmLeadsPage() {
       </section>
 
       {/* Footer */}
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-white/30">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-white/30">
         <span>{filtered.length} leads · sorted by intent score</span>
         <Link href="/freehold-intelligence/crm" className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
           → Intelligence view

@@ -5,13 +5,13 @@ import { projects } from '@/src/data/projects'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
-  if (s === 'Ready') return { dot: 'bg-emerald-400', text: 'text-emerald-300', bg: 'bg-emerald-400/10 border-emerald-400/20' }
+  if (s === 'Ready') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
   if (s === 'Under construction') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   return { dot: 'bg-sky-400', text: 'text-sky-200', bg: 'bg-sky-400/10 border-sky-400/20' }
 }
 
 function readinessTone(n: number) {
-  if (n >= 90) return { bar: 'bg-emerald-400', text: 'text-emerald-300' }
+  if (n >= 90) return { bar: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
   if (n >= 80) return { bar: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]' }
   return { bar: 'bg-white/30', text: 'text-white/50' }
 }
@@ -41,11 +41,11 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.bg} ${tone.text}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.bg} ${tone.text}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             {project.status}
           </span>
-          <span className="text-[11px] text-white/30">{project.area} · {project.emirate}</span>
+          <span className="text-[13px] text-white/30">{project.area} · {project.emirate}</span>
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
           {project.projectName}
@@ -55,28 +55,28 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
 
       {/* Key metrics grid */}
       <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <CreditCard className="h-3 w-3" /> Price from
           </div>
           <p className="mt-2 text-[22px] font-semibold text-white">
             AED {Number(project.startingPrice).toLocaleString()}
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Calendar className="h-3 w-3" /> Handover
           </div>
           <p className="mt-2 text-[22px] font-semibold text-white">{project.handover}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Building2 className="h-3 w-3" /> Unit types
           </div>
           <p className="mt-2 text-[15px] font-semibold text-white">{project.unitTypes.join(' · ')}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Target className="h-3 w-3" /> Readiness
           </div>
           <div className="mt-2 flex items-center gap-2">
@@ -89,8 +89,8 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
       </section>
 
       {/* Payment plan */}
-      <section className="mt-5 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4">
-        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+      <section className="mt-5 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
+        <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
           <CreditCard className="h-3 w-3" /> Payment plan
         </div>
         <p className="mt-2 text-[15px] text-white/85">{project.paymentPlan}</p>
@@ -99,33 +99,33 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
       {/* Intelligence cards */}
       <section className="mt-5 grid gap-4 sm:grid-cols-2">
         <div className="rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
             <Megaphone className="h-3 w-3" /> Ad angle
           </div>
           <p className="mt-3 text-[14px] leading-[1.65] text-white/85">{project.adAngle}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Users className="h-3 w-3" /> Buyer profile
           </div>
           <p className="mt-3 text-[14px] leading-[1.65] text-white/75">{project.buyerProfile}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <TrendingUp className="h-3 w-3" /> ROI note
           </div>
           <p className="mt-3 text-[14px] leading-[1.65] text-white/75">{project.roiNote}</p>
         </div>
 
-        <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
             <MapPin className="h-3 w-3" /> Tags
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
-              <span key={tag} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/55">
+              <span key={tag} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/55">
                 {tag}
               </span>
             ))}

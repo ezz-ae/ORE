@@ -62,7 +62,7 @@ export default async function CampaignsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Megaphone className="h-3.5 w-3.5" /> Meta Campaigns
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -114,68 +114,25 @@ export default async function CampaignsPage() {
       {!isConfigError && (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Active',      value: active,                        color: 'text-emerald-300' },
+            { label: 'Active',      value: active,                        color: 'text-[#D4AF37]' },
             { label: 'Paused',      value: paused,                        color: 'text-[#D4AF37]' },
             { label: 'Total spend', value: fmtSpend(String(totalSpend)),  color: 'text-white' },
-            { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-emerald-300' : 'text-white' },
+            { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-              <div className="mt-1.5 text-[11px] text-white/40">{s.label}</div>
+              <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* Campaign list */}
-      {campaigns.length > 0 && (
-        <section className="mt-12">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All campaigns</div>
-          <div className="mt-4 space-y-3">
-            {campaigns.map((campaign) => {
-              const st     = statusConfig(campaign.status)
-              const leads  = getLeads(campaign)
-              const cpl    = parseFloat(campaign.insights?.spend ?? '0') > 0 && parseInt(leads) > 0
-                ? `AED ${(parseFloat(campaign.insights!.spend) / parseInt(leads)).toFixed(0)}`
-                : '—'
-
-              return (
-                <Link
-                  key={campaign.id}
-                  href={`/freehold-intelligence/lead-machine/campaigns/${campaign.id}`}
-                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/25"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} />
-                      <h3 className="text-[15px] font-semibold text-white/90 transition group-hover:text-white truncate">{campaign.name}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.badge}`}>{st.label}</span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-white/45">
-                      <span>Budget: <span className="text-white/70">{fmtBudget(campaign.daily_budget)}/day</span></span>
-                      <span>Objective: <span className="text-white/70">{campaign.objective.replace(/_/g, ' ')}</span></span>
-                    </div>
-                    {campaign.insights && (
-                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12px]">
-                        <span className="text-white/45">Impressions: <span className="text-white/70">{parseInt(campaign.insights.impressions ?? '0').toLocaleString()}</span></span>
-                        <span className="text-white/45">Clicks: <span className="text-white/70">{parseInt(campaign.insights.clicks ?? '0').toLocaleString()}</span></span>
-                        <span className="text-white/45">Spend: <span className="text-white/70">{fmtSpend(campaign.insights.spend)}</span></span>
-                        <span className="text-white/45">Leads: <span className="text-emerald-300 font-semibold">{leads}</span></span>
-                        <span className="text-white/45">CPL: <span className="text-white/70">{cpl}</span></span>
-                      </div>
-                    )}
-                  </div>
-                  <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-white/20 transition group-hover:text-[#D4AF37]" />
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      )}
+      {campaigns.length > 0 && <CampaignList campaigns={campaigns} />}
 
       {/* Empty state — connected but no campaigns */}
       {!isConfigError && !data.error && campaigns.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No campaigns yet</div>
           <p className="mt-2 text-[14px] text-white/40">Create the first campaign to start generating leads from Meta and Instagram.</p>

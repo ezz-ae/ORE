@@ -41,9 +41,9 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copy}
-      className="inline-flex items-center gap-1 text-[11px] text-white/25 transition hover:text-white/60"
+      className="inline-flex items-center gap-1 text-[13px] text-white/25 transition hover:text-white/60"
     >
-      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+      {copied ? <Check className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
   )
@@ -106,7 +106,7 @@ export default function GenerateCreativePage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Wand2 className="h-3.5 w-3.5" /> AI Copy Generator
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -122,14 +122,14 @@ export default function GenerateCreativePage() {
 
           {/* Listing */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Listing
             </label>
             <div className="relative">
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -138,7 +138,7 @@ export default function GenerateCreativePage() {
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-white/30" />
             </div>
             {listing && (
-              <div className="mt-1.5 text-[11px] text-white/30">
+              <div className="mt-1.5 text-[13px] text-white/30">
                 {listing.area} · {listing.developer}
                 {listing.startingPrice && (
                   <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
@@ -149,7 +149,7 @@ export default function GenerateCreativePage() {
 
           {/* Angle */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Creative angle
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -161,11 +161,11 @@ export default function GenerateCreativePage() {
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-white/[0.07] bg-[#0A0D10] text-white/50 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/50 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   <div className="text-[12px] font-semibold">{a.label}</div>
-                  <div className="mt-0.5 text-[10px] leading-tight opacity-60">{a.desc}</div>
+                  <div className="mt-0.5 text-[12px] leading-tight opacity-60">{a.desc}</div>
                 </button>
               ))}
             </div>
@@ -173,7 +173,7 @@ export default function GenerateCreativePage() {
 
           {/* Tone */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Tone
             </label>
             <div className="flex gap-2">
@@ -185,7 +185,7 @@ export default function GenerateCreativePage() {
                     'flex-1 rounded-[12px] border py-2.5 text-[12px] font-medium transition',
                     tone === t.value
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-white/[0.07] bg-[#0A0D10] text-white/45 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/45 hover:text-white/70',
                   ].join(' ')}
                 >
                   {t.label}
@@ -196,14 +196,14 @@ export default function GenerateCreativePage() {
 
           {/* CTA */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Call to action
             </label>
             <div className="relative">
               <select
                 value={cta}
                 onChange={(e) => setCta(e.target.value as MetaCta)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#D4AF37]/40 focus:outline-none"
               >
                 {CTAS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -260,7 +260,7 @@ export default function GenerateCreativePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+                  <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
                     {variants.length} variant{variants.length !== 1 ? 's' : ''} — {angleConfig.label} · {tone}
                   </div>
                 </div>
@@ -273,12 +273,12 @@ export default function GenerateCreativePage() {
               </div>
 
               {variants.map((v, i) => (
-                <div key={v.id} className="rounded-[20px] border border-white/[0.07] bg-[#0A0D10] p-5">
+                <div key={v.id} className="rounded-[20px] border border-white/[0.07] bg-[#1A1F2A] p-5">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/25">
+                    <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                       Variant {i + 1}
                     </span>
-                    <span className="rounded-full border border-white/[0.08] px-2.5 py-0.5 text-[10px] text-white/35">
+                    <span className="rounded-full border border-white/[0.08] px-2.5 py-0.5 text-[12px] text-white/35">
                       {v.cta.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -286,7 +286,7 @@ export default function GenerateCreativePage() {
                   <div className="space-y-3">
                     <div>
                       <div className="mb-1 flex items-center justify-between">
-                        <div className="text-[10px] text-white/30 uppercase tracking-[0.14em]">Headline</div>
+                        <div className="text-[12px] text-white/30 uppercase tracking-[0.14em]">Headline</div>
                         <CopyButton text={v.headline} />
                       </div>
                       <p className="text-[15px] font-semibold text-white leading-snug">{v.headline}</p>
@@ -294,7 +294,7 @@ export default function GenerateCreativePage() {
 
                     <div>
                       <div className="mb-1 flex items-center justify-between">
-                        <div className="text-[10px] text-white/30 uppercase tracking-[0.14em]">Primary text</div>
+                        <div className="text-[12px] text-white/30 uppercase tracking-[0.14em]">Primary text</div>
                         <CopyButton text={v.primaryText} />
                       </div>
                       <p className="text-[13px] text-white/65 leading-relaxed">{v.primaryText}</p>
@@ -303,7 +303,7 @@ export default function GenerateCreativePage() {
                     {v.description && (
                       <div>
                         <div className="mb-1 flex items-center justify-between">
-                          <div className="text-[10px] text-white/30 uppercase tracking-[0.14em]">Description</div>
+                          <div className="text-[12px] text-white/30 uppercase tracking-[0.14em]">Description</div>
                           <CopyButton text={v.description} />
                         </div>
                         <p className="text-[12px] text-white/45">{v.description}</p>
@@ -312,13 +312,13 @@ export default function GenerateCreativePage() {
                   </div>
 
                   <div className="mt-4 border-t border-white/[0.04] pt-3 flex justify-between items-center">
-                    <code className="text-[10px] font-mono text-white/15">{v.id}</code>
+                    <code className="text-[12px] font-mono text-white/15">{v.id}</code>
                     <button
                       onClick={() => {
                         const full = `HEADLINE:\n${v.headline}\n\nPRIMARY TEXT:\n${v.primaryText}\n\nDESCRIPTION:\n${v.description}\n\nCTA: ${v.cta}`
                         navigator.clipboard.writeText(full)
                       }}
-                      className="text-[11px] text-white/25 transition hover:text-white/60"
+                      className="text-[13px] text-white/25 transition hover:text-white/60"
                     >
                       Copy all
                     </button>

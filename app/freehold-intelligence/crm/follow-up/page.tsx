@@ -28,7 +28,7 @@ const urgencyPillStyle: Record<Urgency, string> = {
   All:      'border-white/[0.08] text-white/60 hover:border-white/20 hover:text-white',
   Critical: 'border-red-400/25 text-red-300/70 hover:border-red-400/50 hover:text-red-300',
   High:     'border-[#D4AF37]/25 text-[#D4AF37]/70 hover:border-[#D4AF37]/50 hover:text-[#D4AF37]',
-  Medium:   'border-sky-400/25 text-sky-300/70 hover:border-sky-400/50 hover:text-sky-300',
+  Medium:   'border-sky-400/25 text-white/55/70 hover:border-sky-400/50 hover:text-white/55',
   Low:      'border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/60',
 }
 
@@ -36,7 +36,7 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   All:      'border-white/25 bg-white/[0.06] text-white',
   Critical: 'border-red-400/40 bg-red-400/10 text-red-300',
   High:     'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]',
-  Medium:   'border-sky-400/40 bg-sky-400/10 text-sky-300',
+  Medium:   'border-sky-400/40 bg-sky-400/10 text-white/55',
   Low:      'border-white/20 bg-white/[0.04] text-white/60',
 }
 
@@ -104,7 +104,7 @@ export default function FollowUpQueuePage() {
         <div className="min-w-0">
 
           {/* Header */}
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Clock className="h-3.5 w-3.5" /> Follow-up Queue
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -116,21 +116,21 @@ export default function FollowUpQueuePage() {
 
           {/* Stats strip */}
           <div className="mt-8 grid grid-cols-4 gap-3">
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
               <div className="text-[26px] font-semibold text-white">{stats.total}</div>
-              <div className="mt-0.5 text-[11px] text-white/40">Overdue</div>
+              <div className="mt-0.5 text-[13px] text-white/40">Overdue</div>
             </div>
             <div className="rounded-[18px] border border-red-400/15 bg-red-400/[0.04] p-5">
               <div className="text-[26px] font-semibold text-red-400">{stats.critical}</div>
-              <div className="mt-0.5 text-[11px] text-white/40">Critical</div>
+              <div className="mt-0.5 text-[13px] text-white/40">Critical</div>
             </div>
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
               <div className="text-[26px] font-semibold text-white">{stats.avgOverdue}<span className="text-[14px] font-normal text-white/40">h</span></div>
-              <div className="mt-0.5 text-[11px] text-white/40">Avg delay</div>
+              <div className="mt-0.5 text-[13px] text-white/40">Avg delay</div>
             </div>
-            <div className="rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.04] p-5">
-              <div className="text-[26px] font-semibold text-emerald-300">{stats.doneCount}</div>
-              <div className="mt-0.5 text-[11px] text-white/40">Done this session</div>
+            <div className="rounded-[18px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-5">
+              <div className="text-[26px] font-semibold text-[#D4AF37]">{stats.doneCount}</div>
+              <div className="mt-0.5 text-[13px] text-white/40">Done this session</div>
             </div>
           </div>
 
@@ -149,10 +149,10 @@ export default function FollowUpQueuePage() {
               <select
                 value={activeAgent}
                 onChange={(e) => setActiveAgent(e.target.value)}
-                className="rounded-full border border-white/[0.08] bg-[#0A0D10] px-3.5 py-1 text-[12px] text-white/60 outline-none transition hover:border-white/20 hover:text-white focus:border-white/20"
+                className="rounded-full border border-white/[0.08] bg-[#1A1F2A] px-3.5 py-1 text-[12px] text-white/60 outline-none transition hover:border-white/20 hover:text-white focus:border-white/20"
               >
                 {allAgents.map((a) => (
-                  <option key={a} value={a} className="bg-[#0A0D10]">{a === 'All' ? 'All agents' : a}</option>
+                  <option key={a} value={a} className="bg-[#1A1F2A]">{a === 'All' ? 'All agents' : a}</option>
                 ))}
               </select>
             </div>
@@ -161,16 +161,16 @@ export default function FollowUpQueuePage() {
           {/* Lead cards */}
           <div className="mt-6 space-y-3">
             {visible.length === 0 ? (
-              <div className="rounded-[22px] border border-emerald-400/20 bg-emerald-400/[0.03] p-10 text-center">
-                <CheckCircle className="mx-auto h-10 w-10 text-emerald-300/60" />
-                <div className="mt-4 text-[20px] font-semibold text-emerald-300">Queue clear</div>
+              <div className="rounded-[22px] border border-emerald-400/20 bg-[#D4AF37]/[0.03] p-10 text-center">
+                <CheckCircle className="mx-auto h-10 w-10 text-[#D4AF37]/60" />
+                <div className="mt-4 text-[20px] font-semibold text-[#D4AF37]">Queue clear</div>
                 <p className="mt-2 text-[14px] text-white/45">All follow-ups actioned. Great work.</p>
               </div>
             ) : (
               visible.map((item) => {
                 const tone = urgencyTone(item.urgency)
                 return (
-                  <div key={item.leadId} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 sm:p-6">
+                  <div key={item.leadId} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -180,11 +180,11 @@ export default function FollowUpQueuePage() {
                           >
                             {item.leadName}
                           </Link>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.badge}`}>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.badge}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                             {tone.label}
                           </span>
-                          <span className="text-[11px] font-medium text-red-300/70">{overdueLabel(item.overdueHours)}</span>
+                          <span className="text-[13px] font-medium text-red-300/70">{overdueLabel(item.overdueHours)}</span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] text-white/40">
                           <span>{item.stage}</span>
@@ -209,7 +209,7 @@ export default function FollowUpQueuePage() {
                       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col sm:items-end">
                         <button
                           onClick={() => markDone(item.leadId)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/50 hover:bg-emerald-400/10"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/[0.06] px-4 py-2 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/50 hover:bg-[#D4AF37]/10"
                         >
                           <CheckCircle className="h-3.5 w-3.5" /> Mark Done
                         </button>
@@ -241,14 +241,14 @@ export default function FollowUpQueuePage() {
 
             {riskLeads > 0 && (
               <div className="rounded-[20px] border border-orange-500/20 bg-orange-500/[0.04] p-5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-orange-300/70">Risk alerts</div>
+                <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-orange-300/70">Risk alerts</div>
                 <div className="mt-2 text-[28px] font-semibold text-orange-300">{riskLeads}</div>
                 <div className="mt-1 text-[12px] text-white/50">leads flagged for duplicate or wrong number — resolve before outreach.</div>
               </div>
             )}
 
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Overdue by agent</div>
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Overdue by agent</div>
               <div className="space-y-2">
                 {Object.entries(byAgent).sort((a, b) => b[1] - a[1]).map(([agent, count]) => (
                   <div key={agent} className="flex items-center justify-between text-[13px]">
@@ -275,8 +275,8 @@ export default function FollowUpQueuePage() {
       {/* Flash banner */}
       {flash && (
         <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2">
-          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-[#0A0D10]/95 px-5 py-3 shadow-2xl backdrop-blur-sm">
-            <CheckCircle className="h-4 w-4 text-emerald-300" />
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-[#1A1F2A]/95 px-5 py-3 shadow-2xl backdrop-blur-sm">
+            <CheckCircle className="h-4 w-4 text-[#D4AF37]" />
             <span className="text-[13px] font-medium text-white">{flash}</span>
             <button onClick={() => setFlash(null)} className="ml-1 text-white/40 transition hover:text-white">
               <X className="h-3.5 w-3.5" />

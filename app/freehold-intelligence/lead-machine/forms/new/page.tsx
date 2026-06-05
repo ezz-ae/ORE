@@ -157,8 +157,8 @@ export default function NewFormPage() {
   if (created) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-32 pt-16 sm:px-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/15 mb-6">
-          <Check className="h-8 w-8 text-emerald-400" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#D4AF37]/15 mb-6">
+          <Check className="h-8 w-8 text-[#D4AF37]" />
         </div>
         <h2 className="text-[28px] font-semibold text-white">Form created.</h2>
         <p className="mt-3 text-[15px] text-white/55">Your lead gen form is live on Meta and ready to attach to campaigns.</p>
@@ -192,7 +192,7 @@ export default function NewFormPage() {
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <FileText className="h-3.5 w-3.5" /> New lead form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white">
@@ -218,7 +218,7 @@ export default function NewFormPage() {
             <select
               value={form.listingId}
               onChange={(e) => onListingChange(e.target.value)}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
             >
               <option value="">Select listing…</option>
               {leadMachineListings.map((l) => (
@@ -233,7 +233,7 @@ export default function NewFormPage() {
               value={form.formName}
               onChange={(e) => setForm((p) => ({ ...p, formName: e.target.value }))}
               placeholder="e.g. Palm Jumeirah — Lead Form"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -243,7 +243,7 @@ export default function NewFormPage() {
               value={form.landingUrl}
               onChange={(e) => setForm((p) => ({ ...p, landingUrl: e.target.value }))}
               placeholder="https://… (used for thank-you redirect)"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -252,7 +252,7 @@ export default function NewFormPage() {
             <input
               value={form.privacyPolicyUrl}
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
         </div>
@@ -272,7 +272,7 @@ export default function NewFormPage() {
                     key={q.type}
                     onClick={() => toggleStandard(q.type)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.06] bg-[#0A0D10] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/15'
                     } ${required ? 'cursor-not-allowed opacity-80' : ''}`}
                   >
                     {selected
@@ -283,10 +283,10 @@ export default function NewFormPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-[13px] font-medium text-white">{q.label}</span>
                         {required && (
-                          <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[9px] font-medium text-emerald-300">Required</span>
+                          <span className="rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-medium text-[#D4AF37]">Required</span>
                         )}
                       </div>
-                      <div className="text-[11px] text-white/35">{q.description}</div>
+                      <div className="text-[13px] text-white/35">{q.description}</div>
                     </div>
                   </button>
                 )
@@ -304,7 +304,7 @@ export default function NewFormPage() {
                     key={preset.key}
                     onClick={() => toggleCustom(preset.key)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.06] bg-[#0A0D10] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/15'
                     }`}
                   >
                     {selected
@@ -313,7 +313,7 @@ export default function NewFormPage() {
                     }
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-medium text-white">{preset.label}</div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-white/30">
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[13px] text-white/30">
                         {preset.options.map((o) => <span key={o.value}>{o.label}</span>)}
                       </div>
                     </div>
@@ -340,7 +340,7 @@ export default function NewFormPage() {
               value={form.thankYouTitle}
               onChange={(e) => setForm((p) => ({ ...p, thankYouTitle: e.target.value }))}
               placeholder="Thank you — we'll be in touch."
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
@@ -351,13 +351,13 @@ export default function NewFormPage() {
               onChange={(e) => setForm((p) => ({ ...p, thankYouBody: e.target.value }))}
               rows={3}
               placeholder="A senior advisor will contact you within 24 hours…"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition resize-none"
+              className="w-full rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition resize-none"
             />
           </div>
 
           {/* Preview */}
           <div className="rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-5">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70 mb-3">Preview</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70 mb-3">Preview</div>
             <div className="text-[17px] font-semibold text-white">{form.thankYouTitle || 'Thank you headline'}</div>
             <p className="mt-2 text-[13px] text-white/60">{form.thankYouBody || 'Thank you message body…'}</p>
           </div>
@@ -392,8 +392,8 @@ export default function NewFormPage() {
               ],
             },
           ].map((section) => (
-            <div key={section.title} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">{section.title}</div>
+            <div key={section.title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="mb-3 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">{section.title}</div>
               <div className="space-y-2">
                 {section.rows.map(([label, value]) => (
                   <div key={label} className="flex items-start justify-between gap-3">

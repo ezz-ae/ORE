@@ -36,7 +36,7 @@ type ChecklistFilter = 'All' | 'Done' | 'Pending'
 
 function Check({ ok }: { ok: boolean }) {
   return ok
-    ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+    ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
     : <EyeOff className="h-4 w-4 text-white/20" />
 }
 
@@ -63,7 +63,7 @@ export default function SecurityPage() {
     <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Lock className="h-3.5 w-3.5" /> Security
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -76,19 +76,19 @@ export default function SecurityPage() {
       </section>
 
       {/* Progress bar */}
-      <section className="mt-10 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+      <section className="mt-10 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
         <div className="flex items-center justify-between">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
           <span className="text-[14px] font-semibold text-white">{pct}%</span>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
           <div
-            className={`h-full rounded-full ${pct >= 70 ? 'bg-emerald-400' : pct >= 40 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
+            className={`h-full rounded-full ${pct >= 70 ? 'bg-[#D4AF37]' : pct >= 40 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
         <div className="mt-2 flex items-center gap-2 text-[12px] text-white/35">
-          <CheckCircle2 className="h-3 w-3 text-emerald-400" /> {done} complete
+          <CheckCircle2 className="h-3 w-3 text-[#D4AF37]" /> {done} complete
           <span className="mx-1">·</span>
           <AlertCircle className="h-3 w-3 text-red-400" /> {total - done} pending
         </div>
@@ -98,7 +98,7 @@ export default function SecurityPage() {
       <section className="mt-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Hardening checklist</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Production readiness</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function SecurityPage() {
                 key={f}
                 onClick={() => setChecklistFilter(f)}
                 className={[
-                  'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                  'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                   checklistFilter === f
                     ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -124,25 +124,25 @@ export default function SecurityPage() {
               key={item.label}
               className={`flex items-start gap-4 rounded-[18px] border p-5 ${
                 item.done
-                  ? 'border-emerald-400/10 bg-emerald-400/[0.03]'
+                  ? 'border-emerald-400/10 bg-[#D4AF37]/[0.03]'
                   : 'border-red-400/15 bg-red-400/[0.03]'
               }`}
             >
               {item.done
-                ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
                 : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               }
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-semibold text-white">{item.label}</div>
                 <p className="mt-0.5 text-[12px] text-white/50">{item.note}</p>
               </div>
-              <span className={`shrink-0 text-[11px] font-medium ${item.done ? 'text-emerald-300' : 'text-red-300'}`}>
+              <span className={`shrink-0 text-[13px] font-medium ${item.done ? 'text-[#D4AF37]' : 'text-red-300'}`}>
                 {item.done ? 'Done' : 'Pending'}
               </span>
             </div>
           ))}
           {filteredChecklist.length === 0 && (
-            <div className="rounded-[18px] border border-white/[0.06] px-5 py-10 text-center text-[13px] text-white/35">
+            <div className="rounded-[18px] border border-white/[0.08] px-5 py-10 text-center text-[13px] text-white/35">
               No items match this filter.
             </div>
           )}
@@ -151,18 +151,18 @@ export default function SecurityPage() {
 
       {/* Role matrix */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Access model</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Access model</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Role</th>
-                <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">View</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Edit</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Approve</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Admin</th>
-                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Scope</th>
+                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Role</th>
+                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">View</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Edit</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Approve</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Admin</th>
+                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Scope</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
@@ -193,11 +193,11 @@ export default function SecurityPage() {
 
       {/* Current session scope */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Current session</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Current session</div>
         <h2 className="mt-2 text-xl font-semibold text-white">AI scope — {currentServerUser.role.replace('_', ' ')}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {scope.map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-emerald-400/[0.05] px-3.5 py-1.5 text-[12px] text-emerald-300/80">
+            <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-[#D4AF37]/[0.05] px-3.5 py-1.5 text-[12px] text-[#D4AF37]/80">
               <Eye className="h-3 w-3" /> {s}
             </span>
           ))}
@@ -208,7 +208,7 @@ export default function SecurityPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Audit trail</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Recent actor-tagged events</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -217,7 +217,7 @@ export default function SecurityPage() {
                 key={t}
                 onClick={() => setAuditTypeFilter(t)}
                 className={[
-                  'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                  'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                   auditTypeFilter === t
                     ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -228,7 +228,7 @@ export default function SecurityPage() {
             ))}
           </div>
         </div>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           {filteredAudit.length === 0 ? (
             <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events match this filter.</div>
           ) : (
@@ -242,7 +242,7 @@ export default function SecurityPage() {
                     <span className="text-white/25"> · </span>
                     <span className="text-white/50">{event.leadName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-white/30">
+                  <div className="flex items-center gap-2 text-[13px] text-white/30">
                     <Clock className="h-3 w-3" />
                     {new Date(event.createdAt).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' })}
                   </div>

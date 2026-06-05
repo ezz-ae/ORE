@@ -14,7 +14,7 @@ type StatusFilter = 'All' | 'Approved' | 'Pending Review' | 'Draft'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
-  if (s.includes('approved')) return { dot: 'bg-emerald-400', badge: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' }
+  if (s.includes('approved')) return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
   if (s.includes('review') || s.includes('pending')) return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s.includes('draft')) return { dot: 'bg-white/30', badge: 'text-white/55 bg-white/[0.04] border-white/10' }
   return { dot: 'bg-white/20', badge: 'text-white/40 bg-white/[0.03] border-white/[0.08]' }
@@ -27,8 +27,8 @@ function CheckRow({ label, status }: { label: string; status: string }) {
       <span className="text-[12px] text-white/45">{label}</span>
       <span
         className={[
-          'text-[11px] font-medium',
-          isReady ? 'text-emerald-400' : 'text-[#D4AF37]',
+          'text-[13px] font-medium',
+          isReady ? 'text-[#D4AF37]' : 'text-[#D4AF37]',
         ].join(' ')}
       >
         {status}
@@ -38,9 +38,9 @@ function CheckRow({ label, status }: { label: string; status: string }) {
 }
 
 function adReqStatusStyle(s: string) {
-  if (s === 'Running')          return 'text-emerald-300 border-emerald-400/20 bg-emerald-400/10'
+  if (s === 'Running')          return 'text-[#D4AF37] border-emerald-400/20 bg-[#D4AF37]/10'
   if (s === 'Approved' || s === 'Ready to Launch') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
-  if (s === 'Pending Review')   return 'text-sky-300 border-sky-400/20 bg-sky-400/10'
+  if (s === 'Pending Review')   return 'text-white/55 border-sky-400/20 bg-sky-400/10'
   if (s === 'Blocked')          return 'text-red-300 border-red-400/20 bg-red-400/10'
   return 'text-white/40 border-white/[0.08] bg-white/[0.03]'
 }
@@ -51,11 +51,11 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
   const style      = statusStyle(landing.status)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0A0D10] transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -64,7 +64,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
           </div>
           <span
             className={[
-              'mt-1 shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium',
+              'mt-1 shrink-0 rounded-full border px-2.5 py-1 text-[13px] font-medium',
               style.badge,
             ].join(' ')}
           >
@@ -78,7 +78,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
         </div>
 
         <div className="mt-5">
-          <div className="mb-1 flex items-center justify-between text-[11px]">
+          <div className="mb-1 flex items-center justify-between text-[13px]">
             <span className="font-medium uppercase tracking-[0.18em] text-white/35">Completion</span>
             <span className="font-semibold tabular-nums text-white/75">{landing.completion}%</span>
           </div>
@@ -91,7 +91,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
         </div>
       </div>
 
-      <div className="mx-7 mb-0 mt-5 border-t border-white/[0.06] sm:mx-8">
+      <div className="mx-7 mb-0 mt-5 border-t border-white/[0.08] sm:mx-8">
         <div className="divide-y divide-white/[0.04] py-1">
           <CheckRow label="Hero" status={landing.heroStatus} />
           <CheckRow label="Lead Form" status={landing.leadFormStatus} />
@@ -103,15 +103,15 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
 
       {landing.aiReviewSummary && (
         <div className="mx-7 mb-0 mt-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-4 py-3.5 sm:mx-8">
-          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">AI take</div>
+          <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">AI take</div>
           <p className="mt-1.5 text-[13px] leading-[1.55] text-white/65">{landing.aiReviewSummary}</p>
         </div>
       )}
 
       {/* Linked campaigns */}
       {linkedReqs.length > 0 ? (
-        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.06] pt-5 sm:mx-8">
-          <div className="mb-3 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.08] pt-5 sm:mx-8">
+          <div className="mb-3 flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
             <Zap className="h-3 w-3 text-[#D4AF37]/50" /> Linked campaigns
           </div>
           <div className="space-y-2">
@@ -119,15 +119,15 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
               <Link
                 key={req.id}
                 href={`/freehold-intelligence/lead-machine/ad-requests`}
-                className="group flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 transition hover:border-[#D4AF37]/20"
+                className="group flex items-center justify-between gap-3 rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5 transition hover:border-[#D4AF37]/20"
               >
                 <div className="min-w-0">
                   <div className="text-[12px] font-medium text-white/80 truncate group-hover:text-white">
                     {req.campaignAngle.slice(0, 55)}{req.campaignAngle.length > 55 ? '…' : ''}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-white/35">{req.platform} · {req.budget}</div>
+                  <div className="mt-0.5 text-[13px] text-white/35">{req.platform} · {req.budget}</div>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${adReqStatusStyle(req.status)}`}>
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${adReqStatusStyle(req.status)}`}>
                   {req.status}
                 </span>
               </Link>
@@ -135,7 +135,7 @@ function LandingCard({ landing }: { landing: LeadMachineLanding }) {
           </div>
         </div>
       ) : (
-        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.06] pt-5 sm:mx-8">
+        <div className="mx-7 mb-0 mt-5 border-t border-white/[0.08] pt-5 sm:mx-8">
           <div className="flex items-center gap-2 text-[12px] text-white/25">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             No active campaigns linked to this landing.{' '}
@@ -185,7 +185,7 @@ export default function LandingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Globe className="h-3.5 w-3.5" /> Landing Pages
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
@@ -206,7 +206,7 @@ export default function LandingsPage() {
 
       <section className="mt-16">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {statusFilter === 'All'
               ? `${leadMachineLandings.length} pages`
@@ -221,7 +221,7 @@ export default function LandingsPage() {
               key={filter}
               onClick={() => setStatusFilter(filter)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 statusFilter === filter
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65',

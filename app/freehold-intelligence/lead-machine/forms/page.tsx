@@ -28,7 +28,7 @@ async function getForms(): Promise<FormsResponse> {
 }
 
 function statusConfig(s: string) {
-  if (s === 'ACTIVE')   return { dot: 'bg-emerald-400', text: 'text-emerald-300', badge: 'border-emerald-400/20 bg-emerald-400/10', label: 'Active'   }
+  if (s === 'ACTIVE')   return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10', label: 'Active'   }
   if (s === 'ARCHIVED') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'Archived' }
   return                       { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       label: 'Deleted'  }
 }
@@ -45,7 +45,7 @@ export default async function FormsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <FileText className="h-3.5 w-3.5" /> Lead Forms
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -97,13 +97,13 @@ export default async function FormsPage() {
       {!isConfigError && (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[
-            { label: 'Active forms', value: active,      color: 'text-emerald-300' },
+            { label: 'Active forms', value: active,      color: 'text-[#D4AF37]' },
             { label: 'Total forms',  value: forms.length, color: 'text-white'       },
             { label: 'Total leads',  value: totalLeads,  color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-              <div className="mt-1.5 text-[11px] text-white/40">{s.label}</div>
+              <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
             </div>
           ))}
         </div>
@@ -112,7 +112,7 @@ export default async function FormsPage() {
       {/* Forms list */}
       {forms.length > 0 && (
         <section className="mt-12">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All forms</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All forms</div>
           <div className="mt-4 space-y-3">
             {forms.map((form) => {
               const st = statusConfig(form.status)
@@ -120,13 +120,13 @@ export default async function FormsPage() {
                 <Link
                   key={form.id}
                   href={`/freehold-intelligence/lead-machine/forms/${form.id}`}
-                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/25"
+                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} />
                       <h3 className="text-[15px] font-semibold text-white/90 group-hover:text-white truncate">{form.name}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.badge} ${st.text}`}>{st.label}</span>
+                      <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${st.badge} ${st.text}`}>{st.label}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-white/45">
                       <span className="flex items-center gap-1">
@@ -153,7 +153,7 @@ export default async function FormsPage() {
 
       {/* Empty state */}
       {!isConfigError && !data.error && forms.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No lead forms yet</div>
           <p className="mt-2 text-[14px] text-white/40">Create your first Meta lead gen form to start capturing leads from campaigns.</p>
@@ -174,7 +174,7 @@ export default async function FormsPage() {
             { icon: CheckCircle2, title: 'CRM sync',      body: 'Leads flow into your CRM and WhatsApp sequence the moment the form is submitted.' },
             { icon: Users, title: 'Native experience',    body: 'Forms open inside Meta — no redirect, no page load. 3× higher completion rate than external pages.' },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
               <Icon className="h-5 w-5 text-[#D4AF37]/60 mb-3" />
               <div className="text-[13px] font-semibold text-white">{title}</div>
               <p className="mt-1 text-[12px] leading-relaxed text-white/45">{body}</p>

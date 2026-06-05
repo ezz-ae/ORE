@@ -46,10 +46,10 @@ export default function DashboardProfilePage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85 flex items-center gap-2">
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85 flex items-center gap-2">
             <UserCog className="h-3.5 w-3.5" /> Profile & Access
           </div>
-          <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[10px] font-medium text-sky-300">
+          <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[12px] font-medium text-white/55">
             In progress — team management coming in V1.1
           </span>
         </div>
@@ -62,7 +62,7 @@ export default function DashboardProfilePage() {
         <div className="space-y-5">
 
           {/* Account card */}
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/25 to-[#D4AF37]/5 text-[20px] font-semibold text-[#D4AF37]">
                 {currentServerUser.name.slice(0, 2).toUpperCase()}
@@ -80,15 +80,15 @@ export default function DashboardProfilePage() {
           </div>
 
           {/* Role scope */}
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+            <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <Shield className="h-3 w-3" /> Role scope
             </div>
             <p className="mt-1 text-[12px] text-white/35">Surfaces and data visible to a {currentServerUser.role.replace('_', ' ')}.</p>
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {scope.map((item) => (
                 <div key={item} className="flex items-center gap-2 rounded-[10px] border border-white/[0.05] bg-white/[0.025] px-3 py-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/60" />
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/60" />
                   <span className="text-[12px] text-white/65">{item}</span>
                 </div>
               ))}
@@ -96,8 +96,8 @@ export default function DashboardProfilePage() {
           </div>
 
           {/* Assigned modules */}
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-            <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+            <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <CheckCircle2 className="h-3 w-3" /> Assigned modules
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -111,21 +111,21 @@ export default function DashboardProfilePage() {
 
           {/* Flash toast */}
           {flash && (
-            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#06080A]/95 px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl backdrop-blur">
+            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#111318]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
               Preferences saved
             </div>
           )}
 
           {/* Notifications card */}
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Bell className="h-3 w-3" /> Notification preferences
               </div>
               <button
                 type="button"
                 onClick={saveNotifications}
-                className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1 text-[11px] font-medium text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15"
+                className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1 text-[13px] font-medium text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15"
               >
                 Save
               </button>
@@ -147,7 +147,7 @@ export default function DashboardProfilePage() {
                 >
                   <div className="min-w-0">
                     <div className="text-[13px] font-medium text-white/80">{label}</div>
-                    <div className="text-[11px] text-white/35">{note}</div>
+                    <div className="text-[13px] text-white/35">{note}</div>
                   </div>
                   <div className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${notifications[key] ? 'bg-[#D4AF37]' : 'bg-white/[0.08]'}`}>
                     <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${notifications[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
@@ -170,24 +170,24 @@ export default function DashboardProfilePage() {
 
         {/* Sidebar: team */}
         <aside className="space-y-4">
-          <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-            <div className="flex items-center gap-2 mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="flex items-center gap-2 mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
               <Users className="h-3 w-3" /> Sales team
             </div>
             <div className="space-y-3">
               {crmAgentRoster.map((agent) => (
                 <div key={agent.id} className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[11px] font-semibold text-[#D4AF37]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[13px] font-semibold text-[#D4AF37]">
                       {agent.initials}
                     </div>
                     <div>
                       <div className="text-[13px] font-medium text-white">{agent.name}</div>
-                      <div className="text-[10px] text-white/35">{agent.role}</div>
+                      <div className="text-[12px] text-white/35">{agent.role}</div>
                     </div>
                   </div>
-                  <span className={`text-[10px] font-medium ${
-                    agent.status === 'available' ? 'text-emerald-300' :
+                  <span className={`text-[12px] font-medium ${
+                    agent.status === 'available' ? 'text-[#D4AF37]' :
                     agent.status === 'overloaded' ? 'text-red-300' : 'text-[#F8E7AE]'
                   }`}>
                     {agent.status.replace('_', ' ')}
@@ -197,14 +197,14 @@ export default function DashboardProfilePage() {
             </div>
             <Link
               href="/freehold-intelligence/crm/assignment"
-              className="mt-4 flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+              className="mt-4 flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
             >
               Manage assignments <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
 
           <div className="rounded-[20px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-5">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">Coming in V1.1</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">Coming in V1.1</div>
             <div className="mt-3 space-y-2 text-[12px] text-white/55">
               <div>· Invite team members</div>
               <div>· Role assignment interface</div>

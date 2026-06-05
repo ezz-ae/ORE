@@ -7,7 +7,7 @@ import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-sess
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
-  available:    { label: 'Available',    classes: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20' },
+  available:    { label: 'Available',    classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20' },
   at_capacity:  { label: 'At capacity',  classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25'       },
   overloaded:   { label: 'Overloaded',   classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
@@ -61,7 +61,7 @@ export default function CrmAgentsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <UserCheck className="h-3.5 w-3.5" /> Agents
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
@@ -125,7 +125,7 @@ export default function CrmAgentsPage() {
                 const st = STATUS_CONFIG[agent.status]
                 const wasContacted = contacted.has(agent.id)
                 return (
-                  <div key={agent.id} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-white/10 sm:p-7">
+                  <div key={agent.id} className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-white/10 sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[15px] font-semibold text-[#D4AF37]">
@@ -134,9 +134,9 @@ export default function CrmAgentsPage() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2.5">
                             <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
-                            <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.classes}`}>{st.label}</span>
+                            <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${st.classes}`}>{st.label}</span>
                             {wasContacted && (
-                              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-2 py-0.5 text-[10px] text-emerald-300">
+                              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">
                                 <CheckCircle className="h-3 w-3" /> Contacted
                               </span>
                             )}
@@ -148,54 +148,54 @@ export default function CrmAgentsPage() {
                       <div className="grid grid-cols-4 gap-5 sm:gap-6">
                         <div className="text-center">
                           <div className="text-[22px] font-semibold text-white">{agent.totalLeads}</div>
-                          <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Leads</div>
+                          <div className="text-[12px] uppercase tracking-[0.12em] text-white/35">Leads</div>
                         </div>
                         <div className="text-center">
                           <div className={`text-[22px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-white/40'}`}>{agent.hotLeads}</div>
-                          <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Hot</div>
+                          <div className="text-[12px] uppercase tracking-[0.12em] text-white/35">Hot</div>
                         </div>
                         <div className="text-center">
                           <div className={`text-[22px] font-semibold ${agent.overdueFollowUps > 0 ? 'text-orange-400' : 'text-white/40'}`}>{agent.overdueFollowUps}</div>
-                          <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Overdue</div>
+                          <div className="text-[12px] uppercase tracking-[0.12em] text-white/35">Overdue</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-[22px] font-semibold text-emerald-300">{agent.recentWins}</div>
-                          <div className="text-[10px] uppercase tracking-[0.12em] text-white/35">Wins</div>
+                          <div className="text-[22px] font-semibold text-[#D4AF37]">{agent.recentWins}</div>
+                          <div className="text-[12px] uppercase tracking-[0.12em] text-white/35">Wins</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Utilization bar */}
                     <div className="mt-5 border-t border-white/[0.05] pt-4">
-                      <div className="flex items-center justify-between text-[11px] text-white/40">
+                      <div className="flex items-center justify-between text-[13px] text-white/40">
                         <span>Utilization</span>
-                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-[#D4AF37]' : 'text-emerald-300'}>
+                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-[#D4AF37]' : 'text-[#D4AF37]'}>
                           {agent.utilization}%
                         </span>
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                         <div
-                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-[#D4AF37]' : 'bg-emerald-400'}`}
+                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-[#D4AF37]' : 'bg-[#D4AF37]'}`}
                           style={{ width: `${agent.utilization}%` }}
                         />
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <Link
                           href="/freehold-intelligence/crm/assignment"
-                          className="text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                          className="text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
                         >
                           View assignments
                         </Link>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleContact(agent.id, agent.name, 'call')}
-                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06] active:scale-95"
+                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[13px] font-medium text-white/65 transition hover:bg-white/[0.06] active:scale-95"
                           >
                             <Phone className="h-3 w-3" /> Call
                           </button>
                           <button
                             onClick={() => handleContact(agent.id, agent.name, 'message')}
-                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/65 transition hover:bg-white/[0.06] active:scale-95"
+                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[13px] font-medium text-white/65 transition hover:bg-white/[0.06] active:scale-95"
                           >
                             <MessageSquare className="h-3 w-3" /> Message
                           </button>
@@ -223,8 +223,8 @@ export default function CrmAgentsPage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Team load
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">{totalLeads}</div>
@@ -232,8 +232,8 @@ export default function CrmAgentsPage() {
             </div>
 
             {topPerformer && (
-              <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Top performer</div>
+              <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+                <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Top performer</div>
                 <div className="mt-3 text-[18px] font-semibold text-white">{topPerformer.name}</div>
                 <div className="mt-1 text-[12px] text-white/50">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
               </div>
@@ -241,7 +241,7 @@ export default function CrmAgentsPage() {
 
             {overloaded.length > 0 && (
               <div className="rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent p-5">
-                <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Coaching flag</div>
+                <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Coaching flag</div>
                 <div className="mt-3 text-[14px] font-semibold text-white">{overloaded[0].name} — overloaded</div>
                 <div className="mt-2 text-[12px] leading-relaxed text-white/55">
                   {overloaded[0].utilization}% utilization · {overloaded[0].overdueFollowUps} overdue. Redistribute before assigning new leads.
@@ -249,8 +249,8 @@ export default function CrmAgentsPage() {
               </div>
             )}
 
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Avg. time-to-close</div>
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Avg. time-to-close</div>
               <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
               <div className="mt-1 text-[12px] text-white/50">target: &lt;21 days</div>
             </div>
@@ -260,7 +260,7 @@ export default function CrmAgentsPage() {
 
       {/* Flash banner */}
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl">
           {flash}
         </div>
       )}

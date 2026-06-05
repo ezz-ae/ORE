@@ -22,15 +22,15 @@ const contentData: Record<string, { status: ListingStatus; seo: number; words: n
 }
 
 function statusBadge(status: ListingStatus) {
-  if (status === 'Published')    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-  if (status === 'Needs Review') return 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+  if (status === 'Published')    return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Needs Review') return 'text-white/55 bg-rose-500/10 border-rose-500/20'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
 
 function seoColor(score: number) {
-  if (score >= 85) return 'text-emerald-400'
+  if (score >= 85) return 'text-[#D4AF37]'
   if (score >= 65) return 'text-[#D4AF37]'
-  return 'text-rose-400'
+  return 'text-white/55'
 }
 
 export default function AiManagerListingsPage() {
@@ -57,7 +57,7 @@ export default function AiManagerListingsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
         <Bot className="h-3.5 w-3.5" />
         AI Manager · Listings
       </div>
@@ -69,7 +69,7 @@ export default function AiManagerListingsPage() {
           <div className="mt-2 flex flex-wrap gap-3">
             <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs">
               <span className="text-white/40">Published </span>
-              <span className="font-semibold text-emerald-400">{counts.Published}</span>
+              <span className="font-semibold text-[#D4AF37]">{counts.Published}</span>
             </span>
             <span className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs">
               <span className="text-white/40">Draft </span>
@@ -77,13 +77,13 @@ export default function AiManagerListingsPage() {
             </span>
             <span className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs">
               <span className="text-white/40">Needs Review </span>
-              <span className="font-semibold text-rose-400">{counts['Needs Review']}</span>
+              <span className="font-semibold text-white/55">{counts['Needs Review']}</span>
             </span>
           </div>
         </div>
         <Link
           href="/freehold-intelligence/ai-manager/listings/new"
-          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20"
+          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20"
         >
           <Plus className="h-4 w-4" />
           New Listing
@@ -92,15 +92,15 @@ export default function AiManagerListingsPage() {
 
       {/* Bulk AI actions */}
       <div className="mt-6 flex flex-wrap gap-2">
-        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-rose-400">
+        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-white/55">
           <Sparkles className="h-3.5 w-3.5" />
           Refresh Meta Descriptions
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-rose-400">
+        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-white/55">
           <Sparkles className="h-3.5 w-3.5" />
           Check All SEO
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-rose-400">
+        <button className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-white/60 transition hover:border-rose-500/20 hover:text-white/55">
           <Sparkles className="h-3.5 w-3.5" />
           Regenerate Summaries
         </button>
@@ -114,7 +114,7 @@ export default function AiManagerListingsPage() {
             onClick={() => setActiveFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                ? 'bg-rose-500/10 border-rose-500/30 text-white/55'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
             }`}
           >
@@ -129,7 +129,7 @@ export default function AiManagerListingsPage() {
           <thead>
             <tr className="border-b border-white/[0.05]">
               {['Name', 'Area', 'Property Status', 'Content Status', 'SEO Score', 'Words', 'Images', 'Last Updated', 'Actions'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-white/30">
+                <th key={h} className="px-4 py-3 text-left text-[13px] font-medium uppercase tracking-widest text-white/30">
                   {h}
                 </th>
               ))}
@@ -153,12 +153,12 @@ export default function AiManagerListingsPage() {
                   </td>
                   <td className="px-4 py-3.5 text-sm text-white/50">{prop.area}</td>
                   <td className="px-4 py-3.5">
-                    <span className="inline-block rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] font-medium text-white/50 capitalize">
+                    <span className="inline-block rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] font-medium text-white/50 capitalize">
                       {prop.status.replace('_', ' ')}
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(content.status)}`}>
+                    <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(content.status)}`}>
                       {content.status}
                     </span>
                   </td>
@@ -174,7 +174,7 @@ export default function AiManagerListingsPage() {
                       <button className="text-xs text-white/40 hover:text-white/70 transition">
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
-                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20">
+                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[13px] font-medium text-white/55 transition hover:bg-rose-500/20">
                         <Sparkles className="h-3 w-3" />
                         AI Improve
                       </button>
@@ -187,7 +187,7 @@ export default function AiManagerListingsPage() {
         </table>
       </div>
 
-      <p className="mt-3 text-[11px] text-white/25">
+      <p className="mt-3 text-[13px] text-white/25">
         {listings.length} of {inventoryProperties.length} listings · AI Manager
       </p>
     </div>

@@ -9,11 +9,11 @@ function fmt(n: number) {
 
 function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
   return platform === 'meta' ? (
-    <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-400">
+    <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[13px] font-medium text-blue-400">
       Meta
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+    <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
       Google
     </span>
   )
@@ -22,27 +22,27 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'paid') {
     return (
-      <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+      <span className="inline-flex items-center rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">
         Paid
       </span>
     )
   }
   if (status === 'processing') {
     return (
-      <span className="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+      <span className="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[13px] font-medium text-amber-400">
         Processing
       </span>
     )
   }
   if (status === 'overdue') {
     return (
-      <span className="inline-flex items-center rounded-md border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[11px] font-medium text-red-400">
+      <span className="inline-flex items-center rounded-md border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[13px] font-medium text-red-400">
         Overdue
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-white/40">
+    <span className="inline-flex items-center rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[13px] font-medium text-white/40">
       {status}
     </span>
   )
@@ -234,11 +234,11 @@ export default function FinancePage() {
 
                 {/* Stat chips */}
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm">
                     <span className="text-white/40">Avg Monthly Spend: </span>
                     <span className="font-medium text-white/80 tabular-nums">AED 37,388</span>
                   </div>
-                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm">
+                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm">
                     <span className="text-white/40">YTD Spend: </span>
                     <span className="font-medium text-white/80 tabular-nums">AED 186,940</span>
                   </div>
@@ -274,7 +274,7 @@ export default function FinancePage() {
                       <td className="px-5 py-4 font-medium text-white/75">
                         {row.month}
                         {isCurrent && (
-                          <span className="ml-2 rounded-full bg-[#D4AF37]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#D4AF37]">Current</span>
+                          <span className="ml-2 rounded-full bg-[#D4AF37]/15 px-1.5 py-0.5 text-[12px] font-medium text-[#D4AF37]">Current</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-right tabular-nums text-white/50">{fmt(row.budgetAED)}</td>
@@ -282,7 +282,7 @@ export default function FinancePage() {
                       <td className="px-5 py-4 text-right tabular-nums text-white/70">{row.leadsGenerated.toLocaleString('en-US')}</td>
                       <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">AED {row.avgCpl}</td>
                       <td className="px-5 py-4 text-right">
-                        <span className={`text-xs font-medium tabular-nums ${util >= 0.9 ? 'text-red-400' : util >= 0.7 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        <span className={`text-xs font-medium tabular-nums ${util >= 0.9 ? 'text-red-400' : util >= 0.7 ? 'text-amber-400' : 'text-[#D4AF37]'}`}>
                           {Math.round(util * 100)}%
                         </span>
                       </td>
@@ -304,12 +304,12 @@ export default function FinancePage() {
               const isActive = platformFilter === p
               let activeClass = 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
               if (isActive && p === 'meta') activeClass = 'border border-blue-400/35 bg-blue-400/10 text-blue-300'
-              if (isActive && p === 'google') activeClass = 'border border-emerald-400/35 bg-emerald-400/10 text-emerald-300'
+              if (isActive && p === 'google') activeClass = 'border border-emerald-400/35 bg-[#D4AF37]/10 text-[#D4AF37]'
               return (
                 <button
                   key={p}
                   onClick={() => setPlatformFilter(p)}
-                  className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                  className={`rounded-full px-3 py-1 text-[13px] font-medium transition ${
                     isActive
                       ? activeClass
                       : 'border border-white/[0.08] text-white/40 hover:text-white/65'
@@ -368,7 +368,7 @@ export default function FinancePage() {
               <button
                 key={s}
                 onClick={() => setInvoiceFilter(s)}
-                className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                className={`rounded-full px-3 py-1 text-[13px] font-medium transition ${
                   invoiceFilter === s
                     ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border border-white/[0.08] text-white/40 hover:text-white/65'

@@ -43,11 +43,11 @@ function MetaFeedPreview({ property, headline, description }: { property: Proper
       {/* Page row */}
       <div className="flex items-center gap-2.5 bg-white px-4 py-3">
         <div className="h-8 w-8 rounded-full bg-[#1877F2] flex items-center justify-center">
-          <span className="text-[11px] font-bold text-white">FP</span>
+          <span className="text-[13px] font-bold text-white">FP</span>
         </div>
         <div>
           <div className="text-[12px] font-semibold text-gray-900">Freehold Property Dubai</div>
-          <div className="flex items-center gap-1 text-[10px] text-gray-400">
+          <div className="flex items-center gap-1 text-[12px] text-gray-400">
             Sponsored ·
             <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8z"/><path d="M8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
           </div>
@@ -69,17 +69,17 @@ function MetaFeedPreview({ property, headline, description }: { property: Proper
               <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5}/>
             </svg>
           </div>
-          <span className="text-[11px] text-white/50">{property} · Image</span>
+          <span className="text-[13px] text-white/50">{property} · Image</span>
         </div>
       </div>
       {/* Ad footer */}
       <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-gray-400">freeholdproperty.ae</div>
+          <div className="text-[12px] uppercase tracking-wide text-gray-400">freeholdproperty.ae</div>
           <div className="text-[12px] font-bold text-gray-900 leading-tight">{headline.slice(0, 40)}{headline.length > 40 ? '…' : ''}</div>
-          <div className="text-[10px] text-gray-500 leading-tight mt-0.5">{description.slice(0, 60)}…</div>
+          <div className="text-[12px] text-gray-500 leading-tight mt-0.5">{description.slice(0, 60)}…</div>
         </div>
-        <button className="ml-3 shrink-0 rounded-md bg-[#1877F2] px-3 py-1.5 text-[11px] font-semibold text-white">
+        <button className="ml-3 shrink-0 rounded-md bg-[#1877F2] px-3 py-1.5 text-[13px] font-semibold text-white">
           Learn More
         </button>
       </div>
@@ -101,7 +101,7 @@ function MetaStoryPreview({ property, headline, description }: { property: Prope
               <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5}/>
             </svg>
           </div>
-          <span className="text-[10px] text-white/30">{property}</span>
+          <span className="text-[12px] text-white/30">{property}</span>
         </div>
       </div>
       {/* Top bar */}
@@ -109,7 +109,7 @@ function MetaStoryPreview({ property, headline, description }: { property: Prope
         <div className="h-5 w-5 rounded-full bg-[#1877F2] flex items-center justify-center">
           <span className="text-[7px] font-bold text-white">FP</span>
         </div>
-        <span className="text-[10px] font-semibold text-white/90">Freehold Property Dubai</span>
+        <span className="text-[12px] font-semibold text-white/90">Freehold Property Dubai</span>
         <span className="ml-0.5 text-[9px] text-white/50">· Sponsored</span>
       </div>
       {/* Progress bar */}
@@ -119,8 +119,8 @@ function MetaStoryPreview({ property, headline, description }: { property: Prope
       {/* Overlay copy */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-8 pt-10">
         <div className="text-[13px] font-bold leading-tight text-white">{headline}</div>
-        <div className="mt-1.5 text-[10px] leading-relaxed text-white/70">{description.slice(0, 70)}…</div>
-        <button className="mt-3 w-full rounded-xl bg-white py-2 text-[11px] font-bold text-gray-900">
+        <div className="mt-1.5 text-[12px] leading-relaxed text-white/70">{description.slice(0, 70)}…</div>
+        <button className="mt-3 w-full rounded-xl bg-white py-2 text-[13px] font-bold text-gray-900">
           Learn More
         </button>
       </div>
@@ -144,10 +144,10 @@ function GoogleSearchPreview({ headline, description, url }: { headline: string;
         <span className="text-[12px] text-white/40">buy apartment dubai</span>
       </div>
       {/* Ad card */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="rounded border border-[#4285F4]/40 px-1.5 py-0.5 text-[9px] font-semibold text-[#4285F4] tracking-wide">Ad</span>
-          <span className="text-[11px] text-white/50">{url}</span>
+          <span className="text-[13px] text-white/50">{url}</span>
         </div>
         <div className="text-[16px] font-medium leading-snug" style={{ color: GOOGLE_BLUE }}>
           {h1}
@@ -188,10 +188,10 @@ function GoogleDisplayPreview({ property, headline, description }: { property: P
           <div>
             <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1">freeholdproperty.ae</div>
             <div className="text-[13px] font-bold leading-snug text-gray-900">{headline.slice(0, 50)}{headline.length > 50 ? '…' : ''}</div>
-            <div className="mt-1.5 text-[10px] leading-relaxed text-gray-500">{description.slice(0, 80)}…</div>
+            <div className="mt-1.5 text-[12px] leading-relaxed text-gray-500">{description.slice(0, 80)}…</div>
           </div>
           <button
-            className="mt-3 w-full rounded-lg py-1.5 text-[11px] font-bold text-white"
+            className="mt-3 w-full rounded-lg py-1.5 text-[13px] font-bold text-white"
             style={{ backgroundColor: GOOGLE_BLUE }}
           >
             Learn More
@@ -227,7 +227,7 @@ export default function AdPreviewPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.07A1 1 0 0121 8.85v6.298a1 1 0 01-1.447.9L15 14M4 8h11a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V10a2 2 0 012-2z" />
             </svg>
@@ -311,7 +311,7 @@ export default function AdPreviewPage() {
 
       {/* Ad copy editor */}
       <section className="mt-8">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Ad Copy</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Ad Copy</div>
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-[12px] text-white/50">Headline</label>
@@ -322,7 +322,7 @@ export default function AdPreviewPage() {
               className="w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[13px] text-white/90 placeholder-white/25 outline-none focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20 transition"
               placeholder="Ad headline…"
             />
-            <div className="mt-1 flex justify-end text-[10px] text-white/30">
+            <div className="mt-1 flex justify-end text-[12px] text-white/30">
               {headline.length} chars
             </div>
           </div>
@@ -335,7 +335,7 @@ export default function AdPreviewPage() {
               className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[13px] text-white/90 placeholder-white/25 outline-none focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20 transition"
               placeholder="Ad description…"
             />
-            <div className="mt-1 flex justify-end text-[10px] text-white/30">
+            <div className="mt-1 flex justify-end text-[12px] text-white/30">
               {description.length} chars
             </div>
           </div>

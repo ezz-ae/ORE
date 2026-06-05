@@ -44,7 +44,7 @@ interface ApiState {
 
 function statusBadge(status: string) {
   switch (status) {
-    case 'ACTIVE':   return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+    case 'ACTIVE':   return 'border-emerald-400/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'PAUSED':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'DELETED':  return 'border-red-400/25 bg-red-400/10 text-red-300'
     default:         return 'border-white/10 bg-white/[0.04] text-white/45'
@@ -170,7 +170,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h1 className="text-[28px] font-semibold text-white sm:text-[36px]">{campaign.name}</h1>
-                  <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(campaign.status)}`}>
+                  <span className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(campaign.status)}`}>
                     {campaign.status}
                   </span>
                 </div>
@@ -184,7 +184,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                 <button
                   onClick={() => campaignId && fetchData(campaignId)}
                   disabled={updating}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 text-[11px] text-white/60 transition hover:bg-white/[0.07]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 text-[13px] text-white/60 transition hover:bg-white/[0.07]"
                 >
                   <RefreshCw className={`h-3 w-3 ${updating ? 'animate-spin' : ''}`} /> Refresh
                 </button>
@@ -193,7 +193,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('PAUSED')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-[11px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
                     <Pause className="h-3 w-3" /> Pause
                   </button>
@@ -203,7 +203,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('ACTIVE')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-400/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
                     <Play className="h-3 w-3" /> Activate
                   </button>
@@ -215,7 +215,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                       if (confirm('Delete this campaign? This cannot be undone.')) updateStatus('DELETED')
                     }}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-red-400/15 bg-red-400/[0.06] px-3 text-[11px] text-red-300 transition hover:bg-red-400/15"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-red-400/15 bg-red-400/[0.06] px-3 text-[13px] text-red-300 transition hover:bg-red-400/15"
                   >
                     <Trash2 className="h-3 w-3" /> Delete
                   </button>
@@ -227,7 +227,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Metrics */}
           {insights ? (
             <section className="mt-10">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 Performance · {insights.date_start} → {insights.date_stop}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -239,8 +239,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   { label: 'Leads',       value: leads,                        icon: Users },
                   { label: 'CPL',         value: cpl,                          icon: DollarSign },
                 ].map((m) => (
-                  <div key={m.label} className="rounded-[16px] border border-white/[0.06] bg-[#0A0D10] p-4">
-                    <div className="text-[11px] text-white/35">{m.label}</div>
+                  <div key={m.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+                    <div className="text-[13px] text-white/35">{m.label}</div>
                     <div className="mt-2 text-[20px] font-semibold text-white leading-tight">{m.value}</div>
                   </div>
                 ))}
@@ -254,7 +254,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               )}
             </section>
           ) : (
-            <div className="mt-8 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5 text-center text-[13px] text-white/35">
+            <div className="mt-8 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 text-center text-[13px] text-white/35">
               No insights yet — data appears after the campaign has delivered impressions.
             </div>
           )}
@@ -262,11 +262,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Ad sets */}
           {data?.adSets && data.adSets.length > 0 && (
             <section className="mt-14">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Ad sets</div>
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Ad sets</div>
               <h2 className="mt-2 text-xl font-semibold text-white">{data.adSets.length} ad set{data.adSets.length !== 1 ? 's' : ''}</h2>
               <div className="mt-5 space-y-3">
                 {data.adSets.map((adSet) => (
-                  <div key={adSet.id} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+                  <div key={adSet.id} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-[14px] font-semibold text-white">{adSet.name}</div>
@@ -274,7 +274,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                           Budget {fmtBudget(adSet.daily_budget)}/day · {adSet.optimization_goal.replace(/_/g, ' ')}
                         </div>
                       </div>
-                      <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${statusBadge(adSet.status)}`}>
+                      <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusBadge(adSet.status)}`}>
                         {adSet.status}
                       </span>
                     </div>
@@ -284,10 +284,10 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                         {adSet.ads.map((ad) => (
                           <div key={ad.id} className="flex items-center justify-between gap-3 text-[12px]">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-emerald-400' : 'text-white/20'}`} />
+                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/20'}`} />
                               <span className="text-white/70">{ad.name}</span>
                             </div>
-                            <span className={`text-[10px] font-medium ${ad.status === 'ACTIVE' ? 'text-emerald-300' : 'text-white/35'}`}>{ad.status}</span>
+                            <span className={`text-[12px] font-medium ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/35'}`}>{ad.status}</span>
                           </div>
                         ))}
                       </div>

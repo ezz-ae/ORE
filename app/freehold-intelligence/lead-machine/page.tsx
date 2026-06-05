@@ -10,19 +10,19 @@ import {
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function scoreBg(score: number) {
-  if (score >= 80) return 'bg-emerald-400'
+  if (score >= 80) return 'bg-[#D4AF37]'
   if (score >= 50) return 'bg-[#D4AF37]'
   return 'bg-red-400'
 }
 
 function scoreText(score: number) {
-  if (score >= 80) return 'text-emerald-300'
+  if (score >= 80) return 'text-[#D4AF37]'
   if (score >= 50) return 'text-[#F8E7AE]'
   return 'text-red-300'
 }
 
 function blockerDot(status: string) {
-  if (status === 'Clear') return 'bg-emerald-400'
+  if (status === 'Clear') return 'bg-[#D4AF37]'
   if (status === 'Needs Access') return 'bg-red-400'
   if (status === 'Needs Data') return 'bg-[#D4AF37]'
   return 'bg-orange-400'
@@ -30,7 +30,7 @@ function blockerDot(status: string) {
 
 function statusIcon(status: string) {
   const s = status.toLowerCase()
-  if (s.includes('ready') || s.includes('approved') || s.includes('active')) return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+  if (s.includes('ready') || s.includes('approved') || s.includes('active')) return <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
   if (s.includes('block') || s.includes('missing')) return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
   return <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />
 }
@@ -80,7 +80,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Zap className="h-3.5 w-3.5" /> Lead Machine
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -97,28 +97,28 @@ export default function LeadMachineOverviewPage() {
 
       {/* Stats row */}
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
           <p className="text-[28px] font-semibold text-white">{leadMachineListings.length}</p>
-          <p className="text-[10px] text-white/35 mt-1">Active listings</p>
+          <p className="text-[12px] text-white/35 mt-1">Active listings</p>
         </div>
-        <div className="rounded-[18px] border border-emerald-400/20 bg-emerald-400/[0.05] p-4 text-center">
-          <p className="text-[28px] font-semibold text-emerald-300">{summary.landingPagesReady}</p>
-          <p className="text-[10px] text-emerald-400/60 mt-1">Landings ready</p>
+        <div className="rounded-[18px] border border-emerald-400/20 bg-[#D4AF37]/[0.05] p-4 text-center">
+          <p className="text-[28px] font-semibold text-[#D4AF37]">{summary.landingPagesReady}</p>
+          <p className="text-[12px] text-[#D4AF37]/60 mt-1">Landings ready</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
           <p className="text-[28px] font-semibold text-[#F8E7AE]">{summary.pendingAdRequests}</p>
-          <p className="text-[10px] text-[#D4AF37]/60 mt-1">Ad requests pending</p>
+          <p className="text-[12px] text-[#D4AF37]/60 mt-1">Ad requests pending</p>
         </div>
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.05] p-4 text-center">
           <p className="text-[28px] font-semibold text-red-300">{summary.blockedByAccess}</p>
-          <p className="text-[10px] text-red-400/60 mt-1">Blocked on access</p>
+          <p className="text-[12px] text-red-400/60 mt-1">Blocked on access</p>
         </div>
       </section>
 
       {/* Critical blockers */}
       {criticalReqs.length > 0 && (
         <section className="mt-8">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-red-300/80 mb-3">Critical — blocks launch</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-red-300/80 mb-3">Critical — blocks launch</div>
           <div className="space-y-3">
             {criticalReqs.map(req => (
               <div key={req.id} className="flex items-start gap-4 rounded-[18px] border border-red-400/20 bg-red-400/[0.05] p-5">
@@ -129,9 +129,9 @@ export default function LeadMachineOverviewPage() {
                   <div className="mt-2 text-[12px] font-medium text-red-300">→ {req.nextAction}</div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-[10px] text-white/30">Owner</div>
+                  <div className="text-[12px] text-white/30">Owner</div>
                   <div className="text-[12px] text-white/70">{req.owner}</div>
-                  <div className="mt-1 text-[11px] text-red-300/70">Due {req.dueDate}</div>
+                  <div className="mt-1 text-[13px] text-red-300/70">Due {req.dueDate}</div>
                 </div>
               </div>
             ))}
@@ -143,7 +143,7 @@ export default function LeadMachineOverviewPage() {
       <section className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Readiness Matrix</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Readiness Matrix</div>
             <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">Score by listing</h2>
           </div>
           <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/70 hover:text-[#D4AF37]">
@@ -151,12 +151,12 @@ export default function LeadMachineOverviewPage() {
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-4 border-b border-white/[0.05] px-6 py-3">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Project</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Project</div>
             {['Data', 'Landing', 'Ads', 'Opp'].map(h => (
-              <div key={h} className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 text-center">{h}</div>
+              <div key={h} className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 text-center">{h}</div>
             ))}
           </div>
           <div className="divide-y divide-white/[0.04]">
@@ -166,7 +166,7 @@ export default function LeadMachineOverviewPage() {
                   <Link href={`/freehold-intelligence/lead-machine/listings/${listing.id}`} className="truncate text-[13px] font-semibold text-white hover:text-[#D4AF37] transition">
                     {listing.projectName}
                   </Link>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/35">
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-white/35">
                     <span className={`h-1.5 w-1.5 rounded-full ${blockerDot(listing.blockerStatus)}`} />
                     {listing.blockerStatus}
                   </div>
@@ -191,7 +191,7 @@ export default function LeadMachineOverviewPage() {
           <Link
             key={href}
             href={href}
-            className="group flex items-start gap-4 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/25"
+            className="group flex items-start gap-4 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
           >
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition group-hover:border-[#D4AF37]/20">
               <Icon className="h-4 w-4 text-white/70" />
@@ -202,7 +202,7 @@ export default function LeadMachineOverviewPage() {
                 <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-white/25 transition group-hover:text-[#D4AF37]" />
               </div>
               <p className="mt-1 text-[12px] leading-snug text-white/45">{desc}</p>
-              <div className="mt-3 text-[11px] font-medium text-[#D4AF37]/70">
+              <div className="mt-3 text-[13px] font-medium text-[#D4AF37]/70">
                 {count} {countLabel}
               </div>
             </div>
@@ -212,14 +212,14 @@ export default function LeadMachineOverviewPage() {
 
       {/* Landing & ad status table */}
       <section className="mt-8">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Campaign readiness by listing</div>
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Campaign readiness by listing</div>
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <div className="divide-y divide-white/[0.04]">
             {leadMachineListings.map(listing => (
               <div key={listing.id} className="flex items-center gap-4 px-6 py-4">
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-semibold text-white">{listing.projectName}</div>
-                  <div className="mt-0.5 text-[11px] text-white/40">{listing.area} · {listing.developer}</div>
+                  <div className="mt-0.5 text-[13px] text-white/40">{listing.area} · {listing.developer}</div>
                 </div>
                 <div className="flex items-center gap-3 text-[12px]">
                   <span className="flex items-center gap-1.5 text-white/55">
@@ -231,7 +231,7 @@ export default function LeadMachineOverviewPage() {
                     Ads
                   </span>
                 </div>
-                <Link href={`/freehold-intelligence/lead-machine/listings/${listing.id}`} className="hidden sm:inline-flex items-center gap-1 text-[11px] text-white/25 hover:text-[#D4AF37] transition">
+                <Link href={`/freehold-intelligence/lead-machine/listings/${listing.id}`} className="hidden sm:inline-flex items-center gap-1 text-[13px] text-white/25 hover:text-[#D4AF37] transition">
                   Open <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -242,7 +242,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.035] px-6 py-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[15px] font-medium leading-[1.65] text-white/85">

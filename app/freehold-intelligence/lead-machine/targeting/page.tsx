@@ -9,10 +9,10 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const USE_CASE_CONFIG: Record<TargetingUseCase, { label: string; color: string; badge: string }> = {
   investor:       { label: 'Investor',       color: 'text-[#D4AF37]',   badge: 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'   },
-  end_user:       { label: 'End user',       color: 'text-emerald-300', badge: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' },
-  golden_visa:    { label: 'Golden Visa',    color: 'text-sky-300',     badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200'           },
-  secondary:      { label: 'Secondary',      color: 'text-violet-300',  badge: 'border-violet-400/20 bg-violet-400/10 text-violet-300'  },
-  international:  { label: 'International',  color: 'text-rose-300',    badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200'        },
+  end_user:       { label: 'End user',       color: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]' },
+  golden_visa:    { label: 'Golden Visa',    color: 'text-white/55',     badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200'           },
+  secondary:      { label: 'Secondary',      color: 'text-white/55',  badge: 'border-violet-400/20 bg-violet-400/10 text-white/55'  },
+  international:  { label: 'International',  color: 'text-white/55',    badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200'        },
   custom:         { label: 'Custom',         color: 'text-white/60',    badge: 'border-white/10 bg-white/[0.04] text-white/50'          },
 }
 
@@ -59,7 +59,7 @@ export default function TargetingPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Target className="h-3.5 w-3.5" /> Targeting
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -78,7 +78,7 @@ export default function TargetingPage() {
           { icon: MapPin,  title: 'Geo-precise',        body: 'City-level targeting within the UAE. Dubai and Abu Dhabi broken out from each other.' },
           { icon: Sliders, title: 'Fully editable',     body: 'All templates are starting points — override any field in the campaign wizard.' },
         ].map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+          <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
             <Icon className="h-4 w-4 text-[#D4AF37]/60 mb-2" />
             <div className="text-[13px] font-semibold text-white">{title}</div>
             <p className="mt-1 text-[12px] text-white/40 leading-relaxed">{body}</p>
@@ -113,7 +113,7 @@ export default function TargetingPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             onClick={() => setUseCaseFilter('All')}
-            className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+            className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
               useCaseFilter === 'All'
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
@@ -125,7 +125,7 @@ export default function TargetingPage() {
             <button
               key={key}
               onClick={() => setUseCaseFilter(key)}
-              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+              className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
                 useCaseFilter === key
                   ? USE_CASE_CONFIG[key].badge
                   : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
@@ -139,7 +139,7 @@ export default function TargetingPage() {
 
       {/* Templates */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
           Templates &mdash; {filtered.length} of {TARGETING_TEMPLATES.length}
         </div>
 
@@ -160,13 +160,13 @@ export default function TargetingPage() {
               const campaignUrl = `/freehold-intelligence/lead-machine/campaigns/new?template=${tmpl.id}`
 
               return (
-                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6">
+                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6">
                   {/* Top */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap items-center gap-2.5">
                         <h3 className="text-[17px] font-semibold text-white">{tmpl.name}</h3>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${uc.badge}`}>{uc.label}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${uc.badge}`}>{uc.label}</span>
                       </div>
                       <p className="mt-1.5 text-[13px] text-white/55">{tmpl.description}</p>
                     </div>
@@ -181,25 +181,25 @@ export default function TargetingPage() {
                   {/* Params grid */}
                   <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Age range</div>
+                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Age range</div>
                       <div className="text-[14px] font-semibold text-white">{tmpl.targeting.ageMin}–{tmpl.targeting.ageMax}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Est. reach</div>
-                      <div className="text-[14px] font-semibold text-emerald-300">{tmpl.estimatedReach}</div>
+                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Est. reach</div>
+                      <div className="text-[14px] font-semibold text-[#D4AF37]">{tmpl.estimatedReach}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Countries</div>
+                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Countries</div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tmpl.targeting.countries.map((c) => (
-                          <span key={c} className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-white/60">
+                          <span key={c} className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[12px] font-medium text-white/60">
                             {countryName(c)}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Cities</div>
+                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Cities</div>
                       <div className="text-[13px] text-white/60">
                         {tmpl.targeting.cityKeys.length > 0
                           ? tmpl.targeting.cityKeys.map((k) => cityName(k)).join(', ')
@@ -211,10 +211,10 @@ export default function TargetingPage() {
 
                   {/* Interests */}
                   <div className="mt-4">
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Interests</div>
+                    <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Interests</div>
                     <div className="flex flex-wrap gap-2">
                       {tmpl.targeting.interests.map((interest) => (
-                        <span key={interest.id} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/55">
+                        <span key={interest.id} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/55">
                           {interest.name}
                         </span>
                       ))}

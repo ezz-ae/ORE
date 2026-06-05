@@ -12,17 +12,17 @@ const PIPELINE_VALUE_DATA = [
   { stage: 'Follow-up', leads:  8, value: 'AED 9.4M',  label: 'pipeline',  dot: 'bg-amber-400'   },
   { stage: 'Qualified', leads:  5, value: 'AED 7.2M',  label: 'pipeline',  dot: 'bg-violet-400'  },
   { stage: 'Hot',       leads:  6, value: 'AED 11.2M', label: 'pipeline',  dot: 'bg-red-400'     },
-  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-emerald-400' },
+  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-[#D4AF37]' },
 ]
 
 const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
 
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string; value: string }> = {
-  'New':       { tone: 'text-sky-300',       dot: 'bg-sky-400',      dotBg: 'bg-sky-400/20',      value: 'AED 12.6M' },
-  'Follow-up': { tone: 'text-violet-300',    dot: 'bg-violet-400',   dotBg: 'bg-violet-400/20',   value: 'AED 9.4M'  },
+  'New':       { tone: 'text-white/55',       dot: 'bg-sky-400',      dotBg: 'bg-sky-400/20',      value: 'AED 12.6M' },
+  'Follow-up': { tone: 'text-white/55',    dot: 'bg-violet-400',   dotBg: 'bg-violet-400/20',   value: 'AED 9.4M'  },
   'Qualified': { tone: 'text-[#D4AF37]',     dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 7.2M'  },
   'Hot':       { tone: 'text-red-300',       dot: 'bg-red-400',      dotBg: 'bg-red-400/20',      value: 'AED 11.2M' },
-  'Won':       { tone: 'text-emerald-200',   dot: 'bg-emerald-400',  dotBg: 'bg-emerald-500/20',  value: 'AED 9.8M'  },
+  'Won':       { tone: 'text-emerald-200',   dot: 'bg-[#D4AF37]',  dotBg: 'bg-emerald-500/20',  value: 'AED 9.8M'  },
 }
 
 const STAGE_DELTA: Record<string, string> = {
@@ -71,7 +71,7 @@ export default function CrmPipelinePage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Users className="h-3.5 w-3.5" /> Pipeline
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px] lg:text-[56px]">
@@ -90,14 +90,14 @@ export default function CrmPipelinePage() {
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
-                  <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45 truncate">
+                  <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/45 truncate">
                     {item.stage}
                   </span>
                 </div>
                 <div className="text-[22px] font-semibold text-white leading-none">{item.leads}</div>
-                <div className="mt-0.5 text-[10px] text-white/40">lead{item.leads !== 1 ? 's' : ''}</div>
+                <div className="mt-0.5 text-[12px] text-white/40">lead{item.leads !== 1 ? 's' : ''}</div>
                 <div className="mt-3 text-[13px] font-semibold text-white/80">{item.value}</div>
-                <div className="text-[10px] text-white/35">{item.label}</div>
+                <div className="text-[12px] text-white/35">{item.label}</div>
               </div>
             ))}
           </div>
@@ -114,16 +114,16 @@ export default function CrmPipelinePage() {
                     'rounded-[20px] border p-5 text-left transition',
                     isSelected
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                      : 'border-white/[0.06] bg-[#0A0D10] hover:border-white/10',
+                      : 'border-white/[0.08] bg-[#1A1F2A] hover:border-white/10',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-1.5 w-1.5 rounded-full ${stage.dot}`} />
-                    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45">{stage.name}</div>
+                    <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/45">{stage.name}</div>
                   </div>
                   <div className="mt-3 text-[32px] font-semibold text-white">{stage.count}</div>
                   <div className="mt-1 text-[12px] font-medium text-white/55">{stage.value}</div>
-                  <div className={`mt-3 text-[11px] ${stage.tone}`}>{stage.delta}</div>
+                  <div className={`mt-3 text-[13px] ${stage.tone}`}>{stage.delta}</div>
                 </button>
               )
             })}
@@ -132,7 +132,7 @@ export default function CrmPipelinePage() {
           {activeStage && (
             <div className="mt-4 flex items-center gap-2">
               <span className="text-[12px] text-white/40">Showing</span>
-              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-[11px] font-medium text-[#D4AF37]">{activeStage}</span>
+              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-[13px] font-medium text-[#D4AF37]">{activeStage}</span>
               <button
                 onClick={() => setActiveStage(null)}
                 className="text-[12px] text-white/30 transition hover:text-white/60"
@@ -147,25 +147,25 @@ export default function CrmPipelinePage() {
             <section key={label} className="mt-14">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-[18px] font-semibold text-white">{label}</h2>
-                <span className="text-[11px] uppercase tracking-[0.18em] text-white/35">{leads.length} active</span>
+                <span className="text-[13px] uppercase tracking-[0.18em] text-white/35">{leads.length} active</span>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {leads.map((lead) => (
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/25"
+                    className="group rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/25"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-[15px] font-semibold text-white group-hover:text-white">{lead.name}</div>
                         <div className="mt-0.5 truncate text-[12px] text-white/45">{lead.source}</div>
                       </div>
-                      <span className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#D4AF37]">
+                      <span className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[12px] font-medium text-[#D4AF37]">
                         {lead.intentScore}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3 text-[11px] text-white/40">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/[0.05] pt-3 text-[13px] text-white/40">
                       <span>Agent: <span className="text-white/70">{lead.assignedAgent}</span></span>
                       <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     </div>
@@ -190,16 +190,16 @@ export default function CrmPipelinePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <TrendingUp className="h-3 w-3" /> Conversion rate
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">23%</div>
-              <div className="mt-1 text-[12px] text-emerald-300">+4pp vs last month</div>
+              <div className="mt-1 text-[12px] text-[#D4AF37]">+4pp vs last month</div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Clock className="h-3 w-3" /> Avg. time-to-close
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
@@ -207,7 +207,7 @@ export default function CrmPipelinePage() {
             </div>
 
             <div className="rounded-[20px] border border-red-400/20 bg-red-400/[0.04] p-5">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-red-300/80">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-red-300/80">
                 <AlertCircle className="h-3 w-3" /> Stuck stage
               </div>
               <div className="mt-3 text-[15px] font-semibold text-white">Follow-up → Qualified</div>

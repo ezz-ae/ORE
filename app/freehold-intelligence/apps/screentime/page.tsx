@@ -93,7 +93,7 @@ export default function ScreentimePage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Activity className="h-3.5 w-3.5" /> Screentime
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -117,19 +117,19 @@ export default function ScreentimePage() {
         {[
           { label: 'Events logged', value: totalEvents,       color: 'text-white'       },
           { label: 'Calls made',    value: totalCalls,        color: 'text-white'       },
-          { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-emerald-300' },
+          { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-[#D4AF37]' },
           { label: 'Peak hour',     value: peakLabel,         color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Activity heatmap */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Activity heatmap</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Activity heatmap</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">Hour × day distribution</h2>
         <div className="mt-5 overflow-x-auto">
           <div className="min-w-[520px]">
@@ -143,7 +143,7 @@ export default function ScreentimePage() {
             </div>
             {DAYS.map((day, di) => (
               <div key={day} className="mb-1.5 flex items-center gap-1">
-                <div className="w-10 shrink-0 text-[10px] text-white/30">{day}</div>
+                <div className="w-10 shrink-0 text-[12px] text-white/30">{day}</div>
                 <div className="flex flex-1 gap-1">
                   {HOURS.map((h) => {
                     const count = grid[di][h]
@@ -158,7 +158,7 @@ export default function ScreentimePage() {
                 </div>
               </div>
             ))}
-            <div className="mt-3 flex items-center gap-2 pl-10 text-[10px] text-white/30">
+            <div className="mt-3 flex items-center gap-2 pl-10 text-[12px] text-white/30">
               <span>Less</span>
               {['bg-white/[0.04]', 'bg-[#D4AF37]/15', 'bg-[#D4AF37]/35', 'bg-[#D4AF37]/70', 'bg-[#D4AF37]'].map((cls) => (
                 <div key={cls} className={`h-4 w-4 rounded-[4px] ${cls}`} />
@@ -171,19 +171,19 @@ export default function ScreentimePage() {
 
       {/* Per-agent breakdown — sortable */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Agent activity</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Agent activity</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">CRM events by agent</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
+                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
                 {SORT_COLS.map(({ key, label }) => (
                   <th key={key} className={`px-4 py-3 text-center ${key === 'avgDur' ? 'hidden md:table-cell' : key === 'calls' ? 'hidden sm:table-cell' : ''}`}>
                     <button
                       onClick={() => handleSort(key)}
                       className={[
-                        'flex items-center gap-1 mx-auto text-[10px] font-medium uppercase tracking-[0.16em] transition',
+                        'flex items-center gap-1 mx-auto text-[12px] font-medium uppercase tracking-[0.16em] transition',
                         sortKey === key ? 'text-white/65' : 'text-white/30 hover:text-white/55',
                       ].join(' ')}
                     >
@@ -192,7 +192,7 @@ export default function ScreentimePage() {
                     </button>
                   </th>
                 ))}
-                <th className="px-6 py-3 text-right text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Intensity</th>
+                <th className="px-6 py-3 text-right text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Intensity</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -202,12 +202,12 @@ export default function ScreentimePage() {
                   <tr key={agent.id} className="transition hover:bg-white/[0.02]">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold text-white/60">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[13px] font-semibold text-white/60">
                           {agent.initials}
                         </div>
                         <div>
                           <div className="text-[13px] font-medium text-white/85">{agent.name}</div>
-                          <div className="text-[11px] text-white/35">{agent.role}</div>
+                          <div className="text-[13px] text-white/35">{agent.role}</div>
                         </div>
                       </div>
                     </td>
@@ -216,7 +216,7 @@ export default function ScreentimePage() {
                     </td>
                     <td className="hidden px-4 py-4 text-center text-white/60 sm:table-cell">{calls}</td>
                     <td className="hidden px-4 py-4 text-center md:table-cell">
-                      <span className={cr >= 60 ? 'text-emerald-300' : cr > 0 ? 'text-[#D4AF37]' : 'text-white/30'}>
+                      <span className={cr >= 60 ? 'text-[#D4AF37]' : cr > 0 ? 'text-[#D4AF37]' : 'text-white/30'}>
                         {cr > 0 ? `${cr}%` : '—'}
                       </span>
                     </td>
@@ -243,9 +243,9 @@ export default function ScreentimePage() {
 
       {/* Hour distribution bar chart */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Hour distribution</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Hour distribution</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">When the team is most active</h2>
-        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
           {HOURS.map((h) => {
             const count = hourTotals[h]
             const max   = Math.max(...HOURS.map((hh) => hourTotals[hh]))

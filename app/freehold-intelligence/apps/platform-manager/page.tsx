@@ -51,7 +51,7 @@ const INFRA = [
 ]
 
 function statusConfig(s: RouteStatus) {
-  if (s === 'live')    return { dot: 'bg-emerald-400', text: 'text-emerald-300', label: 'Live'    }
+  if (s === 'live')    return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Live'    }
   if (s === 'pending') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Pending' }
   if (s === 'planned') return { dot: 'bg-sky-400',     text: 'text-sky-200',    label: 'Planned' }
   return                      { dot: 'bg-red-400',     text: 'text-red-300',    label: 'Down'    }
@@ -76,7 +76,7 @@ export default async function PlatformManagerPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Globe className="h-3.5 w-3.5" /> Platform Manager
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -96,22 +96,22 @@ export default async function PlatformManagerPage() {
           { label: 'Developers',  value: snapshot.total_developers,                        color: 'text-white'       },
           { label: 'Audit events (24h)', value: snapshot.audit_events_24h,                color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
             <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Infrastructure */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">{liveInfra} of {INFRA.length} components live</h2>
         <div className="mt-4 space-y-2">
           {INFRA.map((item) => {
             const st = statusConfig(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Database className="h-4 w-4 shrink-0 text-white/30" />
                   <div className="min-w-0">
@@ -119,7 +119,7 @@ export default async function PlatformManagerPage() {
                     <div className="text-[12px] text-white/40">{item.note}</div>
                   </div>
                 </div>
-                <span className={`flex shrink-0 items-center gap-1.5 text-[11px] font-medium ${st.text}`}>
+                <span className={`flex shrink-0 items-center gap-1.5 text-[13px] font-medium ${st.text}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                   {st.label}
                 </span>

@@ -54,10 +54,10 @@ export default function GoogleIntegrationPage() {
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" /> Google Ads
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[10px] font-medium text-red-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
             Not connected
           </span>
@@ -86,19 +86,19 @@ export default function GoogleIntegrationPage() {
 
       {/* Requirements checklist */}
       <section className="mt-8">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Requirements</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Requirements</div>
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
           <div
-            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
             style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
           />
         </div>
         <div className="space-y-2">
           {REQUIREMENTS.map((req) => (
-            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-emerald-400/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.06] bg-[#0A0D10]'}`}>
+            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#1A1F2A]'}`}>
               <div className="mt-0.5 shrink-0">
                 {checked[req.id]
-                  ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
                   : req.critical
                     ? <XCircle className="h-4 w-4 text-red-400/70" />
                     : <AlertCircle className="h-4 w-4 text-white/20" />
@@ -120,12 +120,12 @@ export default function GoogleIntegrationPage() {
 
       {/* Setup steps */}
       <section className="mt-10">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Setup guide</div>
-        <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">Setup guide</div>
+        <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
           <div className="space-y-3">
             {SETUP_STEPS.map((step, i) => (
               <div key={i} className="flex items-start gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.04] text-[10px] font-semibold text-white/35">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.04] text-[12px] font-semibold text-white/35">
                   {i + 1}
                 </span>
                 <p className="text-[13px] leading-relaxed text-white/60">{step}</p>
@@ -156,14 +156,14 @@ export default function GoogleIntegrationPage() {
 
       {/* Environment variables */}
       <section className="mt-10">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">
           Environment variables required
         </div>
-        <div className="overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
           <div className="divide-y divide-white/[0.04]">
             {ENV_VARS.map((v) => (
               <div key={v.key} className="flex items-start gap-4 px-5 py-3.5">
-                <code className="shrink-0 rounded-[8px] bg-white/[0.04] px-2.5 py-1 text-[11px] font-mono text-[#4285F4]/80">
+                <code className="shrink-0 rounded-[8px] bg-white/[0.04] px-2.5 py-1 text-[13px] font-mono text-[#4285F4]/80">
                   {v.key}
                 </code>
                 <span className="text-[12px] text-white/40">{v.desc}</span>
@@ -178,7 +178,7 @@ export default function GoogleIntegrationPage() {
 
       {/* What unlocks */}
       <section className="mt-10">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">What this unlocks</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">What this unlocks</div>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { title: 'Campaign management',   body: 'Create and manage Search, PMax, Display, and Video campaigns directly from Freehold.' },
@@ -188,7 +188,7 @@ export default function GoogleIntegrationPage() {
             { title: 'Audience management',    body: 'Customer Match lists, in-market segments, and remarketing audiences.' },
             { title: 'Ad extensions',          body: 'Sitelinks, callouts, call, location, and lead form extensions synced from your account.' },
           ].map(({ title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
               <div className="text-[13px] font-semibold text-white">{title}</div>
               <p className="mt-1 text-[12px] leading-relaxed text-white/40">{body}</p>
             </div>

@@ -50,11 +50,11 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
       onClick={copy}
       className={
         className ??
-        'inline-flex items-center gap-1 text-[11px] text-white/25 transition hover:text-white/60'
+        'inline-flex items-center gap-1 text-[13px] text-white/25 transition hover:text-white/60'
       }
     >
       {copied
-        ? <Check className="h-3 w-3 text-emerald-400" />
+        ? <Check className="h-3 w-3 text-[#D4AF37]" />
         : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
@@ -67,20 +67,20 @@ function CharBadge({ text, limit, warn }: { text: string; limit: number; warn: n
   const len = text.length
   if (len > limit) {
     return (
-      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium bg-red-400/[0.12] text-red-400">
+      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[12px] font-medium bg-red-400/[0.12] text-red-400">
         {len}/{limit}
       </span>
     )
   }
   if (len > warn) {
     return (
-      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-400/[0.12] text-orange-300">
+      <span className="ml-1.5 rounded px-1.5 py-0.5 text-[12px] font-medium bg-orange-400/[0.12] text-orange-300">
         {len}/{limit}
       </span>
     )
   }
   return (
-    <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] text-white/20">
+    <span className="ml-1.5 rounded px-1.5 py-0.5 text-[12px] text-white/20">
       {len}/{limit}
     </span>
   )
@@ -182,7 +182,7 @@ export default function GenerateRsaPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
           <Wand2 className="h-3.5 w-3.5" /> RSA Generator
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -199,14 +199,14 @@ export default function GenerateRsaPage() {
 
           {/* Listing select */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Listing
             </label>
             <div className="relative">
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#0A0D10] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3 pr-10 text-[13px] text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -215,7 +215,7 @@ export default function GenerateRsaPage() {
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-white/30" />
             </div>
             {listing && (
-              <div className="mt-1.5 text-[11px] text-white/30">
+              <div className="mt-1.5 text-[13px] text-white/30">
                 {listing.area} · {listing.developer}
                 {listing.startingPrice != null && (
                   <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
@@ -226,7 +226,7 @@ export default function GenerateRsaPage() {
 
           {/* Angle grid */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Ad angle
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -238,11 +238,11 @@ export default function GenerateRsaPage() {
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-white/[0.07] bg-[#0A0D10] text-white/50 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/50 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   <div className="text-[12px] font-semibold">{a.label}</div>
-                  <div className="mt-0.5 text-[10px] leading-tight opacity-60">{a.desc}</div>
+                  <div className="mt-0.5 text-[12px] leading-tight opacity-60">{a.desc}</div>
                 </button>
               ))}
             </div>
@@ -250,7 +250,7 @@ export default function GenerateRsaPage() {
 
           {/* Tone row */}
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+            <label className="mb-2 block text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
               Tone
             </label>
             <div className="flex gap-2">
@@ -262,7 +262,7 @@ export default function GenerateRsaPage() {
                     'flex-1 rounded-[12px] border py-2.5 text-[12px] font-medium transition',
                     tone === t.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-white/[0.07] bg-[#0A0D10] text-white/45 hover:border-white/20 hover:text-white/70',
+                      : 'border-white/[0.07] bg-[#1A1F2A] text-white/45 hover:border-white/20 hover:text-white/70',
                   ].join(' ')}
                 >
                   {t.label}
@@ -297,7 +297,7 @@ export default function GenerateRsaPage() {
                   <p className="text-[12px] text-white/60">{error}</p>
                   <Link
                     href="/freehold-intelligence/integrations/google"
-                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-[#4285F4]/80 transition hover:text-[#4285F4]"
+                    className="mt-1.5 inline-flex items-center gap-1 text-[13px] text-[#4285F4]/80 transition hover:text-[#4285F4]"
                   >
                     Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
                   </Link>
@@ -322,9 +322,9 @@ export default function GenerateRsaPage() {
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border border-dashed border-white/[0.07] px-8 text-center">
               <Wand2 className="mb-4 h-8 w-8 text-white/15" />
               <div className="text-[14px] text-white/30">RSA copy will appear here</div>
-              <div className="mt-4 max-w-xs rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-4 py-4 text-left">
-                <div className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">RSA format</div>
-                <div className="space-y-1.5 text-[11px] text-white/40">
+              <div className="mt-4 max-w-xs rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-4 text-left">
+                <div className="mb-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">RSA format</div>
+                <div className="space-y-1.5 text-[13px] text-white/40">
                   <div>
                     <span className="text-white/60 font-medium">Headlines</span> — up to 15, max 30 chars each
                   </div>
@@ -352,7 +352,7 @@ export default function GenerateRsaPage() {
           {/* Variant cards */}
           {variants.length > 0 && (
             <div className="space-y-5">
-              <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">
                 {variants.length} variant{variants.length !== 1 ? 's' : ''} — {angleConfig.label} · {tone}
               </div>
 
@@ -363,31 +363,31 @@ export default function GenerateRsaPage() {
                 return (
                   <div
                     key={v.id}
-                    className="rounded-[22px] border border-white/[0.07] bg-[#0A0D10] p-5"
+                    className="rounded-[22px] border border-white/[0.07] bg-[#1A1F2A] p-5"
                   >
                     {/* Variant header */}
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div>
-                        <span className="rounded-full bg-[#4285F4]/15 border border-[#4285F4]/25 px-2.5 py-1 text-[11px] font-semibold text-[#4285F4]">
+                        <span className="rounded-full bg-[#4285F4]/15 border border-[#4285F4]/25 px-2.5 py-1 text-[13px] font-semibold text-[#4285F4]">
                           Variant {i + 1}
                         </span>
                         {v.note && (
-                          <p className="mt-2 text-[11px] leading-relaxed text-white/35">{v.note}</p>
+                          <p className="mt-2 text-[13px] leading-relaxed text-white/35">{v.note}</p>
                         )}
                       </div>
                       <CopyButton
                         text={copyAllText}
-                        className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-white/45 transition hover:border-[#4285F4]/30 hover:text-white/80"
+                        className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[13px] font-medium text-white/45 transition hover:border-[#4285F4]/30 hover:text-white/80"
                       />
                     </div>
 
                     {/* Headlines section */}
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
-                        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/30">
+                        <span className="text-[12px] font-medium uppercase tracking-[0.16em] text-white/30">
                           Headlines
                         </span>
-                        <span className="text-[10px] text-white/20">
+                        <span className="text-[12px] text-white/20">
                           {v.headlines.length}/15 max · 30 char limit
                         </span>
                       </div>
@@ -398,7 +398,7 @@ export default function GenerateRsaPage() {
                             className="flex items-start justify-between gap-3 rounded-[10px] border border-white/[0.05] bg-white/[0.02] px-3 py-2.5"
                           >
                             <div className="flex items-baseline gap-2 min-w-0">
-                              <span className="shrink-0 text-[10px] text-white/20 w-4">{hIdx + 1}.</span>
+                              <span className="shrink-0 text-[12px] text-white/20 w-4">{hIdx + 1}.</span>
                               <span className="text-[13px] font-medium text-white/85 leading-snug break-words">
                                 {headline}
                               </span>
@@ -417,10 +417,10 @@ export default function GenerateRsaPage() {
                     {/* Descriptions section */}
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
-                        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/30">
+                        <span className="text-[12px] font-medium uppercase tracking-[0.16em] text-white/30">
                           Descriptions
                         </span>
-                        <span className="text-[10px] text-white/20">
+                        <span className="text-[12px] text-white/20">
                           {v.descriptions.length}/4 max · 90 char limit
                         </span>
                       </div>
@@ -431,7 +431,7 @@ export default function GenerateRsaPage() {
                             className="flex items-start justify-between gap-3 rounded-[10px] border border-white/[0.05] bg-white/[0.02] px-3 py-2.5"
                           >
                             <div className="flex items-baseline gap-2 min-w-0">
-                              <span className="shrink-0 text-[10px] text-white/20 w-4">{dIdx + 1}.</span>
+                              <span className="shrink-0 text-[12px] text-white/20 w-4">{dIdx + 1}.</span>
                               <span className="text-[12px] text-white/70 leading-snug break-words">
                                 {desc}
                               </span>
@@ -453,7 +453,7 @@ export default function GenerateRsaPage() {
                         text={copyAllText}
                         className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-[#5A97F5]"
                       />
-                      <span className="ml-2 text-[11px] text-white/25">
+                      <span className="ml-2 text-[13px] text-white/25">
                         Copy all for Google Ads
                       </span>
                     </div>
@@ -461,12 +461,12 @@ export default function GenerateRsaPage() {
                     {/* Char limit warning summary */}
                     {warnings.length > 0 && (
                       <div className="mt-3 rounded-[10px] border border-red-400/15 bg-red-400/[0.04] px-3 py-2.5">
-                        <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-red-400/70">
+                        <div className="mb-1 flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.14em] text-red-400/70">
                           <AlertCircle className="h-3 w-3" /> Character limit exceeded
                         </div>
                         <div className="space-y-0.5">
                           {warnings.map((w, wIdx) => (
-                            <div key={wIdx} className="text-[11px] text-red-400/70">
+                            <div key={wIdx} className="text-[13px] text-red-400/70">
                               {w.type === 'headline' ? `Headline ${w.index}` : `Description ${w.index}`}: {w.len} chars (limit {w.limit})
                             </div>
                           ))}
@@ -486,11 +486,11 @@ export default function GenerateRsaPage() {
         <div className="flex items-start gap-3">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#4285F4]/60" />
           <div>
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4285F4]/70">
+            <div className="mb-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#4285F4]/70">
               RSA Best Practices
             </div>
             <p className="text-[12px] leading-relaxed text-white/45">
-              Use 3+ unique themes across headlines, pin <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[10px] font-mono text-white/60">HEADLINE_1</code> for brand or listing name,
+              Use 3+ unique themes across headlines, pin <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[12px] font-mono text-white/60">HEADLINE_1</code> for brand or listing name,
               and ensure no redundant phrasing across pinned slots. Google requires at least 3 headlines
               and 2 descriptions. Strong RSAs with 15 headlines and 4 unique descriptions typically
               achieve &ldquo;Good&rdquo; or &ldquo;Excellent&rdquo; Ad Strength, which correlates with lower CPCs

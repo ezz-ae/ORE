@@ -94,7 +94,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       <span
         className={[
           'absolute top-0.5 h-5 w-5 rounded-full border transition-all duration-200',
-          on ? 'left-5 border-emerald-400/60 bg-emerald-400' : 'left-0.5 border-white/20 bg-white/30',
+          on ? 'left-5 border-emerald-400/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30',
         ].join(' ')}
       />
     </button>
@@ -111,7 +111,7 @@ function SectionHead({ icon: Icon, accent, title, sub }: {
 }) {
   return (
     <div className="mb-6">
-      <div className={`flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] ${accent}`}>
+      <div className={`flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] ${accent}`}>
         <Icon className="h-3.5 w-3.5" />
         {title}
       </div>
@@ -168,7 +168,7 @@ export default function SettingsPage() {
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
           <div>
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/35 mb-3">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/35 mb-3">
               <SettingsIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> System Settings
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-white/90">Settings</h1>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
             className={[
               'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition',
               saved
-                ? 'border border-emerald-400/30 bg-emerald-500/10 text-emerald-400'
+                ? 'border border-emerald-400/30 bg-emerald-500/10 text-[#D4AF37]'
                 : 'border border-white/[0.08] bg-white/[0.04] text-white/70 hover:border-[#D4AF37]/30 hover:text-white',
             ].join(' ')}
           >
@@ -222,12 +222,12 @@ export default function SettingsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-white/85">{a.label}</p>
                     <p className="mt-0.5 text-xs text-white/35">{a.description}</p>
-                    <span className="mt-1 inline-block rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[10px] text-white/35">
+                    <span className="mt-1 inline-block rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/35">
                       {a.role} approval
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${a.enabled ? 'text-emerald-400' : 'text-white/30'}`}>
+                    <span className={`text-xs font-medium ${a.enabled ? 'text-[#D4AF37]' : 'text-white/30'}`}>
                       {a.enabled ? 'Enabled' : 'Off'}
                     </span>
                     <Toggle on={a.enabled} onChange={() => toggleAiAction(a.id)} />
@@ -246,7 +246,7 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Database}
-              accent="text-emerald-400/80"
+              accent="text-[#D4AF37]/80"
               title="CRM Field Mapping"
               sub="Map external data sources to internal CRM intelligence fields"
             />
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                     <p className="truncate text-sm font-medium text-white/85">{f.target}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${f.mapped ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    <span className={`text-xs font-medium ${f.mapped ? 'text-[#D4AF37]' : 'text-amber-400'}`}>
                       {f.mapped ? 'Mapped' : 'Unmapped'}
                     </span>
                     <Toggle on={f.mapped} onChange={() => toggleCrmField(idx)} />
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                       <span className="ml-0.5 text-xs font-normal text-white/35">{t.unit}</span>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-between text-[10px] text-white/25">
+                  <div className="mt-2 flex justify-between text-[12px] text-white/25">
                     <span>{t.min}{t.unit}</span>
                     <span>{t.max}{t.unit}</span>
                   </div>
@@ -322,7 +322,7 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Bell}
-              accent="text-sky-400/80"
+              accent="text-white/55/80"
               title="Notification Triggers"
               sub="Choose which platform events generate alerts in your dashboard"
             />
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-white/85">{n.label}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${n.enabled ? 'text-emerald-400' : 'text-white/30'}`}>
+                    <span className={`text-xs font-medium ${n.enabled ? 'text-[#D4AF37]' : 'text-white/30'}`}>
                       {n.enabled ? 'On' : 'Off'}
                     </span>
                     <Toggle on={n.enabled} onChange={() => toggleNotif(n.id)} />
@@ -352,7 +352,7 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Globe}
-              accent="text-violet-400/80"
+              accent="text-white/55/80"
               title="Brand & Identity"
               sub="Core identity settings used across campaigns, landing pages, and AI-generated content"
             />
@@ -373,13 +373,13 @@ export default function SettingsPage() {
                 <label className="block text-xs font-medium text-white/40 mb-3">Dashboard Theme</label>
                 <div className="flex gap-3">
                   {[
-                    { label: 'Dark (current)', bg: 'bg-[#06080A]', ring: 'ring-[#D4AF37] ring-2' },
+                    { label: 'Dark (current)', bg: 'bg-[#111318]', ring: 'ring-[#D4AF37] ring-2' },
                     { label: 'Darker',         bg: 'bg-black',     ring: 'ring-white/10' },
                     { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-white/10' },
                   ].map((t) => (
                     <button key={t.label} className="flex flex-col items-center gap-1.5">
                       <div className={`h-8 w-8 rounded-lg border border-white/10 ${t.bg} ${t.ring}`} />
-                      <span className="text-[10px] text-white/35">{t.label}</span>
+                      <span className="text-[12px] text-white/35">{t.label}</span>
                     </button>
                   ))}
                 </div>
@@ -402,7 +402,7 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-white/80">{u.role}</p>
                         <p className="text-xs text-white/35">{u.email}</p>
                       </div>
-                      <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/40">
+                      <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/40">
                         {u.perms}
                       </span>
                     </div>

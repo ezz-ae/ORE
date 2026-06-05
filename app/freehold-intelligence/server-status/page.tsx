@@ -10,7 +10,7 @@ const INFRA = [
 ] as const
 
 function statusTone(s: string) {
-  if (s === 'live') return { dot: 'bg-emerald-400', label: 'Live',     text: 'text-emerald-300' }
+  if (s === 'live') return { dot: 'bg-[#D4AF37]', label: 'Live',     text: 'text-[#D4AF37]' }
   if (s === 'pending') return { dot: 'bg-[#D4AF37]', label: 'Pending', text: 'text-[#F8E7AE]' }
   return { dot: 'bg-red-400', label: 'Down', text: 'text-red-300' }
 }
@@ -25,7 +25,7 @@ export default async function ServerStatusPage() {
     <div className="mx-auto max-w-5xl px-6 pb-32 pt-12 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <ShieldCheck className="h-3.5 w-3.5" /> Server
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
@@ -50,13 +50,13 @@ export default async function ServerStatusPage() {
       </section>
 
       <section className="mt-20">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Infrastructure</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Live components</h2>
         <div className="mt-7 grid gap-3">
           {INFRA.map((i) => {
             const t = statusTone(i.status)
             return (
-              <div key={i.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div key={i.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
                 <div className="min-w-0">
                   <div className="text-[15px] font-semibold text-white">{i.label}</div>
                   <div className="mt-0.5 text-[13px] text-white/50">{i.note}</div>
@@ -72,9 +72,9 @@ export default async function ServerStatusPage() {
       </section>
 
       <section className="mt-20">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Audit</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Audit</div>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">What happened recently</h2>
-        <div className="mt-7 overflow-hidden rounded-3xl border border-white/[0.06] bg-[#0A0D10]">
+        <div className="mt-7 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1A1F2A]">
           {audit.length === 0 ? (
             <div className="px-6 py-12 text-center text-[14px] text-white/45">
               No audit events yet. They'll appear here as actor-tagged actions land.

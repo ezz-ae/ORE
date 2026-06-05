@@ -60,7 +60,7 @@ function buildDefaults(prop: InventoryProperty): FormState {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35 mb-4">
+    <h2 className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35 mb-4">
       {children}
     </h2>
   )
@@ -68,7 +68,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-[20px] border border-white/[0.06] bg-white/[0.03] p-5 ${className}`}>
+    <div className={`rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5 ${className}`}>
       {children}
     </div>
   )
@@ -221,7 +221,7 @@ export default function GenerateLandingPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Sparkles className="h-3.5 w-3.5" /> Landing Page Generator
         </div>
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[40px]">
@@ -258,10 +258,10 @@ export default function GenerateLandingPage() {
                   <div className={`mb-1 text-[13px] font-semibold ${active ? 'text-[#F8E7AE]' : 'text-white/80'}`}>
                     {t.title}
                   </div>
-                  <div className="mb-3 text-[11px] text-white/40">{t.description}</div>
+                  <div className="mb-3 text-[13px] text-white/40">{t.description}</div>
                   <ul className="space-y-1">
                     {t.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-1.5 text-[11px] text-white/50">
+                      <li key={b} className="flex items-start gap-1.5 text-[13px] text-white/50">
                         <ChevronRight className={`mt-0.5 h-3 w-3 shrink-0 ${active ? 'text-[#D4AF37]/70' : 'text-white/25'}`} />
                         {b}
                       </li>
@@ -318,7 +318,7 @@ export default function GenerateLandingPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             {form.highlights.map((val, idx) => (
               <div key={idx}>
-                <label className="mb-1.5 block text-[11px] text-white/40">
+                <label className="mb-1.5 block text-[13px] text-white/40">
                   Highlight {idx + 1}
                 </label>
                 <input
@@ -342,7 +342,7 @@ export default function GenerateLandingPage() {
               <div>
                 <div className="text-[13px] text-white/75">Show hero image</div>
                 {!prop.hasImages && (
-                  <div className="mt-0.5 text-[11px] text-rose-300/70">
+                  <div className="mt-0.5 text-[13px] text-white/55/70">
                     No images available for this property
                   </div>
                 )}
@@ -372,7 +372,7 @@ export default function GenerateLandingPage() {
 
             {/* Headline */}
             <div>
-              <label className="mb-1.5 block text-[11px] text-white/40">Headline</label>
+              <label className="mb-1.5 block text-[13px] text-white/40">Headline</label>
               <input
                 type="text"
                 value={form.headline}
@@ -383,7 +383,7 @@ export default function GenerateLandingPage() {
 
             {/* Subheadline */}
             <div>
-              <label className="mb-1.5 block text-[11px] text-white/40">Subheadline</label>
+              <label className="mb-1.5 block text-[13px] text-white/40">Subheadline</label>
               <input
                 type="text"
                 value={form.subheadline}
@@ -469,9 +469,9 @@ export default function GenerateLandingPage() {
 
       {/* Success / preview ready */}
       {generated && (
-        <div className="mt-6 rounded-[20px] border border-emerald-400/20 bg-emerald-400/[0.05] p-5">
-          <div className="flex items-center gap-2 text-emerald-300">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400/15">
+        <div className="mt-6 rounded-[20px] border border-emerald-400/20 bg-[#D4AF37]/[0.05] p-5">
+          <div className="flex items-center gap-2 text-[#D4AF37]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/15">
               <Check className="h-4 w-4" />
             </div>
             <span className="text-[14px] font-semibold">Preview Ready</span>
@@ -493,7 +493,7 @@ export default function GenerateLandingPage() {
               className={[
                 'inline-flex items-center gap-1.5 rounded-[12px] border px-3.5 py-2.5 text-[12px] font-medium transition',
                 copied
-                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+                  ? 'border-emerald-400/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white',
               ].join(' ')}
             >

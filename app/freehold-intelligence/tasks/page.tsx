@@ -133,11 +133,11 @@ function priorityTone(p: string) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
   if (p === 'high')     return { ring: 'border-[#D4AF37]/25', bg: 'bg-[#D4AF37]/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-[#D4AF37]', label: 'High' }
   if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
-  return                       { ring: 'border-white/[0.06]', bg: 'bg-[#0A0D10]', text: 'text-white/50', dot: 'bg-white/30', label: 'Low' }
+  return                       { ring: 'border-white/[0.08]', bg: 'bg-[#1A1F2A]', text: 'text-white/50', dot: 'bg-white/30', label: 'Low' }
 }
 
 function statusChip(status: string) {
-  if (status === 'done')        return { text: 'text-emerald-300', icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />, label: 'Done' }
+  if (status === 'done')        return { text: 'text-[#D4AF37]', icon: <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />, label: 'Done' }
   if (status === 'blocked')     return { text: 'text-red-300', icon: <AlertCircle className="h-3.5 w-3.5 text-red-400" />, label: 'Blocked' }
   if (status === 'in_progress') return { text: 'text-[#F8E7AE]', icon: <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />, label: 'In Progress' }
   return                               { text: 'text-white/55', icon: <Clock className="h-3.5 w-3.5 text-white/30" />, label: 'Open' }
@@ -253,14 +253,14 @@ export default function TasksPage() {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
+    'w-full rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition'
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <CheckSquare className="h-3.5 w-3.5" /> Tasks
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -275,21 +275,21 @@ export default function TasksPage() {
 
       {/* Stat strip */}
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.open}</p>
-          <p className="text-[10px] text-white/35 mt-1">Open</p>
+          <p className="text-[12px] text-white/35 mt-1">Open</p>
         </div>
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
-          <p className="text-[10px] text-red-400/60 mt-1">Critical</p>
+          <p className="text-[12px] text-red-400/60 mt-1">Critical</p>
         </div>
         <div className="rounded-[18px] border border-orange-400/20 bg-orange-400/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-orange-300">{stats.blocked}</p>
-          <p className="text-[10px] text-orange-400/60 mt-1">Blocked</p>
+          <p className="text-[12px] text-orange-400/60 mt-1">Blocked</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{stats.dueToday}</p>
-          <p className="text-[10px] text-[#D4AF37]/60 mt-1">Due today</p>
+          <p className="text-[12px] text-[#D4AF37]/60 mt-1">Due today</p>
         </div>
       </section>
 
@@ -303,7 +303,7 @@ export default function TasksPage() {
               <button
                 key={s}
                 onClick={() => setActiveStatus(s)}
-                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
                   active
                     ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white/70'
@@ -325,7 +325,7 @@ export default function TasksPage() {
               <button
                 key={p}
                 onClick={() => setActivePriority(p)}
-                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
                   active
                     ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white/70'
@@ -341,7 +341,7 @@ export default function TasksPage() {
         {anyFilterActive && (
           <button
             onClick={() => { setActiveStatus('All'); setActivePriority('All') }}
-            className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[11px] text-white/35 transition hover:border-white/20 hover:text-white/60"
+            className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] px-2.5 py-1 text-[13px] text-white/35 transition hover:border-white/20 hover:text-white/60"
           >
             <X className="h-3 w-3" /> Clear
           </button>
@@ -351,7 +351,7 @@ export default function TasksPage() {
       {/* Task cards */}
       <section className="mt-6 space-y-4">
         {filtered.length === 0 && (
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center text-[13px] text-white/30">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-10 text-center text-[13px] text-white/30">
             No tasks match the current filters.
           </div>
         )}
@@ -370,17 +370,17 @@ export default function TasksPage() {
               {/* Top row */}
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.ring} ${tone.text}`}>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.ring} ${tone.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                     {tone.label}
                   </span>
-                  <span className="text-[11px] text-white/30">{task.app}</span>
+                  <span className="text-[13px] text-white/30">{task.app}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[12px]">
                   {isDone
-                    ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    ? <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
                     : st.icon}
-                  <span className={isDone ? 'text-emerald-300' : st.text}>
+                  <span className={isDone ? 'text-[#D4AF37]' : st.text}>
                     {isDone ? 'Done' : st.label}
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export default function TasksPage() {
                 {!isDone && (
                   <button
                     onClick={() => markDone(task.id)}
-                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10"
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-emerald-400/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Mark done
@@ -423,7 +423,7 @@ export default function TasksPage() {
               {task.appHref && (
                 <Link
                   href={task.appHref}
-                  className="mt-3 inline-flex items-center gap-1 text-[11px] text-white/30 transition hover:text-[#D4AF37]"
+                  className="mt-3 inline-flex items-center gap-1 text-[13px] text-white/30 transition hover:text-[#D4AF37]"
                 >
                   Open in {task.app} <ArrowUpRight className="h-3 w-3" />
                 </Link>
@@ -434,13 +434,13 @@ export default function TasksPage() {
       </section>
 
       {/* Create task form */}
-      <section className="mt-8 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+      <section className="mt-8 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
             <Plus className="h-3.5 w-3.5" /> Create a task
           </div>
           {showSuccess && (
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+            <span className="flex items-center gap-1.5 text-[13px] font-medium text-[#D4AF37]">
               <CheckCircle2 className="h-3.5 w-3.5" /> Task created
             </span>
           )}
@@ -466,12 +466,12 @@ export default function TasksPage() {
               value={formAssignee}
               onChange={e => setFormAssignee(e.target.value)}
               placeholder="Assign to…"
-              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
             <select
               value={formPriority}
               onChange={e => setFormPriority(e.target.value as Task['priority'])}
-              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white/70 outline-none focus:border-[#D4AF37]/30 transition appearance-none cursor-pointer"
+              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white/70 outline-none focus:border-[#D4AF37]/30 transition appearance-none cursor-pointer"
             >
               <option value="critical">Critical</option>
               <option value="high">High</option>
@@ -482,7 +482,7 @@ export default function TasksPage() {
               value={formDue}
               onChange={e => setFormDue(e.target.value)}
               placeholder="Due date"
-              className="rounded-xl border border-white/[0.08] bg-[#06080A] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+              className="rounded-xl border border-white/[0.08] bg-[#111318] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
             />
             <button
               type="submit"
@@ -496,7 +496,7 @@ export default function TasksPage() {
 
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] px-6 py-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80 mb-3">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80 mb-3">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="text-[15px] font-medium leading-[1.65] text-white/85">

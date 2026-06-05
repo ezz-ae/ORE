@@ -18,12 +18,12 @@ const INFRA = [
 ] as const
 
 function infraDot(s: string) {
-  if (s === 'live') return 'bg-emerald-400'
+  if (s === 'live') return 'bg-[#D4AF37]'
   return 'bg-[#D4AF37]'
 }
 
 function infraLabel(s: string) {
-  if (s === 'live') return { text: 'text-emerald-300', label: 'Live' }
+  if (s === 'live') return { text: 'text-[#D4AF37]', label: 'Live' }
   return { text: 'text-[#F8E7AE]', label: 'Pending' }
 }
 
@@ -45,7 +45,7 @@ export default async function DashboardOverviewPage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <LayoutDashboard className="h-3.5 w-3.5" /> Operating Overview
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -59,16 +59,16 @@ export default async function DashboardOverviewPage() {
       {/* KPI row */}
       <section className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: 'Live apps',   value: liveApps,       tone: 'text-emerald-300' },
+          { label: 'Live apps',   value: liveApps,       tone: 'text-[#D4AF37]' },
           { label: 'Hot leads',   value: hotLeads,       tone: 'text-red-400' },
           { label: 'Overdue FU',  value: overdue,        tone: 'text-orange-300' },
           { label: 'Approvals',   value: approvals,      tone: 'text-[#D4AF37]' },
           { label: 'Blocked',     value: blocked,        tone: 'text-red-400' },
-          { label: 'Agents avail',value: available,      tone: 'text-emerald-300' },
+          { label: 'Agents avail',value: available,      tone: 'text-[#D4AF37]' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
             <div className={`text-[28px] font-semibold ${kpi.tone}`}>{kpi.value}</div>
-            <div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-white/35">{kpi.label}</div>
+            <div className="mt-0.5 text-[12px] uppercase tracking-[0.14em] text-white/35">{kpi.label}</div>
           </div>
         ))}
       </section>
@@ -80,7 +80,7 @@ export default async function DashboardOverviewPage() {
 
       {/* Infrastructure */}
       <section className="mt-14">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
           <ShieldCheck className="h-3.5 w-3.5" /> Infrastructure
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Live components</h2>
@@ -88,7 +88,7 @@ export default async function DashboardOverviewPage() {
           {INFRA.map((item) => {
             const t = infraLabel(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div key={item.label} className="flex items-center justify-between gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5">
                 <div className="min-w-0">
                   <div className="text-[14px] font-semibold text-white">{item.label}</div>
                   <div className="mt-0.5 text-[12px] text-white/45">{item.note}</div>
@@ -105,19 +105,19 @@ export default async function DashboardOverviewPage() {
 
       {/* App health matrix */}
       <section className="mt-14">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
           <TrendingUp className="h-3.5 w-3.5" /> Apps
         </div>
         <h2 className="mt-2 text-xl font-semibold text-white">Live status matrix</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">App</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Urgent</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Blocked</th>
-                <th className="hidden px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Approvals</th>
-                <th className="px-6 py-3 text-right text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Status</th>
+                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">App</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Urgent</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Blocked</th>
+                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Approvals</th>
+                <th className="px-6 py-3 text-right text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
@@ -136,7 +136,7 @@ export default async function DashboardOverviewPage() {
                     <span className={`font-medium tabular-nums ${app.pendingApprovalCount > 0 ? 'text-[#D4AF37]' : 'text-white/25'}`}>{app.pendingApprovalCount}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className={`text-[11px] font-medium ${app.status === 'live' ? 'text-emerald-300' : app.status === 'in_progress' ? 'text-[#F8E7AE]' : 'text-white/35'}`}>
+                    <span className={`text-[13px] font-medium ${app.status === 'live' ? 'text-[#D4AF37]' : app.status === 'in_progress' ? 'text-[#F8E7AE]' : 'text-white/35'}`}>
                       {app.status.replace('_', ' ')}
                     </span>
                   </td>

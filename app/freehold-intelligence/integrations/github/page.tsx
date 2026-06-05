@@ -7,13 +7,13 @@ import { mockGithubData } from '@/lib/freehold/mcp/mock-integrations'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function ciTone(s: string) {
-  if (s === 'success') return { icon: CheckCircle2, text: 'text-emerald-300', bg: 'bg-emerald-400/10 border-emerald-400/20' }
+  if (s === 'success') return { icon: CheckCircle2, text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
   if (s === 'failure') return { icon: AlertCircle, text: 'text-red-300', bg: 'bg-red-400/10 border-red-400/20' }
   return { icon: Circle, text: 'text-[#F8E7AE]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
 }
 
 function deployTone(s: string) {
-  if (s === 'ready') return { dot: 'bg-emerald-400', text: 'text-emerald-300' }
+  if (s === 'ready') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
   if (s === 'building') return { dot: 'bg-[#D4AF37] animate-pulse', text: 'text-[#F8E7AE]' }
   return { dot: 'bg-red-400', text: 'text-red-300' }
 }
@@ -60,18 +60,18 @@ export default function GithubIntegrationPage() {
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[13px] font-medium text-[#D4AF37]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
             Connected
           </span>
-          <span className="text-[11px] text-white/30">
+          <span className="text-[13px] text-white/30">
             {refreshedAt ? `Refreshed just now` : `Last synced ${timeAgo(gh.lastCommit.timestamp)}`}
           </span>
           <button
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-[11px] text-white/50 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-3 py-1.5 text-[13px] text-white/50 transition hover:border-white/20 hover:text-white disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing…' : 'Refresh'}
@@ -87,29 +87,29 @@ export default function GithubIntegrationPage() {
 
       {/* Stats row */}
       <section className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">CI status</p>
-          <p className={`mt-2 text-[22px] font-semibold ${allCiPassed ? 'text-emerald-300' : 'text-red-300'}`}>
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">CI status</p>
+          <p className={`mt-2 text-[22px] font-semibold ${allCiPassed ? 'text-[#D4AF37]' : 'text-red-300'}`}>
             {allCiPassed ? 'Passing' : 'Failing'}
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Deployments</p>
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Deployments</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.deployments.length}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Open PRs</p>
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Open PRs</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.openPRs}</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Open issues</p>
+        <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Open issues</p>
           <p className="mt-2 text-[22px] font-semibold text-white">{gh.openIssues}</p>
         </div>
       </section>
 
       {/* Branch + last commit */}
-      <section className="mt-5 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+      <section className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
           <GitBranch className="h-3.5 w-3.5" /> Active branch
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -131,14 +131,14 @@ export default function GithubIntegrationPage() {
           <div>
             <p className="font-mono text-[12px] text-white/45">{gh.lastCommit.sha}</p>
             <p className="mt-1 text-[13px] text-white/80">{gh.lastCommit.message}</p>
-            <p className="mt-1 text-[11px] text-white/35">{gh.lastCommit.author} · {timeAgo(gh.lastCommit.timestamp)}</p>
+            <p className="mt-1 text-[13px] text-white/35">{gh.lastCommit.author} · {timeAgo(gh.lastCommit.timestamp)}</p>
           </div>
         </div>
       </section>
 
       {/* CI Checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           CI checks
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -153,7 +153,7 @@ export default function GithubIntegrationPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[12px] text-white/35">{check.duration}</span>
-                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] capitalize ${t.bg} ${t.text}`}>
+                  <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] capitalize ${t.bg} ${t.text}`}>
                     {rerunning === check.name ? 'running…' : check.status}
                   </span>
                   {(check.status === 'failure' || rerunning === check.name) && (
@@ -161,7 +161,7 @@ export default function GithubIntegrationPage() {
                       type="button"
                       onClick={() => handleRerun(check.name)}
                       disabled={rerunning !== null}
-                      className="rounded-[8px] border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[11px] text-white/45 transition hover:border-emerald-400/20 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-[8px] border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[13px] text-white/45 transition hover:border-emerald-400/20 hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {rerunning === check.name ? 'Running…' : 'Re-run'}
                     </button>
@@ -174,8 +174,8 @@ export default function GithubIntegrationPage() {
       </section>
 
       {/* Deployments */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Deployments
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -198,8 +198,8 @@ export default function GithubIntegrationPage() {
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-white/30">{timeAgo(dep.createdAt)}</span>
-                  <span className={`text-[11px] ${t.text} capitalize`}>{dep.status}</span>
+                  <span className="text-[13px] text-white/30">{timeAgo(dep.createdAt)}</span>
+                  <span className={`text-[13px] ${t.text} capitalize`}>{dep.status}</span>
                 </div>
               </div>
             )
@@ -208,8 +208,8 @@ export default function GithubIntegrationPage() {
       </section>
 
       {/* Recent activity */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
-        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
+        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Recent activity
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -218,7 +218,7 @@ export default function GithubIntegrationPage() {
               <Code2 className="mt-0.5 h-4 w-4 shrink-0 text-white/25" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] text-white/80">{act.message}</p>
-                <p className="mt-0.5 text-[11px] text-white/35">{act.author} · {act.ago}</p>
+                <p className="mt-0.5 text-[13px] text-white/35">{act.author} · {act.ago}</p>
               </div>
             </div>
           ))}

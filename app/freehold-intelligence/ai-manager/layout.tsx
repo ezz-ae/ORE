@@ -18,7 +18,7 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
 
   return (
     <>
-      <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#06080A]/80 backdrop-blur-xl">
+      <div className="sticky top-[56px] z-30 border-b border-white/[0.08] bg-[#111318]/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
             {tabs.map((tab) => {

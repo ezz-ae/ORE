@@ -203,7 +203,7 @@ export default function NewCampaignPage() {
   if (launched) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-32 pt-14 text-center sm:px-6">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-400" />
+        <CheckCircle2 className="mx-auto h-14 w-14 text-[#D4AF37]" />
         <h1 className="mt-6 text-[32px] font-semibold text-white">Campaign created</h1>
         <p className="mt-3 text-[16px] text-white/55">
           {launched.status === 'ACTIVE'
@@ -238,7 +238,7 @@ export default function NewCampaignPage() {
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> New Meta Campaign
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white sm:text-[40px]">
@@ -254,23 +254,23 @@ export default function NewCampaignPage() {
           const Icon    = s.icon
           return (
             <div key={s.n} className="flex flex-1 items-center">
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition ${
-                done    ? 'border-emerald-400/40 bg-emerald-400/15 text-emerald-300'
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[13px] font-semibold transition ${
+                done    ? 'border-emerald-400/40 bg-[#D4AF37]/15 text-[#D4AF37]'
                 : active ? 'border-[#D4AF37]/50 bg-[#D4AF37]/15 text-[#D4AF37]'
                 : 'border-white/[0.08] bg-white/[0.04] text-white/30'
               }`}>
                 {done ? <CheckCircle2 className="h-4 w-4" /> : s.n}
               </div>
-              <span className={`ml-2 hidden text-[11px] font-medium sm:block ${active ? 'text-white' : done ? 'text-emerald-300/70' : 'text-white/25'}`}>{s.label}</span>
+              <span className={`ml-2 hidden text-[13px] font-medium sm:block ${active ? 'text-white' : done ? 'text-[#D4AF37]/70' : 'text-white/25'}`}>{s.label}</span>
               {i < STEPS.length - 1 && (
-                <div className={`mx-3 h-px flex-1 ${done ? 'bg-emerald-400/30' : 'bg-white/[0.06]'}`} />
+                <div className={`mx-3 h-px flex-1 ${done ? 'bg-[#D4AF37]/30' : 'bg-white/[0.06]'}`} />
               )}
             </div>
           )
         })}
       </div>
 
-      <div className="mt-10 rounded-[24px] border border-white/[0.06] bg-[#0A0D10] p-6 sm:p-8">
+      <div className="mt-10 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] p-6 sm:p-8">
 
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (
@@ -301,7 +301,7 @@ export default function NewCampaignPage() {
                     className={`w-full rounded-[14px] border p-4 text-left transition ${
                       form.objective === obj.value
                         ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                        : 'border-white/[0.06] bg-white/[0.02] hover:border-white/10'
+                        : 'border-white/[0.08] bg-white/[0.02] hover:border-white/10'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -342,7 +342,7 @@ export default function NewCampaignPage() {
                 value={form.dailyBudgetAED}
                 onChange={(e) => update('dailyBudgetAED', Math.max(50, parseInt(e.target.value) || 50))}
               />
-              <p className="mt-1 text-[11px] text-white/35">≈ AED {(form.dailyBudgetAED * 30).toLocaleString()} / month at this rate</p>
+              <p className="mt-1 text-[13px] text-white/35">≈ AED {(form.dailyBudgetAED * 30).toLocaleString()} / month at this rate</p>
             </div>
 
             <div>
@@ -473,7 +473,7 @@ export default function NewCampaignPage() {
                 onChange={(e) => update('primaryText', e.target.value)}
                 placeholder="The investor pitch — 2–3 sentences that lead with the strongest signal."
               />
-              <p className="mt-1 text-[11px] text-white/35">{form.primaryText.length}/500 · Aim for under 125 characters for mobile preview.</p>
+              <p className="mt-1 text-[13px] text-white/35">{form.primaryText.length}/500 · Aim for under 125 characters for mobile preview.</p>
             </div>
 
             <div>
@@ -546,20 +546,20 @@ export default function NewCampaignPage() {
                 { label: 'Platforms',   value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
                 { label: 'CTA',         value: CTA_OPTIONS.find((c) => c.value === form.cta)?.label ?? form.cta },
               ].map((item) => (
-                <div key={item.label} className="rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                  <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</div>
+                <div key={item.label} className="rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
+                  <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</div>
                   <div className="mt-1 text-[14px] font-semibold text-white">{item.value}</div>
                 </div>
               ))}
             </div>
 
             {/* Creative preview */}
-            <div className="rounded-[16px] border border-white/[0.06] bg-white/[0.02] p-5">
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35 mb-3">Creative preview</div>
+            <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-5">
+              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35 mb-3">Creative preview</div>
               <div className="text-[12px] leading-relaxed text-white/60 mb-2">{form.primaryText}</div>
               <div className="text-[14px] font-semibold text-white">{form.headline}</div>
               <div className="text-[12px] text-white/45 mt-0.5">{form.description}</div>
-              <div className="mt-2 inline-flex items-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[10px] text-[#D4AF37]">
+              <div className="mt-2 inline-flex items-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[12px] text-[#D4AF37]">
                 {CTA_OPTIONS.find((c) => c.value === form.cta)?.label}
               </div>
             </div>
@@ -579,13 +579,13 @@ export default function NewCampaignPage() {
                     className={`flex-1 rounded-[14px] border p-4 text-left transition ${
                       form.launchStatus === opt.value
                         ? opt.value === 'ACTIVE'
-                          ? 'border-emerald-400/30 bg-emerald-400/[0.06]'
+                          ? 'border-emerald-400/30 bg-[#D4AF37]/[0.06]'
                           : 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                        : 'border-white/[0.06] hover:border-white/10'
+                        : 'border-white/[0.08] hover:border-white/10'
                     }`}
                   >
                     <div className="text-[13px] font-semibold text-white">{opt.label}</div>
-                    <p className="mt-1 text-[11px] text-white/40">{opt.desc}</p>
+                    <p className="mt-1 text-[13px] text-white/40">{opt.desc}</p>
                   </button>
                 ))}
               </div>

@@ -44,7 +44,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
     <>
       {/* Flash toast */}
       {flash && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#06080A]/95 px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/30 bg-[#111318]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
           {flash}
         </div>
       )}
@@ -52,26 +52,26 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
       {/* Urgent items */}
       {visibleUrgent.length > 0 && (
         <section className="mt-14">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Today</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Today</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Urgent items</h2>
           <div className="mt-5 space-y-3">
             {visibleUrgent.map((task) => (
-              <div key={task.id} className="flex items-start gap-4 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+              <div key={task.id} className="flex items-start gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
                 <AlertCircle className={`mt-0.5 h-4 w-4 shrink-0 ${task.priority === 'critical' ? 'text-red-400' : 'text-[#D4AF37]'}`} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-semibold text-white">{task.title}</div>
                   <p className="mt-0.5 text-[13px] text-white/55">{task.body}</p>
-                  <div className="mt-1 text-[11px] text-white/30">{task.app} · {task.owner}</div>
+                  <div className="mt-1 text-[13px] text-white/30">{task.app} · {task.owner}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {task.due && <span className="text-[11px] font-medium text-[#D4AF37]/70">{task.due}</span>}
+                  {task.due && <span className="text-[13px] font-medium text-[#D4AF37]/70">{task.due}</span>}
                   <button
                     type="button"
                     onClick={() => {
                       setDismissed((prev) => new Set([...prev, task.id]))
                       setFlash('Task dismissed')
                     }}
-                    className="rounded-[8px] border border-white/[0.06] bg-white/[0.02] p-1.5 text-white/30 transition hover:border-white/15 hover:text-white/60"
+                    className="rounded-[8px] border border-white/[0.08] bg-white/[0.02] p-1.5 text-white/30 transition hover:border-white/15 hover:text-white/60"
                     title="Dismiss"
                   >
                     <X className="h-3 w-3" />
@@ -86,7 +86,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
       {/* Pending approvals */}
       {visibleApprovals.length > 0 && (
         <section className="mt-14">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Awaiting you</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Awaiting you</div>
           <h2 className="mt-2 text-xl font-semibold text-white">Pending approvals</h2>
           <div className="mt-5 space-y-3">
             {visibleApprovals.map((item) => (
@@ -95,7 +95,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-semibold text-white">{item.title}</div>
                   <p className="mt-0.5 text-[13px] text-white/55">{item.body}</p>
-                  <div className="mt-1 text-[11px] text-white/30">{item.app} · {item.owner}</div>
+                  <div className="mt-1 text-[13px] text-white/30">{item.app} · {item.owner}</div>
                 </div>
                 <button
                   type="button"
@@ -103,7 +103,7 @@ export function ActionItems({ urgentTasks, pendingApprovals }: Props) {
                     setApproved((prev) => new Set([...prev, item.id]))
                     setFlash(`"${item.title}" approved`)
                   }}
-                  className="shrink-0 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:bg-emerald-400/20"
+                  className="shrink-0 rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-3 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                 >
                   Approve
                 </button>

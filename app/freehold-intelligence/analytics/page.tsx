@@ -20,16 +20,16 @@ function formatDuration(seconds: number): string {
 
 function SourceBadge({ type }: { type: string }) {
   const styles: Record<string, string> = {
-    organic:  'border-emerald-500/20 bg-emerald-500/10 text-emerald-400',
+    organic:  'border-emerald-500/20 bg-emerald-500/10 text-[#D4AF37]',
     paid:     'border-blue-500/20 bg-blue-500/10 text-blue-400',
-    social:   'border-violet-500/20 bg-violet-500/10 text-violet-400',
+    social:   'border-violet-500/20 bg-violet-500/10 text-white/55',
     direct:   'border-white/[0.08] bg-white/[0.04] text-white/45',
     referral: 'border-amber-500/20 bg-amber-500/10 text-amber-400',
     email:    'border-orange-500/20 bg-orange-500/10 text-orange-400',
   }
   const label = type.charAt(0).toUpperCase() + type.slice(1)
   return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize ${styles[type] ?? styles.direct}`}>
+    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[13px] font-medium capitalize ${styles[type] ?? styles.direct}`}>
       {label}
     </span>
   )
@@ -159,7 +159,7 @@ function FilterPills<T extends string>({
           <button
             key={value}
             onClick={() => onChange(value)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+            className={`rounded-full px-3 py-1 text-[13px] font-medium transition ${
               isActive
                 ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
                 : 'border border-white/[0.08] text-white/40 hover:text-white/65'
@@ -208,8 +208,8 @@ export default function AnalyticsPage() {
   // Filtered devices
   const filteredDevices = useMemo(() => {
     const all = [
-      { label: 'Mobile',  data: a.devices.find((d) => d.device === 'mobile')!,  color: 'text-sky-400',    bar: 'bg-sky-500'    },
-      { label: 'Desktop', data: a.devices.find((d) => d.device === 'desktop')!, color: 'text-violet-400', bar: 'bg-violet-500' },
+      { label: 'Mobile',  data: a.devices.find((d) => d.device === 'mobile')!,  color: 'text-white/55',    bar: 'bg-sky-500'    },
+      { label: 'Desktop', data: a.devices.find((d) => d.device === 'desktop')!, color: 'text-white/55', bar: 'bg-violet-500' },
       { label: 'Tablet',  data: a.devices.find((d) => d.device === 'tablet')!,  color: 'text-amber-400',  bar: 'bg-amber-500'  },
     ]
     return deviceFilter === 'All'
@@ -230,7 +230,7 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-white/90">Site Analytics</h1>
           <p className="mt-1 text-sm text-white/40">Traffic, conversions, and audience insights</p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-violet-400">
+        <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-white/55">
           Last 30 days
         </div>
       </div>
@@ -331,7 +331,7 @@ export default function AnalyticsPage() {
                       </td>
                       <td className="px-5 py-4 text-right tabular-nums text-white/65">{src.conversions}</td>
                       <td className="px-5 py-4 text-right">
-                        <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-[#D4AF37]' : src.convRate >= 0.03 ? 'text-emerald-400' : 'text-white/50'}`}>
+                        <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-[#D4AF37]' : src.convRate >= 0.03 ? 'text-[#D4AF37]' : 'text-white/50'}`}>
                           {(src.convRate * 100).toFixed(1)}%
                         </span>
                       </td>
@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
                   <tr key={page.path} className="transition hover:bg-white/[0.02]">
                     <td className="px-5 py-4">
                       <div className="font-medium text-white/75">{page.title}</div>
-                      <div className="mt-0.5 font-mono text-[11px] text-white/30">{page.path}</div>
+                      <div className="mt-0.5 font-mono text-[13px] text-white/30">{page.path}</div>
                     </td>
                     <td className="px-5 py-4 text-right tabular-nums text-white/65">
                       {page.pageViews.toLocaleString('en-US')}
@@ -378,7 +378,7 @@ export default function AnalyticsPage() {
                       {formatDuration(page.avgTimeOnPage)}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <span className={`text-xs font-medium tabular-nums ${page.bounceRate >= 0.6 ? 'text-amber-400' : page.bounceRate <= 0.35 ? 'text-emerald-400' : 'text-white/50'}`}>
+                      <span className={`text-xs font-medium tabular-nums ${page.bounceRate >= 0.6 ? 'text-amber-400' : page.bounceRate <= 0.35 ? 'text-[#D4AF37]' : 'text-white/50'}`}>
                         {Math.round(page.bounceRate * 100)}%
                       </span>
                     </td>

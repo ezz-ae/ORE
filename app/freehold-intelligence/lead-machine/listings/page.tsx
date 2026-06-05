@@ -10,7 +10,7 @@ import {
 
 function dot(value: string) {
   const v = value.toLowerCase()
-  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-emerald-400'
+  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-[#D4AF37]'
   if (v.includes('block') || v.includes('missing')) return 'bg-red-400'
   if (v.includes('review') || v.includes('draft') || v.includes('access') || v.includes('pending')) return 'bg-[#D4AF37]'
   return 'bg-white/30'
@@ -33,7 +33,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0A0D10] transition hover:border-[#D4AF37]/25">
+    <article className="group overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
@@ -42,7 +42,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-6 sm:p-8">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
               {listing.area} · {listing.developer}
             </div>
             <h3 className="mt-2 text-2xl font-semibold leading-tight text-white sm:text-[28px]">
@@ -83,8 +83,8 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         </div>
 
         {listing.missingRequirements.length > 0 && (
-          <div className="mt-5 border-t border-white/[0.06] pt-4">
-            <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">Holding it back</div>
+          <div className="mt-5 border-t border-white/[0.08] pt-4">
+            <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">Holding it back</div>
             <ul className="mt-2 grid gap-1 text-[14px] text-white/65">
               {listing.missingRequirements.map((req) => (
                 <li
@@ -160,7 +160,7 @@ export default function ListingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <LayoutList className="h-3.5 w-3.5" /> Active Listings
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
@@ -182,7 +182,7 @@ export default function ListingsPage() {
       <section className="mt-16">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All</div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {isFiltered
                 ? <>{filtered.length} of {total} listings</>
@@ -219,7 +219,7 @@ export default function ListingsPage() {
             <button
               key={option}
               onClick={() => setReadinessFilter(option)}
-              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+              className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
                 readinessFilter === option
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'

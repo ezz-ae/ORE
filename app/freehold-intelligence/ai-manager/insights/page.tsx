@@ -107,8 +107,8 @@ const insights: Insight[] = [
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
-  Opportunity: { label: 'Opportunity', className: 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400' },
-  Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-sky-400' },
+  Opportunity: { label: 'Opportunity', className: 'bg-emerald-500/10 border border-emerald-500/25 text-[#D4AF37]' },
+  Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-white/55' },
 }
 
 // ─── content performance table ─────────────────────────────────────────────────
@@ -121,13 +121,13 @@ const contentRows = [
 ]
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-emerald-400'
+  if (score >= 80) return 'text-[#D4AF37]'
   if (score >= 60) return 'text-[#D4AF37]'
   return 'text-red-400'
 }
 
 function statusBadge(status: string) {
-  if (status === 'Good')       return 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+  if (status === 'Good')       return 'bg-emerald-500/10 border border-emerald-500/20 text-[#D4AF37]'
   if (status === 'Needs work') return 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
   return 'bg-white/[0.05] border border-white/10 text-white/50'
 }
@@ -173,7 +173,7 @@ export default function InsightsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80">
+      <div className="flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
         <Bot className="h-3.5 w-3.5" />
         AI Manager · Insights
       </div>
@@ -191,7 +191,7 @@ export default function InsightsPage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
           {generating ? (
             <>
@@ -208,7 +208,7 @@ export default function InsightsPage() {
       </div>
 
       {generated && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-[#D4AF37]">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Report generated — insights refreshed from latest data.
         </div>
@@ -217,7 +217,7 @@ export default function InsightsPage() {
       {/* ── Section 1: System Snapshot ─────────────────────────────────────── */}
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
-          <BarChart3 className="h-4 w-4 text-rose-400" />
+          <BarChart3 className="h-4 w-4 text-white/55" />
           <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">System Snapshot</h2>
         </div>
 
@@ -227,7 +227,7 @@ export default function InsightsPage() {
               key={card.label}
               className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
             >
-              <div className="text-[11px] font-medium uppercase tracking-widest text-white/35">
+              <div className="text-[13px] font-medium uppercase tracking-widest text-white/35">
                 {card.label}
               </div>
               <div className="mt-2 text-2xl font-semibold tracking-tight text-white">
@@ -242,7 +242,7 @@ export default function InsightsPage() {
       {/* ── Section 2: AI Insights Feed ────────────────────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <Sparkles className="h-4 w-4 text-rose-400" />
+          <Sparkles className="h-4 w-4 text-white/55" />
           <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">AI Insights Feed</h2>
         </div>
 
@@ -258,18 +258,18 @@ export default function InsightsPage() {
                 <div className="flex items-start gap-4">
                   {/* rose sparkles icon */}
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10">
-                    <Sparkles className="h-4 w-4 text-rose-400" />
+                    <Sparkles className="h-4 w-4 text-white/55" />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold text-white/90">{insight.title}</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge.className}`}>
+                      <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-wider ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
                     <p className="mt-1.5 text-sm leading-relaxed text-white/55">{insight.detail}</p>
-                    <p className="mt-2 text-[11px] text-white/25">{insight.time}</p>
+                    <p className="mt-2 text-[13px] text-white/25">{insight.time}</p>
                   </div>
 
                   {/* contextual insight icon */}
@@ -286,7 +286,7 @@ export default function InsightsPage() {
       {/* ── Section 3: Content Performance by Section ──────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <BarChart3 className="h-4 w-4 text-rose-400" />
+          <BarChart3 className="h-4 w-4 text-white/55" />
           <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Content Performance by Section</h2>
         </div>
 
@@ -297,7 +297,7 @@ export default function InsightsPage() {
                 {['Section', 'Items', 'Published', 'Avg SEO', 'Status'].map((h) => (
                   <th
                     key={h}
-                    className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-widest text-white/30"
+                    className="px-5 py-3.5 text-left text-[13px] font-semibold uppercase tracking-widest text-white/30"
                   >
                     {h}
                   </th>
@@ -320,7 +320,7 @@ export default function InsightsPage() {
                     {row.avgSeo}/100
                   </td>
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(row.status)}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(row.status)}`}>
                       {row.status}
                     </span>
                   </td>
@@ -334,7 +334,7 @@ export default function InsightsPage() {
       {/* ── Section 4: Recommended Actions ────────────────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <CheckCircle2 className="h-4 w-4 text-rose-400" />
+          <CheckCircle2 className="h-4 w-4 text-white/55" />
           <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Recommended Actions</h2>
         </div>
 
@@ -345,7 +345,7 @@ export default function InsightsPage() {
               className="flex flex-col gap-4 rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
             >
               {/* number badge */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-rose-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-white/55">
                 {action.n}
               </div>
               <div>

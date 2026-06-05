@@ -61,7 +61,7 @@ export default function AdsLivePage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Radio className="h-3.5 w-3.5" /> Ads Live
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -73,8 +73,8 @@ export default function AdsLivePage() {
         <div className="mt-7 flex items-center gap-3 sm:mt-10">
           <span className="flex items-center gap-1.5 text-[12px] text-white/40">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#D4AF37]" />
             </span>
             Live · {now} GST
           </span>
@@ -107,9 +107,9 @@ export default function AdsLivePage() {
           { label: 'Active Campaigns', value: '6',          sub: 'Meta + Google' },
         ].map((m) => (
           <div key={m.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
-            <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/40">{m.label}</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/40">{m.label}</div>
             <div className="mt-2 text-[28px] font-semibold leading-none text-white">{m.value}</div>
-            <div className="mt-1.5 text-[11px] text-white/35">{m.sub}</div>
+            <div className="mt-1.5 text-[13px] text-white/35">{m.sub}</div>
           </div>
         ))}
       </div>
@@ -129,7 +129,7 @@ export default function AdsLivePage() {
                 <span className="text-[12px] text-white/50">Spend this month</span>
                 <span className="text-[15px] font-semibold text-white">AED 18,420</span>
               </div>
-              <div className="mt-1 flex items-baseline justify-between text-[11px] text-white/35">
+              <div className="mt-1 flex items-baseline justify-between text-[13px] text-white/35">
                 <span>Budget AED 25,000</span>
                 <span>73.7%</span>
               </div>
@@ -137,11 +137,11 @@ export default function AdsLivePage() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <div className="text-[11px] text-white/40">Leads</div>
+                <div className="text-[13px] text-white/40">Leads</div>
                 <div className="mt-0.5 text-[20px] font-semibold text-white">248</div>
               </div>
               <div>
-                <div className="text-[11px] text-white/40">CPL</div>
+                <div className="text-[13px] text-white/40">CPL</div>
                 <div className="mt-0.5 text-[20px] font-semibold text-white">AED 74.3</div>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function AdsLivePage() {
                 <span className="text-[12px] text-white/50">Spend this month</span>
                 <span className="text-[15px] font-semibold text-white">AED 12,870</span>
               </div>
-              <div className="mt-1 flex items-baseline justify-between text-[11px] text-white/35">
+              <div className="mt-1 flex items-baseline justify-between text-[13px] text-white/35">
                 <span>Budget AED 18,000</span>
                 <span>71.5%</span>
               </div>
@@ -174,11 +174,11 @@ export default function AdsLivePage() {
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <div className="text-[11px] text-white/40">Leads</div>
+                <div className="text-[13px] text-white/40">Leads</div>
                 <div className="mt-0.5 text-[20px] font-semibold text-white">167</div>
               </div>
               <div>
-                <div className="text-[11px] text-white/40">CPL</div>
+                <div className="text-[13px] text-white/40">CPL</div>
                 <div className="mt-0.5 text-[20px] font-semibold text-white">AED 77.1</div>
               </div>
             </div>
@@ -195,13 +195,13 @@ export default function AdsLivePage() {
       {/* Live campaigns */}
       <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
             Live Campaigns
           </div>
-          <span className="flex items-center gap-1.5 text-[11px] text-emerald-400/70">
+          <span className="flex items-center gap-1.5 text-[13px] text-[#D4AF37]/70">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
             </span>
             Live data
           </span>
@@ -220,8 +220,8 @@ export default function AdsLivePage() {
                 >
                   {/* Live indicator */}
                   <span className="relative flex h-1.5 w-1.5 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-50" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
                   </span>
 
                   {/* Name */}
@@ -231,7 +231,7 @@ export default function AdsLivePage() {
 
                   {/* Platform badge */}
                   <span
-                    className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                    className="shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-semibold"
                     style={{
                       backgroundColor: `${platformColor}18`,
                       color: platformColor,
@@ -250,7 +250,7 @@ export default function AdsLivePage() {
                       </span>
                     </span>
                     <span>
-                      Leads <span className="font-semibold text-emerald-300">{c.leads}</span>
+                      Leads <span className="font-semibold text-[#D4AF37]">{c.leads}</span>
                     </span>
                     <span>
                       CPL <span className="text-white/80">AED {c.cpl}</span>
@@ -265,7 +265,7 @@ export default function AdsLivePage() {
 
       {/* CPL trend chart */}
       <section className="mt-10">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">CPL trend · last 4 weeks</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">CPL trend · last 4 weeks</div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
           <div className="flex items-center gap-6 mb-4 text-[12px]">
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>
@@ -302,7 +302,7 @@ export default function AdsLivePage() {
               })}
             </svg>
           </div>
-          <p className="mt-2 text-[11px] text-white/25">Both platforms trending down — Meta dropped 18.5% over 4 weeks</p>
+          <p className="mt-2 text-[13px] text-white/25">Both platforms trending down — Meta dropped 18.5% over 4 weeks</p>
         </div>
       </section>
 

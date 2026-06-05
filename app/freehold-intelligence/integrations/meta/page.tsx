@@ -43,10 +43,10 @@ export default function MetaIntegrationPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Megaphone className="h-3.5 w-3.5" /> Meta Ads
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[10px] font-medium text-red-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> Not connected
           </span>
         </div>
@@ -75,12 +75,12 @@ export default function MetaIntegrationPage() {
 
       {/* Requirements checklist */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Access requirements</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Access requirements</div>
         <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
         {/* progress bar */}
         <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
           <div
-            className="h-full rounded-full bg-emerald-400 transition-all duration-300"
+            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
             style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
           />
         </div>
@@ -92,14 +92,14 @@ export default function MetaIntegrationPage() {
               onClick={() => toggle(req.id)}
               className={`flex w-full text-left items-start gap-4 rounded-[18px] border p-5 ${
                 checked[req.id]
-                  ? 'border-emerald-400/15 bg-emerald-400/[0.03]'
+                  ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]'
                   : req.critical
                     ? 'border-red-400/15 bg-red-400/[0.03]'
-                    : 'border-white/[0.06] bg-[#0A0D10]'
+                    : 'border-white/[0.08] bg-[#1A1F2A]'
               }`}
             >
               {checked[req.id]
-                ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
                 : req.critical
                   ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                   : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-white/25" />
@@ -108,8 +108,8 @@ export default function MetaIntegrationPage() {
                 <div className="text-[14px] font-semibold text-white">{req.label}</div>
                 <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
               </div>
-              <span className={`shrink-0 text-[11px] font-medium ${
-                checked[req.id] ? 'text-emerald-300' : req.critical ? 'text-red-300' : 'text-white/35'
+              <span className={`shrink-0 text-[13px] font-medium ${
+                checked[req.id] ? 'text-[#D4AF37]' : req.critical ? 'text-red-300' : 'text-white/35'
               }`}>
                 {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
               </span>
@@ -120,12 +120,12 @@ export default function MetaIntegrationPage() {
 
       {/* Setup checklist */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Setup guide</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Setup guide</div>
         <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
         <div className="mt-5 space-y-2">
           {CHECKLIST.map((step, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#0A0D10] px-5 py-4">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-white/40">
+            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#1A1F2A] px-5 py-4">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-white/40">
                 {i + 1}
               </span>
               <p className="text-[13px] leading-relaxed text-white/70">{step}</p>
@@ -136,22 +136,22 @@ export default function MetaIntegrationPage() {
 
       {/* Campaign preview */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Pending campaigns</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Pending campaigns</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Ready to launch once connected</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {[
             { name: 'Palm Jumeirah Investor Pack', blocker: 'Meta billing owner + API', status: 'Blocked' },
             { name: 'Dubai Hills Yield Campaign',  blocker: 'API credentials only', status: 'Blocked' },
           ].map((campaign) => (
-            <div key={campaign.name} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+            <div key={campaign.name} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
               <div className="flex items-start justify-between gap-2">
                 <div className="text-[14px] font-semibold text-white">{campaign.name}</div>
-                <span className="shrink-0 rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[10px] text-red-300">{campaign.status}</span>
+                <span className="shrink-0 rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[12px] text-red-300">{campaign.status}</span>
               </div>
               <p className="mt-1.5 text-[12px] text-white/45">{campaign.blocker}</p>
               <Link
                 href="/freehold-intelligence/lead-machine/ad-requests"
-                className="mt-3 inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                className="mt-3 inline-flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
               >
                 View ad request <ArrowUpRight className="h-3 w-3" />
               </Link>

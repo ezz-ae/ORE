@@ -43,7 +43,7 @@ const WEEK = [
 ]
 
 const ANGLE_STATUS = {
-  approved:        { label: 'Approved',         classes: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20' },
+  approved:        { label: 'Approved',         classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20' },
   pending_approval:{ label: 'Pending approval', classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
   draft:           { label: 'Draft',            classes: 'bg-white/[0.06] text-white/50 border-white/10' },
 }
@@ -51,12 +51,12 @@ const ANGLE_STATUS = {
 const PLATFORM_CLASSES: Record<string, string> = {
   'Meta':     'bg-blue-400/10 text-blue-300 border-blue-400/20',
   'Instagram':'bg-pink-400/10 text-pink-300 border-pink-400/20',
-  'LinkedIn': 'bg-sky-400/10 text-sky-300 border-sky-400/20',
+  'LinkedIn': 'bg-sky-400/10 text-white/55 border-sky-400/20',
   'Meta Ads': 'bg-blue-400/10 text-blue-300 border-blue-400/20',
 }
 
 const SCHEDULE_STATUS = {
-  scheduled: 'text-emerald-300',
+  scheduled: 'text-[#D4AF37]',
   pending:   'text-[#D4AF37]',
   draft:     'text-white/35',
   blocked:   'text-red-300',
@@ -114,10 +114,10 @@ export default function SocialMediaManagerPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Megaphone className="h-3.5 w-3.5" /> Social Media Manager
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[10px] font-medium text-sky-300">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-[12px] font-medium text-white/55">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-400" /> Planned
           </span>
         </div>
@@ -139,21 +139,21 @@ export default function SocialMediaManagerPage() {
               <div className="text-[13px] font-semibold text-white">{pendingApprovals.length} item{pendingApprovals.length !== 1 ? 's' : ''} waiting for approval</div>
               <div className="mt-3 space-y-2">
                 {pendingApprovals.map((ap) => (
-                  <div key={ap.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-4 py-3">
+                  <div key={ap.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3">
                     <div className="min-w-0">
                       <div className="text-[13px] font-medium text-white/85">{ap.title}</div>
-                      <div className="mt-0.5 text-[11px] text-white/40">{ap.listing} · submitted by {ap.submittedBy} · {fmt(ap.submittedAt)}</div>
+                      <div className="mt-0.5 text-[13px] text-white/40">{ap.listing} · submitted by {ap.submittedBy} · {fmt(ap.submittedAt)}</div>
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleApproval(ap.id, ap.title, 'approved')}
-                        className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-300 transition hover:bg-emerald-400/20"
+                        className="rounded-full border border-emerald-400/25 bg-[#D4AF37]/10 px-3 py-1 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleApproval(ap.id, ap.title, 'changes_requested')}
-                        className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-white/50 transition hover:bg-white/[0.07]"
+                        className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-[13px] font-medium text-white/50 transition hover:bg-white/[0.07]"
                       >
                         Request changes
                       </button>
@@ -166,7 +166,7 @@ export default function SocialMediaManagerPage() {
         </div>
       )}
       {pendingApprovals.length === 0 && INITIAL_APPROVALS.length > 0 && (
-        <div className="mt-8 flex items-center gap-2 rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.03] px-5 py-4 text-[13px] text-emerald-300">
+        <div className="mt-8 flex items-center gap-2 rounded-[18px] border border-emerald-400/15 bg-[#D4AF37]/[0.03] px-5 py-4 text-[13px] text-[#D4AF37]">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> All approval items resolved.
         </div>
       )}
@@ -175,7 +175,7 @@ export default function SocialMediaManagerPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Campaign angles</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Campaign angles</div>
             <h2 className="mt-1 text-xl font-semibold text-white">By listing</h2>
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function SocialMediaManagerPage() {
               key={p}
               onClick={() => setPlatformFilter(p)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 platformFilter === p
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -205,7 +205,7 @@ export default function SocialMediaManagerPage() {
               key={key}
               onClick={() => setAngleStatusFilter(key)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 angleStatusFilter === key
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -218,7 +218,7 @@ export default function SocialMediaManagerPage() {
 
         <div className="mt-5 space-y-8">
           {filteredGroups.length === 0 ? (
-            <div className="rounded-[18px] border border-white/[0.06] px-6 py-10 text-center text-[13px] text-white/35">
+            <div className="rounded-[18px] border border-white/[0.08] px-6 py-10 text-center text-[13px] text-white/35">
               No angles match these filters.{' '}
               <button
                 onClick={() => { setPlatformFilter('All'); setAngleStatusFilter('all') }}
@@ -232,10 +232,10 @@ export default function SocialMediaManagerPage() {
               <div key={group.listing}>
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{group.area}</div>
+                    <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{group.area}</div>
                     <h3 className="mt-0.5 text-[16px] font-semibold text-white">{group.listing}</h3>
                   </div>
-                  <Link href={group.listingHref} className="inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+                  <Link href={group.listingHref} className="inline-flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
                     Open workspace <ArrowUpRight className="h-3 w-3" />
                   </Link>
                 </div>
@@ -248,18 +248,18 @@ export default function SocialMediaManagerPage() {
                     }
                     const st = ANGLE_STATUS[effectiveStatus]
                     return (
-                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-emerald-400/[0.03]' : 'border-white/[0.06] bg-[#0A0D10]'}`}>
+                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : 'border-white/[0.08] bg-[#1A1F2A]'}`}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="text-[13px] font-semibold text-white">{angle.title}</div>
-                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${PLATFORM_CLASSES[angle.platform] ?? 'border-white/10 text-white/40'}`}>
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${PLATFORM_CLASSES[angle.platform] ?? 'border-white/10 text-white/40'}`}>
                             {angle.platform}
                           </span>
                         </div>
                         <p className="mt-2 text-[12px] font-medium leading-snug text-white/75">{angle.headline}</p>
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-white/40">{angle.hook}</p>
+                        <p className="mt-1.5 text-[13px] leading-relaxed text-white/40">{angle.hook}</p>
                         <div className="mt-3 flex items-center justify-between">
-                          <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${st.classes}`}>{st.label}</span>
-                          {effectiveStatus === 'approved' && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${st.classes}`}>{st.label}</span>
+                          {effectiveStatus === 'approved' && <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />}
                         </div>
                       </div>
                     )
@@ -273,19 +273,19 @@ export default function SocialMediaManagerPage() {
 
       {/* Weekly publishing schedule */}
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Publishing schedule</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Publishing schedule</div>
         <h2 className="mt-2 text-xl font-semibold text-white">This week</h2>
         <div className="mt-5 grid grid-cols-7 gap-2">
           {WEEK.map((day) => (
             <div
               key={day.day}
-              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-white/[0.06] bg-[#0A0D10]' : 'border-white/[0.03] bg-transparent'}`}
+              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-white/[0.08] bg-[#1A1F2A]' : 'border-white/[0.03] bg-transparent'}`}
             >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">{day.day}</div>
+              <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-white/30">{day.day}</div>
               {day.post && (
                 <>
-                  <p className="mt-2 text-[10px] leading-snug text-white/65">{day.post}</p>
-                  <div className={`mt-2 text-[10px] font-semibold ${day.status ? SCHEDULE_STATUS[day.status] : 'text-white/25'}`}>
+                  <p className="mt-2 text-[12px] leading-snug text-white/65">{day.post}</p>
+                  <div className={`mt-2 text-[12px] font-semibold ${day.status ? SCHEDULE_STATUS[day.status] : 'text-white/25'}`}>
                     {day.status}
                   </div>
                 </>
@@ -293,7 +293,7 @@ export default function SocialMediaManagerPage() {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-white/35">
+        <div className="mt-3 flex flex-wrap gap-3 text-[13px] text-white/35">
           {(['scheduled', 'pending', 'draft', 'blocked'] as const).map((s) => (
             <span key={s} className={`flex items-center gap-1.5 ${SCHEDULE_STATUS[s]}`}>
               <span className="h-1.5 w-1.5 rounded-full bg-current" /> {s}
@@ -303,8 +303,8 @@ export default function SocialMediaManagerPage() {
       </section>
 
       {/* AI Take */}
-      <section className="mt-10 rounded-[24px] border border-white/[0.06] bg-white/[0.02] p-6">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+      <section className="mt-10 rounded-[24px] border border-white/[0.08] bg-white/[0.02] p-6">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[15px] leading-[1.65] text-white/80">
@@ -325,7 +325,7 @@ export default function SocialMediaManagerPage() {
 
       {/* Flash toast */}
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-emerald-400/25 bg-[#1A1F2A] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {flash}
           <button onClick={() => setFlash(null)} className="text-white/30 transition hover:text-white/60">

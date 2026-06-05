@@ -43,7 +43,7 @@ const STATUS_PILLS: { key: StatusFilter; label: string }[] = [
 
 function statusCfg(status: string) {
   switch (status) {
-    case 'connected':       return { label: 'Connected',     dot: 'bg-emerald-400', text: 'text-emerald-300' }
+    case 'connected':       return { label: 'Connected',     dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
     case 'partial':         return { label: 'Partial',       dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]'   }
     case 'needs_access':    return { label: 'Needs access',  dot: 'bg-orange-400',  text: 'text-orange-200' }
     case 'blocked':
@@ -96,7 +96,7 @@ export default function IntegrationsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Zap className="h-3.5 w-3.5" /> Connections
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
@@ -112,7 +112,7 @@ export default function IntegrationsPage() {
       {/* Critical blockers */}
       {critical.length > 0 && (
         <section className="mt-20">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-red-300/85">Must clear before launch</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-red-300/85">Must clear before launch</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
             {critical.length} {critical.length === 1 ? 'thing is' : 'things are'} holding back the server
           </h2>
@@ -124,12 +124,12 @@ export default function IntegrationsPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-red-300/85">
+                    <div className="text-[12px] font-medium uppercase tracking-[0.22em] text-red-300/85">
                       {String(b.integrationId || b.integration_id || 'system').replace(/-/g, ' ')}
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-white">{b.title || b.message}</h3>
                   </div>
-                  <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-red-200">
+                  <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-red-200">
                     Critical
                   </span>
                 </div>
@@ -148,7 +148,7 @@ export default function IntegrationsPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">All connections</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">All connections</div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {totalVisible} of {integrations.length} integrations
             </h2>
@@ -162,7 +162,7 @@ export default function IntegrationsPage() {
               key={key}
               onClick={() => setStatusFilter(key)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 statusFilter === key
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -177,7 +177,7 @@ export default function IntegrationsPage() {
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 categoryFilter === cat
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -192,7 +192,7 @@ export default function IntegrationsPage() {
       {/* Integration cards grouped by category */}
       <div className="mt-8 grid gap-12">
         {visibleCategories.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.06] bg-white/[0.02] px-6 py-12 text-center">
+          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.02] px-6 py-12 text-center">
             <p className="text-[14px] text-white/35">No integrations match these filters.</p>
             <button
               onClick={() => { setStatusFilter('All'); setCategoryFilter('All') }}
@@ -204,7 +204,7 @@ export default function IntegrationsPage() {
         ) : (
           visibleCategories.map((cat) => (
             <div key={cat}>
-              <div className="mb-4 text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">{cat}</div>
+              <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.22em] text-white/35">{cat}</div>
               <div className="grid gap-3">
                 {filteredGrouped[cat].map((integration: any) => {
                   const meta = META[integration.id]
@@ -213,7 +213,7 @@ export default function IntegrationsPage() {
                   return (
                     <div
                       key={integration.id}
-                      className="flex items-center gap-5 rounded-2xl border border-white/[0.06] bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/20"
+                      className="flex items-center gap-5 rounded-2xl border border-white/[0.08] bg-[#1A1F2A] p-5 transition hover:border-[#D4AF37]/20"
                     >
                       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
                         <Icon className="h-5 w-5 text-white/90" />
@@ -245,8 +245,8 @@ export default function IntegrationsPage() {
       </div>
 
       {/* AI take footer */}
-      <section className="mt-20 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
+      <section className="mt-20 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">

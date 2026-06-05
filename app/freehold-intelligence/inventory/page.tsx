@@ -21,7 +21,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
     case 'off_plan':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'under_construction':
@@ -29,7 +29,7 @@ function statusBadge(status: PropertyStatus) {
     case 'sold_out':
       return 'bg-red-400/10 text-red-300 border-red-400/20'
     case 'coming_soon':
-      return 'bg-violet-400/10 text-violet-300 border-violet-400/20'
+      return 'bg-violet-400/10 text-white/55 border-violet-400/20'
     default:
       return 'bg-white/[0.04] text-white/40 border-white/[0.08]'
   }
@@ -49,13 +49,13 @@ function statusLabel(status: PropertyStatus): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'missing':
-      return 'bg-rose-400/10 text-rose-300 border-rose-400/20'
+      return 'bg-rose-400/10 text-white/55 border-rose-400/20'
   }
 }
 
@@ -69,7 +69,7 @@ function landingLabel(status: LandingStatus): string {
 }
 
 function readinessBar(value: number) {
-  if (value >= 80) return 'bg-emerald-400'
+  if (value >= 80) return 'bg-[#D4AF37]'
   if (value >= 50) return 'bg-[#D4AF37]'
   return 'bg-red-400'
 }
@@ -107,7 +107,7 @@ export default function InventoryPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <LayoutGrid className="h-3.5 w-3.5" /> Freehold Intelligence
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -118,15 +118,15 @@ export default function InventoryPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           {[
             { label: 'Total properties', value: stats.total },
-            { label: 'Live landings', value: stats.live, accent: 'text-emerald-300' },
-            { label: 'Missing landing', value: stats.missingLanding, accent: 'text-rose-300' },
+            { label: 'Live landings', value: stats.live, accent: 'text-[#D4AF37]' },
+            { label: 'Missing landing', value: stats.missingLanding, accent: 'text-white/55' },
             { label: 'Ad-ready', value: stats.adReady, accent: 'text-[#D4AF37]' },
           ].map(({ label, value, accent }) => (
             <div
               key={label}
-              className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-4 py-3"
+              className="rounded-[14px] border border-white/[0.08] bg-white/[0.03] px-4 py-3"
             >
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">{label}</div>
+              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{label}</div>
               <div className={`mt-1 text-[24px] font-semibold tabular-nums leading-none ${accent ?? 'text-white'}`}>
                 {value}
               </div>
@@ -169,7 +169,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-5 overflow-x-auto rounded-[20px] border border-white/[0.06] bg-white/[0.02]">
+      <div className="mt-5 overflow-x-auto rounded-[20px] border border-white/[0.08] bg-white/[0.02]">
         <table className="w-full min-w-[1060px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-white/[0.05]">
@@ -188,7 +188,7 @@ export default function InventoryPage() {
               ].map((col) => (
                 <th
                   key={col}
-                  className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/35 first:pl-5 last:pr-5"
+                  className="px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/35 first:pl-5 last:pr-5"
                 >
                   {col}
                 </th>
@@ -211,7 +211,7 @@ export default function InventoryPage() {
         </table>
       </div>
 
-      <p className="mt-3 text-[11px] text-white/25">
+      <p className="mt-3 text-[13px] text-white/25">
         {filtered.length} of {inventoryProperties.length} properties · sorted by ad readiness
       </p>
     </div>
@@ -224,18 +224,18 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Name */}
       <td className="max-w-[200px] pl-5 pr-4 py-3.5">
         <div className="truncate font-medium text-white/90">{prop.name}</div>
-        <div className="mt-0.5 text-[11px] capitalize text-white/35">{prop.type}</div>
+        <div className="mt-0.5 text-[13px] capitalize text-white/35">{prop.type}</div>
       </td>
 
       {/* Area / Developer */}
       <td className="px-4 py-3.5">
         <div className="text-white/75">{prop.area}</div>
-        <div className="mt-0.5 text-[11px] text-white/35">{prop.developer}</div>
+        <div className="mt-0.5 text-[13px] text-white/35">{prop.developer}</div>
       </td>
 
       {/* Status */}
       <td className="px-4 py-3.5">
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(prop.status)}`}>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(prop.status)}`}>
           {statusLabel(prop.status)}
         </span>
       </td>
@@ -253,7 +253,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* ROI */}
       <td className="px-4 py-3.5 tabular-nums">
         {prop.roi !== null ? (
-          <span className="text-emerald-300">{prop.roi.toFixed(1)}%</span>
+          <span className="text-[#D4AF37]">{prop.roi.toFixed(1)}%</span>
         ) : (
           <span className="text-white/25">—</span>
         )}
@@ -261,7 +261,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
 
       {/* Landing status */}
       <td className="px-4 py-3.5">
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${landingBadge(prop.landingStatus)}`}>
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${landingBadge(prop.landingStatus)}`}>
           {landingLabel(prop.landingStatus)}
         </span>
       </td>
@@ -275,7 +275,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
               style={{ width: `${prop.dataQuality}%` }}
             />
           </div>
-          <span className="tabular-nums text-[11px] text-white/40">{prop.dataQuality}</span>
+          <span className="tabular-nums text-[13px] text-white/40">{prop.dataQuality}</span>
         </div>
       </td>
 
@@ -288,7 +288,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
               style={{ width: `${prop.adReadiness}%` }}
             />
           </div>
-          <span className="tabular-nums text-[11px] text-white/40">{prop.adReadiness}</span>
+          <span className="tabular-nums text-[13px] text-white/40">{prop.adReadiness}</span>
         </div>
       </td>
 
@@ -306,13 +306,13 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
         <div className="flex items-center gap-2">
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}`}
-            className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-white/60 transition hover:border-white/20 hover:text-white"
+            className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[13px] text-white/60 transition hover:border-white/20 hover:text-white"
           >
             View <ArrowUpRight className="h-3 w-3" />
           </Link>
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[11px] text-[#D4AF37]/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+            className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[13px] text-[#D4AF37]/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
           >
             <Sparkles className="h-3 w-3" /> LP
           </Link>

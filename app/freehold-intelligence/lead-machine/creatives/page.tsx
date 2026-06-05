@@ -63,7 +63,7 @@ export default function CreativesPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Palette className="h-3.5 w-3.5" /> Ad Creatives
           </div>
           <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
@@ -117,9 +117,9 @@ export default function CreativesPage() {
               { label: 'With image',        value: creatives.filter((c) => c.object_story_spec?.link_data?.picture).length },
               { label: 'Named creatives',   value: creatives.filter((c) => c.name && c.name !== 'Unnamed').length },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-white/[0.06] bg-[#0A0D10] px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
                 <div className="text-[20px] font-semibold text-white">{s.value}</div>
-                <div className="text-[10px] text-white/35">{s.label}</div>
+                <div className="text-[12px] text-white/35">{s.label}</div>
               </div>
             ))}
           </div>
@@ -142,7 +142,7 @@ export default function CreativesPage() {
       {/* Creative grid */}
       {!loading && creatives.length > 0 && (
         <section className="mt-8">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">All creatives</div>
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40 mb-4">All creatives</div>
           <div className="grid gap-4 sm:grid-cols-2">
             {creatives.map((creative) => {
               const ld       = creative.object_story_spec?.link_data
@@ -154,7 +154,7 @@ export default function CreativesPage() {
               const pageUrl  = ld?.link
 
               return (
-                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
                   {/* Image preview */}
                   {imgUrl ? (
                     <div className="relative h-40 w-full overflow-hidden bg-white/[0.03]">
@@ -172,7 +172,7 @@ export default function CreativesPage() {
                       <h3 className="text-[14px] font-semibold text-white leading-snug">{truncate(headline, 60)}</h3>
                       {creative.status && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-medium ${
-                          creative.status === 'ACTIVE' ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/[0.04] text-white/35'
+                          creative.status === 'ACTIVE' ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'bg-white/[0.04] text-white/35'
                         }`}>
                           {creative.status}
                         </span>
@@ -182,13 +182,13 @@ export default function CreativesPage() {
                     <p className="text-[12px] text-white/50 leading-relaxed line-clamp-3">{truncate(body, 150)}</p>
 
                     {desc && (
-                      <p className="mt-2 text-[11px] text-white/30 line-clamp-1">{desc}</p>
+                      <p className="mt-2 text-[13px] text-white/30 line-clamp-1">{desc}</p>
                     )}
 
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex gap-2">
                         {ctaType && (
-                          <span className="rounded-full border border-white/[0.08] px-2.5 py-0.5 text-[10px] text-white/40">
+                          <span className="rounded-full border border-white/[0.08] px-2.5 py-0.5 text-[12px] text-white/40">
                             {ctaType.replace(/_/g, ' ')}
                           </span>
                         )}
@@ -199,7 +199,7 @@ export default function CreativesPage() {
                             href={pageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-white/25 transition hover:text-[#D4AF37]"
+                            className="inline-flex items-center gap-1 text-[13px] text-white/25 transition hover:text-[#D4AF37]"
                           >
                             <ExternalLink className="h-3 w-3" /> Landing
                           </a>
@@ -207,7 +207,7 @@ export default function CreativesPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 border-t border-white/[0.04] pt-3 text-[10px] font-mono text-white/20 truncate">
+                    <div className="mt-3 border-t border-white/[0.04] pt-3 text-[12px] font-mono text-white/20 truncate">
                       {creative.id}
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function CreativesPage() {
 
       {/* Empty state */}
       {!loading && !isConfigError && creatives.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
           <Palette className="mx-auto h-8 w-8 text-[#D4AF37]/40 mb-4" />
           <div className="text-[18px] font-semibold text-white">No creatives yet</div>
           <p className="mt-2 text-[14px] text-white/40">Generate ad copy with AI or launch a campaign to create creatives automatically.</p>

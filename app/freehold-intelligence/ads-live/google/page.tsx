@@ -83,7 +83,7 @@ export default function GoogleAdsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
           <div
-            className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em]"
+            className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em]"
             style={{ color: `${GOOGLE_BLUE}CC` }}
           >
             {/* Google G icon */}
@@ -100,7 +100,7 @@ export default function GoogleAdsPage() {
 
         <div className="mt-7 flex flex-col items-end gap-2 sm:mt-10">
           <span
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium"
             style={{ backgroundColor: `${GOOGLE_BLUE}14`, border: `1px solid ${GOOGLE_BLUE}30`, color: GOOGLE_BLUE }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GOOGLE_BLUE }} />
@@ -121,12 +121,12 @@ export default function GoogleAdsPage() {
           { label: 'Spend',        value: 'AED 12,870' },
           { label: 'Impressions',  value: '218,000' },
           { label: 'Clicks',       value: '4,840' },
-          { label: 'Leads',        value: '167',        color: 'text-emerald-300' },
+          { label: 'Leads',        value: '167',        color: 'text-[#D4AF37]' },
           { label: 'CPL',          value: 'AED 77.1' },
           { label: 'Avg CPC',      value: 'AED 2.66' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/40">{k.label}</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/40">{k.label}</div>
             <div className={`mt-2 text-[20px] font-semibold leading-none ${k.color ?? 'text-white'}`}>{k.value}</div>
           </div>
         ))}
@@ -134,7 +134,7 @@ export default function GoogleAdsPage() {
 
       {/* Campaigns table */}
       <section className="mt-10">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Active Campaigns</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Active Campaigns</div>
         <div className="overflow-x-auto">
           <div className="min-w-[680px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Table header */}
@@ -153,7 +153,7 @@ export default function GoogleAdsPage() {
                   key={label}
                   onClick={() => col && handleSort(col)}
                   className={[
-                    'flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.16em] transition',
+                    'flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.16em] transition',
                     col ? 'cursor-pointer text-white/30 hover:text-white/60' : 'cursor-default text-white/30',
                     col && sortCol === col ? 'text-white/60' : '',
                   ].join(' ')}
@@ -173,12 +173,12 @@ export default function GoogleAdsPage() {
                   className="grid grid-cols-[2fr_80px_70px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-emerald-400' : 'bg-[#D4AF37]'}`} />
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-[#D4AF37]' : 'bg-[#D4AF37]'}`} />
                     <span className="truncate text-[13px] font-semibold text-white/90">{c.name}</span>
                   </div>
                   <div>
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      className="rounded-full px-2 py-0.5 text-[12px] font-medium"
                       style={{
                         backgroundColor: `${GOOGLE_BLUE}14`,
                         border: `1px solid ${GOOGLE_BLUE}28`,
@@ -190,9 +190,9 @@ export default function GoogleAdsPage() {
                   </div>
                   <div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
                         c.status === 'Active'
-                          ? 'border border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
+                          ? 'border border-emerald-400/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       }`}
                     >
@@ -208,7 +208,7 @@ export default function GoogleAdsPage() {
                   <div className="text-[12px] text-white/60">
                     {c.clicks.toLocaleString()}
                   </div>
-                  <div className="text-[13px] font-semibold text-emerald-300">
+                  <div className="text-[13px] font-semibold text-[#D4AF37]">
                     {c.leads}
                   </div>
                   <div className="text-[12px] text-white/70">
@@ -223,13 +223,13 @@ export default function GoogleAdsPage() {
 
       {/* Top search terms */}
       <section className="mt-10">
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Top Search Terms</div>
+        <div className="mb-4 text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Top Search Terms</div>
         <div className="overflow-x-auto">
           <div className="min-w-[560px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
             {/* Header */}
             <div className="grid grid-cols-[2fr_90px_70px_70px_90px] gap-4 border-b border-white/[0.05] px-5 py-3">
               {['Search Term', 'Impressions', 'Clicks', 'CTR', 'Avg CPC'].map((h) => (
-                <div key={h} className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/30">{h}</div>
+                <div key={h} className="text-[12px] font-medium uppercase tracking-[0.16em] text-white/30">{h}</div>
               ))}
             </div>
             {/* Rows */}

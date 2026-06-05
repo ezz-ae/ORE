@@ -32,7 +32,7 @@ export default function NewListingPage() {
         Back to Listings
       </Link>
 
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80 mb-3">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80 mb-3">
         <Sparkles className="h-3.5 w-3.5" />
         AI Manager · New Listing
       </div>
@@ -43,7 +43,7 @@ export default function NewListingPage() {
       {/* Step 1 */}
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[11px] font-bold text-rose-400">1</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">1</span>
           <h2 className="text-sm font-semibold text-white/80">Property Details</h2>
         </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 space-y-4">
@@ -67,14 +67,14 @@ export default function NewListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-white/50">Type</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#06080A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <select className="w-full rounded-xl border border-white/[0.08] bg-[#111318] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select type…</option>
                 {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-white/50">Status</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#06080A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <select className="w-full rounded-xl border border-white/[0.08] bg-[#111318] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select status…</option>
                 {STATUSES.map((s) => <option key={s}>{s}</option>)}
               </select>
@@ -94,14 +94,14 @@ export default function NewListingPage() {
       {/* Step 2 */}
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[11px] font-bold text-rose-400">2</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">2</span>
           <h2 className="text-sm font-semibold text-white/80">AI Generate Content</h2>
         </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 space-y-5">
           <button
             onClick={handleGenerate}
             disabled={state.generating}
-            className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20 disabled:opacity-60"
           >
             {state.generating ? (
               <>
@@ -118,7 +118,7 @@ export default function NewListingPage() {
 
           {state.generated && (
             <div className="space-y-4 animate-in fade-in duration-300">
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <div className="flex items-center gap-1.5 text-xs text-[#D4AF37]">
                 <Check className="h-3.5 w-3.5" />
                 Content generated successfully
               </div>
@@ -161,7 +161,7 @@ export default function NewListingPage() {
       {/* Step 3 */}
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[11px] font-bold text-rose-400">3</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">3</span>
           <h2 className="text-sm font-semibold text-white/80">Images &amp; Media</h2>
         </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">

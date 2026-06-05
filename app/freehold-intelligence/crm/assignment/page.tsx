@@ -12,12 +12,12 @@ type UrgencyFilter = 'all' | 'critical' | 'high' | 'medium'
 function urgencyBadgeClass(u: string) {
   if (u === 'critical') return 'bg-red-400/10 border-red-400/25 text-red-400'
   if (u === 'high')     return 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#D4AF37]'
-  if (u === 'medium')   return 'bg-sky-500/10 border-sky-400/25 text-sky-400'
+  if (u === 'medium')   return 'bg-sky-500/10 border-sky-400/25 text-white/55'
   return 'bg-white/[0.04] border-white/10 text-white/50'
 }
 
 function agentStatusClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300'
+  if (status === 'available')   return 'bg-[#D4AF37]/10 border-emerald-400/25 text-[#D4AF37]'
   if (status === 'at_capacity') return 'bg-amber-400/10 border-amber-400/25 text-amber-400'
   return 'bg-white/[0.04] border-white/10 text-white/40'
 }
@@ -29,13 +29,13 @@ function agentStatusLabel(status: CRMAgentCapacity['status']) {
 }
 
 function agentBarClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'bg-emerald-400'
+  if (status === 'available')   return 'bg-[#D4AF37]'
   if (status === 'at_capacity') return 'bg-amber-400'
   return 'bg-white/20'
 }
 
 function agentAvatarClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'from-emerald-500/20 to-emerald-400/5 text-emerald-300'
+  if (status === 'available')   return 'from-emerald-500/20 to-emerald-400/5 text-[#D4AF37]'
   if (status === 'at_capacity') return 'from-amber-500/20 to-amber-400/5 text-amber-300'
   return 'from-white/10 to-white/5 text-white/40'
 }
@@ -51,13 +51,13 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub?: string
 }) {
   return (
-    <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4">
+    <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4">
       <div className="flex items-center gap-2 text-white/35">
         <Icon className="h-3.5 w-3.5" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.18em]">{label}</span>
+        <span className="text-[12px] font-medium uppercase tracking-[0.18em]">{label}</span>
       </div>
       <div className="mt-2 text-[28px] font-semibold leading-none text-white">{value}</div>
-      {sub && <div className="mt-1.5 text-[11px] text-white/35">{sub}</div>}
+      {sub && <div className="mt-1.5 text-[13px] text-white/35">{sub}</div>}
     </div>
   )
 }
@@ -74,9 +74,9 @@ function AgentButton({
       onClick={onAssign}
       disabled={agent.status === 'overloaded'}
       className={[
-        'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-medium transition-all',
+        'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all',
         agent.status === 'available'
-          ? 'border-emerald-400/20 bg-emerald-400/[0.06] text-emerald-300 hover:border-emerald-400/40 hover:bg-emerald-400/10'
+          ? 'border-emerald-400/20 bg-[#D4AF37]/[0.06] text-[#D4AF37] hover:border-emerald-400/40 hover:bg-[#D4AF37]/10'
           : agent.status === 'at_capacity'
           ? 'border-amber-400/20 bg-amber-400/[0.04] text-amber-400/80 hover:border-amber-400/35 hover:bg-amber-400/08'
           : 'cursor-not-allowed border-white/[0.05] bg-white/[0.02] text-white/25',
@@ -84,7 +84,7 @@ function AgentButton({
     >
       <span className={[
         'h-1.5 w-1.5 rounded-full',
-        agent.status === 'available' ? 'bg-emerald-400' : agent.status === 'at_capacity' ? 'bg-amber-400' : 'bg-white/20',
+        agent.status === 'available' ? 'bg-[#D4AF37]' : agent.status === 'at_capacity' ? 'bg-amber-400' : 'bg-white/20',
       ].join(' ')} />
       {agent.name}
     </button>
@@ -108,26 +108,26 @@ function LeadCard({
 
   if (justAssigned) {
     return (
-      <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/20 bg-emerald-400/[0.04] px-5 py-4 transition-all">
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+      <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition-all">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
         <div>
           <span className="text-[14px] font-medium text-white">{lead.name}</span>
-          <span className="ml-2 text-[12px] text-emerald-400">Assigned to {assignedName}</span>
+          <span className="ml-2 text-[12px] text-[#D4AF37]">Assigned to {assignedName}</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5 transition-all hover:border-white/[0.10]">
+    <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5 transition-all hover:border-white/[0.10]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[16px] font-semibold text-white">{lead.name}</span>
-            <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] ${urgencyBadgeClass(lead.urgency)}`}>
+            <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium uppercase tracking-[0.1em] ${urgencyBadgeClass(lead.urgency)}`}>
               {lead.urgency}
             </span>
-            <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/40">
+            <span className="rounded-full bg-white/[0.04] px-2 py-0.5 text-[12px] text-white/40">
               Intent {lead.intentScore}
             </span>
           </div>
@@ -151,7 +151,7 @@ function LeadCard({
 
 function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
   return (
-    <div className="rounded-[18px] border border-white/[0.06] bg-[#0D1014] p-4">
+    <div className="rounded-[18px] border border-white/[0.08] bg-[#0D1014] p-4">
       <div className="flex items-center gap-3">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-[12px] font-semibold ${agentAvatarClass(agent.status)}`}>
           {agent.initials}
@@ -163,12 +163,12 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
               {agentStatusLabel(agent.status)}
             </span>
           </div>
-          <div className="mt-0.5 text-[10px] text-white/35 truncate">{agent.specialty}</div>
+          <div className="mt-0.5 text-[12px] text-white/35 truncate">{agent.specialty}</div>
         </div>
       </div>
 
       <div className="mt-3">
-        <div className="mb-1 flex items-center justify-between text-[10px] text-white/35">
+        <div className="mb-1 flex items-center justify-between text-[12px] text-white/35">
           <span>Load</span>
           <span className="font-medium text-white/55">{agent.utilization}%</span>
         </div>
@@ -180,7 +180,7 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-white/[0.04] pt-3 text-[10px]">
+      <div className="mt-3 flex items-center justify-between border-t border-white/[0.04] pt-3 text-[12px]">
         <div className="text-center">
           <div className="text-[15px] font-semibold text-white">{agent.totalLeads}</div>
           <div className="text-white/30">Leads</div>
@@ -277,7 +277,7 @@ export default function AssignmentPage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 lg:pt-14">
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
         <UserCog className="h-3.5 w-3.5" />
         <span>CRM · Assignment</span>
       </div>
@@ -313,37 +313,37 @@ export default function AssignmentPage() {
                 key={key}
                 onClick={() => setActiveUrgency(key)}
                 className={[
-                  'rounded-full border px-3.5 py-1.5 text-[11px] font-medium transition-all',
+                  'rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all',
                   activeUrgency === key
                     ? key === 'critical'
                       ? 'border-red-400/40 bg-red-400/10 text-red-400'
                       : key === 'high'
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                       : key === 'medium'
-                      ? 'border-sky-400/40 bg-sky-400/10 text-sky-400'
+                      ? 'border-sky-400/40 bg-sky-400/10 text-white/55'
                       : 'border-white/20 bg-white/[0.06] text-white'
-                    : 'border-white/[0.06] bg-transparent text-white/40 hover:border-white/[0.12] hover:text-white/60',
+                    : 'border-white/[0.08] bg-transparent text-white/40 hover:border-white/[0.12] hover:text-white/60',
                 ].join(' ')}
               >
                 {label}
               </button>
             ))}
-            <span className="ml-auto text-[11px] text-white/30">
+            <span className="ml-auto text-[13px] text-white/30">
               {filteredQueue.filter((l) => !justAssigned.has(l.id)).length} in queue
             </span>
           </div>
 
           {/* Queue header */}
           <div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">
+            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">
               Unassigned leads
             </div>
           </div>
 
           {/* Queue cards */}
           {filteredQueue.length === 0 && (
-            <div className="rounded-[20px] border border-white/[0.04] bg-[#0A0D10] px-6 py-10 text-center">
-              <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400/40" />
+            <div className="rounded-[20px] border border-white/[0.04] bg-[#1A1F2A] px-6 py-10 text-center">
+              <CheckCircle2 className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
               <p className="mt-3 text-[14px] text-white/35">
                 {activeUrgency === 'all' ? 'All leads have been assigned.' : `No ${activeUrgency} leads in queue.`}
               </p>
@@ -366,19 +366,19 @@ export default function AssignmentPage() {
           {/* Recently assigned (this session) */}
           {recentlyCompleted.length > 0 && (
             <div className="mt-2">
-              <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-white/25">
+              <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.2em] text-white/25">
                 Assigned this session
               </div>
               <div className="space-y-2">
                 {recentlyCompleted.map((lead) => (
                   <div
                     key={lead.id}
-                    className="flex items-center gap-3 rounded-[14px] border border-white/[0.04] bg-[#0A0D10] px-4 py-3"
+                    className="flex items-center gap-3 rounded-[14px] border border-white/[0.04] bg-[#1A1F2A] px-4 py-3"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/60" />
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/60" />
                     <span className="text-[13px] text-white/60">{lead.name}</span>
-                    <span className="text-[11px] text-white/30">→</span>
-                    <span className="text-[13px] text-emerald-300/70">{assignments[lead.id]}</span>
+                    <span className="text-[13px] text-white/30">→</span>
+                    <span className="text-[13px] text-[#D4AF37]/70">{assignments[lead.id]}</span>
                     <span className={`ml-auto rounded-full border px-2 py-0.5 text-[9px] font-medium ${urgencyBadgeClass(lead.urgency)}`}>
                       {lead.urgency}
                     </span>
@@ -391,10 +391,10 @@ export default function AssignmentPage() {
           {/* Already-assigned inbox leads (compact table) */}
           {alreadyAssignedLeads.length > 0 && (
             <div className="mt-6">
-              <div className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-white/25">
+              <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.2em] text-white/25">
                 Already assigned
               </div>
-              <div className="overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#0A0D10]">
+              <div className="overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#1A1F2A]">
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-white/[0.05]">
@@ -409,7 +409,7 @@ export default function AssignmentPage() {
                       <tr key={lead.id} className="hover:bg-white/[0.015] transition-colors">
                         <td className="px-5 py-3">
                           <div className="font-medium text-white/80">{lead.name}</div>
-                          <div className="text-[10px] text-white/30">Intent {lead.intentScore}</div>
+                          <div className="text-[12px] text-white/30">Intent {lead.intentScore}</div>
                         </td>
                         <td className="hidden px-5 py-3 text-white/40 sm:table-cell">{lead.source}</td>
                         <td className="px-5 py-3 text-white/60">{lead.assignedAgent}</td>
@@ -429,8 +429,8 @@ export default function AssignmentPage() {
 
         {/* ── Sidebar: Agent roster ── */}
         <div className="space-y-4">
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5">
-            <div className="mb-4 text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">
               Agent roster
             </div>
             <div className="space-y-3">
@@ -441,17 +441,17 @@ export default function AssignmentPage() {
           </div>
 
           {/* Quick legend */}
-          <div className="rounded-[18px] border border-white/[0.04] bg-[#0A0D10]/60 px-4 py-4">
+          <div className="rounded-[18px] border border-white/[0.04] bg-[#1A1F2A]/60 px-4 py-4">
             <div className="mb-3 text-[9px] font-medium uppercase tracking-[0.2em] text-white/20">Status legend</div>
             <div className="space-y-2">
               {[
-                { label: 'Available', dot: 'bg-emerald-400', text: 'text-emerald-300' },
+                { label: 'Available', dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' },
                 { label: 'Busy', dot: 'bg-amber-400', text: 'text-amber-400' },
                 { label: 'Overloaded', dot: 'bg-red-400', text: 'text-red-400' },
               ].map(({ label, dot, text }) => (
                 <div key={label} className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${dot}`} />
-                  <span className={`text-[11px] ${text}`}>{label}</span>
+                  <span className={`text-[13px] ${text}`}>{label}</span>
                 </div>
               ))}
             </div>

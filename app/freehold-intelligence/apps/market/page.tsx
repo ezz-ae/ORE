@@ -14,13 +14,13 @@ const ALL_AREAS = Array.from(new Set(projects.map((p) => p.area))).sort()
 const ALL_STATUSES: StatusFilter[] = ['All', 'Ready', 'Off-plan', 'Under construction', 'Secondary', 'Rental']
 
 function statusTone(s: string) {
-  if (s === 'Ready')             return { dot: 'bg-emerald-400', text: 'text-emerald-300', bg: 'bg-emerald-400/10 border-emerald-400/20' }
+  if (s === 'Ready')             return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-emerald-400/20' }
   if (s === 'Under construction') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   return                                 { dot: 'bg-sky-400',     text: 'text-sky-200',    bg: 'bg-sky-400/10 border-sky-400/20' }
 }
 
 function readinessTone(n: number) {
-  if (n >= 90) return 'bg-emerald-400'
+  if (n >= 90) return 'bg-[#D4AF37]'
   if (n >= 80) return 'bg-[#D4AF37]'
   return 'bg-white/30'
 }
@@ -83,7 +83,7 @@ export default function MarketIntelligencePage() {
       {/* Header */}
       <section className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
             <Database className="h-3.5 w-3.5" /> Market Intelligence
           </div>
           <h1 className="mt-4 text-[40px] font-semibold leading-[1.02] tracking-tight text-white sm:text-[52px]">
@@ -98,9 +98,9 @@ export default function MarketIntelligencePage() {
 
         <div className="grid grid-cols-2 gap-3 lg:shrink-0 lg:grid-cols-4">
           {topStats.map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
               <div className="text-[26px] font-semibold leading-none text-white">{s.value}</div>
-              <div className="mt-1 text-[10px] text-white/35">{s.label}</div>
+              <div className="mt-1 text-[12px] text-white/35">{s.label}</div>
             </div>
           ))}
         </div>
@@ -157,7 +157,7 @@ export default function MarketIntelligencePage() {
               key={s}
               onClick={() => setStatusFilter(s)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 statusFilter === s
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -167,7 +167,7 @@ export default function MarketIntelligencePage() {
             </button>
           ))}
           {isFiltered && (
-            <button onClick={clearFilters} className="ml-1 text-[11px] text-white/30 transition hover:text-white/60">
+            <button onClick={clearFilters} className="ml-1 text-[13px] text-white/30 transition hover:text-white/60">
               Clear all
             </button>
           )}
@@ -182,7 +182,7 @@ export default function MarketIntelligencePage() {
 
       {/* Table */}
       <section className="mt-5">
-        <div className="overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#1A1F2A]">
           {/* Table header */}
           <div className="hidden grid-cols-[2fr_1fr_1fr_0.8fr_2fr_auto] gap-4 border-b border-white/[0.05] px-6 py-3.5 lg:grid">
             {[
@@ -198,7 +198,7 @@ export default function MarketIntelligencePage() {
                   <button
                     onClick={() => handleSort(key)}
                     className={[
-                      'flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.18em] transition',
+                      'flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.18em] transition',
                       sortKey === key ? 'text-white/60' : 'text-white/30 hover:text-white/55',
                     ].join(' ')}
                   >
@@ -206,7 +206,7 @@ export default function MarketIntelligencePage() {
                     {sortKey === key && (sortAsc ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />)}
                   </button>
                 ) : (
-                  <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">{label}</span>
+                  <span className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">{label}</span>
                 )}
               </div>
             ))}
@@ -244,7 +244,7 @@ export default function MarketIntelligencePage() {
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.bg} ${tone.text}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.bg} ${tone.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                         {project.status}
                       </span>
@@ -254,7 +254,7 @@ export default function MarketIntelligencePage() {
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
                         <div className={`h-full rounded-full ${readinessTone(project.campaignReadiness)}`} style={{ width: `${project.campaignReadiness}%` }} />
                       </div>
-                      <span className="w-8 text-right text-[11px] tabular-nums text-white/40">{project.campaignReadiness}</span>
+                      <span className="w-8 text-right text-[13px] tabular-nums text-white/40">{project.campaignReadiness}</span>
                     </div>
 
                     <p className="hidden truncate text-[13px] text-white/50 lg:block">{project.salesAngle}</p>
@@ -273,7 +273,7 @@ export default function MarketIntelligencePage() {
         <div className="flex items-start gap-3">
           <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">Internal use only</p>
+            <p className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">Internal use only</p>
             <p className="mt-2 text-[14px] leading-relaxed text-white/65">
               Sales angles, ad angles, buyer profiles, and ROI notes are internal intelligence — not for client-facing materials. Use the Notebook to adapt them into approved output.
             </p>

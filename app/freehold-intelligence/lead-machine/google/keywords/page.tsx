@@ -29,8 +29,8 @@ function fmtPct(n: number): string {
 
 const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
   BROAD:  'bg-white/[0.04] text-white/40 border-white/[0.08]',
-  PHRASE: 'bg-sky-400/10 text-sky-300 border-sky-400/20',
-  EXACT:  'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
+  PHRASE: 'bg-sky-400/10 text-white/55 border-sky-400/20',
+  EXACT:  'bg-[#D4AF37]/10 text-[#D4AF37] border-emerald-400/20',
 }
 
 const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
@@ -41,17 +41,17 @@ const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
 
 const INTENT_BADGE: Record<string, string> = {
   high:   'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20',
-  medium: 'bg-sky-400/10 text-sky-300 border-sky-400/20',
-  brand:  'bg-violet-400/10 text-violet-300 border-violet-400/20',
+  medium: 'bg-sky-400/10 text-white/55 border-sky-400/20',
+  brand:  'bg-violet-400/10 text-white/55 border-violet-400/20',
 }
 
 // ─── Quality score indicator ──────────────────────────────────────────────────
 
 function QualityScore({ score }: { score: number }) {
   const color =
-    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-emerald-400'
+    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-[#D4AF37]'
   const textColor =
-    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-emerald-400'
+    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-[#D4AF37]'
 
   return (
     <div className="flex items-center gap-1.5">
@@ -65,7 +65,7 @@ function QualityScore({ score }: { score: number }) {
           />
         ))}
       </div>
-      <span className={`text-[11px] font-medium tabular-nums ${textColor}`}>{score}</span>
+      <span className={`text-[13px] font-medium tabular-nums ${textColor}`}>{score}</span>
     </div>
   )
 }
@@ -133,7 +133,7 @@ export default function GoogleKeywordsPage() {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" />
             Keywords
           </div>
@@ -202,8 +202,8 @@ export default function GoogleKeywordsPage() {
             {[
               { label: 'Total',       value: keywords.length,            color: 'text-white'       },
               { label: 'Broad',       value: broadCount,                 color: 'text-white/50'    },
-              { label: 'Phrase',      value: phraseCount,                color: 'text-sky-300'     },
-              { label: 'Exact',       value: exactCount,                 color: 'text-emerald-300' },
+              { label: 'Phrase',      value: phraseCount,                color: 'text-white/55'     },
+              { label: 'Exact',       value: exactCount,                 color: 'text-[#D4AF37]' },
               { label: 'Impressions', value: totalImps.toLocaleString(), color: 'text-white'       },
               {
                 label: 'Avg QS',
@@ -212,23 +212,23 @@ export default function GoogleKeywordsPage() {
                   avgQS == null
                     ? 'text-white/30'
                     : avgQS >= 7
-                      ? 'text-emerald-300'
+                      ? 'text-[#D4AF37]'
                       : avgQS >= 4
                         ? 'text-yellow-400'
                         : 'text-red-400',
               },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
-                <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+                <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
               </div>
             ))}
           </div>
 
           {/* ── Match type filter tabs ── */}
-          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-white/[0.06] bg-[#0A0D10] p-1 w-fit">
+          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-white/[0.08] bg-[#1A1F2A] p-1 w-fit">
             {(['ALL', 'BROAD', 'PHRASE', 'EXACT'] as MatchFilter[]).map((f) => {
               const label =
                 f === 'ALL'
@@ -252,9 +252,9 @@ export default function GoogleKeywordsPage() {
 
           {/* ── Keywords table ── */}
           {filtered.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#0A0D10]">
+            <div className="mt-4 overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#1A1F2A]">
               {/* Table header */}
-              <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/25">
+              <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                 <span>Keyword</span>
                 <span>Match</span>
                 <span>Quality score</span>
@@ -275,7 +275,7 @@ export default function GoogleKeywordsPage() {
                     <div className="flex min-w-0 items-center gap-2">
                       <span
                         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                          kw.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'
+                          kw.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-white/20'
                         }`}
                       />
                       <span className="truncate font-medium text-white/85">{kw.text}</span>
@@ -283,7 +283,7 @@ export default function GoogleKeywordsPage() {
 
                     {/* Match type badge */}
                     <span
-                      className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${MATCH_BADGE[kw.matchType]}`}
+                      className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${MATCH_BADGE[kw.matchType]}`}
                     >
                       {MATCH_LABEL[kw.matchType]}
                     </span>
@@ -293,7 +293,7 @@ export default function GoogleKeywordsPage() {
                       {kw.qualityScore != null ? (
                         <QualityScore score={kw.qualityScore} />
                       ) : (
-                        <span className="text-[11px] text-white/20">—</span>
+                        <span className="text-[13px] text-white/20">—</span>
                       )}
                     </div>
 
@@ -323,7 +323,7 @@ export default function GoogleKeywordsPage() {
             </div>
           ) : (
             /* ── Empty state ── */
-            <div className="mt-8 rounded-[24px] border border-white/[0.06] bg-[#0A0D10] px-6 py-14 text-center">
+            <div className="mt-8 rounded-[24px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
               <div className="text-[16px] font-semibold text-white">No keywords found</div>
               <p className="mt-2 text-[13px] text-white/40">
@@ -339,11 +339,11 @@ export default function GoogleKeywordsPage() {
             <section className="mt-8">
               <button
                 onClick={() => setNegsOpen((o) => !o)}
-                className="flex w-full items-center justify-between rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4 text-left transition hover:border-white/[0.10]"
+                className="flex w-full items-center justify-between rounded-[16px] border border-white/[0.08] bg-[#1A1F2A] px-5 py-4 text-left transition hover:border-white/[0.10]"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-[13px] font-semibold text-white">Negative keywords</span>
-                  <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[10px] font-medium text-red-300">
+                  <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[12px] font-medium text-red-300">
                     {negatives.length} exclusions
                   </span>
                 </div>
@@ -355,9 +355,9 @@ export default function GoogleKeywordsPage() {
               </button>
 
               {negsOpen && (
-                <div className="mt-1 overflow-hidden rounded-[16px] border border-white/[0.06] bg-[#0A0D10]">
+                <div className="mt-1 overflow-hidden rounded-[16px] border border-white/[0.08] bg-[#1A1F2A]">
                   {/* Column headers */}
-                  <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-white/25">
+                  <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-white/[0.05] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">
                     <span>Keyword</span>
                     <span>Match</span>
                     <span>Campaign</span>
@@ -370,11 +370,11 @@ export default function GoogleKeywordsPage() {
                       >
                         <span className="truncate font-medium text-white/70">{neg.text}</span>
                         <span
-                          className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${MATCH_BADGE[neg.matchType]}`}
+                          className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[12px] font-medium ${MATCH_BADGE[neg.matchType]}`}
                         >
                           {MATCH_LABEL[neg.matchType]}
                         </span>
-                        <span className="truncate text-[11px] text-white/30">{neg.campaignId}</span>
+                        <span className="truncate text-[13px] text-white/30">{neg.campaignId}</span>
                       </div>
                     ))}
                   </div>
@@ -386,7 +386,7 @@ export default function GoogleKeywordsPage() {
           {/* ── Keyword Themes ── */}
           <section className="mt-12">
             <div className="mb-5">
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
                 UAE Real Estate keyword themes
               </div>
               <p className="mt-1.5 text-[13px] text-white/40">
@@ -398,7 +398,7 @@ export default function GoogleKeywordsPage() {
               {UAE_REAL_ESTATE_KEYWORD_THEMES.map((theme) => (
                 <div
                   key={theme.id}
-                  className="flex flex-col gap-3 rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5"
+                  className="flex flex-col gap-3 rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5"
                 >
                   {/* Theme header */}
                   <div className="flex items-start justify-between gap-3">
@@ -406,7 +406,7 @@ export default function GoogleKeywordsPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[13px] font-semibold text-white">{theme.name}</span>
                         <span
-                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[12px] font-medium capitalize ${
                             INTENT_BADGE[theme.intent] ?? INTENT_BADGE.medium
                           }`}
                         >
@@ -421,7 +421,7 @@ export default function GoogleKeywordsPage() {
                         {theme.description}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-white/50">
+                    <span className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[13px] font-medium text-white/50">
                       {theme.keywords.length} kws
                     </span>
                   </div>
@@ -432,14 +432,14 @@ export default function GoogleKeywordsPage() {
                       <div key={i} className="flex items-center gap-2">
                         <span className="flex-1 truncate text-[12px] text-white/55">{kw.text}</span>
                         <span
-                          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${MATCH_BADGE[kw.matchType]}`}
+                          className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[12px] font-medium ${MATCH_BADGE[kw.matchType]}`}
                         >
                           {MATCH_LABEL[kw.matchType]}
                         </span>
                       </div>
                     ))}
                     {theme.keywords.length > 5 && (
-                      <p className="text-[11px] text-white/25">
+                      <p className="text-[13px] text-white/25">
                         +{theme.keywords.length - 5} more keywords
                       </p>
                     )}
@@ -455,9 +455,9 @@ export default function GoogleKeywordsPage() {
                         Add to campaign
                       </button>
                       {/* Tooltip */}
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-white/[0.08] bg-[#0A0D10] px-2.5 py-1.5 text-[11px] text-white/50 shadow-xl group-hover:block">
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-white/[0.08] bg-[#1A1F2A] px-2.5 py-1.5 text-[13px] text-white/50 shadow-xl group-hover:block">
                         Select campaign first
-                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-white/[0.08] bg-[#0A0D10]" />
+                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-white/[0.08] bg-[#1A1F2A]" />
                       </div>
                     </div>
                   </div>

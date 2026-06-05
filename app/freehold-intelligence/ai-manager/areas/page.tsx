@@ -31,15 +31,15 @@ type FilterKey = 'All' | AreaRow['status']
 const FILTERS: FilterKey[] = ['All', 'Published', 'Draft', 'Missing']
 
 function statusBadge(status: AreaRow['status']) {
-  if (status === 'Published') return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-  if (status === 'Missing')   return 'text-rose-400 bg-rose-500/10 border-rose-500/20'
+  if (status === 'Published') return 'text-[#D4AF37] bg-emerald-500/10 border-emerald-500/20'
+  if (status === 'Missing')   return 'text-white/55 bg-rose-500/10 border-rose-500/20'
   return 'text-white/50 bg-white/[0.04] border-white/10'
 }
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-emerald-400'
+  if (score >= 80) return 'text-[#D4AF37]'
   if (score >= 60) return 'text-[#D4AF37]'
-  return 'text-rose-400'
+  return 'text-white/55'
 }
 
 export default function AreaGuidesPage() {
@@ -50,7 +50,7 @@ export default function AreaGuidesPage() {
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
       {/* Header */}
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose-400/80">
+      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-white/55/80">
         <MapPin className="h-3.5 w-3.5" />
         AI Manager · Areas
       </div>
@@ -58,7 +58,7 @@ export default function AreaGuidesPage() {
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-white sm:text-[40px]">
           Area Guides
         </h1>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-rose-400 transition hover:bg-rose-500/20">
+        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20">
           <Plus className="h-4 w-4" />
           Add Area
         </button>
@@ -72,7 +72,7 @@ export default function AreaGuidesPage() {
             onClick={() => setActiveFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                ? 'bg-rose-500/10 border-rose-500/30 text-white/55'
                 : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:text-white/80 hover:border-white/20'
             }`}
           >
@@ -89,7 +89,7 @@ export default function AreaGuidesPage() {
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Published </span>
-          <span className="font-semibold text-emerald-400">{areas.filter((a) => a.status === 'Published').length}</span>
+          <span className="font-semibold text-[#D4AF37]">{areas.filter((a) => a.status === 'Published').length}</span>
         </div>
         <div className="rounded-xl border border-white/[0.05] bg-white/[0.03] px-4 py-2.5 text-sm">
           <span className="text-white/40">Draft </span>
@@ -97,7 +97,7 @@ export default function AreaGuidesPage() {
         </div>
         <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm">
           <span className="text-white/40">Missing </span>
-          <span className="font-semibold text-rose-400">{areas.filter((a) => a.status === 'Missing').length}</span>
+          <span className="font-semibold text-white/55">{areas.filter((a) => a.status === 'Missing').length}</span>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function AreaGuidesPage() {
           <thead>
             <tr className="border-b border-white/[0.05]">
               {['Area Name', 'Status', 'SEO Score', 'Word Count', 'Properties', 'Last Updated', 'Actions'].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-widest text-white/30">
+                <th key={h} className="px-4 py-3 text-left text-[13px] font-medium uppercase tracking-widest text-white/30">
                   {h}
                 </th>
               ))}
@@ -130,7 +130,7 @@ export default function AreaGuidesPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${statusBadge(area.status)}`}>
+                    <span className={`inline-block rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(area.status)}`}>
                       {area.status}
                     </span>
                   </td>
@@ -143,12 +143,12 @@ export default function AreaGuidesPage() {
                   <td className="px-4 py-3.5 text-xs text-white/40">{area.lastUpdated}</td>
                   <td className="px-4 py-3.5">
                     {area.status === 'Missing' ? (
-                      <button className="flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20">
+                      <button className="flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[13px] font-medium text-white/55 transition hover:bg-rose-500/20">
                         <Sparkles className="h-3 w-3" />
                         Generate
                       </button>
                     ) : (
-                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-400 transition hover:bg-rose-500/20">
+                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[13px] font-medium text-white/55 transition hover:bg-rose-500/20">
                         <Sparkles className="h-3 w-3" />
                         AI Improve
                       </button>
@@ -161,7 +161,7 @@ export default function AreaGuidesPage() {
         </table>
       </div>
 
-      <p className="mt-3 text-[11px] text-white/25">
+      <p className="mt-3 text-[13px] text-white/25">
         {filtered.length} of {areas.length} areas shown
       </p>
     </div>

@@ -10,19 +10,19 @@ type AdFilter     = 'All' | 'ready' | 'blocked' | 'needs_assets'
 type ReviewFilter = 'All' | 'approved' | 'pending_approval' | 'open'
 
 function landingTone(s: string) {
-  if (s === 'ready' || s === 'approved') return { dot: 'bg-emerald-400', text: 'text-emerald-300', label: s === 'approved' ? 'Approved' : 'Ready' }
+  if (s === 'ready' || s === 'approved') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: s === 'approved' ? 'Approved' : 'Ready' }
   if (s === 'needs_review')              return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Review' }
   return                                        { dot: 'bg-red-400',   text: 'text-red-300',   label: 'Missing' }
 }
 
 function adTone(s: string) {
-  if (s === 'ready')        return { dot: 'bg-emerald-400', text: 'text-emerald-300', label: 'Ready' }
+  if (s === 'ready')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Ready' }
   if (s === 'blocked')      return { dot: 'bg-red-400',     text: 'text-red-300',     label: 'Blocked' }
   return                           { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Needs assets' }
 }
 
 function reviewTone(s: string) {
-  if (s === 'approved')         return { dot: 'bg-emerald-400', text: 'text-emerald-300', label: 'Approved' }
+  if (s === 'approved')         return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Approved' }
   if (s === 'pending_approval') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Pending' }
   return                               { dot: 'bg-white/30',    text: 'text-white/45',    label: 'Open' }
 }
@@ -55,7 +55,7 @@ export default function DashboardProjectsPage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <FolderKanban className="h-3.5 w-3.5" /> Projects Admin
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -68,20 +68,20 @@ export default function DashboardProjectsPage() {
 
       <section className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Ad ready',          value: ready,      tone: 'text-emerald-300' },
+          { label: 'Ad ready',          value: ready,      tone: 'text-[#D4AF37]' },
           { label: 'Blocked',           value: blocked,    tone: 'text-red-400' },
           { label: 'Review pending',    value: pending,    tone: 'text-[#D4AF37]' },
-          { label: 'Open requirements', value: totalReqs,  tone: 'text-sky-300' },
+          { label: 'Open requirements', value: totalReqs,  tone: 'text-white/55' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-5">
+          <div key={kpi.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
             <div className={`text-[28px] font-semibold ${kpi.tone}`}>{kpi.value}</div>
-            <div className="mt-0.5 text-[11px] text-white/40">{kpi.label}</div>
+            <div className="mt-0.5 text-[13px] text-white/40">{kpi.label}</div>
           </div>
         ))}
       </section>
 
       <section className="mt-14">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Campaign projects</div>
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Campaign projects</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Full inventory</h2>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -92,12 +92,12 @@ export default function DashboardProjectsPage() {
             { key: 'blocked',      label: 'Blocked' },
           ] as { key: AdFilter; label: string }[]).map(({ key, label }) => (
             <button key={key} onClick={() => setAdFilter(key)}
-              className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              className={['rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 adFilter === key
                   ? key === 'blocked'
                     ? 'border-red-400/40 bg-red-400/10 text-red-300'
                     : key === 'ready'
-                    ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                    ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
               ].join(' ')}>{label}</button>
@@ -110,10 +110,10 @@ export default function DashboardProjectsPage() {
             { key: 'open',             label: 'Open' },
           ] as { key: ReviewFilter; label: string }[]).map(({ key, label }) => (
             <button key={key} onClick={() => setReviewFilter(key)}
-              className={['rounded-full border px-3 py-1 text-[11px] font-medium transition',
+              className={['rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 reviewFilter === key
                   ? key === 'approved'
-                    ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300'
+                    ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
               ].join(' ')}>{label}</button>
@@ -126,7 +126,7 @@ export default function DashboardProjectsPage() {
         </p>
 
         {filtered.length === 0 ? (
-          <div className="mt-5 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] px-6 py-10 text-center text-[13px] text-white/35">
+          <div className="mt-5 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] px-6 py-10 text-center text-[13px] text-white/35">
             No projects match these filters.{' '}
             <button onClick={() => { setAdFilter('All'); setReviewFilter('All') }} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Clear</button>
           </div>
@@ -137,7 +137,7 @@ export default function DashboardProjectsPage() {
               const ad   = adTone(listing.adReadiness)
               const rev  = reviewTone(listing.reviewStatus)
               return (
-                <div key={listing.id} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-5 sm:p-6">
+                <div key={listing.id} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-5 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">
@@ -148,7 +148,7 @@ export default function DashboardProjectsPage() {
                           {listing.name}
                         </Link>
                         {listing.adReadiness === 'blocked' && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-red-300/70">
+                          <span className="inline-flex items-center gap-1 text-[13px] text-red-300/70">
                             <AlertCircle className="h-3 w-3" /> Blocked
                           </span>
                         )}
@@ -157,13 +157,13 @@ export default function DashboardProjectsPage() {
                       <p className="mt-2 text-[13px] text-white/60">{listing.nextAction}</p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium border-current/20 ${land.text}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium border-current/20 ${land.text}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${land.dot}`} /> Landing: {land.label}
                         </span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium border-current/20 ${ad.text}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium border-current/20 ${ad.text}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${ad.dot}`} /> Ads: {ad.label}
                         </span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium border-current/20 ${rev.text}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium border-current/20 ${rev.text}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${rev.dot}`} /> Review: {rev.label}
                         </span>
                       </div>

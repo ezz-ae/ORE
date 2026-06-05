@@ -14,8 +14,8 @@ type PlatformFilter = 'All' | 'Meta' | 'Google'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
-  if (s === 'running') return { dot: 'bg-emerald-400', badge: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' }
-  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-emerald-400', badge: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' }
+  if (s === 'running') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
+  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-emerald-400/20' }
   if (s === 'pending review') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-white/55 bg-white/[0.04] border-white/10' }
   if (s === 'blocked' || s === 'needs changes') return { dot: 'bg-red-400', badge: 'text-red-400 bg-red-400/10 border-red-400/20' }
@@ -34,11 +34,11 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   const platform = platformStyle(request.platform)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/[0.06] bg-[#0A0D10] transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#1A1F2A] transition hover:border-[#D4AF37]/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -48,7 +48,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <span
               className={[
-                'rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                'rounded-full border px-2.5 py-1 text-[13px] font-medium',
                 platform,
               ].join(' ')}
             >
@@ -56,7 +56,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
             </span>
             <span
               className={[
-                'rounded-full border px-2.5 py-1 text-[11px] font-medium',
+                'rounded-full border px-2.5 py-1 text-[13px] font-medium',
                 status.badge,
               ].join(' ')}
             >
@@ -67,22 +67,22 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">Objective</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Objective</div>
             <p className="mt-1 text-[13px] text-white/70">{request.campaignObjective}</p>
           </div>
           <div>
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">Budget</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Budget</div>
             <p className="mt-1 text-[13px] font-semibold text-white/85">{request.budget}</p>
           </div>
           <div className="sm:col-span-2">
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">Campaign Angle</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Campaign Angle</div>
             <p className="mt-1 text-[13px] leading-[1.55] text-white/65">{request.campaignAngle}</p>
           </div>
         </div>
 
         {request.blockers.length > 0 && (
           <div className="mt-5 rounded-2xl border border-red-400/15 bg-red-400/[0.04] px-4 py-3.5">
-            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-red-400/70">Blockers</div>
+            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-red-400/70">Blockers</div>
             <ul className="mt-1.5 grid gap-1 text-[13px] text-white/65">
               {request.blockers.map((b) => (
                 <li
@@ -140,7 +140,7 @@ export default function AdRequestsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-32 pt-12 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> Ad Requests
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[56px]">
@@ -163,7 +163,7 @@ export default function AdRequestsPage() {
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+            <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
               {filtered.length === leadMachineAdRequests.length
                 ? 'All'
                 : `${filtered.length} of ${leadMachineAdRequests.length}`}
@@ -181,7 +181,7 @@ export default function AdRequestsPage() {
               key={s}
               onClick={() => setStatusFilter(s)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 statusFilter === s
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -196,7 +196,7 @@ export default function AdRequestsPage() {
               key={p}
               onClick={() => setPlatformFilter(p)}
               className={[
-                'rounded-full border px-3 py-1 text-[11px] font-medium transition',
+                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
                 platformFilter === p
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
@@ -214,7 +214,7 @@ export default function AdRequestsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="mt-8 rounded-[28px] border border-white/[0.06] bg-white/[0.02] px-7 py-12 text-center sm:px-10">
+          <div className="mt-8 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-12 text-center sm:px-10">
             <Megaphone className="mx-auto h-8 w-8 text-white/20" />
             <p className="mt-4 text-[15px] text-white/40">No requests match these filters.</p>
             <button

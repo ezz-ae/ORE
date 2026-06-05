@@ -12,7 +12,7 @@ import {
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
-  available:   { dot: 'bg-emerald-400', text: 'text-emerald-300', badge: 'border-emerald-400/20 bg-emerald-400/10', label: 'Available'   },
+  available:   { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-emerald-400/20 bg-[#D4AF37]/10', label: 'Available'   },
   at_capacity: { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'At capacity' },
   overloaded:  { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Overloaded'  },
 }
@@ -65,7 +65,7 @@ export default function SalesTeamPage() {
     }
     if (value === 'overloaded')  return 'border-red-400/35 bg-red-400/10 text-red-300'
     if (value === 'at_capacity') return 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-    if (value === 'available')   return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+    if (value === 'available')   return 'border-emerald-400/30 bg-[#D4AF37]/10 text-[#D4AF37]'
     return 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
   }
 
@@ -87,7 +87,7 @@ export default function SalesTeamPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.22em] text-[#D4AF37]/85">
           <Users className="h-3.5 w-3.5" /> Sales Team
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -115,13 +115,13 @@ export default function SalesTeamPage() {
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Agents',    value: crmAgentRoster.length, color: 'text-white'       },
-          { label: 'Available', value: available.length,       color: 'text-emerald-300' },
+          { label: 'Available', value: available.length,       color: 'text-[#D4AF37]' },
           { label: 'Hot leads', value: totalHot,               color: 'text-red-300'     },
           { label: 'Overdue',   value: totalOverdue,           color: totalOverdue > 3 ? 'text-red-300' : 'text-[#D4AF37]' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 text-center">
             <div className={`text-[28px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[10px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
           </div>
         ))}
       </div>
@@ -129,7 +129,7 @@ export default function SalesTeamPage() {
       {/* Agent roster */}
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">
             Roster
             {statusFilter !== 'All' && (
               <span className="ml-2 normal-case tracking-normal text-white/25">
@@ -144,7 +144,7 @@ export default function SalesTeamPage() {
               <button
                 key={pill.value}
                 onClick={() => setStatusFilter(pill.value)}
-                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${statusPillClass(pill.value)}`}
+                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${statusPillClass(pill.value)}`}
               >
                 {pill.label}
               </button>
@@ -156,7 +156,7 @@ export default function SalesTeamPage() {
               <button
                 key={pill.value}
                 onClick={() => setSortKey(pill.value)}
-                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${sortPillClass(pill.value)}`}
+                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${sortPillClass(pill.value)}`}
               >
                 {pill.label}
               </button>
@@ -166,11 +166,11 @@ export default function SalesTeamPage() {
 
         <div className="mt-4 space-y-3">
           {filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] py-14 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] py-14 text-center">
               <p className="text-[13px] text-white/35">No agents match this filter</p>
               <button
                 onClick={() => setStatusFilter('All')}
-                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-[11px] font-medium text-white/40 transition hover:text-white/65"
+                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-[13px] font-medium text-white/40 transition hover:text-white/65"
               >
                 Clear
               </button>
@@ -185,7 +185,7 @@ export default function SalesTeamPage() {
               )
 
               return (
-                <div key={agent.id} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+                <div key={agent.id} className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
 
                   {/* Top row */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -196,13 +196,13 @@ export default function SalesTeamPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[16px] font-semibold text-white">{agent.name}</span>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.badge} ${st.text}`}>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[12px] font-medium ${st.badge} ${st.text}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                             {st.label}
                           </span>
                         </div>
                         <div className="mt-0.5 text-[12px] text-white/40">{agent.role}</div>
-                        <div className="mt-0.5 text-[11px] text-white/25">{agent.specialty}</div>
+                        <div className="mt-0.5 text-[13px] text-white/25">{agent.specialty}</div>
                       </div>
                     </div>
 
@@ -211,7 +211,7 @@ export default function SalesTeamPage() {
                         { label: 'Leads',   value: agent.totalLeads,      color: 'text-white'       },
                         { label: 'Hot',     value: agent.hotLeads,         color: agent.hotLeads > 0 ? 'text-red-400' : 'text-white' },
                         { label: 'Overdue', value: agent.overdueFollowUps, color: agent.overdueFollowUps > 0 ? 'text-[#D4AF37]' : 'text-white' },
-                        { label: 'Wins',    value: agent.recentWins,       color: 'text-emerald-300' },
+                        { label: 'Wins',    value: agent.recentWins,       color: 'text-[#D4AF37]' },
                       ].map((m) => (
                         <div key={m.label}>
                           <div className={`text-[20px] font-semibold ${m.color}`}>{m.value}</div>
@@ -223,12 +223,12 @@ export default function SalesTeamPage() {
 
                   {/* Utilization */}
                   <div className="mt-5">
-                    <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                    <div className="mb-1.5 flex items-center justify-between text-[13px]">
                       <span className="text-white/35">Utilization</span>
                       <span className={
                         agent.utilization >= 85 ? 'text-red-300'
                         : agent.utilization >= 70 ? 'text-[#D4AF37]'
-                        : 'text-emerald-300'
+                        : 'text-[#D4AF37]'
                       }>
                         {agent.utilization}%
                       </span>
@@ -238,7 +238,7 @@ export default function SalesTeamPage() {
                         className={`h-full rounded-full ${
                           agent.utilization >= 85 ? 'bg-red-400'
                           : agent.utilization >= 70 ? 'bg-[#D4AF37]'
-                          : 'bg-emerald-400'
+                          : 'bg-[#D4AF37]'
                         }`}
                         style={{ width: `${agent.utilization}%` }}
                       />
@@ -252,7 +252,7 @@ export default function SalesTeamPage() {
                         <Link
                           key={l.id}
                           href={`/freehold-intelligence/crm/leads/${l.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[11px] text-white/60 transition hover:border-[#D4AF37]/25 hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[13px] text-white/60 transition hover:border-[#D4AF37]/25 hover:text-white"
                         >
                           <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-[#D4AF37]'}`} />
                           {l.name.split(' ')[0]}
@@ -260,7 +260,7 @@ export default function SalesTeamPage() {
                         </Link>
                       ))}
                       {overdue.length > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[11px] text-[#F8E7AE]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[13px] text-[#F8E7AE]">
                           {overdue.length} overdue follow-up{overdue.length !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -275,17 +275,17 @@ export default function SalesTeamPage() {
 
       {/* Leaderboard */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Win ranking</div>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
+        <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Win ranking</div>
+        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1A1F2A]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">#</th>
-                <th className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
-                <th className="hidden px-4 py-3 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Specialty</th>
-                <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Wins</th>
-                <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Hot</th>
-                <th className="px-6 py-3 text-right text-[10px] font-medium uppercase tracking-[0.18em] text-white/30">Load</th>
+                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">#</th>
+                <th className="px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
+                <th className="hidden px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Specialty</th>
+                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Wins</th>
+                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Hot</th>
+                <th className="px-6 py-3 text-right text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Load</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -303,17 +303,17 @@ export default function SalesTeamPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[11px] font-semibold text-white/60">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[13px] font-semibold text-white/60">
                             {agent.initials}
                           </div>
                           <div>
                             <div className="text-[13px] font-medium text-white/85">{agent.name}</div>
-                            <div className="text-[11px] text-white/35">{agent.role}</div>
+                            <div className="text-[13px] text-white/35">{agent.role}</div>
                           </div>
                         </div>
                       </td>
                       <td className="hidden px-4 py-4 text-[12px] text-white/40 sm:table-cell">{agent.specialty}</td>
-                      <td className="px-4 py-4 text-center text-[14px] font-semibold text-emerald-300">{agent.recentWins}</td>
+                      <td className="px-4 py-4 text-center text-[14px] font-semibold text-[#D4AF37]">{agent.recentWins}</td>
                       <td className="px-4 py-4 text-center">
                         <span className={`text-[13px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-white/30'}`}>
                           {agent.hotLeads}
@@ -335,7 +335,7 @@ export default function SalesTeamPage() {
         <section className="mt-12">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Unassigned inbox</div>
+              <div className="text-[13px] font-medium uppercase tracking-[0.22em] text-white/40">Unassigned inbox</div>
               <h2 className="mt-1 text-lg font-semibold text-white">{unassigned.length} leads waiting for assignment</h2>
             </div>
             <Link
@@ -347,19 +347,19 @@ export default function SalesTeamPage() {
           </div>
           <div className="space-y-2">
             {unassigned.map((lead) => (
-              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
+              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[14px] font-semibold text-white">{lead.name}</span>
-                    <span className="text-[11px] text-white/35">{lead.source}</span>
+                    <span className="text-[13px] text-white/35">{lead.source}</span>
                   </div>
                   <p className="mt-1 line-clamp-1 text-[12px] text-white/50">{lead.aiNote}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className={`text-[14px] font-semibold ${lead.intentScore >= 80 ? 'text-emerald-300' : 'text-white/70'}`}>
+                  <div className={`text-[14px] font-semibold ${lead.intentScore >= 80 ? 'text-[#D4AF37]' : 'text-white/70'}`}>
                     {lead.intentScore}
                   </div>
-                  <div className="text-[10px] text-white/30">intent</div>
+                  <div className="text-[12px] text-white/30">intent</div>
                 </div>
               </div>
             ))}

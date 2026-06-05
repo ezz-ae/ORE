@@ -17,7 +17,7 @@ function urgencyTone(u: string) {
 }
 
 function scoreBar(n: number) {
-  if (n >= 85) return 'bg-emerald-400'
+  if (n >= 85) return 'bg-[#D4AF37]'
   if (n >= 65) return 'bg-[#D4AF37]'
   return 'bg-red-400'
 }
@@ -38,11 +38,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   function activityIcon(type: string) {
-    if (type === 'call')         return { Icon: PhoneCall,      color: 'text-emerald-300', bg: 'bg-emerald-400/10' }
+    if (type === 'call')         return { Icon: PhoneCall,      color: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10' }
     if (type === 'whatsapp')     return { Icon: MessageSquare,  color: 'text-[#D4AF37]',   bg: 'bg-[#D4AF37]/10' }
-    if (type === 'note')         return { Icon: FileText,       color: 'text-sky-300',     bg: 'bg-sky-400/10' }
-    if (type === 'stage_change') return { Icon: ArrowLeftRight, color: 'text-violet-300',  bg: 'bg-violet-400/10' }
-    if (type === 'assignment')   return { Icon: User,           color: 'text-rose-300',    bg: 'bg-rose-400/10' }
+    if (type === 'note')         return { Icon: FileText,       color: 'text-white/55',     bg: 'bg-sky-400/10' }
+    if (type === 'stage_change') return { Icon: ArrowLeftRight, color: 'text-white/55',  bg: 'bg-violet-400/10' }
+    if (type === 'assignment')   return { Icon: User,           color: 'text-white/55',    bg: 'bg-rose-400/10' }
     if (type === 'follow_up')    return { Icon: Bell,           color: 'text-orange-300',  bg: 'bg-orange-400/10' }
     return { Icon: Zap, color: 'text-white/45', bg: 'bg-white/[0.04]' }
   }
@@ -56,14 +56,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${tone.bg} border-current/20 ${tone.text}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.bg} border-current/20 ${tone.text}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             {tone.label} urgency
           </span>
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[11px] text-white/50">
+          <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/50">
             {lead.stage}
           </span>
-          <span className="text-[11px] text-white/30">{lead.source}</span>
+          <span className="text-[13px] text-white/30">{lead.source}</span>
         </div>
         <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
           {lead.name}
@@ -80,26 +80,26 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">
-            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 transition hover:border-[#D4AF37]/25">
+            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 transition hover:border-[#D4AF37]/25">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
                 <Phone className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Phone</p>
+                <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Phone</p>
                 <p className="mt-0.5 text-[13px] font-medium text-white group-hover:text-[#D4AF37] transition-colors">{lead.phone}</p>
               </div>
             </a>
-            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4 transition hover:border-sky-400/25">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400">
+            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4 transition hover:border-sky-400/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10 text-white/55">
                 <Mail className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-[10px] text-white/35 uppercase tracking-[0.14em]">Email</p>
-                <p className="mt-0.5 text-[13px] font-medium text-white group-hover:text-sky-300 transition-colors truncate">{lead.email}</p>
+                <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Email</p>
+                <p className="mt-0.5 text-[13px] font-medium text-white group-hover:text-white/55 transition-colors truncate">{lead.email}</p>
               </div>
             </a>
-            <div className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
-              <div className="flex items-center gap-2 text-[10px] text-white/35 uppercase tracking-[0.14em]">
+            <div className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-4">
+              <div className="flex items-center gap-2 text-[12px] text-white/35 uppercase tracking-[0.14em]">
                 <Target className="h-3 w-3" /> Intent score
               </div>
               <div className="mt-2 flex items-end gap-2">
@@ -115,7 +115,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* Risk warnings */}
           {(lead.duplicateRisk || lead.wrongNumberRisk) && (
             <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.05] p-5">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-red-300/80">
+              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-red-300/80">
                 <AlertTriangle className="h-3.5 w-3.5" /> Risk flags
               </div>
               <ul className="mt-3 space-y-1.5">
@@ -127,29 +127,29 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* AI Summary */}
           <div className="rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-6">
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
               <Brain className="h-3.5 w-3.5" /> AI intelligence summary
             </div>
             <p className="mt-3 text-[15px] leading-[1.7] text-white/85">{lead.aiSummary}</p>
           </div>
 
           {/* Next best action */}
-          <div className="rounded-[22px] border border-emerald-400/15 bg-emerald-400/[0.04] p-6">
-            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-300/80">
+          <div className="rounded-[22px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-6">
+            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
               <Zap className="h-3.5 w-3.5" /> Next best action
             </div>
             <p className="mt-3 text-[15px] leading-[1.7] text-white/85">{lead.nextBestAction}</p>
           </div>
 
           {/* Suggested WhatsApp */}
-          <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+          <div className="rounded-[22px] border border-white/[0.08] bg-[#1A1F2A] p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Bell className="h-3.5 w-3.5" /> Suggested message
               </div>
               <CopyButton text={lead.suggestedMessage} />
             </div>
-            <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-emerald-400/[0.04] p-4">
+            <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-4">
               <p className="text-[14px] leading-[1.7] text-white/80 italic">"{lead.suggestedMessage}"</p>
             </div>
             <SuggestedMessageActions message={lead.suggestedMessage} phone={lead.phone} leadId={lead.id} />
@@ -171,8 +171,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <aside className="space-y-4">
 
           {/* Lead metadata */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-            <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Lead details</p>
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Lead details</p>
             <div className="space-y-3">
               {[
                 { label: 'Source', value: lead.source },
@@ -191,18 +191,18 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Quick actions */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
-            <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Actions</p>
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
+            <p className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Actions</p>
             <QuickActions leadId={lead.id} leadName={lead.name} currentStage={lead.stage} />
           </div>
 
           {/* Activity */}
-          <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
+          <div className="rounded-[20px] border border-white/[0.08] bg-[#1A1F2A] p-5">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">
+              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
                 <Clock className="h-3 w-3" /> Activity
               </div>
-              <Link href="/freehold-intelligence/crm/activity" className="text-[10px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]">
+              <Link href="/freehold-intelligence/crm/activity" className="text-[12px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]">
                 All activity
               </Link>
             </div>
@@ -217,7 +217,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[12px] text-white/70 leading-snug">{event.content}</p>
-                        <p className="mt-0.5 text-[10px] text-white/30">{event.actor} · {new Date(event.createdAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                        <p className="mt-0.5 text-[12px] text-white/30">{event.actor} · {new Date(event.createdAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
                       </div>
                     </div>
                   )
@@ -229,14 +229,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]" />
                   <div>
                     <p className="text-white/70">Lead created via {lead.source}</p>
-                    <p className="mt-0.5 text-[11px] text-white/30">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                    <p className="mt-0.5 text-[13px] text-white/30">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
                   </div>
                 </div>
                 <div className="flex gap-3 text-[13px]">
                   <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/20" />
                   <div>
                     <p className="text-white/50">Assigned to {lead.assignedAgent}</p>
-                    <p className="mt-0.5 text-[11px] text-white/30">Auto-assigned</p>
+                    <p className="mt-0.5 text-[13px] text-white/30">Auto-assigned</p>
                   </div>
                 </div>
               </div>
