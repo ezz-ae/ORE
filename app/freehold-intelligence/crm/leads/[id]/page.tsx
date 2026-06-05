@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
-  ArrowLeft, ArrowUpRight, Phone, Mail, MessageSquare, Brain,
-  AlertTriangle, Clock, User, Target, Zap, Copy, BookOpen,
+  ArrowLeft, Phone, Mail, Brain,
+  AlertTriangle, Clock, User, Target, Zap,
   PhoneCall, FileText, ArrowLeftRight, Bell,
 } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     label: 'Critical' }
@@ -144,33 +145,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <div className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
-                <MessageSquare className="h-3.5 w-3.5" /> Suggested message
+                <Bell className="h-3.5 w-3.5" /> Suggested message
               </div>
-              <button className="flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
-                <Copy className="h-3 w-3" /> Copy
-              </button>
+              <CopyButton text={lead.suggestedMessage} />
             </div>
             <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-emerald-400/[0.04] p-4">
               <p className="text-[14px] leading-[1.7] text-white/80 italic">"{lead.suggestedMessage}"</p>
             </div>
-            <div className="mt-4 flex gap-3">
-              <a
-                href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-500/90"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                Send on WhatsApp
-              </a>
-              <Link
-                href={`/freehold-intelligence/notebook?lead=${lead.id}`}
-                className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[12px] text-white/65 transition hover:border-[#D4AF37]/30 hover:text-white"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Save to Notebook
-              </Link>
-            </div>
+            <SuggestedMessageActions message={lead.suggestedMessage} phone={lead.phone} leadId={lead.id} />
           </div>
 
           {/* AI Prompt */}
@@ -211,21 +193,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* Quick actions */}
           <div className="rounded-[20px] border border-white/[0.06] bg-[#0A0D10] p-5">
             <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-white/35">Actions</p>
-            <div className="space-y-2">
-              {[
-                { label: 'Move to Hot', icon: Zap, accent: 'hover:border-[#D4AF37]/30 hover:text-[#F8E7AE]' },
-                { label: 'Reassign agent', icon: User, accent: 'hover:border-sky-400/30 hover:text-sky-200' },
-                { label: 'View in pipeline', icon: ArrowUpRight, accent: 'hover:border-white/20 hover:text-white' },
-              ].map((action) => {
-                const Icon = action.icon
-                return (
-                  <button key={action.label} className={`flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-[13px] text-white/55 transition ${action.accent}`}>
-                    <Icon className="h-3.5 w-3.5" />
-                    {action.label}
-                  </button>
-                )
-              })}
-            </div>
+            <QuickActions leadId={lead.id} leadName={lead.name} currentStage={lead.stage} />
           </div>
 
           {/* Activity */}
