@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Copy, AlertCircle, CheckCircle2, ArrowUpRight, Phone, Mail, User, GitMerge } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
@@ -135,9 +138,40 @@ function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPr
   )
 }
 
+type ConfidenceFilter = 'All' | 'high' | 'medium' | 'low'
+
 export default function CrmDuplicatesPage() {
+  const [resolved, setResolved] = useState<Record<string, 'merged' | 'dismissed'>>({})
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('All')
+  const [flash, setFlash] = useState<string | null>(null)
+
   const atRisk = leads.filter((l) => l.duplicateRisk).length
-  const highConf = CLUSTERS.filter((c) => c.confidence === 'high').length
+
+  const visibleClusters = useMemo(() => {
+    return CLUSTERS.filter((c) => {
+      if (resolved[c.id]) return false
+      if (confidenceFilter !== 'All' && c.confidence !== confidenceFilter) return false
+      return true
+    })
+  }, [resolved, confidenceFilter])
+
+  const mergedCount = Object.values(resolved).filter((v) => v === 'merged').length
+  const highConf = visibleClusters.filter((c) => c.confidence === 'high').length
+
+  function triggerFlash(msg: string) {
+    setFlash(msg)
+    setTimeout(() => setFlash(null), 2500)
+  }
+
+  function handleMerge(id: string, name: string) {
+    setResolved((prev) => ({ ...prev, [id]: 'merged' }))
+    triggerFlash(`Merged: ${name} — primary record kept`)
+  }
+
+  function handleDismiss(id: string) {
+    setResolved((prev) => ({ ...prev, [id]: 'dismissed' }))
+    triggerFlash('Marked as not a duplicate')
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -147,7 +181,7 @@ export default function CrmDuplicatesPage() {
           <Copy className="h-3.5 w-3.5" /> Duplicates
         </div>
         <h1 className="mt-5 text-[36px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-          Duplicate leads<br /><span className="text-white/35">{CLUSTERS.length} cluster{CLUSTERS.length !== 1 ? 's' : ''} flagged.</span>
+          Duplicate leads<br /><span className="text-white/35">{visibleClusters.length} cluster{visibleClusters.length !== 1 ? 's' : ''} remaining.</span>
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
           Duplicate leads waste agent time and split the contact history. Merge keeps the primary record and combines timeline, notes, and stage.
@@ -157,10 +191,10 @@ export default function CrmDuplicatesPage() {
       {/* Stats */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Clusters found',   value: CLUSTERS.length,    color: 'text-white' },
-          { label: 'High confidence',  value: highConf,           color: 'text-red-300' },
-          { label: 'At-risk leads',    value: atRisk,             color: 'text-orange-300' },
-          { label: 'Merged this month', value: 0,                 color: 'text-emerald-300' },
+          { label: 'Clusters remaining',  value: visibleClusters.length,  color: 'text-white' },
+          { label: 'High confidence',     value: highConf,                color: 'text-red-300' },
+          { label: 'At-risk leads',       value: atRisk,                  color: 'text-orange-300' },
+          { label: 'Merged this session', value: mergedCount,             color: 'text-emerald-300' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-[18px] border border-white/[0.06] bg-[#0A0D10] p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
@@ -184,57 +218,98 @@ export default function CrmDuplicatesPage() {
 
       {/* Clusters */}
       <section className="mt-12">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Duplicate clusters</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Review and resolve</h2>
-        <div className="mt-5 space-y-4">
-          {CLUSTERS.map((cluster) => {
-            const conf = CONFIDENCE_CONFIG[cluster.confidence]
-            return (
-              <div key={cluster.id} className={`rounded-[22px] border p-5 sm:p-6 ${conf.border} ${conf.bg}`}>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Duplicate clusters</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">Review and resolve</h2>
+          </div>
+          <div className="ml-auto flex gap-1.5">
+            {(['All', 'high', 'medium', 'low'] as ConfidenceFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setConfidenceFilter(f)}
+                className={[
+                  'rounded-full px-3 py-1 text-[11px] font-medium capitalize transition border',
+                  confidenceFilter === f
+                    ? 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-white/[0.08] text-white/40 hover:text-white/65',
+                ].join(' ')}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                {/* Cluster header */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`h-2 w-2 rounded-full ${conf.dot}`} />
-                    <span className={`text-[12px] font-semibold ${conf.text}`}>{conf.label}</span>
-                    <span className="text-white/20">·</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {cluster.matchReason.map((r) => (
-                        <span key={r} className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">{r}</span>
-                      ))}
+        {visibleClusters.length === 0 ? (
+          <div className="rounded-[22px] border border-emerald-400/15 bg-emerald-400/[0.04] py-14 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
+            <div className="mt-3 text-[15px] font-semibold text-white">All clear — no duplicate clusters remaining</div>
+            <div className="mt-1 text-[13px] text-white/45">{mergedCount} merged this session.</div>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-4">
+            {visibleClusters.map((cluster) => {
+              const conf = CONFIDENCE_CONFIG[cluster.confidence]
+              return (
+                <div key={cluster.id} className={`rounded-[22px] border p-5 sm:p-6 ${conf.border} ${conf.bg}`}>
+
+                  {/* Cluster header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`h-2 w-2 rounded-full ${conf.dot}`} />
+                      <span className={`text-[12px] font-semibold ${conf.text}`}>{conf.label}</span>
+                      <span className="text-white/20">·</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cluster.matchReason.map((r) => (
+                          <span key={r} className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/45">{r}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Lead cards */}
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <LeadCard lead={cluster.primary} isPrimary={true} />
-                  <div className="flex items-center justify-center">
-                    <GitMerge className="h-5 w-5 text-white/20" />
+                  {/* Lead cards */}
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <LeadCard lead={cluster.primary} isPrimary={true} />
+                    <div className="flex items-center justify-center">
+                      <GitMerge className="h-5 w-5 text-white/20" />
+                    </div>
+                    <LeadCard lead={cluster.duplicate} isPrimary={false} />
                   </div>
-                  <LeadCard lead={cluster.duplicate} isPrimary={false} />
-                </div>
 
-                {/* Actions */}
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-4 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:bg-emerald-400/15">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Merge into primary
-                  </button>
-                  <button className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-white/50 transition hover:bg-white/[0.07] hover:text-white/70">
-                    Not a duplicate
-                  </button>
-                  <Link
-                    href={`/freehold-intelligence/crm/leads/${cluster.primary.id}`}
-                    className="ml-auto inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
-                  >
-                    Open primary <ArrowUpRight className="h-3 w-3" />
-                  </Link>
+                  {/* Actions */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleMerge(cluster.id, cluster.primary.name)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-4 py-1.5 text-[12px] font-medium text-emerald-300 transition hover:bg-emerald-400/15 active:scale-95"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Merge into primary
+                    </button>
+                    <button
+                      onClick={() => handleDismiss(cluster.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-white/50 transition hover:bg-white/[0.07] hover:text-white/70 active:scale-95"
+                    >
+                      Not a duplicate
+                    </button>
+                    <Link
+                      href={`/freehold-intelligence/crm/leads/${cluster.primary.id}`}
+                      className="ml-auto inline-flex items-center gap-1 text-[11px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                    >
+                      Open primary <ArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
+
+      {flash && (
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-emerald-400/25 bg-[#0A0D10] px-5 py-2.5 text-[13px] font-medium text-emerald-300 shadow-xl">
+          {flash}
+        </div>
+      )}
 
       {/* Resolution guide */}
       <section className="mt-14">

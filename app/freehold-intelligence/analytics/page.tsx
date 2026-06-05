@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 
 const FLAG: Record<string, string> = {
@@ -137,12 +138,86 @@ function SourcesBarChart({ sources }: { sources: { name: string; type: string; s
   )
 }
 
+// ── Filter Pills ─────────────────────────────────────────────────────────────
+type SourceFilterValue = 'All' | 'organic' | 'paid' | 'social' | 'direct' | 'referral' | 'email'
+type DeviceFilterValue = 'All' | 'mobile' | 'desktop' | 'tablet'
+
+function FilterPills<T extends string>({
+  options,
+  active,
+  onChange,
+}: {
+  options: { label: string; value: T }[]
+  active: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {options.map(({ label, value }) => {
+        const isActive = active === value
+        return (
+          <button
+            key={value}
+            onClick={() => onChange(value)}
+            className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+              isActive
+                ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                : 'border border-white/[0.08] text-white/40 hover:text-white/65'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const SOURCE_FILTER_OPTIONS: { label: string; value: SourceFilterValue }[] = [
+  { label: 'All',      value: 'All'      },
+  { label: 'Organic',  value: 'organic'  },
+  { label: 'Paid',     value: 'paid'     },
+  { label: 'Social',   value: 'social'   },
+  { label: 'Direct',   value: 'direct'   },
+  { label: 'Referral', value: 'referral' },
+  { label: 'Email',    value: 'email'    },
+]
+
+const DEVICE_FILTER_OPTIONS: { label: string; value: DeviceFilterValue }[] = [
+  { label: 'All',     value: 'All'     },
+  { label: 'Mobile',  value: 'mobile'  },
+  { label: 'Desktop', value: 'desktop' },
+  { label: 'Tablet',  value: 'tablet'  },
+]
+
 export default function AnalyticsPage() {
   const a = siteAnalytics
 
-  const mobile  = a.devices.find((d) => d.device === 'mobile')!
-  const desktop = a.devices.find((d) => d.device === 'desktop')!
-  const tablet  = a.devices.find((d) => d.device === 'tablet')!
+  const [sourceFilter, setSourceFilter] = useState<SourceFilterValue>('All')
+  const [deviceFilter, setDeviceFilter] = useState<DeviceFilterValue>('All')
+
+  // Filtered traffic sources (shared by bar chart and table)
+  const filteredSources = useMemo(
+    () =>
+      sourceFilter === 'All'
+        ? a.sources
+        : a.sources.filter((s) => s.type === sourceFilter),
+    [a.sources, sourceFilter],
+  )
+
+  // Filtered devices
+  const filteredDevices = useMemo(() => {
+    const all = [
+      { label: 'Mobile',  data: a.devices.find((d) => d.device === 'mobile')!,  color: 'text-sky-400',    bar: 'bg-sky-500'    },
+      { label: 'Desktop', data: a.devices.find((d) => d.device === 'desktop')!, color: 'text-violet-400', bar: 'bg-violet-500' },
+      { label: 'Tablet',  data: a.devices.find((d) => d.device === 'tablet')!,  color: 'text-amber-400',  bar: 'bg-amber-500'  },
+    ]
+    return deviceFilter === 'All'
+      ? all
+      : all.filter((d) => d.data.device === deviceFilter)
+  }, [a.devices, deviceFilter])
+
+  const totalDeviceSessions = a.devices.reduce((s, d) => s + d.sessions, 0)
 
   const funnelMax = a.funnel[0].users
 
@@ -204,15 +279,33 @@ export default function AnalyticsPage() {
 
       {/* ── Sources Bar Chart ── */}
       <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Sessions by Source</div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Sessions by Source</div>
+          <FilterPills
+            options={SOURCE_FILTER_OPTIONS}
+            active={sourceFilter}
+            onChange={setSourceFilter}
+          />
+        </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
-          <SourcesBarChart sources={a.sources} />
+          {filteredSources.length > 0 ? (
+            <SourcesBarChart sources={filteredSources} />
+          ) : (
+            <p className="py-6 text-center text-sm text-white/30">No sources match the selected filter.</p>
+          )}
         </div>
       </section>
 
       {/* ── Traffic Sources ── */}
       <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Traffic Sources</div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Traffic Sources</div>
+          <FilterPills
+            options={SOURCE_FILTER_OPTIONS}
+            active={sourceFilter}
+            onChange={setSourceFilter}
+          />
+        </div>
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -226,23 +319,31 @@ export default function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {a.sources.map((src) => (
-                  <tr key={src.name} className="transition hover:bg-white/[0.02]">
-                    <td className="px-5 py-4 font-medium text-white/75">{src.name}</td>
-                    <td className="px-5 py-4">
-                      <SourceBadge type={src.type} />
-                    </td>
-                    <td className="px-5 py-4 text-right tabular-nums text-white/65">
-                      {src.sessions.toLocaleString('en-US')}
-                    </td>
-                    <td className="px-5 py-4 text-right tabular-nums text-white/65">{src.conversions}</td>
-                    <td className="px-5 py-4 text-right">
-                      <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-[#D4AF37]' : src.convRate >= 0.03 ? 'text-emerald-400' : 'text-white/50'}`}>
-                        {(src.convRate * 100).toFixed(1)}%
-                      </span>
+                {filteredSources.length > 0 ? (
+                  filteredSources.map((src) => (
+                    <tr key={src.name} className="transition hover:bg-white/[0.02]">
+                      <td className="px-5 py-4 font-medium text-white/75">{src.name}</td>
+                      <td className="px-5 py-4">
+                        <SourceBadge type={src.type} />
+                      </td>
+                      <td className="px-5 py-4 text-right tabular-nums text-white/65">
+                        {src.sessions.toLocaleString('en-US')}
+                      </td>
+                      <td className="px-5 py-4 text-right tabular-nums text-white/65">{src.conversions}</td>
+                      <td className="px-5 py-4 text-right">
+                        <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-[#D4AF37]' : src.convRate >= 0.03 ? 'text-emerald-400' : 'text-white/50'}`}>
+                          {(src.convRate * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-sm text-white/30">
+                      No sources match the selected filter.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -291,42 +392,50 @@ export default function AnalyticsPage() {
 
       {/* ── Device Breakdown ── */}
       <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Device Breakdown</div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            { label: 'Mobile',  data: mobile,  color: 'text-sky-400',    bar: 'bg-sky-500'    },
-            { label: 'Desktop', data: desktop, color: 'text-violet-400', bar: 'bg-violet-500' },
-            { label: 'Tablet',  data: tablet,  color: 'text-amber-400',  bar: 'bg-amber-500'  },
-          ].map(({ label, data, color, bar }) => {
-            const totalSessions = a.devices.reduce((s, d) => s + d.sessions, 0)
-            const pct = Math.round((data.sessions / totalSessions) * 100)
-            return (
-              <div key={label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium uppercase tracking-wider text-white/40">{label}</span>
-                  <span className={`text-xs font-semibold ${color}`}>{pct}%</span>
-                </div>
-                <div className="mt-3 text-2xl font-semibold tabular-nums text-white/90">
-                  {data.sessions.toLocaleString('en-US')}
-                  <span className="ml-1 text-sm font-normal text-white/30">sessions</span>
-                </div>
-                <div className="mt-3 h-1.5 w-full rounded-full bg-white/[0.06]">
-                  <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-white/40">
-                  <div>
-                    <span className="block text-white/60 font-medium">{Math.round(data.bounceRate * 100)}%</span>
-                    Bounce rate
-                  </div>
-                  <div>
-                    <span className="block text-white/60 font-medium">{data.conversions}</span>
-                    Conversions
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-white/40">Device Breakdown</div>
+          <FilterPills
+            options={DEVICE_FILTER_OPTIONS}
+            active={deviceFilter}
+            onChange={setDeviceFilter}
+          />
         </div>
+        {filteredDevices.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {filteredDevices.map(({ label, data, color, bar }) => {
+              const pct = Math.round((data.sessions / totalDeviceSessions) * 100)
+              return (
+                <div key={label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium uppercase tracking-wider text-white/40">{label}</span>
+                    <span className={`text-xs font-semibold ${color}`}>{pct}%</span>
+                  </div>
+                  <div className="mt-3 text-2xl font-semibold tabular-nums text-white/90">
+                    {data.sessions.toLocaleString('en-US')}
+                    <span className="ml-1 text-sm font-normal text-white/30">sessions</span>
+                  </div>
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-white/[0.06]">
+                    <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-white/40">
+                    <div>
+                      <span className="block text-white/60 font-medium">{Math.round(data.bounceRate * 100)}%</span>
+                      Bounce rate
+                    </div>
+                    <div>
+                      <span className="block text-white/60 font-medium">{data.conversions}</span>
+                      Conversions
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-8 text-center text-sm text-white/30">
+            No device data matches the selected filter.
+          </div>
+        )}
       </section>
 
       {/* ── Countries + Conversion Funnel ── */}
