@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, BarChart3, Clock, TrendingUp, ArrowUpRight } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
@@ -27,9 +30,22 @@ const MONTHLY = [
 ]
 
 const MAX_LEADS = Math.max(...MONTHLY.map((m) => m.leads))
-const MAX_SRC   = Math.max(...SOURCE_BREAKDOWN.map((s) => s.leads))
 
 export default function DashboardAnalyticsPage() {
+  type Range = 'mtd' | '30d' | '90d'
+  type SourceFilter = 'all' | 'paid' | 'organic'
+
+  const [range, setRange]               = useState<Range>('mtd')
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
+
+  const filteredSources = sourceFilter === 'all'
+    ? SOURCE_BREAKDOWN
+    : sourceFilter === 'paid'
+      ? SOURCE_BREAKDOWN.filter((s) => s.spend !== '—')
+      : SOURCE_BREAKDOWN.filter((s) => s.spend === '—')
+
+  const MAX_SRC = Math.max(...filteredSources.map((s) => s.leads), 1)
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
 
@@ -53,6 +69,48 @@ export default function DashboardAnalyticsPage() {
           Traffic, lead quality, source attribution and revenue — currently seeded with representative data.
         </p>
       </section>
+
+      {/* Range + Source filter bar */}
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          {(['mtd', '30d', '90d'] as Range[]).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRange(r)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium uppercase tracking-[0.1em] transition',
+                range === r
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.02] text-white/40 hover:text-white/65',
+              ].join(' ')}
+            >
+              {r === 'mtd' ? 'MTD' : r === '30d' ? 'Last 30d' : 'Last 90d'}
+            </button>
+          ))}
+        </div>
+        <div className="h-3.5 w-px bg-white/10" />
+        <div className="flex items-center gap-1.5">
+          {(['all', 'paid', 'organic'] as SourceFilter[]).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setSourceFilter(f)}
+              className={[
+                'rounded-full border px-3 py-1 text-[11px] font-medium capitalize transition',
+                sourceFilter === f
+                  ? 'border-white/20 bg-white/[0.06] text-white/80'
+                  : 'border-white/[0.07] bg-transparent text-white/35 hover:text-white/55',
+              ].join(' ')}
+            >
+              {f === 'all' ? 'All sources' : f}
+            </button>
+          ))}
+        </div>
+        {range !== 'mtd' && (
+          <span className="text-[11px] text-white/30 italic">Showing MTD data · {range} view coming in V1.1</span>
+        )}
+      </div>
 
       {/* KPIs */}
       <section className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -111,7 +169,12 @@ export default function DashboardAnalyticsPage() {
         <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
           <BarChart3 className="h-3.5 w-3.5" /> Source attribution
         </div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Channel performance</h2>
+        <h2 className="mt-2 flex items-baseline text-xl font-semibold text-white">
+          Channel performance
+          {sourceFilter !== 'all' && (
+            <span className="ml-3 text-[12px] text-white/35">({filteredSources.length} of {SOURCE_BREAKDOWN.length} sources)</span>
+          )}
+        </h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
           <table className="w-full text-[13px]">
             <thead>
@@ -123,7 +186,7 @@ export default function DashboardAnalyticsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
-              {SOURCE_BREAKDOWN.map((src) => (
+              {filteredSources.map((src) => (
                 <tr key={src.source} className="transition hover:bg-white/[0.02]">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

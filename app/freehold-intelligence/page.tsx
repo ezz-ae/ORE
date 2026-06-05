@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   BarChart2, Zap, Users, Package, DollarSign, TrendingUp,
-  Bot, AlertCircle, CheckCircle2, ArrowUpRight, Calendar, Activity,
+  Bot, AlertCircle, CheckCircle2, ArrowUpRight, Calendar, Activity, X,
 } from 'lucide-react'
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
+import AiPrompt from '@/components/freehold/ai-prompt'
 
 // 7-day lead trend (Mon–Sun, current week)
 const WEEKLY_LEADS = [
@@ -18,6 +20,7 @@ const WEEKLY_LEADS = [
   { day: 'Sun', leads: 40, spend: 780  },
 ]
 const MAX_LEADS = Math.max(...WEEKLY_LEADS.map((d) => d.leads))
+const TODAY_IDX = (new Date().getDay() + 6) % 7
 const SVG_W = 420
 const SVG_H = 72
 const BAR_W = 38
@@ -113,6 +116,16 @@ export default function IntelligenceDashboard() {
   const lowAdReadiness = inventoryProperties.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')
   const noImages = inventoryProperties.filter((p) => !p.hasImages)
+
+  const [activityFilter, setActivityFilter] = useState<'all' | 'lead' | 'warning' | 'success' | 'info'>('all')
+  const filteredActivity = activityFilter === 'all'
+    ? recentActivity
+    : recentActivity.filter((a) => a.type === activityFilter)
+
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  function dismissPriority(id: string) {
+    setDismissedIds((prev) => new Set([...prev, id]))
+  }
 
   const avgDataQuality = Math.round(
     inventoryProperties.reduce((s, p) => s + p.dataQuality, 0) / inventoryProperties.length
@@ -233,7 +246,7 @@ export default function IntelligenceDashboard() {
                 const x = BAR_GAP + i * (BAR_W + BAR_GAP)
                 const barH = (d.leads / MAX_LEADS) * (SVG_H - 8)
                 const y = SVG_H - barH
-                const isToday = i === 4
+                const isToday = i === TODAY_IDX
                 return (
                   <g key={d.day}>
                     <rect
@@ -300,36 +313,51 @@ export default function IntelligenceDashboard() {
           <div className="mb-4 text-xs font-medium uppercase tracking-widest text-white/40">Today's Priorities</div>
           <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] divide-y divide-white/[0.04]">
 
-            {lowAdReadiness.map((p) => (
+            {lowAdReadiness.map((p) => !dismissedIds.has(p.id) && (
               <div key={p.id} className="flex items-start gap-3 p-4">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white/80 truncate">{p.name}</p>
                   <p className="mt-0.5 text-xs text-white/40">Ad readiness {p.adReadiness}% — needs creative & copy</p>
                 </div>
-                <Link href="/freehold-intelligence/inventory" className="shrink-0 rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Fix</Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link href="/freehold-intelligence/inventory" className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Fix</Link>
+                  <button type="button" onClick={() => dismissPriority(p.id)} className="rounded-xl border border-white/[0.07] bg-white/[0.04] p-1 text-white/30 transition hover:text-white/60">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             ))}
 
-            {missingLandings.map((p) => (
+            {missingLandings.map((p) => !dismissedIds.has(p.id) && (
               <div key={p.id} className="flex items-start gap-3 p-4">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white/80 truncate">{p.name}</p>
                   <p className="mt-0.5 text-xs text-white/40">No landing page — {p.linkedCampaigns === 0 ? 'no active campaigns' : `${p.linkedCampaigns} campaign(s) paused`}</p>
                 </div>
-                <Link href="/freehold-intelligence/inventory" className="shrink-0 rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Create</Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link href="/freehold-intelligence/inventory" className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Create</Link>
+                  <button type="button" onClick={() => dismissPriority(p.id)} className="rounded-xl border border-white/[0.07] bg-white/[0.04] p-1 text-white/30 transition hover:text-white/60">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             ))}
 
-            {noImages.filter((p) => !missingLandings.includes(p)).map((p) => (
+            {noImages.filter((p) => !missingLandings.includes(p)).map((p) => !dismissedIds.has(p.id) && (
               <div key={p.id} className="flex items-start gap-3 p-4">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-white/80 truncate">{p.name}</p>
                   <p className="mt-0.5 text-xs text-white/40">No images uploaded — blocks ad creative generation</p>
                 </div>
-                <Link href="/freehold-intelligence/inventory" className="shrink-0 rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Upload</Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link href="/freehold-intelligence/inventory" className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-2.5 py-1 text-xs text-white/50 hover:text-white/80 transition">Upload</Link>
+                  <button type="button" onClick={() => dismissPriority(p.id)} className="rounded-xl border border-white/[0.07] bg-white/[0.04] p-1 text-white/30 transition hover:text-white/60">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             ))}
 
