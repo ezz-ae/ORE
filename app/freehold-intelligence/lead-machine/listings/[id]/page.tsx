@@ -9,6 +9,7 @@ import {
   getLeadMachineRequirements, getLeadMachineComments
 } from '@/src/features/freehold-intelligence/lead-machine'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { ListingWorkspace } from './_components/ListingWorkspace'
 
 function scoreTone(n: number) {
   if (n >= 80) return { bar: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
@@ -158,7 +159,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               </div>
               <div className="flex items-center gap-3">
                 <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.06]">
-                  <div className="h-full rounded-full bg-sky-400" style={{ width: `${landing.completion}%` }} />
+                  <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${landing.completion}%` }} />
                 </div>
                 <span className="text-[12px] tabular-nums text-white/50">{landing.completion}%</span>
                 <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] ${statusChip(landing.status)}`}>{landing.status}</span>
@@ -218,48 +219,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </section>
       )}
 
-      {/* Requirements log */}
-      {requirements.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-4 text-[15px] font-semibold text-white">Requirements ({requirements.length})</h2>
-          <div className="space-y-3">
-            {requirements.map((req) => {
-              const sev = req.severity === 'critical' ? 'text-red-300 border-red-400/20 bg-red-400/[0.05]'
-                        : req.severity === 'high' ? 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]'
-                        : 'text-white/60 border-white/[0.08] bg-[#1A1F2A]'
-              return (
-                <div key={req.id} className={`rounded-[18px] border p-5 ${sev}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-[13px] font-semibold">{req.title}</p>
-                    <span className="shrink-0 text-[13px] capitalize">{req.status.replace(/_/g, ' ')}</span>
-                  </div>
-                  <p className="mt-1.5 text-[13px] opacity-80">{req.description}</p>
-                  <p className="mt-2 text-[12px] opacity-60">→ {req.nextAction}</p>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Comments */}
-      {comments.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-4 text-[15px] font-semibold text-white">Comments ({comments.length})</h2>
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="rounded-[18px] border border-white/[0.08] bg-[#1A1F2A] p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/45 capitalize">{comment.type}</span>
-                  <span className="text-[13px] text-white/30">{comment.owner}</span>
-                </div>
-                <p className="mt-3 text-[13px] leading-relaxed text-white/80">{comment.body}</p>
-                <p className="mt-2 text-[12px] text-white/40">Expected: {comment.expectedOutput}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Interactive requirements + comments workspace */}
+      <ListingWorkspace
+        requirements={requirements}
+        comments={comments}
+        projectName={listing.projectName}
+      />
 
       {/* Action bar */}
       <section className="mt-10 flex flex-wrap gap-3">
