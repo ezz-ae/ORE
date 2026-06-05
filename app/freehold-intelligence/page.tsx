@@ -124,7 +124,7 @@ export default function IntelligenceDashboard() {
 
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
   function dismissPriority(id: string) {
-    setDismissedIds((prev) => new Set([...prev, id]))
+    setDismissedIds((prev: Set<string>) => new Set([...prev, id]))
   }
 
   const avgDataQuality = Math.round(
