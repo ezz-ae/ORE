@@ -9,6 +9,7 @@ const tabs = [
   { label: 'Follow-up', href: '/freehold-intelligence/crm/follow-up' },
   { label: 'Assignment', href: '/freehold-intelligence/crm/assignment' },
   { label: 'Activity', href: '/freehold-intelligence/crm/activity' },
+  { label: 'Duplicates', href: '/freehold-intelligence/crm/duplicates' },
   { label: 'Pipeline', href: '/freehold-intelligence/crm/pipeline' },
   { label: 'Agents', href: '/freehold-intelligence/crm/agents' },
   { label: 'Reports', href: '/freehold-intelligence/crm/reports' },

@@ -19,14 +19,14 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 type IntMeta = { category: string; icon: LucideIcon; copy: string }
 
 const META: Record<string, IntMeta & { href?: string }> = {
-  hubspot:      { category: 'CRM',            icon: Users2,        copy: 'Lead capture, contact sync, pipeline automation.' },
-  'meta-ads':   { category: 'Paid Ads',       icon: Megaphone,     copy: 'Meta & Instagram campaigns and pixel events.' },
+  hubspot:      { category: 'CRM',            icon: Users2,        copy: 'Lead capture, contact sync, pipeline automation.',         href: '/freehold-intelligence/integrations/hubspot' },
+  'meta-ads':   { category: 'Paid Ads',       icon: Megaphone,     copy: 'Meta & Instagram campaigns and pixel events.',             href: '/freehold-intelligence/integrations/meta' },
   'google-ads': { category: 'Paid Ads',       icon: Megaphone,     copy: 'Google search and display — budget and bidding.' },
-  whatsapp:     { category: 'Messaging',      icon: MessageSquare, copy: 'Automated and agent-triggered WhatsApp flows.' },
+  whatsapp:     { category: 'Messaging',      icon: MessageSquare, copy: 'Automated and agent-triggered WhatsApp flows.',            href: '/freehold-intelligence/integrations/whatsapp' },
   tracking:     { category: 'Analytics',      icon: BarChart3,     copy: 'Meta Pixel, GA4, GTM, conversion attribution.' },
   neon:         { category: 'Infrastructure', icon: Database,      copy: 'Neon PostgreSQL — the private data layer.' },
   vercel:       { category: 'Infrastructure', icon: Server,        copy: 'Vercel deployment pipeline and health.' },
-  github:       { category: 'Infrastructure', icon: GitBranch,     copy: 'Repository, CI/CD pipeline, and deployment tracking.', href: '/freehold-intelligence/integrations/github' },
+  github:       { category: 'Infrastructure', icon: GitBranch,     copy: 'Repository, CI/CD pipeline, and deployment tracking.',     href: '/freehold-intelligence/integrations/github' },
 }
 
 function statusCfg(status: string) {
