@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp, AlertCircle, Clock, Phone, CheckCircle2, ArrowUpRight } from 'lucide-react'
 import { crmAgentRoster, crmLeads, crmActivityLog, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
@@ -15,11 +18,23 @@ const AGENT_METRICS: Record<string, { avgResponseH: number; leadToViewing: numbe
 
 const TEAM_TARGET_RESPONSE = 2.0 // hours
 
+type SortKey = 'wins' | 'response' | 'revenue' | 'leads'
+type RiskFilter = 'All' | 'duplicate' | 'wrong_number' | 'critical'
+
+function parseRevenue(rev: string): number {
+  // e.g. 'AED 11.2M' → 11200000
+  const num = parseFloat(rev.replace('AED ', '').replace('M', ''))
+  return num * 1_000_000
+}
+
 export default function SalesPerformancePage() {
   const agents  = crmAgentRoster
   const leads   = crmLeads
   const actLog  = crmActivityLog
   const fuQueue = crmFollowUpQueue
+
+  const [sortKey, setSortKey] = useState<SortKey>('wins')
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>('All')
 
   // Live computed stats
   const totalLeads    = leads.length
@@ -34,11 +49,47 @@ export default function SalesPerformancePage() {
   const agentIds = agents.map((a) => a.id)
   const avgResponse = agentIds.reduce((s, id) => s + (AGENT_METRICS[id]?.avgResponseH ?? 0), 0) / agentIds.length
 
-  // Sort agents: best performers first (by recentWins desc, then overdueFollowUps asc)
-  const ranked = [...agents].sort((a, b) => {
-    if (b.recentWins !== a.recentWins) return b.recentWins - a.recentWins
-    return a.overdueFollowUps - b.overdueFollowUps
-  })
+  // Sorted agents
+  const sortedAgents = useMemo(() => {
+    return [...agents].sort((a, b) => {
+      switch (sortKey) {
+        case 'wins':
+          return b.recentWins - a.recentWins
+        case 'response':
+          return (AGENT_METRICS[a.id]?.avgResponseH ?? 99) - (AGENT_METRICS[b.id]?.avgResponseH ?? 99)
+        case 'revenue':
+          return parseRevenue(AGENT_METRICS[b.id]?.revMTD ?? 'AED 0M') - parseRevenue(AGENT_METRICS[a.id]?.revMTD ?? 'AED 0M')
+        case 'leads':
+          return b.totalLeads - a.totalLeads
+        default:
+          return 0
+      }
+    })
+  }, [agents, sortKey])
+
+  // Risk-filtered leads
+  const riskLeadsList = useMemo(() => {
+    const base = leads.filter((l) => l.duplicateRisk || l.wrongNumberRisk || l.urgency === 'critical')
+    if (riskFilter === 'All') return base
+    if (riskFilter === 'duplicate')    return base.filter((l) => l.duplicateRisk === true)
+    if (riskFilter === 'wrong_number') return base.filter((l) => l.wrongNumberRisk === true)
+    if (riskFilter === 'critical')     return base.filter((l) => l.urgency === 'critical')
+    return base
+  }, [leads, riskFilter])
+
+  const sortPills: { key: SortKey; label: string }[] = [
+    { key: 'wins',     label: 'Wins' },
+    { key: 'response', label: 'Response time' },
+    { key: 'revenue',  label: 'Revenue' },
+    { key: 'leads',    label: 'Leads' },
+  ]
+
+  const riskPills: { key: RiskFilter; label: string }[] = [
+    { key: 'All',          label: 'All' },
+    { key: 'duplicate',    label: 'Duplicate risk' },
+    { key: 'wrong_number', label: 'Wrong number' },
+    { key: 'critical',     label: 'Critical' },
+  ]
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -85,6 +136,25 @@ export default function SalesPerformancePage() {
       <section className="mt-12">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Agent ranking</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Performance by advisor</h2>
+
+        {/* Sort controls */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-white/35 mr-1">Sort by:</span>
+          {sortPills.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setSortKey(key)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                sortKey === key
+                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0A0D10]">
           <table className="w-full text-[13px]">
             <thead>
@@ -98,7 +168,7 @@ export default function SalesPerformancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05]">
-              {ranked.map((agent, i) => {
+              {sortedAgents.map((agent, i) => {
                 const m = AGENT_METRICS[agent.id]
                 const responseOk = m ? m.avgResponseH <= TEAM_TARGET_RESPONSE : true
                 return (
@@ -145,8 +215,28 @@ export default function SalesPerformancePage() {
       <section className="mt-14">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Risk signals</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Leads needing attention</h2>
+
+        {/* Risk filter pills */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {riskPills.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setRiskFilter(key)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                riskFilter === key
+                  ? key === 'All'
+                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    : 'border-red-400/35 bg-red-400/10 text-red-300'
+                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-5 space-y-2">
-          {leads.filter((l) => l.duplicateRisk || l.wrongNumberRisk || l.urgency === 'critical').map((lead) => (
+          {riskLeadsList.map((lead) => (
             <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-white/[0.06] bg-[#0A0D10] px-5 py-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -167,7 +257,7 @@ export default function SalesPerformancePage() {
               </Link>
             </div>
           ))}
-          {leads.filter((l) => l.duplicateRisk || l.wrongNumberRisk || l.urgency === 'critical').length === 0 && (
+          {riskLeadsList.length === 0 && (
             <div className="flex items-center gap-2 rounded-[16px] border border-emerald-400/15 bg-emerald-400/[0.03] px-5 py-4 text-[13px] text-emerald-300">
               <CheckCircle2 className="h-4 w-4" /> No risk flags active.
             </div>

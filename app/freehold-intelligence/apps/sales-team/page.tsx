@@ -1,3 +1,6 @@
+'use client'
+
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, AlertTriangle, ArrowUpRight, Trophy } from 'lucide-react'
 import {
@@ -16,16 +19,61 @@ const STATUS_CONFIG = {
 
 const PRIORITY_STATUS = { overloaded: 0, at_capacity: 1, available: 2 }
 
+type StatusFilter = 'All' | 'available' | 'at_capacity' | 'overloaded'
+type SortKey = 'status' | 'hot' | 'overdue' | 'wins'
+
 export default function SalesTeamPage() {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+  const [sortKey, setSortKey] = useState<SortKey>('status')
+
   const overloaded  = crmAgentRoster.filter((a) => a.status === 'overloaded')
   const available   = crmAgentRoster.filter((a) => a.status === 'available')
   const totalHot    = crmAgentRoster.reduce((s, a) => s + a.hotLeads, 0)
   const totalOverdue = crmAgentRoster.reduce((s, a) => s + a.overdueFollowUps, 0)
   const unassigned  = crmInboxLeads.filter((l) => l.status === 'unassigned')
 
-  const sorted = [...crmAgentRoster].sort(
-    (a, b) => PRIORITY_STATUS[a.status] - PRIORITY_STATUS[b.status],
-  )
+  const filteredAgents = useMemo(() => {
+    let items = [...crmAgentRoster]
+    if (statusFilter !== 'All') items = items.filter((a) => a.status === statusFilter)
+    items.sort((a, b) => {
+      if (sortKey === 'status') return PRIORITY_STATUS[a.status] - PRIORITY_STATUS[b.status]
+      if (sortKey === 'hot') return b.hotLeads - a.hotLeads
+      if (sortKey === 'overdue') return b.overdueFollowUps - a.overdueFollowUps
+      if (sortKey === 'wins') return b.recentWins - a.recentWins
+      return 0
+    })
+    return items
+  }, [statusFilter, sortKey])
+
+  const statusPills: { value: StatusFilter; label: string }[] = [
+    { value: 'All',         label: 'All'         },
+    { value: 'available',   label: 'Available'   },
+    { value: 'at_capacity', label: 'At capacity' },
+    { value: 'overloaded',  label: 'Overloaded'  },
+  ]
+
+  const sortPills: { value: SortKey; label: string }[] = [
+    { value: 'status',  label: 'Status'    },
+    { value: 'hot',     label: 'Hot leads' },
+    { value: 'overdue', label: 'Overdue'   },
+    { value: 'wins',    label: 'Wins'      },
+  ]
+
+  function statusPillClass(value: StatusFilter) {
+    if (value !== statusFilter) {
+      return 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+    }
+    if (value === 'overloaded')  return 'border-red-400/35 bg-red-400/10 text-red-300'
+    if (value === 'at_capacity') return 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+    if (value === 'available')   return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+    return 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+  }
+
+  function sortPillClass(value: SortKey) {
+    return value === sortKey
+      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+      : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-32 pt-10 sm:px-6 sm:pt-14">
@@ -80,101 +128,148 @@ export default function SalesTeamPage() {
 
       {/* Agent roster */}
       <section className="mt-10">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">Roster</div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/40">
+            Roster
+            {statusFilter !== 'All' && (
+              <span className="ml-2 normal-case tracking-normal text-white/25">
+                {filteredAgents.length} of {crmAgentRoster.length} agents
+              </span>
+            )}
+          </div>
+
+          {/* Filter + sort pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {statusPills.map((pill) => (
+              <button
+                key={pill.value}
+                onClick={() => setStatusFilter(pill.value)}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${statusPillClass(pill.value)}`}
+              >
+                {pill.label}
+              </button>
+            ))}
+
+            <span className="text-white/20 select-none">|</span>
+
+            {sortPills.map((pill) => (
+              <button
+                key={pill.value}
+                onClick={() => setSortKey(pill.value)}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${sortPillClass(pill.value)}`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-4 space-y-3">
-          {sorted.map((agent) => {
-            const st         = STATUS_CONFIG[agent.status]
-            const agentLeads = crmLeads.filter((l) => l.assignedAgent === agent.name)
-            const hotLeads   = agentLeads.filter((l) => l.urgency === 'critical' || l.urgency === 'high')
-            const overdue    = crmFollowUpQueue.filter(
-              (f) => f.assignedAgent === agent.name && f.overdueHours > 0,
-            )
+          {filteredAgents.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.06] bg-[#0A0D10] py-14 text-center">
+              <p className="text-[13px] text-white/35">No agents match this filter</p>
+              <button
+                onClick={() => setStatusFilter('All')}
+                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-[11px] font-medium text-white/40 transition hover:text-white/65"
+              >
+                Clear
+              </button>
+            </div>
+          ) : (
+            filteredAgents.map((agent) => {
+              const st         = STATUS_CONFIG[agent.status]
+              const agentLeads = crmLeads.filter((l) => l.assignedAgent === agent.name)
+              const hotLeads   = agentLeads.filter((l) => l.urgency === 'critical' || l.urgency === 'high')
+              const overdue    = crmFollowUpQueue.filter(
+                (f) => f.assignedAgent === agent.name && f.overdueHours > 0,
+              )
 
-            return (
-              <div key={agent.id} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
+              return (
+                <div key={agent.id} className="rounded-[22px] border border-white/[0.06] bg-[#0A0D10] p-6">
 
-                {/* Top row */}
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[15px] font-semibold text-white/70">
-                      {agent.initials}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[16px] font-semibold text-white">{agent.name}</span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.badge} ${st.text}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                          {st.label}
-                        </span>
+                  {/* Top row */}
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[15px] font-semibold text-white/70">
+                        {agent.initials}
                       </div>
-                      <div className="mt-0.5 text-[12px] text-white/40">{agent.role}</div>
-                      <div className="mt-0.5 text-[11px] text-white/25">{agent.specialty}</div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[16px] font-semibold text-white">{agent.name}</span>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.badge} ${st.text}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
+                            {st.label}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 text-[12px] text-white/40">{agent.role}</div>
+                        <div className="mt-0.5 text-[11px] text-white/25">{agent.specialty}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-5 text-center">
+                      {[
+                        { label: 'Leads',   value: agent.totalLeads,      color: 'text-white'       },
+                        { label: 'Hot',     value: agent.hotLeads,         color: agent.hotLeads > 0 ? 'text-red-400' : 'text-white' },
+                        { label: 'Overdue', value: agent.overdueFollowUps, color: agent.overdueFollowUps > 0 ? 'text-[#D4AF37]' : 'text-white' },
+                        { label: 'Wins',    value: agent.recentWins,       color: 'text-emerald-300' },
+                      ].map((m) => (
+                        <div key={m.label}>
+                          <div className={`text-[20px] font-semibold ${m.color}`}>{m.value}</div>
+                          <div className="text-[9px] text-white/30">{m.label}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="flex gap-5 text-center">
-                    {[
-                      { label: 'Leads',   value: agent.totalLeads,      color: 'text-white'       },
-                      { label: 'Hot',     value: agent.hotLeads,         color: agent.hotLeads > 0 ? 'text-red-400' : 'text-white' },
-                      { label: 'Overdue', value: agent.overdueFollowUps, color: agent.overdueFollowUps > 0 ? 'text-[#D4AF37]' : 'text-white' },
-                      { label: 'Wins',    value: agent.recentWins,       color: 'text-emerald-300' },
-                    ].map((m) => (
-                      <div key={m.label}>
-                        <div className={`text-[20px] font-semibold ${m.color}`}>{m.value}</div>
-                        <div className="text-[9px] text-white/30">{m.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Utilization */}
-                <div className="mt-5">
-                  <div className="mb-1.5 flex items-center justify-between text-[11px]">
-                    <span className="text-white/35">Utilization</span>
-                    <span className={
-                      agent.utilization >= 85 ? 'text-red-300'
-                      : agent.utilization >= 70 ? 'text-[#D4AF37]'
-                      : 'text-emerald-300'
-                    }>
-                      {agent.utilization}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-                    <div
-                      className={`h-full rounded-full ${
-                        agent.utilization >= 85 ? 'bg-red-400'
-                        : agent.utilization >= 70 ? 'bg-[#D4AF37]'
-                        : 'bg-emerald-400'
-                      }`}
-                      style={{ width: `${agent.utilization}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Hot lead chips */}
-                {hotLeads.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {hotLeads.map((l) => (
-                      <Link
-                        key={l.id}
-                        href={`/freehold-intelligence/crm/leads/${l.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[11px] text-white/60 transition hover:border-[#D4AF37]/25 hover:text-white"
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-[#D4AF37]'}`} />
-                        {l.name.split(' ')[0]}
-                        <span className="text-white/30">· {l.intentScore}</span>
-                      </Link>
-                    ))}
-                    {overdue.length > 0 && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[11px] text-[#F8E7AE]">
-                        {overdue.length} overdue follow-up{overdue.length !== 1 ? 's' : ''}
+                  {/* Utilization */}
+                  <div className="mt-5">
+                    <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                      <span className="text-white/35">Utilization</span>
+                      <span className={
+                        agent.utilization >= 85 ? 'text-red-300'
+                        : agent.utilization >= 70 ? 'text-[#D4AF37]'
+                        : 'text-emerald-300'
+                      }>
+                        {agent.utilization}%
                       </span>
-                    )}
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className={`h-full rounded-full ${
+                          agent.utilization >= 85 ? 'bg-red-400'
+                          : agent.utilization >= 70 ? 'bg-[#D4AF37]'
+                          : 'bg-emerald-400'
+                        }`}
+                        style={{ width: `${agent.utilization}%` }}
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
-            )
-          })}
+
+                  {/* Hot lead chips */}
+                  {hotLeads.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {hotLeads.map((l) => (
+                        <Link
+                          key={l.id}
+                          href={`/freehold-intelligence/crm/leads/${l.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[11px] text-white/60 transition hover:border-[#D4AF37]/25 hover:text-white"
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-[#D4AF37]'}`} />
+                          {l.name.split(' ')[0]}
+                          <span className="text-white/30">· {l.intentScore}</span>
+                        </Link>
+                      ))}
+                      {overdue.length > 0 && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[11px] text-[#F8E7AE]">
+                          {overdue.length} overdue follow-up{overdue.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </section>
 
