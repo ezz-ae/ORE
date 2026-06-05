@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Radio } from 'lucide-react'
+import { ArrowUpRight, Radio, TrendingDown, TrendingUp } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 
 // 4-week CPL trend: Meta vs Google
 const CPL_TREND = [
@@ -210,56 +211,67 @@ export default function AdsLivePage() {
         <div className="overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
           <div className="divide-y divide-white/[0.04]">
             {campaigns.map((c) => {
-              const isMeta = c.platform === 'meta'
-              const platformColor = isMeta ? '#1877F2' : '#4285F4'
-              const platformLabel = isMeta ? 'Meta' : 'Google'
+              const isMeta   = c.platform === 'meta'
+              const platClr  = isMeta ? '#1877F2' : '#4285F4'
+              const platLbl  = isMeta ? 'Meta' : 'Google'
+              const avg      = financeSummary.avgCpl30d
+              const below    = c.cpl < avg
+              const listing  = c.projectId ? leadMachineListings.find((l) => l.projectId === c.projectId) : null
+              const CplIcon  = below ? TrendingDown : TrendingUp
               return (
-                <div
+                <Link
                   key={c.name}
-                  className="flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4"
+                  href="/freehold-intelligence/lead-machine/campaigns/attribution"
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4 transition hover:bg-white/[0.025]"
                 >
-                  {/* Live indicator */}
+                  {/* Live / paused indicator */}
                   <span className="relative flex h-1.5 w-1.5 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-50" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+                    {c.status === 'Running' && (
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-50" />
+                    )}
+                    <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${c.status === 'Running' ? 'bg-[#D4AF37]' : 'bg-white/25'}`} />
                   </span>
 
-                  {/* Name */}
+                  {/* Name + property */}
                   <div className="min-w-0 flex-1">
-                    <span className="truncate text-[13px] font-semibold text-white/90">{c.name}</span>
+                    <div className="truncate text-[13px] font-semibold text-white/90 group-hover:text-white transition-colors">{c.name}</div>
+                    {listing && (
+                      <div className="mt-0.5 text-[12px] text-white/30">{listing.area} · {listing.developer}</div>
+                    )}
                   </div>
 
                   {/* Platform badge */}
                   <span
                     className="shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-semibold"
-                    style={{
-                      backgroundColor: `${platformColor}18`,
-                      color: platformColor,
-                      border: `1px solid ${platformColor}30`,
-                    }}
+                    style={{ backgroundColor: `${platClr}18`, color: platClr, border: `1px solid ${platClr}30` }}
                   >
-                    {platformLabel}
+                    {platLbl}
                   </span>
 
                   {/* Stats */}
                   <div className="flex gap-5 text-[12px] text-white/50">
-                    <span>
-                      Spend{' '}
-                      <span className="text-white/80">
-                        AED {c.spendAED.toLocaleString()}
-                      </span>
-                    </span>
-                    <span>
-                      Leads <span className="font-semibold text-[#D4AF37]">{c.leads}</span>
-                    </span>
-                    <span>
-                      CPL <span className="text-white/80">AED {c.cpl}</span>
+                    <span>AED {c.spendAED.toLocaleString()}</span>
+                    <span className="font-semibold text-[#D4AF37]">{c.leads} leads</span>
+                    <span className={`flex items-center gap-0.5 font-medium ${below ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <CplIcon className="h-3 w-3" />
+                      AED {c.cpl}
                     </span>
                   </div>
-                </div>
+
+                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-white/20 opacity-0 group-hover:opacity-100 transition" />
+                </Link>
               )
             })}
           </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-end">
+          <Link
+            href="/freehold-intelligence/lead-machine/campaigns/attribution"
+            className="flex items-center gap-1 text-[12px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+          >
+            Full attribution report <ArrowUpRight className="h-3 w-3" />
+          </Link>
         </div>
       </section>
 
