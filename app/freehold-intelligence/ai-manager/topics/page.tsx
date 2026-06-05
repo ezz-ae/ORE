@@ -105,7 +105,7 @@ const topics: TopicRow[] = [
   },
 ]
 
-const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Scheduled', 'Ideas']
+const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Scheduled', 'Idea']
 
 function categoryBadge(cat: TopicCategory) {
   if (cat === 'Market News') return 'text-sky-400 bg-sky-500/10 border-sky-500/20'
