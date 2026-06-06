@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
-  LogOut, Shield, ChevronRight, Menu, X,
+  LogOut, Shield, ChevronRight, Menu, X, Coins,
 } from 'lucide-react'
 
 const SESSION_KEY = 'fh_mgmt_auth'
@@ -17,6 +17,7 @@ const NAV = [
   { href: '/management/team',       label: 'Team',        icon: Users },
   { href: '/management/marketing',  label: 'Marketing',   icon: Megaphone },
   { href: '/management/finance',    label: 'Finance',     icon: DollarSign },
+  { href: '/management/credits',    label: 'Credits',     icon: Coins },
   { href: '/management/deals',      label: 'Deals',       icon: Briefcase },
   { href: '/management/inventory',  label: 'Inventory',   icon: Building2 },
   { href: '/management/roi',        label: 'ROI',         icon: TrendingUp },
