@@ -1,6 +1,7 @@
 'use client'
 
 import { SpacesNav } from '@/components/freehold/spaces-nav'
+import { ExpertChat } from '@/components/freehold/expert-chat'
 
 export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
       <main className="fi-content flex-1 overflow-y-auto">
         {children}
       </main>
+      <ExpertChat />
     </div>
   )
 }
