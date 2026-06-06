@@ -62,6 +62,7 @@ const QUICK_NAV = [
 export default function ManagementDashboard() {
   const [tasks, setTasks]   = useState(TASKS)
   const [aiInput, setAiInput] = useState('')
+  const [aiPending, setAiPending] = useState(false)
   const [aiMessages, setAiMessages] = useState([
     { role: 'assistant', text: `Good morning. Here is your briefing:\n\n**3 urgent deals** need attention before end of day. Your best agent Sara closed a villa in Dubai Hills — congratulations to her. Meta ad spend is performing well today with CPL at AED 38. Google Ads CTR dropped 15% — worth reviewing.\n\nWhat would you like to focus on first?` },
   ])
@@ -70,16 +71,28 @@ export default function ManagementDashboard() {
     setTasks(t => t.map(task => task.id === id ? { ...task, done: !task.done } : task))
   }
 
-  function sendAi(e: React.FormEvent) {
+  async function sendAi(e: React.FormEvent) {
     e.preventDefault()
-    if (!aiInput.trim()) return
-    const msg = aiInput.trim()
+    const message = aiInput.trim()
+    if (!message || aiPending) return
     setAiInput('')
-    setAiMessages(m => [
-      ...m,
-      { role: 'user', text: msg },
-      { role: 'assistant', text: `Analyzing your query about "${msg}"…\n\nBased on current data: your pipeline shows AED 8.4M in active deals with 3 closing this week. Marketing performance is strong with Meta CPL at AED 38. I recommend prioritizing the Palm Jumeirah counter-proposal from Ahmed Hassan today.` },
-    ])
+    setAiMessages(m => [...m, { role: 'user', text: message }])
+    setAiPending(true)
+    try {
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, role: 'owner' }),
+      })
+      const data = await res.json()
+      const answer = data?.data?.answer || data?.answer || data?.message || data?.reply ||
+        'I reviewed the current data. Try one of the suggested prompts.'
+      setAiMessages(m => [...m, { role: 'assistant', text: answer }])
+    } catch {
+      setAiMessages(m => [...m, { role: 'assistant', text: 'I could not reach the server right now. Try again in a moment.' }])
+    } finally {
+      setAiPending(false)
+    }
   }
 
   return (
@@ -162,6 +175,16 @@ export default function ManagementDashboard() {
                     </div>
                   </div>
                 ))}
+                {aiPending && (
+                  <div className="flex gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="max-w-[85%] rounded-xl bg-slate-800/60 px-4 py-2.5 text-sm leading-relaxed text-slate-400">
+                      Thinking…
+                    </div>
+                  </div>
+                )}
               </div>
 
               <form onSubmit={sendAi} className="flex gap-2 border-t border-[#D4AF37]/15 px-4 py-3">
@@ -173,7 +196,7 @@ export default function ManagementDashboard() {
                 />
                 <button
                   type="submit"
-                  disabled={!aiInput.trim()}
+                  disabled={!aiInput.trim() || aiPending}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37] text-[#0D1117] transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   <Send className="h-4 w-4" />

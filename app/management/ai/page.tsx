@@ -108,18 +108,28 @@ export default function AIChatPage() {
     setToggles(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  function sendMessage(text?: string) {
-    const msg = (text ?? input).trim()
-    if (!msg) return
+  async function sendMessage(text?: string) {
+    const message = (text ?? input).trim()
+    if (!message || isTyping) return
     setInput('')
-    const userMsg: Message = { role: 'user', text: msg, timestamp: formatTime() }
+    const userMsg: Message = { role: 'user', text: message, timestamp: formatTime() }
     setMessages(prev => [...prev, userMsg])
     setIsTyping(true)
-    setTimeout(() => {
-      const response = getMockResponse(msg)
-      setMessages(prev => [...prev, { role: 'assistant', text: response, timestamp: formatTime() }])
+    try {
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, role: 'owner' }),
+      })
+      const data = await res.json()
+      const answer = data?.data?.answer || data?.answer || data?.message || data?.reply ||
+        'I reviewed the current data. Try one of the suggested prompts.'
+      setMessages(prev => [...prev, { role: 'assistant', text: answer, timestamp: formatTime() }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'I could not reach the server right now. Try again in a moment.', timestamp: formatTime() }])
+    } finally {
       setIsTyping(false)
-    }, 1200)
+    }
   }
 
   function newConversation() {

@@ -122,16 +122,27 @@ export default function InventoryIntelligencePage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
-  function sendMessage(text?: string) {
-    const msg = (text ?? chatInput).trim()
-    if (!msg) return
+  async function sendMessage(text?: string) {
+    const message = (text ?? chatInput).trim()
+    if (!message || isTyping) return
     setChatInput('')
-    setMessages(prev => [...prev, { role: 'user', text: msg, timestamp: formatTime() }])
+    setMessages(prev => [...prev, { role: 'user', text: message, timestamp: formatTime() }])
     setIsTyping(true)
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'assistant', text: getMockResponse(msg), timestamp: formatTime() }])
+    try {
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, role: 'owner' }),
+      })
+      const data = await res.json()
+      const answer = data?.data?.answer || data?.answer || data?.message || data?.reply ||
+        'I reviewed the current data. Try one of the suggested prompts.'
+      setMessages(prev => [...prev, { role: 'assistant', text: answer, timestamp: formatTime() }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', text: 'I could not reach the server right now. Try again in a moment.', timestamp: formatTime() }])
+    } finally {
       setIsTyping(false)
-    }, 1400)
+    }
   }
 
   function toggleFile(id: number) {
