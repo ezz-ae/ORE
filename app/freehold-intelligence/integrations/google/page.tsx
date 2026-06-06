@@ -128,11 +128,11 @@ export default function GoogleAdsPage() {
             </div>
             <h1 className="text-[20px] font-semibold text-white">Google Ads</h1>
           </div>
-          <p className="mt-1 text-[12px] text-white/30">Store your credentials — syncs via the Freehold backend</p>
+          <p className="mt-1 text-xs text-slate-500">Store your credentials — syncs via the Freehold backend</p>
         </div>
         {phase === 'saved' && (
           <button onClick={clear}
-            className="shrink-0 flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-[12px] text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
+            className="shrink-0 flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-xs text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
             <XCircle className="h-3 w-3" /> Clear credentials
           </button>
         )}
@@ -141,8 +141,8 @@ export default function GoogleAdsPage() {
       {/* Info banner — explain why credentials are stored not used live */}
       <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-blue-400/15 bg-blue-400/[0.04] px-4 py-3">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-400/70" />
-        <p className="text-[12px] text-white/40 leading-relaxed">
-          Google Ads API requires a <strong className="text-white/60">Developer Token</strong> and server-side OAuth — browser calls are blocked.
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Google Ads API requires a <strong className="text-slate-200">Developer Token</strong> and server-side OAuth — browser calls are blocked.
           Your credentials are saved here and used by the Freehold backend to pull live campaign data.
           Nothing is sent to any third party.
         </p>
@@ -151,12 +151,12 @@ export default function GoogleAdsPage() {
       {/* Credentials form */}
       <div className="mb-6 space-y-3">
         {FIELDS.map(({ key, label, placeholder, mono, secret, hint }) => (
-          <div key={key} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+          <div key={key} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="text-[12px] font-medium text-white/60">{label}</span>
+              <span className="text-xs font-medium text-slate-300">{label}</span>
               {creds[key] && (
                 <button onClick={() => copy(creds[key], key)}
-                  className="flex items-center gap-1 text-[11px] text-white/20 hover:text-white/50 transition">
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition">
                   {copied === key ? <CheckCircle2 className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                   {copied === key ? 'Copied' : 'Copy'}
                 </button>
@@ -168,22 +168,22 @@ export default function GoogleAdsPage() {
                 placeholder={placeholder}
                 value={creds[key]}
                 onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
-                className={`w-full rounded-[9px] border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 text-[13px] text-white placeholder-white/15 outline-none focus:border-blue-400/30 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
+                className={`w-full rounded-[9px] border border-slate-800 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-blue-400/50 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
               />
               {secret && (
                 <button onClick={() => toggleShow(key)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50">
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                   {shows[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               )}
             </div>
-            <p className="mt-1.5 text-[11px] text-white/25 leading-relaxed">{hint}</p>
+            <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">{hint}</p>
           </div>
         ))}
       </div>
 
       {phase === 'error' && (
-        <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-[12px] text-red-400/90">
+        <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-xs text-red-400/90">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           All five credentials are required.
         </div>
@@ -201,16 +201,16 @@ export default function GoogleAdsPage() {
           {/* Saved banner */}
           <div className="mb-6 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-[13px] text-emerald-400/90">Credentials saved — backend will sync on next run</span>
+            <span className="text-sm text-emerald-400/90">Credentials saved — backend will sync on next run</span>
             <button onClick={() => setPhase('idle')}
-              className="ml-auto text-[11px] text-white/25 underline underline-offset-2 hover:text-white/50">
+              className="ml-auto text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300">
               Edit
             </button>
           </div>
 
           {/* Preview dashboard */}
           <div className="mb-3 flex items-center gap-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/25">Campaign preview</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Campaign preview</div>
             <span className="rounded-full border border-amber-400/25 px-2 py-0.5 text-[10px] text-amber-400/70">Sample data</span>
           </div>
 
@@ -222,16 +222,16 @@ export default function GoogleAdsPage() {
               { label: 'Impressions',   value: `${(totalImpressions / 1000).toFixed(1)}K`, Icon: BarChart2,         color: 'text-violet-400'  },
               { label: 'Conversions',   value: totalConversions.toString(),                 Icon: TrendingUp,        color: 'text-emerald-400' },
             ].map(({ label, value, Icon, color }) => (
-              <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+              <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
                 <div className="mt-2 text-[18px] font-semibold text-white">{value}</div>
-                <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
+                <div className="mt-0.5 text-xs text-slate-500">{label}</div>
               </div>
             ))}
           </div>
 
           {/* Campaigns table */}
-          <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+          <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
             {MOCK_CAMPAIGNS.map((c) => {
               const budgetPct = pct(c.spend, c.budget)
               const ctr       = c.impressions > 0 ? ((c.clicks / c.impressions) * 100).toFixed(2) : '0.00'
@@ -241,22 +241,22 @@ export default function GoogleAdsPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
-                        <span className="text-[13px] font-medium text-white/80 truncate">{c.name}</span>
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                        <span className="text-sm font-medium text-slate-100 truncate">{c.name}</span>
                       </div>
-                      <div className="mt-0.5 flex items-center gap-3 text-[11px] text-white/25">
+                      <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
                         <span>CTR {ctr}%</span>
                         <span>CPC AED {c.clicks > 0 ? (c.spend / c.clicks).toFixed(2) : '—'}</span>
                         {c.conversions > 0 && <span>CPL AED {cpl}</span>}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[13px] font-medium text-white/70">AED {c.spend.toLocaleString()}</div>
-                      <div className="text-[11px] text-white/25">of AED {c.budget.toLocaleString()}</div>
+                      <div className="text-sm font-medium text-slate-300">AED {c.spend.toLocaleString()}</div>
+                      <div className="text-xs text-slate-500">of AED {c.budget.toLocaleString()}</div>
                     </div>
                   </div>
                   {c.status === 'ENABLED' && (
-                    <div className="mt-2.5 h-1 w-full rounded-full bg-white/[0.06]">
+                    <div className="mt-2.5 h-1 w-full rounded-full bg-slate-700">
                       <div
                         className={`h-1 rounded-full transition-all ${budgetPct >= 90 ? 'bg-red-400' : budgetPct >= 75 ? 'bg-amber-400' : 'bg-blue-400'}`}
                         style={{ width: `${budgetPct}%` }}
@@ -268,7 +268,7 @@ export default function GoogleAdsPage() {
             })}
           </div>
 
-          <p className="mt-3 text-center text-[11px] text-white/20">
+          <p className="mt-3 text-center text-xs text-slate-500">
             Sample data shown. Live data syncs once the backend connects with your credentials.
           </p>
         </>
