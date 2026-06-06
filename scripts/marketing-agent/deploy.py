@@ -18,8 +18,13 @@ from vertexai.preview.reasoning_engines import AdkApp
 
 from agent import marketing_agent
 
-PROJECT_ID = "gen-lang-client-0814069297"
-LOCATION   = "us-central1"
+PROJECT_ID      = "gen-lang-client-0814069297"
+LOCATION        = "us-central1"
+# Create this bucket first if it doesn't exist:
+#   gsutil mb -l us-central1 gs://gen-lang-client-0814069297-adk-staging
+# Or set the env var to an existing bucket:
+#   export GCS_STAGING_BUCKET=gs://your-existing-bucket
+STAGING_BUCKET  = os.environ.get("GCS_STAGING_BUCKET", f"gs://{PROJECT_ID}-adk-staging")
 
 # ── Auth: use the service account JSON if available ───────────────────────────
 cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
@@ -36,7 +41,8 @@ if sa_json and not cred_path:
 
 # ── Deploy ─────────────────────────────────────────────────────────────────────
 
-vertexai.init(project=PROJECT_ID, location=LOCATION)
+print(f"Using staging bucket: {STAGING_BUCKET}")
+vertexai.init(project=PROJECT_ID, location=LOCATION, staging_bucket=STAGING_BUCKET)
 
 app = AdkApp(
     agent=marketing_agent,
