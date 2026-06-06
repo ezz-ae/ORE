@@ -237,13 +237,16 @@ export default function TeamPage() {
                       </button>
                       {openMenu === member.id && (
                         <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-white/[0.10] bg-[#1A2338] py-1 shadow-xl">
-                          {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => (
-                            <button key={r} onClick={() => changeRole(member.id, r)}
-                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-white/60 transition hover:bg-white/[0.05] hover:text-white">
-                              <ROLE_META[r].Icon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
-                              Set as {r}
-                            </button>
-                          ))}
+                          {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
+                            const RoleIcon = ROLE_META[r].Icon
+                            return (
+                              <button key={r} onClick={() => changeRole(member.id, r)}
+                                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-white/60 transition hover:bg-white/[0.05] hover:text-white">
+                                <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
+                                Set as {r}
+                              </button>
+                            )
+                          })}
                           <div className="my-1 border-t border-white/[0.07]" />
                           <button onClick={() => toggleSuspend(member.id)}
                             className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-amber-400/80 transition hover:bg-white/[0.05] hover:text-amber-400">

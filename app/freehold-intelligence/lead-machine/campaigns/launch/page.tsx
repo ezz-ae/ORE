@@ -1430,7 +1430,7 @@ export default function CampaignLaunchPage() {
                 ? { label: 'Keywords',   value: state.googleKeywords.slice(0, 3).join(', ') + (state.googleKeywords.length > 3 ? '…' : '') }
                 : null,
               { label: 'CTA',       value: state.cta },
-              { label: 'Landing',   value: selectedLanding?.landingUrl ?? state.landingUrl || 'Not set' },
+              { label: 'Landing',   value: (selectedLanding?.landingUrl ?? state.landingUrl) || 'Not set' },
             ].filter(Boolean) as { label: string; value: string }[]).map(({ label, value }) => (
               <div key={label} className="flex items-baseline justify-between gap-4 px-4 py-3">
                 <span className="w-24 shrink-0 text-[12px] text-white/30">{label}</span>
