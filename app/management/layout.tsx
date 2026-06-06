@@ -32,7 +32,9 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (!sessionStorage.getItem(SESSION_KEY)) {
+      // session-only OR "remember me" (localStorage) both grant access
+      const authed = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY)
+      if (!authed) {
         router.replace('/server')
       } else {
         setReady(true)
@@ -46,6 +48,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
 
   function handleLogout() {
     sessionStorage.removeItem(SESSION_KEY)
+    localStorage.removeItem(SESSION_KEY)
     router.replace('/server')
   }
 

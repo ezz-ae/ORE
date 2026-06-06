@@ -2,24 +2,31 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Shield, Lock } from 'lucide-react'
+import { Eye, EyeOff, Shield, Lock, Mail, Check } from 'lucide-react'
 
-const PASSCODE = 'FreeHold_in26'
+// NOTE: temporary client-side credentials — replace with real server auth later.
+const USERNAME = 'admin@freehold.ae'
+const PASSWORD = 'FreeHold_in26'
 const SESSION_KEY = 'fh_mgmt_auth'
 
 export default function ServerAuth() {
   const router = useRouter()
-  const [code, setCode]       = useState('')
-  const [show, setShow]       = useState(false)
-  const [error, setError]     = useState(false)
-  const [loading, setLoading] = useState(false)
+  // pre-filled so the owner finds the credentials already there
+  const [email, setEmail]       = useState(USERNAME)
+  const [password, setPassword] = useState(PASSWORD)
+  const [remember, setRemember] = useState(true)
+  const [show, setShow]         = useState(false)
+  const [error, setError]       = useState(false)
+  const [loading, setLoading]   = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!code || loading) return
+    if (!email || !password || loading) return
     setLoading(true)
     setTimeout(() => {
-      if (code === PASSCODE) {
+      if (email.trim().toLowerCase() === USERNAME && password === PASSWORD) {
+        // remember me → persist across browser restarts; else session-only
+        if (remember) localStorage.setItem(SESSION_KEY, '1')
         sessionStorage.setItem(SESSION_KEY, '1')
         router.replace('/management')
       } else {
@@ -33,7 +40,7 @@ export default function ServerAuth() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D1117] px-6">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:48px_48px]" />
 
-      <div className="relative w-full max-w-[360px]">
+      <div className="relative w-full max-w-[380px]">
         <div className="mb-10 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/10">
             <Shield className="h-8 w-8 text-[#D4AF37]" />
@@ -48,21 +55,38 @@ export default function ServerAuth() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email / username */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">Access Code</label>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(false) }}
+                  placeholder="you@freehold.ae"
+                  autoComplete="username"
+                  className={[
+                    'w-full rounded-xl border bg-slate-800/60 py-3 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
+                    error ? 'border-red-500/60 focus:border-red-500/80' : 'border-slate-700 focus:border-[#D4AF37]/50',
+                  ].join(' ')}
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Password</label>
               <div className="relative">
                 <input
                   type={show ? 'text' : 'password'}
-                  value={code}
-                  onChange={e => { setCode(e.target.value); setError(false) }}
-                  placeholder="Enter your access code"
-                  autoFocus
-                  autoComplete="off"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(false) }}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
                   className={[
-                    'w-full rounded-xl border bg-slate-800/60 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-700 pr-11',
-                    error
-                      ? 'border-red-500/60 focus:border-red-500/80'
-                      : 'border-slate-700 focus:border-[#D4AF37]/50',
+                    'w-full rounded-xl border bg-slate-800/60 px-4 py-3 pr-11 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
+                    error ? 'border-red-500/60 focus:border-red-500/80' : 'border-slate-700 focus:border-[#D4AF37]/50',
                   ].join(' ')}
                 />
                 <button
@@ -74,15 +98,30 @@ export default function ServerAuth() {
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {error && <p className="mt-2 text-xs text-red-400">Incorrect access code. Please try again.</p>}
+              {error && <p className="mt-2 text-xs text-red-400">Incorrect email or password. Please try again.</p>}
             </div>
+
+            {/* Remember me */}
+            <label className="flex cursor-pointer items-center gap-2.5 select-none">
+              <button
+                type="button"
+                onClick={() => setRemember(r => !r)}
+                className={[
+                  'flex h-4.5 w-4.5 items-center justify-center rounded border transition-colors',
+                  remember ? 'border-[#D4AF37]/60 bg-[#D4AF37] text-[#0D1117]' : 'border-slate-700 bg-slate-800/60',
+                ].join(' ')}
+              >
+                {remember && <Check className="h-3 w-3" strokeWidth={3} />}
+              </button>
+              <span className="text-sm text-slate-400" onClick={() => setRemember(r => !r)}>Remember me on this device</span>
+            </label>
 
             <button
               type="submit"
-              disabled={!code || loading}
+              disabled={!email || !password || loading}
               className="w-full rounded-xl bg-[#D4AF37] py-3 text-sm font-semibold text-[#0D1117] transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Verifying…' : 'Enter Control Panel'}
+              {loading ? 'Verifying…' : 'Sign in to Control Panel'}
             </button>
           </form>
         </div>
