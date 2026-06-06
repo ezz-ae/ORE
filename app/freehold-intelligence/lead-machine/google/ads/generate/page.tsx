@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, AlertCircle, ArrowUpRight, Info } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'

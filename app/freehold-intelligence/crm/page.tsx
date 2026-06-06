@@ -390,13 +390,29 @@ export default function FreeholdCrmPage() {
 
             {/* AI prompt */}
             <AiPrompt
+              skill="crm_advisor"
               placeholder="Ask about leads, pipeline, follow-ups…"
               suggestions={[
                 'Which leads need urgent follow-up?',
-                'Draft a follow-up for Rami.',
+                'Draft a WhatsApp for the hottest lead.',
                 'Who is closest to closing?',
-                "Summarise today's pipeline.",
+                'Flag any duplicate or wrong-number risks.',
               ]}
+              context={{
+                pipeline: {
+                  totalLeads: crmLeads.length,
+                  newLeads: newCount,
+                  urgentFollowUps: followUpsCount,
+                  hotLeads: hotCount,
+                  qualified: qualifiedCount,
+                  closedMTD: closedCount,
+                  pipelineValueAED: PIPELINE_VALUE,
+                },
+                topByIntent: [...crmLeads]
+                  .sort((a, b) => b.intentScore - a.intentScore)
+                  .slice(0, 6)
+                  .map(l => ({ name: l.name, stage: l.pipelineStage, temperature: l.temperature, intentScore: l.intentScore, project: l.projectInterest, budget: l.budgetAED })),
+              }}
             />
 
           </div>

@@ -100,7 +100,7 @@ export async function queryServerAgent(
     data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ??
     '(no response)'
 
-  _history.set(sid, [...history, { role: 'user', text: message }, { role: 'model', text }].slice(-20))
+  _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
 
   return text
 }

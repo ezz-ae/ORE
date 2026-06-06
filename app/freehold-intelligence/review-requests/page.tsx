@@ -367,6 +367,7 @@ export default function ReviewRequestsPage() {
       {/* AI prompt */}
       <section className="mt-8">
         <AiPrompt
+          skill="server_ops"
           placeholder="Ask about approvals, reviews, blockers…"
           suggestions={[
             'What needs my approval today?',

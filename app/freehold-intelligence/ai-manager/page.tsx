@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { Bot, MapPin, Building2, FileText, BookOpen, Sparkles, ArrowUpRight, Activity, CheckCircle } from 'lucide-react'
+import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity } from 'lucide-react'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const CONTENT_TYPES = [
   { label: 'Listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,      summary: '28 listings',          alert: '5 need updates',       alertColor: 'text-white/45' },
@@ -20,37 +20,13 @@ const ACTIVITY = [
   { text: 'AI review completed for 8 landing pages',              time: '3h ago' },
 ]
 
-function generateContent(prompt: string): string {
-  const p = prompt.toLowerCase()
-  if (p.includes('palm') || p.includes('jumeirah')) {
-    return `Palm Jumeirah — Dubai's Iconic Island Address\n\nPalm Jumeirah remains one of the most recognised addresses in the world. Offering beachfront living, panoramic sea views, and access to world-class hospitality — including Atlantis and FIVE Palm — it attracts both residents and investors seeking unmatched prestige.\n\nProperties range from AED 2.5M to AED 120M+ for ultra-luxury penthouses. Rental yields average 5–6%, with strong capital appreciation driven by limited supply.`
-  }
-  if (p.includes('whatsapp') || p.includes('message') || p.includes('lead') || p.includes('follow')) {
-    return `Hi [Name], this is [Agent] from Freehold Property.\n\nI noticed you were interested in [Project] — we currently have a few exclusive units available at competitive prices, and I'd love to walk you through the options.\n\nWould you be free for a quick 10-minute call this week? I can share floor plans, payment plans, and our latest ROI projections.\n\nLooking forward to connecting!`
-  }
-  if (p.includes('golden visa') || p.includes('investor') || p.includes('visa')) {
-    return `UAE Golden Visa — Property Pathway\n\nThe UAE Golden Visa offers 5 or 10-year renewable residency for property investors. To qualify through real estate, you must own property worth AED 2M or more — either outright or through a mortgage.\n\nKey Benefits:\n• Long-term residency without employer sponsorship\n• Sponsor family members including parents\n• Business-friendly — operate companies under your own name\n• Access to premium UAE banking and services\n\nFreehold Property specialises in Golden Visa-eligible properties.`
-  }
-  return `Dubai Hills Estate — Premium Lifestyle Living\n\nNestled within Mohammed Bin Rashid City, Dubai Hills Estate offers an unparalleled blend of nature, luxury, and connectivity. With an 18-hole championship golf course, world-class retail at Dubai Hills Mall, and easy access to both Downtown Dubai and Dubai Marina, this master community redefines what premium living means in the UAE.\n\nStarting from AED 1.2M, Dubai Hills presents exceptional value for end-users and investors alike, with consistent appreciation and high rental yields averaging 6–7% annually.`
+const SITE_CONTEXT = {
+  site: 'freeholdproperty.ae',
+  counts: { listings: 28, areaGuides: 12, developers: 18, pages: 34, topics: 47 },
+  alerts: { areasWithMissingContent: 3, incompleteDevProfiles: 2, pagesNeedingAiReview: 8, unpublishedTopics: 12 },
 }
 
 export default function AiManagerPage() {
-  const [prompt, setPrompt] = useState('')
-  const [result, setResult] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  function handleGenerate() {
-    if (!prompt.trim()) return
-    setResult(generateContent(prompt))
-  }
-
-  function handleCopy() {
-    if (!result) return
-    navigator.clipboard.writeText(result)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
 
@@ -108,55 +84,23 @@ export default function AiManagerPage() {
           </ul>
         </div>
 
-        {/* Quick Generate */}
+        {/* Web Manager AI */}
         <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-            <h2 className="text-sm font-semibold text-white/85">Quick Generate</h2>
-          </div>
+          <div className="mb-4 text-sm font-semibold text-white/85">Web Manager</div>
           <p className="mb-4 text-[13px] text-white/40">
-            Describe a piece of content — listing copy, area guide, or WhatsApp follow-up.
+            Ask about content gaps, publishing priorities, SEO fixes, or landing page health.
           </p>
-          <textarea
-            rows={3}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate() }}
-            placeholder="e.g. Palm Jumeirah listing description, or WhatsApp follow-up for a hot lead…"
-            className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-[13px] text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/30 focus:outline-none"
+          <AiPrompt
+            skill="web_manager"
+            placeholder="What content needs publishing or fixing?"
+            suggestions={[
+              'What pages or listings are missing content?',
+              'Which landing pages should be published first?',
+              'Prioritise SEO fixes by traffic impact.',
+              'Any live ads pointing at missing or draft pages?',
+            ]}
+            context={SITE_CONTEXT}
           />
-          <div className="mt-3 flex items-center justify-between">
-            <button
-              onClick={handleGenerate}
-              disabled={!prompt.trim()}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-40"
-            >
-              <Sparkles className="h-3.5 w-3.5" /> Generate
-            </button>
-            <span className="text-[12px] text-white/25">⌘↵</span>
-          </div>
-
-          {result && (
-            <div className="mt-5 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-[12px] font-medium uppercase tracking-wider text-white/40">Generated</span>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-[13px] text-white/35 transition hover:text-white/65"
-                >
-                  {copied && <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-              <p className="whitespace-pre-line text-[13px] leading-[1.75] text-white/70">{result}</p>
-              <button
-                onClick={() => { setResult(null); setPrompt('') }}
-                className="mt-4 rounded-full border border-white/[0.08] px-3 py-1 text-[13px] text-white/35 transition hover:text-white/60"
-              >
-                Clear
-              </button>
-            </div>
-          )}
         </div>
 
       </div>

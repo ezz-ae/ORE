@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import {
-  Sparkles, ChevronRight, CheckCircle, AlertCircle, Send,
+  Sparkles, ChevronRight, CheckCircle, AlertCircle,
   Zap, BookOpen, Users, Globe, Settings,
 } from 'lucide-react'
-import { agentConnections, agentProfile, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
+import { agentConnections, agentProfile, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const CATEGORY_META: Record<AgentConnection['category'], { label: string; color: string }> = {
   crm:        { label: 'CRM',        color: 'text-orange-400' },
@@ -17,6 +18,9 @@ const CATEGORY_META: Record<AgentConnection['category'], { label: string; color:
   messaging:  { label: 'Messaging',  color: 'text-emerald-400'},
 }
 
+const criticalLeads = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
+const activeLeads   = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
+
 type Route = 'apps' | 'inventory' | 'frontend'
 
 const ROUTES: { id: Route; label: string; Icon: React.ElementType; desc: string; color: string }[] = [
@@ -25,27 +29,10 @@ const ROUTES: { id: Route; label: string; Icon: React.ElementType; desc: string;
   { id: 'frontend',  label: 'Listings',  Icon: Globe,    desc: 'PropertyFinder, Bayut, Dubizzle, your landing pages', color: 'text-sky-400'    },
 ]
 
-const TEST_PROMPTS = [
-  'How many critical leads do I have right now?',
-  'Summarise my Palm Jumeirah performance this month.',
-  'Draft a WhatsApp message for my offer lead.',
-  'Which connection needs setup?',
-]
-
-type ChatMsg = { role: 'user' | 'ai'; text: string }
-
-const AI_RESPONSES: Record<string, string> = {
-  'How many critical leads do I have right now?': `You have 2 critical leads:\n1. George Lawson — Offer stage, AED 4.4M counter, decision deadline today. Call immediately.\n2. Rami Haddad — Last contacted 15 days ago. Payment plan sent, no response. Competitor risk is high.`,
-  'Summarise my Palm Jumeirah performance this month.': `Palm Jumeirah summary (June MTD):\n• 4 active leads on Palm properties\n• 1 closed deal (Aiko Nakamura, AED 3.2M)\n• 1 offer in progress (George Lawson, AED 4.4M)\n• Expertise level: Expert (4 career deals)\n• You are the top Palm performer on your team this month.`,
-  'Draft a WhatsApp message for my offer lead.': `Hi George 👋\n\nJust checking in on our conversation from yesterday — the counter at AED 4.4M is still on the table and we want to make sure you have everything you need to make a decision.\n\nThe developer is firm on the June 6 deadline for this unit. Happy to jump on a quick call if helpful?\n\nBest, Noura`,
-  'Which connection needs setup?': `3 connections need setup:\n1. Bayut — Portal listing integration not configured\n2. Canva — Design automation not linked\n3. Gmail — Email sync not authorised\n\nConnect these from the My AI → Connections section to unlock automated listings and email follow-ups.`,
-}
 
 export default function AgentAIPage() {
   const [connections, setConnections] = useState<AgentConnection[]>(agentConnections)
   const [activeRoute, setActiveRoute] = useState<Route>('apps')
-  const [chatInput, setChatInput]     = useState('')
-  const [chat, setChat]               = useState<ChatMsg[]>([])
   const [settingUp, setSettingUp]     = useState<string | null>(null)
 
   const connected = connections.filter((c) => c.status === 'connected').length
@@ -61,14 +48,6 @@ export default function AgentAIPage() {
       )
       setSettingUp(null)
     }, 1500)
-  }
-
-  function sendChat() {
-    if (!chatInput.trim()) return
-    const q = chatInput.trim()
-    const reply = AI_RESPONSES[q] ?? `[Agent AI response for "${q}" — this would be powered by Claude with full context of your leads, wallet, connections, and inventory.]`
-    setChat((prev) => [...prev, { role: 'user', text: q }, { role: 'ai', text: reply }])
-    setChatInput('')
   }
 
   const grouped = (['crm', 'ads', 'portal', 'messaging', 'social', 'ai', 'automation'] as AgentConnection['category'][]).reduce(
@@ -206,56 +185,28 @@ export default function AgentAIPage() {
         </div>
       </section>
 
-      {/* Test chat */}
+      {/* Agent AI — real CRM Advisor */}
       <section className="mt-8">
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Test your agent</div>
-
-        {/* Quick prompts */}
-        {chat.length === 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {TEST_PROMPTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => { setChatInput(p); setTimeout(() => { const q = p; const reply = AI_RESPONSES[q] ?? '[AI response]'; setChat((prev) => [...prev, { role: 'user', text: q }, { role: 'ai', text: reply }]); setChatInput('') }, 0) }}
-                className="rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:border-white/20 hover:text-white/70"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Chat area */}
-        {chat.length > 0 && (
-          <div className="mb-3 max-h-[320px] overflow-y-auto rounded-[16px] border border-white/[0.07] bg-[#0D1220] p-4 space-y-3">
-            {chat.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-[12px] px-4 py-2.5 ${
-                  msg.role === 'user'
-                    ? 'bg-[#D4AF37]/15 text-white/85'
-                    : 'border border-white/[0.07] bg-white/[0.03] text-white/65'
-                }`}>
-                  <div className="whitespace-pre-wrap text-[13px] leading-relaxed">{msg.text}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 rounded-[14px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5">
-          <Sparkles className="h-4 w-4 shrink-0 text-[#D4AF37]/50" />
-          <input
-            type="text"
-            placeholder="Ask your agent anything…"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendChat()}
-            className="flex-1 bg-transparent text-[13px] text-white placeholder-white/25 outline-none"
-          />
-          <button onClick={sendChat} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/80 text-black transition hover:bg-[#D4AF37]">
-            <Send className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Ask your agent</div>
+        <AiPrompt
+          skill="crm_advisor"
+          placeholder="How many critical leads? Draft a WhatsApp? Who to call first?"
+          suggestions={[
+            'How many critical leads do I have right now?',
+            'Draft a WhatsApp for my offer lead.',
+            'Which connection needs setup?',
+            'Summarise my Palm Jumeirah performance.',
+          ]}
+          context={{
+            agent: { name: agentProfile.name, tier: agentProfile.tier, title: agentProfile.title },
+            pipeline: { activeLeads, criticalLeads },
+            leads: agentPipelineLeads.slice(0, 8).map(l => ({
+              name: l.name, stage: l.pipelineStage, urgency: l.urgency,
+              property: l.property, note: l.note,
+            })),
+            connections: connections.map(c => ({ name: c.name, status: c.status, category: c.category })),
+          }}
+        />
       </section>
 
     </div>

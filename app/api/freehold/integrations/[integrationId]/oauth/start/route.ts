@@ -6,9 +6,9 @@ import { McpResponseEnvelope } from '@/types/freehold-mcp';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { integrationId: string } }
+  { params }: { params: Promise<{ integrationId: string }> }
 ) {
-  const integrationId = params.integrationId;
+  const { integrationId } = await params;
   const integration = getIntegration(integrationId);
 
   if (!integration) {

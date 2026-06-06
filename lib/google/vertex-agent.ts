@@ -116,7 +116,7 @@ export async function queryAdsAgent(
     '(no response from agent)'
 
   // Keep last 20 turns to stay within context limits
-  _history.set(sid, [...history, { role: 'user', text: message }, { role: 'model', text }].slice(-20))
+  _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
 
   return text
 }
