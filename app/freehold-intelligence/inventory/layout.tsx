@@ -27,7 +27,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#0B0F1A]/95 px-4 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence"
-          className="flex items-center gap-1.5 text-[13px] text-white/35 transition hover:text-white/70 shrink-0"
+          className="flex items-center gap-1.5 text-[13px] text-white/55 transition hover:text-white/85 shrink-0"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span className="hidden sm:block">Apps</span>
@@ -55,7 +55,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
                   href={tab.href}
                   className={[
                     'flex items-center px-3 py-2.5 rounded-lg text-[13px] font-medium transition',
-                    active ? 'bg-white/[0.08] text-white' : 'text-white/45 hover:text-white/75 hover:bg-white/[0.04]',
+                    active ? 'bg-white/[0.08] text-white' : 'text-white/58 hover:text-white/85 hover:bg-white/[0.05]',
                   ].join(' ')}
                 >
                   {tab.label}
@@ -78,7 +78,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
                     href={tab.href}
                     className={[
                       'inline-flex items-center px-3 py-3.5 text-[13px] font-medium border-b-2 transition whitespace-nowrap',
-                      active ? 'border-amber-400 text-white' : 'border-transparent text-white/40 hover:text-white/65',
+                      active ? 'border-amber-400 text-white' : 'border-transparent text-white/55 hover:text-white/80',
                     ].join(' ')}
                   >
                     {tab.label}

@@ -29,15 +29,15 @@ export function SpacesNav() {
   const syncedCount  = integrationSyncStatuses.filter(s => s.status === 'synced').length
 
   return (
-    <div className="flex h-11 shrink-0 items-center border-b border-white/[0.06] bg-[#080C14]/95 backdrop-blur-xl">
+    <div className="flex h-12 shrink-0 items-center border-b border-white/[0.08] bg-[#080C14]/95 backdrop-blur-xl">
 
       {/* Brand mark */}
       <Link
         href="/freehold-intelligence"
-        className="flex h-full shrink-0 items-center gap-2 border-r border-white/[0.06] px-4 transition hover:bg-white/[0.03]"
+        className="flex h-full shrink-0 items-center gap-2 border-r border-white/[0.08] px-4 transition hover:bg-white/[0.04]"
       >
         <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-        <span className="hidden text-[12px] font-semibold tracking-tight text-white/55 sm:block">FI</span>
+        <span className="hidden text-[12px] font-semibold tracking-tight text-white/70 sm:block">FI</span>
       </Link>
 
       {/* Spaces tabs */}
@@ -50,10 +50,10 @@ export function SpacesNav() {
                 key={space.href}
                 href={space.href}
                 className={[
-                  'flex h-full items-center border-b-2 px-3.5 text-[12px] font-medium whitespace-nowrap transition',
+                  'flex h-full items-center border-b-2 px-3.5 text-[13px] font-medium whitespace-nowrap transition',
                   active
                     ? 'border-[#D4AF37] text-white'
-                    : 'border-transparent text-white/30 hover:border-white/[0.10] hover:text-white/60',
+                    : 'border-transparent text-white/55 hover:border-white/[0.15] hover:text-white/85',
                 ].join(' ')}
               >
                 {space.label}
@@ -64,7 +64,7 @@ export function SpacesNav() {
       </nav>
 
       {/* Background sync status */}
-      <div className="flex h-full shrink-0 items-center gap-2.5 border-l border-white/[0.06] px-3.5">
+      <div className="flex h-full shrink-0 items-center gap-2.5 border-l border-white/[0.08] px-3.5">
         <div className="flex items-center gap-1">
           {integrationSyncStatuses.map(s => (
             <span
@@ -74,9 +74,9 @@ export function SpacesNav() {
             />
           ))}
         </div>
-        <span className="hidden text-[11px] text-white/25 whitespace-nowrap md:block">
+        <span className="hidden text-[11px] text-white/40 whitespace-nowrap md:block">
           {errorCount > 0
-            ? <span className="text-red-400/80">{errorCount} error</span>
+            ? <span className="text-red-400">{errorCount} error</span>
             : `${syncedCount} synced`}
         </span>
       </div>

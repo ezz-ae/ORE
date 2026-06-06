@@ -32,14 +32,14 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
           ) : (
             <Link
               href="/freehold-intelligence/agent"
-              className="flex items-center gap-1.5 text-[13px] text-white/40 transition hover:text-white"
+              className="flex items-center gap-1.5 text-[13px] text-white/55 transition hover:text-white"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Apps
             </Link>
           )}
 
           {label && (
-            <div className="flex items-center gap-1 text-white/20">
+            <div className="flex items-center gap-1 text-white/35">
               <ChevronRight className="h-3.5 w-3.5" />
               <span className="text-[13px] font-semibold text-white/80">{label}</span>
             </div>

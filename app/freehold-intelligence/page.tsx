@@ -240,7 +240,7 @@ export default function IntelligenceLauncher() {
               </div>
               <div>
                 <div className="text-[15px] font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
-                <div className="text-[11px] text-white/30">{dateStr}</div>
+                <div className="text-[11px] text-white/45">{dateStr}</div>
               </div>
             </div>
             {/* Stat chips */}
@@ -263,7 +263,7 @@ export default function IntelligenceLauncher() {
           </div>
 
           {/* Summary text */}
-          <p className="mt-4 text-[13px] leading-relaxed text-white/50 max-w-2xl">
+          <p className="mt-4 text-[13px] leading-relaxed text-white/60 max-w-2xl">
             {serverSummary.summaryText}
           </p>
 
@@ -299,7 +299,7 @@ export default function IntelligenceLauncher() {
                   type="button"
                   onClick={() => sendChat(q)}
                   disabled={chatLoading}
-                  className="rounded-full border border-white/[0.08] bg-black/10 px-3 py-1 text-[11px] text-white/35 transition hover:border-white/[0.18] hover:text-white/65 disabled:opacity-40"
+                  className="rounded-full border border-white/[0.10] bg-black/10 px-3 py-1 text-[11px] text-white/50 transition hover:border-white/[0.22] hover:text-white/80 disabled:opacity-40"
                 >
                   {q}
                 </button>
@@ -310,7 +310,7 @@ export default function IntelligenceLauncher() {
             {(chatLoading || chatReply) && (
               <div className="mt-4 rounded-xl border border-[#D4AF37]/12 bg-black/20 p-4">
                 {chatLoading ? (
-                  <div className="flex items-center gap-2.5 text-[13px] text-white/35">
+                  <div className="flex items-center gap-2.5 text-[13px] text-white/50">
                     <span className="flex gap-1">
                       {[0, 1, 2].map((i) => (
                         <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/60 animate-bounce"
@@ -326,11 +326,11 @@ export default function IntelligenceLauncher() {
                     </p>
                     <div className="mt-3 flex items-center justify-between border-t border-white/[0.05] pt-3">
                       <Link href="/freehold-intelligence/agent"
-                        className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/55 transition">
+                        className="flex items-center gap-1 text-[11px] text-white/45 hover:text-white/70 transition">
                         Full conversation <ChevronRight className="h-3 w-3" />
                       </Link>
                       <button type="button" onClick={() => setChatReply(null)}
-                        className="text-[11px] text-white/20 hover:text-white/40 transition">
+                        className="text-[11px] text-white/35 hover:text-white/55 transition">
                         Dismiss
                       </button>
                     </div>
@@ -345,11 +345,11 @@ export default function IntelligenceLauncher() {
       {/* ── Urgent actions ──────────────────────────────────────────────────── */}
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-white/25">
-            <AlertTriangle className="h-3 w-3 text-red-400/60" />
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-white/45">
+            <AlertTriangle className="h-3 w-3 text-red-400/80" />
             Urgent
           </div>
-          <span className="text-[12px] text-white/20">{serverSummary.urgentTasks.length} open</span>
+          <span className="text-[12px] text-white/40">{serverSummary.urgentTasks.length} open</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {serverSummary.urgentTasks.map((task) => (
@@ -360,8 +360,8 @@ export default function IntelligenceLauncher() {
                   <div className={`text-[13px] font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
                     {task.title}
                   </div>
-                  <div className="mt-1 text-[12px] text-white/38 leading-snug">{task.body}</div>
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-white/22">
+                  <div className="mt-1 text-[12px] text-white/55 leading-snug">{task.body}</div>
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-white/38">
                     <span>{task.app}</span>
                     {task.due && (
                       <>
@@ -380,7 +380,7 @@ export default function IntelligenceLauncher() {
 
       {/* ── App grid ──────────────────────────────────────────────────────────── */}
       <section>
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/25">Apps</div>
+        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/45">Apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => (
             <Link
@@ -398,13 +398,13 @@ export default function IntelligenceLauncher() {
               </div>
               <div className="mt-4 flex-1">
                 <div className="text-[15px] font-semibold text-white/90 group-hover:text-white">{app.label}</div>
-                <div className="mt-0.5 text-[11px] text-white/28">{app.sub}</div>
+                <div className="mt-0.5 text-[11px] text-white/50">{app.sub}</div>
               </div>
               <div className="mt-3 flex items-center justify-between">
                 <div className="text-[12px] font-medium" style={{ color: `${app.accent}99` }}>
                   {app.metric}
                 </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-white/15 transition group-hover:text-white/40" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-white/25 transition group-hover:text-white/55" />
               </div>
             </Link>
           ))}
@@ -421,7 +421,7 @@ export default function IntelligenceLauncher() {
               <AlertCircle className="h-3.5 w-3.5 text-amber-400/70" />
               Priorities
             </div>
-            <span className="text-[12px] text-white/20">{priorities.length} open</span>
+            <span className="text-[12px] text-white/40">{priorities.length} open</span>
           </div>
           <div className="divide-y divide-white/[0.04]">
             {priorities.slice(0, 3).map((p) => (
@@ -429,15 +429,15 @@ export default function IntelligenceLauncher() {
                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${p.sev === 'red' ? 'bg-red-400' : 'bg-amber-400'}`} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-medium text-white/75 truncate">{p.name}</div>
-                  <div className="text-[11px] text-white/30 truncate">{p.note}</div>
+                  <div className="text-[11px] text-white/45 truncate">{p.note}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <Link href={p.href}
-                    className="rounded-md border border-white/[0.07] px-2.5 py-1 text-[12px] text-white/40 transition hover:text-white/70">
+                    className="rounded-md border border-white/[0.10] px-2.5 py-1 text-[12px] text-white/55 transition hover:text-white/80">
                     Fix
                   </Link>
                   <button type="button" onClick={() => setDismissed((s) => new Set([...s, p.id]))}
-                    className="p-1 text-white/15 hover:text-white/40 transition">
+                    className="p-1 text-white/30 hover:text-white/55 transition">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -468,10 +468,10 @@ export default function IntelligenceLauncher() {
                 }`} />
                 <div className="min-w-0 flex-1">
                   <span className="text-[13px] font-medium text-white/70">{item.label}</span>
-                  <span className="text-white/15 mx-1.5">·</span>
-                  <span className="text-[12px] text-white/30">{item.detail}</span>
+                  <span className="text-white/25 mx-1.5">·</span>
+                  <span className="text-[12px] text-white/45">{item.detail}</span>
                 </div>
-                <span className="shrink-0 text-[11px] text-white/20 tabular-nums">{item.time}</span>
+                <span className="shrink-0 text-[11px] text-white/38 tabular-nums">{item.time}</span>
               </div>
             ))}
           </div>
