@@ -180,8 +180,8 @@ function AiPanel({
   useEffect(() => { generate() }, [])
 
   return (
-    <div className="flex w-72 shrink-0 flex-col border-l border-white/[0.07] bg-[#0B0F1A]">
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+    <div className="flex w-72 shrink-0 flex-col border-l border-slate-800 bg-[#0A0E14]">
+      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
         <div className="flex items-center gap-2 text-[13px] font-semibold text-white">
           <Sparkles className="h-4 w-4 text-[#D4AF37]" /> AI Replies
         </div>
@@ -198,7 +198,7 @@ function AiPanel({
         {error && <p className="text-[12px] text-red-400/80">{error}</p>}
         {suggestions.map((s, i) => (
           <button key={i} onClick={() => onSelect(s)}
-            className="w-full rounded-[14px] border border-white/[0.07] bg-[#131B2B] px-3.5 py-3 text-left text-[12px] leading-relaxed text-white/75 transition hover:border-[#D4AF37]/30 hover:text-white active:scale-[0.98]">
+            className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white active:scale-[0.98]">
             {s}
           </button>
         ))}

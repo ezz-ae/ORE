@@ -106,23 +106,23 @@ export default function DataEngineeringPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
       </Link>
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
             <Database className="h-3.5 w-3.5" /> Data Engineering
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[12px] font-medium text-[#D4AF37]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs font-medium text-[#D4AF37]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" /> In progress
           </span>
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          Project data<br /><span className="text-white/35">{avgComplete}% complete.</span>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+          Project data<br /><span className="text-slate-500">{avgComplete}% complete.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
+        <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-300">
           Field completeness, media quality, and area profile coverage. Every missing field is a gap that weakens a landing page or blocks campaign launch.
         </p>
       </section>
@@ -130,21 +130,21 @@ export default function DataEngineeringPage() {
       {/* Stats */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Avg. completeness', value: `${avgComplete}%`, color: avgComplete >= 80 ? 'text-[#D4AF37]' : 'text-[#D4AF37]' },
+          { label: 'Avg. completeness', value: `${avgComplete}%`, color: 'text-[#D4AF37]' },
           { label: 'Fields filled',    value: `${filledFields}/${totalFields}`, color: 'text-white' },
           { label: 'Urgent gaps',      value: urgentTotal,       color: urgentTotal > 0 ? 'text-red-300' : 'text-[#D4AF37]' },
           { label: 'Listings tracked', value: LISTINGS.length,   color: 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+          <div key={stat.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
-            <div className="mt-1.5 text-[13px] text-white/40">{stat.label}</div>
+            <div className="mt-1.5 text-sm text-slate-500">{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Completeness matrix */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Field matrix</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Field matrix</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Listing data completeness</h2>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -158,51 +158,51 @@ export default function DataEngineeringPage() {
               key={key}
               onClick={() => setCompletenessFilter(key)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 completenessFilter === key
                   ? key === 'critical' ? 'border-red-400/40 bg-red-400/10 text-red-300'
                     : key === 'moderate' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : key === 'strong' ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {label}
             </button>
           ))}
         </div>
-        <p className="mt-2 text-[12px] text-white/30">
+        <p className="mt-2 text-xs text-slate-500">
           {filteredListings.length === LISTINGS.length
             ? `${LISTINGS.length} listings`
             : `${filteredListings.length} of ${LISTINGS.length} listings`}
         </p>
 
         {filteredListings.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-6 py-10 text-center text-[13px] text-white/35">
+          <div className="rounded-[22px] border border-slate-800 bg-slate-900 px-6 py-10 text-center text-sm text-slate-500">
             No listings match this filter.{' '}
             <button onClick={() => setCompletenessFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Show all</button>
           </div>
         ) : (
           <div className="mt-5 space-y-5">
             {filteredListings.map((listing) => (
-              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#131B2B]'}`}>
+              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-slate-800 bg-slate-900'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
-                    <h3 className="mt-1 text-[16px] font-semibold text-white">{listing.name}</h3>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
+                    <h3 className="mt-1 text-base font-semibold text-white">{listing.name}</h3>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-[13px] font-semibold ${listing.completeness >= 80 ? 'text-[#D4AF37]' : listing.completeness >= 60 ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+                    <span className={`text-sm font-semibold ${listing.completeness >= 80 ? 'text-[#D4AF37]' : listing.completeness >= 60 ? 'text-[#D4AF37]' : 'text-red-300'}`}>
                       {listing.completeness}%
                     </span>
-                    <Link href={listing.href} className="inline-flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+                    <Link href={listing.href} className="inline-flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
                       Open <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800">
                   <div
                     className={`h-full rounded-full ${listing.completeness >= 80 ? 'bg-[#D4AF37]' : listing.completeness >= 60 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
                     style={{ width: `${listing.completeness}%` }}
@@ -214,7 +214,7 @@ export default function DataEngineeringPage() {
                   {DATA_FIELDS.map((field) => (
                     <div key={field} className="flex items-center gap-2">
                       <FieldDot status={listing.fields[field] ?? false} />
-                      <span className={`text-[12px] ${listing.fields[field] === true ? 'text-white/65' : 'text-white/35'}`}>{field}</span>
+                      <span className={`text-sm ${listing.fields[field] === true ? 'text-slate-300' : 'text-slate-500'}`}>{field}</span>
                     </div>
                   ))}
                 </div>
@@ -223,7 +223,7 @@ export default function DataEngineeringPage() {
                 {listing.urgent.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {listing.urgent.map((gap) => (
-                      <span key={gap} className="inline-flex items-center gap-1.5 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2.5 py-1 text-[13px] text-red-300">
+                      <span key={gap} className="inline-flex items-center gap-1.5 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2.5 py-1 text-sm text-red-300">
                         <AlertCircle className="h-3 w-3" /> {gap}
                       </span>
                     ))}
@@ -237,35 +237,35 @@ export default function DataEngineeringPage() {
 
       {/* Area profiles */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Area profiles</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Area profiles</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Coverage by area</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <table className="w-full text-[13px]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Area</th>
-                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Fields</th>
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Coverage</th>
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Status</th>
+              <tr className="border-b border-slate-800">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Area</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Fields</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Coverage</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.05]">
+            <tbody className="divide-y divide-slate-800">
               {AREA_PROFILES.map((area) => {
                 const pct = Math.round((area.fieldsComplete / area.totalFields) * 100)
                 return (
-                  <tr key={area.area} className="hover:bg-white/[0.02]">
-                    <td className="px-6 py-4 font-medium text-white/85">{area.area}</td>
-                    <td className="px-4 py-4 text-center text-white/50">{area.fieldsComplete}/{area.totalFields}</td>
+                  <tr key={area.area} className="hover:bg-slate-800/30">
+                    <td className="px-6 py-4 font-medium text-slate-100">{area.area}</td>
+                    <td className="px-4 py-4 text-center text-slate-400">{area.fieldsComplete}/{area.totalFields}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
                           <div className={`h-full rounded-full ${pct >= 75 ? 'bg-[#D4AF37]' : pct >= 55 ? 'bg-[#D4AF37]' : 'bg-red-400'}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-[12px] text-white/50">{pct}%</span>
+                        <span className="text-xs text-slate-400">{pct}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-[13px] font-medium ${area.status === 'strong' ? 'text-[#D4AF37]' : area.status === 'moderate' ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+                      <span className={`text-sm font-medium ${area.status === 'strong' ? 'text-[#D4AF37]' : area.status === 'moderate' ? 'text-[#D4AF37]' : 'text-red-300'}`}>
                         {area.status === 'strong' ? 'Strong' : area.status === 'moderate' ? 'Moderate' : 'Needs work'}
                       </span>
                     </td>
@@ -279,19 +279,19 @@ export default function DataEngineeringPage() {
 
       {/* Media quality note */}
       <section className="mt-10 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <Image className="h-3 w-3" /> Media quality
           </div>
-          <p className="mt-3 text-[13px] leading-relaxed text-white/65">
+          <p className="mt-3 text-sm leading-relaxed text-slate-300">
             Palm and Hills have production-grade hero images. Business Bay has a placeholder — needs a real render or developer-supplied photo before landing can go live.
           </p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <FileText className="h-3 w-3" /> Brochures
           </div>
-          <p className="mt-3 text-[13px] leading-relaxed text-white/65">
+          <p className="mt-3 text-sm leading-relaxed text-slate-300">
             Palm brochure PDF is missing — required for the investor lead follow-up flow. Dubai Hills brochure ready. Business Bay needs a full document set from the developer.
           </p>
         </div>

@@ -65,20 +65,20 @@ export default function AgentAIPage() {
       {/* Header */}
       <section className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold text-white">My AI</h1>
-          <p className="mt-1 text-[13px] text-white/35">
+          <h1 className="text-xl font-semibold text-white">My AI</h1>
+          <p className="mt-1 text-sm text-slate-400">
             {agentProfile.name}'s personal agent — {connected} of {connections.length} connections live
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2">
           <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-          <span className="text-[13px] font-medium text-[#D4AF37]">Agent active</span>
+          <span className="text-sm font-medium text-[#D4AF37]">Agent active</span>
         </div>
       </section>
 
       {/* Three-route map */}
       <section className="mt-6">
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent routes</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Agent routes</div>
         <div className="grid grid-cols-3 gap-3">
           {ROUTES.map(({ id, label, Icon, desc, color }) => (
             <button
@@ -86,15 +86,15 @@ export default function AgentAIPage() {
               onClick={() => setActiveRoute(id)}
               className={`flex flex-col rounded-[18px] border p-4 text-left transition ${
                 activeRoute === id
-                  ? 'border-white/20 bg-white/[0.06]'
-                  : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                  ? 'border-slate-600 bg-slate-800/60'
+                  : 'border-slate-800 bg-slate-800/50 hover:bg-slate-800/60'
               }`}
             >
               <Icon className={`h-5 w-5 ${color}`} />
-              <div className={`mt-2 text-[13px] font-semibold ${activeRoute === id ? 'text-white' : 'text-white/60'}`}>{label}</div>
-              <div className="mt-0.5 text-[11px] text-white/25 leading-relaxed">{desc}</div>
+              <div className={`mt-2 text-sm font-semibold ${activeRoute === id ? 'text-white' : 'text-slate-400'}`}>{label}</div>
+              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{desc}</div>
               {activeRoute === id && (
-                <div className={`mt-2 text-[11px] font-medium ${color}`}>Active ·</div>
+                <div className={`mt-2 text-xs font-medium ${color}`}>Active ·</div>
               )}
             </button>
           ))}
@@ -104,9 +104,9 @@ export default function AgentAIPage() {
       {/* Connections */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Connections</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Connections</div>
           {needsSetup > 0 && (
-            <div className="flex items-center gap-1 text-[11px] text-amber-400">
+            <div className="flex items-center gap-1 text-xs text-amber-400">
               <AlertCircle className="h-3 w-3" />
               {needsSetup} need setup
             </div>
@@ -118,7 +118,7 @@ export default function AgentAIPage() {
             const cm = CATEGORY_META[cat as AgentConnection['category']]
             return (
               <div key={cat}>
-                <div className={`mb-2 text-[11px] font-semibold uppercase tracking-wider ${cm.color}`}>{cm.label}</div>
+                <div className={`mb-2 text-xs font-semibold uppercase tracking-wider ${cm.color}`}>{cm.label}</div>
                 <div className="space-y-2">
                   {items.map((conn) => {
                     const isSettingUp = settingUp === conn.id
@@ -127,20 +127,20 @@ export default function AgentAIPage() {
                         key={conn.id}
                         className={`flex items-center gap-4 rounded-[14px] border px-4 py-3.5 transition ${
                           conn.status === 'connected'
-                            ? 'border-white/[0.07] bg-white/[0.02]'
-                            : 'border-white/[0.04] bg-transparent opacity-70'
+                            ? 'border-slate-800 bg-slate-800/50'
+                            : 'border-slate-800/50 bg-transparent opacity-70'
                         }`}
                       >
                         <span className="text-[20px]">{conn.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-medium text-white/80">{conn.name}</div>
+                          <div className="text-sm font-medium text-slate-300">{conn.name}</div>
                           {conn.status === 'connected' && conn.lastSync && (
-                            <div className="mt-0.5 text-[10px] text-white/25">
+                            <div className="mt-0.5 text-xs text-slate-500">
                               Synced {new Date(conn.lastSync).toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' })}
                             </div>
                           )}
                           {conn.status === 'needs_setup' && (
-                            <div className="mt-0.5 text-[10px] text-amber-400/70">Not connected</div>
+                            <div className="mt-0.5 text-xs text-amber-400/70">Not connected</div>
                           )}
                         </div>
                         {conn.status === 'connected' ? (
@@ -149,7 +149,7 @@ export default function AgentAIPage() {
                           <button
                             onClick={() => connect(conn.id)}
                             disabled={isSettingUp}
-                            className="flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-[11px] font-medium text-amber-400 transition hover:bg-amber-400/20 disabled:opacity-50"
+                            className="flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-400 transition hover:bg-amber-400/20 disabled:opacity-50"
                           >
                             {isSettingUp ? 'Connecting…' : 'Connect'}
                             {!isSettingUp && <ChevronRight className="h-3 w-3" />}
@@ -167,18 +167,18 @@ export default function AgentAIPage() {
 
       {/* Agent knowledge */}
       <section className="mt-8">
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent knowledge</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Agent knowledge</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {[
             { Icon: Users,    label: 'Leads + pipeline',    value: '8 leads tracked',         color: 'text-sky-400'    },
             { Icon: BookOpen, label: 'Inventory notes',      value: '3 notes · 8 sources',     color: 'text-violet-400' },
             { Icon: Settings, label: 'Profile & expertise',  value: 'Palm Expert · Gold tier', color: 'text-[#D4AF37]'  },
           ].map(({ Icon, label, value, color }) => (
-            <div key={label} className="flex items-center gap-3 rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+            <div key={label} className="flex items-center gap-3 rounded-[14px] border border-slate-800 bg-slate-800/50 px-4 py-3">
               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
               <div>
-                <div className={`text-[12px] font-medium ${color}`}>{value}</div>
-                <div className="mt-0.5 text-[10px] text-white/25">{label}</div>
+                <div className={`text-sm font-medium ${color}`}>{value}</div>
+                <div className="mt-0.5 text-xs text-slate-500">{label}</div>
               </div>
             </div>
           ))}
@@ -187,7 +187,7 @@ export default function AgentAIPage() {
 
       {/* Agent AI — real CRM Advisor */}
       <section className="mt-8">
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Ask your agent</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Ask your agent</div>
         <AiPrompt
           skill="crm_advisor"
           placeholder="How many critical leads? Draft a WhatsApp? Who to call first?"

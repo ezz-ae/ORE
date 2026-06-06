@@ -15,7 +15,7 @@ function healthTone(health?: string | null) {
     case 'on_track': return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bar: 'bg-[#D4AF37]' }
     case 'at_risk':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#F8E7AE]',  bar: 'bg-[#D4AF37]'  }
     case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
-    default:         return { dot: 'bg-white/25',   text: 'text-white/55',   bar: 'bg-white/25'   }
+    default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500'  }
   }
 }
 
@@ -30,37 +30,37 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
 
-      <Link href="/freehold-intelligence/milestones" className="inline-flex items-center gap-1.5 text-[12px] text-white/45 transition hover:text-white">
+      <Link href="/freehold-intelligence/milestones" className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" />
         All milestones
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <Flag className="h-3.5 w-3.5" /> {milestone.code}
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
           {milestone.title}
         </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+        <p className="mt-7 max-w-2xl text-lg leading-[1.6] text-slate-300">
           {milestone.description || 'Execution milestone for the Freehold Intelligence V1 skeleton.'}
         </p>
       </section>
 
       <section className="mt-12 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Owner</div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Owner</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.owner}</div>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Deadline</div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Deadline</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.deadline}</div>
           {milestone.days_to_deadline != null && (
-            <div className="mt-1 text-[12px] text-white/45">{milestone.days_to_deadline}d remaining</div>
+            <div className="mt-1 text-xs text-slate-400">{milestone.days_to_deadline}d remaining</div>
           )}
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5">
-          <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Health</div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Health</div>
           <div className={`mt-2 flex items-center gap-1.5 text-lg font-semibold capitalize ${tone.text}`}>
             <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
             {(milestone.health ?? 'planned').replace('_', ' ')}
@@ -68,25 +68,25 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
         </div>
       </section>
 
-      <section className="mt-8 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-6">
-        <div className="flex items-center justify-between text-[12px] text-white/55">
+      <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>Progress</span>
           <span className="tabular-nums font-semibold text-white">{pct}%</span>
         </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800/60">
           <div className={`h-full transition-all ${tone.bar}`} style={{ width: `${pct}%` }} />
         </div>
       </section>
 
       {milestone.success_event && (
         <section className="mt-12 rounded-3xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-7 py-7 sm:px-10 sm:py-9">
-          <div className="text-[12px] font-medium uppercase tracking-wider text-[#D4AF37]/85">Success event</div>
-          <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">{milestone.success_event}</p>
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">Success event</div>
+          <p className="mt-3 text-base font-medium leading-[1.65] text-slate-100 sm:text-lg">{milestone.success_event}</p>
         </section>
       )}
 
       <section className="mt-16">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Comments and decisions</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Comments and decisions</div>
         <h2 className="mt-2 mb-6 text-2xl font-semibold tracking-tight text-white">Review on this milestone</h2>
         <CommentsPanel pageRef={pageRef} items={comments.filter((c) => c.page_ref === pageRef)} />
       </section>

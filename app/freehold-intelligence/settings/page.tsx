@@ -88,13 +88,13 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       aria-pressed={on}
       className={[
         'relative h-6 w-11 rounded-full border transition-all duration-200',
-        on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.12] bg-white/[0.04]',
+        on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-slate-700 bg-slate-800/50',
       ].join(' ')}
     >
       <span
         className={[
           'absolute top-0.5 h-5 w-5 rounded-full border transition-all duration-200',
-          on ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30',
+          on ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-slate-600 bg-slate-400',
         ].join(' ')}
       />
     </button>
@@ -111,11 +111,11 @@ function SectionHead({ icon: Icon, accent, title, sub }: {
 }) {
   return (
     <div className="mb-6">
-      <div className={`flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider ${accent}`}>
+      <div className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${accent}`}>
         <Icon className="h-3.5 w-3.5" />
         {title}
       </div>
-      <p className="mt-1 text-sm text-white/40">{sub}</p>
+      <p className="mt-1 text-sm text-slate-400">{sub}</p>
     </div>
   )
 }
@@ -168,11 +168,11 @@ export default function SettingsPage() {
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
           <div>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/35 mb-3">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
               <SettingsIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> System Settings
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white/90">Settings</h1>
-            <p className="mt-1 text-sm text-white/40">Configure AI permissions, data mapping, and platform thresholds</p>
+            <h1 className="text-xl font-semibold tracking-tight text-white">Settings</h1>
+            <p className="mt-1 text-sm text-slate-400">Configure AI permissions, data mapping, and platform thresholds</p>
           </div>
           <button
             onClick={handleSave}
@@ -180,7 +180,7 @@ export default function SettingsPage() {
               'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition',
               saved
                 ? 'border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border border-white/[0.08] bg-white/[0.04] text-white/70 hover:border-[#D4AF37]/30 hover:text-white',
+                : 'border border-slate-800 bg-slate-800/50 text-slate-300 hover:border-[#D4AF37]/30 hover:text-white',
             ].join(' ')}
           >
             {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
@@ -189,16 +189,16 @@ export default function SettingsPage() {
         </div>
 
         {/* ── Tab bar ── */}
-        <div className="mb-8 flex flex-wrap gap-1 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-1">
+        <div className="mb-8 flex flex-wrap gap-1 rounded-2xl border border-slate-800 bg-slate-900 p-1">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={[
-                'flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition',
+                'flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition',
                 activeTab === id
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-white/40 hover:text-white/70',
+                  ? 'bg-slate-700/50 text-white'
+                  : 'text-slate-400 hover:text-slate-100',
               ].join(' ')}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -216,18 +216,18 @@ export default function SettingsPage() {
               title="AI Action Permissions"
               sub="Control which actions the AI can take autonomously on your behalf"
             />
-            <div className="divide-y divide-white/[0.04] rounded-2xl border border-white/[0.05] bg-white/[0.02] overflow-hidden">
+            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
               {aiActions.map((a) => (
                 <div key={a.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white/85">{a.label}</p>
-                    <p className="mt-0.5 text-xs text-white/35">{a.description}</p>
-                    <span className="mt-1 inline-block rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/35">
+                    <p className="text-sm font-medium text-slate-100">{a.label}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{a.description}</p>
+                    <span className="mt-1 inline-block rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-500">
                       {a.role} approval
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${a.enabled ? 'text-[#D4AF37]' : 'text-white/30'}`}>
+                    <span className={`text-xs font-medium ${a.enabled ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
                       {a.enabled ? 'Enabled' : 'Off'}
                     </span>
                     <Toggle on={a.enabled} onChange={() => toggleAiAction(a.id)} />
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-white/25">
+            <p className="mt-3 text-xs text-slate-500">
               {aiActions.filter((a) => a.enabled).length} of {aiActions.length} actions enabled
             </p>
           </section>
@@ -253,18 +253,18 @@ export default function SettingsPage() {
             {unmappedCount > 0 && (
               <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
-                <p className="text-sm text-white/70">
+                <p className="text-sm text-slate-300">
                   {unmappedCount} field{unmappedCount > 1 ? 's' : ''} unmapped — toggle to configure
                 </p>
               </div>
             )}
-            <div className="divide-y divide-white/[0.04] rounded-2xl border border-white/[0.05] bg-white/[0.02] overflow-hidden">
+            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
               {crmFields.map((f, idx) => (
                 <div key={f.source} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                    <p className="truncate text-sm text-white/60">{f.source}</p>
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/20" />
-                    <p className="truncate text-sm font-medium text-white/85">{f.target}</p>
+                    <p className="truncate text-sm text-slate-400">{f.source}</p>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" />
+                    <p className="truncate text-sm font-medium text-slate-100">{f.target}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`text-xs font-medium ${f.mapped ? 'text-[#D4AF37]' : 'text-amber-400'}`}>
@@ -289,9 +289,9 @@ export default function SettingsPage() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               {thresholds.map((t) => (
-                <div key={t.id} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-5">
-                  <p className="text-sm font-medium text-white/80">{t.label}</p>
-                  <p className="mt-0.5 text-xs text-white/35">{t.description}</p>
+                <div key={t.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                  <p className="text-sm font-medium text-slate-100">{t.label}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{t.description}</p>
                   <div className="mt-4 flex items-center gap-3">
                     <input
                       type="range"
@@ -302,12 +302,12 @@ export default function SettingsPage() {
                       onChange={(e) => updateThreshold(t.id, Number(e.target.value))}
                       className="flex-1 accent-[#D4AF37]"
                     />
-                    <div className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-sm font-semibold tabular-nums text-white/90 min-w-[56px] text-center">
+                    <div className="shrink-0 rounded-xl border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-sm font-semibold tabular-nums text-white min-w-[56px] text-center">
                       {t.value}
-                      <span className="ml-0.5 text-xs font-normal text-white/35">{t.unit}</span>
+                      <span className="ml-0.5 text-xs font-normal text-slate-500">{t.unit}</span>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-between text-[12px] text-white/25">
+                  <div className="mt-2 flex justify-between text-xs text-slate-600">
                     <span>{t.min}{t.unit}</span>
                     <span>{t.max}{t.unit}</span>
                   </div>
@@ -322,18 +322,18 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Bell}
-              accent="text-white/55/80"
+              accent="text-slate-400"
               title="Notification Triggers"
               sub="Choose which platform events generate alerts in your dashboard"
             />
-            <div className="divide-y divide-white/[0.04] rounded-2xl border border-white/[0.05] bg-white/[0.02] overflow-hidden">
+            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
               {notifs.map((n) => (
                 <div key={n.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white/85">{n.label}</p>
+                    <p className="text-sm font-medium text-slate-100">{n.label}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${n.enabled ? 'text-[#D4AF37]' : 'text-white/30'}`}>
+                    <span className={`text-xs font-medium ${n.enabled ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
                       {n.enabled ? 'On' : 'Off'}
                     </span>
                     <Toggle on={n.enabled} onChange={() => toggleNotif(n.id)} />
@@ -341,7 +341,7 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-xs text-white/25">
+            <p className="mt-3 text-xs text-slate-500">
               {notifs.filter((n) => n.enabled).length} of {notifs.length} notifications active
             </p>
           </section>
@@ -352,44 +352,44 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Globe}
-              accent="text-white/55/80"
+              accent="text-slate-400"
               title="Brand & Identity"
               sub="Core identity settings used across campaigns, landing pages, and AI-generated content"
             />
             <div className="space-y-4">
               {BRAND_SETTINGS.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-5">
-                  <label className="block text-xs font-medium text-white/40 mb-2">{s.label}</label>
+                <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                  <label className="block text-xs font-medium text-slate-500 mb-2">{s.label}</label>
                   <input
                     type="text"
                     defaultValue={s.value}
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm text-white/85 placeholder:text-white/25 focus:border-[#D4AF37]/35 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/35 focus:outline-none"
                   />
                 </div>
               ))}
 
               {/* Theme */}
-              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-5">
-                <label className="block text-xs font-medium text-white/40 mb-3">Dashboard Theme</label>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <label className="block text-xs font-medium text-slate-500 mb-3">Dashboard Theme</label>
                 <div className="flex gap-3">
                   {[
-                    { label: 'Dark (current)', bg: 'bg-[#0B0F1A]', ring: 'ring-[#D4AF37] ring-2' },
-                    { label: 'Darker',         bg: 'bg-black',     ring: 'ring-white/10' },
-                    { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-white/10' },
+                    { label: 'Dark (current)', bg: 'bg-slate-900', ring: 'ring-[#D4AF37] ring-2' },
+                    { label: 'Darker',         bg: 'bg-black',     ring: 'ring-slate-700' },
+                    { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-slate-700' },
                   ].map((t) => (
                     <button key={t.label} className="flex flex-col items-center gap-1.5">
-                      <div className={`h-8 w-8 rounded-lg border border-white/10 ${t.bg} ${t.ring}`} />
-                      <span className="text-[12px] text-white/35">{t.label}</span>
+                      <div className={`h-8 w-8 rounded-lg border border-slate-700 ${t.bg} ${t.ring}`} />
+                      <span className="text-xs text-slate-500">{t.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Access */}
-              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-5">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Lock className="h-3.5 w-3.5 text-white/30" />
-                  <label className="text-xs font-medium text-white/40">Access Control</label>
+                  <Lock className="h-3.5 w-3.5 text-slate-500" />
+                  <label className="text-xs font-medium text-slate-500">Access Control</label>
                 </div>
                 <div className="space-y-2">
                   {[
@@ -397,12 +397,12 @@ export default function SettingsPage() {
                     { role: 'Admin',           perms: 'All except billing',    email: 'admin@freeholdproperty.ae' },
                     { role: 'Sales Agent',     perms: 'CRM + Lead Machine',    email: '3 members' },
                   ].map((u) => (
-                    <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3">
+                    <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium text-white/80">{u.role}</p>
-                        <p className="text-xs text-white/35">{u.email}</p>
+                        <p className="text-sm font-medium text-slate-100">{u.role}</p>
+                        <p className="text-xs text-slate-500">{u.email}</p>
                       </div>
-                      <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/40">
+                      <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-400">
                         {u.perms}
                       </span>
                     </div>

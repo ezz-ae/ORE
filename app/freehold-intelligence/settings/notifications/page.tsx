@@ -49,8 +49,8 @@ export default function NotificationsPage() {
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <div className="mb-8">
-        <h1 className="text-[20px] font-semibold text-white">Notifications</h1>
-        <p className="mt-1 text-[13px] text-white/35">
+        <h1 className="text-xl font-semibold text-white">Notifications</h1>
+        <p className="mt-1 text-sm text-slate-400">
           Configure when and how the platform notifies you and your team.
         </p>
       </div>
@@ -58,11 +58,11 @@ export default function NotificationsPage() {
       {/* Channel status */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         {(Object.entries(CHANNEL_META) as [Channel, typeof CHANNEL_META[Channel]][]).map(([key, cm]) => (
-          <div key={key} className="rounded-[14px] border border-white/[0.06] bg-[#131B2B] px-4 py-3.5 flex items-center gap-3">
+          <div key={key} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3.5 flex items-center gap-3">
             <cm.Icon className={`h-4 w-4 ${cm.color}`} />
             <div>
-              <div className={`text-[12px] font-semibold ${cm.color}`}>{cm.label}</div>
-              <div className="text-[10px] text-white/25">Connected</div>
+              <div className={`text-sm font-semibold ${cm.color}`}>{cm.label}</div>
+              <div className="text-xs text-slate-500">Connected</div>
             </div>
           </div>
         ))}
@@ -71,10 +71,10 @@ export default function NotificationsPage() {
       {/* Rules by category */}
       {CATEGORIES.map((category) => (
         <div key={category} className="mb-6">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/25">{category}</div>
-          <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{category}</div>
+          <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
             {/* Header */}
-            <div className="grid grid-cols-5 gap-0 px-5 py-2.5 text-[11px] text-white/20">
+            <div className="grid grid-cols-5 gap-0 px-5 py-2.5 text-xs text-slate-600">
               <div className="col-span-2">Event</div>
               {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => {
                 const cm = CHANNEL_META[ch]
@@ -89,14 +89,14 @@ export default function NotificationsPage() {
             {rules.filter((r) => r.category === category).map((rule) => (
               <div key={rule.id} className="grid grid-cols-5 items-center gap-0 px-5 py-3.5">
                 <div className="col-span-2 min-w-0 pr-4">
-                  <div className="text-[13px] font-medium text-white/80">{rule.label}</div>
-                  <div className="mt-0.5 text-[11px] text-white/30 leading-relaxed">{rule.desc}</div>
+                  <div className="text-sm font-medium text-slate-100">{rule.label}</div>
+                  <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rule.desc}</div>
                 </div>
                 {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => (
                   <div key={ch} className="flex items-center justify-center">
                     <button
                       onClick={() => toggle(rule.id, ch)}
-                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-[#D4AF37]/80' : 'bg-white/[0.08]'}`}
+                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-[#D4AF37]/80' : 'bg-slate-800/60'}`}
                     >
                       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rule.channels[ch] ? 'left-[18px]' : 'left-0.5'}`} />
                     </button>

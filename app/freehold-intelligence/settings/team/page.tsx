@@ -26,7 +26,7 @@ const ROLE_META: Record<Role, { Icon: React.ElementType; color: string; desc: st
   Owner:  { Icon: Crown,  color: 'text-[#D4AF37]',   desc: 'Full access + billing' },
   Admin:  { Icon: Shield, color: 'text-violet-400',   desc: 'Manage team & settings' },
   Agent:  { Icon: User,   color: 'text-sky-400',      desc: 'Own leads & campaigns' },
-  Viewer: { Icon: User,   color: 'text-white/40',     desc: 'Read-only access' },
+  Viewer: { Icon: User,   color: 'text-slate-400',    desc: 'Read-only access' },
 }
 
 const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; color: string }> = {
@@ -37,7 +37,7 @@ const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; colo
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400 bg-orange-400/10 border-orange-400/25',
-  Silver:   'text-white/65   bg-white/[0.06]  border-white/15',
+  Silver:   'text-slate-300  bg-slate-800/60  border-slate-600',
   Gold:     'text-[#D4AF37]  bg-[#D4AF37]/10  border-[#D4AF37]/25',
   Platinum: 'text-violet-300 bg-violet-400/10 border-violet-400/25',
 }
@@ -109,14 +109,14 @@ export default function TeamPage() {
       {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[20px] font-semibold text-white">Team</h1>
-          <p className="mt-1 text-[13px] text-white/35">
+          <h1 className="text-xl font-semibold text-white">Team</h1>
+          <p className="mt-1 text-sm text-slate-400">
             {active} active · {invited > 0 ? `${invited} invited · ` : ''}{agents} agents
           </p>
         </div>
         <button
           onClick={() => setShowInvite((v) => !v)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
         >
           <UserPlus className="h-4 w-4" />
           Invite
@@ -126,35 +126,35 @@ export default function TeamPage() {
       {/* Invite form */}
       {showInvite && (
         <div className="mb-6 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5 space-y-3">
-          <div className="text-[13px] font-semibold text-white">Invite team member</div>
+          <div className="text-sm font-semibold text-white">Invite team member</div>
           <div className="flex gap-3 flex-col sm:flex-row">
             <input
               type="email"
               placeholder="Email address"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="flex-1 rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[13px] text-white placeholder-white/30 outline-none focus:border-[#D4AF37]/40"
+              className="flex-1 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
             />
             <div className="relative">
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
-                className="appearance-none rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 pr-8 text-[13px] text-white outline-none focus:border-[#D4AF37]/40"
+                className="appearance-none rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-[#D4AF37]/40"
               >
                 {ROLES.filter((r) => r !== 'Owner').map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={invite}
-              className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-[12px] font-semibold text-black transition hover:bg-[#D4AF37]/90">
+              className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
               <Mail className="h-3.5 w-3.5" /> Send invite
             </button>
             <button onClick={() => setShowInvite(false)}
-              className="rounded-full border border-white/[0.08] px-4 py-2 text-[12px] text-white/35 transition hover:text-white/60">
+              className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
               Cancel
             </button>
           </div>
@@ -166,10 +166,10 @@ export default function TeamPage() {
         {ROLES.map((role) => {
           const rm = ROLE_META[role]
           return (
-            <div key={role} className="rounded-[12px] border border-white/[0.06] bg-[#131B2B] px-3 py-2.5">
+            <div key={role} className="rounded-[12px] border border-slate-800 bg-slate-900 px-3 py-2.5">
               <rm.Icon className={`h-4 w-4 ${rm.color}`} />
-              <div className={`mt-1.5 text-[12px] font-semibold ${rm.color}`}>{role}</div>
-              <div className="mt-0.5 text-[10px] text-white/25 leading-relaxed">{rm.desc}</div>
+              <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{role}</div>
+              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rm.desc}</div>
             </div>
           )
         })}
@@ -185,29 +185,29 @@ export default function TeamPage() {
           return (
             <div
               key={member.id}
-              className={`relative rounded-[16px] border bg-[#131B2B] px-5 py-4 transition ${
-                member.status === 'suspended' ? 'border-red-400/10 opacity-60' : 'border-white/[0.07]'
+              className={`relative rounded-[16px] border bg-slate-900 px-5 py-4 transition ${
+                member.status === 'suspended' ? 'border-red-400/10 opacity-60' : 'border-slate-800'
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                   member.role === 'Owner' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
                   member.role === 'Admin' ? 'bg-violet-400/15 text-violet-300' :
-                  'bg-white/[0.07] text-white/50'
+                  'bg-slate-800/60 text-slate-400'
                 }`}>
                   {member.initials}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[14px] font-semibold text-white truncate">{member.name}</span>
+                    <span className="text-sm font-semibold text-white truncate">{member.name}</span>
                     {tc && (
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${tc}`}>
                         {member.tier}
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-3 text-[11px] text-white/30 flex-wrap">
+                  <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
                     <span className="flex items-center gap-1">
                       <Mail className="h-3 w-3" />
                       {member.email}
@@ -221,9 +221,9 @@ export default function TeamPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="hidden sm:flex items-center gap-1.5">
                     <rm.Icon className={`h-3.5 w-3.5 ${rm.color}`} />
-                    <span className={`text-[12px] font-medium ${rm.color}`}>{member.role}</span>
+                    <span className={`text-xs font-medium ${rm.color}`}>{member.role}</span>
                   </div>
-                  <div className={`flex items-center gap-1 text-[11px] ${sm.color}`}>
+                  <div className={`flex items-center gap-1 text-xs ${sm.color}`}>
                     <sm.Icon className="h-3 w-3" />
                     <span className="hidden sm:block">{sm.label}</span>
                   </div>
@@ -231,30 +231,30 @@ export default function TeamPage() {
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenu(openMenu === member.id ? null : member.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-white/[0.07] text-white/30 transition hover:border-white/20 hover:text-white/60"
+                        className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-500 transition hover:border-slate-600 hover:text-slate-300"
                       >
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                       {openMenu === member.id && (
-                        <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-white/[0.10] bg-[#1A2338] py-1 shadow-xl">
+                        <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-slate-700 bg-slate-900 py-1 shadow-xl">
                           {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
                             const RoleIcon = ROLE_META[r].Icon
                             return (
                               <button key={r} onClick={() => changeRole(member.id, r)}
-                                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-white/60 transition hover:bg-white/[0.05] hover:text-white">
+                                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-white">
                                 <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
                                 Set as {r}
                               </button>
                             )
                           })}
-                          <div className="my-1 border-t border-white/[0.07]" />
+                          <div className="my-1 border-t border-slate-800" />
                           <button onClick={() => toggleSuspend(member.id)}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-amber-400/80 transition hover:bg-white/[0.05] hover:text-amber-400">
+                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-amber-400/80 transition hover:bg-slate-800/60 hover:text-amber-400">
                             <XCircle className="h-3.5 w-3.5" />
                             {member.status === 'suspended' ? 'Reactivate' : 'Suspend'}
                           </button>
                           <button onClick={() => removeMember(member.id)}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-red-400/80 transition hover:bg-white/[0.05] hover:text-red-400">
+                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-red-400/80 transition hover:bg-slate-800/60 hover:text-red-400">
                             <Trash2 className="h-3.5 w-3.5" />
                             Remove
                           </button>

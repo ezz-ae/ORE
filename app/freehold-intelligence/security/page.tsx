@@ -37,7 +37,7 @@ type ChecklistFilter = 'All' | 'Done' | 'Pending'
 function Check({ ok }: { ok: boolean }) {
   return ok
     ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
-    : <EyeOff className="h-4 w-4 text-white/20" />
+    : <EyeOff className="h-4 w-4 text-slate-600" />
 }
 
 export default function SecurityPage() {
@@ -63,31 +63,31 @@ export default function SecurityPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <Lock className="h-3.5 w-3.5" /> Security
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
           Access model<br />
-          <span className="text-white/40">and hardening status.</span>
+          <span className="text-slate-400">and hardening status.</span>
         </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+        <p className="mt-7 max-w-2xl text-lg leading-[1.6] text-slate-300">
           {done} of {total} hardening steps complete. Production auth middleware is the critical remaining item before wider exposure.
         </p>
       </section>
 
       {/* Progress bar */}
-      <section className="mt-10 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
+      <section className="mt-10 rounded-[22px] border border-slate-800 bg-slate-900 p-6">
         <div className="flex items-center justify-between">
-          <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">Security readiness</div>
-          <span className="text-[14px] font-semibold text-white">{pct}%</span>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Security readiness</div>
+          <span className="text-sm font-semibold text-white">{pct}%</span>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800/60">
           <div
             className={`h-full rounded-full ${pct >= 70 ? 'bg-[#D4AF37]' : pct >= 40 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="mt-2 flex items-center gap-2 text-[12px] text-white/35">
+        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
           <CheckCircle2 className="h-3 w-3 text-[#D4AF37]" /> {done} complete
           <span className="mx-1">·</span>
           <AlertCircle className="h-3 w-3 text-red-400" /> {total - done} pending
@@ -98,7 +98,7 @@ export default function SecurityPage() {
       <section className="mt-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Hardening checklist</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Hardening checklist</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Production readiness</h2>
           </div>
           <div className="flex items-center gap-2">
@@ -107,10 +107,10 @@ export default function SecurityPage() {
                 key={f}
                 onClick={() => setChecklistFilter(f)}
                 className={[
-                  'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                  'rounded-full border px-3 py-1 text-sm font-medium transition',
                   checklistFilter === f
                     ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100',
                 ].join(' ')}
               >
                 {f}
@@ -133,16 +133,16 @@ export default function SecurityPage() {
                 : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               }
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-white">{item.label}</div>
-                <p className="mt-0.5 text-[12px] text-white/50">{item.note}</p>
+                <div className="text-sm font-semibold text-white">{item.label}</div>
+                <p className="mt-0.5 text-xs text-slate-400">{item.note}</p>
               </div>
-              <span className={`shrink-0 text-[13px] font-medium ${item.done ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+              <span className={`shrink-0 text-sm font-medium ${item.done ? 'text-[#D4AF37]' : 'text-red-300'}`}>
                 {item.done ? 'Done' : 'Pending'}
               </span>
             </div>
           ))}
           {filteredChecklist.length === 0 && (
-            <div className="rounded-[18px] border border-white/[0.08] px-5 py-10 text-center text-[13px] text-white/35">
+            <div className="rounded-[18px] border border-slate-800 px-5 py-10 text-center text-sm text-slate-400">
               No items match this filter.
             </div>
           )}
@@ -151,31 +151,31 @@ export default function SecurityPage() {
 
       {/* Role matrix */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access model</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Access model</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <table className="w-full text-[13px]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Role</th>
-                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">View</th>
-                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Edit</th>
-                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 md:table-cell">Approve</th>
-                <th className="hidden px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 lg:table-cell">Admin</th>
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Scope</th>
+              <tr className="border-b border-slate-800">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">View</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Edit</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">Approve</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">Admin</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Scope</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.05]">
+            <tbody className="divide-y divide-slate-800">
               {ROLE_MATRIX.map((row) => (
                 <tr
                   key={row.role}
-                  className={`transition hover:bg-white/[0.02] ${row.role.toLowerCase().replace(' ', '_') === currentServerUser.role ? 'bg-[#D4AF37]/[0.04]' : ''}`}
+                  className={`transition hover:bg-slate-800/30 ${row.role.toLowerCase().replace(' ', '_') === currentServerUser.role ? 'bg-[#D4AF37]/[0.04]' : ''}`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white/85">{row.role}</span>
+                      <span className="font-medium text-slate-100">{row.role}</span>
                       {row.role.toLowerCase().replace(' ', '_') === currentServerUser.role && (
-                        <span className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-medium text-[#D4AF37]">You</span>
+                        <span className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2 py-0.5 text-xs font-medium text-[#D4AF37]">You</span>
                       )}
                     </div>
                   </td>
@@ -183,7 +183,7 @@ export default function SecurityPage() {
                   <td className="hidden px-4 py-4 text-center sm:table-cell"><div className="flex justify-center"><Check ok={row.canEdit} /></div></td>
                   <td className="hidden px-4 py-4 text-center md:table-cell"><div className="flex justify-center"><Check ok={row.canApprove} /></div></td>
                   <td className="hidden px-4 py-4 text-center lg:table-cell"><div className="flex justify-center"><Check ok={row.canAdmin} /></div></td>
-                  <td className="px-6 py-4 text-[12px] text-white/45">{row.scope}</td>
+                  <td className="px-6 py-4 text-xs text-slate-400">{row.scope}</td>
                 </tr>
               ))}
             </tbody>
@@ -193,11 +193,11 @@ export default function SecurityPage() {
 
       {/* Current session scope */}
       <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Current session</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current session</div>
         <h2 className="mt-2 text-xl font-semibold text-white">AI scope — {currentServerUser.role.replace('_', ' ')}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {scope.map((s) => (
-            <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-[#D4AF37]/[0.05] px-3.5 py-1.5 text-[12px] text-[#D4AF37]/80">
+            <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-[#D4AF37]/[0.05] px-3.5 py-1.5 text-xs text-[#D4AF37]/80">
               <Eye className="h-3 w-3" /> {s}
             </span>
           ))}
@@ -208,7 +208,7 @@ export default function SecurityPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Audit trail</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Audit trail</div>
             <h2 className="mt-1 text-xl font-semibold text-white">Recent actor-tagged events</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -217,10 +217,10 @@ export default function SecurityPage() {
                 key={t}
                 onClick={() => setAuditTypeFilter(t)}
                 className={[
-                  'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                  'rounded-full border px-3 py-1 text-sm font-medium transition',
                   auditTypeFilter === t
                     ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100',
                 ].join(' ')}
               >
                 {t === 'All' ? 'All' : t.replace(/_/g, ' ')}
@@ -228,21 +228,21 @@ export default function SecurityPage() {
             ))}
           </div>
         </div>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
           {filteredAudit.length === 0 ? (
-            <div className="px-6 py-10 text-center text-[13px] text-white/35">No audit events match this filter.</div>
+            <div className="px-6 py-10 text-center text-sm text-slate-400">No audit events match this filter.</div>
           ) : (
-            <ul className="divide-y divide-white/[0.05]">
+            <ul className="divide-y divide-slate-800">
               {filteredAudit.map((event) => (
-                <li key={event.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-[13px]">
+                <li key={event.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm">
                   <div className="min-w-0">
-                    <span className="text-white/80">{event.actor}</span>
-                    <span className="text-white/25"> · </span>
+                    <span className="text-slate-100">{event.actor}</span>
+                    <span className="text-slate-600"> · </span>
                     <span className="text-[#D4AF37]/75">{event.type.replace(/_/g, ' ')}</span>
-                    <span className="text-white/25"> · </span>
-                    <span className="text-white/50">{event.leadName}</span>
+                    <span className="text-slate-600"> · </span>
+                    <span className="text-slate-400">{event.leadName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[13px] text-white/30">
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Clock className="h-3 w-3" />
                     {new Date(event.createdAt).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' })}
                   </div>

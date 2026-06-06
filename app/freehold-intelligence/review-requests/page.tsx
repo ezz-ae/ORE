@@ -108,7 +108,7 @@ function priorityTone(p: ReviewPriority) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
   if (p === 'high')     return { ring: 'border-[#D4AF37]/25', bg: 'bg-[#D4AF37]/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-[#D4AF37]', label: 'High' }
   if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
-  return                       { ring: 'border-white/[0.08]', bg: 'bg-[#131B2B]', text: 'text-white/50', dot: 'bg-white/30', label: 'Low' }
+  return                       { ring: 'border-slate-800', bg: 'bg-slate-900', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
 }
 
 function typeTone(t: ReviewType) {
@@ -116,14 +116,14 @@ function typeTone(t: ReviewType) {
   if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
   if (t === 'decision')       return 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-[#F8E7AE]'
   if (t === 'correction')     return 'bg-sky-400/10 border-sky-400/20 text-sky-200'
-  return                              'bg-white/[0.04] border-white/10 text-white/50'
+  return                              'bg-slate-800/50 border-slate-700 text-slate-400'
 }
 
 function typeIcon(t: ReviewType) {
   if (t === 'approval' || t === 'decision') return <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
   if (t === 'access request') return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-  if (t === 'correction') return <MessageSquare className="h-3.5 w-3.5 text-white/55" />
-  return <Clock className="h-3.5 w-3.5 text-white/30" />
+  if (t === 'correction') return <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
+  return <Clock className="h-3.5 w-3.5 text-slate-500" />
 }
 
 type FilterType = 'All' | ReviewType
@@ -183,15 +183,15 @@ export default function ReviewRequestsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <CheckSquare className="h-3.5 w-3.5" /> Reviews
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           {stats.total} decisions waiting.
           <br />
-          <span className="text-white/35">{stats.critical} are launch blockers.</span>
+          <span className="text-slate-400">{stats.critical} are launch blockers.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-white/60">
+        <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
           Comments, approvals, corrections, and access requests — sorted by what blocks launch first.
           {stats.resolved > 0 && (
             <span className="ml-2 text-[#D4AF37]/80">{stats.resolved} resolved this session.</span>
@@ -203,33 +203,33 @@ export default function ReviewRequestsPage() {
       <section className="mt-8 grid grid-cols-4 gap-3">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
-          <p className="text-[12px] text-red-400/60 mt-1">Blockers</p>
+          <p className="text-xs text-red-400/60 mt-1">Blockers</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#D4AF37]">{stats.approvals}</p>
-          <p className="text-[12px] text-[#D4AF37]/60 mt-1">Approvals</p>
+          <p className="text-xs text-[#D4AF37]/60 mt-1">Approvals</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.total}</p>
-          <p className="text-[12px] text-white/35 mt-1">Open</p>
+          <p className="text-xs text-slate-500 mt-1">Open</p>
         </div>
         <div className="rounded-[18px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#D4AF37]/70">{stats.resolved}</p>
-          <p className="text-[12px] text-[#D4AF37]/40 mt-1">Resolved</p>
+          <p className="text-xs text-[#D4AF37]/40 mt-1">Resolved</p>
         </div>
       </section>
 
       {/* Type filter pills */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-[13px] text-white/35 shrink-0">Filter:</span>
+        <span className="text-sm text-slate-400 shrink-0">Filter:</span>
         {TYPE_FILTERS.map((f) => (
           <button
             key={f}
             onClick={() => setActiveType(f)}
-            className={`rounded-full border px-3 py-0.5 text-[13px] font-medium capitalize transition ${
+            className={`rounded-full border px-3 py-0.5 text-sm font-medium capitalize transition ${
               activeType === f
                 ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70 hover:border-white/20'
+                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100 hover:border-slate-700'
             }`}
           >
             {f}
@@ -238,19 +238,19 @@ export default function ReviewRequestsPage() {
         {hasFilter && (
           <button
             onClick={() => setActiveType('All')}
-            className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/40 transition hover:text-white/70"
+            className="flex items-center gap-1 rounded-full border border-slate-800 bg-slate-900 px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-100"
           >
             <X className="h-3 w-3" /> Clear
           </button>
         )}
       </div>
 
-      <p className="mt-2 text-[13px] text-white/25">{filtered.length} of {stats.total} items shown</p>
+      <p className="mt-2 text-sm text-slate-500">{filtered.length} of {stats.total} items shown</p>
 
       {/* Review items */}
       <section className="mt-4 space-y-4">
         {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.05] bg-white/[0.02] py-14 text-center text-sm text-white/25">
+          <div className="rounded-[22px] border border-slate-800 bg-slate-900 py-14 text-center text-sm text-slate-400">
             {stats.total === 0 ? 'All items resolved ✓' : 'No items match this filter.'}
           </div>
         ) : (
@@ -260,42 +260,42 @@ export default function ReviewRequestsPage() {
               <div key={item.id} className={`rounded-[22px] border p-6 ${tone.ring} ${tone.bg}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.ring} ${tone.text}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                       {tone.label}
                     </span>
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium capitalize ${typeTone(item.type)}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium capitalize ${typeTone(item.type)}`}>
                       {typeIcon(item.type)}
                       {item.type}
                     </span>
                   </div>
                   {item.dueDate && (
-                    <div className="flex items-center gap-1.5 text-[13px] text-white/40">
+                    <div className="flex items-center gap-1.5 text-sm text-slate-400">
                       <Clock className="h-3 w-3" /> Due {item.dueDate}
                     </div>
                   )}
                 </div>
 
-                <h3 className="mt-3 text-[15px] font-semibold text-white">{item.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-white/65">{item.body}</p>
+                <h3 className="mt-3 text-base font-semibold text-white">{item.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{item.body}</p>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.05] pt-4">
-                  <div className="flex flex-wrap gap-4 text-[12px] text-white/35">
-                    <span>Project: <span className="text-white/55">{item.project}</span></span>
-                    <span>Owner: <span className="text-white/55">{item.owner}</span></span>
-                    {item.linkedTo && <span>Linked: <span className="text-white/55">{item.linkedTo}</span></span>}
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                    <span>Project: <span className="text-slate-300">{item.project}</span></span>
+                    <span>Owner: <span className="text-slate-300">{item.owner}</span></span>
+                    {item.linkedTo && <span>Linked: <span className="text-slate-300">{item.linkedTo}</span></span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => resolve(item.id, 'approved')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
+                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-xs font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
                     >
                       <ThumbsUp className="h-3.5 w-3.5" />
                       Approve
                     </button>
                     <button
                       onClick={() => resolve(item.id, 'rejected')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-red-400/20 bg-red-400/[0.04] px-3.5 py-1.5 text-[12px] font-medium text-red-300 transition hover:border-red-400/30 hover:bg-red-400/[0.08]"
+                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-red-400/20 bg-red-400/[0.04] px-3.5 py-1.5 text-xs font-medium text-red-300 transition hover:border-red-400/30 hover:bg-red-400/[0.08]"
                     >
                       <ThumbsDown className="h-3.5 w-3.5" />
                       Reject
@@ -306,7 +306,7 @@ export default function ReviewRequestsPage() {
                 {item.projectHref && (
                   <Link
                     href={item.projectHref}
-                    className="mt-3 inline-flex items-center gap-1 text-[13px] text-white/30 transition hover:text-[#D4AF37]"
+                    className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-[#D4AF37]"
                   >
                     Open project workspace <ArrowUpRight className="h-3 w-3" />
                   </Link>
@@ -318,8 +318,8 @@ export default function ReviewRequestsPage() {
       </section>
 
       {/* Add comment */}
-      <section className="mt-8 rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
-        <div className="mb-4 flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
+      <section className="mt-8 rounded-[22px] border border-slate-800 bg-slate-900 p-6">
+        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <MessageSquare className="h-3.5 w-3.5" /> Add a review comment
         </div>
         {commentFlash && (
@@ -333,19 +333,19 @@ export default function ReviewRequestsPage() {
             value={commentName}
             onChange={(e) => setCommentName(e.target.value)}
             placeholder="Your name"
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition"
+            className="w-full rounded-[12px] border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/30 transition"
           />
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Add a review comment, decision request, or correction note…"
             rows={3}
-            className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/30 transition resize-none"
+            className="w-full rounded-[12px] border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/30 transition resize-none"
           />
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-white/90 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-white/90 disabled:opacity-50"
               disabled={!commentText.trim()}
             >
               Add comment
@@ -356,10 +356,10 @@ export default function ReviewRequestsPage() {
 
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] px-6 py-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80 mb-3">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80 mb-3">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
-        <p className="text-[15px] font-medium leading-[1.65] text-white/85">
+        <p className="text-base font-medium leading-[1.65] text-slate-100">
           Resolve the Meta billing access first — it&apos;s the one item that blocks everything downstream. After that, the Palm landing approval is the next fastest unlock. The Dubai Hills angle approval can happen in parallel.
         </p>
       </section>

@@ -42,15 +42,15 @@ const dashboardApps = [
 function StatusBadge({ status }: { status: string }) {
   if (status === 'live') {
     return (
-      <span className="flex items-center gap-1.5 text-[13px] text-[#D4AF37]">
+      <span className="flex items-center gap-1.5 text-sm text-[#D4AF37]">
         <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
         Live
       </span>
     )
   }
   return (
-    <span className="flex items-center gap-1.5 text-[13px] text-white/35">
-      <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
+    <span className="flex items-center gap-1.5 text-sm text-slate-500">
+      <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
       In progress
     </span>
   )
@@ -61,15 +61,15 @@ export default function ControlRoomDashboardAppPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           Dashboard App
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
           Command surfaces
           <br />
-          <span className="text-white/35">in one place.</span>
+          <span className="text-slate-500">in one place.</span>
         </h1>
-        <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55">
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
           {dashboardApps.length} focused workspaces — each one a distinct operating layer.
           The AI follows context between them.
         </p>
@@ -82,7 +82,7 @@ export default function ControlRoomDashboardAppPage() {
             <Link
               key={app.href}
               href={app.href}
-              className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#131B2B] p-7 transition hover:border-[#D4AF37]/25 hover:bg-white/[0.03]"
+              className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-7 transition hover:border-[#D4AF37]/25 hover:bg-slate-800/50"
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.07] to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="relative flex flex-col gap-6">
@@ -93,10 +93,10 @@ export default function ControlRoomDashboardAppPage() {
                   <StatusBadge status={app.status} />
                 </div>
                 <div>
-                  <h2 className="text-[16px] font-semibold tracking-tight text-white">{app.label}</h2>
-                  <p className="mt-2 text-[14px] leading-relaxed text-white/50">{app.description}</p>
+                  <h2 className="text-base font-semibold tracking-tight text-white">{app.label}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{app.description}</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-[13px] font-medium text-[#D4AF37]/45 transition group-hover:text-[#D4AF37]">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-[#D4AF37]/45 transition group-hover:text-[#D4AF37]">
                   Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
                 </div>
               </div>

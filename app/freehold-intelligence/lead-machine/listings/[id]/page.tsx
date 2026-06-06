@@ -31,7 +31,7 @@ function statusChip(s: string) {
   if (green.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
   if (gold.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'
   if (red.some(r => s.includes(r) || s === r)) return 'border-red-400/25 bg-red-400/10 text-red-300'
-  return 'border-white/10 bg-white/[0.04] text-white/55'
+  return 'border-slate-700 bg-slate-800/50 text-slate-400'
 }
 
 export async function generateStaticParams() {
@@ -66,19 +66,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-      <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All listings
       </Link>
 
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${bt.text} border-current/20`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${bt.text} border-current/20`}>
             <span className={`h-1.5 w-1.5 rounded-full ${bt.dot}`} />
             {bt.label}
           </span>
-          <span className="text-[13px] text-white/30">{listing.area} · {listing.developer}</span>
-          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusChip(listing.landingStatus)}`}>
+          <span className="text-sm text-slate-400">{listing.area} · {listing.developer}</span>
+          <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusChip(listing.landingStatus)}`}>
             {listing.landingStatus}
           </span>
         </div>
@@ -86,7 +86,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           {listing.projectName}
         </h1>
         {listing.startingPrice && (
-          <p className="mt-3 text-[16px] text-white/55">
+          <p className="mt-3 text-base text-slate-400">
             AED {Number(listing.startingPrice).toLocaleString()} · {listing.paymentPlan || 'Payment plan TBC'}
           </p>
         )}
@@ -97,7 +97,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         {scoreItems.map((item) => {
           const t = scoreTone(item.score)
           return (
-            <div key={item.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div key={item.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
               <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</p>
               <p className={`mt-1.5 text-[28px] font-semibold leading-none tabular-nums ${t.text}`}>{item.score}</p>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
@@ -109,8 +109,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* Component checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-        <div className="border-b border-white/[0.05] px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+        <div className="border-b border-slate-800 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
           Component readiness
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -151,8 +151,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Landing status */}
       {landing && (
         <section className="mt-5">
-          <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-            <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
+          <div className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-white/55" />
                 <span className="text-[13px] font-semibold text-white">Landing page</span>
@@ -184,8 +184,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       {/* Ad Request */}
       {adRequest && (
-        <section className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4">
+        <section className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-[#D4AF37]" />
               <span className="text-[13px] font-semibold text-white">Ad request</span>
@@ -244,7 +244,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </Link>
         <Link
           href={`/freehold-intelligence/notebook?listing=${listing.id}`}
-          className="inline-flex items-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.025] px-5 py-2.5 text-[13px] text-white/65 transition hover:border-white/20 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-[12px] border border-slate-800 bg-white/[0.025] px-5 py-2.5 text-[13px] text-white/65 transition hover:border-white/20 hover:text-white"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Open in Notebook

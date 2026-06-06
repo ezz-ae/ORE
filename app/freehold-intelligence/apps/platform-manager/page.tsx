@@ -52,9 +52,9 @@ const INFRA = [
 
 function statusConfig(s: RouteStatus) {
   if (s === 'live')    return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Live'    }
-  if (s === 'pending') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Pending' }
-  if (s === 'planned') return { dot: 'bg-sky-400',     text: 'text-sky-200',    label: 'Planned' }
-  return                      { dot: 'bg-red-400',     text: 'text-red-300',    label: 'Down'    }
+  if (s === 'pending') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Pending' }
+  if (s === 'planned') return { dot: 'bg-sky-400',   text: 'text-sky-200',   label: 'Planned' }
+  return                      { dot: 'bg-red-400',   text: 'text-red-300',   label: 'Down'    }
 }
 
 export default async function PlatformManagerPage() {
@@ -69,21 +69,21 @@ export default async function PlatformManagerPage() {
 
       <Link
         href="/freehold-intelligence/apps"
-        className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-white"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
       </Link>
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <Globe className="h-3.5 w-3.5" /> Platform Manager
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           {liveRoutes} routes live.<br />
-          <span className="text-white/35">{pendingRoutes} still pending.</span>
+          <span className="text-slate-500">{pendingRoutes} still pending.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-white/60">
+        <p className="mt-5 max-w-xl text-lg leading-[1.65] text-slate-300">
           Production deployment health, route audit, and infrastructure status for the Freehold Intelligence control room.
         </p>
       </section>
@@ -96,30 +96,30 @@ export default async function PlatformManagerPage() {
           { label: 'Developers',  value: snapshot.total_developers,                        color: 'text-white'       },
           { label: 'Audit events (24h)', value: snapshot.audit_events_24h,                color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
             <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Infrastructure */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Infrastructure</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Infrastructure</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">{liveInfra} of {INFRA.length} components live</h2>
         <div className="mt-4 space-y-2">
           {INFRA.map((item) => {
             const st = statusConfig(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <Database className="h-4 w-4 shrink-0 text-white/30" />
+                  <Database className="h-4 w-4 shrink-0 text-slate-500" />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-medium text-white/85">{item.label}</div>
-                    <div className="text-[12px] text-white/40">{item.note}</div>
+                    <div className="text-sm font-medium text-slate-100">{item.label}</div>
+                    <div className="text-xs text-slate-500">{item.note}</div>
                   </div>
                 </div>
-                <span className={`flex shrink-0 items-center gap-1.5 text-[13px] font-medium ${st.text}`}>
+                <span className={`flex shrink-0 items-center gap-1.5 text-sm font-medium ${st.text}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                   {st.label}
                 </span>
@@ -134,7 +134,7 @@ export default async function PlatformManagerPage() {
         <RouteSections routes={ROUTES} />
         <Link
           href="/freehold-intelligence/security"
-          className="mt-6 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+          className="mt-6 inline-flex items-center gap-1 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
         >
           Full security report <ArrowUpRight className="h-3 w-3" />
         </Link>

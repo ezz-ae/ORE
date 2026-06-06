@@ -13,8 +13,8 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
   available:   { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'Available'   },
-  at_capacity: { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'At capacity' },
-  overloaded:  { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Overloaded'  },
+  at_capacity: { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'At capacity' },
+  overloaded:  { dot: 'bg-red-400',   text: 'text-red-300',   badge: 'border-red-400/20 bg-red-400/10',     label: 'Overloaded'  },
 }
 
 const PRIORITY_STATUS = { overloaded: 0, at_capacity: 1, available: 2 }
@@ -61,7 +61,7 @@ export default function SalesTeamPage() {
 
   function statusPillClass(value: StatusFilter) {
     if (value !== statusFilter) {
-      return 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+      return 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
     }
     if (value === 'overloaded')  return 'border-red-400/35 bg-red-400/10 text-red-300'
     if (value === 'at_capacity') return 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
@@ -72,7 +72,7 @@ export default function SalesTeamPage() {
   function sortPillClass(value: SortKey) {
     return value === sortKey
       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-      : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65'
+      : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
   }
 
   return (
@@ -80,19 +80,19 @@ export default function SalesTeamPage() {
 
       <Link
         href="/freehold-intelligence/apps"
-        className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-white"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
       </Link>
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <Users className="h-3.5 w-3.5" /> Sales Team
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           {crmAgentRoster.length} agents.<br />
-          <span className="text-white/35">{totalHot} hot leads active.</span>
+          <span className="text-slate-500">{totalHot} hot leads active.</span>
         </h1>
       </section>
 
@@ -101,10 +101,10 @@ export default function SalesTeamPage() {
         <div className="mt-8 flex items-start gap-3 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
           <div>
-            <div className="text-[13px] font-semibold text-white">
+            <div className="text-sm font-semibold text-white">
               {overloaded.map((a) => a.name).join(', ')} {overloaded.length === 1 ? 'is' : 'are'} overloaded
             </div>
-            <p className="mt-0.5 text-[13px] text-white/55">
+            <p className="mt-0.5 text-sm text-slate-400">
               Reassign leads or pause new assignments until utilization drops below 85%.
             </p>
           </div>
@@ -119,9 +119,9 @@ export default function SalesTeamPage() {
           { label: 'Hot leads', value: totalHot,               color: 'text-red-300'     },
           { label: 'Overdue',   value: totalOverdue,           color: totalOverdue > 3 ? 'text-red-300' : 'text-[#D4AF37]' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
             <div className={`text-[28px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
         ))}
       </div>
@@ -129,10 +129,10 @@ export default function SalesTeamPage() {
       {/* Agent roster */}
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             Roster
             {statusFilter !== 'All' && (
-              <span className="ml-2 normal-case tracking-normal text-white/25">
+              <span className="ml-2 normal-case tracking-normal text-slate-600">
                 {filteredAgents.length} of {crmAgentRoster.length} agents
               </span>
             )}
@@ -144,19 +144,19 @@ export default function SalesTeamPage() {
               <button
                 key={pill.value}
                 onClick={() => setStatusFilter(pill.value)}
-                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${statusPillClass(pill.value)}`}
+                className={`rounded-full border px-3 py-1 text-sm font-medium transition ${statusPillClass(pill.value)}`}
               >
                 {pill.label}
               </button>
             ))}
 
-            <span className="text-white/20 select-none">|</span>
+            <span className="text-slate-700 select-none">|</span>
 
             {sortPills.map((pill) => (
               <button
                 key={pill.value}
                 onClick={() => setSortKey(pill.value)}
-                className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${sortPillClass(pill.value)}`}
+                className={`rounded-full border px-3 py-1 text-sm font-medium transition ${sortPillClass(pill.value)}`}
               >
                 {pill.label}
               </button>
@@ -166,11 +166,11 @@ export default function SalesTeamPage() {
 
         <div className="mt-4 space-y-3">
           {filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-white/[0.08] bg-[#131B2B] py-14 text-center">
-              <p className="text-[13px] text-white/35">No agents match this filter</p>
+            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-slate-800 bg-slate-900 py-14 text-center">
+              <p className="text-sm text-slate-500">No agents match this filter</p>
               <button
                 onClick={() => setStatusFilter('All')}
-                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5 text-[13px] font-medium text-white/40 transition hover:text-white/65"
+                className="rounded-full border border-slate-800 bg-slate-800/50 px-4 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-300"
               >
                 Clear
               </button>
@@ -185,24 +185,24 @@ export default function SalesTeamPage() {
               )
 
               return (
-                <div key={agent.id} className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
+                <div key={agent.id} className="rounded-[22px] border border-slate-800 bg-slate-900 p-6">
 
                   {/* Top row */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[15px] font-semibold text-white/70">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-800 bg-slate-800/50 text-base font-semibold text-slate-300">
                         {agent.initials}
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[16px] font-semibold text-white">{agent.name}</span>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[12px] font-medium ${st.badge} ${st.text}`}>
+                          <span className="text-base font-semibold text-white">{agent.name}</span>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${st.badge} ${st.text}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                             {st.label}
                           </span>
                         </div>
-                        <div className="mt-0.5 text-[12px] text-white/40">{agent.role}</div>
-                        <div className="mt-0.5 text-[13px] text-white/25">{agent.specialty}</div>
+                        <div className="mt-0.5 text-xs text-slate-500">{agent.role}</div>
+                        <div className="mt-0.5 text-sm text-slate-500">{agent.specialty}</div>
                       </div>
                     </div>
 
@@ -214,8 +214,8 @@ export default function SalesTeamPage() {
                         { label: 'Wins',    value: agent.recentWins,       color: 'text-[#D4AF37]' },
                       ].map((m) => (
                         <div key={m.label}>
-                          <div className={`text-[20px] font-semibold ${m.color}`}>{m.value}</div>
-                          <div className="text-[9px] text-white/30">{m.label}</div>
+                          <div className={`text-xl font-semibold ${m.color}`}>{m.value}</div>
+                          <div className="text-[9px] text-slate-600">{m.label}</div>
                         </div>
                       ))}
                     </div>
@@ -223,8 +223,8 @@ export default function SalesTeamPage() {
 
                   {/* Utilization */}
                   <div className="mt-5">
-                    <div className="mb-1.5 flex items-center justify-between text-[13px]">
-                      <span className="text-white/35">Utilization</span>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="text-slate-500">Utilization</span>
                       <span className={
                         agent.utilization >= 85 ? 'text-red-300'
                         : agent.utilization >= 70 ? 'text-[#D4AF37]'
@@ -233,7 +233,7 @@ export default function SalesTeamPage() {
                         {agent.utilization}%
                       </span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                       <div
                         className={`h-full rounded-full ${
                           agent.utilization >= 85 ? 'bg-red-400'
@@ -252,15 +252,15 @@ export default function SalesTeamPage() {
                         <Link
                           key={l.id}
                           href={`/freehold-intelligence/crm/leads/${l.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[13px] text-white/60 transition hover:border-[#D4AF37]/25 hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-sm text-slate-400 transition hover:border-[#D4AF37]/25 hover:text-white"
                         >
                           <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-[#D4AF37]'}`} />
                           {l.name.split(' ')[0]}
-                          <span className="text-white/30">· {l.intentScore}</span>
+                          <span className="text-slate-600">· {l.intentScore}</span>
                         </Link>
                       ))}
                       {overdue.length > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-[13px] text-[#F8E7AE]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-sm text-[#F8E7AE]">
                           {overdue.length} overdue follow-up{overdue.length !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -275,52 +275,52 @@ export default function SalesTeamPage() {
 
       {/* Leaderboard */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Win ranking</div>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <table className="w-full text-[13px]">
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Win ranking</div>
+        <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">#</th>
-                <th className="px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
-                <th className="hidden px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Specialty</th>
-                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Wins</th>
-                <th className="px-4 py-3 text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Hot</th>
-                <th className="px-6 py-3 text-right text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Load</th>
+              <tr className="border-b border-slate-800">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">#</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
+                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Specialty</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Wins</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Hot</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Load</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-slate-800">
               {[...crmAgentRoster]
                 .sort((a, b) => b.recentWins - a.recentWins)
                 .map((agent, i) => {
                   const st = STATUS_CONFIG[agent.status]
                   return (
-                    <tr key={agent.id} className={`transition hover:bg-white/[0.02] ${i === 0 ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
+                    <tr key={agent.id} className={`transition hover:bg-slate-800/30 ${i === 0 ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
                       <td className="px-6 py-4">
                         {i === 0
                           ? <Trophy className="h-4 w-4 text-[#D4AF37]" />
-                          : <span className="text-[13px] text-white/30">{i + 1}</span>
+                          : <span className="text-sm text-slate-500">{i + 1}</span>
                         }
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[13px] font-semibold text-white/60">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-800/50 text-sm font-semibold text-slate-300">
                             {agent.initials}
                           </div>
                           <div>
-                            <div className="text-[13px] font-medium text-white/85">{agent.name}</div>
-                            <div className="text-[13px] text-white/35">{agent.role}</div>
+                            <div className="text-sm font-medium text-slate-100">{agent.name}</div>
+                            <div className="text-sm text-slate-500">{agent.role}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="hidden px-4 py-4 text-[12px] text-white/40 sm:table-cell">{agent.specialty}</td>
-                      <td className="px-4 py-4 text-center text-[14px] font-semibold text-[#D4AF37]">{agent.recentWins}</td>
+                      <td className="hidden px-4 py-4 text-xs text-slate-500 sm:table-cell">{agent.specialty}</td>
+                      <td className="px-4 py-4 text-center text-sm font-semibold text-[#D4AF37]">{agent.recentWins}</td>
                       <td className="px-4 py-4 text-center">
-                        <span className={`text-[13px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-white/30'}`}>
+                        <span className={`text-sm font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-600'}`}>
                           {agent.hotLeads}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`text-[12px] font-medium ${st.text}`}>{agent.utilization}%</span>
+                        <span className={`text-xs font-medium ${st.text}`}>{agent.utilization}%</span>
                       </td>
                     </tr>
                   )
@@ -335,31 +335,31 @@ export default function SalesTeamPage() {
         <section className="mt-12">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Unassigned inbox</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Unassigned inbox</div>
               <h2 className="mt-1 text-lg font-semibold text-white">{unassigned.length} leads waiting for assignment</h2>
             </div>
             <Link
               href="/freehold-intelligence/crm/inbox"
-              className="inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+              className="inline-flex items-center gap-1 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
             >
               Full inbox <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
           <div className="space-y-2">
             {unassigned.map((lead) => (
-              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[14px] font-semibold text-white">{lead.name}</span>
-                    <span className="text-[13px] text-white/35">{lead.source}</span>
+                    <span className="text-sm font-semibold text-white">{lead.name}</span>
+                    <span className="text-sm text-slate-500">{lead.source}</span>
                   </div>
-                  <p className="mt-1 line-clamp-1 text-[12px] text-white/50">{lead.aiNote}</p>
+                  <p className="mt-1 line-clamp-1 text-xs text-slate-400">{lead.aiNote}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className={`text-[14px] font-semibold ${lead.intentScore >= 80 ? 'text-[#D4AF37]' : 'text-white/70'}`}>
+                  <div className={`text-sm font-semibold ${lead.intentScore >= 80 ? 'text-[#D4AF37]' : 'text-slate-300'}`}>
                     {lead.intentScore}
                   </div>
-                  <div className="text-[12px] text-white/30">intent</div>
+                  <div className="text-xs text-slate-500">intent</div>
                 </div>
               </div>
             ))}

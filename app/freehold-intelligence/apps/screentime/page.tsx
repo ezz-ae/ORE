@@ -12,7 +12,7 @@ const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 type SortKey = 'events' | 'calls' | 'connect' | 'avgDur'
 
 function intensityClass(count: number, max: number) {
-  if (count === 0) return 'bg-white/[0.04]'
+  if (count === 0) return 'bg-slate-800/60'
   const pct = count / max
   if (pct >= 0.75) return 'bg-[#D4AF37]'
   if (pct >= 0.5)  return 'bg-[#D4AF37]/70'
@@ -88,26 +88,26 @@ export default function ScreentimePage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/apps" className="inline-flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All apps
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
           <Activity className="h-3.5 w-3.5" /> Screentime
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           Operator activity<br />
-          <span className="text-white/35">patterns &amp; gaps.</span>
+          <span className="text-slate-500">patterns &amp; gaps.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-white/60">
+        <p className="mt-5 max-w-xl text-lg leading-[1.65] text-slate-300">
           Derived from the CRM activity log — call times, response gaps, and agent intensity. Live session telemetry connects in V2.
         </p>
       </section>
 
       <div className="mt-6 flex items-start gap-2.5 rounded-[16px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
         <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D4AF37]/70" />
-        <p className="text-[12px] text-white/55">
+        <p className="text-sm text-slate-400">
           <span className="text-[#D4AF37]/80 font-medium">V1 — CRM-derived data.</span> Activity timing is pulled from the CRM event log.
           Real-time session tracking and keystroke telemetry require V2 instrumentation.
         </p>
@@ -120,30 +120,30 @@ export default function ScreentimePage() {
           { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-[#D4AF37]' },
           { label: 'Peak hour',     value: peakLabel,         color: 'text-[#D4AF37]'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Activity heatmap */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Activity heatmap</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Activity heatmap</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">Hour × day distribution</h2>
         <div className="mt-5 overflow-x-auto">
           <div className="min-w-[520px]">
             <div className="mb-2 flex">
               <div className="w-10 shrink-0" />
               {HOURS.map((h) => (
-                <div key={h} className="flex-1 text-center text-[9px] text-white/25">
+                <div key={h} className="flex-1 text-center text-[9px] text-slate-600">
                   {h < 12 ? `${h}` : h === 12 ? '12' : `${h - 12}p`}
                 </div>
               ))}
             </div>
             {DAYS.map((day, di) => (
               <div key={day} className="mb-1.5 flex items-center gap-1">
-                <div className="w-10 shrink-0 text-[12px] text-white/30">{day}</div>
+                <div className="w-10 shrink-0 text-xs text-slate-500">{day}</div>
                 <div className="flex flex-1 gap-1">
                   {HOURS.map((h) => {
                     const count = grid[di][h]
@@ -158,9 +158,9 @@ export default function ScreentimePage() {
                 </div>
               </div>
             ))}
-            <div className="mt-3 flex items-center gap-2 pl-10 text-[12px] text-white/30">
+            <div className="mt-3 flex items-center gap-2 pl-10 text-xs text-slate-500">
               <span>Less</span>
-              {['bg-white/[0.04]', 'bg-[#D4AF37]/15', 'bg-[#D4AF37]/35', 'bg-[#D4AF37]/70', 'bg-[#D4AF37]'].map((cls) => (
+              {['bg-slate-800/60', 'bg-[#D4AF37]/15', 'bg-[#D4AF37]/35', 'bg-[#D4AF37]/70', 'bg-[#D4AF37]'].map((cls) => (
                 <div key={cls} className={`h-4 w-4 rounded-[4px] ${cls}`} />
               ))}
               <span>More</span>
@@ -171,20 +171,20 @@ export default function ScreentimePage() {
 
       {/* Per-agent breakdown — sortable */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Agent activity</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agent activity</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">CRM events by agent</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <table className="w-full text-[13px]">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</th>
+              <tr className="border-b border-slate-800">
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
                 {SORT_COLS.map(({ key, label }) => (
                   <th key={key} className={`px-4 py-3 text-center ${key === 'avgDur' ? 'hidden md:table-cell' : key === 'calls' ? 'hidden sm:table-cell' : ''}`}>
                     <button
                       onClick={() => handleSort(key)}
                       className={[
-                        'flex items-center gap-1 mx-auto text-[12px] font-medium uppercase tracking-[0.16em] transition',
-                        sortKey === key ? 'text-white/65' : 'text-white/30 hover:text-white/55',
+                        'flex items-center gap-1 mx-auto text-xs font-semibold uppercase tracking-wider transition',
+                        sortKey === key ? 'text-slate-300' : 'text-slate-500 hover:text-slate-400',
                       ].join(' ')}
                     >
                       {label}
@@ -192,40 +192,40 @@ export default function ScreentimePage() {
                     </button>
                   </th>
                 ))}
-                <th className="px-6 py-3 text-right text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Intensity</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Intensity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-slate-800">
               {agentStats.map(({ agent, events, calls, connectRate: cr }) => {
                 const maxEventsAll = Math.max(...BASE_AGENT_STATS.map((s) => s.events), 1)
                 return (
-                  <tr key={agent.id} className="transition hover:bg-white/[0.02]">
+                  <tr key={agent.id} className="transition hover:bg-slate-800/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-[13px] font-semibold text-white/60">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-800/50 text-sm font-semibold text-slate-300">
                           {agent.initials}
                         </div>
                         <div>
-                          <div className="text-[13px] font-medium text-white/85">{agent.name}</div>
-                          <div className="text-[13px] text-white/35">{agent.role}</div>
+                          <div className="text-sm font-medium text-slate-100">{agent.name}</div>
+                          <div className="text-sm text-slate-500">{agent.role}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center">
-                      <span className="text-[14px] font-semibold text-white">{events}</span>
+                      <span className="text-sm font-semibold text-white">{events}</span>
                     </td>
-                    <td className="hidden px-4 py-4 text-center text-white/60 sm:table-cell">{calls}</td>
+                    <td className="hidden px-4 py-4 text-center text-slate-300 sm:table-cell">{calls}</td>
                     <td className="hidden px-4 py-4 text-center md:table-cell">
-                      <span className={cr >= 60 ? 'text-[#D4AF37]' : cr > 0 ? 'text-[#D4AF37]' : 'text-white/30'}>
+                      <span className={cr >= 60 ? 'text-[#D4AF37]' : cr > 0 ? 'text-[#D4AF37]' : 'text-slate-600'}>
                         {cr > 0 ? `${cr}%` : '—'}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-4 text-center text-white/50 md:table-cell">
+                    <td className="hidden px-4 py-4 text-center text-slate-400 md:table-cell">
                       {agentStats.find((s) => s.agent.id === agent.id)?.avgDur || 0}m
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <div className="w-24 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="w-24 overflow-hidden rounded-full bg-slate-800">
                           <div
                             className="h-1.5 rounded-full bg-[#D4AF37]/70"
                             style={{ width: `${maxEventsAll > 0 ? (events / maxEventsAll) * 100 : 0}%` }}
@@ -243,9 +243,9 @@ export default function ScreentimePage() {
 
       {/* Hour distribution bar chart */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Hour distribution</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Hour distribution</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">When the team is most active</h2>
-        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
           {HOURS.map((h) => {
             const count = hourTotals[h]
             const max   = Math.max(...HOURS.map((hh) => hourTotals[hh]))
@@ -254,17 +254,17 @@ export default function ScreentimePage() {
             return (
               <div key={h} className="flex flex-1 flex-col items-center gap-1">
                 <div
-                  className={`w-full rounded-t-[3px] ${isPeak ? 'bg-[#D4AF37]' : 'bg-white/[0.12]'}`}
+                  className={`w-full rounded-t-[3px] ${isPeak ? 'bg-[#D4AF37]' : 'bg-slate-700'}`}
                   style={{ height: `${Math.max(pct, 4)}%` }}
                 />
-                <span className={`text-[8px] ${isPeak ? 'text-[#D4AF37]' : 'text-white/20'}`}>
+                <span className={`text-[8px] ${isPeak ? 'text-[#D4AF37]' : 'text-slate-600'}`}>
                   {h < 12 ? h : h === 12 ? '12' : h - 12}
                 </span>
               </div>
             )
           })}
         </div>
-        <p className="mt-2 text-[12px] text-white/35">
+        <p className="mt-2 text-xs text-slate-500">
           Peak activity at {peakLabel}. Morning calls dominate — align hot-lead follow-ups accordingly.
         </p>
       </section>

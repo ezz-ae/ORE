@@ -170,11 +170,11 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h1 className="text-[28px] font-semibold text-white sm:text-[36px]">{campaign.name}</h1>
-                  <span className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(campaign.status)}`}>
+                  <span className={`rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(campaign.status)}`}>
                     {campaign.status}
                   </span>
                 </div>
-                <p className="mt-2 text-[13px] text-white/45">
+                <p className="mt-2 text-sm text-slate-400">
                   {campaign.objective.replace(/_/g, ' ')} · Budget {fmtBudget(campaign.daily_budget)}/day · ID {campaign.id}
                 </p>
               </div>
@@ -184,7 +184,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                 <button
                   onClick={() => campaignId && fetchData(campaignId)}
                   disabled={updating}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 text-[13px] text-white/60 transition hover:bg-white/[0.07]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 text-sm text-slate-300 transition hover:bg-slate-800"
                 >
                   <RefreshCw className={`h-3 w-3 ${updating ? 'animate-spin' : ''}`} /> Refresh
                 </button>
@@ -193,7 +193,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('PAUSED')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
                     <Pause className="h-3 w-3" /> Pause
                   </button>
@@ -203,7 +203,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('ACTIVE')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
                     <Play className="h-3 w-3" /> Activate
                   </button>
@@ -215,7 +215,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                       if (confirm('Delete this campaign? This cannot be undone.')) updateStatus('DELETED')
                     }}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-red-400/15 bg-red-400/[0.06] px-3 text-[13px] text-red-300 transition hover:bg-red-400/15"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-red-400/15 bg-red-400/[0.06] px-3 text-sm text-red-300 transition hover:bg-red-400/15"
                   >
                     <Trash2 className="h-3 w-3" /> Delete
                   </button>
@@ -227,7 +227,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Metrics */}
           {insights ? (
             <section className="mt-10">
-              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Performance · {insights.date_start} → {insights.date_stop}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -239,22 +239,22 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   { label: 'Leads',       value: leads,                        icon: Users },
                   { label: 'CPL',         value: cpl,                          icon: DollarSign },
                 ].map((m) => (
-                  <div key={m.label} className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] p-4">
-                    <div className="text-[13px] text-white/35">{m.label}</div>
-                    <div className="mt-2 text-[20px] font-semibold text-white leading-tight">{m.value}</div>
+                  <div key={m.label} className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+                    <div className="text-xs text-slate-500">{m.label}</div>
+                    <div className="mt-2 text-xl font-semibold text-white leading-tight">{m.value}</div>
                   </div>
                 ))}
               </div>
 
               {insights.cpc && (
-                <div className="mt-3 flex flex-wrap gap-5 text-[12px] text-white/40">
-                  <span>CPC: <span className="text-white/65">{fmtMoney(insights.cpc)}</span></span>
-                  <span>CPM: <span className="text-white/65">{fmtMoney(insights.cpm)}</span></span>
+                <div className="mt-3 flex flex-wrap gap-5 text-xs text-slate-500">
+                  <span>CPC: <span className="text-slate-300">{fmtMoney(insights.cpc)}</span></span>
+                  <span>CPM: <span className="text-slate-300">{fmtMoney(insights.cpm)}</span></span>
                 </div>
               )}
             </section>
           ) : (
-            <div className="mt-8 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5 text-center text-[13px] text-white/35">
+            <div className="mt-8 rounded-[18px] border border-slate-800 bg-slate-900 p-5 text-center text-sm text-slate-400">
               No insights yet — data appears after the campaign has delivered impressions.
             </div>
           )}
@@ -262,32 +262,32 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           {/* Ad sets */}
           {data?.adSets && data.adSets.length > 0 && (
             <section className="mt-14">
-              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Ad sets</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Ad sets</div>
               <h2 className="mt-2 text-xl font-semibold text-white">{data.adSets.length} ad set{data.adSets.length !== 1 ? 's' : ''}</h2>
               <div className="mt-5 space-y-3">
                 {data.adSets.map((adSet) => (
-                  <div key={adSet.id} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+                  <div key={adSet.id} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-[14px] font-semibold text-white">{adSet.name}</div>
-                        <div className="mt-1 text-[12px] text-white/45">
+                        <div className="text-sm font-semibold text-white">{adSet.name}</div>
+                        <div className="mt-1 text-xs text-slate-400">
                           Budget {fmtBudget(adSet.daily_budget)}/day · {adSet.optimization_goal.replace(/_/g, ' ')}
                         </div>
                       </div>
-                      <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusBadge(adSet.status)}`}>
+                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge(adSet.status)}`}>
                         {adSet.status}
                       </span>
                     </div>
 
                     {adSet.ads.length > 0 && (
-                      <div className="mt-4 border-t border-white/[0.05] pt-4 space-y-2">
+                      <div className="mt-4 border-t border-slate-800 pt-4 space-y-2">
                         {adSet.ads.map((ad) => (
-                          <div key={ad.id} className="flex items-center justify-between gap-3 text-[12px]">
+                          <div key={ad.id} className="flex items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/20'}`} />
-                              <span className="text-white/70">{ad.name}</span>
+                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-600'}`} />
+                              <span className="text-slate-300">{ad.name}</span>
                             </div>
-                            <span className={`text-[12px] font-medium ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/35'}`}>{ad.status}</span>
+                            <span className={`text-xs font-medium ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-500'}`}>{ad.status}</span>
                           </div>
                         ))}
                       </div>

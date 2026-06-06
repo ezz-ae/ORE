@@ -33,8 +33,8 @@ export default function ApiPage() {
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <div className="mb-8">
-        <h1 className="text-[20px] font-semibold text-white">API Reference</h1>
-        <p className="mt-1 text-[13px] text-white/35">
+        <h1 className="text-xl font-semibold text-white">API Reference</h1>
+        <p className="mt-1 text-sm text-slate-400">
           RESTful API for integrating Freehold Intelligence with external tools.
           Manage keys in <Link href="/freehold-intelligence/settings/security" className="text-[#D4AF37]/80 hover:text-[#D4AF37] underline underline-offset-2">Security →</Link>
         </p>
@@ -42,10 +42,10 @@ export default function ApiPage() {
 
       {/* Base URL */}
       <section className="mb-6 rounded-[16px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-        <div className="text-[11px] text-white/30 mb-1.5 uppercase tracking-wider">Base URL</div>
-        <code className="font-mono text-[13px] text-[#D4AF37]">https://api.freeholdproperty.ae</code>
-        <div className="mt-2 text-[11px] text-white/30">
-          All requests require <code className="text-white/50">Authorization: Bearer fh_prod_...</code>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Base URL</div>
+        <code className="font-mono text-sm text-[#D4AF37]">https://api.freeholdproperty.ae</code>
+        <div className="mt-2 text-xs text-slate-500">
+          All requests require <code className="text-slate-400">Authorization: Bearer fh_prod_...</code>
         </div>
       </section>
 
@@ -56,27 +56,27 @@ export default function ApiPage() {
           { Icon: Zap,  label: 'Zapier plugin',  color: 'text-amber-400'  },
           { Icon: Globe,label: 'OpenAPI spec',   color: 'text-sky-400'    },
         ].map(({ Icon, label, color }) => (
-          <button key={label} className="flex items-center gap-2 rounded-[12px] border border-white/[0.07] bg-[#131B2B] px-4 py-3 text-[13px] font-medium text-white/50 transition hover:border-white/15 hover:text-white/80">
+          <button key={label} className="flex items-center gap-2 rounded-[12px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-slate-700 hover:text-slate-100">
             <Icon className={`h-4 w-4 shrink-0 ${color}`} />
             {label}
-            <ArrowRight className="ml-auto h-3.5 w-3.5 text-white/20" />
+            <ArrowRight className="ml-auto h-3.5 w-3.5 text-slate-600" />
           </button>
         ))}
       </div>
 
       {/* Endpoints */}
       <section className="mb-6">
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">Endpoints</div>
-        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Endpoints</div>
+        <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
           {ENDPOINTS.map((ep) => {
             const mc = METHOD_COLOR[ep.method] ?? METHOD_COLOR.GET
             return (
               <div key={ep.path} className="flex items-center gap-4 px-5 py-3.5">
-                <span className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold ${mc}`}>
+                <span className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-xs font-semibold ${mc}`}>
                   {ep.method}
                 </span>
-                <code className="font-mono text-[13px] text-white/60 min-w-0 truncate">{ep.path}</code>
-                <span className="ml-auto text-[11px] text-white/25 whitespace-nowrap hidden sm:block">{ep.desc}</span>
+                <code className="font-mono text-sm text-slate-400 min-w-0 truncate">{ep.path}</code>
+                <span className="ml-auto text-xs text-slate-500 whitespace-nowrap hidden sm:block">{ep.desc}</span>
               </div>
             )
           })}
@@ -85,19 +85,19 @@ export default function ApiPage() {
 
       {/* Webhooks */}
       <section>
-        <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/25">Webhooks</div>
-        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Webhooks</div>
+        <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
           {WEBHOOKS.map((wh) => (
             <div key={wh.event} className="flex items-center gap-4 px-5 py-3.5">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/[0.04]">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-800/50">
                 <Zap className="h-3.5 w-3.5 text-amber-400/60" />
               </div>
-              <code className="font-mono text-[13px] text-white/65">{wh.event}</code>
-              <span className="ml-auto text-[11px] text-white/25 hidden sm:block">{wh.desc}</span>
+              <code className="font-mono text-sm text-slate-300">{wh.event}</code>
+              <span className="ml-auto text-xs text-slate-500 hidden sm:block">{wh.desc}</span>
             </div>
           ))}
         </div>
-        <div className="mt-3 text-[12px] text-white/25">
+        <div className="mt-3 text-xs text-slate-500">
           Configure webhook URLs in <Link href="/freehold-intelligence/integrations" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">Integrations →</Link>
         </div>
       </section>
