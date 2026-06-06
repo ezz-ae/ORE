@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, BarChart2, Zap, AlertCircle, ArrowUpRight, TrendingUp, RefreshCw, Monitor } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
-import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
 interface OverviewData {
   campaigns?: GoogleCampaign[]
@@ -288,25 +287,6 @@ export default function GoogleOverviewPage() {
         </div>
       )}
 
-      {/* Marketing Expert Agent */}
-      <MarketingExpertPanel
-        scope="google-ads"
-        context={{
-          platform: 'Google Ads',
-          activeCampaigns: active,
-          pausedCampaigns: paused,
-          totalCampaigns: campaigns.length,
-          spend30d: fmtMicros(spend),
-          conversions30d: Math.round(convs),
-          clicks30d: clicks,
-          impressions30d: imps,
-          avgCtr: imps > 0 ? fmtPct(clicks / imps) : '0%',
-          topCampaigns: [...campaigns]
-            .sort((a, b) => (b.metrics?.costMicros ?? 0) - (a.metrics?.costMicros ?? 0))
-            .slice(0, 5)
-            .map((c) => ({ name: c.name, spend: fmtMicros(c.metrics?.costMicros ?? 0), status: c.status })),
-        }}
-      />
 
     </div>
   )

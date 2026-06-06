@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { AdsConversationSidebar } from '@/components/google/ads-conversation-sidebar'
 
 const BASE = '/freehold-intelligence/lead-machine/google'
 
@@ -19,10 +20,10 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
 
   return (
-    <>
+    <div className="flex flex-col min-h-full">
       {/* Google Ads sub-nav */}
       <div className="border-b border-white/[0.04] bg-[#04060A]">
-        <div className="mx-auto max-w-5xl overflow-x-auto px-6">
+        <div className="overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
             {tabs.map((tab) => {
               const isActive =
@@ -48,7 +49,14 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
       </div>
-      {children}
-    </>
+
+      {/* Two-column: scrollable main content + sticky conversation sidebar */}
+      <div className="flex flex-1 min-h-0">
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          {children}
+        </main>
+        <AdsConversationSidebar />
+      </div>
+    </div>
   )
 }
