@@ -1,207 +1,320 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Users2, AlertCircle, CheckCircle2, ArrowUpRight, XCircle, RefreshCw, GitMerge } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useState, useEffect } from 'react'
+import { Users2, TrendingUp, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, Phone, Mail, XCircle, DollarSign, Clock } from 'lucide-react'
 
-const REQUIREMENTS = [
-  { id: 'private-app-token', label: 'Private App token',                met: false, critical: true,  note: 'HubSpot Private App token with contacts, deals and companies scopes.' },
-  { id: 'portal-id',         label: 'Portal ID',                        met: false, critical: true,  note: 'Identifies the HubSpot account — found under Settings → Account Information.' },
-  { id: 'contacts-scope',    label: 'Contacts read & write',            met: false, critical: true,  note: 'Required to sync leads as HubSpot contacts and write intent score updates.' },
-  { id: 'deals-scope',       label: 'Deals pipeline access',            met: false, critical: true,  note: 'Maps Freehold pipeline stages (New → Hot → Closed) to HubSpot deal stages.' },
-  { id: 'companies-scope',   label: 'Companies scope',                  met: false, critical: false, note: 'Optional firm-level mapping for corporate or multi-property buyers.' },
-  { id: 'custom-props',      label: 'Custom properties configured',     met: false, critical: false, note: 'Maps source, intent_score and assigned_agent to custom HubSpot contact fields.' },
-  { id: 'webhook',           label: 'Webhook endpoint active',          met: false, critical: false, note: 'Real-time contact updates from HubSpot to Freehold when stage changes occur.' },
-]
+const TOKEN_KEY = 'fh_hubspot_token'
+const BASE      = 'https://api.hubapi.com'
 
-const CHECKLIST = [
-  'Log in to HubSpot and go to Settings → Integrations → Private Apps',
-  'Create a new Private App — give it the name "Freehold Intelligence"',
-  'Enable scopes: crm.objects.contacts (read+write), crm.objects.deals (read+write), crm.objects.companies (read)',
-  'Generate the app token and copy it',
-  'Copy your Portal ID from Settings → Account → Account Information',
-  'Paste both values into the Freehold integration settings under HubSpot',
-  'Map Freehold stages: New → Lead In, Follow-up → Attempting Contact, Hot → Contract Sent, Closed → Closed Won',
-]
+type Phase = 'idle' | 'connecting' | 'connected' | 'error'
 
-const SYNC_SCHEMA = [
-  { freehold: 'CRM Lead',      hubspot: 'Contact',        fields: 'Name, phone, email, source, intent_score, assigned_agent' },
-  { freehold: 'Pipeline stage', hubspot: 'Deal stage',     fields: 'New → Hot → Qualified → Closed' },
-  { freehold: 'Activity log',  hubspot: 'Contact timeline', fields: 'Calls, notes, WhatsApp events, stage changes' },
-  { freehold: 'Agent',         hubspot: 'Contact owner',   fields: 'Agent name maps to HubSpot owner by email' },
-]
-
-export default function HubSpotIntegrationPage() {
-  const [checked, setChecked] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
-  )
-  function toggle(id: string) {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+type HsContact = {
+  id: string
+  properties: {
+    firstname?: string
+    lastname?: string
+    email?: string
+    phone?: string
+    lifecyclestage?: string
+    hs_lead_status?: string
+    createdate?: string
   }
-  const metCount      = Object.values(checked).filter(Boolean).length
-  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
+}
+
+type HsDeal = {
+  id: string
+  properties: {
+    dealname?: string
+    amount?: string
+    dealstage?: string
+    closedate?: string
+  }
+}
+
+type HsData = {
+  contacts: HsContact[]
+  deals: HsDeal[]
+  contactTotal: number
+  dealTotal: number
+}
+
+async function hs<T = any>(path: string, token: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  })
+  const json = await res.json()
+  if (!res.ok) {
+    throw Object.assign(new Error(json.message || `HTTP ${res.status}`), {
+      status: res.status,
+      category: json.category,
+    })
+  }
+  return json
+}
+
+async function fetchAll(token: string): Promise<HsData> {
+  const [contacts, deals] = await Promise.all([
+    hs('/crm/v3/objects/contacts?limit=10&properties=firstname,lastname,email,phone,lifecyclestage,hs_lead_status,createdate&sorts=-createdate', token),
+    hs('/crm/v3/objects/deals?limit=10&properties=dealname,amount,dealstage,closedate&sorts=-createdate', token),
+  ])
+  return {
+    contacts:     contacts.results  ?? [],
+    deals:        deals.results     ?? [],
+    contactTotal: contacts.total    ?? 0,
+    dealTotal:    deals.total       ?? 0,
+  }
+}
+
+const STAGE_COLORS: Record<string, string> = {
+  leadIn:              'text-sky-400    bg-sky-400/10    border-sky-400/20',
+  attemptingcontact:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
+  contractsent:        'text-violet-400 bg-violet-400/10 border-violet-400/20',
+  closedwon:           'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  closedlost:          'text-red-400    bg-red-400/10    border-red-400/20',
+}
+
+function stageStyle(stage?: string) {
+  const key = (stage ?? '').toLowerCase().replace(/[^a-z]/g, '')
+  return STAGE_COLORS[key] ?? 'text-white/40 bg-white/[0.05] border-white/10'
+}
+
+function stageName(stage?: string) {
+  if (!stage) return '—'
+  return stage.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()).trim()
+}
+
+function fmtAed(amount?: string) {
+  if (!amount) return '—'
+  return `AED ${Number(amount).toLocaleString()}`
+}
+
+function ago(iso?: string) {
+  if (!iso) return '—'
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  if (d === 0) return 'Today'
+  if (d === 1) return 'Yesterday'
+  return `${d}d ago`
+}
+
+export default function HubSpotPage() {
+  const [token,   setToken]   = useState('')
+  const [show,    setShow]    = useState(false)
+  const [phase,   setPhase]   = useState<Phase>('idle')
+  const [data,    setData]    = useState<HsData | null>(null)
+  const [errMsg,  setErrMsg]  = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(TOKEN_KEY)
+    if (saved) { setToken(saved); connect(saved) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function connect(tok = token) {
+    const t = tok.trim()
+    if (!t) return
+    setPhase('connecting')
+    setLoading(true)
+    setErrMsg('')
+    try {
+      const d = await fetchAll(t)
+      localStorage.setItem(TOKEN_KEY, t)
+      setData(d)
+      setPhase('connected')
+    } catch (err: any) {
+      setErrMsg(
+        err.status === 401 ? 'Invalid token — check your HubSpot Private App token.' :
+        err.status === 403 ? 'Token missing required scopes. Enable contacts + deals read.' :
+        err.message || 'Connection failed.',
+      )
+      setPhase('error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function disconnect() {
+    localStorage.removeItem(TOKEN_KEY)
+    setToken('')
+    setData(null)
+    setPhase('idle')
+    setErrMsg('')
+  }
+
+  async function refresh() {
+    const saved = localStorage.getItem(TOKEN_KEY)
+    if (saved) await connect(saved)
+  }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> Integrations
-      </Link>
-
-      <section className="mt-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
-            <Users2 className="h-3.5 w-3.5" /> HubSpot CRM
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> Not connected
-          </span>
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          HubSpot CRM<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
-          HubSpot is the lead sync backbone. Without it, lead data lives only inside Freehold — no contact timeline, no pipeline history, no cross-channel attribution.
-        </p>
-      </section>
-
-      {/* Critical blocker banner */}
-      {criticalUnmet > 0 && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-            <div>
-              <div className="text-[13px] font-semibold text-white">Lead sync is disabled</div>
-              <p className="mt-1 text-[13px] text-white/60">
-                All CRM data is currently mocked inside Freehold only. No leads are being written to HubSpot, no stage changes are syncing, and no activity history is building in the contact timeline.
-              </p>
+      {/* Header */}
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-orange-500/15">
+              <Users2 className="h-4 w-4 text-orange-400" />
             </div>
+            <h1 className="text-[20px] font-semibold text-white">HubSpot CRM</h1>
           </div>
+          <p className="mt-1 text-[12px] text-white/30">Live contacts and deals from your HubSpot portal</p>
+        </div>
+        {phase === 'connected' && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={refresh} disabled={loading}
+              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:text-white/70 disabled:opacity-40">
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+            <button onClick={disconnect}
+              className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-[12px] text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
+              <XCircle className="h-3 w-3" /> Disconnect
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Connect form */}
+      {phase !== 'connected' && (
+        <div className="mb-6 rounded-[18px] border border-orange-400/15 bg-orange-400/[0.03] p-5">
+          <div className="mb-1 text-[13px] font-medium text-white/70">HubSpot Private App Token</div>
+          <div className="mb-3 text-[11px] text-white/25">
+            Settings → Integrations → Private Apps → Create app. Enable scopes:{' '}
+            <code className="text-white/40">crm.objects.contacts.read</code> and{' '}
+            <code className="text-white/40">crm.objects.deals.read</code>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type={show ? 'text' : 'password'}
+                placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && connect()}
+                className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 pr-9 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-orange-400/40"
+              />
+              <button onClick={() => setShow((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60">
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <button onClick={() => connect()} disabled={!token.trim() || loading}
+              className="rounded-[10px] bg-orange-500 px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-orange-400 disabled:opacity-40">
+              {phase === 'connecting' ? 'Connecting…' : 'Connect'}
+            </button>
+          </div>
+          {phase === 'error' && (
+            <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-[12px] text-red-400/90">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {errMsg}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Requirements */}
-      <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access requirements</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
-            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
-          />
-        </div>
-        <div className="mt-5 space-y-2">
-          {REQUIREMENTS.map((req) => (
-            <button
-              key={req.id}
-              type="button"
-              onClick={() => toggle(req.id)}
-              className={`w-full text-left flex items-start gap-4 rounded-[18px] border p-5 ${
-                checked[req.id]
-                  ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]'
-                  : req.critical
-                    ? 'border-red-400/15 bg-red-400/[0.03]'
-                    : 'border-white/[0.08] bg-[#131B2B]'
-              }`}
-            >
-              {checked[req.id]
-                ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
-                : req.critical
-                  ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                  : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-white/25" />
-              }
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-white">{req.label}</div>
-                <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
+      {/* Connected dashboard */}
+      {phase === 'connected' && data && (
+        <>
+          {/* Status */}
+          <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-[13px] text-emerald-400/90">Connected to HubSpot</span>
+            <span className="ml-auto text-[11px] text-white/20">Token stored in browser only</span>
+          </div>
+
+          {/* Summary tiles */}
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Contacts',     value: data.contactTotal.toLocaleString(), Icon: Users2,       color: 'text-orange-400'  },
+              { label: 'Deals',        value: data.dealTotal.toLocaleString(),    Icon: TrendingUp,   color: 'text-violet-400'  },
+              { label: 'Active deals', value: data.deals.filter((d) => !['closedwon','closedlost'].includes((d.properties.dealstage ?? '').toLowerCase())).length.toString(), Icon: DollarSign, color: 'text-amber-400' },
+              { label: 'Won',          value: data.deals.filter((d) => (d.properties.dealstage ?? '').toLowerCase() === 'closedwon').length.toString(), Icon: CheckCircle2, color: 'text-emerald-400' },
+            ].map(({ label, value, Icon, color }) => (
+              <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+                <Icon className={`h-4 w-4 ${color}`} />
+                <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
+                <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
               </div>
-              <span className={`shrink-0 text-[13px] font-medium ${
-                checked[req.id] ? 'text-[#D4AF37]' : req.critical ? 'text-red-300' : 'text-white/35'
-              }`}>
-                {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
 
-      {/* Setup guide */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Setup guide</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
-        <div className="mt-5 space-y-2">
-          {CHECKLIST.map((step, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-5 py-4">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-white/40">
-                {i + 1}
-              </span>
-              <p className="text-[13px] leading-relaxed text-white/70">{step}</p>
+          {/* Contacts table */}
+          <section className="mb-5">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/25">
+              Recent Contacts <span className="text-white/15 normal-case font-normal">({data.contactTotal.toLocaleString()} total)</span>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+              {data.contacts.length === 0
+                ? <div className="px-5 py-8 text-center text-[13px] text-white/25">No contacts found</div>
+                : data.contacts.map((c) => {
+                    const name = [c.properties.firstname, c.properties.lastname].filter(Boolean).join(' ') || 'Unknown'
+                    return (
+                      <div key={c.id} className="flex items-center gap-3 px-5 py-3.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-400/10 text-[12px] font-semibold text-orange-400">
+                          {name[0]?.toUpperCase() ?? '?'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-white/85 truncate">{name}</div>
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            {c.properties.email && (
+                              <span className="flex items-center gap-1 text-[11px] text-white/30">
+                                <Mail className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[140px]">{c.properties.email}</span>
+                              </span>
+                            )}
+                            {c.properties.phone && (
+                              <span className="flex items-center gap-1 text-[11px] text-white/30">
+                                <Phone className="h-3 w-3 shrink-0" /> {c.properties.phone}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {c.properties.lifecyclestage && (
+                            <span className={`hidden sm:flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${stageStyle(c.properties.lifecyclestage)}`}>
+                              {stageName(c.properties.lifecyclestage)}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-white/20">{ago(c.properties.createdate)}</span>
+                        </div>
+                      </div>
+                    )
+                  })
+              }
+            </div>
+          </section>
 
-      {/* Sync schema */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Data mapping</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">What syncs once connected</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-white/[0.05]">
-                <th className="px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Freehold</th>
-                <th className="px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">HubSpot</th>
-                <th className="hidden px-6 py-3 text-left text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 sm:table-cell">Fields synced</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.05]">
-              {SYNC_SCHEMA.map((row) => (
-                <tr key={row.freehold} className="transition hover:bg-white/[0.02]">
-                  <td className="px-6 py-4 font-medium text-white/85">{row.freehold}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      <GitMerge className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/50" />
-                      <span className="text-[#D4AF37]/75">{row.hubspot}</span>
+          {/* Deals table */}
+          <section>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/25">
+              Recent Deals <span className="text-white/15 normal-case font-normal">({data.dealTotal.toLocaleString()} total)</span>
+            </div>
+            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+              {data.deals.length === 0
+                ? <div className="px-5 py-8 text-center text-[13px] text-white/25">No deals found</div>
+                : data.deals.map((d) => (
+                    <div key={d.id} className="flex items-center gap-4 px-5 py-3.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-white/85 truncate">{d.properties.dealname || 'Unnamed deal'}</div>
+                        {d.properties.closedate && (
+                          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-white/25">
+                            <Clock className="h-3 w-3" />
+                            Close {new Date(d.properties.closedate).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-[13px] font-medium text-white/60">{fmtAed(d.properties.amount)}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${stageStyle(d.properties.dealstage)}`}>
+                          {stageName(d.properties.dealstage)}
+                        </span>
+                      </div>
                     </div>
-                  </td>
-                  <td className="hidden px-6 py-4 text-[12px] text-white/45 sm:table-cell">{row.fields}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 flex items-center gap-2 rounded-[14px] border border-white/[0.05] bg-white/[0.02] px-4 py-3">
-          <RefreshCw className="h-3.5 w-3.5 shrink-0 text-white/30" />
-          <p className="text-[12px] text-white/45">
-            Sync will run every 15 minutes bidirectionally once the token and portal ID are confirmed. Stage changes in HubSpot will update Freehold CRM within one sync cycle.
-          </p>
-        </div>
-      </section>
-
-      {/* CRM link */}
-      <section className="mt-10 flex items-center justify-between rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
-        <div>
-          <div className="text-[13px] font-semibold text-white">View CRM leads affected</div>
-          <p className="mt-0.5 text-[12px] text-white/45">6 active leads are tracked in Freehold only — no HubSpot record yet.</p>
-        </div>
-        <Link
-          href="/freehold-intelligence/crm"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[12px] text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 hover:text-[#D4AF37]"
-        >
-          Open CRM <ArrowUpRight className="h-3 w-3" />
-        </Link>
-      </section>
-
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about HubSpot setup, sync, data mapping…"
-          suggestions={[
-            'What happens to existing leads when HubSpot connects?',
-            'How do I create a Private App in HubSpot?',
-            'What pipeline stages should I map to Freehold?',
-          ]}
-        />
-      </section>
+                  ))
+              }
+            </div>
+          </section>
+        </>
+      )}
 
     </div>
   )

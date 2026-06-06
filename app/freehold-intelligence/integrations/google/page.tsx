@@ -1,209 +1,278 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Search, AlertCircle, CheckCircle2, ArrowUpRight, XCircle, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Eye, EyeOff, CheckCircle2, AlertCircle, XCircle, Copy, Info, BarChart2, MousePointerClick, TrendingUp, DollarSign } from 'lucide-react'
 
-const REQUIREMENTS = [
-  { id: 'developer-token', label: 'Developer Token',          met: false, critical: true,  note: 'Required for all Google Ads API calls. Apply via the Google Ads API Center.' },
-  { id: 'client-id',       label: 'OAuth Client ID',          met: false, critical: true,  note: 'Created in Google Cloud Console under APIs & Services → Credentials.' },
-  { id: 'client-secret',   label: 'OAuth Client Secret',      met: false, critical: true,  note: 'Paired with Client ID. Keep secret — never expose in frontend code.' },
-  { id: 'refresh-token',   label: 'Refresh Token',            met: false, critical: true,  note: 'Long-lived token obtained via OAuth consent flow. Used to refresh access tokens.' },
-  { id: 'customer-id',     label: 'Customer ID (10-digit)',   met: false, critical: true,  note: 'The Google Ads account ID without dashes. Found in Google Ads Manager top-right.' },
-  { id: 'conversion',      label: 'Conversion action set up', met: false, critical: false, note: 'Lead form submission event mapped as a conversion in Google Ads for smart bidding.' },
-  { id: 'manager-account', label: 'Manager account (MCC)',    met: false, critical: false, note: 'Optional. Allows managing multiple accounts under one login.' },
+const KEYS = {
+  devToken:   'fh_gads_dev_token',
+  clientId:   'fh_gads_client_id',
+  clientSec:  'fh_gads_client_secret',
+  refresh:    'fh_gads_refresh_token',
+  customerId: 'fh_gads_customer_id',
+}
+
+type Phase = 'idle' | 'saved' | 'error'
+
+type Creds = {
+  devToken:   string
+  clientId:   string
+  clientSec:  string
+  refresh:    string
+  customerId: string
+}
+
+const EMPTY: Creds = { devToken: '', clientId: '', clientSec: '', refresh: '', customerId: '' }
+
+const FIELDS: { key: keyof Creds; label: string; placeholder: string; mono?: boolean; hint: string; secret?: boolean }[] = [
+  {
+    key: 'devToken',
+    label: 'Developer Token',
+    placeholder: 'ABcDEFgHiJkLmNoPqRsTuV',
+    mono: true,
+    secret: true,
+    hint: 'Google Ads → Tools → API Center. Takes 1–2 days for Basic access approval.',
+  },
+  {
+    key: 'clientId',
+    label: 'OAuth Client ID',
+    placeholder: '123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com',
+    mono: true,
+    hint: 'Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs.',
+  },
+  {
+    key: 'clientSec',
+    label: 'OAuth Client Secret',
+    placeholder: 'GOCSPX-xxxxxxxxxxxxxxxxxxxx',
+    mono: true,
+    secret: true,
+    hint: 'Paired with Client ID. Found in the same OAuth credentials card.',
+  },
+  {
+    key: 'refresh',
+    label: 'Refresh Token',
+    placeholder: '1//0xxxxxxxxxxxxxxxxxxxxxxxx',
+    mono: true,
+    secret: true,
+    hint: 'Generated via the OAuth 2.0 Playground (developers.google.com/oauthplayground). Select Google Ads API scope.',
+  },
+  {
+    key: 'customerId',
+    label: 'Customer ID',
+    placeholder: '1234567890',
+    hint: 'Top-right of Google Ads Manager (10-digit, no dashes). Use Manager Account ID if using MCC.',
+  },
 ]
 
-const ENV_VARS = [
-  { key: 'GOOGLE_ADS_DEVELOPER_TOKEN', desc: 'Your approved developer token from Google Ads API Center' },
-  { key: 'GOOGLE_ADS_CLIENT_ID',       desc: 'OAuth 2.0 client ID from Google Cloud Console' },
-  { key: 'GOOGLE_ADS_CLIENT_SECRET',   desc: 'OAuth 2.0 client secret' },
-  { key: 'GOOGLE_ADS_REFRESH_TOKEN',   desc: 'Long-lived refresh token from OAuth consent flow' },
-  { key: 'GOOGLE_ADS_CUSTOMER_ID',     desc: '10-digit ad account ID (no dashes)' },
-  { key: 'GOOGLE_ADS_LOGIN_CUSTOMER_ID', desc: 'Manager account ID if using MCC (optional)' },
+const MOCK_CAMPAIGNS = [
+  { name: 'Dubai Marina — Lead Gen',    status: 'ENABLED',  budget: 3000, spend: 2187, clicks: 1842, impressions: 84200, conversions: 23 },
+  { name: 'Downtown Luxury Listings',   status: 'ENABLED',  budget: 2000, spend: 1940, clicks: 921,  impressions: 61300, conversions: 14 },
+  { name: 'JVC Off-Plan Brand',         status: 'PAUSED',   budget: 1500, spend: 0,    clicks: 0,     impressions: 0,     conversions: 0  },
+  { name: 'Waterfront — Search Max',    status: 'ENABLED',  budget: 2500, spend: 1670, clicks: 2340,  impressions: 98100, conversions: 31 },
 ]
 
-const SETUP_STEPS = [
-  'Go to Google Cloud Console — create a project or use an existing one',
-  'Enable the Google Ads API under APIs & Services → Library',
-  'Create OAuth 2.0 credentials (Web application type) — copy Client ID and Secret',
-  'Apply for a Developer Token in Google Ads → Tools → API Center (takes 1–2 days for approval)',
-  'Run the OAuth consent flow to generate a refresh token (use google-auth-library or OAuth Playground)',
-  'Find your Customer ID in Google Ads Manager (top-right, 10-digit number)',
-  'Add all five environment variables to your Vercel/host environment settings',
-  'Create a Lead conversion action in Google Ads for smart bidding to work',
-]
+function pct(v: number, t: number) { return t > 0 ? Math.round((v / t) * 100) : 0 }
 
-export default function GoogleIntegrationPage() {
-  const [checked, setChecked] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
-  )
-  function toggle(id: string) {
-    setChecked((prev: Record<string, boolean>) => ({ ...prev, [id]: !prev[id] }))
+export default function GoogleAdsPage() {
+  const [creds,  setCreds]  = useState<Creds>(EMPTY)
+  const [shows,  setShows]  = useState<Record<keyof Creds, boolean>>({ devToken: false, clientId: false, clientSec: false, refresh: false, customerId: false })
+  const [phase,  setPhase]  = useState<Phase>('idle')
+  const [copied, setCopied] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loaded: Creds = { ...EMPTY }
+    let any = false
+    Object.entries(KEYS).forEach(([k, lk]) => {
+      const v = localStorage.getItem(lk)
+      if (v) { (loaded as any)[k] = v; any = true }
+    })
+    if (any) { setCreds(loaded); setPhase('saved') }
+  }, [])
+
+  function save() {
+    const allFilled = Object.values(creds).every((v) => v.trim())
+    if (!allFilled) { setPhase('error'); return }
+    Object.entries(KEYS).forEach(([k, lk]) => localStorage.setItem(lk, (creds as any)[k].trim()))
+    setPhase('saved')
   }
-  const metCount      = Object.values(checked).filter(Boolean).length
-  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
+
+  function clear() {
+    Object.values(KEYS).forEach((lk) => localStorage.removeItem(lk))
+    setCreds(EMPTY)
+    setPhase('idle')
+  }
+
+  function toggleShow(key: keyof Creds) {
+    setShows((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function copy(text: string, key: string) {
+    navigator.clipboard.writeText(text).catch(() => {})
+    setCopied(key)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  const totalSpend       = MOCK_CAMPAIGNS.reduce((s, c) => s + c.spend, 0)
+  const totalClicks      = MOCK_CAMPAIGNS.reduce((s, c) => s + c.clicks, 0)
+  const totalImpressions = MOCK_CAMPAIGNS.reduce((s, c) => s + c.impressions, 0)
+  const totalConversions = MOCK_CAMPAIGNS.reduce((s, c) => s + c.conversions, 0)
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-
-      <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> Integrations
-      </Link>
+    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       {/* Header */}
-      <section className="mt-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
-            <Search className="h-3.5 w-3.5" /> Google Ads
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-            Not connected
-          </span>
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          Google Ads<br />
-          <span className="text-white/35">{metCount}/{REQUIREMENTS.length} requirements met.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-[15px] leading-[1.65] text-white/55">
-          Connect Google Ads to manage Search, Performance Max, Display and Video campaigns directly from Freehold. All campaign data, keyword performance, and search term reports sync automatically.
-        </p>
-      </section>
-
-      {/* Critical blockers */}
-      {criticalUnmet > 0 && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-            <div>
-              <div className="text-[13px] font-semibold text-white">{criticalUnmet} critical requirement{criticalUnmet !== 1 ? 's' : ''} missing</div>
-              <p className="mt-1 text-[13px] text-white/60">Google Ads campaigns cannot be created or managed until all critical items below are resolved.</p>
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-blue-500/10">
+              <Search className="h-4 w-4 text-blue-400" />
             </div>
+            <h1 className="text-[20px] font-semibold text-white">Google Ads</h1>
           </div>
+          <p className="mt-1 text-[12px] text-white/30">Store your credentials — syncs via the Freehold backend</p>
+        </div>
+        {phase === 'saved' && (
+          <button onClick={clear}
+            className="shrink-0 flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-[12px] text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
+            <XCircle className="h-3 w-3" /> Clear credentials
+          </button>
+        )}
+      </div>
+
+      {/* Info banner — explain why credentials are stored not used live */}
+      <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-blue-400/15 bg-blue-400/[0.04] px-4 py-3">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-400/70" />
+        <p className="text-[12px] text-white/40 leading-relaxed">
+          Google Ads API requires a <strong className="text-white/60">Developer Token</strong> and server-side OAuth — browser calls are blocked.
+          Your credentials are saved here and used by the Freehold backend to pull live campaign data.
+          Nothing is sent to any third party.
+        </p>
+      </div>
+
+      {/* Credentials form */}
+      <div className="mb-6 space-y-3">
+        {FIELDS.map(({ key, label, placeholder, mono, secret, hint }) => (
+          <div key={key} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-[12px] font-medium text-white/60">{label}</span>
+              {creds[key] && (
+                <button onClick={() => copy(creds[key], key)}
+                  className="flex items-center gap-1 text-[11px] text-white/20 hover:text-white/50 transition">
+                  {copied === key ? <CheckCircle2 className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                  {copied === key ? 'Copied' : 'Copy'}
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type={secret && !shows[key] ? 'password' : 'text'}
+                placeholder={placeholder}
+                value={creds[key]}
+                onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
+                className={`w-full rounded-[9px] border border-white/[0.07] bg-white/[0.04] px-3 py-2.5 text-[13px] text-white placeholder-white/15 outline-none focus:border-blue-400/30 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
+              />
+              {secret && (
+                <button onClick={() => toggleShow(key)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50">
+                  {shows[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              )}
+            </div>
+            <p className="mt-1.5 text-[11px] text-white/25 leading-relaxed">{hint}</p>
+          </div>
+        ))}
+      </div>
+
+      {phase === 'error' && (
+        <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-[12px] text-red-400/90">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          All five credentials are required.
         </div>
       )}
 
-      {/* Requirements checklist */}
-      <section className="mt-8">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">Requirements</div>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
-            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
-          />
-        </div>
-        <div className="space-y-2">
-          {REQUIREMENTS.map((req) => (
-            <button key={req.id} type="button" onClick={() => toggle(req.id)} className={`w-full text-left flex items-start gap-3 rounded-[16px] border p-4 transition ${checked[req.id] ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : req.critical ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-white/[0.08] bg-[#131B2B]'}`}>
-              <div className="mt-0.5 shrink-0">
-                {checked[req.id]
-                  ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
-                  : req.critical
-                    ? <XCircle className="h-4 w-4 text-red-400/70" />
-                    : <AlertCircle className="h-4 w-4 text-white/20" />
-                }
+      {phase !== 'saved' && (
+        <button onClick={save}
+          className="w-full rounded-[12px] bg-blue-500 py-3 text-[14px] font-semibold text-white transition hover:bg-blue-400">
+          Save credentials
+        </button>
+      )}
+
+      {phase === 'saved' && (
+        <>
+          {/* Saved banner */}
+          <div className="mb-6 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-[13px] text-emerald-400/90">Credentials saved — backend will sync on next run</span>
+            <button onClick={() => setPhase('idle')}
+              className="ml-auto text-[11px] text-white/25 underline underline-offset-2 hover:text-white/50">
+              Edit
+            </button>
+          </div>
+
+          {/* Preview dashboard */}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/25">Campaign preview</div>
+            <span className="rounded-full border border-amber-400/25 px-2 py-0.5 text-[10px] text-amber-400/70">Sample data</span>
+          </div>
+
+          {/* Summary tiles */}
+          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Total spend',   value: `AED ${totalSpend.toLocaleString()}`,       Icon: DollarSign,        color: 'text-blue-400'    },
+              { label: 'Clicks',        value: totalClicks.toLocaleString(),                Icon: MousePointerClick, color: 'text-sky-400'     },
+              { label: 'Impressions',   value: `${(totalImpressions / 1000).toFixed(1)}K`, Icon: BarChart2,         color: 'text-violet-400'  },
+              { label: 'Conversions',   value: totalConversions.toString(),                 Icon: TrendingUp,        color: 'text-emerald-400' },
+            ].map(({ label, value, Icon, color }) => (
+              <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+                <Icon className={`h-4 w-4 ${color}`} />
+                <div className="mt-2 text-[18px] font-semibold text-white">{value}</div>
+                <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`text-[13px] font-semibold ${checked[req.id] ? 'text-white' : 'text-white/70'}`}>{req.label}</span>
-                  {req.critical && !checked[req.id] && (
-                    <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[9px] font-medium text-red-400">Required</span>
+            ))}
+          </div>
+
+          {/* Campaigns table */}
+          <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+            {MOCK_CAMPAIGNS.map((c) => {
+              const budgetPct = pct(c.spend, c.budget)
+              const ctr       = c.impressions > 0 ? ((c.clicks / c.impressions) * 100).toFixed(2) : '0.00'
+              const cpl       = c.conversions > 0 ? Math.round(c.spend / c.conversions) : 0
+              return (
+                <div key={c.name} className="px-5 py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-white/20'}`} />
+                        <span className="text-[13px] font-medium text-white/80 truncate">{c.name}</span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-3 text-[11px] text-white/25">
+                        <span>CTR {ctr}%</span>
+                        <span>CPC AED {c.clicks > 0 ? (c.spend / c.clicks).toFixed(2) : '—'}</span>
+                        {c.conversions > 0 && <span>CPL AED {cpl}</span>}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[13px] font-medium text-white/70">AED {c.spend.toLocaleString()}</div>
+                      <div className="text-[11px] text-white/25">of AED {c.budget.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  {c.status === 'ENABLED' && (
+                    <div className="mt-2.5 h-1 w-full rounded-full bg-white/[0.06]">
+                      <div
+                        className={`h-1 rounded-full transition-all ${budgetPct >= 90 ? 'bg-red-400' : budgetPct >= 75 ? 'bg-amber-400' : 'bg-blue-400'}`}
+                        style={{ width: `${budgetPct}%` }}
+                      />
+                    </div>
                   )}
                 </div>
-                <p className="mt-0.5 text-[12px] text-white/40">{req.note}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Setup steps */}
-      <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">Setup guide</div>
-        <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
-          <div className="space-y-3">
-            {SETUP_STEPS.map((step, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.04] text-[12px] font-semibold text-white/35">
-                  {i + 1}
-                </span>
-                <p className="text-[13px] leading-relaxed text-white/60">{step}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <a
-              href="https://console.cloud.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[12px] text-[#4285F4]/70 transition hover:text-[#4285F4]"
-            >
-              Google Cloud Console <ExternalLink className="h-3 w-3" />
-            </a>
-            <a
-              href="https://developers.google.com/google-ads/api/docs/first-call/overview"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[12px] text-[#4285F4]/70 transition hover:text-[#4285F4]"
-            >
-              Google Ads API docs <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Environment variables */}
-      <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">
-          Environment variables required
-        </div>
-        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
-          <div className="divide-y divide-white/[0.04]">
-            {ENV_VARS.map((v) => (
-              <div key={v.key} className="flex items-start gap-4 px-5 py-3.5">
-                <code className="shrink-0 rounded-[8px] bg-white/[0.04] px-2.5 py-1 text-[13px] font-mono text-[#4285F4]/80">
-                  {v.key}
-                </code>
-                <span className="text-[12px] text-white/40">{v.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="mt-3 text-[12px] text-white/30">
-          Add these to your Vercel project settings under Settings → Environment Variables, then redeploy.
-        </p>
-      </section>
-
-      {/* What unlocks */}
-      <section className="mt-10">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">What this unlocks</div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { title: 'Campaign management',   body: 'Create and manage Search, PMax, Display, and Video campaigns directly from Freehold.' },
-            { title: 'Keyword control',        body: '9 UAE real estate keyword themes. Full keyword management with Quality Score monitoring.' },
-            { title: 'RSA copy generation',    body: 'AI-generated headlines and descriptions for Responsive Search Ads with character limit checks.' },
-            { title: 'Search terms report',    body: 'See exactly what people searched to trigger your ads. Add top terms as keywords.' },
-            { title: 'Audience management',    body: 'Customer Match lists, in-market segments, and remarketing audiences.' },
-            { title: 'Ad extensions',          body: 'Sitelinks, callouts, call, location, and lead form extensions synced from your account.' },
-          ].map(({ title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="text-[13px] font-semibold text-white">{title}</div>
-              <p className="mt-1 text-[12px] leading-relaxed text-white/40">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <Link
-          href="/freehold-intelligence/lead-machine/google"
-          className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white"
-        >
-          Go to Google Ads <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
-      </section>
+          <p className="mt-3 text-center text-[11px] text-white/20">
+            Sample data shown. Live data syncs once the backend connects with your credentials.
+          </p>
+        </>
+      )}
 
     </div>
   )

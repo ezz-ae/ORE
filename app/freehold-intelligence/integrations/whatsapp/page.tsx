@@ -1,229 +1,313 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, MessageSquare, AlertCircle, CheckCircle2, XCircle, ArrowUpRight, Zap } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useState, useEffect } from 'react'
+import { MessageSquare, Phone, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, XCircle, Zap, Send, Shield } from 'lucide-react'
 
-const REQUIREMENTS = [
-  { id: 'waba-id',         label: 'WhatsApp Business Account ID',   met: false, critical: true,  note: 'The WABA ID from Meta Business Manager — links Freehold to your business account.' },
-  { id: 'phone-number-id', label: 'Phone Number ID',                met: false, critical: true,  note: 'The specific phone number registered under your WABA for sending messages.' },
-  { id: 'access-token',    label: 'Permanent system user token',    met: false, critical: true,  note: 'System user token from Meta Business Manager with `whatsapp_business_messaging` scope.' },
-  { id: 'verified-number', label: 'Verified business phone number', met: false, critical: true,  note: 'The business phone number must pass Meta verification before messages can send.' },
-  { id: 'biz-manager',     label: 'Meta Business Manager access',   met: false, critical: true,  note: 'Business Manager is the parent account — admin access is required to manage WABA.' },
-  { id: 'templates',       label: 'Message templates approved',     met: false, critical: false, note: 'Pre-approved templates required for automated follow-up flows (1–2 day Meta review).' },
-  { id: 'webhook',         label: 'Webhook endpoint configured',    met: false, critical: false, note: 'Receive delivery receipts and incoming messages in real time.' },
-]
+const TOKEN_KEY = 'fh_whatsapp_token'
+const PHONE_KEY = 'fh_whatsapp_phone_id'
+const GRAPH     = 'https://graph.facebook.com/v20.0'
 
-const CHECKLIST = [
-  'Open Meta Business Manager and go to WhatsApp → Business Accounts',
-  'Add or select the business phone number to use for Freehold messages',
-  'Create a System User under Business Settings → Users → System Users',
-  'Assign the System User to the WhatsApp account with Standard access',
-  'Generate a permanent access token for the System User',
-  'Copy the WABA ID, Phone Number ID, and token into Freehold integration settings',
-  'Submit message templates for Meta approval — use the Freehold pre-built set',
-  'Test a template message to confirm delivery before enabling automations',
-]
+type Phase = 'idle' | 'connecting' | 'connected' | 'error'
 
-const AUTOMATION_FLOWS = [
-  {
-    id: 'lead-follow-up',
-    label: '24h lead follow-up',
-    trigger: 'New lead arrives, no agent contact within 24h',
-    template: 'Hi {{name}}, I saw your enquiry about {{area}}. I have the details ready — when is a good time to connect?',
-    status: 'Pending template approval',
-    statusColor: 'text-orange-300',
-  },
-  {
-    id: 'payment-plan',
-    label: 'Payment plan delivery',
-    trigger: 'Agent marks lead stage as "Qualified"',
-    template: 'Hi {{name}}, here is the {{project}} payment plan you requested. {{payment_plan_link}}',
-    status: 'Pending template approval',
-    statusColor: 'text-orange-300',
-  },
-  {
-    id: 'appointment-confirm',
-    label: 'Viewing confirmation',
-    trigger: 'Viewing appointment logged in CRM',
-    template: 'Hi {{name}}, confirming your viewing of {{project}} on {{date}} at {{time}}. Reply YES to confirm.',
-    status: 'Pending template approval',
-    statusColor: 'text-orange-300',
-  },
-  {
-    id: 'hot-escalation',
-    label: 'Hot-lead agent alert',
-    trigger: 'Lead intent score crosses 85 threshold',
-    template: 'Internal agent alert: {{name}} is now hot. Intent: {{score}}/100. Action: {{next_action}}',
-    status: 'No template needed (agent-to-agent)',
-    statusColor: 'text-[#D4AF37]',
-  },
-]
+type WaPhone = {
+  id: string
+  verified_name: string
+  display_phone_number: string
+  quality_rating: 'GREEN' | 'YELLOW' | 'RED' | string
+  status: 'CONNECTED' | 'FLAGGED' | 'RESTRICTED' | string
+  name_status?: string
+  platform_type?: string
+  throughput?: { level: string }
+}
 
-export default function WhatsAppIntegrationPage() {
-  const [checked, setChecked] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
-  )
-  function toggle(id: string) {
-    setChecked((prev: Record<string, boolean>) => ({ ...prev, [id]: !prev[id] }))
+type WaTemplate = {
+  id: string
+  name: string
+  status: 'APPROVED' | 'PENDING' | 'REJECTED' | string
+  language: string
+  category: string
+}
+
+type WaData = {
+  phone: WaPhone
+  templates: WaTemplate[]
+  waba_id?: string
+}
+
+async function graph<T = any>(path: string, token: string, params: Record<string, string> = {}): Promise<T> {
+  const url = new URL(`${GRAPH}${path}`)
+  url.searchParams.set('access_token', token)
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+  const res  = await fetch(url.toString())
+  const json = await res.json()
+  if (json.error) {
+    throw Object.assign(new Error(json.error.message), { code: json.error.code, type: json.error.type })
   }
-  const metCount      = Object.values(checked).filter(Boolean).length
-  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
+  return json
+}
+
+async function fetchAll(phoneId: string, token: string): Promise<WaData> {
+  const phone: WaPhone = await graph(
+    `/${phoneId}`,
+    token,
+    { fields: 'id,verified_name,display_phone_number,quality_rating,status,name_status,platform_type,throughput' },
+  )
+  const tmplRes = await graph<{ data: WaTemplate[] }>(
+    `/${phoneId}/message_templates`,
+    token,
+    { limit: '20', fields: 'id,name,status,language,category' },
+  ).catch(() => ({ data: [] as WaTemplate[] }))
+
+  return { phone, templates: tmplRes.data ?? [] }
+}
+
+const QUALITY_COLOR: Record<string, string> = {
+  GREEN:  'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  YELLOW: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
+  RED:    'text-red-400     bg-red-400/10     border-red-400/20',
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  CONNECTED:  'text-emerald-400',
+  FLAGGED:    'text-amber-400',
+  RESTRICTED: 'text-red-400',
+}
+
+const TMPL_COLOR: Record<string, string> = {
+  APPROVED: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  PENDING:  'text-amber-400   bg-amber-400/10   border-amber-400/20',
+  REJECTED: 'text-red-400     bg-red-400/10     border-red-400/20',
+}
+
+function errMsg(err: any) {
+  if (err.code === 190) return 'Token expired or invalid. Generate a new System User token in Meta Business Manager.'
+  if (err.code === 100) return 'Invalid Phone Number ID. Find it in Meta Business Manager → WhatsApp → Phone Numbers.'
+  if (err.code === 200 || err.code === 10) return 'Token missing whatsapp_business_messaging permission.'
+  return err.message || 'Connection failed.'
+}
+
+export default function WhatsAppPage() {
+  const [token,   setToken]   = useState('')
+  const [phoneId, setPhoneId] = useState('')
+  const [showTok, setShowTok] = useState(false)
+  const [phase,   setPhase]   = useState<Phase>('idle')
+  const [data,    setData]    = useState<WaData | null>(null)
+  const [err,     setErr]     = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const savedTok   = localStorage.getItem(TOKEN_KEY)
+    const savedPhone = localStorage.getItem(PHONE_KEY)
+    if (savedTok && savedPhone) {
+      setToken(savedTok)
+      setPhoneId(savedPhone)
+      connect(savedPhone, savedTok)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function connect(pid = phoneId, tok = token) {
+    const p = pid.trim(), t = tok.trim()
+    if (!p || !t) return
+    setPhase('connecting')
+    setLoading(true)
+    setErr('')
+    try {
+      const d = await fetchAll(p, t)
+      localStorage.setItem(TOKEN_KEY, t)
+      localStorage.setItem(PHONE_KEY, p)
+      setData(d)
+      setPhase('connected')
+    } catch (e: any) {
+      setErr(errMsg(e))
+      setPhase('error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function disconnect() {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(PHONE_KEY)
+    setToken('')
+    setPhoneId('')
+    setData(null)
+    setPhase('idle')
+    setErr('')
+  }
+
+  async function refresh() {
+    const t = localStorage.getItem(TOKEN_KEY)
+    const p = localStorage.getItem(PHONE_KEY)
+    if (t && p) await connect(p, t)
+  }
+
+  const approvedTemplates = data?.templates.filter((t) => t.status === 'APPROVED').length ?? 0
+  const pendingTemplates  = data?.templates.filter((t) => t.status === 'PENDING').length ?? 0
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> Integrations
-      </Link>
-
-      <section className="mt-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
-            <MessageSquare className="h-3.5 w-3.5" /> WhatsApp Business
+      {/* Header */}
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-emerald-400/10">
+              <MessageSquare className="h-4 w-4 text-emerald-400" />
+            </div>
+            <h1 className="text-[20px] font-semibold text-white">WhatsApp Business</h1>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> Not connected
-          </span>
+          <p className="mt-1 text-[12px] text-white/30">Live phone number status and message templates</p>
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          WhatsApp Business<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
-          WhatsApp is the primary follow-up channel. Without it, lead messages are sent manually — no automation, no delivery receipts, and no CRM activity logging on outbound messages.
-        </p>
-      </section>
+        {phase === 'connected' && (
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={refresh} disabled={loading}
+              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:text-white/70 disabled:opacity-40">
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+            <button onClick={disconnect}
+              className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-[12px] text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
+              <XCircle className="h-3 w-3" /> Disconnect
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* Blocker banner */}
-      {criticalUnmet > 0 && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-            <div>
-              <div className="text-[13px] font-semibold text-white">Lead follow-up automation is disabled</div>
-              <p className="mt-1 text-[13px] text-white/60">
-                Agents are sending WhatsApp messages manually with no read receipt tracking, no delivery confirmation, and no activity sync to the CRM timeline. The 24h follow-up automation cannot run until this integration is live.
-              </p>
+      {/* Connect form */}
+      {phase !== 'connected' && (
+        <div className="mb-6 rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.03] p-5 space-y-3">
+          <div>
+            <div className="mb-1 text-[13px] font-medium text-white/70">Phone Number ID</div>
+            <input
+              type="text"
+              placeholder="e.g. 102834961234567"
+              value={phoneId}
+              onChange={(e) => setPhoneId(e.target.value)}
+              className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
+            />
+          </div>
+          <div>
+            <div className="mb-1 text-[13px] font-medium text-white/70">System User Token</div>
+            <div className="relative">
+              <input
+                type={showTok ? 'text' : 'password'}
+                placeholder="EAAxxxxxxxxxxxxxxxx…"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && connect()}
+                className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 pr-9 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
+              />
+              <button onClick={() => setShowTok((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60">
+                {showTok ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
+          <button onClick={() => connect()} disabled={!token.trim() || !phoneId.trim() || loading}
+            className="w-full rounded-[10px] bg-emerald-500 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-40">
+            {phase === 'connecting' ? 'Verifying…' : 'Connect WhatsApp'}
+          </button>
+          {phase === 'error' && (
+            <div className="flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-[12px] text-red-400/90">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {err}
+            </div>
+          )}
+          <p className="text-[11px] text-white/20">
+            Phone Number ID → Meta Business Manager → WhatsApp → Phone Numbers.
+            System User token → Business Settings → Users → System Users → Generate token (scope: whatsapp_business_messaging).
+          </p>
         </div>
       )}
 
-      {/* Requirements */}
-      <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access requirements</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
-            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
-          />
-        </div>
-        <div className="mt-5 space-y-2">
-          {REQUIREMENTS.map((req) => (
-            <button
-              key={req.id}
-              type="button"
-              onClick={() => toggle(req.id)}
-              className={`w-full text-left flex items-start gap-4 rounded-[18px] border p-5 ${
-                checked[req.id]
-                  ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]'
-                  : req.critical
-                    ? 'border-red-400/15 bg-red-400/[0.03]'
-                    : 'border-white/[0.08] bg-[#131B2B]'
-              }`}
-            >
-              {checked[req.id]
-                ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
-                : req.critical
-                  ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                  : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-white/25" />
-              }
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-white">{req.label}</div>
-                <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
-              </div>
-              <span className={`shrink-0 text-[13px] font-medium ${
-                checked[req.id] ? 'text-[#D4AF37]' : req.critical ? 'text-red-300' : 'text-white/35'
-              }`}>
-                {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
+      {/* Connected dashboard */}
+      {phase === 'connected' && data && (
+        <>
+          {/* Status bar */}
+          <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-[13px] text-emerald-400/90">Connected to WhatsApp Business API</span>
+            <span className="ml-auto text-[11px] text-white/20">Credentials stored in browser only</span>
+          </div>
 
-      {/* Setup guide */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Setup guide</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
-        <div className="mt-5 space-y-2">
-          {CHECKLIST.map((step, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-5 py-4">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-white/40">
-                {i + 1}
-              </span>
-              <p className="text-[13px] leading-relaxed text-white/70">{step}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 rounded-[14px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-5 py-4">
-          <p className="text-[12px] text-white/55">
-            <span className="font-semibold text-[#D4AF37]/80">Note:</span> Meta Business Verification is separate from WhatsApp verification and may take up to 5 business days. Start this process first if your Business Manager account is newly created.
-          </p>
-        </div>
-      </section>
-
-      {/* Automation flows */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Automations</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Flows enabled once connected</h2>
-        <div className="mt-5 space-y-3">
-          {AUTOMATION_FLOWS.map((flow) => (
-            <div key={flow.id} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50" />
-                  <div>
-                    <div className="text-[14px] font-semibold text-white">{flow.label}</div>
-                    <p className="mt-0.5 text-[12px] text-white/45">{flow.trigger}</p>
-                  </div>
+          {/* Phone number card */}
+          <section className="mb-5 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-emerald-400/10">
+                  <Phone className="h-5 w-5 text-emerald-400" />
                 </div>
-                <span className={`shrink-0 text-[13px] font-medium ${flow.statusColor}`}>{flow.status}</span>
+                <div>
+                  <div className="text-[15px] font-semibold text-white">{data.phone.verified_name}</div>
+                  <div className="mt-0.5 text-[13px] text-white/50">{data.phone.display_phone_number}</div>
+                </div>
               </div>
-              <div className="mt-3 rounded-[10px] border border-white/[0.04] bg-white/[0.02] px-4 py-3">
-                <p className="font-mono text-[13px] leading-relaxed text-white/40">{flow.template}</p>
+              <div className="flex flex-col items-end gap-2">
+                <span className={`text-[12px] font-medium ${STATUS_COLOR[data.phone.status] ?? 'text-white/40'}`}>
+                  {data.phone.status}
+                </span>
+                {data.phone.quality_rating && (
+                  <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${QUALITY_COLOR[data.phone.quality_rating] ?? 'text-white/40 bg-white/[0.05] border-white/10'}`}>
+                    {data.phone.quality_rating} quality
+                  </span>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.05] pt-4">
+              <div>
+                <div className="text-[10px] text-white/25 uppercase tracking-wider">Throughput</div>
+                <div className="mt-1 text-[13px] text-white/70 capitalize">{data.phone.throughput?.level?.toLowerCase().replace('_', ' ') ?? '—'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-white/25 uppercase tracking-wider">Platform</div>
+                <div className="mt-1 text-[13px] text-white/70">{data.phone.platform_type ?? 'Cloud API'}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-white/25 uppercase tracking-wider">Name status</div>
+                <div className="mt-1 text-[13px] text-white/70 capitalize">{data.phone.name_status?.toLowerCase().replace('_', ' ') ?? '—'}</div>
+              </div>
+            </div>
+          </section>
 
-      {/* CRM link */}
-      <section className="mt-10 flex items-center justify-between rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
-        <div>
-          <div className="text-[13px] font-semibold text-white">Leads waiting for automated follow-up</div>
-          <p className="mt-0.5 text-[12px] text-white/45">3 leads in the overdue queue would receive automated messages once connected.</p>
-        </div>
-        <Link
-          href="/freehold-intelligence/crm/follow-up"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[12px] text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 hover:text-[#D4AF37]"
-        >
-          View queue <ArrowUpRight className="h-3 w-3" />
-        </Link>
-      </section>
+          {/* Template summary tiles */}
+          <div className="mb-5 grid grid-cols-3 gap-3">
+            {[
+              { label: 'Total templates', value: data.templates.length, Icon: Zap,       color: 'text-white/60'   },
+              { label: 'Approved',        value: approvedTemplates,     Icon: CheckCircle2, color: 'text-emerald-400' },
+              { label: 'Pending review',  value: pendingTemplates,      Icon: Shield,    color: 'text-amber-400'  },
+            ].map(({ label, value, Icon, color }) => (
+              <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+                <Icon className={`h-4 w-4 ${color}`} />
+                <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
+                <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
+              </div>
+            ))}
+          </div>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about WhatsApp setup, templates, automations…"
-          suggestions={[
-            'What message templates do I need to submit?',
-            'How long does Meta Business Verification take?',
-            'Which leads would get automated follow-ups first?',
-          ]}
-        />
-      </section>
+          {/* Templates list */}
+          <section>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/25">Message Templates</div>
+            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+              {data.templates.length === 0
+                ? <div className="px-5 py-8 text-center text-[13px] text-white/25">No templates found</div>
+                : data.templates.map((t) => (
+                    <div key={t.id} className="flex items-center gap-4 px-5 py-3.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.04]">
+                        <Send className="h-3.5 w-3.5 text-emerald-400/60" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-[13px] text-white/80 truncate">{t.name}</div>
+                        <div className="text-[11px] text-white/25">{t.language} · {t.category}</div>
+                      </div>
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[t.status] ?? 'text-white/40 bg-white/[0.05] border-white/10'}`}>
+                        {t.status}
+                      </span>
+                    </div>
+                  ))
+              }
+            </div>
+          </section>
+        </>
+      )}
 
     </div>
   )
