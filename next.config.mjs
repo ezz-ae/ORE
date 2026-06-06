@@ -9,6 +9,20 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Baileys + its native deps (sharp, pino, thread-stream) must not be bundled
+  serverExternalPackages: [
+    '@whiskeysockets/baileys',
+    'sharp',
+    'pino',
+    'pino-pretty',
+    'thread-stream',
+    'sonic-boom',
+    'jimp',
+    'keyv',
+    '@cacheable/memory',
+    '@cacheable/utils',
+    'cacheable',
+  ],
   turbopack: {
     root: __dirname,
   },
