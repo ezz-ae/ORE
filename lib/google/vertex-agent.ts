@@ -4,9 +4,11 @@ const PROJECT  = 'gen-lang-client-0814069297'
 const LOCATION = 'us-central1'
 const MODEL    = 'gemini-2.0-flash-001'
 
-// Deployed ADK reasoning engine — used for session/memory storage in future
-// const REASONING_ENGINE_ID = '2989271399492747264'
+// Deployed ADK reasoning engine (Freehold Marketing Expert) — primary path.
+// Falls back to the direct Gemini call below if the engine is unreachable.
+const REASONING_ENGINE_ID = '6954127921439047680'
 
+const REASONING_ENGINE_URL = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/reasoningEngines/${REASONING_ENGINE_ID}:streamQuery`
 const GEMINI_URL = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT}/locations/${LOCATION}/publishers/google/models/${MODEL}:generateContent`
 
 const SYSTEM_PROMPT = `You are the Marketing Expert for Freehold — a premium Dubai real estate brand.
@@ -74,13 +76,85 @@ export interface AgentQueryOptions {
   context?: Record<string, unknown>
 }
 
+// ─── Deployed ADK reasoning engine (primary path) ─────────────────────────────
+//
+// The AdkApp on Vertex Agent Engine exposes stream_query. It returns a stream of
+// ADK event objects; we concatenate every model text part into the final answer.
+// Any failure here causes queryAdsAgent to fall back to the direct Gemini call.
+
+async function queryReasoningEngine(
+  message: string,
+  sid: string,
+  context?: Record<string, unknown>,
+): Promise<string> {
+  const authHeaders = await getAuthHeaders()
+
+  const messageText =
+    context
+      ? `Account context:\n${JSON.stringify(context, null, 2)}\n\nUser question: ${message}`
+      : message
+
+  const res = await fetch(REASONING_ENGINE_URL, {
+    method:  'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      class_method: 'stream_query',
+      input: { user_id: sid, message: messageText },
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => `HTTP ${res.status}`)
+    throw new Error(`Reasoning engine error (${res.status}): ${err}`)
+  }
+
+  // The response body is a stream of JSON event objects (one per line / SSE).
+  const raw = await res.text()
+  let answer = ''
+  for (const line of raw.split('\n')) {
+    const trimmed = line.replace(/^data:\s*/, '').trim()
+    if (!trimmed) continue
+    try {
+      const event = JSON.parse(trimmed) as {
+        content?: { role?: string; parts?: Array<{ text?: string }> }
+      }
+      if (event.content?.role !== 'user') {
+        for (const part of event.content?.parts ?? []) {
+          if (part.text) answer += part.text
+        }
+      }
+    } catch {
+      // Skip non-JSON keepalive / partial lines.
+    }
+  }
+
+  const text = answer.trim()
+  if (!text) throw new Error('Reasoning engine returned no text')
+  return text
+}
+
 export async function queryAdsAgent(
   message: string,
   { sessionId, context }: AgentQueryOptions = {},
 ): Promise<string> {
-  const authHeaders = await getAuthHeaders()
   const sid     = sessionId ?? 'anon'
   const history = _history.get(sid) ?? []
+
+  // ── Primary: deployed ADK reasoning engine ──
+  try {
+    const text = await queryReasoningEngine(
+      message,
+      sid,
+      history.length === 0 ? context : undefined,
+    )
+    _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
+    return text
+  } catch (engineErr) {
+    console.warn('[vertex-agent] reasoning engine failed, falling back to Gemini direct:', engineErr)
+  }
+
+  // ── Fallback: direct Gemini call with local history ──
+  const authHeaders = await getAuthHeaders()
 
   // Inject account context only on the first turn of a session
   const inputText =
