@@ -1,0 +1,1 @@
+google-cloud-aiplatform[adk,reasoningengine]>=1.79.0

@@ -97,6 +97,27 @@ export default function GenerateRsaPage() {
   const [configErr, setConfigErr] = useState(false)
   const [variants, setVariants]   = useState<GeneratedRsaVariant[]>([])
 
+  // Pick up any copy that was sent from the Marketing Expert sidebar
+  useEffect(() => {
+    const raw = sessionStorage.getItem('rsa-prefill')
+    if (!raw) return
+    sessionStorage.removeItem('rsa-prefill')
+    try {
+      const { headlines, descriptions } = JSON.parse(raw) as {
+        headlines: string[]
+        descriptions: string[]
+      }
+      if (headlines?.length || descriptions?.length) {
+        setVariants([{
+          id:           'agent-suggestion',
+          headlines:    headlines ?? [],
+          descriptions: descriptions ?? [],
+          note:         'From Marketing Expert — review and refine before uploading to Google Ads.',
+        }])
+      }
+    } catch { /* ignore malformed prefill */ }
+  }, [])
+
   const listing = leadMachineListings.find((l) => l.id === listingId)
 
   // ── Generate ────────────────────────────────────────────────────────────────

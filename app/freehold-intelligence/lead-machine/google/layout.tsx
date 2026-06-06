@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdsConversationSidebar } from '@/components/google/ads-conversation-sidebar'
+import { AdsContextProvider } from '@/lib/google/ads-context'
 
 const BASE = '/freehold-intelligence/lead-machine/google'
 
@@ -20,6 +21,7 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
 
   return (
+    <AdsContextProvider>
     <div className="flex flex-col min-h-full">
       {/* Google Ads sub-nav */}
       <div className="border-b border-white/[0.04] bg-[#04060A]">
@@ -58,5 +60,6 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
         <AdsConversationSidebar />
       </div>
     </div>
+    </AdsContextProvider>
   )
 }

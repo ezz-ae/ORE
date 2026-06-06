@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Search, BarChart2, Zap, AlertCircle, ArrowUpRight, TrendingUp, RefreshCw, Monitor } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
+import { useAdsContext } from '@/lib/google/ads-context'
 
 interface OverviewData {
   campaigns?: GoogleCampaign[]
@@ -40,6 +41,7 @@ export default function GoogleOverviewPage() {
   const [configErr, setConfigErr] = useState(false)
   const [loading, setLoading]     = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const { setAdsContext }         = useAdsContext()
 
   async function fetchAll(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -72,6 +74,27 @@ export default function GoogleOverviewPage() {
   const convs   = campaigns.reduce((s, c) => s + (c.metrics?.conversions ?? 0), 0)
   const clicks  = campaigns.reduce((s, c) => s + (c.metrics?.clicks ?? 0), 0)
   const imps    = campaigns.reduce((s, c) => s + (c.metrics?.impressions ?? 0), 0)
+
+  // Push live account data into the sidebar context once loaded
+  useEffect(() => {
+    if (loading || campaigns.length === 0) return
+    setAdsContext({
+      platform:        'Google Ads',
+      currentSection:  'Overview',
+      activeCampaigns: active,
+      pausedCampaigns: paused,
+      totalCampaigns:  campaigns.length,
+      spend30d:        fmtMicros(spend),
+      conversions30d:  Math.round(convs),
+      clicks30d:       clicks,
+      impressions30d:  imps,
+      avgCtr:          imps > 0 ? fmtPct(clicks / imps) : '0%',
+      topCampaigns:    [...campaigns]
+        .sort((a, b) => (b.metrics?.costMicros ?? 0) - (a.metrics?.costMicros ?? 0))
+        .slice(0, 5)
+        .map((c) => ({ name: c.name, spend: fmtMicros(c.metrics?.costMicros ?? 0), status: c.status })),
+    })
+  }, [loading, campaigns.length, active, paused, spend, convs, clicks, imps])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
