@@ -8,6 +8,7 @@ import {
   Check, Rocket, Pencil, Eye, ThumbsUp, ArrowRight, ImageIcon, Copy, ListChecks,
 } from 'lucide-react'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
+import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
 
 type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[] }
 
@@ -107,7 +108,7 @@ export function ExpertChat() {
     setWidth((w) => { localStorage.setItem('fi-expert-width', String(w)); return w })
   }, [])
 
-  async function send(text?: string) {
+  const send = useCallback(async (text?: string) => {
     const message = (text ?? value).trim()
     if (!message || pending) return
     setMessages((m) => [...m, { role: 'user', content: message }])
@@ -127,7 +128,23 @@ export function ExpertChat() {
     } finally {
       setPending(false)
     }
-  }
+  }, [value, pending, pathname])
+
+  // Listen for messages pushed from any on-page AI box → unified conversation.
+  useEffect(() => {
+    function onSend(e: Event) {
+      const msg = (e as CustomEvent).detail?.message as string | undefined
+      setOpen(true)
+      if (msg) send(msg)
+    }
+    function onOpen() { setOpen(true) }
+    window.addEventListener(EXPERT_SEND, onSend)
+    window.addEventListener(EXPERT_OPEN, onOpen)
+    return () => {
+      window.removeEventListener(EXPERT_SEND, onSend)
+      window.removeEventListener(EXPERT_OPEN, onOpen)
+    }
+  }, [send])
 
   function reset() {
     setMessages([]); setValue('')
