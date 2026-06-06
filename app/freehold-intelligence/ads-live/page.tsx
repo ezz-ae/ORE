@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Radio, TrendingDown, TrendingUp } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
@@ -51,11 +51,20 @@ export default function AdsLivePage() {
     return c.platform === 'google'
   })
 
-  const now = new Date().toLocaleTimeString('en-AE', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Dubai',
-  })
+  // Compute the live time on the client only — calling new Date() during render
+  // produces a server/client hydration mismatch.
+  const [now, setNow] = useState<string>('')
+  useEffect(() => {
+    const fmt = () =>
+      new Date().toLocaleTimeString('en-AE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Dubai',
+      })
+    setNow(fmt())
+    const id = setInterval(() => setNow(fmt()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">

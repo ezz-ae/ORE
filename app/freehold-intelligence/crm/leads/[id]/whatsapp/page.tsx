@@ -1,7 +1,7 @@
 'use client'
 
 import {
-  useState, useEffect, useRef, useCallback,
+  useState, useEffect, useRef, useCallback, use,
 } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -216,8 +216,9 @@ function AiPanel({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-export default function WhatsAppPage({ params }: { params: { id: string } }) {
-  const lead = crmLeads.find((l) => l.id === params.id)
+export default function WhatsAppPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const lead = crmLeads.find((l) => l.id === id)
   if (!lead) return null
 
   const phone = lead.phone.replace(/\D/g, '')

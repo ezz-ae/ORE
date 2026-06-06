@@ -541,6 +541,12 @@ export default function CampaignLaunchPage() {
   const [generatedLandings, setGeneratedLandings] = useState<LeadMachineLanding[]>([])
   const [generatingId,     setGeneratingId]     = useState<string | null>(null)
   const [newKeyword,       setNewKeyword]       = useState('')
+  // Date label for the auto-generated campaign name — computed on the client only
+  // to avoid a server/client hydration mismatch from new Date() during render.
+  const [dateLabel,        setDateLabel]        = useState('')
+  useEffect(() => {
+    setDateLabel(new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))
+  }, [])
 
   function patch<K extends keyof WizardState>(key: K, val: WizardState[K]) {
     setState((s) => ({ ...s, [key]: val }))
