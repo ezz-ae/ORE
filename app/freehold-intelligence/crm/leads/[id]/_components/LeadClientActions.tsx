@@ -38,23 +38,32 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
   const [sent, setSent] = useState(false)
 
   return (
-    <div className="mt-4 flex gap-3">
+    <div className="mt-4 flex flex-wrap gap-2">
+      {/* Full in-app WhatsApp chat */}
+      <Link
+        href={`/freehold-intelligence/crm/leads/${leadId}/whatsapp`}
+        className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-400"
+      >
+        <MessageSquare className="h-3.5 w-3.5" />
+        Open WhatsApp Chat
+      </Link>
+      {/* External wa.me fallback */}
       <a
-        href={`https://wa.me/${phone.replace(/\D/g, '')}`}
+        href={`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`}
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => setSent(true)}
-        className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-500/90"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-2 text-[12px] text-emerald-400 transition hover:bg-emerald-500/15"
       >
         <MessageSquare className="h-3.5 w-3.5" />
-        {sent ? 'Opened WhatsApp' : 'Send on WhatsApp'}
+        {sent ? 'Opened' : 'wa.me'}
       </a>
       <Link
         href={`/freehold-intelligence/notebook?lead=${leadId}`}
         className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[12px] text-white/65 transition hover:border-[#D4AF37]/30 hover:text-white"
       >
         <BookOpen className="h-3.5 w-3.5" />
-        Save to Notebook
+        Notebook
       </Link>
     </div>
   )
