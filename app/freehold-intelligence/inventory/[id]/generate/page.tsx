@@ -1,533 +1,497 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { Sparkles, Copy, Check, FileText, ChevronRight, ArrowLeft } from 'lucide-react'
+import {
+  Sparkles, Check, ArrowLeft, Eye, Globe, ChevronDown, ChevronUp,
+  RotateCcw, Pencil, Phone, MapPin, Shield, Star, TrendingUp, ChevronRight,
+} from 'lucide-react'
 import {
   inventoryProperties,
   type InventoryProperty,
 } from '@/src/features/freehold-intelligence/inventory'
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-type Template = 'investor' | 'luxury' | 'first_home'
-type AudienceKey = 'uae_residents' | 'gcc_investors' | 'international_hnw' | 'end_users'
-type LeadFieldKey = 'name' | 'phone' | 'email' | 'nationality' | 'budget_range' | 'timeline'
-
-interface FormState {
-  template: Template
-  audiences: Record<AudienceKey, boolean>
-  highlights: [string, string, string, string]
-  showHeroImage: boolean
-  headline: string
-  subheadline: string
-  leadFields: Record<LeadFieldKey, boolean>
+function fmtPrice(n: number | null): string {
+  if (n === null) return 'Competitive Pricing'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  return `AED ${(n / 1_000).toFixed(0)}K`
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+type Section = 'hero' | 'highlights' | 'payment' | 'form'
 
-function buildDefaults(prop: InventoryProperty): FormState {
-  const roiHighlight = prop.roi !== null ? `ROI up to ${prop.roi.toFixed(1)}%` : 'Strong rental returns'
-  const bedroomsHighlight = `${prop.bedrooms} bedroom residences`
-  const paymentHighlight = prop.paymentPlan ?? 'Flexible payment options available'
-  const locationHighlight = `Prime location in ${prop.area}`
+interface LandingConfig {
+  headline: string
+  subheadline: string
+  highlights: [string, string, string, string]
+  ctaText: string
+  leadFields: { name: boolean; phone: boolean; email: boolean; nationality: boolean; budget: boolean }
+  showPaymentPlan: boolean
+  template: 'investor' | 'luxury' | 'end_user'
+}
 
+function buildConfig(prop: InventoryProperty): LandingConfig {
   return {
+    headline: `Invest in ${prop.name}`,
+    subheadline: `${prop.area} · ${prop.developer} · From ${fmtPrice(prop.startingPriceAED)}`,
+    highlights: [
+      prop.roi !== null ? `Up to ${prop.roi.toFixed(1)}% annual rental yield` : 'Strong rental returns in prime Dubai',
+      `${prop.bedrooms} bedroom ${prop.type}s${prop.sizeRange ? ` · ${prop.sizeRange}` : ''}`,
+      prop.paymentPlan ? `${prop.paymentPlan} payment plan` : 'Flexible payment options available',
+      prop.handoverYear ? `Handover ${prop.handoverYear} — ${prop.availableUnits ?? 'limited'} units available` : `Prime location in ${prop.area}, Dubai`,
+    ],
+    ctaText: 'Request Brochure & Pricing',
+    leadFields: { name: true, phone: true, email: true, nationality: false, budget: false },
+    showPaymentPlan: !!prop.paymentPlan,
     template: 'investor',
-    audiences: {
-      uae_residents: true,
-      gcc_investors: true,
-      international_hnw: false,
-      end_users: false,
-    },
-    highlights: [roiHighlight, bedroomsHighlight, paymentHighlight, locationHighlight],
-    showHeroImage: prop.hasImages,
-    headline: `Invest in ${prop.name} — ${prop.area}'s Premier Address`,
-    subheadline: `Starting from AED ${prop.startingPriceAED ? (prop.startingPriceAED / 1_000_000).toFixed(1) + 'M' : 'competitive pricing'} · ${prop.developer}`,
-    leadFields: {
-      name: true,
-      phone: true,
-      email: true,
-      nationality: false,
-      budget_range: false,
-      timeline: false,
-    },
   }
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-[12px] font-medium uppercase tracking-wider text-white/35 mb-4">
-      {children}
-    </h2>
-  )
+const AI_VARIANTS: Record<string, (p: InventoryProperty) => Partial<LandingConfig>> = {
+  investor: (p) => ({
+    headline: `${p.name}: ${p.roi ? p.roi.toFixed(1) + '% Yield Investment' : 'Prime Investment Opportunity'}`,
+    subheadline: `${p.developer} · ${p.area} · ${p.bedrooms} BR · From ${fmtPrice(p.startingPriceAED)}`,
+    highlights: [
+      p.roi ? `${p.roi.toFixed(1)}% projected net rental yield — above Dubai average` : 'Above-average returns in established Dubai corridor',
+      `${p.bedrooms} bedroom residences — high tenant demand in ${p.area}`,
+      p.paymentPlan ? `${p.paymentPlan} — developer-backed payment plan` : 'Competitive pricing with flexible payment options',
+      `Golden Visa eligible — AED 2M+ threshold met in most configurations`,
+    ] as [string, string, string, string],
+    ctaText: 'Get Investment Analysis',
+  }),
+  luxury: (p) => ({
+    headline: `${p.name} — Exclusive ${p.area} Living`,
+    subheadline: `Crafted by ${p.developer} · ${p.bedrooms} residences · ${p.sizeRange}`,
+    highlights: [
+      `Prestigious ${p.area} address — among Dubai's most sought-after locations`,
+      `${p.bedrooms} bedroom ${p.type}s designed for discerning lifestyles`,
+      `Award-winning ${p.developer} craftsmanship and build quality`,
+      `Exceptional views and world-class amenities included`,
+    ] as [string, string, string, string],
+    ctaText: 'Schedule Private Viewing',
+  }),
+  end_user: (p) => ({
+    headline: `Your New Home in ${p.area}`,
+    subheadline: `Move-in ready ${p.type}s by ${p.developer} — from ${fmtPrice(p.startingPriceAED)}`,
+    highlights: [
+      `${p.bedrooms} bedroom homes — ideal for families and professionals`,
+      `${p.area}: vibrant community with schools, retail, and lifestyle`,
+      p.paymentPlan ? `Easy ${p.paymentPlan} — own your home today` : 'Competitive pricing and flexible financing available',
+      p.handoverYear ? `Ready ${p.handoverYear} — start your life in Dubai now` : 'Ready to move — no waiting required',
+    ] as [string, string, string, string],
+    ctaText: 'Book a Viewing',
+  }),
 }
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+// ─── Phone Preview ─────────────────────────────────────────────────────────
+
+function PhonePreview({ prop, config }: { prop: InventoryProperty; config: LandingConfig }) {
   return (
-    <div className={`rounded-[20px] border border-white/[0.08] bg-white/[0.03] p-5 ${className}`}>
-      {children}
+    <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-[#0B0F1A] shadow-2xl overflow-hidden">
+      {/* notch */}
+      <div className="flex justify-center py-2">
+        <div className="h-1.5 w-12 rounded-full bg-white/10" />
+      </div>
+      <div className="h-[520px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+        {/* topbar */}
+        <div className="flex items-center justify-between bg-[#0B0F1A]/90 px-3 py-2 border-b border-white/[0.06]">
+          <span className="text-[7px] font-bold tracking-wide text-[#D4AF37]">FREEHOLD</span>
+          <span className="flex items-center gap-0.5 rounded-full border border-[#D4AF37]/20 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">
+            <Phone className="h-2 w-2" /> Call
+          </span>
+        </div>
+        {/* hero */}
+        <div className="px-4 pt-6 pb-4" style={{ background: 'radial-gradient(ellipse 100% 50% at 50% 0%, rgba(212,175,55,0.15) 0%, transparent 60%)' }}>
+          <div className="flex gap-1 mb-2 flex-wrap">
+            <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">{prop.area}</span>
+            <span className="rounded-full border border-white/[0.10] bg-white/[0.04] px-1.5 py-0.5 text-[6px] text-white/50">{prop.developer}</span>
+          </div>
+          <div className="text-[11px] font-bold text-white leading-tight">{config.headline}</div>
+          <div className="mt-0.5 text-[7px] text-white/40">{config.subheadline}</div>
+          <button className="mt-3 w-full rounded-[6px] bg-[#D4AF37] py-1.5 text-[7px] font-bold text-[#06080A]">
+            {config.ctaText} →
+          </button>
+        </div>
+        {/* facts */}
+        <div className="grid grid-cols-4 border-y border-white/[0.06] bg-[#0D1321]">
+          {[prop.bedrooms + 'BR', prop.sizeRange?.split('–')[0] || '—', prop.roi ? prop.roi.toFixed(1)+'%' : '—', String(prop.handoverYear || '—')].map((v, i) => (
+            <div key={i} className="border-r border-white/[0.06] last:border-r-0 py-2 text-center">
+              <div className="text-[9px] font-semibold text-white/70">{v}</div>
+            </div>
+          ))}
+        </div>
+        {/* highlights */}
+        <div className="px-4 py-4 space-y-1.5">
+          {config.highlights.slice(0, 3).map((h, i) => (
+            <div key={i} className="flex items-start gap-1.5 rounded-[8px] border border-white/[0.05] bg-white/[0.02] px-2 py-1.5">
+              <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 flex items-center justify-center">
+                <Check className="h-1.5 w-1.5 text-[#D4AF37]" />
+              </div>
+              <span className="text-[7px] text-white/60 leading-tight">{h}</span>
+            </div>
+          ))}
+        </div>
+        {/* form */}
+        <div className="mx-4 mb-4 rounded-[12px] border border-[#D4AF37]/15 bg-[#131B2B] p-3">
+          <div className="text-[8px] font-bold text-white mb-2">Request Exclusive Pricing</div>
+          {['Full Name', 'Phone / WhatsApp', config.leadFields.email ? 'Email' : null].filter(Boolean).map((f) => (
+            <div key={f} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-white/[0.03] px-1.5 flex items-center">
+              <span className="text-[6px] text-white/20">{f}…</span>
+            </div>
+          ))}
+          <div className="mt-2 rounded-[6px] bg-[#D4AF37] py-1.5 text-center text-[7px] font-bold text-[#06080A]">
+            {config.ctaText}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Section accordion ──────────────────────────────────────────────────────
+
+function SectionPanel({
+  title, open, onToggle, children,
+}: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return (
+    <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+      <button
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+        onClick={onToggle}
+      >
+        <span className="text-[13px] font-medium text-white/85">{title}</span>
+        {open ? <ChevronUp className="h-4 w-4 text-white/30" /> : <ChevronDown className="h-4 w-4 text-white/30" />}
+      </button>
+      {open && <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">{children}</div>}
+    </div>
+  )
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function GenerateLandingPage() {
   const { id } = useParams<{ id: string }>()
   const prop = inventoryProperties.find((p) => p.id === id)
 
-  const [form, setForm] = useState<FormState>(() =>
-    prop ? buildDefaults(prop) : buildDefaults({
-      id: '',
-      slug: '',
-      name: 'Unknown Property',
-      area: '',
-      developer: '',
-      type: 'apartment',
-      status: 'off_plan',
-      startingPriceAED: null,
-      maxPriceAED: null,
-      handoverYear: null,
-      paymentPlan: null,
-      bedrooms: '1–3',
-      totalUnits: null,
-      availableUnits: null,
-      sizeRange: '',
-      roi: null,
-      landingStatus: 'missing',
-      landingUrl: null,
-      hasImages: false,
-      imageCount: 0,
-      dataQuality: 0,
-      adReadiness: 0,
-      linkedCampaigns: 0,
-      leads30d: 0,
-      views30d: 0,
-      lastUpdated: '',
-      tags: [],
-    })
+  const [config, setConfig] = useState<LandingConfig>(() =>
+    prop ? buildConfig(prop) : buildConfig(inventoryProperties[0])
   )
-
-  const [generating, setGenerating] = useState(false)
-  const [generated, setGenerated] = useState(false)
+  const [open, setOpen] = useState<Section>('hero')
+  const [redesigning, setRedesigning] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [published, setPublished] = useState(prop?.landingStatus === 'live')
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [showAiBox, setShowAiBox] = useState(false)
   const [copied, setCopied] = useState(false)
 
   if (!prop) {
     return (
-      <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 text-center">
-        <div className="text-[48px] font-semibold text-white/10">404</div>
-        <p className="mt-3 text-[16px] text-white/50">Property not found.</p>
-        <Link
-          href="/freehold-intelligence/inventory"
-          className="mt-6 inline-flex items-center gap-1.5 text-[13px] text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to Inventory
-        </Link>
+      <div className="mx-auto max-w-3xl px-5 pt-12 pb-20 text-center">
+        <p className="text-white/40">Property not found.</p>
+        <Link href="/freehold-intelligence/inventory" className="mt-4 inline-block text-amber-400">← Back</Link>
       </div>
     )
   }
 
-  const generatedUrl = `/lp/${prop.slug}`
+  const lpUrl = `/lp/${prop.slug}`
 
-  function handleGenerate() {
-    setGenerating(true)
-    setGenerated(false)
+  function toggleSection(s: Section) {
+    setOpen((prev) => (prev === s ? (null as any) : s))
+  }
+
+  function aiRedesign(variant: 'investor' | 'luxury' | 'end_user') {
+    setRedesigning(true)
     setTimeout(() => {
-      setGenerating(false)
-      setGenerated(true)
-    }, 1500)
+      const patch = AI_VARIANTS[variant](prop)
+      setConfig((prev) => ({ ...prev, ...patch }))
+      setRedesigning(false)
+    }, 1400)
   }
 
-  function handleCopy() {
-    navigator.clipboard.writeText(generatedUrl).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+  function handleCustomAi() {
+    if (!aiPrompt.trim()) return
+    setRedesigning(true)
+    setTimeout(() => {
+      const variant = aiPrompt.toLowerCase().includes('luxury') ? 'luxury'
+        : aiPrompt.toLowerCase().includes('end user') || aiPrompt.toLowerCase().includes('family') ? 'end_user'
+        : 'investor'
+      const patch = AI_VARIANTS[variant](prop)
+      setConfig((prev) => ({ ...prev, ...patch }))
+      setAiPrompt('')
+      setShowAiBox(false)
+      setRedesigning(false)
+    }, 1600)
   }
 
-  function setHighlight(idx: number, value: string) {
-    setForm((prev) => {
-      const next = [...prev.highlights] as [string, string, string, string]
-      next[idx] = value
-      return { ...prev, highlights: next }
-    })
+  function publish() {
+    setPublishing(true)
+    setTimeout(() => { setPublished(true); setPublishing(false) }, 1200)
   }
 
-  function toggleAudience(key: AudienceKey) {
-    setForm((prev) => ({
-      ...prev,
-      audiences: { ...prev.audiences, [key]: !prev.audiences[key] },
-    }))
+  function copyUrl() {
+    navigator.clipboard.writeText(window.location.origin + lpUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
-
-  function toggleLeadField(key: LeadFieldKey) {
-    setForm((prev) => ({
-      ...prev,
-      leadFields: { ...prev.leadFields, [key]: !prev.leadFields[key] },
-    }))
-  }
-
-  const templates: { id: Template; title: string; description: string; bullets: string[] }[] = [
-    {
-      id: 'investor',
-      title: 'Investor Focus',
-      description: 'Optimised for yield-driven buyers',
-      bullets: ['ROI & rental yield', 'Payment plan breakdown', 'Capital appreciation data'],
-    },
-    {
-      id: 'luxury',
-      title: 'Luxury Lifestyle',
-      description: 'Optimised for premium appeal',
-      bullets: ['Amenities & finishes', 'Prestige & exclusivity', 'Lifestyle imagery'],
-    },
-    {
-      id: 'first_home',
-      title: 'First Home Buyer',
-      description: 'Optimised for owner-occupiers',
-      bullets: ['Community & schools', 'Value proposition', 'Family-friendly features'],
-    },
-  ]
-
-  const audiences: { key: AudienceKey; label: string }[] = [
-    { key: 'uae_residents', label: 'UAE Residents' },
-    { key: 'gcc_investors', label: 'GCC Investors' },
-    { key: 'international_hnw', label: 'International HNW' },
-    { key: 'end_users', label: 'End Users' },
-  ]
-
-  const leadFields: { key: LeadFieldKey; label: string }[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'email', label: 'Email' },
-    { key: 'nationality', label: 'Nationality' },
-    { key: 'budget_range', label: 'Budget Range' },
-    { key: 'timeline', label: 'Timeline' },
-  ]
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-
-      {/* Back link */}
-      <Link
-        href={`/freehold-intelligence/inventory/${prop.id}`}
-        className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Back to {prop.name}
-      </Link>
+    <div className="mx-auto max-w-[900px] px-5 pb-20 pt-7 sm:px-8">
 
       {/* Header */}
-      <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
-          <Sparkles className="h-3.5 w-3.5" /> Landing Page Generator
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          Generate Landing Page
-        </h1>
-        <p className="mt-2 text-[15px] text-white/50">
-          for{' '}
-          <span className="text-white/80">{prop.name}</span>
-          <span className="mx-2 text-white/20">·</span>
-          <span className="text-white/40">{prop.area}</span>
-        </p>
-      </section>
-
-      {/* Form */}
-      <div className="mt-10 space-y-6">
-
-        {/* 1 — Template */}
-        <Card>
-          <SectionHeading>Template</SectionHeading>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {templates.map((t) => {
-              const active = form.template === t.id
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setForm((prev) => ({ ...prev, template: t.id }))}
-                  className={[
-                    'rounded-[16px] border p-4 text-left transition',
-                    active
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07]'
-                      : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]',
-                  ].join(' ')}
-                >
-                  <div className={`mb-1 text-[13px] font-semibold ${active ? 'text-[#F8E7AE]' : 'text-white/80'}`}>
-                    {t.title}
-                  </div>
-                  <div className="mb-3 text-[13px] text-white/40">{t.description}</div>
-                  <ul className="space-y-1">
-                    {t.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-1.5 text-[13px] text-white/50">
-                        <ChevronRight className={`mt-0.5 h-3 w-3 shrink-0 ${active ? 'text-[#D4AF37]/70' : 'text-white/25'}`} />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
-              )
-            })}
-          </div>
-        </Card>
-
-        {/* 2 — Target Audience */}
-        <Card>
-          <SectionHeading>Target Audience</SectionHeading>
-          <div className="flex flex-wrap gap-3">
-            {audiences.map(({ key, label }) => {
-              const checked = form.audiences[key]
-              return (
-                <label
-                  key={key}
-                  className={[
-                    'flex cursor-pointer items-center gap-2.5 rounded-full border px-4 py-2 text-[13px] transition select-none',
-                    checked
-                      ? 'border-[#D4AF37]/35 bg-[#D4AF37]/[0.08] text-[#F8E7AE]'
-                      : 'border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/[0.14] hover:text-white/80',
-                  ].join(' ')}
-                >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={checked}
-                    onChange={() => toggleAudience(key)}
-                  />
-                  <span
-                    className={[
-                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition',
-                      checked
-                        ? 'border-[#D4AF37]/60 bg-[#D4AF37]/20'
-                        : 'border-white/20 bg-white/[0.03]',
-                    ].join(' ')}
-                  >
-                    {checked && <Check className="h-2.5 w-2.5 text-[#D4AF37]" />}
-                  </span>
-                  {label}
-                </label>
-              )
-            })}
-          </div>
-        </Card>
-
-        {/* 3 — Key Highlights */}
-        <Card>
-          <SectionHeading>Key Highlights</SectionHeading>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {form.highlights.map((val, idx) => (
-              <div key={idx}>
-                <label className="mb-1.5 block text-[13px] text-white/40">
-                  Highlight {idx + 1}
-                </label>
-                <input
-                  type="text"
-                  value={val}
-                  onChange={(e) => setHighlight(idx, e.target.value)}
-                  className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/85 placeholder:text-white/25 focus:border-[#D4AF37]/35 focus:outline-none"
-                />
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* 4 — Hero Section */}
-        <Card>
-          <SectionHeading>Hero Section</SectionHeading>
-          <div className="space-y-4">
-
-            {/* Hero image toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[13px] text-white/75">Show hero image</div>
-                {!prop.hasImages && (
-                  <div className="mt-0.5 text-[13px] text-white/55/70">
-                    No images available for this property
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setForm((prev) => ({ ...prev, showHeroImage: !prev.showHeroImage }))}
-                disabled={!prop.hasImages}
-                className={[
-                  'relative h-6 w-11 rounded-full border transition',
-                  form.showHeroImage && prop.hasImages
-                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20'
-                    : 'border-white/[0.1] bg-white/[0.04]',
-                  !prop.hasImages ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
-                ].join(' ')}
-                aria-label="Toggle hero image"
-              >
-                <span
-                  className={[
-                    'absolute top-0.5 h-5 w-5 rounded-full border transition-all',
-                    form.showHeroImage && prop.hasImages
-                      ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]'
-                      : 'left-0.5 border-white/20 bg-white/30',
-                  ].join(' ')}
-                />
-              </button>
-            </div>
-
-            {/* Headline */}
-            <div>
-              <label className="mb-1.5 block text-[13px] text-white/40">Headline</label>
-              <input
-                type="text"
-                value={form.headline}
-                onChange={(e) => setForm((prev) => ({ ...prev, headline: e.target.value }))}
-                className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/85 placeholder:text-white/25 focus:border-[#D4AF37]/35 focus:outline-none"
-              />
-            </div>
-
-            {/* Subheadline */}
-            <div>
-              <label className="mb-1.5 block text-[13px] text-white/40">Subheadline</label>
-              <input
-                type="text"
-                value={form.subheadline}
-                onChange={(e) => setForm((prev) => ({ ...prev, subheadline: e.target.value }))}
-                className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/85 placeholder:text-white/25 focus:border-[#D4AF37]/35 focus:outline-none"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* 5 — Lead Form */}
-        <Card>
-          <SectionHeading>Lead Form</SectionHeading>
-          <div className="flex flex-wrap gap-3">
-            {leadFields.map(({ key, label }) => {
-              const checked = form.leadFields[key]
-              return (
-                <label
-                  key={key}
-                  className={[
-                    'flex cursor-pointer items-center gap-2.5 rounded-full border px-4 py-2 text-[13px] transition select-none',
-                    checked
-                      ? 'border-[#D4AF37]/35 bg-[#D4AF37]/[0.08] text-[#F8E7AE]'
-                      : 'border-white/[0.07] bg-white/[0.02] text-white/55 hover:border-white/[0.14] hover:text-white/80',
-                  ].join(' ')}
-                >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={checked}
-                    onChange={() => toggleLeadField(key)}
-                  />
-                  <span
-                    className={[
-                      'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition',
-                      checked
-                        ? 'border-[#D4AF37]/60 bg-[#D4AF37]/20'
-                        : 'border-white/20 bg-white/[0.03]',
-                    ].join(' ')}
-                  >
-                    {checked && <Check className="h-2.5 w-2.5 text-[#D4AF37]" />}
-                  </span>
-                  {label}
-                </label>
-              )
-            })}
-          </div>
-        </Card>
-
-      </div>
-
-      {/* Generate button */}
-      <div className="mt-8 flex flex-wrap items-center gap-4">
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className={[
-            'inline-flex items-center gap-2 rounded-full px-6 py-3 text-[14px] font-semibold transition',
-            generating
-              ? 'bg-[#D4AF37]/50 text-[#06080A]/60 cursor-wait'
-              : 'bg-[#D4AF37] text-[#06080A] hover:bg-[#F8E7AE]',
-          ].join(' ')}
+      <div className="mb-7">
+        <Link
+          href={`/freehold-intelligence/inventory/${prop.id}`}
+          className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-white/30 transition hover:text-white/60"
         >
-          {generating ? (
-            <>
-              <Sparkles className="h-4 w-4 animate-pulse" />
-              Generating…
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Generate Preview
-            </>
-          )}
-        </button>
-
-        {!generated && !generating && (
-          <p className="text-[12px] text-white/30">
-            Configure the options above, then generate your landing page.
-          </p>
-        )}
-      </div>
-
-      {/* Success / preview ready */}
-      {generated && (
-        <div className="mt-6 rounded-[20px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-5">
-          <div className="flex items-center gap-2 text-[#D4AF37]">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/15">
-              <Check className="h-4 w-4" />
-            </div>
-            <span className="text-[14px] font-semibold">Preview Ready</span>
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to {prop.name}
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[20px] font-semibold text-white">Landing Page Editor</h1>
+            <p className="mt-1 text-[12px] text-white/30">{prop.name} · {prop.area} · {prop.developer}</p>
           </div>
-
-          <p className="mt-2 text-[12px] text-white/50">
-            Your landing page has been generated successfully. Use the URL below to preview or share it.
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <div className="flex flex-1 items-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5">
-              <FileText className="h-3.5 w-3.5 shrink-0 text-white/30" />
-              <span className="flex-1 text-[13px] text-white/75 font-mono">
-                {generatedUrl}
-              </span>
-            </div>
-            <button
-              onClick={handleCopy}
-              className={[
-                'inline-flex items-center gap-1.5 rounded-[12px] border px-3.5 py-2.5 text-[12px] font-medium transition',
-                copied
-                  ? 'border-emerald-400/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white',
-              ].join(' ')}
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={lpUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3.5 py-2 text-[12px] text-white/50 transition hover:text-white/80"
             >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Copied
-                </>
+              <Eye className="h-3.5 w-3.5" /> Preview
+            </a>
+            <button
+              onClick={publish}
+              disabled={publishing || published}
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-medium transition ${
+                published
+                  ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
+                  : 'bg-[#D4AF37] text-[#06080A] hover:bg-[#F0CB67]'
+              }`}
+            >
+              {publishing ? (
+                <><Sparkles className="h-3.5 w-3.5 animate-spin" /> Publishing…</>
+              ) : published ? (
+                <><Check className="h-3.5 w-3.5" /> Published</>
               ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" /> Copy
-                </>
+                <><Globe className="h-3.5 w-3.5" /> Publish</>
               )}
             </button>
           </div>
+        </div>
+      </div>
 
-          <div className="mt-4 flex flex-wrap gap-3">
-            <a
-              href={generatedUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[12px] text-white/60 transition hover:border-white/20 hover:text-white"
-            >
-              Open Preview
+      {/* Published banner */}
+      {published && (
+        <div className="mb-6 flex items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
+          <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+          <div className="flex-1 min-w-0">
+            <span className="text-[13px] font-medium text-emerald-300">Landing page is live — </span>
+            <a href={lpUrl} target="_blank" rel="noopener noreferrer"
+              className="font-mono text-[12px] text-emerald-400/80 underline underline-offset-2 hover:text-emerald-400">
+              {typeof window !== 'undefined' ? window.location.origin : ''}{lpUrl}
             </a>
-            <button
-              onClick={() => setGenerated(false)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-2 text-[12px] text-[#D4AF37]/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
-            >
-              <Sparkles className="h-3.5 w-3.5" /> Regenerate
-            </button>
           </div>
+          <button onClick={copyUrl}
+            className="shrink-0 rounded-full border border-emerald-400/20 px-3 py-1 text-[11px] text-emerald-400/70 hover:bg-emerald-400/10">
+            {copied ? 'Copied!' : 'Copy URL'}
+          </button>
         </div>
       )}
 
+      {/* Two-column layout */}
+      <div className="flex gap-8 items-start">
+
+        {/* LEFT: editor */}
+        <div className="flex-1 min-w-0 space-y-3">
+
+          {/* AI Redesign strip */}
+          <div className="rounded-[16px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+                <span className="text-[13px] font-medium text-[#D4AF37]">AI Full Redesign</span>
+              </div>
+              <button
+                onClick={() => setShowAiBox(!showAiBox)}
+                className="text-[11px] text-white/30 hover:text-white/60 transition"
+              >
+                {showAiBox ? 'Use presets ↑' : 'Custom prompt ↓'}
+              </button>
+            </div>
+
+            {!showAiBox ? (
+              <div className="flex flex-wrap gap-2">
+                {(['investor', 'luxury', 'end_user'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => aiRedesign(v)}
+                    disabled={redesigning}
+                    className={`rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1.5 text-[12px] capitalize text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 disabled:opacity-50`}
+                  >
+                    {redesigning ? '…' : v.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCustomAi()}
+                  placeholder="e.g. Make it more luxury focused, target GCC buyers…"
+                  className="flex-1 rounded-[10px] border border-white/[0.10] bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/30"
+                />
+                <button
+                  onClick={handleCustomAi}
+                  disabled={redesigning || !aiPrompt.trim()}
+                  className="rounded-[10px] bg-[#D4AF37] px-4 py-2 text-[12px] font-medium text-[#06080A] transition hover:bg-[#F0CB67] disabled:opacity-50"
+                >
+                  {redesigning ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            )}
+
+            {redesigning && (
+              <div className="mt-3 flex items-center gap-2 text-[12px] text-[#D4AF37]/60">
+                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                Redesigning all sections…
+              </div>
+            )}
+          </div>
+
+          {/* Hero section */}
+          <SectionPanel title="Hero Section" open={open === 'hero'} onToggle={() => toggleSection('hero')}>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">Headline</label>
+                <input
+                  value={config.headline}
+                  onChange={(e) => setConfig((p) => ({ ...p, headline: e.target.value }))}
+                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">Subheadline</label>
+                <input
+                  value={config.subheadline}
+                  onChange={(e) => setConfig((p) => ({ ...p, subheadline: e.target.value }))}
+                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                />
+              </div>
+            </div>
+          </SectionPanel>
+
+          {/* Highlights */}
+          <SectionPanel title="Key Highlights" open={open === 'highlights'} onToggle={() => toggleSection('highlights')}>
+            <div className="space-y-3">
+              {config.highlights.map((h, i) => (
+                <div key={i}>
+                  <label className="mb-1 block text-[11px] text-white/30">Highlight {i + 1}</label>
+                  <input
+                    value={h}
+                    onChange={(e) => {
+                      const next = [...config.highlights] as [string, string, string, string]
+                      next[i] = e.target.value
+                      setConfig((p) => ({ ...p, highlights: next }))
+                    }}
+                    className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                  />
+                </div>
+              ))}
+            </div>
+          </SectionPanel>
+
+          {/* Payment plan */}
+          <SectionPanel title="Payment Plan" open={open === 'payment'} onToggle={() => toggleSection('payment')}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[13px] text-white/75">Show payment plan section</div>
+                <div className="text-[12px] text-white/30">{prop.paymentPlan ?? 'No plan configured for this property'}</div>
+              </div>
+              <button
+                onClick={() => setConfig((p) => ({ ...p, showPaymentPlan: !p.showPaymentPlan }))}
+                className={`relative h-6 w-11 rounded-full border transition ${
+                  config.showPaymentPlan ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.1] bg-white/[0.04]'
+                }`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full border transition-all ${
+                  config.showPaymentPlan ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30'
+                }`} />
+              </button>
+            </div>
+          </SectionPanel>
+
+          {/* Lead form */}
+          <SectionPanel title="Lead Form" open={open === 'form'} onToggle={() => toggleSection('form')}>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">CTA Button Text</label>
+                <input
+                  value={config.ctaText}
+                  onChange={(e) => setConfig((p) => ({ ...p, ctaText: e.target.value }))}
+                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                />
+              </div>
+              <div>
+                <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/30">Form Fields</div>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.entries(config.leadFields) as [keyof typeof config.leadFields, boolean][]).map(([key, val]) => (
+                    <label key={key}
+                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] transition select-none ${
+                        val ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-[#D4AF37]/90' : 'border-white/[0.07] text-white/40'
+                      }`}
+                    >
+                      <input type="checkbox" className="sr-only" checked={val}
+                        onChange={() => setConfig((p) => ({ ...p, leadFields: { ...p.leadFields, [key]: !val } }))}
+                      />
+                      {val && <Check className="h-3 w-3 text-[#D4AF37]" />}
+                      {key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SectionPanel>
+
+          {/* Quick property info */}
+          <div className="rounded-[16px] border border-white/[0.06] bg-white/[0.02] px-5 py-4">
+            <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-white/25">Property Data</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+              {[
+                ['Status', prop.status.replace('_', ' ')],
+                ['Bedrooms', prop.bedrooms + ' BR'],
+                ['Size', prop.sizeRange],
+                ['Price from', fmtPrice(prop.startingPriceAED)],
+                ['ROI', prop.roi ? prop.roi.toFixed(1) + '%' : '—'],
+                ['Ad Readiness', prop.adReadiness + '%'],
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between gap-2">
+                  <span className="text-white/30">{k}</span>
+                  <span className="text-white/65 capitalize">{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT: phone preview */}
+        <div className="hidden lg:block shrink-0 sticky top-6">
+          <div className="mb-3 text-center text-[11px] text-white/25 uppercase tracking-wider">Live Preview</div>
+          <PhonePreview prop={prop} config={config} />
+          <div className="mt-4 text-center">
+            <a
+              href={lpUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] px-4 py-2 text-[11px] text-white/40 transition hover:text-white/70"
+            >
+              <Eye className="h-3.5 w-3.5" /> Open full page
+            </a>
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }
