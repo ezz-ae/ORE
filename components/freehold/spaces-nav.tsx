@@ -20,24 +20,27 @@ function syncDotClass(status: string) {
   if (status === 'synced')  return 'bg-emerald-400'
   if (status === 'syncing') return 'bg-amber-400 animate-pulse'
   if (status === 'error')   return 'bg-red-400'
-  return 'bg-white/[0.18]'
+  return 'bg-slate-600'
 }
 
 export function SpacesNav() {
   const pathname = usePathname()
-  const errorCount   = integrationSyncStatuses.filter(s => s.status === 'error').length
-  const syncedCount  = integrationSyncStatuses.filter(s => s.status === 'synced').length
+  const errorCount  = integrationSyncStatuses.filter(s => s.status === 'error').length
+  const syncedCount = integrationSyncStatuses.filter(s => s.status === 'synced').length
 
   return (
-    <div className="flex h-12 shrink-0 items-center border-b border-white/[0.08] bg-[#080C14]/95 backdrop-blur-xl">
+    <div className="flex h-14 shrink-0 items-center border-b border-white/[0.08] bg-[#090D16] backdrop-blur-xl">
 
-      {/* Brand mark */}
+      {/* Brand */}
       <Link
         href="/freehold-intelligence"
-        className="flex h-full shrink-0 items-center gap-2 border-r border-white/[0.08] px-4 transition hover:bg-white/[0.04]"
+        className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.08] px-5 transition hover:bg-white/[0.03]"
       >
-        <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-        <span className="hidden text-[12px] font-semibold tracking-tight text-white/70 sm:block">FI</span>
+        <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+        <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
+          Freehold
+          <span className="ml-1 text-[#D4AF37]">Intelligence</span>
+        </span>
       </Link>
 
       {/* Spaces tabs */}
@@ -50,10 +53,10 @@ export function SpacesNav() {
                 key={space.href}
                 href={space.href}
                 className={[
-                  'flex h-full items-center border-b-2 px-3.5 text-[13px] font-medium whitespace-nowrap transition',
+                  'flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                   active
                     ? 'border-[#D4AF37] text-white'
-                    : 'border-transparent text-white/55 hover:border-white/[0.15] hover:text-white/85',
+                    : 'border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600',
                 ].join(' ')}
               >
                 {space.label}
@@ -63,18 +66,18 @@ export function SpacesNav() {
         </div>
       </nav>
 
-      {/* Background sync status */}
-      <div className="flex h-full shrink-0 items-center gap-2.5 border-l border-white/[0.08] px-3.5">
-        <div className="flex items-center gap-1">
+      {/* Sync status */}
+      <div className="flex h-full shrink-0 items-center gap-3 border-l border-white/[0.08] px-4">
+        <div className="flex items-center gap-1.5">
           {integrationSyncStatuses.map(s => (
             <span
               key={s.id}
               title={`${s.name}: ${s.status}${s.lastSyncAt ? ` · ${new Date(s.lastSyncAt).toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' })}` : ''}`}
-              className={`h-[6px] w-[6px] rounded-full ${syncDotClass(s.status)}`}
+              className={`h-1.5 w-1.5 rounded-full ${syncDotClass(s.status)}`}
             />
           ))}
         </div>
-        <span className="hidden text-[11px] text-white/40 whitespace-nowrap md:block">
+        <span className="hidden text-xs text-slate-500 whitespace-nowrap md:block">
           {errorCount > 0
             ? <span className="text-red-400">{errorCount} error</span>
             : `${syncedCount} synced`}

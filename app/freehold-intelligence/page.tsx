@@ -226,49 +226,49 @@ export default function IntelligenceLauncher() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-5 pb-20 pt-6 sm:px-8 sm:pt-8">
+    <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
-      {/* ── Morning Briefing ─────────────────────────────────────────────────── */}
-      <section className="mb-8 overflow-hidden rounded-[24px] border border-[#D4AF37]/12 bg-gradient-to-br from-[#D4AF37]/[0.04] to-transparent">
-        <div className="p-6">
+      {/* ── Morning Briefing ──────────────────────────────────────────────── */}
+      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/15 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent">
+        <div className="p-6 sm:p-7">
 
           {/* Header row */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-                <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+                <Sparkles className="h-5 w-5 text-[#D4AF37]" />
               </div>
               <div>
-                <div className="text-[15px] font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
-                <div className="text-[11px] text-white/45">{dateStr}</div>
+                <div className="text-base font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
+                <div className="text-sm text-slate-400 mt-0.5">{dateStr}</div>
               </div>
             </div>
             {/* Stat chips */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-[11px] font-medium text-red-400">
-                <span className="h-1 w-1 rounded-full bg-red-500 animate-pulse" />
+              <span className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                 {serverSummary.urgentTasks.length} urgent
               </span>
-              <span className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-400">
+              <span className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-400">
                 {serverSummary.blockedItems.length} blocked
               </span>
-              <span className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/35">
+              <span className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm text-slate-400">
                 {serverSummary.pendingApprovals.length} pending
               </span>
-              <Link href="/" className="flex items-center gap-1 text-[11px] text-white/20 hover:text-white/45 transition">
-                <Globe className="h-3 w-3" />
+              <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
+                <Globe className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">freeholdproperty.ae</span>
               </Link>
             </div>
           </div>
 
           {/* Summary text */}
-          <p className="mt-4 text-[13px] leading-relaxed text-white/60 max-w-2xl">
+          <p className="mt-5 text-sm leading-relaxed text-slate-300 max-w-2xl">
             {serverSummary.summaryText}
           </p>
 
           {/* Divider */}
-          <div className="my-5 border-t border-white/[0.06]" />
+          <div className="my-5 border-t border-slate-800" />
 
           {/* AI Chat */}
           <div>
@@ -279,13 +279,13 @@ export default function IntelligenceLauncher() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
                 placeholder="Ask anything about today's priorities…"
-                className="flex-1 rounded-xl border border-white/[0.08] bg-black/20 px-4 py-2.5 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/30 transition"
+                className="flex-1 rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => sendChat(chatInput)}
                 disabled={chatLoading || !chatInput.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#06080A] transition hover:bg-[#D4AF37]/80 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#06080A] transition-opacity hover:opacity-85 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -299,7 +299,7 @@ export default function IntelligenceLauncher() {
                   type="button"
                   onClick={() => sendChat(q)}
                   disabled={chatLoading}
-                  className="rounded-full border border-white/[0.10] bg-black/10 px-3 py-1 text-[11px] text-white/50 transition hover:border-white/[0.22] hover:text-white/80 disabled:opacity-40"
+                  className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-200 disabled:opacity-40"
                 >
                   {q}
                 </button>
@@ -308,9 +308,9 @@ export default function IntelligenceLauncher() {
 
             {/* AI response */}
             {(chatLoading || chatReply) && (
-              <div className="mt-4 rounded-xl border border-[#D4AF37]/12 bg-black/20 p-4">
+              <div className="mt-4 rounded-xl border border-[#D4AF37]/15 bg-slate-800/40 p-4">
                 {chatLoading ? (
-                  <div className="flex items-center gap-2.5 text-[13px] text-white/50">
+                  <div className="flex items-center gap-3 text-sm text-slate-400">
                     <span className="flex gap-1">
                       {[0, 1, 2].map((i) => (
                         <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/60 animate-bounce"
@@ -321,16 +321,16 @@ export default function IntelligenceLauncher() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-[13px] text-white/70 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
                       {chatReply}
                     </p>
-                    <div className="mt-3 flex items-center justify-between border-t border-white/[0.05] pt-3">
+                    <div className="mt-3 flex items-center justify-between border-t border-slate-700 pt-3">
                       <Link href="/freehold-intelligence/agent"
-                        className="flex items-center gap-1 text-[11px] text-white/45 hover:text-white/70 transition">
-                        Full conversation <ChevronRight className="h-3 w-3" />
+                        className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+                        Full conversation <ChevronRight className="h-3.5 w-3.5" />
                       </Link>
                       <button type="button" onClick={() => setChatReply(null)}
-                        className="text-[11px] text-white/35 hover:text-white/55 transition">
+                        className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
                         Dismiss
                       </button>
                     </div>
@@ -344,24 +344,24 @@ export default function IntelligenceLauncher() {
 
       {/* ── Urgent actions ──────────────────────────────────────────────────── */}
       <section className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-white/45">
-            <AlertTriangle className="h-3 w-3 text-red-400/80" />
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
             Urgent
           </div>
-          <span className="text-[12px] text-white/40">{serverSummary.urgentTasks.length} open</span>
+          <span className="text-sm text-slate-500">{serverSummary.urgentTasks.length} open</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           {serverSummary.urgentTasks.map((task) => (
-            <div key={task.id} className={`rounded-[18px] border p-4 ${urgentCardCls(task.priority)}`}>
-              <div className="flex items-start gap-2.5">
-                <div className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${urgentDotCls(task.priority)}`} />
+            <div key={task.id} className={`rounded-xl border p-4 ${urgentCardCls(task.priority)}`}>
+              <div className="flex items-start gap-3">
+                <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${urgentDotCls(task.priority)}`} />
                 <div className="min-w-0 flex-1">
-                  <div className={`text-[13px] font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
+                  <div className={`text-sm font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
                     {task.title}
                   </div>
-                  <div className="mt-1 text-[12px] text-white/55 leading-snug">{task.body}</div>
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-white/38">
+                  <div className="mt-1 text-sm text-slate-400 leading-snug">{task.body}</div>
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
                     <span>{task.app}</span>
                     {task.due && (
                       <>
@@ -380,31 +380,31 @@ export default function IntelligenceLauncher() {
 
       {/* ── App grid ──────────────────────────────────────────────────────────── */}
       <section>
-        <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/45">Apps</div>
+        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => (
             <Link
               key={app.id}
               href={app.href}
-              className={`group relative flex flex-col rounded-[22px] border bg-[#131B2B] p-5 transition ${app.card}`}
+              className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition-colors ${app.card}`}
             >
               {app.badge > 0 && (
-                <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
                   {app.badge}
                 </span>
               )}
-              <div className={`flex h-11 w-11 items-center justify-center rounded-[14px] border ${app.icon}`}>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${app.icon}`}>
                 <app.Icon className="h-5 w-5" />
               </div>
               <div className="mt-4 flex-1">
-                <div className="text-[15px] font-semibold text-white/90 group-hover:text-white">{app.label}</div>
-                <div className="mt-0.5 text-[11px] text-white/50">{app.sub}</div>
+                <div className="text-[15px] font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
+                <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="text-[12px] font-medium" style={{ color: `${app.accent}99` }}>
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-slate-400 font-medium">
                   {app.metric}
                 </div>
-                <ArrowUpRight className="h-3.5 w-3.5 text-white/25 transition group-hover:text-white/55" />
+                <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-slate-400" />
               </div>
             </Link>
           ))}
@@ -412,66 +412,66 @@ export default function IntelligenceLauncher() {
       </section>
 
       {/* ── Executive overview ─────────────────────────────────────────────── */}
-      <section className="mt-10 grid gap-4 lg:grid-cols-2">
+      <section className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Priority queue */}
-        <div className="rounded-[18px] border border-white/[0.07] bg-[#131B2B] overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-            <div className="flex items-center gap-2 text-[13px] font-medium text-white/50">
-              <AlertCircle className="h-3.5 w-3.5 text-amber-400/70" />
+        <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+              <AlertCircle className="h-4 w-4 text-amber-400" />
               Priorities
             </div>
-            <span className="text-[12px] text-white/40">{priorities.length} open</span>
+            <span className="text-sm text-slate-500">{priorities.length} open</span>
           </div>
-          <div className="divide-y divide-white/[0.04]">
+          <div className="divide-y divide-slate-800">
             {priorities.slice(0, 3).map((p) => (
-              <div key={p.id} className="flex items-center gap-3 px-5 py-3">
-                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${p.sev === 'red' ? 'bg-red-400' : 'bg-amber-400'}`} />
+              <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
+                <div className={`h-2 w-2 shrink-0 rounded-full ${p.sev === 'red' ? 'bg-red-400' : 'bg-amber-400'}`} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-white/75 truncate">{p.name}</div>
-                  <div className="text-[11px] text-white/45 truncate">{p.note}</div>
+                  <div className="text-sm font-medium text-slate-200 truncate">{p.name}</div>
+                  <div className="text-sm text-slate-400 truncate">{p.note}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <Link href={p.href}
-                    className="rounded-md border border-white/[0.10] px-2.5 py-1 text-[12px] text-white/55 transition hover:text-white/80">
+                    className="rounded-lg border border-slate-700 px-3 py-1 text-sm text-slate-300 transition-colors hover:text-white hover:border-slate-500">
                     Fix
                   </Link>
                   <button type="button" onClick={() => setDismissed((s) => new Set([...s, p.id]))}
-                    className="p-1 text-white/30 hover:text-white/55 transition">
-                    <X className="h-3 w-3" />
+                    className="p-1 text-slate-600 hover:text-slate-300 transition-colors">
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
             {priorities.length === 0 && (
               <div className="flex items-center gap-3 px-5 py-4">
-                <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]/50" />
-                <span className="text-[13px] text-white/45">All clear — no open priorities</span>
+                <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
+                <span className="text-sm text-slate-300">All clear — no open priorities</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Live activity */}
-        <div className="rounded-[18px] border border-white/[0.07] bg-[#131B2B] overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3 text-[13px] font-medium text-white/50">
-            <Activity className="h-3.5 w-3.5" />
+        <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-slate-800 px-5 py-3.5 text-sm font-medium text-slate-300">
+            <Activity className="h-4 w-4" />
             Live activity
           </div>
-          <div className="divide-y divide-white/[0.04]">
+          <div className="divide-y divide-slate-800">
             {ACTIVITY.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3">
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+              <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${
                   item.type === 'lead'    ? 'bg-[#D4AF37]' :
                   item.type === 'warning' ? 'bg-amber-400' :
-                  item.type === 'success' ? 'bg-emerald-400' : 'bg-white/20'
+                  item.type === 'success' ? 'bg-emerald-400' : 'bg-slate-600'
                 }`} />
                 <div className="min-w-0 flex-1">
-                  <span className="text-[13px] font-medium text-white/70">{item.label}</span>
-                  <span className="text-white/25 mx-1.5">·</span>
-                  <span className="text-[12px] text-white/45">{item.detail}</span>
+                  <span className="text-sm font-medium text-slate-200">{item.label}</span>
+                  <span className="text-slate-600 mx-2">·</span>
+                  <span className="text-sm text-slate-400">{item.detail}</span>
                 </div>
-                <span className="shrink-0 text-[11px] text-white/38 tabular-nums">{item.time}</span>
+                <span className="shrink-0 text-xs text-slate-500 tabular-nums">{item.time}</span>
               </div>
             ))}
           </div>
