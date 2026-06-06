@@ -14,7 +14,7 @@ import {
   currentServerUser,
   type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
-import { getSession } from '@/lib/freehold/session'
+import { useSession } from '@/lib/freehold/use-session'
 
 const stats          = getInventoryStats()
 const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
@@ -180,12 +180,12 @@ export default function IntelligenceLauncher() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatReply, setChatReply]     = useState<string | null>(null)
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
-  const [isAdmin, setIsAdmin]         = useState(false)
+  const { user }   = useSession()
+  const isAdmin    = user?.role === 'admin'
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     setGreeting(getGreeting(currentServerUser.name))
-    setIsAdmin(getSession()?.role === 'admin')
   }, [])
 
   const visibleApps = APPS.filter((a) => !a.adminOnly || isAdmin)

@@ -2,36 +2,52 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSession, type Role, type SessionUser } from './session'
+import { fetchSession } from './session'
+import type { Role, SessionUser } from './session-types'
 
-interface GuardState {
+interface SessionState {
   ready: boolean
   user: SessionUser | null
 }
 
-/**
- * Client-side route guard. Reads the session, and if `requireRole` is given,
- * redirects users who don't hold that role:
- *   - no session        → /server (login)
- *   - wrong role         → that user's own home
- * Returns { ready, user } so the page can render a spinner until resolved.
- */
-export function useSessionGuard(requireRole?: Role): GuardState {
-  const router = useRouter()
-  const [state, setState] = useState<GuardState>({ ready: false, user: null })
+/** Read the verified session (from /api/server/me). */
+export function useSession(): SessionState {
+  const [state, setState] = useState<SessionState>({ ready: false, user: null })
 
   useEffect(() => {
-    const user = getSession()
+    let active = true
+    fetchSession().then((user) => {
+      if (active) setState({ ready: true, user })
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return state
+}
+
+/**
+ * Client guard (belt-and-suspenders on top of middleware): redirects users who
+ * shouldn't be here, and returns `ready` only once the correct role is confirmed.
+ *   - no session   → /server
+ *   - wrong role   → that user's own home
+ */
+export function useSessionGuard(requireRole?: Role): SessionState {
+  const router = useRouter()
+  const { ready, user } = useSession()
+
+  useEffect(() => {
+    if (!ready) return
     if (!user) {
       router.replace('/server')
       return
     }
     if (requireRole && user.role !== requireRole) {
       router.replace(user.home)
-      return
     }
-    setState({ ready: true, user })
-  }, [router, requireRole])
+  }, [ready, user, requireRole, router])
 
-  return state
+  const allowed = !!user && (!requireRole || user.role === requireRole)
+  return { ready: ready && allowed, user }
 }

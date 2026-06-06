@@ -35,8 +35,8 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
     return item.exact ? pathname === item.href : pathname.startsWith(item.href)
   }
 
-  function handleLogout() {
-    clearSession()
+  async function handleLogout() {
+    await clearSession()
     router.replace('/server')
   }
 

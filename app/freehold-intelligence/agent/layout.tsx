@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { ArrowLeft, Bell, ChevronRight, LogOut, Shield } from 'lucide-react'
 import { agentProfile } from '@/src/features/freehold-intelligence/agent'
-import { getSession, clearSession } from '@/lib/freehold/session'
+import { clearSession } from '@/lib/freehold/session'
+import { useSession } from '@/lib/freehold/use-session'
 
 const APP_LABELS: Record<string, string> = {
   '/freehold-intelligence/agent/leads':     'My Leads',
@@ -22,21 +22,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const isHome   = pathname === '/freehold-intelligence/agent'
   const label    = APP_LABELS[pathname] ?? ''
 
-  const [name, setName]       = useState(agentProfile.name)
-  const [initials, setInitials] = useState(agentProfile.initials)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { user } = useSession()
+  const name     = user?.name ?? agentProfile.name
+  const initials = user?.initials ?? agentProfile.initials
+  const isAdmin  = user?.role === 'admin'
 
-  useEffect(() => {
-    const s = getSession()
-    if (s) {
-      setName(s.name)
-      setInitials(s.initials)
-      setIsAdmin(s.role === 'admin')
-    }
-  }, [])
-
-  function signOut() {
-    clearSession()
+  async function signOut() {
+    await clearSession()
     router.replace('/server')
   }
 

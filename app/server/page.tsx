@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, Lock, Mail, Check } from 'lucide-react'
-import { authenticate, persistSession } from '@/lib/freehold/session'
+import { login } from '@/lib/freehold/session'
 
 // NOTE: temporary pre-filled admin credentials — replace with real server auth.
 const USERNAME = 'admin@freehold.ae'
@@ -19,21 +19,19 @@ export default function ServerAuth() {
   const [error, setError]       = useState(false)
   const [loading, setLoading]   = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email || !password || loading) return
     setLoading(true)
-    setTimeout(() => {
-      const user = authenticate(email, password)
-      if (user) {
-        // role-aware: persist the session and route to the role's landing
-        persistSession(user, remember)
-        router.replace(user.home)
-      } else {
-        setError(true)
-        setLoading(false)
-      }
-    }, 500)
+    setError(false)
+    // server-side auth: sets a signed httpOnly cookie, returns the user
+    const user = await login(email, password, remember)
+    if (user) {
+      router.replace(user.home)   // admin → /management, broker → /agent
+    } else {
+      setError(true)
+      setLoading(false)
+    }
   }
 
   return (
