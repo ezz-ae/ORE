@@ -3,6 +3,7 @@ import { McpResponseEnvelope } from '@/types/freehold-mcp'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { getSkill } from '@/lib/freehold/ai-skills'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
+import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import type { Role } from '@/types/freehold-mcp'
 
 export const runtime = 'nodejs'
@@ -42,13 +43,21 @@ async function gatherSystemContext(role: Role): Promise<Record<string, unknown>>
     safe('lead-machine-summary'),
   ])
 
-  return {
-    server,
-    launchBlockers: blockers,
-    inventory,
-    integrations,
-    leadMachine,
+  return { server, launchBlockers: blockers, inventory, integrations, leadMachine }
+}
+
+/** Parse the model's JSON into blocks; fall back to a single text block. */
+function parseBlocks(raw: string): ExpertBlock[] {
+  const trimmed = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+  try {
+    const parsed = JSON.parse(trimmed) as { blocks?: ExpertBlock[] }
+    if (Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
+      return parsed.blocks.filter((b) => b && typeof b === 'object' && 'type' in b)
+    }
+  } catch {
+    // fall through
   }
+  return [{ type: 'text', content: raw.trim() || 'I could not format a response. Try rephrasing.' }]
 }
 
 export async function POST(request: NextRequest) {
@@ -61,14 +70,12 @@ export async function POST(request: NextRequest) {
 
     if (!message) {
       return NextResponse.json(
-        { layer: 'expert', status: 'error', data: { answer: 'Ask me anything about the business.' }, generatedAt },
+        { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'Ask me anything about the business.' }] }, generatedAt },
         { status: 400 },
       )
     }
 
     const skill = getSkill('expert')!
-
-    // Pull a live, compact snapshot of the whole platform.
     const systemContext = await gatherSystemContext(role as Role)
 
     const fullContext: Record<string, unknown> = {
@@ -78,13 +85,17 @@ export async function POST(request: NextRequest) {
       ...(body.context ?? {}),
     }
 
-    const answer = await queryServerAgent(message, {
+    const raw = await queryServerAgent(message, {
       sessionId,
       context: fullContext,
-      systemPrompt: skill.systemPrompt,
+      systemPrompt: `${skill.systemPrompt}\n${BLOCK_PROTOCOL}`,
+      responseMimeType: 'application/json',
+      maxOutputTokens: 4096,
+      temperature: 0.5,
     })
 
-    const data = { answer, skill: skill.id, cardType: 'expert', cards: [] }
+    const blocks = parseBlocks(raw)
+    const data = { blocks, skill: skill.id }
 
     const response: McpResponseEnvelope<typeof data> = {
       requestId: crypto.randomUUID(),
@@ -97,7 +108,7 @@ export async function POST(request: NextRequest) {
         `Context: ${Object.entries(systemContext).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}`,
       ],
       warnings: [],
-      nextActions: ['Ask a follow-up', 'Request a sequenced execution plan'],
+      nextActions: ['Act on a button', 'Ask a follow-up'],
       generatedAt,
     }
 
@@ -109,7 +120,7 @@ export async function POST(request: NextRequest) {
         requestId: crypto.randomUUID(),
         layer: 'expert',
         status: 'error',
-        data: { answer: `Expert error: ${msg}` },
+        data: { blocks: [{ type: 'text', content: `Expert error: ${msg}` }] },
         evidence: ['Request processing failed'],
         warnings: [msg],
         nextActions: ['Check VERTEX_AI_SERVICE_ACCOUNT_JSON environment variable'],

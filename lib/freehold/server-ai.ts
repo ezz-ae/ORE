@@ -58,11 +58,17 @@ export interface ServerQueryOptions {
   sessionId?: string
   context?: Record<string, unknown>
   systemPrompt?: string
+  /** Set to 'application/json' to force a pure-JSON response (generative UI). */
+  responseMimeType?: string
+  /** Override the output token cap (default 1024). */
+  maxOutputTokens?: number
+  /** Override sampling temperature (default 0.4). */
+  temperature?: number
 }
 
 export async function queryServerAgent(
   message: string,
-  { sessionId, context, systemPrompt }: ServerQueryOptions = {},
+  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature }: ServerQueryOptions = {},
 ): Promise<string> {
   const authHeaders = await getAuthHeaders()
   const sid     = sessionId ?? 'server-anon'
@@ -78,13 +84,19 @@ export async function queryServerAgent(
     { role: 'user', parts: [{ text: inputText }] },
   ]
 
+  const generationConfig: Record<string, unknown> = {
+    temperature: temperature ?? 0.4,
+    maxOutputTokens: maxOutputTokens ?? 1024,
+  }
+  if (responseMimeType) generationConfig.responseMimeType = responseMimeType
+
   const res = await fetch(GEMINI_URL, {
     method:  'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: systemPrompt ?? SYSTEM_PROMPT }] },
       contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
+      generationConfig,
     }),
   })
 
