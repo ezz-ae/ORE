@@ -98,9 +98,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           const t = scoreTone(item.score)
           return (
             <div key={item.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
-              <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
               <p className={`mt-1.5 text-[28px] font-semibold leading-none tabular-nums ${t.text}`}>{item.score}</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
                 <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${item.score}%` }} />
               </div>
             </div>
@@ -110,7 +110,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       {/* Component checks */}
       <section className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-        <div className="border-b border-slate-800 px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
+        <div className="border-b border-slate-800 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
           Component readiness
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -118,8 +118,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             const isReady = status === 'Ready'
             return (
               <div key={label} className="flex items-center justify-between gap-4 px-6 py-3.5">
-                <span className="text-[13px] text-white/70">{label}</span>
-                <span className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${isReady ? 'text-[#D4AF37]' : 'text-[#F8E7AE]'}`}>
+                <span className="text-sm text-slate-300">{label}</span>
+                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${isReady ? 'text-[#D4AF37]' : 'text-[#F8E7AE]'}`}>
                   {isReady
                     ? <CheckCircle2 className="h-3.5 w-3.5" />
                     : <Clock className="h-3.5 w-3.5" />}
@@ -134,12 +134,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Missing requirements */}
       {listing.missingRequirements.length > 0 && (
         <section className="mt-5 rounded-[22px] border border-red-400/15 bg-red-400/[0.04] p-6">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-red-300/80">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-red-300/80">
             <AlertCircle className="h-3.5 w-3.5" /> Blocking requirements
           </div>
           <ul className="mt-4 space-y-2">
             {listing.missingRequirements.map((req) => (
-              <li key={req} className="flex items-start gap-2.5 text-[13px] text-red-200/80">
+              <li key={req} className="flex items-start gap-2.5 text-sm text-red-200/80">
                 <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-red-400/70" />
                 {req}
               </li>
@@ -154,23 +154,23 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <div className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
             <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
               <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-white/55" />
-                <span className="text-[13px] font-semibold text-white">Landing page</span>
+                <Globe className="h-4 w-4 text-slate-400" />
+                <span className="text-sm font-semibold text-white">Landing page</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
                   <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${landing.completion}%` }} />
                 </div>
-                <span className="text-[12px] tabular-nums text-white/50">{landing.completion}%</span>
-                <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] ${statusChip(landing.status)}`}>{landing.status}</span>
+                <span className="text-xs tabular-nums text-slate-400">{landing.completion}%</span>
+                <span className={`inline-flex rounded-full border px-2 py-0.5 text-sm ${statusChip(landing.status)}`}>{landing.status}</span>
               </div>
             </div>
             <div className="px-6 py-4">
-              <p className="text-[13px] leading-relaxed text-white/70">{landing.aiReviewSummary}</p>
+              <p className="text-sm leading-relaxed text-slate-300">{landing.aiReviewSummary}</p>
               {landing.recommendedEdits.length > 0 && (
                 <ul className="mt-3 space-y-1.5">
                   {landing.recommendedEdits.map((edit) => (
-                    <li key={edit} className="flex items-start gap-2 text-[12px] text-[#F8E7AE]/70">
+                    <li key={edit} className="flex items-start gap-2 text-xs text-[#F8E7AE]/70">
                       <Sparkles className="mt-[3px] h-3 w-3 shrink-0 text-[#D4AF37]/60" />
                       {edit}
                     </li>
@@ -188,29 +188,29 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-[#D4AF37]" />
-              <span className="text-[13px] font-semibold text-white">Ad request</span>
+              <span className="text-sm font-semibold text-white">Ad request</span>
             </div>
-            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[13px] ${statusChip(adRequest.status)}`}>{adRequest.status}</span>
+            <span className={`inline-flex rounded-full border px-2 py-0.5 text-sm ${statusChip(adRequest.status)}`}>{adRequest.status}</span>
           </div>
           <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
             <div>
-              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Platform</p>
-              <p className="mt-1 text-[14px] font-medium text-white">{adRequest.platform}</p>
+              <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Platform</p>
+              <p className="mt-1 text-sm font-medium text-white">{adRequest.platform}</p>
             </div>
             <div>
-              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Budget</p>
-              <p className="mt-1 text-[14px] font-medium text-white">{adRequest.budget}</p>
+              <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Budget</p>
+              <p className="mt-1 text-sm font-medium text-white">{adRequest.budget}</p>
             </div>
             <div className="sm:col-span-2">
-              <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Campaign angle</p>
-              <p className="mt-1 text-[14px] text-white/80">{adRequest.campaignAngle}</p>
+              <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Campaign angle</p>
+              <p className="mt-1 text-sm text-slate-300">{adRequest.campaignAngle}</p>
             </div>
             {adRequest.blockers.length > 0 && (
               <div className="sm:col-span-2">
-                <p className="text-[12px] text-white/35 uppercase tracking-[0.14em]">Blockers</p>
+                <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Blockers</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {adRequest.blockers.map((b) => (
-                    <span key={b} className="rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[13px] text-red-300">{b}</span>
+                    <span key={b} className="rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-sm text-red-300">{b}</span>
                   ))}
                 </div>
               </div>
