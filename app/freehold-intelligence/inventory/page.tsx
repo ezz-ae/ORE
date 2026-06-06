@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Search, LayoutGrid, ArrowUpRight, Sparkles } from 'lucide-react'
+import { Search, LayoutGrid, ArrowUpRight, Sparkles, TrendingUp, Wrench, Rocket, AlertTriangle } from 'lucide-react'
 import {
   inventoryProperties,
   getInventoryStats,
+  getInventoryAnalysis,
   type InventoryProperty,
   type PropertyStatus,
   type LandingStatus,
+  type AdCandidate,
+  type AdVerdict,
 } from '@/src/features/freehold-intelligence/inventory'
+import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -84,8 +88,49 @@ const FILTERS: { value: FilterStatus; label: string }[] = [
   { value: 'coming_soon', label: 'Coming Soon' },
 ]
 
+const VERDICT_META: Record<AdVerdict, { label: string; cls: string; Icon: typeof Rocket }> = {
+  scale:     { label: 'Scale',     cls: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300', Icon: TrendingUp },
+  launch:    { label: 'Launch',    cls: 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] text-[#F8E7AE]',       Icon: Rocket },
+  fix_first: { label: 'Fix first', cls: 'border-amber-400/25 bg-amber-400/[0.06] text-amber-300',        Icon: Wrench },
+  hold:      { label: 'Hold',      cls: 'border-white/[0.1] bg-white/[0.03] text-white/45',              Icon: AlertTriangle },
+}
+
+function CandidateCard({ c }: { c: AdCandidate }) {
+  const m = VERDICT_META[c.verdict]
+  return (
+    <div className="flex flex-col rounded-[16px] border border-white/[0.07] bg-[#131B2B] p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[14px] font-semibold text-white/90">{c.name}</div>
+          <div className="mt-0.5 truncate text-[11px] text-white/35">{c.area} · {c.developer}</div>
+        </div>
+        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${m.cls}`}>
+          <m.Icon className="h-3 w-3" /> {m.label}
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-center gap-3 text-[11px] text-white/40">
+        <span className="font-semibold tabular-nums text-white/70">{c.score}<span className="text-white/30">/100</span></span>
+        {c.roi !== null && <span className="text-[#D4AF37]/80">{c.roi.toFixed(1)}% ROI</span>}
+        <span>{c.leads30d} leads</span>
+      </div>
+
+      <ul className="mt-3 space-y-1">
+        {c.reasons.slice(0, 2).map((r, i) => (
+          <li key={i} className="flex gap-1.5 text-[11px] leading-snug text-white/45">
+            <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-white/25" />{r}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-3 border-t border-white/[0.05] pt-2.5 text-[11px] text-[#D4AF37]/75">{c.nextAction}</div>
+    </div>
+  )
+}
+
 export default function InventoryPage() {
   const stats = getInventoryStats()
+  const analysis = getInventoryAnalysis()
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [query, setQuery] = useState('')
 
@@ -135,8 +180,95 @@ export default function InventoryPage() {
         </div>
       </section>
 
+      {/* ── Ad-readiness analysis ─────────────────────────────────────────── */}
+      <section className="mt-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+            <Sparkles className="h-3.5 w-3.5" /> Which to advertise
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-white/35">
+            <span className="text-emerald-300">{analysis.counts.scale} scale</span>
+            <span className="text-[#F8E7AE]">{analysis.counts.launch} launch</span>
+            <span className="text-amber-300">{analysis.counts.fixFirst} fix first</span>
+          </div>
+        </div>
+        <p className="mt-1.5 text-[12px] text-white/35">
+          Ranked by a composite of ad readiness, ROI, lead momentum, data quality and landing status.
+        </p>
+
+        {/* Top picks */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {analysis.topPicks.map((c) => <CandidateCard key={c.id} c={c} />)}
+        </div>
+
+        {/* Fix-first + missed opportunities */}
+        {(analysis.fixFirst.length > 0 || analysis.missedOpportunities.length > 0) && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {analysis.fixFirst.length > 0 && (
+              <div className="rounded-[16px] border border-amber-400/15 bg-amber-400/[0.03] p-4">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-amber-300/90">
+                  <Wrench className="h-3.5 w-3.5" /> Fix first — high potential, blocked
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {analysis.fixFirst.map((c) => (
+                    <li key={c.id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-[12px] font-medium text-white/80">{c.name}</div>
+                        <div className="truncate text-[11px] text-white/35">{c.nextAction}</div>
+                      </div>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}`} className="shrink-0 text-[11px] text-[#D4AF37]/70 hover:text-[#D4AF37]">Open</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {analysis.missedOpportunities.length > 0 && (
+              <div className="rounded-[16px] border border-rose-400/15 bg-rose-400/[0.03] p-4">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-rose-300/90">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Missed — high ROI, no landing page
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {analysis.missedOpportunities.map((c) => (
+                    <li key={c.id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-[12px] font-medium text-white/80">{c.name}</div>
+                        <div className="truncate text-[11px] text-white/35">{c.roi?.toFixed(1)}% ROI · build landing to capture demand</div>
+                      </div>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}/generate`} className="shrink-0 text-[11px] text-[#D4AF37]/70 hover:text-[#D4AF37]">Build LP</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Web Designer AI */}
+        <div className="mt-5 rounded-[18px] border border-[#D4AF37]/12 bg-gradient-to-br from-[#D4AF37]/[0.04] to-transparent p-5">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
+            <Sparkles className="h-3.5 w-3.5" /> Web Designer
+          </div>
+          <AiPrompt
+            skill="web_designer"
+            placeholder="Ask the Web Designer which properties to advertise, or to design a landing page…"
+            suggestions={[
+              'Which 3 properties should we advertise this week, and why?',
+              'Design a landing page hero for the top pick.',
+              'Which listings are wasting budget and should pause?',
+              'What single fix unblocks the most properties?',
+            ]}
+            context={{
+              topPicks: analysis.topPicks.map((c) => ({ name: c.name, area: c.area, score: c.score, roi: c.roi, leads30d: c.leads30d, landing: c.landingStatus, verdict: c.verdict })),
+              fixFirst: analysis.fixFirst.map((c) => ({ name: c.name, nextAction: c.nextAction })),
+              missedOpportunities: analysis.missedOpportunities.map((c) => ({ name: c.name, roi: c.roi })),
+              counts: analysis.counts,
+            }}
+          />
+        </div>
+      </section>
+
       {/* Controls */}
-      <div className="mt-8 flex flex-wrap items-center gap-3">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         {/* Filter pills */}
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map((f) => (

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { McpResponseEnvelope } from '@/types/freehold-mcp'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
+import { getSkill, isRoleAllowed } from '@/lib/freehold/ai-skills'
 
 type ServerRole = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_agent' | 'data_manager' | 'viewer'
 type ServerTopic =
@@ -15,6 +16,7 @@ export interface ServerAiChatRequest {
   userId?: string
   sessionId?: string
   context?: Record<string, unknown>
+  skill?: string
   assignedAgentId?: string
   assignedModules?: string[]
   userRoles?: string[]
@@ -82,14 +84,44 @@ export async function POST(request: NextRequest) {
     const body     = await request.json() as ServerAiChatRequest
     const message  = body.message || ''
     const role     = normalizeRole(body, request)
-    const topic    = inferTopic(message)
-    const allowed  = isAllowed(role, topic)
     const scope    = ROLE_SCOPES[role]
+    const sessionId = body.sessionId ?? `sai-${crypto.randomUUID()}`
+
+    // ── Skill path: a page explicitly selected a specialist (web_designer, etc.) ──
+    const skill = getSkill(body.skill)
+    if (body.skill && !skill) {
+      return NextResponse.json(
+        { layer: 'server-ai', status: 'error', data: { answer: `Unknown skill: ${body.skill}` }, generatedAt: new Date().toISOString() },
+        { status: 400 },
+      )
+    }
 
     let data: Record<string, unknown>
+    let topic: ServerTopic = inferTopic(message)
+    let allowed: boolean
 
-    if (allowed) {
-      const roleSystemPrompt = `You are the private Freehold Intelligence Server AI for the ${scope.label} role (${scope.tone}).
+    if (skill) {
+      // Skill is an explicit specialist scope; RBAC is enforced per-skill.
+      allowed = isRoleAllowed(skill, role)
+      if (allowed) {
+        const answer = await queryServerAgent(message, {
+          sessionId,
+          context: body.context,
+          systemPrompt: skill.systemPrompt,
+        })
+        data = { answer, skill: skill.id, cardType: skill.id, cards: [] }
+      } else {
+        data = {
+          answer: `The ${skill.label} skill isn't available at ${scope.label} access level.`,
+          cardType: 'permission_guard',
+          restrictedSkill: skill.id,
+        }
+      }
+    } else {
+      // Default path: role + inferred topic scope.
+      allowed = isAllowed(role, topic)
+      if (allowed) {
+        const roleSystemPrompt = `You are the private Freehold Intelligence Server AI for the ${scope.label} role (${scope.tone}).
 
 Your allowed scope: ${scope.allowedTopics.join(', ')}.
 Topic of this query: ${topic}.
@@ -99,17 +131,16 @@ Be operational — give specific next actions, message drafts, or data insights.
 When drafting messages, write them ready-to-send with no placeholders.
 Keep answers under 200 words unless more detail is requested.`
 
-      const sessionId = body.sessionId ?? `sai-${crypto.randomUUID()}`
+        const answer = await queryServerAgent(message, {
+          sessionId,
+          context: body.context,
+          systemPrompt: roleSystemPrompt,
+        })
 
-      const answer = await queryServerAgent(message, {
-        sessionId,
-        context: body.context,
-        systemPrompt: roleSystemPrompt,
-      })
-
-      data = { answer, cardType: topic, cards: [] }
-    } else {
-      data = restrictedReply(role, topic)
+        data = { answer, cardType: topic, cards: [] }
+      } else {
+        data = restrictedReply(role, topic)
+      }
     }
 
     const response: McpResponseEnvelope<typeof data> = {
@@ -117,10 +148,10 @@ Keep answers under 200 words unless more detail is requested.`
       layer: 'server-ai',
       status: 'success',
       data,
-      evidence: [`Role: ${role}`, `Topic: ${topic}`, `Permission: ${allowed ? 'allowed' : 'restricted'}`],
+      evidence: [`Role: ${role}`, skill ? `Skill: ${skill.id}` : `Topic: ${topic}`, `Permission: ${allowed ? 'allowed' : 'restricted'}`],
       warnings: allowed ? [] : [`Restricted answer blocked for role ${role}`],
       nextActions: allowed
-        ? ['Return structured operational cards', 'Keep answer inside role scope']
+        ? ['Return structured operational cards', 'Keep answer inside scope']
         : ['Ask an Owner/Admin for access', safePromptForRole(role)],
       generatedAt: new Date().toISOString(),
     }

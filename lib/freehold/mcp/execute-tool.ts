@@ -4,6 +4,7 @@ import { McpResponseEnvelope, Role } from '@/types/freehold-mcp';
 import { getToolById } from '@/lib/freehold/mcp/registry';
 import { userHasRole, isActionApproved } from '@/lib/freehold/mcp/permissions';
 import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations';
+import { getInventoryAnalysis } from '@/src/features/freehold-intelligence/inventory';
 import { query } from '@/lib/db';
 
 export interface ToolCallRequest {
@@ -130,6 +131,16 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
         result = await getLeadMachineSummary();
         evidence = ['Mapped Lead Machine metrics from freehold_site_projects and landing tables'];
         nextActions = ['Prioritize listings with active landing pages', 'Resolve blockers before ad launch'];
+        break;
+      }
+      case 'inventory-analysis': {
+        result = getInventoryAnalysis();
+        evidence = ['Ranked inventory by composite ad-opportunity score'];
+        warnings = result.counts.fixFirst > 0 ? [`${result.counts.fixFirst} high-potential listing(s) blocked from ads`] : [];
+        nextActions = [
+          ...result.topPicks.slice(0, 3).map((c) => `${c.name}: ${c.nextAction}`),
+          ...(result.missedOpportunities.length ? [`Build landing pages for ${result.missedOpportunities.length} high-ROI listing(s)`] : []),
+        ];
         break;
       }
       default:

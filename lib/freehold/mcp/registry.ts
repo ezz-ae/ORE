@@ -57,6 +57,16 @@ export const mcpTools: Tool[] = [
     canWriteExternal: false,
   },
   {
+    id: 'inventory-analysis',
+    aliases: ['inventory_analysis', 'ad_candidates', 'which_to_advertise', 'inventory_ad_analysis'],
+    name: 'Inventory Ad Analysis',
+    category: 'lead-machine',
+    description: 'Ranks properties by ad opportunity (readiness, ROI, lead momentum, data quality, landing status) and returns top picks, fix-first list and missed opportunities.',
+    requiresApproval: false,
+    allowedRoles: [...readRoles],
+    canWriteExternal: false,
+  },
+  {
     id: 'lead-machine-campaign',
     aliases: ['lead_machine_campaign', 'create_ad_request', 'create_landing_request'],
     name: 'Lead Machine Campaign',

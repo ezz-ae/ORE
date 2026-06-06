@@ -454,3 +454,147 @@ export function getInventoryStats() {
     totalViews30d: props.reduce((s, p) => s + p.views30d, 0),
   }
 }
+
+// ── Ad-readiness analysis ─────────────────────────────────────────────────────
+// "Which properties should we advertise, and why?" — a composite score plus a
+// recommended action for every property, used by the inventory analysis panel
+// and the Web Designer AI skill.
+
+export type AdVerdict = 'scale' | 'launch' | 'fix_first' | 'hold'
+
+export interface AdCandidate {
+  id: string
+  name: string
+  area: string
+  developer: string
+  /** 0–100 composite ad opportunity score. */
+  score: number
+  verdict: AdVerdict
+  roi: number | null
+  adReadiness: number
+  dataQuality: number
+  leads30d: number
+  landingStatus: LandingStatus
+  /** Human-readable reasons driving the verdict. */
+  reasons: string[]
+  /** The single highest-leverage next action. */
+  nextAction: string
+}
+
+function conversionRate(p: InventoryProperty): number {
+  return p.views30d > 0 ? (p.leads30d / p.views30d) * 100 : 0
+}
+
+/**
+ * Composite score blending ad readiness, ROI, lead momentum, data quality and
+ * landing status. Tuned so "ready + converting + high ROI" floats to the top
+ * and "missing landing / no data" sinks.
+ */
+function adOpportunityScore(p: InventoryProperty): number {
+  const readiness = p.adReadiness                         // 0–100
+  const roiScore = p.roi ? Math.min(p.roi / 10, 1) * 100 : 40
+  const momentum = Math.min(p.leads30d / 80, 1) * 100      // 80 leads/mo = full marks
+  const quality = p.dataQuality                            // 0–100
+  const landingBonus =
+    p.landingStatus === 'live' ? 100 :
+    p.landingStatus === 'pending_review' ? 70 :
+    p.landingStatus === 'draft' ? 50 : 0
+
+  const raw =
+    readiness * 0.30 +
+    landingBonus * 0.25 +
+    momentum * 0.20 +
+    roiScore * 0.15 +
+    quality * 0.10
+
+  return Math.round(raw)
+}
+
+function verdictFor(p: InventoryProperty, score: number): AdVerdict {
+  if (p.landingStatus === 'live' && p.adReadiness >= 75 && score >= 70) return 'scale'
+  if (p.adReadiness >= 60 && p.landingStatus !== 'missing') return 'launch'
+  if (p.landingStatus === 'missing' || p.dataQuality < 55 || !p.hasImages) return 'fix_first'
+  return 'hold'
+}
+
+function reasonsFor(p: InventoryProperty): string[] {
+  const r: string[] = []
+  if (p.roi && p.roi >= 7.5) r.push(`Strong ${p.roi.toFixed(1)}% ROI — a headline-worthy hook`)
+  if (p.landingStatus === 'live') r.push('Landing page is live — ad traffic has somewhere to land')
+  if (p.landingStatus === 'missing') r.push('No landing page — paid traffic would be wasted')
+  if (!p.hasImages) r.push('No images — blocks ad creative generation')
+  if (p.dataQuality < 55) r.push(`Low data quality (${p.dataQuality}) — fill missing fields first`)
+  const cr = conversionRate(p)
+  if (cr >= 3) r.push(`Converting at ${cr.toFixed(1)}% (leads/views) — proven demand`)
+  if (p.leads30d >= 50) r.push(`${p.leads30d} leads in 30d — momentum already there`)
+  if (p.linkedCampaigns > 0 && p.adReadiness >= 75) r.push('Already running and ready — increase budget')
+  if (p.availableUnits !== null && p.totalUnits && p.availableUnits / p.totalUnits < 0.15)
+    r.push('Low remaining inventory — lead with scarcity')
+  if (r.length === 0) r.push('Moderate readiness — needs review before spend')
+  return r
+}
+
+function nextActionFor(p: InventoryProperty, verdict: AdVerdict): string {
+  switch (verdict) {
+    case 'scale':     return 'Increase budget and add a Performance Max campaign.'
+    case 'launch':    return p.landingStatus === 'draft'
+      ? 'Publish the landing page, then create the ad request.'
+      : 'Create the ad request — this is ready to launch.'
+    case 'fix_first': return p.landingStatus === 'missing'
+      ? 'Generate the landing page first (highest unblock value).'
+      : !p.hasImages ? 'Add property images to unblock ad creative.'
+      : 'Complete missing data fields, then re-score.'
+    case 'hold':      return 'Hold — review positioning and data before spending.'
+  }
+}
+
+export function getAdCandidates(): AdCandidate[] {
+  return inventoryProperties
+    .map((p) => {
+      const score = adOpportunityScore(p)
+      const verdict = verdictFor(p, score)
+      return {
+        id: p.id,
+        name: p.name,
+        area: p.area,
+        developer: p.developer,
+        score,
+        verdict,
+        roi: p.roi,
+        adReadiness: p.adReadiness,
+        dataQuality: p.dataQuality,
+        leads30d: p.leads30d,
+        landingStatus: p.landingStatus,
+        reasons: reasonsFor(p),
+        nextAction: nextActionFor(p, verdict),
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+}
+
+export interface InventoryAnalysis {
+  topPicks: AdCandidate[]      // best to advertise now
+  fixFirst: AdCandidate[]      // high potential, blocked
+  scaling: AdCandidate[]       // already live + ready, push budget
+  counts: { scale: number; launch: number; fixFirst: number; hold: number }
+  /** Properties with high ROI but no landing — biggest missed opportunity. */
+  missedOpportunities: AdCandidate[]
+}
+
+export function getInventoryAnalysis(): InventoryAnalysis {
+  const candidates = getAdCandidates()
+  return {
+    topPicks: candidates.filter((c) => c.verdict === 'launch' || c.verdict === 'scale').slice(0, 5),
+    fixFirst: candidates.filter((c) => c.verdict === 'fix_first').slice(0, 5),
+    scaling: candidates.filter((c) => c.verdict === 'scale').slice(0, 5),
+    counts: {
+      scale: candidates.filter((c) => c.verdict === 'scale').length,
+      launch: candidates.filter((c) => c.verdict === 'launch').length,
+      fixFirst: candidates.filter((c) => c.verdict === 'fix_first').length,
+      hold: candidates.filter((c) => c.verdict === 'hold').length,
+    },
+    missedOpportunities: candidates
+      .filter((c) => (c.roi ?? 0) >= 7 && c.landingStatus === 'missing')
+      .slice(0, 5),
+  }
+}

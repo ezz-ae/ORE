@@ -9,10 +9,12 @@ export function AiPrompt({
   placeholder = 'Ask anything about your business',
   suggestions = [],
   context,
+  skill,
 }: {
   placeholder?: string
   suggestions?: string[]
   context?: Record<string, unknown>
+  skill?: string
 }) {
   const [value, setValue] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -35,7 +37,7 @@ export function AiPrompt({
       const res = await fetch('/api/freehold/server-ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, role: 'owner', ...(context ? { context } : {}) }),
+        body: JSON.stringify({ message, role: 'owner', ...(context ? { context } : {}), ...(skill ? { skill } : {}) }),
       })
       const data = await res.json()
       const answer =
