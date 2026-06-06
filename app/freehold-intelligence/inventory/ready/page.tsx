@@ -62,7 +62,7 @@ export default function ReadyPage() {
           { label: 'Ready',        value: props.length,   color: 'text-amber-400'   },
           { label: 'Live pages',   value: liveLandings,   color: 'text-emerald-400' },
           { label: '30d Leads',    value: totalLeads,     color: 'text-[#D4AF37]'   },
-          { label: 'Avg readiness',value: `${avgReadiness}%`, color: 'text-white/70' },
+          { label: 'Avg readiness',value: `${avgReadiness}%`, color: 'text-slate-300' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
@@ -107,7 +107,7 @@ export default function ReadyPage() {
           {(['leads', 'price', 'readiness', 'roi'] as SortKey[]).map((s) => (
             <button key={s} onClick={() => setSort(s)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
-                sort === s ? 'bg-white/[0.08] text-white' : 'text-slate-500 hover:text-white/60'
+                sort === s ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
               {s}
             </button>
@@ -125,7 +125,7 @@ export default function ReadyPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-white/85 truncate">{p.name}</span>
+                  <span className="text-sm font-medium text-white truncate">{p.name}</span>
                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${LANDING_STYLE[p.landingStatus]}`}>
                     {LANDING_LABEL[p.landingStatus] ?? p.landingStatus}
                   </span>
@@ -142,7 +142,7 @@ export default function ReadyPage() {
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-24 rounded-full bg-white/[0.07]">
+                  <div className="h-1 w-24 rounded-full bg-slate-800/50">
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/60'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
@@ -151,10 +151,10 @@ export default function ReadyPage() {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <div className="text-sm font-semibold text-white/70">{formatPrice(p.startingPriceAED)}</div>
+                <div className="text-sm font-semibold text-slate-300">{formatPrice(p.startingPriceAED)}</div>
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-white/80 transition">
+                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
                     View <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

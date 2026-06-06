@@ -75,14 +75,14 @@ const TYPE_COLORS: Record<ContractType, string> = {
   data:     'text-violet-400 bg-violet-400/10 border-violet-400/20',
   agency:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
   legal:    'text-sky-400    bg-sky-400/10    border-sky-400/20',
-  service:  'text-white/50   bg-white/[0.06]  border-white/10',
+  service:  'text-slate-400   bg-slate-800/50  border-white/10',
 }
 
 const STATUS_COLORS: Record<ContractStatus, string> = {
   active:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   expiring: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
   expired:  'text-red-400     bg-red-400/10     border-red-400/20',
-  draft:    'text-white/35    bg-white/[0.04]   border-white/10',
+  draft:    'text-slate-500    bg-slate-800/40   border-white/10',
 }
 
 export default function ContractsPage() {
@@ -108,9 +108,9 @@ export default function ContractsPage() {
       <div className="mb-7 flex items-center justify-between">
         <div>
           <h1 className="text-[20px] font-semibold text-white">Contracts</h1>
-          <p className="mt-1 text-[12px] text-white/30">Active agreements, renewals, and platform terms</p>
+          <p className="mt-1 text-xs text-slate-500">Active agreements, renewals, and platform terms</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-[12px] font-medium text-emerald-400 transition hover:bg-emerald-400/15">
+        <button className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
           <Plus className="h-3.5 w-3.5" /> Add contract
         </button>
       </div>
@@ -118,13 +118,13 @@ export default function ContractsPage() {
       {/* Summary tiles */}
       <div className="mb-5 grid grid-cols-4 gap-3">
         {[
-          { label: 'Total',       value: CONTRACTS.length,    color: 'text-white/75'   },
+          { label: 'Total',       value: CONTRACTS.length,    color: 'text-slate-200'   },
           { label: 'Active',      value: active,              color: 'text-emerald-400' },
-          { label: 'Expiring',    value: expiring.length,     color: expiring.length > 0 ? 'text-amber-400' : 'text-white/75' },
+          { label: 'Expiring',    value: expiring.length,     color: expiring.length > 0 ? 'text-amber-400' : 'text-slate-200' },
           { label: 'Auto-renew',  value: autoRenewCount,      color: 'text-sky-400'     },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-3.5">
-            <div className="text-[10px] text-white/25 uppercase tracking-wider">{label}</div>
+          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+            <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
           </div>
         ))}
@@ -135,8 +135,8 @@ export default function ContractsPage() {
         <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-amber-400/20 bg-amber-400/[0.04] px-4 py-3.5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
           <div>
-            <div className="text-[13px] font-medium text-amber-300">Renewal action required</div>
-            <div className="mt-0.5 text-[12px] text-white/40">
+            <div className="text-sm font-medium text-amber-300">Renewal action required</div>
+            <div className="mt-0.5 text-xs text-slate-500">
               {expiring.map((c) => `${c.name} (${c.daysLeft}d)`).join(' · ')}
             </div>
           </div>
@@ -150,22 +150,22 @@ export default function ContractsPage() {
           const isRenewing = renewing === c.id
           const isRenewed  = renewed.includes(c.id)
           return (
-            <div key={c.id} className={`rounded-[16px] border bg-[#131B2B] overflow-hidden transition ${
-              c.status === 'expiring' ? 'border-amber-400/20' : 'border-white/[0.07]'
+            <div key={c.id} className={`rounded-[16px] border bg-slate-900 overflow-hidden transition ${
+              c.status === 'expiring' ? 'border-amber-400/20' : 'border-slate-800'
             }`}>
               <button className="w-full flex items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isExpanded ? null : c.id)}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white/[0.04]">
-                  <FileCheck className="h-4 w-4 text-white/30" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-800/40">
+                  <FileCheck className="h-4 w-4 text-slate-500" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] font-medium text-white/85">{c.name}</span>
+                    <span className="text-sm font-medium text-white">{c.name}</span>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${TYPE_COLORS[c.type]}`}>
                       {c.type}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5 text-[11px] text-white/30">
+                  <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-500">
                     <span>{c.counterparty}</span>
                     <span>·</span>
                     <span>{c.value}</span>
@@ -183,45 +183,45 @@ export default function ContractsPage() {
                   <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${STATUS_COLORS[c.status]}`}>
                     {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                   </span>
-                  {isExpanded ? <ChevronDown className="h-4 w-4 text-white/20" /> : <ChevronRight className="h-4 w-4 text-white/20" />}
+                  {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-600" /> : <ChevronRight className="h-4 w-4 text-slate-600" />}
                 </div>
               </button>
 
               {isExpanded && (
-                <div className="border-t border-white/[0.05] px-5 py-4 space-y-3">
+                <div className="border-t border-slate-800 px-5 py-4 space-y-3">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <div className="text-[10px] text-white/25 uppercase tracking-wider">Term</div>
-                      <div className="mt-1 text-[12px] text-white/65">{c.startDate} → {c.endDate}</div>
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider">Term</div>
+                      <div className="mt-1 text-xs text-slate-300">{c.startDate} → {c.endDate}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-white/25 uppercase tracking-wider">Auto-renew</div>
-                      <div className={`mt-1 text-[12px] font-medium ${c.autoRenew ? 'text-emerald-400' : 'text-white/35'}`}>
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider">Auto-renew</div>
+                      <div className={`mt-1 text-xs font-medium ${c.autoRenew ? 'text-emerald-400' : 'text-slate-500'}`}>
                         {c.autoRenew ? 'Yes' : 'No'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-white/25 uppercase tracking-wider">Contract ID</div>
-                      <div className="mt-1 font-mono text-[11px] text-white/35">{c.id}</div>
+                      <div className="text-[10px] text-slate-600 uppercase tracking-wider">Contract ID</div>
+                      <div className="mt-1 font-mono text-xs text-slate-500">{c.id}</div>
                     </div>
                   </div>
                   {c.notes && (
-                    <p className="text-[12px] text-white/40 leading-relaxed border-t border-white/[0.04] pt-3">{c.notes}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-800 pt-3">{c.notes}</p>
                   )}
-                  <div className="flex items-center gap-2 border-t border-white/[0.04] pt-3">
+                  <div className="flex items-center gap-2 border-t border-slate-800 pt-3">
                     {c.status === 'expiring' && !isRenewed && (
                       <button onClick={() => startRenewal(c.id)} disabled={isRenewing}
-                        className="flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-4 py-1.5 text-[12px] font-medium text-amber-300 transition hover:bg-amber-400/30 disabled:opacity-50">
+                        className="flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-4 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-400/30 disabled:opacity-50">
                         {isRenewing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Calendar className="h-3 w-3" />}
                         {isRenewing ? 'Sending renewal…' : 'Request renewal'}
                       </button>
                     )}
                     {isRenewed && (
-                      <span className="flex items-center gap-1.5 text-[12px] text-emerald-400">
+                      <span className="flex items-center gap-1.5 text-xs text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" /> Renewal requested
                       </span>
                     )}
-                    <button className="flex items-center gap-1 text-[12px] text-white/25 hover:text-white/60 transition ml-auto">
+                    <button className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition ml-auto">
                       <ExternalLink className="h-3.5 w-3.5" /> View document
                     </button>
                   </div>

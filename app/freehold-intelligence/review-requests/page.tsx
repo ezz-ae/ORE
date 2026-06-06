@@ -345,7 +345,7 @@ export default function ReviewRequestsPage() {
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-white/90 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90 disabled:opacity-50"
               disabled={!commentText.trim()}
             >
               Add comment

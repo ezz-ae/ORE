@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   off_plan:           'text-blue-400   bg-blue-400/10   border-blue-400/20',
   under_construction: 'text-amber-400  bg-amber-400/10  border-amber-400/20',
-  coming_soon:        'text-white/45   bg-slate-800/50  border-white/10',
+  coming_soon:        'text-slate-500   bg-slate-800/50  border-white/10',
 }
 
 type SortKey = 'leads' | 'price' | 'handover' | 'readiness'
@@ -70,7 +70,7 @@ export default function OffPlanPage() {
           { label: 'Off Plan',     value: offPlanCount,           color: 'text-blue-400'   },
           { label: 'Under Const.', value: underConstCount,        color: 'text-amber-400'  },
           { label: '30d Leads',    value: totalLeads,             color: 'text-[#D4AF37]'  },
-          { label: 'Handovers',    value: Object.keys(handovers).length + ' yrs', color: 'text-white/60' },
+          { label: 'Handovers',    value: Object.keys(handovers).length + ' yrs', color: 'text-slate-400' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
@@ -87,7 +87,7 @@ export default function OffPlanPage() {
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition ${
               year === yr
                 ? 'border-amber-400/30 bg-amber-400/10 text-amber-400'
-                : 'border-slate-800 text-slate-400 hover:text-white/70'
+                : 'border-slate-800 text-slate-400 hover:text-slate-300'
             }`}>
             <Calendar className="h-3 w-3" />
             {yr}
@@ -95,7 +95,7 @@ export default function OffPlanPage() {
           </button>
         ))}
         {year !== 'All' && (
-          <button onClick={() => setYear('All')} className="text-xs text-slate-500 hover:text-white/50 transition">clear</button>
+          <button onClick={() => setYear('All')} className="text-xs text-slate-500 hover:text-slate-400 transition">clear</button>
         )}
       </div>
 
@@ -115,7 +115,7 @@ export default function OffPlanPage() {
           {(['leads', 'price', 'handover', 'readiness'] as SortKey[]).map((s) => (
             <button key={s} onClick={() => setSort(s)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
-                sort === s ? 'bg-white/[0.08] text-white' : 'text-slate-500 hover:text-white/60'
+                sort === s ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
               {s}
             </button>
@@ -133,7 +133,7 @@ export default function OffPlanPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-white/85 truncate">{p.name}</span>
+                  <span className="text-sm font-medium text-white truncate">{p.name}</span>
                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[p.status]}`}>
                     {STATUS_LABEL[p.status] ?? p.status}
                   </span>
@@ -153,7 +153,7 @@ export default function OffPlanPage() {
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-24 rounded-full bg-white/[0.07]">
+                  <div className="h-1 w-24 rounded-full bg-slate-800/50">
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-white/20'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
@@ -161,10 +161,10 @@ export default function OffPlanPage() {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <div className="text-sm font-semibold text-white/65">{formatPrice(p.startingPriceAED)}</div>
+                <div className="text-sm font-semibold text-slate-300">{formatPrice(p.startingPriceAED)}</div>
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-white/80 transition">
+                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
                     View <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

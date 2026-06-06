@@ -247,7 +247,7 @@ export default function NotebookPage() {
                 <Link
                   key={conv.id}
                   href={`/freehold-intelligence/notebook/${conv.id}`}
-                  className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 transition"
+                  className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 transition"
                 >
                   <ChevronRight className="h-3 w-3 shrink-0" />
                   <span className="truncate">{conv.title}</span>
@@ -328,7 +328,7 @@ export default function NotebookPage() {
                   <SourceCheckbox checked={!!checkedSources[u.id]} onChange={() => toggleSource(u.id)} />
                   <FileText className="h-3 w-3 shrink-0 text-slate-500" />
                   <div className="min-w-0">
-                    <p className="truncate text-[11px] text-slate-300">{u.name}</p>
+                    <p className="truncate text-xs text-slate-300">{u.name}</p>
                     <p className="text-[10px] text-slate-600">{u.size}</p>
                   </div>
                 </div>
@@ -350,7 +350,7 @@ export default function NotebookPage() {
           ].join(' ')}
         >
           <Upload className="h-4 w-4" />
-          <p className="text-[11px] leading-tight">Drop files here<br /><span className="text-slate-700">or click to upload</span></p>
+          <p className="text-xs leading-tight">Drop files here<br /><span className="text-slate-700">or click to upload</span></p>
         </div>
 
       </aside>
@@ -471,7 +471,7 @@ export default function NotebookPage() {
                 <button
                   onClick={() => sendChat()}
                   disabled={!chatInput.trim() || chatPending}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#0D1117] transition hover:bg-[#E8C657] disabled:opacity-30"
                 >
                   {chatPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
                 </button>
@@ -613,7 +613,7 @@ export default function NotebookPage() {
                   />
                   <button
                     onClick={() => setActiveGenerate(null)}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657]"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#D4AF37] text-[#0D1117] transition hover:bg-[#E8C657]"
                   >
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
@@ -677,7 +677,7 @@ export default function NotebookPage() {
               {activeSendDest && (
                 <button
                   onClick={() => { setActiveSendDest(null); setActiveSendOutput(null) }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#06080A] transition hover:bg-[#E8C657]"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#0D1117] transition hover:bg-[#E8C657]"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Send to {SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.label}

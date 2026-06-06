@@ -37,7 +37,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-400/25 bg-amber-400/10">
             <Package className="h-3.5 w-3.5 text-amber-400" />
           </div>
-          <span className="text-[15px] font-semibold text-white">Inventory</span>
+          <span className="text-sm font-semibold text-white">Inventory</span>
         </div>
       </header>
 

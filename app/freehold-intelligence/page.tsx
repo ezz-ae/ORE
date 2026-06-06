@@ -113,8 +113,8 @@ const APPS = [
     metric: '8 connected · 2 pending',
     badge:  0,
     accent: 'rgba(255,255,255,0.4)',
-    card:   'border-white/[0.07] hover:border-white/[0.15]',
-    icon:   'text-white/50 bg-white/[0.05] border-white/[0.08]',
+    card:   'border-slate-800 hover:border-white/[0.15]',
+    icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
   },
   {
     id:     'settings',
@@ -125,8 +125,8 @@ const APPS = [
     metric: '3 users active',
     badge:  0,
     accent: 'rgba(255,255,255,0.4)',
-    card:   'border-white/[0.07] hover:border-white/[0.15]',
-    icon:   'text-white/50 bg-white/[0.05] border-white/[0.08]',
+    card:   'border-slate-800 hover:border-white/[0.15]',
+    icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
   },
 ]
 
@@ -147,7 +147,7 @@ function getGreeting(name: string) {
 function urgentCardCls(p: ServerActionCard['priority']) {
   if (p === 'critical') return 'border-red-500/25 bg-red-500/[0.06]'
   if (p === 'high')     return 'border-amber-500/25 bg-amber-500/[0.06]'
-  return 'border-white/[0.08] bg-white/[0.02]'
+  return 'border-slate-800 bg-slate-800/40'
 }
 function urgentDotCls(p: ServerActionCard['priority']) {
   if (p === 'critical') return 'bg-red-500'
@@ -157,7 +157,7 @@ function urgentDotCls(p: ServerActionCard['priority']) {
 function urgentTitleCls(p: ServerActionCard['priority']) {
   if (p === 'critical') return 'text-red-400'
   if (p === 'high')     return 'text-amber-300'
-  return 'text-white/70'
+  return 'text-slate-300'
 }
 
 export default function IntelligenceLauncher() {
@@ -285,7 +285,7 @@ export default function IntelligenceLauncher() {
                 type="button"
                 onClick={() => sendChat(chatInput)}
                 disabled={chatLoading || !chatInput.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#06080A] transition-opacity hover:opacity-85 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#0D1117] transition-opacity hover:opacity-85 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -397,7 +397,7 @@ export default function IntelligenceLauncher() {
                 <app.Icon className="h-5 w-5" />
               </div>
               <div className="mt-4 flex-1">
-                <div className="text-[15px] font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
+                <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
                 <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
               </div>
               <div className="mt-4 flex items-center justify-between">

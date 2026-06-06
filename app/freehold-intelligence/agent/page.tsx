@@ -204,7 +204,7 @@ export default function AgentHomePage() {
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4">
-                  <div className="text-[14px] font-semibold text-white group-hover:text-white/90">{app.label}</div>
+                  <div className="text-[14px] font-semibold text-white group-hover:text-white">{app.label}</div>
                   <div className="mt-0.5 text-xs text-slate-500">{app.sub}</div>
                 </div>
                 <div className={`mt-3 text-xs font-medium ${a.icon} opacity-80`}>{app.metric}</div>

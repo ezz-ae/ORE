@@ -63,18 +63,18 @@ export default function DashboardAiAssistantPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/apps/dashboard" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/apps/dashboard" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Dashboard App
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Bot className="h-3.5 w-3.5" /> AI Assistant
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          Your command layer.<br /><span className="text-white/35">Ask anything.</span>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+          Your command layer.<br /><span className="text-slate-500">Ask anything.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[17px] leading-[1.65] text-white/60">
+        <p className="mt-5 max-w-xl text-[17px] leading-[1.65] text-slate-400">
           Briefings, ad copy, follow-up scripts, comparisons, summaries. The AI follows context across CRM, Lead Machine, and Notebook.
         </p>
       </section>
@@ -94,7 +94,7 @@ export default function DashboardAiAssistantPage() {
 
       {/* Quick action prompts */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Quick actions</div>
+        <div className="text-sm font-medium uppercase tracking-wider text-slate-500">Quick actions</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Common command tasks</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {QUICK_ACTIONS.map((action) => (
@@ -104,7 +104,7 @@ export default function DashboardAiAssistantPage() {
               className={`group flex items-start gap-3 rounded-[18px] border p-4 text-left transition ${
                 activeAction === action.label
                   ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.04]'
-                  : 'border-white/[0.08] bg-[#131B2B] hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
+                  : 'border-slate-800 bg-slate-900 hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.03]'
               }`}
             >
               {loading && activeAction === action.label
@@ -112,8 +112,8 @@ export default function DashboardAiAssistantPage() {
                 : <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50 transition group-hover:text-[#D4AF37]" />
               }
               <div>
-                <div className="text-[13px] font-semibold text-white/80 group-hover:text-white transition">{action.label}</div>
-                <p className="mt-0.5 text-[13px] leading-relaxed text-white/35 group-hover:text-white/50 transition">{action.prompt}</p>
+                <div className="text-sm font-semibold text-slate-100 group-hover:text-white transition">{action.label}</div>
+                <p className="mt-0.5 text-sm leading-relaxed text-slate-500 group-hover:text-slate-400 transition">{action.prompt}</p>
               </div>
             </button>
           ))}
@@ -122,30 +122,30 @@ export default function DashboardAiAssistantPage() {
         {(loading || response) && activeAction && (
           <div className="mt-5 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">
+              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70">
                 <Loader2 className={`h-3 w-3 ${loading ? 'animate-spin' : 'hidden'}`} />
                 {loading ? 'Thinking…' : activeAction}
               </div>
               <div className="flex items-center gap-2">
                 {!loading && response && (
-                  <button onClick={handleCopy} className="flex items-center gap-1 text-[13px] text-white/35 hover:text-white/65 transition">
+                  <button onClick={handleCopy} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-300 transition">
                     {copied ? <CheckCircle2 className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 )}
-                <button onClick={() => { setActiveAction(null); setResponse(null) }} className="text-white/25 hover:text-white/55 transition">
+                <button onClick={() => { setActiveAction(null); setResponse(null) }} className="text-slate-600 hover:text-slate-400 transition">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
             {loading ? (
               <div className="space-y-2">
-                <div className="h-3 w-3/4 rounded-full bg-white/[0.06] animate-pulse" />
-                <div className="h-3 w-1/2 rounded-full bg-white/[0.06] animate-pulse" />
-                <div className="h-3 w-2/3 rounded-full bg-white/[0.06] animate-pulse" />
+                <div className="h-3 w-3/4 rounded-full bg-slate-800/50 animate-pulse" />
+                <div className="h-3 w-1/2 rounded-full bg-slate-800/50 animate-pulse" />
+                <div className="h-3 w-2/3 rounded-full bg-slate-800/50 animate-pulse" />
               </div>
             ) : (
-              <p className="whitespace-pre-line text-[13px] leading-[1.75] text-white/75">
+              <p className="whitespace-pre-line text-sm leading-[1.75] text-slate-200">
                 {response?.replace(/\*\*/g, '').replace(/\*/g, '')}
               </p>
             )}
@@ -157,12 +157,12 @@ export default function DashboardAiAssistantPage() {
       <section className="mt-14">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Recent</div>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-500">Recent</div>
             <h2 className="mt-2 text-xl font-semibold text-white">Notebook conversations</h2>
           </div>
           <Link
             href="/freehold-intelligence/notebook"
-            className="inline-flex items-center gap-1.5 text-[12px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+            className="inline-flex items-center gap-1.5 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
           >
             All conversations <ArrowUpRight className="h-3 w-3" />
           </Link>
@@ -174,21 +174,21 @@ export default function DashboardAiAssistantPage() {
               <Link
                 key={conv.id}
                 href={`/freehold-intelligence/notebook/${conv.id}`}
-                className="group flex items-start justify-between gap-4 rounded-[18px] border border-white/[0.05] bg-[#131B2B] px-5 py-4 transition hover:border-[#D4AF37]/25"
+                className="group flex items-start justify-between gap-4 rounded-[18px] border border-slate-800 bg-slate-900 px-5 py-4 transition hover:border-[#D4AF37]/25"
               >
                 <div className="flex items-start gap-3 min-w-0">
-                  <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-white/25 transition group-hover:text-[#D4AF37]/60" />
+                  <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]/60" />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-semibold text-white/85 transition group-hover:text-white">{conv.title}</div>
-                    <p className="mt-0.5 text-[12px] text-white/40 truncate">{lastMsg?.content.slice(0, 80)}…</p>
-                    <div className="mt-1 flex items-center gap-2 text-[13px] text-white/30">
+                    <div className="text-[14px] font-semibold text-white transition group-hover:text-white">{conv.title}</div>
+                    <p className="mt-0.5 text-xs text-slate-500 truncate">{lastMsg?.content.slice(0, 80)}…</p>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                       <span>{conv.messages.length} messages</span>
                       <span>·</span>
                       <span>{conv.savedOutputs.length} saved outputs</span>
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 text-[13px] text-white/30">{relativeTime(conv.updatedAt)}</div>
+                <div className="shrink-0 text-sm text-slate-500">{relativeTime(conv.updatedAt)}</div>
               </Link>
             )
           })}
@@ -204,7 +204,7 @@ export default function DashboardAiAssistantPage() {
           <Link
             key={link.href}
             href={link.href}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/60 transition hover:border-[#D4AF37]/30 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
           >
             {link.label} <ArrowUpRight className="h-3 w-3" />
           </Link>

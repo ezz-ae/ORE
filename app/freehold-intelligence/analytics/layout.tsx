@@ -21,7 +21,7 @@ export default function AnalyticsLayout({ children }: { children: React.ReactNod
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-violet-400/25 bg-violet-400/10">
             <TrendingUp className="h-3.5 w-3.5 text-violet-400" />
           </div>
-          <span className="text-[15px] font-semibold text-white">Analytics</span>
+          <span className="text-sm font-semibold text-white">Analytics</span>
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm text-slate-400">
           <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />

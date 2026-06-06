@@ -486,7 +486,7 @@ export default function TasksPage() {
             />
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-white/90"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90"
             >
               Create task
             </button>

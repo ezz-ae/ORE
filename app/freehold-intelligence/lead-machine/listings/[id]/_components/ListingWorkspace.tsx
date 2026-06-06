@@ -27,17 +27,17 @@ interface Props {
 }
 
 function severityClass(severity: string, resolved: boolean) {
-  if (resolved) return 'border-white/[0.08] bg-[#131B2B] opacity-60'
+  if (resolved) return 'border-slate-800 bg-slate-900 opacity-60'
   if (severity === 'critical') return 'border-red-400/20 bg-red-400/[0.05]'
   if (severity === 'high')     return 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]'
-  return 'border-white/[0.08] bg-[#131B2B]'
+  return 'border-slate-800 bg-slate-900'
 }
 
 function severityTextClass(severity: string, resolved: boolean) {
-  if (resolved) return 'text-white/40'
+  if (resolved) return 'text-slate-500'
   if (severity === 'critical') return 'text-red-300'
   if (severity === 'high')     return 'text-[#F8E7AE]'
-  return 'text-white/60'
+  return 'text-slate-400'
 }
 
 export function ListingWorkspace({ requirements, comments, projectName }: Props) {
@@ -93,7 +93,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
   return (
     <>
       {/* Tab bar */}
-      <div className="mt-8 flex items-center gap-1 border-b border-white/[0.07] pb-0">
+      <div className="mt-8 flex items-center gap-1 border-b border-slate-800 pb-0">
         <button
           type="button"
           onClick={() => setTab('requirements')}
@@ -101,13 +101,13 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
             'flex items-center gap-2 px-4 py-3 text-[14px] font-medium transition border-b-2',
             tab === 'requirements'
               ? 'border-[#D4AF37] text-white'
-              : 'border-transparent text-white/40 hover:text-white/65',
+              : 'border-transparent text-slate-500 hover:text-slate-300',
           ].join(' ')}
         >
           <ClipboardList className="h-3.5 w-3.5" />
           Requirements
           {unresolvedCount > 0 && (
-            <span className="rounded-full bg-red-500/20 px-1.5 py-0.5 text-[11px] font-semibold text-red-400 leading-none">
+            <span className="rounded-full bg-red-500/20 px-1.5 py-0.5 text-xs font-semibold text-red-400 leading-none">
               {unresolvedCount}
             </span>
           )}
@@ -119,12 +119,12 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
             'flex items-center gap-2 px-4 py-3 text-[14px] font-medium transition border-b-2',
             tab === 'comments'
               ? 'border-[#D4AF37] text-white'
-              : 'border-transparent text-white/40 hover:text-white/65',
+              : 'border-transparent text-slate-500 hover:text-slate-300',
           ].join(' ')}
         >
           <MessageSquare className="h-3.5 w-3.5" />
           Comments
-          <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[11px] font-medium text-white/40 leading-none">
+          <span className="rounded-full border border-slate-800 bg-slate-800/40 px-1.5 py-0.5 text-xs font-medium text-slate-500 leading-none">
             {localComments.length}
           </span>
         </button>
@@ -147,10 +147,10 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
                     </p>
                     {!isResolved && (
                       <>
-                        <p className={`mt-1.5 text-[13px] leading-relaxed ${severityTextClass(req.severity, isResolved)} opacity-80`}>
+                        <p className={`mt-1.5 text-sm leading-relaxed ${severityTextClass(req.severity, isResolved)} opacity-80`}>
                           {req.description}
                         </p>
-                        <p className={`mt-2 text-[12px] opacity-60 ${severityTextClass(req.severity, isResolved)}`}>
+                        <p className={`mt-2 text-xs opacity-60 ${severityTextClass(req.severity, isResolved)}`}>
                           → {req.nextAction}
                         </p>
                       </>
@@ -160,10 +160,10 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
                     type="button"
                     onClick={() => toggleResolved(req.id)}
                     className={[
-                      'shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition',
+                      'shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition',
                       isResolved
                         ? 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-white/[0.09] bg-white/[0.04] text-white/45 hover:text-white/70',
+                        : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
                     ].join(' ')}
                   >
                     {isResolved
@@ -183,23 +183,23 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
         <div className="mt-6 space-y-4">
           {/* Existing comments */}
           {localComments.map((comment) => (
-            <div key={comment.id} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-6">
+            <div key={comment.id} className="rounded-[18px] border border-slate-800 bg-slate-900 p-6">
               <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[12px] text-white/45 capitalize">
+                <span className="rounded-full border border-slate-800 bg-slate-800/40 px-2.5 py-0.5 text-xs text-slate-500 capitalize">
                   {comment.type}
                 </span>
-                <span className="text-[13px] text-white/30">{comment.owner}</span>
+                <span className="text-sm text-slate-500">{comment.owner}</span>
               </div>
-              <p className="mt-3 text-[14px] leading-relaxed text-white/80">{comment.body}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-slate-100">{comment.body}</p>
               {comment.expectedOutput && (
-                <p className="mt-2 text-[12px] text-white/40">Expected: {comment.expectedOutput}</p>
+                <p className="mt-2 text-xs text-slate-500">Expected: {comment.expectedOutput}</p>
               )}
             </div>
           ))}
 
           {/* Add comment form */}
-          <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-3">
+          <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">
               Add note
             </div>
             <textarea
@@ -208,15 +208,15 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
               onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postComment() }}
               placeholder={`Note about ${projectName}…`}
               rows={3}
-              className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[14px] text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none transition"
+              className="w-full resize-none rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-[14px] text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none transition"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
-              <span className="text-[12px] text-white/25">⌘↵ to post</span>
+              <span className="text-xs text-slate-600">⌘↵ to post</span>
               <button
                 type="button"
                 onClick={postComment}
                 disabled={!draft.trim()}
-                className="flex items-center gap-2 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-4 py-2 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <Send className="h-3.5 w-3.5" />
                 Post
@@ -228,7 +228,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
 
       {/* Flash toast */}
       {flash && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/30 bg-[#0B0F1A]/95 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/30 bg-slate-900/95 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-xl backdrop-blur">
           {flash}
         </div>
       )}

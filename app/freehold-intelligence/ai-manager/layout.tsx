@@ -39,7 +39,7 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-sky-400/25 bg-sky-400/10">
             <Bot className="h-3.5 w-3.5 text-sky-400" />
           </div>
-          <span className="text-[15px] font-semibold text-white">AI Manager</span>
+          <span className="text-sm font-semibold text-white">AI Manager</span>
         </div>
       </header>
 

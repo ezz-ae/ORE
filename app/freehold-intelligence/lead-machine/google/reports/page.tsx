@@ -41,12 +41,12 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
   DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
-  VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
-  SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',
+  VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
+  SHOPPING:        'bg-violet-400/10 text-slate-400 border-violet-400/20',
 }
 
 const STATUS_BADGE: Record<SearchTermStatus, string> = {
-  NONE:           'text-white/40 border border-white/[0.12] bg-white/[0.03]',
+  NONE:           'text-slate-500 border border-white/[0.12] bg-slate-800/40',
   ADDED:          'text-[#D4AF37] border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07]',
   EXCLUDED:       'text-red-400 border border-red-400/25 bg-red-400/[0.07]',
   ADDED_EXCLUDED: 'text-orange-300 border border-orange-400/25 bg-orange-400/[0.07]',
@@ -156,12 +156,12 @@ export default function GoogleReportsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
           <BarChart2 className="h-3.5 w-3.5" /> Reports
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           Performance reports<br />
-          <span className="text-white/35">{rangeLabel[range]} window.</span>
+          <span className="text-slate-500">{rangeLabel[range]} window.</span>
         </h1>
       </section>
 
@@ -172,10 +172,10 @@ export default function GoogleReportsPage() {
             key={r}
             onClick={() => setRange(r)}
             className={[
-              'rounded-[10px] px-4 py-2 text-[12px] font-semibold transition',
+              'rounded-[10px] px-4 py-2 text-xs font-semibold transition',
               range === r
                 ? 'bg-[#4285F4] text-white'
-                : 'bg-white/[0.06] text-white/45 hover:bg-white/[0.1] hover:text-white/70',
+                : 'bg-slate-800/50 text-slate-500 hover:bg-white/[0.1] hover:text-slate-300',
             ].join(' ')}
           >
             {r}
@@ -189,11 +189,11 @@ export default function GoogleReportsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Google Ads not connected</div>
-              <p className="mt-1 text-[13px] text-white/60">{error}</p>
+              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
-                className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#4285F4]/80 transition hover:text-[#4285F4]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
                 Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -207,24 +207,24 @@ export default function GoogleReportsPage() {
         <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-[13px] text-white/65">{error}</p>
+            <p className="text-sm text-slate-300">{error}</p>
           </div>
         </div>
       )}
 
       {/* Loading */}
       {loading && (
-        <div className="mt-16 text-center text-[14px] text-white/35">
+        <div className="mt-16 text-center text-[14px] text-slate-500">
           Loading {rangeLabel[range]} report…
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && !report && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-14 text-center">
           <BarChart2 className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
           <div className="text-[17px] font-semibold text-white">No report data</div>
-          <p className="mt-2 text-[13px] text-white/40">
+          <p className="mt-2 text-sm text-slate-500">
             No performance data is available for the selected window.
           </p>
         </div>
@@ -234,7 +234,7 @@ export default function GoogleReportsPage() {
         <>
           {/* ── KPI summary cards ───────────────────────────────────────────── */}
           <section className="mt-10">
-            <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
+            <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
               Summary — {rangeLabel[range]}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -248,12 +248,12 @@ export default function GoogleReportsPage() {
               ].map((kpi) => (
                 <div
                   key={kpi.label}
-                  className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-4 py-4"
+                  className="rounded-[18px] border border-slate-800 bg-slate-900 px-4 py-4"
                 >
                   <div className="text-[20px] font-semibold leading-none text-white">
                     {kpi.value}
                   </div>
-                  <div className="mt-1.5 text-[12px] text-white/35">{kpi.label}</div>
+                  <div className="mt-1.5 text-xs text-slate-500">{kpi.label}</div>
                 </div>
               ))}
             </div>
@@ -262,14 +262,14 @@ export default function GoogleReportsPage() {
           {/* ── By Campaign table ───────────────────────────────────────────── */}
           {sortedCampaigns.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
+              <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
                 By campaign — sorted by spend
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
+              <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-white/[0.08] px-5 py-2.5">
+                <div className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] gap-x-4 border-b border-slate-800 px-5 py-2.5">
                   {['Campaign', 'Type', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Spend'].map((h) => (
-                    <div key={h} className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/30">
+                    <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
                       {h}
                     </div>
                   ))}
@@ -281,25 +281,25 @@ export default function GoogleReportsPage() {
                     return (
                       <div
                         key={c.campaignId}
-                        className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] items-center gap-x-4 px-5 py-3.5 transition hover:bg-white/[0.02]"
+                        className="grid grid-cols-[1fr_100px_80px_60px_70px_70px_90px] items-center gap-x-4 px-5 py-3.5 transition hover:bg-slate-800/40"
                       >
                         <div className="min-w-0">
-                          <div className="truncate text-[13px] font-medium text-white/85">{c.name}</div>
+                          <div className="truncate text-sm font-medium text-white">{c.name}</div>
                         </div>
                         <div>
                           <span
-                            className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${
-                              CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'
+                            className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                              CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-slate-800/40 text-slate-500 border-slate-800'
                             }`}
                           >
                             {c.type.replace(/_/g, ' ')}
                           </span>
                         </div>
-                        <div className="text-[12px] text-white/60">{fmtNum(c.impressions)}</div>
-                        <div className="text-[12px] text-white/60">{fmtNum(c.clicks)}</div>
-                        <div className="text-[12px] text-white/60">{fmtPct(ctr)}</div>
-                        <div className="text-[12px] text-white/60">{Math.round(c.conversions)}</div>
-                        <div className="text-[12px] font-semibold text-white">{fmtMicros(c.costMicros)}</div>
+                        <div className="text-xs text-slate-400">{fmtNum(c.impressions)}</div>
+                        <div className="text-xs text-slate-400">{fmtNum(c.clicks)}</div>
+                        <div className="text-xs text-slate-400">{fmtPct(ctr)}</div>
+                        <div className="text-xs text-slate-400">{Math.round(c.conversions)}</div>
+                        <div className="text-xs font-semibold text-white">{fmtMicros(c.costMicros)}</div>
                       </div>
                     )
                   })}
@@ -311,10 +311,10 @@ export default function GoogleReportsPage() {
           {/* ── By Device breakdown ─────────────────────────────────────────── */}
           {report.byDevice.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
+              <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
                 By device
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+              <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900 p-5">
                 <div className="space-y-5">
                   {[...report.byDevice]
                     .sort((a, b) => b.impressions - a.impressions)
@@ -325,16 +325,16 @@ export default function GoogleReportsPage() {
                         <div key={d.device}>
                           <div className="mb-1.5 flex items-center gap-3">
                             <span className="w-5 text-base">{DEVICE_ICON[d.device] ?? '📲'}</span>
-                            <span className="w-20 text-[12px] font-semibold text-white/80">
+                            <span className="w-20 text-xs font-semibold text-slate-100">
                               {d.device.charAt(0) + d.device.slice(1).toLowerCase()}
                             </span>
-                            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-800/50">
                               <div
                                 className="absolute inset-y-0 left-0 rounded-full bg-[#4285F4]/60"
                                 style={{ width: `${widthPct}%` }}
                               />
                             </div>
-                            <div className="flex w-48 shrink-0 justify-end gap-5 text-[13px] text-white/45">
+                            <div className="flex w-48 shrink-0 justify-end gap-5 text-sm text-slate-500">
                               <span>{fmtNum(d.impressions)} impr.</span>
                               <span>{fmtPct(ctr)} CTR</span>
                               <span>{Math.round(d.conversions)} conv.</span>
@@ -351,10 +351,10 @@ export default function GoogleReportsPage() {
           {/* ── Daily trend ─────────────────────────────────────────────────── */}
           {last14Days.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
+              <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">
                 Daily performance — last {last14Days.length} days
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+              <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900 p-5">
                 {/* SVG line chart */}
                 {(() => {
                   const W = 560, H = 88, pad = 6
@@ -379,7 +379,7 @@ export default function GoogleReportsPage() {
 
                   return (
                     <>
-                      <div className="mb-3 flex items-center gap-5 text-[11px] text-white/35">
+                      <div className="mb-3 flex items-center gap-5 text-xs text-slate-500">
                         <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#4285F4]" /> Spend</span>
                         <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#D4AF37]" /> Clicks</span>
                         <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-emerald-400" /> Conversions</span>
@@ -400,7 +400,7 @@ export default function GoogleReportsPage() {
                         <polyline points={clicksPts} fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
                         <polyline points={convPts}   fill="none" stroke="#34D399" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="2 3" />
                       </svg>
-                      <div className="mt-2 flex justify-between text-[11px] text-white/25">
+                      <div className="mt-2 flex justify-between text-xs text-slate-600">
                         {last14Days
                           .filter((_, i) => i === 0 || i === Math.floor(last14Days.length / 2) || i === last14Days.length - 1)
                           .map((d) => (
@@ -412,7 +412,7 @@ export default function GoogleReportsPage() {
                 })()}
 
                 {/* Summary row below chart */}
-                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-slate-800 pt-4">
                   {[
                     { label: 'Total spend',  value: fmtMicros(last14Days.reduce((s, d) => s + d.costMicros, 0)) },
                     { label: 'Total clicks', value: last14Days.reduce((s, d) => s + d.clicks, 0).toLocaleString() },
@@ -420,7 +420,7 @@ export default function GoogleReportsPage() {
                   ].map((m) => (
                     <div key={m.label}>
                       <div className="text-[17px] font-semibold text-white">{m.value}</div>
-                      <div className="text-[11px] text-white/35">{m.label}</div>
+                      <div className="text-xs text-slate-500">{m.label}</div>
                     </div>
                   ))}
                 </div>
@@ -431,7 +431,7 @@ export default function GoogleReportsPage() {
           {/* ── Search Terms ────────────────────────────────────────────────── */}
           <section className="mt-10">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+              <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
                 Search terms — top 50 by impressions
               </div>
               {/* Status filter */}
@@ -446,10 +446,10 @@ export default function GoogleReportsPage() {
                     key={f.value}
                     onClick={() => setStatusFilter(f.value)}
                     className={[
-                      'rounded-[8px] px-3 py-1.5 text-[13px] font-medium transition',
+                      'rounded-[8px] px-3 py-1.5 text-sm font-medium transition',
                       statusFilter === f.value
                         ? 'bg-[#4285F4] text-white'
-                        : 'bg-white/[0.05] text-white/40 hover:bg-white/[0.1] hover:text-white/65',
+                        : 'bg-slate-800/40 text-slate-500 hover:bg-white/[0.1] hover:text-slate-300',
                     ].join(' ')}
                   >
                     {f.label}
@@ -459,15 +459,15 @@ export default function GoogleReportsPage() {
             </div>
 
             {filteredTerms.length === 0 ? (
-              <div className="rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-5 py-8 text-center text-[13px] text-white/30">
+              <div className="rounded-[16px] border border-slate-800 bg-slate-900 px-5 py-8 text-center text-sm text-slate-500">
                 No search terms match the selected filter.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
+              <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
                 {/* Table header */}
-                <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-white/[0.08] px-5 py-2.5">
+                <div className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] gap-x-3 border-b border-slate-800 px-5 py-2.5">
                   {['Term', 'Match', 'Campaign', 'Ad Group', 'Impr.', 'Clicks', 'CTR', 'Conv.', 'Status'].map((h) => (
-                    <div key={h} className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/30">
+                    <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
                       {h}
                     </div>
                   ))}
@@ -482,32 +482,32 @@ export default function GoogleReportsPage() {
                     return (
                       <div
                         key={`${t.searchTerm}-${idx}`}
-                        className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] items-center gap-x-3 px-5 py-3 transition hover:bg-white/[0.02]"
+                        className="grid grid-cols-[2fr_80px_1fr_1fr_70px_50px_60px_70px_80px] items-center gap-x-3 px-5 py-3 transition hover:bg-slate-800/40"
                       >
                         <div
-                          className="truncate text-[12px] text-white/75"
+                          className="truncate text-xs text-slate-200"
                           title={t.searchTerm}
                         >
                           {displayTerm}
                         </div>
                         <div>
-                          <span className="rounded border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 text-[12px] text-white/40">
+                          <span className="rounded border border-white/[0.1] bg-slate-800/40 px-1.5 py-0.5 text-xs text-slate-500">
                             {t.matchType}
                           </span>
                         </div>
-                        <div className="truncate text-[13px] text-white/45" title={t.campaignName}>
+                        <div className="truncate text-sm text-slate-500" title={t.campaignName}>
                           {t.campaignName}
                         </div>
-                        <div className="truncate text-[13px] text-white/40" title={t.adGroupName}>
+                        <div className="truncate text-sm text-slate-500" title={t.adGroupName}>
                           {t.adGroupName}
                         </div>
-                        <div className="text-[13px] text-white/55">{fmtNum(t.impressions)}</div>
-                        <div className="text-[13px] text-white/55">{fmtNum(t.clicks)}</div>
-                        <div className="text-[13px] text-white/55">{fmtPct(t.ctr)}</div>
-                        <div className="text-[13px] text-white/55">{Math.round(t.conversions)}</div>
+                        <div className="text-sm text-slate-400">{fmtNum(t.impressions)}</div>
+                        <div className="text-sm text-slate-400">{fmtNum(t.clicks)}</div>
+                        <div className="text-sm text-slate-400">{fmtPct(t.ctr)}</div>
+                        <div className="text-sm text-slate-400">{Math.round(t.conversions)}</div>
                         <div>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                               STATUS_BADGE[status] ?? STATUS_BADGE.NONE
                             }`}
                           >
@@ -522,7 +522,7 @@ export default function GoogleReportsPage() {
             )}
 
             {/* Search terms note */}
-            <p className="mt-4 text-[12px] leading-relaxed text-white/35">
+            <p className="mt-4 text-xs leading-relaxed text-slate-500">
               Search terms are matched queries that triggered your ads. Adding high-performing terms
               as keywords improves Quality Score.
             </p>

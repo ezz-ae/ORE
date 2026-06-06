@@ -172,7 +172,7 @@ export default function AgentCreditsPage() {
                   <div className="flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-1 py-1">
                     <button
                       onClick={() => adjust(agent.id, -1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
@@ -181,7 +181,7 @@ export default function AgentCreditsPage() {
                     </span>
                     <button
                       onClick={() => adjust(agent.id, 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
                     >
                       <Plus className="h-3 w-3" />
                     </button>

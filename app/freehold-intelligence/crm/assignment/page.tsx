@@ -182,15 +182,15 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
 
       <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3 text-xs">
         <div className="text-center">
-          <div className="text-[15px] font-semibold text-white">{agent.totalLeads}</div>
+          <div className="text-sm font-semibold text-white">{agent.totalLeads}</div>
           <div className="text-slate-500">Leads</div>
         </div>
         <div className="text-center">
-          <div className={`text-[15px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-500'}`}>{agent.hotLeads}</div>
+          <div className={`text-sm font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-500'}`}>{agent.hotLeads}</div>
           <div className="text-slate-500">Hot</div>
         </div>
         <div className="text-center">
-          <div className={`text-[15px] font-semibold ${agent.overdueFollowUps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>{agent.overdueFollowUps}</div>
+          <div className={`text-sm font-semibold ${agent.overdueFollowUps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>{agent.overdueFollowUps}</div>
           <div className="text-slate-500">Overdue</div>
         </div>
       </div>
@@ -284,7 +284,7 @@ export default function AssignmentPage() {
       <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
         Agent Assignment
       </h1>
-      <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-slate-400">
+      <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-400">
         {totalLeadsAll} total leads across team &mdash;{' '}
         <span className={totalUnassigned > 0 ? 'text-[#D4AF37]' : 'text-slate-400'}>
           {totalUnassigned} unassigned

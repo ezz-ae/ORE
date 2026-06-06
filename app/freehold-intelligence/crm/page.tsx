@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
@@ -81,6 +81,9 @@ function syncLabel(s: typeof integrationSyncStatuses[0]) {
 export default function FreeholdCrmPage() {
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
+  // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const isActive = (l: CRMLeadIntelligence) =>
     l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost'
@@ -299,7 +302,7 @@ export default function FreeholdCrmPage() {
 
                   {/* Last contact */}
                   <div className="hidden text-xs text-slate-500 lg:block">
-                    {relTime(lead.lastContactAt)}
+                    {mounted ? relTime(lead.lastContactAt) : '—'}
                   </div>
 
                   {/* Actions */}
@@ -355,7 +358,7 @@ export default function FreeholdCrmPage() {
                 ))}
               </div>
 
-              {lastSyncStr && (
+              {lastSyncStr && mounted && (
                 <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs text-slate-600">
                   Last sync {relTime(lastSyncStr)} ago · {totalLeadsIn} leads imported
                 </div>

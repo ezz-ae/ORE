@@ -102,7 +102,7 @@ export default function LeadMachineOverviewPage() {
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white/70"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-slate-300"
           >
             View All Campaigns <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -139,12 +139,12 @@ export default function LeadMachineOverviewPage() {
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-white">{req.title}</div>
-                  <div className="mt-0.5 text-xs text-white/55">{req.description}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{req.description}</div>
                   <div className="mt-2 text-xs font-medium text-red-300">→ {req.nextAction}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-xs text-slate-500">Owner</div>
-                  <div className="text-xs text-white/70">{req.owner}</div>
+                  <div className="text-xs text-slate-300">{req.owner}</div>
                   <div className="mt-1 text-sm text-red-300/70">Due {req.dueDate}</div>
                 </div>
               </div>
@@ -187,8 +187,8 @@ export default function LeadMachineOverviewPage() {
                 </div>
                 {[listing.dataQualityScore, listing.landingReadinessScore, listing.adReadinessScore, listing.opportunityScore].map((score, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
-                    <span className={`text-[15px] font-semibold tabular-nums ${scoreText(score)}`}>{score}</span>
-                    <div className="w-full overflow-hidden rounded-full bg-white/[0.06] h-1">
+                    <span className={`text-sm font-semibold tabular-nums ${scoreText(score)}`}>{score}</span>
+                    <div className="w-full overflow-hidden rounded-full bg-slate-800/50 h-1">
                       <div className={`h-full rounded-full ${scoreBg(score)}`} style={{ width: `${score}%` }} />
                     </div>
                   </div>
@@ -208,7 +208,7 @@ export default function LeadMachineOverviewPage() {
             className="group flex items-start gap-4 rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
           >
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-800 bg-slate-800/50 transition group-hover:border-[#D4AF37]/20">
-              <Icon className="h-4 w-4 text-white/70" />
+              <Icon className="h-4 w-4 text-slate-300" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
@@ -236,11 +236,11 @@ export default function LeadMachineOverviewPage() {
                   <div className="mt-0.5 text-sm text-slate-400">{listing.area} · {listing.developer}</div>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="flex items-center gap-1.5 text-white/55">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     {statusIcon(listing.landingStatus)}
                     Landing
                   </span>
-                  <span className="flex items-center gap-1.5 text-white/55">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     {statusIcon(listing.adStatus)}
                     Ads
                   </span>
@@ -259,7 +259,7 @@ export default function LeadMachineOverviewPage() {
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
-        <p className="mt-3 text-[15px] font-medium leading-[1.65] text-slate-100">
+        <p className="mt-3 text-sm font-medium leading-[1.65] text-slate-100">
           One listing is ready for paid traffic — the bottleneck is the Meta billing owner. Resolve that and Dubai Hills launches today. Palm needs a single landing approval. Business Bay needs payment-plan data before a landing can be generated.
         </p>
       </section>

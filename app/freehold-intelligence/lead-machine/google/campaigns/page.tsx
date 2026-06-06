@@ -32,7 +32,7 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
   DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
-  VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
+  VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
 }
 
 const FILTER_TYPES: { label: string; value: GoogleCampaignType | 'ALL' }[] = [
@@ -201,7 +201,7 @@ export default function GoogleCampaignsPage() {
               <div className="text-sm font-semibold text-white">
                 Google Ads not connected
               </div>
-              <p className="mt-1 text-sm text-white/60">{error}</p>
+              <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
@@ -218,7 +218,7 @@ export default function GoogleCampaignsPage() {
         <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-sm text-white/65">{error}</p>
+            <p className="text-sm text-slate-300">{error}</p>
           </div>
         </div>
       )}
@@ -312,7 +312,7 @@ export default function GoogleCampaignsPage() {
 
                       <Link
                         href={`/freehold-intelligence/lead-machine/google/campaigns/${campaign.id}`}
-                        className="min-w-0 flex-1 truncate text-[15px] font-semibold text-slate-100 transition hover:text-white"
+                        className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-100 transition hover:text-white"
                       >
                         {campaign.name}
                       </Link>
@@ -329,7 +329,7 @@ export default function GoogleCampaignsPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-400">
                       <span>
                         Daily budget:{' '}
-                        <span className="text-white/70">
+                        <span className="text-slate-300">
                           AED {Math.round(campaign.dailyBudgetMicros / 1_000_000).toLocaleString()}
                         </span>
                       </span>
@@ -338,17 +338,17 @@ export default function GoogleCampaignsPage() {
                         <>
                           <span>
                             Impressions:{' '}
-                            <span className="text-white/70">
+                            <span className="text-slate-300">
                               {m.impressions.toLocaleString()}
                             </span>
                           </span>
                           <span>
                             Clicks:{' '}
-                            <span className="text-white/70">{m.clicks.toLocaleString()}</span>
+                            <span className="text-slate-300">{m.clicks.toLocaleString()}</span>
                           </span>
                           <span>
                             CTR:{' '}
-                            <span className="text-white/70">{fmtPct(m.ctr)}</span>
+                            <span className="text-slate-300">{fmtPct(m.ctr)}</span>
                           </span>
                           <span>
                             Conversions:{' '}
@@ -358,7 +358,7 @@ export default function GoogleCampaignsPage() {
                           </span>
                           <span>
                             Cost:{' '}
-                            <span className="text-white/70">{fmtMicros(m.costMicros)}</span>
+                            <span className="text-slate-300">{fmtMicros(m.costMicros)}</span>
                           </span>
                         </>
                       )}
@@ -419,7 +419,7 @@ export default function GoogleCampaignsPage() {
             <div className="mt-10 rounded-[20px] border border-slate-800 bg-slate-800/50 px-6 py-10 text-center">
               <p className="text-[14px] text-slate-400">
                 No{' '}
-                <span className="text-white/60">
+                <span className="text-slate-400">
                   {filter.replace(/_/g, ' ').toLowerCase()}
                 </span>{' '}
                 campaigns found.

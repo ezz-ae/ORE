@@ -321,7 +321,7 @@ export default function AnalyticsPage() {
               <tbody className="divide-y divide-slate-800">
                 {filteredSources.length > 0 ? (
                   filteredSources.map((src) => (
-                    <tr key={src.name} className="transition hover:bg-white/[0.02]">
+                    <tr key={src.name} className="transition hover:bg-slate-800/40">
                       <td className="px-5 py-4 font-medium text-slate-300">{src.name}</td>
                       <td className="px-5 py-4">
                         <SourceBadge type={src.type} />
@@ -366,7 +366,7 @@ export default function AnalyticsPage() {
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {a.topPages.map((page) => (
-                  <tr key={page.path} className="transition hover:bg-white/[0.02]">
+                  <tr key={page.path} className="transition hover:bg-slate-800/40">
                     <td className="px-5 py-4">
                       <div className="font-medium text-slate-300">{page.title}</div>
                       <div className="mt-0.5 font-mono text-sm text-slate-500">{page.path}</div>
@@ -455,7 +455,7 @@ export default function AnalyticsPage() {
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {a.countries.map((c) => (
-                  <tr key={c.code} className="transition hover:bg-white/[0.02]">
+                  <tr key={c.code} className="transition hover:bg-slate-800/40">
                     <td className="px-5 py-4 text-slate-300">
                       <span className="mr-2 text-base">{FLAG[c.code] ?? ''}</span>
                       {c.country}

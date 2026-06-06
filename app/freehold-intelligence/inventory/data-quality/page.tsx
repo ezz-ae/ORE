@@ -8,7 +8,7 @@ function QualityBand({ value }: { value: number }) {
   const textColor = value >= 80 ? 'text-[#D4AF37]' : value >= 50 ? 'text-amber-400' : 'text-red-400'
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]">
+      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800/50">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
       </div>
       <span className={`text-xs font-medium tabular-nums ${textColor}`}>{value}</span>
@@ -72,9 +72,9 @@ export default function DataQualityPage() {
                   ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
                   : <AlertTriangle className="h-4 w-4 text-amber-400" />
                 }
-                <span className="text-sm text-white/70">{label}</span>
+                <span className="text-sm text-slate-300">{label}</span>
               </div>
-              <span className={`text-[15px] font-semibold tabular-nums ${
+              <span className={`text-sm font-semibold tabular-nums ${
                 affected === 0 ? 'text-[#D4AF37]' : affected <= 2 ? 'text-amber-400' : 'text-red-400'
               }`}>{affected}</span>
             </div>
@@ -95,12 +95,12 @@ export default function DataQualityPage() {
             </thead>
             <tbody className="divide-y divide-slate-800">
               {sorted.map((p) => (
-                <tr key={p.id} className={`transition hover:bg-white/[0.02] ${p.dataQuality < 50 ? 'bg-red-400/[0.02]' : ''}`}>
+                <tr key={p.id} className={`transition hover:bg-slate-800/40 ${p.dataQuality < 50 ? 'bg-red-400/[0.02]' : ''}`}>
                   <td className="max-w-[200px] pl-5 pr-4 py-3.5">
                     <div className="truncate font-medium text-slate-100">{p.name}</div>
                     <div className="mt-0.5 text-xs text-slate-500">{p.area}</div>
                   </td>
-                  <td className="px-4 py-3.5 text-white/55">{p.developer}</td>
+                  <td className="px-4 py-3.5 text-slate-400">{p.developer}</td>
                   <td className="px-4 py-3.5 text-sm">
                     <span className={p.hasImages ? (p.imageCount >= 5 ? 'text-[#D4AF37]' : 'text-amber-400') : 'text-red-400'}>
                       {p.hasImages ? `${p.imageCount}` : '0'}
@@ -116,7 +116,7 @@ export default function DataQualityPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-sm">
-                    <span className={p.linkedCampaigns > 0 ? 'text-white/65' : 'text-red-400'}>
+                    <span className={p.linkedCampaigns > 0 ? 'text-slate-300' : 'text-red-400'}>
                       {p.linkedCampaigns}
                     </span>
                   </td>

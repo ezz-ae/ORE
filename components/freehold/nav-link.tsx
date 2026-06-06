@@ -27,13 +27,13 @@ export function NavLink({
       className={`flex items-center gap-3 border px-3 py-2.5 text-sm transition ${
         isActive
           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.08] text-white'
-          : 'border-transparent text-white/60 hover:border-[#D4AF37]/25 hover:bg-white/[0.04] hover:text-white'
+          : 'border-transparent text-slate-400 hover:border-[#D4AF37]/25 hover:bg-slate-800/40 hover:text-white'
       }`}
     >
       <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#D4AF37]' : 'text-[#D4AF37]/60'}`} />
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className={`shrink-0 text-[11px] font-semibold tabular-nums ${isActive ? 'text-[#D4AF37]' : 'text-[#D4AF37]/70'}`}>
+        <span className={`shrink-0 text-xs font-semibold tabular-nums ${isActive ? 'text-[#D4AF37]' : 'text-[#D4AF37]/70'}`}>
           {badge}
         </span>
       )}
@@ -59,7 +59,7 @@ export function SmallNavLink({
       className={`flex items-center justify-between border px-3 py-2 text-xs transition ${
         isActive
           ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-white'
-          : 'border-white/5 bg-white/[0.02] text-white/50 hover:border-[#D4AF37]/20 hover:text-white'
+          : 'border-white/5 bg-slate-800/40 text-slate-400 hover:border-[#D4AF37]/20 hover:text-white'
       }`}
     >
       <span className="truncate">{label}</span>

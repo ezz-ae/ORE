@@ -78,7 +78,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
           {lead.name}
         </h1>
-        <p className="mt-3 text-[15px] text-slate-400">
+        <p className="mt-3 text-sm text-slate-400">
           Assigned to <span className="text-slate-300">{lead.assignedAgent}</span> · HubSpot #{lead.hubspotLeadId}
         </p>
       </section>
@@ -140,7 +140,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
               <Brain className="h-3.5 w-3.5" /> AI intelligence summary
             </div>
-            <p className="mt-3 text-[15px] leading-[1.7] text-slate-300">{lead.aiSummary}</p>
+            <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.aiSummary}</p>
           </div>
 
           {/* Next best action */}
@@ -148,7 +148,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
               <Zap className="h-3.5 w-3.5" /> Next best action
             </div>
-            <p className="mt-3 text-[15px] leading-[1.7] text-slate-300">{lead.nextBestAction}</p>
+            <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.nextBestAction}</p>
           </div>
 
           {/* Suggested WhatsApp */}

@@ -86,7 +86,7 @@ const INITIAL_AGENTS: AgentPerms[] = [
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  Silver:   'text-white/65   border-white/15      bg-white/[0.06]',
+  Silver:   'text-slate-300   border-white/15      bg-slate-800/50',
   Gold:     'text-[#D4AF37]  border-[#D4AF37]/25  bg-[#D4AF37]/10',
   Platinum: 'text-violet-300 border-violet-400/25 bg-violet-400/10',
 }
@@ -115,7 +115,7 @@ export default function PermissionsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold text-white">Team Permissions</h1>
-        <p className="mt-1 text-[13px] text-white/35">
+        <p className="mt-1 text-sm text-slate-500">
           Control what each agent can see and do inside Lead Machine. Changes take effect immediately.
         </p>
       </div>
@@ -131,14 +131,14 @@ export default function PermissionsPage() {
           return (
             <div
               key={agent.id}
-              className={`rounded-[20px] border bg-[#131B2B] transition ${isOpen ? 'border-white/15' : 'border-white/[0.07]'}`}
+              className={`rounded-[20px] border bg-slate-900 transition ${isOpen ? 'border-white/15' : 'border-slate-800'}`}
             >
               {/* Agent row */}
               <button
                 className="flex w-full items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isOpen ? '' : agent.id)}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[13px] font-bold text-[#D4AF37]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-sm font-bold text-[#D4AF37]">
                   {agent.initials}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -147,22 +147,22 @@ export default function PermissionsPage() {
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
                       {agent.tier}
                     </span>
-                    <span className="text-[11px] text-white/25">{permCount} permissions active</span>
+                    <span className="text-xs text-slate-600">{permCount} permissions active</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {isSaved && <CheckCircle className="h-4 w-4 text-emerald-400" />}
-                  {isOpen ? <ChevronUp className="h-4 w-4 text-white/25" /> : <ChevronDown className="h-4 w-4 text-white/25" />}
+                  {isOpen ? <ChevronUp className="h-4 w-4 text-slate-600" /> : <ChevronDown className="h-4 w-4 text-slate-600" />}
                 </div>
               </button>
 
               {/* Permission groups */}
               {isOpen && (
-                <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">
+                <div className="border-t border-slate-800 px-5 pb-5 pt-4">
                   <div className="space-y-5">
                     {PERM_GROUPS.map((group) => (
                       <div key={group.label}>
-                        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/25">
+                        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                           {group.label}
                         </div>
                         <div className="space-y-2">
@@ -171,7 +171,7 @@ export default function PermissionsPage() {
                             return (
                               <label
                                 key={item.id}
-                                className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-white/[0.05] bg-white/[0.02] px-4 py-3 transition hover:border-white/10"
+                                className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-800 bg-slate-800/40 px-4 py-3 transition hover:border-white/10"
                               >
                                 <input
                                   type="checkbox"
@@ -185,14 +185,14 @@ export default function PermissionsPage() {
                                   {on ? (
                                     <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" />
                                   ) : (
-                                    <Lock className="h-3 w-3 text-white/20" />
+                                    <Lock className="h-3 w-3 text-slate-600" />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className={`text-[13px] font-medium ${on ? 'text-white/85' : 'text-white/35'}`}>
+                                  <div className={`text-sm font-medium ${on ? 'text-white' : 'text-slate-500'}`}>
                                     {item.label}
                                   </div>
-                                  <div className="text-[11px] text-white/25">{item.desc}</div>
+                                  <div className="text-xs text-slate-600">{item.desc}</div>
                                 </div>
                               </label>
                             )
@@ -205,14 +205,14 @@ export default function PermissionsPage() {
                   <div className="mt-5 flex items-center gap-2">
                     <button
                       onClick={() => saveAgent(agent.id)}
-                      className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-[12px] font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                      className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
                     >
                       <Shield className="h-3.5 w-3.5" />
                       Save permissions
                     </button>
                     <button
                       onClick={() => setExpanded('')}
-                      className="rounded-full border border-white/[0.08] px-4 py-2 text-[12px] text-white/35 transition hover:text-white/60"
+                      className="rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-400"
                     >
                       Close
                     </button>

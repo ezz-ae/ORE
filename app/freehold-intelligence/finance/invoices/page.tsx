@@ -113,7 +113,7 @@ export default function InvoicesPage() {
               const isDownloading = downloading === inv.id
               return (
                 <div key={inv.id}>
-                  <button className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-white/[0.02] transition"
+                  <button className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-slate-800/40 transition"
                     onClick={() => setExpanded(isExpanded ? null : inv.id)}>
                     <StatusIcon className={`h-4 w-4 shrink-0 ${STATUS_STYLE[inv.status].split(' ')[0]}`} />
                     <div className="flex-1 min-w-0">
@@ -143,7 +143,7 @@ export default function InvoicesPage() {
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-slate-800 bg-white/[0.01] px-5 py-4">
+                    <div className="border-t border-slate-800 bg-slate-800/40 px-5 py-4">
                       <div className="grid grid-cols-3 gap-4 text-xs">
                         {[
                           { label: 'Invoice date', value: inv.issuedDate },

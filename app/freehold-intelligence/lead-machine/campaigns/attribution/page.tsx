@@ -35,14 +35,14 @@ function platformStyle(p: string) {
 
 function statusStyle(s: string) {
   if (s === 'Running') return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400'
-  if (s === 'Paused')  return 'border-white/15 bg-white/[0.04] text-white/45'
+  if (s === 'Paused')  return 'border-white/15 bg-slate-800/40 text-slate-500'
   return 'border-red-400/25 bg-red-400/10 text-red-300'
 }
 
 function landingStatusStyle(s: string) {
   if (s === 'Approved' || s === 'Landing Active') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-400'
   if (s === 'Pending Review') return 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
-  return 'border-white/10 bg-white/[0.04] text-white/40'
+  return 'border-white/10 bg-slate-800/40 text-slate-500'
 }
 
 export default function CampaignAttributionPage() {
@@ -78,13 +78,13 @@ export default function CampaignAttributionPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <BarChart3 className="h-3.5 w-3.5" /> Campaign Attribution
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
           Performance attribution
         </h1>
-        <p className="mt-4 max-w-2xl text-[15px] leading-[1.65] text-white/55">
+        <p className="mt-4 max-w-2xl text-sm leading-[1.65] text-slate-400">
           Full chain — campaign to property to landing to CRM lead.{' '}
           <span className="text-white">{financeSummary.topSpendCampaigns.length} campaigns</span> ·{' '}
           AED {totalSpend.toLocaleString()} spent ·{' '}
@@ -100,10 +100,10 @@ export default function CampaignAttributionPage() {
           { label: 'Best CPL',          value: `AED ${bestCpl.toFixed(0)}`,                       sub: 'Lowest this month', highlight: true },
           { label: 'Avg CPL',           value: `AED ${avg.toFixed(0)}`,                           sub: cplDelta < 0 ? `↓ AED ${Math.abs(cplDelta).toFixed(1)} vs last month` : `↑ AED ${cplDelta.toFixed(1)} vs last month` },
         ].map((s) => (
-          <div key={s.label} className={`rounded-[18px] border bg-[#131B2B] p-4 ${s.highlight ? 'border-emerald-400/20' : 'border-white/[0.08]'}`}>
+          <div key={s.label} className={`rounded-[18px] border bg-slate-900 p-4 ${s.highlight ? 'border-emerald-400/20' : 'border-slate-800'}`}>
             <div className={`text-[22px] font-semibold tabular-nums leading-none ${s.highlight ? 'text-emerald-400' : 'text-white'}`}>{s.value}</div>
-            <div className="mt-1.5 text-[12px] text-white/40">{s.label}</div>
-            <div className="mt-1 text-[11px] text-white/25">{s.sub}</div>
+            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
+            <div className="mt-1 text-xs text-slate-600">{s.sub}</div>
           </div>
         ))}
       </div>
@@ -115,16 +115,16 @@ export default function CampaignAttributionPage() {
             key={p}
             onClick={() => setPlatformFilter(p)}
             className={[
-              'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+              'rounded-full border px-3 py-1 text-sm font-medium transition',
               platformFilter === p
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65',
+                : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
             ].join(' ')}
           >
             {p}
           </button>
         ))}
-        <span className="ml-2 text-[12px] text-white/25">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</span>
+        <span className="ml-2 text-xs text-slate-600">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Campaign cards */}
@@ -139,24 +139,24 @@ export default function CampaignAttributionPage() {
           return (
             <article
               key={campaign.name}
-              className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/20"
+              className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/20"
             >
               <div className="p-6 sm:p-7">
 
                 {/* Top row */}
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${plat.cls}`}>
+                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${plat.cls}`}>
                       {plat.label}
                     </span>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusStyle(campaign.status)}`}>
+                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyle(campaign.status)}`}>
                       {campaign.status === 'Running' && (
                         <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                       )}
                       {campaign.status}
                     </span>
                   </div>
-                  <div className={`flex items-center gap-1 text-[13px] font-medium ${info.color}`}>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${info.color}`}>
                     <Icon className="h-3.5 w-3.5" />
                     {info.label}
                   </div>
@@ -167,11 +167,11 @@ export default function CampaignAttributionPage() {
                 {/* Property + landing chain */}
                 <div className="mt-3 space-y-1.5">
                   {campaign.listing ? (
-                    <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-white/45">
+                    <div className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
                       <span>{campaign.listing.area}</span>
-                      <span className="text-white/20">·</span>
+                      <span className="text-slate-600">·</span>
                       <span>{campaign.listing.developer}</span>
-                      <span className="text-white/20">·</span>
+                      <span className="text-slate-600">·</span>
                       <Link
                         href={`/freehold-intelligence/lead-machine/listings/${campaign.listing.id}`}
                         className="text-[#D4AF37]/65 transition hover:text-[#D4AF37]"
@@ -180,20 +180,20 @@ export default function CampaignAttributionPage() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="text-[13px] text-white/30">Multi-project — no single property linked</div>
+                    <div className="text-sm text-slate-500">Multi-project — no single property linked</div>
                   )}
 
                   {campaign.landing ? (
-                    <div className="flex flex-wrap items-center gap-2 text-[12px] text-white/30">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <Globe className="h-3 w-3 shrink-0" />
                       <span className="font-mono">{campaign.landing.landingUrl}</span>
-                      <span className={`rounded-full border px-1.5 py-px text-[11px] font-medium ${landingStatusStyle(campaign.landing.status)}`}>
+                      <span className={`rounded-full border px-1.5 py-px text-xs font-medium ${landingStatusStyle(campaign.landing.status)}`}>
                         {campaign.landing.status}
                       </span>
-                      <span className="text-white/20">{campaign.landing.completion}% complete</span>
+                      <span className="text-slate-600">{campaign.landing.completion}% complete</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1.5 text-[12px] text-white/25">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
                       <Globe className="h-3 w-3 shrink-0" />
                       No landing page linked
                       <Link
@@ -213,8 +213,8 @@ export default function CampaignAttributionPage() {
                     { label: 'Leads',  value: campaign.leads.toString(),                   dim: false },
                     { label: 'CPL',    value: `AED ${campaign.cpl.toFixed(0)}`,            dim: true  },
                   ].map((m) => (
-                    <div key={m.label} className="rounded-[14px] border border-white/[0.06] bg-white/[0.025] px-3 py-3">
-                      <div className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">{m.label}</div>
+                    <div key={m.label} className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-3 py-3">
+                      <div className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">{m.label}</div>
                       <div className={`mt-1.5 text-[20px] font-semibold tabular-nums leading-none ${m.dim ? info.color : 'text-white'}`}>
                         {m.value}
                       </div>
@@ -224,11 +224,11 @@ export default function CampaignAttributionPage() {
 
                 {/* CPL bar vs. target */}
                 <div className="mt-4">
-                  <div className="mb-1.5 flex items-center justify-between text-[11px] text-white/25">
+                  <div className="mb-1.5 flex items-center justify-between text-xs text-slate-600">
                     <span>CPL vs. AED {avg} target</span>
                     <span className={info.color}>{campaign.cpl < avg ? `AED ${(avg - campaign.cpl).toFixed(0)} below` : `AED ${(campaign.cpl - avg).toFixed(0)} above`}</span>
                   </div>
-                  <div className="relative h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-800/50">
                     {/* Target marker line */}
                     <div
                       className="absolute top-0 h-full w-px bg-white/20"
@@ -246,17 +246,17 @@ export default function CampaignAttributionPage() {
                 </div>
 
                 {/* CRM attribution */}
-                <div className="mt-5 border-t border-white/[0.06] pt-5">
+                <div className="mt-5 border-t border-slate-800 pt-5">
                   {campaign.crmLeads.length > 0 ? (
                     <>
                       <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">
+                        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                           <Users className="h-3 w-3" />
                           CRM attribution — {campaign.crmLeads.length} lead{campaign.crmLeads.length !== 1 ? 's' : ''}
                         </div>
                         <Link
                           href="/freehold-intelligence/crm"
-                          className="flex items-center gap-1 text-[12px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+                          className="flex items-center gap-1 text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
                         >
                           All leads <ChevronRight className="h-3 w-3" />
                         </Link>
@@ -266,12 +266,12 @@ export default function CampaignAttributionPage() {
                           <Link
                             key={lead.id}
                             href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                            className="group flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1 text-[12px] text-white/65 transition hover:border-[#D4AF37]/30 hover:text-white"
+                            className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-3 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
                           >
                             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${urgencyDot(lead.urgency)}`} />
                             {lead.name}
-                            <span className="text-white/25">·</span>
-                            <span className={`font-medium tabular-nums ${lead.intentScore >= 85 ? 'text-[#D4AF37]' : 'text-white/45'}`}>
+                            <span className="text-slate-600">·</span>
+                            <span className={`font-medium tabular-nums ${lead.intentScore >= 85 ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
                               {lead.intentScore}
                             </span>
                           </Link>
@@ -280,7 +280,7 @@ export default function CampaignAttributionPage() {
                     </>
                   ) : (
                     <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center gap-2 text-[12px] text-white/25">
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                         <span>
                           {campaign.leads} leads recorded on platform — not yet matched in CRM.
@@ -288,7 +288,7 @@ export default function CampaignAttributionPage() {
                       </div>
                       <Link
                         href="/freehold-intelligence/crm"
-                        className="text-[12px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+                        className="text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
                       >
                         Open CRM
                       </Link>

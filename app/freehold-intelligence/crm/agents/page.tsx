@@ -92,7 +92,7 @@ export default function CrmAgentsPage() {
                   className={[
                     'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
                     statusFilter === key
-                      ? 'bg-[#D4AF37] text-[#06080A]'
+                      ? 'bg-[#D4AF37] text-[#0D1117]'
                       : 'border border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200',
                   ].join(' ')}
                 >
@@ -128,7 +128,7 @@ export default function CrmAgentsPage() {
                   <div key={agent.id} className="rounded-[24px] border border-slate-800 bg-slate-900 p-5 transition hover:border-slate-700 sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-[15px] font-semibold text-[#D4AF37]">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-sm font-semibold text-[#D4AF37]">
                           {agent.initials}
                         </div>
                         <div className="min-w-0">

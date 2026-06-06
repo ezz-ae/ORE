@@ -118,7 +118,7 @@ export default function CrmReportsPage() {
                 className={[
                   'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
                   dateRange === r
-                    ? 'bg-[#D4AF37] text-[#06080A]'
+                    ? 'bg-[#D4AF37] text-[#0D1117]'
                     : 'border border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200',
                 ].join(' ')}
               >
@@ -271,7 +271,7 @@ export default function CrmReportsPage() {
                     className={[
                       'rounded-full px-3 py-1 text-sm font-medium transition',
                       intentFilter === f
-                        ? 'bg-[#D4AF37] text-[#06080A]'
+                        ? 'bg-[#D4AF37] text-[#0D1117]'
                         : 'border border-slate-700 text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
@@ -284,7 +284,7 @@ export default function CrmReportsPage() {
                 onChange={(e) => setAgentFilter(e.target.value)}
                 className="rounded-full border border-slate-700 bg-transparent px-3 py-1 text-sm text-slate-400 outline-none transition hover:border-slate-500 hover:text-slate-200"
               >
-                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-[#0B0F1A]">{a === 'All' ? 'All agents' : a}</option>)}
+                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-slate-900">{a === 'All' ? 'All agents' : a}</option>)}
               </select>
             </div>
             <div className="rounded-[24px] border border-slate-800 bg-slate-900 p-6 sm:p-8">

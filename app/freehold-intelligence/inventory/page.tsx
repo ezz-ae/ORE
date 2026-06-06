@@ -33,7 +33,7 @@ function statusBadge(status: PropertyStatus) {
     case 'sold_out':
       return 'bg-red-400/10 text-red-300 border-red-400/20'
     case 'coming_soon':
-      return 'bg-violet-400/10 text-white/55 border-violet-400/20'
+      return 'bg-violet-400/10 text-slate-400 border-violet-400/20'
     default:
       return 'bg-slate-800/50 text-slate-400 border-slate-800'
   }
@@ -59,7 +59,7 @@ function landingBadge(status: LandingStatus) {
     case 'pending_review':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'missing':
-      return 'bg-rose-400/10 text-white/55 border-rose-400/20'
+      return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
   }
 }
 
@@ -110,7 +110,7 @@ function CandidateCard({ c }: { c: AdCandidate }) {
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">
-        <span className="font-semibold tabular-nums text-white/70">{c.score}<span className="text-slate-500">/100</span></span>
+        <span className="font-semibold tabular-nums text-slate-300">{c.score}<span className="text-slate-500">/100</span></span>
         {c.roi !== null && <span className="text-[#D4AF37]/80">{c.roi.toFixed(1)}% ROI</span>}
         <span>{c.leads30d} leads</span>
       </div>
@@ -164,7 +164,7 @@ export default function InventoryPage() {
           {[
             { label: 'Total properties', value: stats.total },
             { label: 'Live landings', value: stats.live, accent: 'text-[#D4AF37]' },
-            { label: 'Missing landing', value: stats.missingLanding, accent: 'text-white/55' },
+            { label: 'Missing landing', value: stats.missingLanding, accent: 'text-slate-400' },
             { label: 'Ad-ready', value: stats.adReady, accent: 'text-[#D4AF37]' },
           ].map(({ label, value, accent }) => (
             <div
@@ -352,7 +352,7 @@ export default function InventoryPage() {
 
 function PropertyRow({ prop }: { prop: InventoryProperty }) {
   return (
-    <tr className="group transition hover:bg-white/[0.02]">
+    <tr className="group transition hover:bg-slate-800/40">
       {/* Name */}
       <td className="max-w-[200px] pl-5 pr-4 py-3.5">
         <div className="truncate font-medium text-slate-100">{prop.name}</div>
@@ -361,7 +361,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
 
       {/* Area / Developer */}
       <td className="px-4 py-3.5">
-        <div className="text-white/75">{prop.area}</div>
+        <div className="text-slate-200">{prop.area}</div>
         <div className="mt-0.5 text-sm text-slate-500">{prop.developer}</div>
       </td>
 
@@ -373,12 +373,12 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       </td>
 
       {/* Starting price */}
-      <td className="px-4 py-3.5 tabular-nums text-white/75">
+      <td className="px-4 py-3.5 tabular-nums text-slate-200">
         {formatPrice(prop.startingPriceAED)}
       </td>
 
       {/* Bedrooms */}
-      <td className="px-4 py-3.5 text-white/60">
+      <td className="px-4 py-3.5 text-slate-400">
         {prop.bedrooms}
       </td>
 
@@ -401,7 +401,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Data quality */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]">
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800/50">
             <div
               className={`h-full rounded-full ${readinessBar(prop.dataQuality)}`}
               style={{ width: `${prop.dataQuality}%` }}
@@ -414,7 +414,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Ad readiness */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]">
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800/50">
             <div
               className={`h-full rounded-full ${readinessBar(prop.adReadiness)}`}
               style={{ width: `${prop.adReadiness}%` }}
@@ -425,7 +425,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       </td>
 
       {/* Leads 30d */}
-      <td className="px-4 py-3.5 tabular-nums text-white/60">
+      <td className="px-4 py-3.5 tabular-nums text-slate-400">
         {prop.leads30d > 0 ? (
           <span className={prop.leads30d >= 50 ? 'text-slate-100' : ''}>{prop.leads30d}</span>
         ) : (

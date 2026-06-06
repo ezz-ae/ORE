@@ -219,7 +219,7 @@ export default function CrmLeadsPage() {
 
                     {/* Score */}
                     <div className="hidden w-20 text-center sm:block">
-                      <span className={`text-[15px] font-semibold tabular-nums ${scoreColor(lead.intentScore)}`}>
+                      <span className={`text-sm font-semibold tabular-nums ${scoreColor(lead.intentScore)}`}>
                         {lead.intentScore}
                       </span>
                       <div className="mx-auto mt-1 h-1 w-12 overflow-hidden rounded-full bg-slate-800">

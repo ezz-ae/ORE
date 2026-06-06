@@ -134,7 +134,7 @@ export default function IntegrationsPage() {
                   </span>
                 </div>
                 {(b.description || b.resolutionSteps?.[0]) && (
-                  <p className="mt-3 text-[15px] leading-[1.6] text-slate-300">
+                  <p className="mt-3 text-sm leading-[1.6] text-slate-300">
                     {b.description || b.resolutionSteps?.[0]}
                   </p>
                 )}
@@ -216,10 +216,10 @@ export default function IntegrationsPage() {
                       className="flex items-center gap-5 rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/20"
                     >
                       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-slate-800 bg-slate-800/50">
-                        <Icon className="h-5 w-5 text-white/90" />
+                        <Icon className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[15px] font-semibold text-white">{integration.name}</div>
+                        <div className="text-sm font-semibold text-white">{integration.name}</div>
                         <div className="mt-0.5 text-sm leading-snug text-slate-400">{meta?.copy || integration.description}</div>
                       </div>
                       <div className={`flex shrink-0 items-center gap-1.5 text-xs ${st.text}`}>
@@ -227,11 +227,11 @@ export default function IntegrationsPage() {
                         {st.label}
                       </div>
                       {meta?.href ? (
-                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           View <ArrowUpRight className="h-3 w-3" />
                         </Link>
                       ) : integration.status !== 'connected' ? (
-                        <button className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <button className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           Connect <ArrowUpRight className="h-3 w-3" />
                         </button>
                       ) : null}

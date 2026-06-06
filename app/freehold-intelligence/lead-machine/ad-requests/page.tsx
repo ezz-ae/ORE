@@ -17,15 +17,15 @@ function statusStyle(status: string) {
   if (s === 'running') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
   if (s === 'pending review') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
-  if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-white/55 bg-white/[0.04] border-white/10' }
+  if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-slate-400 bg-slate-800/40 border-white/10' }
   if (s === 'blocked' || s === 'needs changes') return { dot: 'bg-red-400', badge: 'text-red-400 bg-red-400/10 border-red-400/20' }
-  return { dot: 'bg-white/20', badge: 'text-white/40 bg-white/[0.03] border-white/[0.08]' }
+  return { dot: 'bg-white/20', badge: 'text-slate-500 bg-slate-800/40 border-slate-800' }
 }
 
 function platformStyle(platform: string) {
   if (platform === 'Meta') return 'text-blue-400 bg-blue-400/10 border-blue-400/20'
   if (platform === 'Google') return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
-  return 'text-white/55 bg-white/[0.04] border-white/10'
+  return 'text-slate-400 bg-slate-800/40 border-white/10'
 }
 
 function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
@@ -34,11 +34,11 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   const platform = platformStyle(request.platform)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -48,7 +48,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <span
               className={[
-                'rounded-full border px-2.5 py-1 text-[13px] font-medium',
+                'rounded-full border px-2.5 py-1 text-sm font-medium',
                 platform,
               ].join(' ')}
             >
@@ -56,7 +56,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
             </span>
             <span
               className={[
-                'rounded-full border px-2.5 py-1 text-[13px] font-medium',
+                'rounded-full border px-2.5 py-1 text-sm font-medium',
                 status.badge,
               ].join(' ')}
             >
@@ -67,23 +67,23 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Objective</div>
-            <p className="mt-1 text-[13px] text-white/70">{request.campaignObjective}</p>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Objective</div>
+            <p className="mt-1 text-sm text-slate-300">{request.campaignObjective}</p>
           </div>
           <div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Budget</div>
-            <p className="mt-1 text-[13px] font-semibold text-white/85">{request.budget}</p>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Budget</div>
+            <p className="mt-1 text-sm font-semibold text-white">{request.budget}</p>
           </div>
           <div className="sm:col-span-2">
-            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-white/30">Campaign Angle</div>
-            <p className="mt-1 text-[13px] leading-[1.55] text-white/65">{request.campaignAngle}</p>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Campaign Angle</div>
+            <p className="mt-1 text-sm leading-[1.55] text-slate-300">{request.campaignAngle}</p>
           </div>
         </div>
 
         {request.blockers.length > 0 && (
           <div className="mt-5 rounded-2xl border border-red-400/15 bg-red-400/[0.04] px-4 py-3.5">
-            <div className="text-[12px] font-medium uppercase tracking-[0.2em] text-red-400/70">Blockers</div>
-            <ul className="mt-1.5 grid gap-1 text-[13px] text-white/65">
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-red-400/70">Blockers</div>
+            <ul className="mt-1.5 grid gap-1 text-sm text-slate-300">
               {request.blockers.map((b) => (
                 <li
                   key={b}
@@ -101,11 +101,11 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href={listing ? `/freehold-intelligence/lead-machine/listings/${listing.id}` : '/freehold-intelligence/lead-machine/listings'}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#06080A] transition hover:gap-2.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0D1117] transition hover:gap-2.5"
           >
             Open listing workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
-          <span className="text-[12px] text-white/35">{request.approvalStatus}</span>
+          <span className="text-xs text-slate-500">{request.approvalStatus}</span>
         </div>
       </div>
     </article>
@@ -140,13 +140,13 @@ export default function AdRequestsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> Ad Requests
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
           Ad Requests
         </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
           {leadMachineAdRequests.length > 0 ? (
             <>
               <span className="text-white">{leadMachineAdRequests.length} campaign request{leadMachineAdRequests.length !== 1 ? 's' : ''}</span> across active listings.{' '}
@@ -163,7 +163,7 @@ export default function AdRequestsPage() {
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
               {filtered.length === leadMachineAdRequests.length
                 ? 'All'
                 : `${filtered.length} of ${leadMachineAdRequests.length}`}
@@ -181,25 +181,25 @@ export default function AdRequestsPage() {
               key={s}
               onClick={() => setStatusFilter(s)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 statusFilter === s
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {s}
             </button>
           ))}
-          <span className="self-center text-white/15">|</span>
+          <span className="self-center text-slate-600">|</span>
           {PLATFORM_PILLS.map((p) => (
             <button
               key={p}
               onClick={() => setPlatformFilter(p)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 platformFilter === p
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {p}
@@ -214,12 +214,12 @@ export default function AdRequestsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="mt-8 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-12 text-center sm:px-10">
-            <Megaphone className="mx-auto h-8 w-8 text-white/20" />
-            <p className="mt-4 text-[15px] text-white/40">No requests match these filters.</p>
+          <div className="mt-8 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-12 text-center sm:px-10">
+            <Megaphone className="mx-auto h-8 w-8 text-slate-600" />
+            <p className="mt-4 text-sm text-slate-500">No requests match these filters.</p>
             <button
               onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
-              className="mt-3 rounded-full border border-white/[0.08] px-4 py-1.5 text-[12px] text-white/45 transition hover:text-white/70"
+              className="mt-3 rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
             >
               Clear filters
             </button>

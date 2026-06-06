@@ -100,7 +100,7 @@ export default function AdsLivePage() {
             onClick={() => setPlatform(t)}
             className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
               platform === t
-                ? 'bg-[#D4AF37] text-[#06080A]'
+                ? 'bg-[#D4AF37] text-[#0D1117]'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -138,7 +138,7 @@ export default function AdsLivePage() {
             <div>
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-slate-400">Spend this month</span>
-                <span className="text-[15px] font-semibold text-white">AED 18,420</span>
+                <span className="text-sm font-semibold text-white">AED 18,420</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between text-sm text-slate-500">
                 <span>Budget AED 25,000</span>
@@ -175,7 +175,7 @@ export default function AdsLivePage() {
             <div>
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-slate-400">Spend this month</span>
-                <span className="text-[15px] font-semibold text-white">AED 12,870</span>
+                <span className="text-sm font-semibold text-white">AED 12,870</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between text-sm text-slate-500">
                 <span>Budget AED 18,000</span>

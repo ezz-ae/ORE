@@ -20,7 +20,7 @@ function severityTone(s: string) {
   if (s === 'critical') return { ring: 'border-red-400/25',      bg: 'bg-red-400/[0.06]',      text: 'text-red-300',      dot: 'bg-red-400',    label: 'Critical', active: 'border-red-400/40 bg-red-400/15 text-red-300' }
   if (s === 'high')     return { ring: 'border-[#D4AF37]/25',    bg: 'bg-[#D4AF37]/[0.05]',   text: 'text-[#F8E7AE]',    dot: 'bg-[#D4AF37]', label: 'High',     active: 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#F8E7AE]' }
   if (s === 'medium')   return { ring: 'border-sky-400/20',      bg: 'bg-sky-400/[0.05]',      text: 'text-sky-200',      dot: 'bg-sky-400',   label: 'Medium',   active: 'border-sky-400/40 bg-sky-400/15 text-sky-200' }
-  return                       { ring: 'border-white/[0.08]',    bg: 'bg-[#131B2B]',           text: 'text-white/50',     dot: 'bg-white/30',  label: 'Low',      active: 'border-white/20 bg-white/[0.06] text-white/65' }
+  return                       { ring: 'border-slate-800',    bg: 'bg-slate-900',           text: 'text-slate-400',     dot: 'bg-white/30',  label: 'Low',      active: 'border-white/20 bg-slate-800/50 text-slate-300' }
 }
 
 function statusIcon(s: string) {
@@ -69,15 +69,15 @@ export default function RequirementsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <AlertCircle className="h-3.5 w-3.5" /> Requirements
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           {totalOpen} open.
           <br />
-          <span className="text-white/35">{criticalCount} critical.</span>
+          <span className="text-slate-500">{criticalCount} critical.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-white/60">
+        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-slate-400">
           Everything blocking landing generation, ad launch, and campaign go-live. Resolve in priority order.
         </p>
       </section>
@@ -86,15 +86,15 @@ export default function RequirementsPage() {
       <section className="mt-8 grid grid-cols-3 gap-3">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{criticalCount}</p>
-          <p className="mt-1 text-[12px] text-red-400/60">Critical</p>
+          <p className="mt-1 text-xs text-red-400/60">Critical</p>
         </div>
         <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{leadMachineRequirements.filter(r => r.severity === 'high').length}</p>
-          <p className="mt-1 text-[12px] text-[#D4AF37]/60">High</p>
+          <p className="mt-1 text-xs text-[#D4AF37]/60">High</p>
         </div>
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{totalOpen}</p>
-          <p className="mt-1 text-[12px] text-white/35">Total open</p>
+          <p className="mt-1 text-xs text-slate-500">Total open</p>
         </div>
       </section>
 
@@ -102,16 +102,16 @@ export default function RequirementsPage() {
       <section className="mt-8">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/25 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-600 pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search requirements…"
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-800/40 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60">
+            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -127,30 +127,30 @@ export default function RequirementsPage() {
                 key={key}
                 onClick={() => setSeverityFilter(key)}
                 className={[
-                  'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                  'rounded-full border px-3 py-1 text-sm font-medium transition',
                   isActive
                     ? key === 'All'
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
                       : tone!.active
-                    : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                    : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
                 {label}
               </button>
             )
           })}
-          <span className="self-center text-white/15">|</span>
+          <span className="self-center text-slate-600">|</span>
           {(['All', 'Open', 'Done'] as StatusFilter[]).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 statusFilter === s
                   ? s === 'Done'
                     ? 'border-emerald-400/35 bg-[#D4AF37]/10 text-[#D4AF37]'
                     : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {s}
@@ -159,7 +159,7 @@ export default function RequirementsPage() {
           {(query || severityFilter !== 'All' || statusFilter !== 'All') && (
             <button
               onClick={clearFilters}
-              className="ml-1 text-[13px] text-white/30 transition hover:text-white/60"
+              className="ml-1 text-sm text-slate-500 transition hover:text-slate-400"
             >
               Clear
             </button>
@@ -167,7 +167,7 @@ export default function RequirementsPage() {
         </div>
 
         {/* Count */}
-        <p className="mt-2 text-[12px] text-white/30">
+        <p className="mt-2 text-xs text-slate-500">
           {filtered.length === leadMachineRequirements.length
             ? `${leadMachineRequirements.length} requirements`
             : `${filtered.length} of ${leadMachineRequirements.length} requirements`}
@@ -177,11 +177,11 @@ export default function RequirementsPage() {
       {/* Requirements list */}
       <section className="mt-6 space-y-4">
         {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.02] px-6 py-12 text-center">
-            <p className="text-[14px] text-white/35">No requirements match these filters.</p>
+          <div className="rounded-[22px] border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
+            <p className="text-[14px] text-slate-500">No requirements match these filters.</p>
             <button
               onClick={clearFilters}
-              className="mt-3 rounded-full border border-white/[0.08] px-4 py-1.5 text-[12px] text-white/45 transition hover:text-white/70"
+              className="mt-3 rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
             >
               Clear filters
             </button>
@@ -193,33 +193,33 @@ export default function RequirementsPage() {
               <div key={req.id} className={`rounded-[22px] border p-6 ${tone.ring} ${tone.bg}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium ${tone.ring} ${tone.text}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                       {tone.label}
                     </span>
-                    <span className="text-[13px] text-white/30">{req.type}</span>
+                    <span className="text-sm text-slate-500">{req.type}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[12px]">
+                  <div className="flex items-center gap-1.5 text-xs">
                     {statusIcon(req.status)}
-                    <span className="text-white/55">{req.status}</span>
+                    <span className="text-slate-400">{req.status}</span>
                   </div>
                 </div>
 
-                <h3 className="mt-3 text-[15px] font-semibold text-white">{req.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-white/65">{req.description}</p>
+                <h3 className="mt-3 text-sm font-semibold text-white">{req.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{req.description}</p>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.05] pt-4">
-                  <div className="flex flex-wrap gap-4 text-[12px] text-white/35">
-                    <span>Project: <span className="text-white/55">{projectName(req.projectId)}</span></span>
-                    <span>Owner: <span className="text-white/55">{req.owner}</span></span>
-                    <span>Due: <span className="text-white/55">{req.dueDate}</span></span>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                    <span>Project: <span className="text-slate-400">{projectName(req.projectId)}</span></span>
+                    <span>Owner: <span className="text-slate-400">{req.owner}</span></span>
+                    <span>Due: <span className="text-slate-400">{req.dueDate}</span></span>
                   </div>
-                  <div className={`text-[12px] font-medium ${tone.text}`}>→ {req.nextAction}</div>
+                  <div className={`text-xs font-medium ${tone.text}`}>→ {req.nextAction}</div>
                 </div>
 
                 <Link
                   href={`/freehold-intelligence/lead-machine/listings/${leadMachineListings.find(l => l.projectId === req.projectId)?.id || ''}`}
-                  className="mt-3 inline-flex items-center gap-1 text-[13px] text-white/30 transition hover:text-[#D4AF37]"
+                  className="mt-3 inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-[#D4AF37]"
                 >
                   View listing <ArrowUpRight className="h-3 w-3" />
                 </Link>

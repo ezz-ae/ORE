@@ -270,7 +270,7 @@ export default function FinancePage() {
                   const util = row.spentAED / row.budgetAED
                   const isCurrent = row.month === 'May 2026'
                   return (
-                    <tr key={i} className={`transition hover:bg-white/[0.02] ${isCurrent ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
+                    <tr key={i} className={`transition hover:bg-slate-800/40 ${isCurrent ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
                       <td className="px-5 py-4 font-medium text-slate-300">
                         {row.month}
                         {isCurrent && (
@@ -340,7 +340,7 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   filteredCampaigns.map((c, i) => (
-                    <tr key={i} className="transition hover:bg-white/[0.02]">
+                    <tr key={i} className="transition hover:bg-slate-800/40">
                       <td className="px-5 py-4 font-medium text-slate-300 max-w-[260px]">
                         <span className="block truncate">{c.name}</span>
                       </td>
@@ -399,7 +399,7 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="transition hover:bg-white/[0.02]">
+                    <tr key={inv.id} className="transition hover:bg-slate-800/40">
                       <td className="px-5 py-4 font-mono text-xs text-slate-400">{inv.id}</td>
                       <td className="px-5 py-4">
                         <PlatformBadge platform={inv.platform} />

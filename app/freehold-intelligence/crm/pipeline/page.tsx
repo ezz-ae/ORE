@@ -158,7 +158,7 @@ export default function CrmPipelinePage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-[15px] font-semibold text-white group-hover:text-white">{lead.name}</div>
+                        <div className="truncate text-sm font-semibold text-white group-hover:text-white">{lead.name}</div>
                         <div className="mt-0.5 truncate text-xs text-slate-400">{lead.source}</div>
                       </div>
                       <span className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs font-medium text-[#D4AF37]">
@@ -210,7 +210,7 @@ export default function CrmPipelinePage() {
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-red-300/80">
                 <AlertCircle className="h-3 w-3" /> Stuck stage
               </div>
-              <div className="mt-3 text-[15px] font-semibold text-white">Follow-up → Qualified</div>
+              <div className="mt-3 text-sm font-semibold text-white">Follow-up → Qualified</div>
               <div className="mt-2 text-xs leading-relaxed text-slate-400">
                 {(stageCounts['Follow-up'] ?? []).length} lead{(stageCounts['Follow-up'] ?? []).length !== 1 ? 's' : ''} in Follow-up without stage progression this week.
               </div>

@@ -118,7 +118,7 @@ function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPr
           {lead.stage}
         </span>
       </div>
-      <div className="mt-2 text-[15px] font-semibold text-white">{lead.name}</div>
+      <div className="mt-2 text-sm font-semibold text-white">{lead.name}</div>
       <div className="mt-2 space-y-1">
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <Phone className="h-3 w-3 shrink-0 text-slate-500" /> {lead.phone}
@@ -244,7 +244,7 @@ export default function CrmDuplicatesPage() {
         {visibleClusters.length === 0 ? (
           <div className="rounded-[22px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] py-14 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-[#D4AF37]" />
-            <div className="mt-3 text-[15px] font-semibold text-white">All clear — no duplicate clusters remaining</div>
+            <div className="mt-3 text-sm font-semibold text-white">All clear — no duplicate clusters remaining</div>
             <div className="mt-1 text-sm text-slate-400">{mergedCount} merged this session.</div>
           </div>
         ) : (

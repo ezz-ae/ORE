@@ -110,7 +110,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   if (error) {
     return (
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
-        <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+        <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
           <ArrowLeft className="h-3.5 w-3.5" /> All forms
         </Link>
         <div className="mt-8 flex items-start gap-3 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
@@ -126,24 +126,24 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   if (!form) return null
 
-  const statusColor = form.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-white/40'
+  const statusColor = form.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-500'
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All forms
       </Link>
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <FileText className="h-3.5 w-3.5" /> Lead Form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
           {form.name}
         </h1>
-        <p className="mt-2 text-[13px] text-white/40">
+        <p className="mt-2 text-sm text-slate-500">
           Created {new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}
           {' · '}
           <span className={statusColor}>{form.status}</span>
@@ -270,7 +270,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                 href={form.follow_up_action_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[12px] font-mono text-[#D4AF37]/70 hover:text-[#D4AF37] transition break-all"
+                className="text-xs font-mono text-[#D4AF37]/70 hover:text-[#D4AF37] transition break-all"
               >
                 {form.follow_up_action_url}
               </a>

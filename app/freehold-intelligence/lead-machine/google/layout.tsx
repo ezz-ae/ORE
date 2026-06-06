@@ -24,7 +24,7 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
     <AdsContextProvider>
     <div className="flex flex-col min-h-full">
       {/* Google Ads sub-nav */}
-      <div className="border-b border-white/[0.04] bg-[#04060A]">
+      <div className="border-b border-slate-800 bg-[#04060A]">
         <div className="overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
             {tabs.map((tab) => {
@@ -38,10 +38,10 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
                   key={tab.href}
                   href={tab.href}
                   className={[
-                    'inline-flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-[12px] font-medium transition',
+                    'inline-flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition',
                     isActive
                       ? 'border-b-2 border-[#4285F4] text-white'
-                      : 'border-b-2 border-transparent text-white/35 hover:text-white/60',
+                      : 'border-b-2 border-transparent text-slate-500 hover:text-slate-400',
                   ].join(' ')}
                 >
                   {tab.label}

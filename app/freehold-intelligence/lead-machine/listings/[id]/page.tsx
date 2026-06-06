@@ -230,21 +230,21 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       <section className="mt-10 flex flex-wrap gap-3">
         <Link
           href={`/freehold-intelligence/review-requests?project=${listing.projectId}`}
-          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-white/90"
+          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90"
         >
           <Play className="h-3.5 w-3.5" />
           Open workspace
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/ad-requests"
-          className="inline-flex items-center gap-2 rounded-[12px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-5 py-2.5 text-[13px] font-medium text-[#F8E7AE] transition hover:border-[#D4AF37]/35"
+          className="inline-flex items-center gap-2 rounded-[12px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-5 py-2.5 text-sm font-medium text-[#F8E7AE] transition hover:border-[#D4AF37]/35"
         >
           <Megaphone className="h-3.5 w-3.5" />
           Create ad request
         </Link>
         <Link
           href={`/freehold-intelligence/notebook?listing=${listing.id}`}
-          className="inline-flex items-center gap-2 rounded-[12px] border border-slate-800 bg-white/[0.025] px-5 py-2.5 text-[13px] text-white/65 transition hover:border-white/20 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-[12px] border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:border-white/20 hover:text-white"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Open in Notebook

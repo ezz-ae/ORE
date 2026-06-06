@@ -156,16 +156,16 @@ export default function WhatsAppPage() {
             </div>
             <h1 className="text-[20px] font-semibold text-white">WhatsApp Business</h1>
           </div>
-          <p className="mt-1 text-[12px] text-white/30">Live phone number status and message templates</p>
+          <p className="mt-1 text-xs text-slate-500">Live phone number status and message templates</p>
         </div>
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
-              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:text-white/70 disabled:opacity-40">
+              className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
             <button onClick={disconnect}
-              className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-[12px] text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
+              className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-xs text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
               <XCircle className="h-3 w-3" /> Disconnect
             </button>
           </div>
@@ -176,17 +176,17 @@ export default function WhatsAppPage() {
       {phase !== 'connected' && (
         <div className="mb-6 rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.03] p-5 space-y-3">
           <div>
-            <div className="mb-1 text-[13px] font-medium text-white/70">Phone Number ID</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">Phone Number ID</div>
             <input
               type="text"
               placeholder="e.g. 102834961234567"
               value={phoneId}
               onChange={(e) => setPhoneId(e.target.value)}
-              className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
+              className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
             />
           </div>
           <div>
-            <div className="mb-1 text-[13px] font-medium text-white/70">System User Token</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">System User Token</div>
             <div className="relative">
               <input
                 type={showTok ? 'text' : 'password'}
@@ -194,25 +194,25 @@ export default function WhatsAppPage() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
-                className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 pr-9 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
+                className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
               />
               <button onClick={() => setShowTok((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
                 {showTok ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
           <button onClick={() => connect()} disabled={!token.trim() || !phoneId.trim() || loading}
-            className="w-full rounded-[10px] bg-emerald-500 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-40">
+            className="w-full rounded-[10px] bg-emerald-500 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-40">
             {phase === 'connecting' ? 'Verifying…' : 'Connect WhatsApp'}
           </button>
           {phase === 'error' && (
-            <div className="flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-[12px] text-red-400/90">
+            <div className="flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-xs text-red-400/90">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {err}
             </div>
           )}
-          <p className="text-[11px] text-white/20">
+          <p className="text-xs text-slate-600">
             Phone Number ID → Meta Business Manager → WhatsApp → Phone Numbers.
             System User token → Business Settings → Users → System Users → Generate token (scope: whatsapp_business_messaging).
           </p>
@@ -225,45 +225,45 @@ export default function WhatsAppPage() {
           {/* Status bar */}
           <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-[13px] text-emerald-400/90">Connected to WhatsApp Business API</span>
-            <span className="ml-auto text-[11px] text-white/20">Credentials stored in browser only</span>
+            <span className="text-sm text-emerald-400/90">Connected to WhatsApp Business API</span>
+            <span className="ml-auto text-xs text-slate-600">Credentials stored in browser only</span>
           </div>
 
           {/* Phone number card */}
-          <section className="mb-5 rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+          <section className="mb-5 rounded-[18px] border border-slate-800 bg-slate-900 p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-emerald-400/10">
                   <Phone className="h-5 w-5 text-emerald-400" />
                 </div>
                 <div>
-                  <div className="text-[15px] font-semibold text-white">{data.phone.verified_name}</div>
-                  <div className="mt-0.5 text-[13px] text-white/50">{data.phone.display_phone_number}</div>
+                  <div className="text-sm font-semibold text-white">{data.phone.verified_name}</div>
+                  <div className="mt-0.5 text-sm text-slate-400">{data.phone.display_phone_number}</div>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className={`text-[12px] font-medium ${STATUS_COLOR[data.phone.status] ?? 'text-white/40'}`}>
+                <span className={`text-xs font-medium ${STATUS_COLOR[data.phone.status] ?? 'text-slate-500'}`}>
                   {data.phone.status}
                 </span>
                 {data.phone.quality_rating && (
-                  <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${QUALITY_COLOR[data.phone.quality_rating] ?? 'text-white/40 bg-white/[0.05] border-white/10'}`}>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${QUALITY_COLOR[data.phone.quality_rating] ?? 'text-slate-500 bg-slate-800/40 border-white/10'}`}>
                     {data.phone.quality_rating} quality
                   </span>
                 )}
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.05] pt-4">
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-slate-800 pt-4">
               <div>
-                <div className="text-[10px] text-white/25 uppercase tracking-wider">Throughput</div>
-                <div className="mt-1 text-[13px] text-white/70 capitalize">{data.phone.throughput?.level?.toLowerCase().replace('_', ' ') ?? '—'}</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Throughput</div>
+                <div className="mt-1 text-sm text-slate-300 capitalize">{data.phone.throughput?.level?.toLowerCase().replace('_', ' ') ?? '—'}</div>
               </div>
               <div>
-                <div className="text-[10px] text-white/25 uppercase tracking-wider">Platform</div>
-                <div className="mt-1 text-[13px] text-white/70">{data.phone.platform_type ?? 'Cloud API'}</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Platform</div>
+                <div className="mt-1 text-sm text-slate-300">{data.phone.platform_type ?? 'Cloud API'}</div>
               </div>
               <div>
-                <div className="text-[10px] text-white/25 uppercase tracking-wider">Name status</div>
-                <div className="mt-1 text-[13px] text-white/70 capitalize">{data.phone.name_status?.toLowerCase().replace('_', ' ') ?? '—'}</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Name status</div>
+                <div className="mt-1 text-sm text-slate-300 capitalize">{data.phone.name_status?.toLowerCase().replace('_', ' ') ?? '—'}</div>
               </div>
             </div>
           </section>
@@ -271,34 +271,34 @@ export default function WhatsAppPage() {
           {/* Template summary tiles */}
           <div className="mb-5 grid grid-cols-3 gap-3">
             {[
-              { label: 'Total templates', value: data.templates.length, Icon: Zap,       color: 'text-white/60'   },
+              { label: 'Total templates', value: data.templates.length, Icon: Zap,       color: 'text-slate-400'   },
               { label: 'Approved',        value: approvedTemplates,     Icon: CheckCircle2, color: 'text-emerald-400' },
               { label: 'Pending review',  value: pendingTemplates,      Icon: Shield,    color: 'text-amber-400'  },
             ].map(({ label, value, Icon, color }) => (
-              <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+              <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
                 <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
-                <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
+                <div className="mt-0.5 text-xs text-slate-600">{label}</div>
               </div>
             ))}
           </div>
 
           {/* Templates list */}
           <section>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/25">Message Templates</div>
-            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">Message Templates</div>
+            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
               {data.templates.length === 0
-                ? <div className="px-5 py-8 text-center text-[13px] text-white/25">No templates found</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No templates found</div>
                 : data.templates.map((t) => (
                     <div key={t.id} className="flex items-center gap-4 px-5 py-3.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.04]">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-slate-800/40">
                         <Send className="h-3.5 w-3.5 text-emerald-400/60" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-mono text-[13px] text-white/80 truncate">{t.name}</div>
-                        <div className="text-[11px] text-white/25">{t.language} · {t.category}</div>
+                        <div className="font-mono text-sm text-slate-100 truncate">{t.name}</div>
+                        <div className="text-xs text-slate-600">{t.language} · {t.category}</div>
                       </div>
-                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[t.status] ?? 'text-white/40 bg-white/[0.05] border-white/10'}`}>
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[t.status] ?? 'text-slate-500 bg-slate-800/40 border-white/10'}`}>
                         {t.status}
                       </span>
                     </div>

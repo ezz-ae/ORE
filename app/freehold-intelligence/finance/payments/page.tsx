@@ -125,7 +125,7 @@ export default function PaymentsPage() {
         ].map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex-1 rounded-[9px] py-2 text-xs font-medium transition ${
-              tab === t.id ? 'bg-white/[0.08] text-white' : 'text-slate-500 hover:text-slate-300'
+              tab === t.id ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-300'
             }`}>
             {t.label}
           </button>

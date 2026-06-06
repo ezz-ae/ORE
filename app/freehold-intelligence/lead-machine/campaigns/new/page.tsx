@@ -78,15 +78,15 @@ const STEPS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function inputCls(err?: boolean) {
   return [
-    'w-full rounded-[12px] border bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-white/25 outline-none transition',
+    'w-full rounded-[12px] border bg-slate-800/40 px-4 py-3 text-[14px] text-white placeholder-white/25 outline-none transition',
     err
       ? 'border-red-400/40 focus:border-red-400'
-      : 'border-white/[0.08] focus:border-[#D4AF37]/50',
+      : 'border-slate-800 focus:border-[#D4AF37]/50',
   ].join(' ')
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <label className="mb-1.5 block text-[12px] font-medium text-white/60">{children}</label>
+  return <label className="mb-1.5 block text-xs font-medium text-slate-400">{children}</label>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ export default function NewCampaignPage() {
       <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 text-center sm:px-6">
         <CheckCircle2 className="mx-auto h-14 w-14 text-[#D4AF37]" />
         <h1 className="mt-6 text-[32px] font-semibold text-white">Campaign created</h1>
-        <p className="mt-3 text-[16px] text-white/55">
+        <p className="mt-3 text-[16px] text-slate-400">
           {launched.status === 'ACTIVE'
             ? 'Your campaign is now live on Meta and Instagram.'
             : 'Your campaign was created in paused state. Activate it from the campaign dashboard.'}
@@ -213,13 +213,13 @@ export default function NewCampaignPage() {
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/campaigns/${launched.campaignId}`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
           >
             Open campaign dashboard
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns"
-            className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-5 py-2.5 text-[13px] text-white/70 transition hover:bg-white/[0.07]"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800/50"
           >
             All campaigns
           </Link>
@@ -233,12 +233,12 @@ export default function NewCampaignPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Megaphone className="h-3.5 w-3.5" /> New Meta Campaign
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white sm:text-[40px]">
@@ -254,23 +254,23 @@ export default function NewCampaignPage() {
           const Icon    = s.icon
           return (
             <div key={s.n} className="flex flex-1 items-center">
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[13px] font-semibold transition ${
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition ${
                 done    ? 'border-emerald-400/40 bg-[#D4AF37]/15 text-[#D4AF37]'
                 : active ? 'border-[#D4AF37]/50 bg-[#D4AF37]/15 text-[#D4AF37]'
-                : 'border-white/[0.08] bg-white/[0.04] text-white/30'
+                : 'border-slate-800 bg-slate-800/40 text-slate-500'
               }`}>
                 {done ? <CheckCircle2 className="h-4 w-4" /> : s.n}
               </div>
-              <span className={`ml-2 hidden text-[13px] font-medium sm:block ${active ? 'text-white' : done ? 'text-[#D4AF37]/70' : 'text-white/25'}`}>{s.label}</span>
+              <span className={`ml-2 hidden text-sm font-medium sm:block ${active ? 'text-white' : done ? 'text-[#D4AF37]/70' : 'text-slate-600'}`}>{s.label}</span>
               {i < STEPS.length - 1 && (
-                <div className={`mx-3 h-px flex-1 ${done ? 'bg-[#D4AF37]/30' : 'bg-white/[0.06]'}`} />
+                <div className={`mx-3 h-px flex-1 ${done ? 'bg-[#D4AF37]/30' : 'bg-slate-800/50'}`} />
               )}
             </div>
           )
         })}
       </div>
 
-      <div className="mt-10 rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
+      <div className="mt-10 rounded-[24px] border border-slate-800 bg-slate-900 p-6 sm:p-8">
 
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (
@@ -301,14 +301,14 @@ export default function NewCampaignPage() {
                     className={`w-full rounded-[14px] border p-4 text-left transition ${
                       form.objective === obj.value
                         ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                        : 'border-white/[0.08] bg-white/[0.02] hover:border-white/10'
+                        : 'border-slate-800 bg-slate-800/40 hover:border-white/10'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`h-3.5 w-3.5 shrink-0 rounded-full border-2 ${form.objective === obj.value ? 'border-[#D4AF37] bg-[#D4AF37]' : 'border-white/25'}`} />
                       <div>
                         <div className="text-[14px] font-semibold text-white">{obj.label}</div>
-                        <p className="mt-0.5 text-[12px] text-white/45">{obj.desc}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{obj.desc}</p>
                       </div>
                     </div>
                   </button>
@@ -342,7 +342,7 @@ export default function NewCampaignPage() {
                 value={form.dailyBudgetAED}
                 onChange={(e) => update('dailyBudgetAED', Math.max(50, parseInt(e.target.value) || 50))}
               />
-              <p className="mt-1 text-[13px] text-white/35">≈ AED {(form.dailyBudgetAED * 30).toLocaleString()} / month at this rate</p>
+              <p className="mt-1 text-sm text-slate-500">≈ AED {(form.dailyBudgetAED * 30).toLocaleString()} / month at this rate</p>
             </div>
 
             <div>
@@ -361,10 +361,10 @@ export default function NewCampaignPage() {
                             : [...form.cityKeys, city.key],
                         )
                       }
-                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
                         selected
                           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]'
-                          : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:border-white/15'
+                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-white/15'
                       }`}
                     >
                       {city.name}
@@ -411,10 +411,10 @@ export default function NewCampaignPage() {
                             : [...form.interestIds, int.id],
                         )
                       }
-                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
                         selected
                           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]'
-                          : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:border-white/15'
+                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-white/15'
                       }`}
                     >
                       {int.name}
@@ -444,10 +444,10 @@ export default function NewCampaignPage() {
                             : [...form.publisherPlatforms, p.value],
                         )
                       }
-                      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
                         selected
                           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]'
-                          : 'border-white/[0.08] bg-white/[0.03] text-white/50 hover:border-white/15'
+                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-white/15'
                       }`}
                     >
                       {p.label}
@@ -473,7 +473,7 @@ export default function NewCampaignPage() {
                 onChange={(e) => update('primaryText', e.target.value)}
                 placeholder="The investor pitch — 2–3 sentences that lead with the strongest signal."
               />
-              <p className="mt-1 text-[13px] text-white/35">{form.primaryText.length}/500 · Aim for under 125 characters for mobile preview.</p>
+              <p className="mt-1 text-sm text-slate-500">{form.primaryText.length}/500 · Aim for under 125 characters for mobile preview.</p>
             </div>
 
             <div>
@@ -546,20 +546,20 @@ export default function NewCampaignPage() {
                 { label: 'Platforms',   value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
                 { label: 'CTA',         value: CTA_OPTIONS.find((c) => c.value === form.cta)?.label ?? form.cta },
               ].map((item) => (
-                <div key={item.label} className="rounded-[14px] border border-white/[0.08] bg-white/[0.02] px-4 py-3">
-                  <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{item.label}</div>
+                <div key={item.label} className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-4 py-3">
+                  <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{item.label}</div>
                   <div className="mt-1 text-[14px] font-semibold text-white">{item.value}</div>
                 </div>
               ))}
             </div>
 
             {/* Creative preview */}
-            <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] p-5">
-              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35 mb-3">Creative preview</div>
-              <div className="text-[12px] leading-relaxed text-white/60 mb-2">{form.primaryText}</div>
+            <div className="rounded-[16px] border border-slate-800 bg-slate-800/40 p-5">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">Creative preview</div>
+              <div className="text-xs leading-relaxed text-slate-400 mb-2">{form.primaryText}</div>
               <div className="text-[14px] font-semibold text-white">{form.headline}</div>
-              <div className="text-[12px] text-white/45 mt-0.5">{form.description}</div>
-              <div className="mt-2 inline-flex items-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2.5 py-0.5 text-[12px] text-[#D4AF37]">
+              <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
+              <div className="mt-2 inline-flex items-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs text-[#D4AF37]">
                 {CTA_OPTIONS.find((c) => c.value === form.cta)?.label}
               </div>
             </div>
@@ -581,11 +581,11 @@ export default function NewCampaignPage() {
                         ? opt.value === 'ACTIVE'
                           ? 'border-emerald-400/30 bg-[#D4AF37]/[0.06]'
                           : 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                        : 'border-white/[0.08] hover:border-white/10'
+                        : 'border-slate-800 hover:border-white/10'
                     }`}
                   >
-                    <div className="text-[13px] font-semibold text-white">{opt.label}</div>
-                    <p className="mt-1 text-[13px] text-white/40">{opt.desc}</p>
+                    <div className="text-sm font-semibold text-white">{opt.label}</div>
+                    <p className="mt-1 text-sm text-slate-500">{opt.desc}</p>
                   </button>
                 ))}
               </div>
@@ -594,7 +594,7 @@ export default function NewCampaignPage() {
             {apiError && (
               <div className="flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] p-4">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                <p className="text-[13px] text-white/70">{apiError}</p>
+                <p className="text-sm text-slate-300">{apiError}</p>
               </div>
             )}
           </div>
@@ -607,7 +607,7 @@ export default function NewCampaignPage() {
           <button
             type="button"
             onClick={() => setStep((s) => (s - 1) as WizardStep)}
-            className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-5 py-2.5 text-[13px] text-white/70 transition hover:bg-white/[0.07]"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800/50"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back
           </button>
@@ -624,7 +624,7 @@ export default function NewCampaignPage() {
               (step === 2 && form.dailyBudgetAED < 50) ||
               (step === 3 && (!form.primaryText || !form.headline || !form.landingUrl))
             }
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Continue <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -633,7 +633,7 @@ export default function NewCampaignPage() {
             type="button"
             onClick={handleLaunch}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-6 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-6 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-60"
           >
             {loading
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Launching…</>

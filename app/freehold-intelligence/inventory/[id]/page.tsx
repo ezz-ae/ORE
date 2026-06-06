@@ -34,7 +34,7 @@ function statusBadge(status: PropertyStatus) {
     case 'sold_out':
       return 'bg-red-400/10 text-red-300 border-red-400/20'
     case 'coming_soon':
-      return 'bg-violet-400/10 text-white/55 border-violet-400/20'
+      return 'bg-violet-400/10 text-slate-400 border-violet-400/20'
     default:
       return 'bg-slate-800/50 text-slate-400 border-slate-800'
   }
@@ -60,7 +60,7 @@ function landingBadge(status: LandingStatus) {
     case 'pending_review':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'missing':
-      return 'bg-rose-400/10 text-white/55 border-rose-400/20'
+      return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
   }
 }
 
@@ -97,8 +97,8 @@ export default function PropertyDetailPage() {
   if (!prop) {
     return (
       <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 text-center">
-        <div className="text-[48px] font-semibold text-white/10">404</div>
-        <p className="mt-3 text-[16px] text-white/50">Property not found.</p>
+        <div className="text-[48px] font-semibold text-slate-700">404</div>
+        <p className="mt-3 text-[16px] text-slate-400">Property not found.</p>
         <Link
           href="/freehold-intelligence/inventory"
           className="mt-6 inline-flex items-center gap-1.5 text-sm text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
@@ -136,15 +136,15 @@ export default function PropertyDetailPage() {
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
           {prop.name}
         </h1>
-        <p className="mt-2 text-[15px] text-white/50">
-          {prop.area} · <span className="text-white/70">{prop.developer}</span>
+        <p className="mt-2 text-sm text-slate-400">
+          {prop.area} · <span className="text-slate-300">{prop.developer}</span>
         </p>
 
         {/* CTA */}
         <div className="mt-5">
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
           >
             <Sparkles className="h-4 w-4" /> Generate Landing Page
           </Link>
@@ -239,10 +239,10 @@ export default function PropertyDetailPage() {
             <div className="space-y-4">
               <div>
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-white/60">Data Quality</span>
+                  <span className="text-slate-400">Data Quality</span>
                   <span className="tabular-nums font-semibold text-slate-300">{prop.dataQuality} / 100</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800/50">
                   <div
                     className={`h-full rounded-full transition-all ${readinessBar(prop.dataQuality)}`}
                     style={{ width: `${prop.dataQuality}%` }}
@@ -251,10 +251,10 @@ export default function PropertyDetailPage() {
               </div>
               <div>
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-white/60">Ad Readiness</span>
+                  <span className="text-slate-400">Ad Readiness</span>
                   <span className="tabular-nums font-semibold text-slate-300">{prop.adReadiness} / 100</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-800/50">
                   <div
                     className={`h-full rounded-full transition-all ${readinessBar(prop.adReadiness)}`}
                     style={{ width: `${prop.adReadiness}%` }}
@@ -267,7 +267,7 @@ export default function PropertyDetailPage() {
           {/* Last updated */}
           <div className="rounded-[16px] border border-slate-800 bg-slate-800/50 px-4 py-3">
             <span className="text-sm text-slate-500">Last updated: </span>
-            <span className="text-sm text-white/55">{prop.lastUpdated}</span>
+            <span className="text-sm text-slate-400">{prop.lastUpdated}</span>
           </div>
 
         </div>
@@ -283,7 +283,7 @@ export default function PropertyDetailPage() {
             {prop.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-xs text-white/55"
+                className="rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-xs text-slate-400"
               >
                 {tag.replace(/_/g, ' ')}
               </span>
@@ -319,11 +319,11 @@ export default function PropertyDetailPage() {
             <div className="flex items-center gap-2 text-xs">
               <ImageIcon className="h-3.5 w-3.5 text-slate-500" />
               {prop.hasImages ? (
-                <span className="text-white/60">
+                <span className="text-slate-400">
                   {prop.imageCount} image{prop.imageCount !== 1 ? 's' : ''} available
                 </span>
               ) : (
-                <span className="text-white/55/70">No images</span>
+                <span className="text-slate-400/70">No images</span>
               )}
             </div>
           </div>

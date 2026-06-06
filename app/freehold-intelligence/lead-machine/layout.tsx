@@ -45,7 +45,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-blue-400/25 bg-blue-400/10">
             <Zap className="h-3.5 w-3.5 text-blue-400" />
           </div>
-          <span className="text-[15px] font-semibold text-white">Lead Machine</span>
+          <span className="text-sm font-semibold text-white">Lead Machine</span>
         </div>
       </header>
 

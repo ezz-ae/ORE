@@ -30,8 +30,8 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
   DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
-  VIDEO:           'bg-rose-400/10 text-white/55 border-rose-400/20',
-  SHOPPING:        'bg-violet-400/10 text-white/55 border-violet-400/20',
+  VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
+  SHOPPING:        'bg-violet-400/10 text-slate-400 border-violet-400/20',
 }
 
 export default function GoogleOverviewPage() {
@@ -138,7 +138,7 @@ export default function GoogleOverviewPage() {
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
               <div className="text-sm font-semibold text-white">Google Ads not connected</div>
-              <p className="mt-1 text-sm text-white/60">{error}</p>
+              <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
@@ -155,7 +155,7 @@ export default function GoogleOverviewPage() {
         <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-sm text-white/65">{error}</p>
+            <p className="text-sm text-slate-300">{error}</p>
           </div>
         </div>
       )}
@@ -254,7 +254,7 @@ export default function GoogleOverviewPage() {
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-slate-800/50 text-slate-400 border-slate-800'}`}>
                         {c.type.replace('_', ' ')}
                       </span>
-                      <span className="flex-1 min-w-0 text-sm font-medium text-white/80 truncate group-hover:text-white">
+                      <span className="flex-1 min-w-0 text-sm font-medium text-slate-100 truncate group-hover:text-white">
                         {c.name}
                       </span>
                       <div className="flex shrink-0 items-center gap-4 text-xs">

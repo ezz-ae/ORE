@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Activity,
@@ -293,9 +293,11 @@ function FilterPill({
 function EventCard({
   event,
   isLast,
+  mounted,
 }: {
   event: CRMActivityEvent
   isLast: boolean
+  mounted: boolean
 }) {
   const cfg = TYPE_CONFIG[event.type] ?? TYPE_CONFIG.system
   const { Icon } = cfg
@@ -340,7 +342,7 @@ function EventCard({
         <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
           <span className="font-medium text-slate-400">{event.actor === 'system' ? 'System' : event.actor}</span>
           <span>·</span>
-          <span title={formatTimestamp(event.createdAt)}>{timeAgo(event.createdAt)}</span>
+          <span title={formatTimestamp(event.createdAt)}>{mounted ? timeAgo(event.createdAt) : formatTimestamp(event.createdAt)}</span>
           <span>·</span>
           <span>{formatTimestamp(event.createdAt)}</span>
         </div>
@@ -390,6 +392,9 @@ function BreakdownList({
 
 export default function CrmActivityPage() {
   const [activeFilter, setActiveFilter] = useState<FilterLabel>('All')
+  // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   // Pre-sort all events newest first
   const sortedAll = useMemo(
@@ -459,7 +464,7 @@ export default function CrmActivityPage() {
   }, [sortedAll])
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A] px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
+    <div className="min-h-screen bg-slate-900 px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="mx-auto max-w-6xl">
 
         {/* ── Header ────────────────────────────────────────────────────────── */}
@@ -471,7 +476,7 @@ export default function CrmActivityPage() {
           Everything that<br />
           <span className="text-slate-500">happened.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-400">
+        <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-400">
           {sortedAll.length} events logged — every call, message, note and stage change in chronological order.
         </p>
 
@@ -525,6 +530,7 @@ export default function CrmActivityPage() {
                         key={event.id}
                         event={event}
                         isLast={idx === events.length - 1}
+                        mounted={mounted}
                       />
                     ))}
                   </div>

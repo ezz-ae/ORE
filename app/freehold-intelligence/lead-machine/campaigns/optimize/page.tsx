@@ -125,13 +125,13 @@ export default function CampaignOptimizePage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Sparkles className="h-3.5 w-3.5" /> AI Budget Optimizer
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
           Budget optimizer
         </h1>
-        <p className="mt-4 max-w-2xl text-[15px] leading-[1.65] text-white/55">
+        <p className="mt-4 max-w-2xl text-sm leading-[1.65] text-slate-400">
           AI-ranked recommendations based on CPL performance, budget utilization, and lead volume.
           Current target: <span className="text-white">AED {AVG} avg CPL</span> across both platforms.
         </p>
@@ -146,29 +146,29 @@ export default function CampaignOptimizePage() {
           const pct = Math.round(p.util * 100)
           const underSpent = pct < 85
           return (
-            <div key={p.label} className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div key={p.label} className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: p.platColor }} />
-                  <span className="text-[13px] font-semibold text-white">{p.label}</span>
+                  <span className="text-sm font-semibold text-white">{p.label}</span>
                 </div>
                 {underSpent && (
-                  <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+                  <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-300">
                     Under-utilised
                   </span>
                 )}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-[22px] font-semibold tabular-nums text-white">AED {p.spend.toLocaleString()}</span>
-                <span className="text-[13px] text-white/35">/ {p.budget.toLocaleString()}</span>
+                <span className="text-sm text-slate-500">/ {p.budget.toLocaleString()}</span>
               </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800/50">
                 <div
                   className={`h-full rounded-full transition-all ${pct < 70 ? 'bg-amber-500' : 'bg-[#D4AF37]'}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <div className="mt-1.5 text-[11px] text-white/30">{pct}% utilised this month</div>
+              <div className="mt-1.5 text-xs text-slate-500">{pct}% utilised this month</div>
             </div>
           )
         })}
@@ -177,17 +177,17 @@ export default function CampaignOptimizePage() {
       {/* Campaign efficiency ranking */}
       <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
             <BarChart3 className="h-3 w-3" /> Campaign Efficiency Rank
           </div>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/attribution"
-            className="flex items-center gap-1 text-[12px] text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+            className="flex items-center gap-1 text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
           >
             Full attribution <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
+        <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
           <div className="divide-y divide-white/[0.05]">
             {sorted.map((c, i) => {
               const info = cplStyle(c.cpl)
@@ -196,18 +196,18 @@ export default function CampaignOptimizePage() {
               const gap = c.cpl - AVG
               return (
                 <div key={c.name} className="flex items-center gap-4 px-5 py-3.5">
-                  <span className="w-5 shrink-0 text-center text-[13px] font-semibold text-white/25">#{i + 1}</span>
+                  <span className="w-5 shrink-0 text-center text-sm font-semibold text-slate-600">#{i + 1}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-medium text-white/80">{c.name}</div>
+                    <div className="truncate text-sm font-medium text-slate-100">{c.name}</div>
                   </div>
-                  <span className={`shrink-0 rounded-full border px-2 py-px text-[11px] font-medium ${plat.cls}`}>
+                  <span className={`shrink-0 rounded-full border px-2 py-px text-xs font-medium ${plat.cls}`}>
                     {plat.label}
                   </span>
-                  <div className={`flex shrink-0 items-center gap-0.5 text-[13px] font-semibold tabular-nums ${info.color}`}>
+                  <div className={`flex shrink-0 items-center gap-0.5 text-sm font-semibold tabular-nums ${info.color}`}>
                     <Icon className="h-3 w-3" />
                     AED {c.cpl.toFixed(0)}
                   </div>
-                  <div className="w-[72px] shrink-0 text-right text-[11px] text-white/30">
+                  <div className="w-[72px] shrink-0 text-right text-xs text-slate-500">
                     {gap < 0 ? `${Math.abs(gap).toFixed(1)} below` : `${gap.toFixed(1)} above`}
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export default function CampaignOptimizePage() {
 
       {/* AI Recommendations */}
       <section className="mt-10">
-        <div className="mb-5 flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">
+        <div className="mb-5 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
           <Sparkles className="h-3 w-3 text-[#D4AF37]/60" /> AI Recommendations
         </div>
         <div className="space-y-4">
@@ -230,45 +230,45 @@ export default function CampaignOptimizePage() {
             return (
               <div
                 key={r.id}
-                className={`overflow-hidden rounded-[22px] border bg-[#131B2B] transition ${
-                  isApplied ? 'border-emerald-400/20' : 'border-white/[0.08]'
+                className={`overflow-hidden rounded-[22px] border bg-slate-900 transition ${
+                  isApplied ? 'border-emerald-400/20' : 'border-slate-800'
                 }`}
               >
                 <div className="p-5 sm:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-semibold ${style.cls}`}>
+                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${style.cls}`}>
                         {r.type}
                       </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${plat.cls}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${plat.cls}`}>
                         {plat.label}
                       </span>
                     </div>
                     {isApplied ? (
-                      <div className="flex items-center gap-1.5 text-[12px] font-medium text-emerald-400">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Applied
                       </div>
                     ) : null}
                   </div>
 
-                  <h3 className="mt-3 text-[15px] font-semibold text-white">{r.campaignName}</h3>
-                  <p className="mt-1.5 text-[13px] leading-[1.55] text-white/55">{r.rationale}</p>
+                  <h3 className="mt-3 text-sm font-semibold text-white">{r.campaignName}</h3>
+                  <p className="mt-1.5 text-sm leading-[1.55] text-slate-400">{r.rationale}</p>
 
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <div className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2">
-                      <div className="text-[11px] text-white/30 uppercase tracking-[0.15em]">Action</div>
-                      <div className="mt-0.5 text-[13px] font-medium text-white/80">{r.action}</div>
+                    <div className="rounded-[12px] border border-slate-800 bg-slate-800/40 px-3 py-2">
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Action</div>
+                      <div className="mt-0.5 text-sm font-medium text-slate-100">{r.action}</div>
                     </div>
-                    <div className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2">
-                      <div className="text-[11px] text-white/30 uppercase tracking-[0.15em]">Est. leads</div>
-                      <div className={`mt-0.5 text-[13px] font-semibold ${r.projectedLeadDelta > 0 ? 'text-emerald-400' : r.projectedLeadDelta < 0 ? 'text-red-400' : 'text-white/45'}`}>
+                    <div className="rounded-[12px] border border-slate-800 bg-slate-800/40 px-3 py-2">
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Est. leads</div>
+                      <div className={`mt-0.5 text-sm font-semibold ${r.projectedLeadDelta > 0 ? 'text-emerald-400' : r.projectedLeadDelta < 0 ? 'text-red-400' : 'text-slate-500'}`}>
                         {r.projectedLeadDelta > 0 ? `+${r.projectedLeadDelta}` : r.projectedLeadDelta === 0 ? 'No change' : r.projectedLeadDelta}/mo
                       </div>
                     </div>
-                    <div className="rounded-[12px] border border-white/[0.06] bg-white/[0.03] px-3 py-2">
-                      <div className="text-[11px] text-white/30 uppercase tracking-[0.15em]">Spend Δ</div>
-                      <div className={`mt-0.5 text-[13px] font-semibold ${r.projectedSpendDelta < 0 ? 'text-emerald-400' : 'text-white/80'}`}>
+                    <div className="rounded-[12px] border border-slate-800 bg-slate-800/40 px-3 py-2">
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Spend Δ</div>
+                      <div className={`mt-0.5 text-sm font-semibold ${r.projectedSpendDelta < 0 ? 'text-emerald-400' : 'text-slate-100'}`}>
                         {r.projectedSpendDelta < 0
                           ? `–AED ${Math.abs(r.projectedSpendDelta).toLocaleString()}`
                           : `+AED ${r.projectedSpendDelta.toLocaleString()}`}
@@ -280,7 +280,7 @@ export default function CampaignOptimizePage() {
                   {!isApplied && (
                     <button
                       onClick={() => apply(r.id)}
-                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-[13px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+                      className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
                     >
                       <Zap className="h-3.5 w-3.5" /> Apply recommendation
                     </button>
@@ -296,7 +296,7 @@ export default function CampaignOptimizePage() {
       {hasApplied && (
         <section className="mt-8">
           <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/[0.04] p-6">
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.18em] text-emerald-400/80">
+            <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-emerald-400/80">
               <CheckCircle2 className="h-3.5 w-3.5" /> Projected impact — {appliedRecos.length} recommendation{appliedRecos.length !== 1 ? 's' : ''} applied
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -306,15 +306,15 @@ export default function CampaignOptimizePage() {
                 { label: 'Projected CPL',   value: `AED ${projNewCpl.toFixed(0)}`,             good: projNewCpl < AVG },
                 { label: 'CPL saving',      value: `AED ${Math.max(0, AVG - projNewCpl).toFixed(0)}`, good: true },
               ].map((m) => (
-                <div key={m.label} className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3 py-3">
-                  <div className="text-[11px] text-white/30 uppercase tracking-[0.15em]">{m.label}</div>
-                  <div className={`mt-1.5 text-[20px] font-semibold tabular-nums leading-none ${m.good ? 'text-emerald-400' : 'text-white/80'}`}>
+                <div key={m.label} className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-3 py-3">
+                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{m.label}</div>
+                  <div className={`mt-1.5 text-[20px] font-semibold tabular-nums leading-none ${m.good ? 'text-emerald-400' : 'text-slate-100'}`}>
                     {m.value}
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-4 text-[12px] text-white/30">
+            <div className="mt-4 text-xs text-slate-500">
               Estimates based on current CPL trends. Actual results may vary within ±15%.
             </div>
           </div>
@@ -325,13 +325,13 @@ export default function CampaignOptimizePage() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           href="/freehold-intelligence/lead-machine/campaigns/attribution"
-          className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13px] text-white/55 transition hover:border-[#D4AF37]/30 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
         >
           Attribution report <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/campaigns/launch"
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-[13px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
         >
           <Zap className="h-3.5 w-3.5" /> Launch new campaign
         </Link>

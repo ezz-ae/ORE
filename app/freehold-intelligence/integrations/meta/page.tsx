@@ -343,7 +343,7 @@ export default function MetaIntegrationPage() {
               'Copy the token and paste it above',
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-xs font-semibold text-slate-400">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-800/50 text-xs font-semibold text-slate-400">
                   {i + 1}
                 </span>
                 {step}
@@ -365,7 +365,7 @@ export default function MetaIntegrationPage() {
           <div className="mb-2 text-xs text-slate-500 uppercase tracking-wider">Required scopes</div>
           <div className="flex flex-wrap gap-1.5">
             {['ads_management', 'ads_read', 'leads_retrieval', 'business_management'].map((s) => (
-              <span key={s} className="rounded bg-white/[0.05] px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
+              <span key={s} className="rounded bg-slate-800/40 px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
             ))}
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function MetaIntegrationPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[15px] font-semibold text-white">Meta Business</span>
+              <span className="text-sm font-semibold text-white">Meta Business</span>
               <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Connected
@@ -487,7 +487,7 @@ export default function MetaIntegrationPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[15px] font-semibold text-white">{account.name}</span>
+                      <span className="text-sm font-semibold text-white">{account.name}</span>
                       <span className={`text-xs font-medium ${st.color}`}>{st.label}</span>
                     </div>
                     <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
@@ -552,7 +552,7 @@ export default function MetaIntegrationPage() {
                             const statusColor = CAMPAIGN_STATUS_COLOR[c.status] ?? 'text-slate-500'
 
                             return (
-                              <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-white/[0.02] transition">
+                              <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-slate-800/40 transition">
                                 <div className="min-w-0 pr-2">
                                   <div className="truncate text-sm font-medium text-slate-100">{c.name}</div>
                                   <div className="mt-0.5 text-[10px] text-slate-500 uppercase tracking-wide">

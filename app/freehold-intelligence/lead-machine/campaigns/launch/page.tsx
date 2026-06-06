@@ -419,17 +419,17 @@ function EditableField({
   if (!editing) {
     return (
       <div
-        className={`group relative cursor-text rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-[13px] leading-[1.65] text-white/80 transition hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.03] ${className}`}
+        className={`group relative cursor-text rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm leading-[1.65] text-slate-100 transition hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.03] ${className}`}
         onClick={() => setEditing(true)}
       >
-        {value || <span className="text-white/25">{placeholder}</span>}
+        {value || <span className="text-slate-600">{placeholder}</span>}
         {maxChars && (
-          <span className={`absolute right-10 top-3 text-[11px] ${value.length > maxChars ? 'text-red-400' : 'text-white/20'}`}>
+          <span className={`absolute right-10 top-3 text-xs ${value.length > maxChars ? 'text-red-400' : 'text-slate-600'}`}>
             {value.length}/{maxChars}
           </span>
         )}
         <button
-          className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-lg bg-white/[0.06] text-white/30 opacity-0 transition group-hover:opacity-100 hover:text-white/65"
+          className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800/50 text-slate-500 opacity-0 transition group-hover:opacity-100 hover:text-slate-300"
           onClick={(e) => { e.stopPropagation(); setEditing(true) }}
         >
           <Edit2 className="h-3 w-3" />
@@ -443,19 +443,19 @@ function EditableField({
       <textarea
         ref={ref} rows={rows} value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        className="w-full resize-none bg-transparent px-4 py-3 text-[13px] leading-[1.65] text-white/85 focus:outline-none"
+        className="w-full resize-none bg-transparent px-4 py-3 text-sm leading-[1.65] text-white focus:outline-none"
       />
-      <div className="flex items-center gap-2 border-t border-white/[0.06] px-3 py-2">
+      <div className="flex items-center gap-2 border-t border-slate-800 px-3 py-2">
         <button onClick={() => { onChange(draft); setEditing(false) }}
-          className="rounded-lg bg-[#D4AF37]/15 px-3 py-1 text-[12px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/25">
+          className="rounded-lg bg-[#D4AF37]/15 px-3 py-1 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/25">
           Apply
         </button>
         <button onClick={() => { setDraft(value); setEditing(false) }}
-          className="rounded-lg px-3 py-1 text-[12px] text-white/35 transition hover:text-white/65">
+          className="rounded-lg px-3 py-1 text-xs text-slate-500 transition hover:text-slate-300">
           Cancel
         </button>
         {maxChars && (
-          <span className={`ml-auto text-[11px] tabular-nums ${over ? 'text-red-400' : 'text-white/25'}`}>
+          <span className={`ml-auto text-xs tabular-nums ${over ? 'text-red-400' : 'text-slate-600'}`}>
             {draft.length}/{maxChars}
           </span>
         )}
@@ -468,7 +468,7 @@ function EditableField({
 
 function AIBadge({ label = 'AI Pick' }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2 py-0.5 text-[11px] font-medium text-[#D4AF37]">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2 py-0.5 text-xs font-medium text-[#D4AF37]">
       <Sparkles className="h-2.5 w-2.5" /> {label}
     </span>
   )
@@ -479,7 +479,7 @@ function AIReason({ text }: { text: string }) {
   return (
     <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
       <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]/60 mt-0.5 shrink-0" />
-      <p className="text-[12px] leading-relaxed text-white/55">{text}</p>
+      <p className="text-xs leading-relaxed text-slate-400">{text}</p>
     </div>
   )
 }
@@ -489,9 +489,9 @@ function SectionLabel({ icon: Icon, label, sub }: { icon: typeof Target; label: 
     <div className="mb-3">
       <div className="flex items-center gap-2">
         <Icon className="h-3.5 w-3.5 text-[#D4AF37]/60" />
-        <span className="text-[13px] font-semibold text-white/80">{label}</span>
+        <span className="text-sm font-semibold text-slate-100">{label}</span>
       </div>
-      {sub && <p className="mt-0.5 pl-5 text-[12px] text-white/35">{sub}</p>}
+      {sub && <p className="mt-0.5 pl-5 text-xs text-slate-500">{sub}</p>}
     </div>
   )
 }
@@ -506,22 +506,22 @@ function StepHeader({ step }: { step: number }) {
             <div key={n} className="flex items-center gap-1.5 shrink-0">
               <div className="flex items-center gap-1.5">
                 <div className={['flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition',
-                  done ? 'bg-[#D4AF37] text-[#0B0F1A]' : active ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/60 text-[#D4AF37]' : 'bg-white/[0.06] text-white/25'].join(' ')}>
+                  done ? 'bg-[#D4AF37] text-[#0D1117]' : active ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/60 text-[#D4AF37]' : 'bg-slate-800/50 text-slate-600'].join(' ')}>
                   {done ? <Check className="h-2.5 w-2.5" /> : n}
                 </div>
-                <span className={['text-[12px] font-medium whitespace-nowrap',
-                  active ? 'text-white/85' : done ? 'text-white/40' : 'text-white/20'].join(' ')}>
+                <span className={['text-xs font-medium whitespace-nowrap',
+                  active ? 'text-white' : done ? 'text-slate-500' : 'text-slate-600'].join(' ')}>
                   {label}
                 </span>
               </div>
               {i < STEP_LABELS.length - 1 && (
-                <div className={`h-px w-6 shrink-0 ${n < step ? 'bg-[#D4AF37]/35' : 'bg-white/[0.06]'}`} />
+                <div className={`h-px w-6 shrink-0 ${n < step ? 'bg-[#D4AF37]/35' : 'bg-slate-800/50'}`} />
               )}
             </div>
           )
         })}
       </div>
-      <div className="mt-2.5 h-0.5 w-full rounded-full bg-white/[0.05]">
+      <div className="mt-2.5 h-0.5 w-full rounded-full bg-slate-800/40">
         <div className="h-full rounded-full bg-[#D4AF37] transition-all duration-500"
           style={{ width: `${((step - 1) / (STEP_LABELS.length - 1)) * 100}%` }} />
       </div>
@@ -686,37 +686,37 @@ export default function CampaignLaunchPage() {
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10">
           <Rocket className="h-6 w-6 text-[#D4AF37]" />
         </div>
-        <h2 className="mt-5 text-xl font-semibold tracking-tight text-white/90">Campaign Live</h2>
-        <p className="mt-1.5 max-w-sm text-[13px] text-white/40">
-          <span className="font-medium text-white/65">{state.campaignName || campaignName}</span> is running on {channelLabel}.
+        <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">Campaign Live</h2>
+        <p className="mt-1.5 max-w-sm text-sm text-slate-500">
+          <span className="font-medium text-slate-300">{state.campaignName || campaignName}</span> is running on {channelLabel}.
         </p>
 
         {/* Platform status cards */}
         <div className="mt-6 flex gap-3">
           {(state.channel === 'meta' || state.channel === 'both') && (
             <div className="rounded-2xl border border-blue-400/15 bg-blue-400/[0.04] px-5 py-4 text-center">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-blue-400/60">Meta Ads</div>
-              <div className="mt-1.5 text-[13px] font-semibold text-white/80">
+              <div className="text-xs font-medium uppercase tracking-wider text-blue-400/60">Meta Ads</div>
+              <div className="mt-1.5 text-sm font-semibold text-slate-100">
                 {state.channel === 'both' ? fmt(metaBudget) : fmt(state.budget)}
               </div>
-              <div className="mt-0.5 text-[12px] text-white/35">
+              <div className="mt-0.5 text-xs text-slate-500">
                 ~{state.channel === 'both' ? Math.round(metaBudget / est.cpl) : est.leads} leads / mo
               </div>
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2 py-0.5 text-[11px] text-blue-400">
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2 py-0.5 text-xs text-blue-400">
                 <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" /> Live
               </div>
             </div>
           )}
           {(state.channel === 'google' || state.channel === 'both') && (
             <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-5 py-4 text-center">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-[#D4AF37]/60">Google Ads</div>
-              <div className="mt-1.5 text-[13px] font-semibold text-white/80">
+              <div className="text-xs font-medium uppercase tracking-wider text-[#D4AF37]/60">Google Ads</div>
+              <div className="mt-1.5 text-sm font-semibold text-slate-100">
                 {state.channel === 'both' ? fmt(googleBudget) : fmt(state.budget)}
               </div>
-              <div className="mt-0.5 text-[12px] text-white/35">
+              <div className="mt-0.5 text-xs text-slate-500">
                 ~{state.channel === 'both' ? Math.round(googleBudget / est.cpl) : est.leads} leads / mo
               </div>
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[11px] text-[#D4AF37]">
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-xs text-[#D4AF37]">
                 <div className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] animate-pulse" /> Live
               </div>
             </div>
@@ -729,20 +729,20 @@ export default function CampaignLaunchPage() {
             { label: 'Est. Leads / Month', value: `~${est.leads}` },
             { label: 'Target CPL',         value: `AED ${est.cpl}` },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] px-4 py-3">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-white/30">{label}</div>
+            <div key={label} className="rounded-2xl border border-slate-800 bg-slate-800/40 px-4 py-3">
+              <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
               <div className="mt-1 text-base font-semibold tabular-nums text-[#D4AF37]">{value}</div>
             </div>
           ))}
         </div>
         <div className="mt-5 flex gap-3">
           <Link href="/freehold-intelligence/lead-machine/campaigns"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-white/60 transition hover:border-white/20 hover:text-white">
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white">
             View Campaigns
           </Link>
           <button
             onClick={() => { setLaunched(false); setStep(1); setState(buildInitialState()) }}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
+            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
             <Plus className="h-3.5 w-3.5" /> New Campaign
           </button>
         </div>
@@ -754,12 +754,12 @@ export default function CampaignLaunchPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
       <Link href="/freehold-intelligence/lead-machine/campaigns"
-        className="mb-5 inline-flex items-center gap-1.5 text-[12px] text-white/30 transition hover:text-white/60">
+        className="mb-5 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400">
         <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
       </Link>
       <div className="mb-5">
-        <h1 className="text-xl font-semibold tracking-tight text-white/90">Launch Campaign</h1>
-        <p className="mt-0.5 text-[12px] text-white/35">AI pre-fills every field from your property data — adjust anything</p>
+        <h1 className="text-xl font-semibold tracking-tight text-white">Launch Campaign</h1>
+        <p className="mt-0.5 text-xs text-slate-500">AI pre-fills every field from your property data — adjust anything</p>
       </div>
       <StepHeader step={step} />
       <AIReason text={reason} />
@@ -779,32 +779,32 @@ export default function CampaignLaunchPage() {
                 disabled={!canLaunch}
                 className={['w-full rounded-2xl border p-4 text-left transition',
                   isSelected   ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                  canLaunch    ? 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]' :
-                                 'border-white/[0.04] bg-white/[0.01] opacity-40 cursor-not-allowed'].join(' ')}>
+                  canLaunch    ? 'border-slate-800 bg-slate-800/40 hover:border-white/[0.14] hover:bg-slate-800/40' :
+                                 'border-slate-800 bg-slate-800/40 opacity-40 cursor-not-allowed'].join(' ')}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[14px] font-medium text-white/90">{l.projectName}</span>
+                      <span className="text-[14px] font-medium text-white">{l.projectName}</span>
                       {isAIPick && <AIBadge />}
                       {!canLaunch && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2 py-0.5 text-[11px] text-red-400">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2 py-0.5 text-xs text-red-400">
                           <AlertCircle className="h-2.5 w-2.5" /> Not ready
                         </span>
                       )}
                     </div>
-                    <div className="mt-0.5 text-[12px] text-white/40">{l.area} · {l.developer}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{l.area} · {l.developer}</div>
                     {!canLaunch && l.missingRequirements.length > 0 && (
-                      <div className="mt-1 text-[12px] text-red-400/60">Missing: {l.missingRequirements.slice(0, 2).join(', ')}</div>
+                      <div className="mt-1 text-xs text-red-400/60">Missing: {l.missingRequirements.slice(0, 2).join(', ')}</div>
                     )}
                     {canLaunch && (
-                      <div className="mt-2 flex items-center gap-3 text-[12px] text-white/35">
+                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
                         <span>Readiness <span className={l.adReadinessScore >= 70 ? 'text-[#D4AF37]' : 'text-amber-400'}>{l.adReadinessScore}%</span></span>
-                        <span className="h-3 w-px bg-white/[0.08]" />
-                        <span>Score <span className="text-white/55">{score}</span></span>
+                        <span className="h-3 w-px bg-slate-800/50" />
+                        <span>Score <span className="text-slate-400">{score}</span></span>
                         {l.startingPrice && (
                           <>
-                            <span className="h-3 w-px bg-white/[0.08]" />
-                            <span>from <span className="text-white/55">AED {(l.startingPrice / 1_000_000).toFixed(1)}M</span></span>
+                            <span className="h-3 w-px bg-slate-800/50" />
+                            <span>from <span className="text-slate-400">AED {(l.startingPrice / 1_000_000).toFixed(1)}M</span></span>
                           </>
                         )}
                       </div>
@@ -822,20 +822,20 @@ export default function CampaignLaunchPage() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-400" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold text-white/80">
+                  <div className="text-sm font-semibold text-slate-100">
                     {listing.projectName} has no live landing page
                   </div>
-                  <div className="mt-0.5 text-[12px] text-white/40">
+                  <div className="mt-0.5 text-xs text-slate-500">
                     Generate one now from your property data — AI fills every field. It auto-selects in Step 6.
                   </div>
-                  <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-2.5 text-[12px] text-white/45">
-                    <span className="text-white/25">URL preview: </span>
+                  <div className="mt-3 rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-xs text-slate-500">
+                    <span className="text-slate-600">URL preview: </span>
                     /lp/<span className="text-[#D4AF37]/70">{slugify(listing.projectName)}</span>
                   </div>
                   <button
                     onClick={() => handleGenerateLanding(listing)}
                     disabled={isGenerating}
-                    className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
                     {isGenerating
                       ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Generating…</>
                       : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
@@ -850,8 +850,8 @@ export default function CampaignLaunchPage() {
             <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-4 py-3">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium text-[#D4AF37]">Landing page generated</div>
-                <div className="text-[12px] text-white/40">
+                <div className="text-sm font-medium text-[#D4AF37]">Landing page generated</div>
+                <div className="text-xs text-slate-500">
                   /lp/{slugify(listing.projectName)} · pre-selected in Step 6
                 </div>
               </div>
@@ -875,22 +875,22 @@ export default function CampaignLaunchPage() {
               <button key={s.id} onClick={() => selectStrategy(s.id)}
                 className={['w-full rounded-2xl border p-4 text-left transition',
                   isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                               'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]'].join(' ')}>
+                               'border-slate-800 bg-slate-800/40 hover:border-white/[0.14] hover:bg-slate-800/40'].join(' ')}>
                 <div className="flex items-start gap-3">
                   <div className={['flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition',
-                    isSelected ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10' : 'border-white/[0.08] bg-white/[0.04]'].join(' ')}>
-                    <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-[#D4AF37]' : 'text-white/40'}`} />
+                    isSelected ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10' : 'border-slate-800 bg-slate-800/40'].join(' ')}>
+                    <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-[#D4AF37]' : 'text-slate-500'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[13px] font-semibold ${isSelected ? 'text-white' : 'text-white/75'}`}>{s.label}</span>
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-200'}`}>{s.label}</span>
                       {isAIPick && <AIBadge />}
                     </div>
-                    <p className="mt-1 text-[12px] leading-relaxed text-white/40">{s.description}</p>
-                    <div className="mt-2 flex items-center gap-3 text-[12px]">
-                      <span className="text-white/35">Est. CPL: <span className="font-medium text-white/55">AED {s.cplBase}</span></span>
-                      <span className="h-3 w-px bg-white/[0.08]" />
-                      <span className={s.cplBase < financeSummary.avgCpl30d ? 'text-[#D4AF37]/70' : 'text-white/30'}>{cplVsAcct}</span>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">{s.description}</p>
+                    <div className="mt-2 flex items-center gap-3 text-xs">
+                      <span className="text-slate-500">Est. CPL: <span className="font-medium text-slate-400">AED {s.cplBase}</span></span>
+                      <span className="h-3 w-px bg-slate-800/50" />
+                      <span className={s.cplBase < financeSummary.avgCpl30d ? 'text-[#D4AF37]/70' : 'text-slate-500'}>{cplVsAcct}</span>
                     </div>
                   </div>
                   {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />}
@@ -919,9 +919,9 @@ export default function CampaignLaunchPage() {
                   <button key={c.key} onClick={() => patch('channel', c.key)}
                     className={['rounded-2xl border p-3.5 text-center transition',
                       isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                                   'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]'].join(' ')}>
-                    <div className={`text-[13px] font-medium ${isSelected ? 'text-white' : 'text-white/65'}`}>{c.label}</div>
-                    <div className="mt-0.5 text-[11px] text-white/30">{c.sub}</div>
+                                   'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                    <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-300'}`}>{c.label}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{c.sub}</div>
                     {isAIPick && <div className="mt-2 flex justify-center"><AIBadge /></div>}
                   </button>
                 )
@@ -931,10 +931,10 @@ export default function CampaignLaunchPage() {
 
           {/* Budget split when 'both' */}
           {state.channel === 'both' && (
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-[13px] font-medium text-white/70">Budget allocation</span>
-                <span className="text-[12px] text-white/35">
+                <span className="text-sm font-medium text-slate-300">Budget allocation</span>
+                <span className="text-xs text-slate-500">
                   Meta {state.metaShare}% · Google {100 - state.metaShare}%
                 </span>
               </div>
@@ -946,10 +946,10 @@ export default function CampaignLaunchPage() {
                   { label: '70/30', meta: 70 },
                 ].map((preset) => (
                   <button key={preset.label} onClick={() => patch('metaShare', preset.meta)}
-                    className={['rounded-lg border px-3 py-1.5 text-[12px] font-medium transition',
+                    className={['rounded-lg border px-3 py-1.5 text-xs font-medium transition',
                       state.metaShare === preset.meta
                         ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-white/[0.08] text-white/35 hover:border-white/15 hover:text-white/55'].join(' ')}>
+                        : 'border-slate-800 text-slate-500 hover:border-white/15 hover:text-slate-400'].join(' ')}>
                     {preset.label}
                     {preset.meta === 60 && <span className="ml-1 text-[10px] opacity-60">AI</span>}
                   </button>
@@ -963,12 +963,12 @@ export default function CampaignLaunchPage() {
               />
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.04] p-3 text-center">
-                  <div className="text-[11px] text-blue-400/60">Meta Ads</div>
-                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/75">{fmt(metaBudget)}</div>
+                  <div className="text-xs text-blue-400/60">Meta Ads</div>
+                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(metaBudget)}</div>
                 </div>
                 <div className="rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-3 text-center">
-                  <div className="text-[11px] text-[#D4AF37]/60">Google Ads</div>
-                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/75">{fmt(googleBudget)}</div>
+                  <div className="text-xs text-[#D4AF37]/60">Google Ads</div>
+                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(googleBudget)}</div>
                 </div>
               </div>
             </div>
@@ -983,19 +983,19 @@ export default function CampaignLaunchPage() {
                 const isAIPick = v === computeAIBudget(state.strategy)
                 return (
                   <button key={v} onClick={() => patch('budget', v)}
-                    className={['rounded-xl border px-4 py-2 text-[13px] font-medium transition',
+                    className={['rounded-xl border px-4 py-2 text-sm font-medium transition',
                       state.budget === v ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                          'border-white/[0.08] text-white/45 hover:border-white/20 hover:text-white/70'].join(' ')}>
+                                          'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                     AED {(v / 1000).toFixed(0)}K
                     {isAIPick && <span className="ml-1.5 text-[10px] opacity-60">AI</span>}
                   </button>
                 )
               })}
-              <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] px-3 py-2">
-                <span className="text-[12px] text-white/25">AED</span>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-800 px-3 py-2">
+                <span className="text-xs text-slate-600">AED</span>
                 <input type="number" value={state.budget}
                   onChange={(e) => patch('budget', Number(e.target.value))}
-                  className="w-16 bg-transparent text-[13px] text-white/70 focus:outline-none" />
+                  className="w-16 bg-transparent text-sm text-slate-300 focus:outline-none" />
               </div>
             </div>
           </div>
@@ -1006,9 +1006,9 @@ export default function CampaignLaunchPage() {
             <div className="flex gap-2">
               {([14, 30, 60] as Duration[]).map((d) => (
                 <button key={d} onClick={() => patch('duration', d)}
-                  className={['rounded-xl border px-4 py-2 text-[13px] font-medium transition',
+                  className={['rounded-xl border px-4 py-2 text-sm font-medium transition',
                     state.duration === d ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                          'border-white/[0.08] text-white/45 hover:border-white/20 hover:text-white/70'].join(' ')}>
+                                          'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                   {d} days{d === 30 && <span className="ml-1.5 text-[10px] opacity-50">AI</span>}
                 </button>
               ))}
@@ -1017,7 +1017,7 @@ export default function CampaignLaunchPage() {
 
           {/* Live projection */}
           <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-            <div className="mb-3 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#D4AF37]/60">
+            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/60">
               <Sparkles className="h-3 w-3" /> Live Projection
             </div>
             <div className="grid grid-cols-4 gap-3">
@@ -1028,12 +1028,12 @@ export default function CampaignLaunchPage() {
                 { label: 'Daily Spend', value: fmt(Math.round(state.budget / state.duration)) },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-white/25">{label}</div>
-                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/80">{value}</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">{label}</div>
+                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-100">{value}</div>
                 </div>
               ))}
             </div>
-            <div className="mt-3 border-t border-white/[0.06] pt-3 text-[12px] text-white/35">
+            <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-500">
               Best campaign in your account: <span className="text-[#D4AF37]">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
               {' · '}{financeSummary.topSpendCampaigns[0].name}
             </div>
@@ -1047,7 +1047,7 @@ export default function CampaignLaunchPage() {
           {state.channel !== 'meta' && (
             <div className="flex items-start gap-2.5 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
               <Search className="h-3.5 w-3.5 text-[#D4AF37]/60 mt-0.5 shrink-0" />
-              <p className="text-[12px] text-white/50">Locations geo-target both Meta and Google. Google additionally uses keyword intent — configure keywords in Step 5.</p>
+              <p className="text-xs text-slate-400">Locations geo-target both Meta and Google. Google additionally uses keyword intent — configure keywords in Step 5.</p>
             </div>
           )}
           <div>
@@ -1058,9 +1058,9 @@ export default function CampaignLaunchPage() {
                 const isAIPick = computeAILocations(state.strategy).includes(loc.key)
                 return (
                   <button key={loc.key} onClick={() => toggle('locations', loc.key)}
-                    className={['rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition',
+                    className={['rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
                       on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                           'border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/65'].join(' ')}>
+                           'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                     {loc.label}
                     {isAIPick && !on && <span className="ml-1 text-[10px] text-[#D4AF37]/50">·</span>}
                   </button>
@@ -1076,9 +1076,9 @@ export default function CampaignLaunchPage() {
                   const on = state.interests.includes(int.key)
                   return (
                     <button key={int.key} onClick={() => toggle('interests', int.key)}
-                      className={['rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition',
+                      className={['rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
                         on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                             'border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/65'].join(' ')}>
+                             'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                       {int.label}
                     </button>
                   )
@@ -1090,33 +1090,33 @@ export default function CampaignLaunchPage() {
             <button onClick={() => patch('useLookalike', !state.useLookalike)}
               className={['flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition',
                 state.useLookalike ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.04]' :
-                                     'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]'].join(' ')}>
+                                     'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
               <div className={['flex h-5 w-5 shrink-0 items-center justify-center rounded border transition',
                 state.useLookalike ? 'border-[#D4AF37] bg-[#D4AF37]' : 'border-white/20'].join(' ')}>
-                {state.useLookalike && <Check className="h-3 w-3 text-[#0B0F1A]" />}
+                {state.useLookalike && <Check className="h-3 w-3 text-[#0D1117]" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium text-white/75">CRM Lookalike Audience</div>
-                <div className="mt-0.5 text-[12px] text-white/35">
+                <div className="text-sm font-medium text-slate-200">CRM Lookalike Audience</div>
+                <div className="mt-0.5 text-xs text-slate-500">
                   Based on {financeSummary.totalLeads30d * 4 + 215} existing leads · 1% similarity · +180K reach
                 </div>
               </div>
               {state.useLookalike && <AIBadge />}
             </button>
           )}
-          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
             <div className="flex items-baseline justify-between">
-              <div className="text-[12px] text-white/35">
+              <div className="text-xs text-slate-500">
                 {state.channel === 'google' ? 'Geo-targeted market' : 'Estimated Reach'}
               </div>
-              <div className="text-[11px] text-white/25">
+              <div className="text-xs text-slate-600">
                 {state.locations.length} loc{state.channel !== 'google' && ` · ${state.interests.length} int${state.useLookalike ? ' · lookalike' : ''}`}
               </div>
             </div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums text-white/80">
+            <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-100">
               {fmtReach(state.channel === 'google' ? LOCATIONS.filter((l) => state.locations.includes(l.key)).reduce((s, l) => s + l.reach, 0) : reach)}
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800/50">
               <div className="h-full rounded-full bg-[#D4AF37]/60 transition-all duration-500"
                 style={{ width: `${Math.min(100, (reach / 600_000) * 100)}%` }} />
             </div>
@@ -1129,7 +1129,7 @@ export default function CampaignLaunchPage() {
         <div className="space-y-5">
           {/* Tab switcher when Google is included */}
           {state.channel !== 'meta' && (
-            <div className="flex rounded-xl border border-white/[0.07] bg-white/[0.02] p-1">
+            <div className="flex rounded-xl border border-slate-800 bg-slate-800/40 p-1">
               {([
                 { key: 'meta'   as CreativeTab, label: 'Meta Ad',      icon: '📘' },
                 { key: 'google' as CreativeTab, label: 'Google Search', icon: '🔍' },
@@ -1137,8 +1137,8 @@ export default function CampaignLaunchPage() {
                 .filter((t) => state.channel === 'both' || t.key === state.channel)
                 .map((t) => (
                   <button key={t.key} onClick={() => setCreativeTab(t.key)}
-                    className={['flex-1 rounded-lg py-2 text-[13px] font-medium transition',
-                      creativeTab === t.key ? 'bg-white/[0.07] text-white/85' : 'text-white/35 hover:text-white/55'].join(' ')}>
+                    className={['flex-1 rounded-lg py-2 text-sm font-medium transition',
+                      creativeTab === t.key ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'].join(' ')}>
                     {t.label}
                   </button>
                 ))}
@@ -1153,11 +1153,11 @@ export default function CampaignLaunchPage() {
                 <div className="space-y-2">
                   {headlines.map((h, i) => (
                     <button key={i} onClick={() => rotateHeadline(i)}
-                      className={['w-full rounded-xl border px-4 py-3 text-left text-[13px] transition',
+                      className={['w-full rounded-xl border px-4 py-3 text-left text-sm transition',
                         state.headline === h
                           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06] font-medium text-white'
-                          : 'border-white/[0.07] text-white/50 hover:border-white/[0.14] hover:text-white/70'].join(' ')}>
-                      <span className="mr-2 text-[10px] text-white/20">{i + 1}</span>
+                          : 'border-slate-800 text-slate-400 hover:border-white/[0.14] hover:text-slate-300'].join(' ')}>
+                      <span className="mr-2 text-[10px] text-slate-600">{i + 1}</span>
                       {h}
                       {i === 0 && <span className="ml-2 text-[10px] text-[#D4AF37]/50">AI</span>}
                     </button>
@@ -1172,13 +1172,13 @@ export default function CampaignLaunchPage() {
                 <div className="flex items-center justify-between">
                   <SectionLabel icon={FileText} label="Body copy" />
                   <button onClick={nextBody}
-                    className="mb-3 inline-flex items-center gap-1.5 text-[12px] text-white/30 transition hover:text-[#D4AF37]">
+                    className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-[#D4AF37]">
                     <RefreshCw className="h-3 w-3" /> Rephrase
                   </button>
                 </div>
                 <EditableField value={state.body} onChange={(v) => patch('body', v)} rows={4} />
-                <p className="mt-1.5 text-[11px] text-white/25">
-                  Written for <span className="text-white/40">{listing?.projectName}</span> · {listing?.area}
+                <p className="mt-1.5 text-xs text-slate-600">
+                  Written for <span className="text-slate-500">{listing?.projectName}</span> · {listing?.area}
                 </p>
               </div>
               <div>
@@ -1186,17 +1186,17 @@ export default function CampaignLaunchPage() {
                 <div className="flex flex-wrap gap-2">
                   {CTAS.map((cta) => (
                     <button key={cta} onClick={() => patch('cta', cta)}
-                      className={['rounded-xl border px-3.5 py-1.5 text-[13px] font-medium transition',
+                      className={['rounded-xl border px-3.5 py-1.5 text-sm font-medium transition',
                         state.cta === cta ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                            'border-white/[0.08] text-white/40 hover:border-white/20 hover:text-white/65'].join(' ')}>
+                                            'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                       {cta}
                     </button>
                   ))}
                 </div>
               </div>
               {/* Meta preview */}
-              <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-                <div className="border-b border-white/[0.05] bg-white/[0.02] px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40">
+                <div className="border-b border-slate-800 bg-slate-800/40 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
                   Preview · Meta Feed
                 </div>
                 <div className="p-4">
@@ -1205,16 +1205,16 @@ export default function CampaignLaunchPage() {
                       <Building2 className="h-3.5 w-3.5 text-[#D4AF37]" />
                     </div>
                     <div>
-                      <div className="text-[12px] font-semibold text-white/75">Freehold Property</div>
-                      <div className="text-[11px] text-white/25">Sponsored</div>
+                      <div className="text-xs font-semibold text-slate-200">Freehold Property</div>
+                      <div className="text-xs text-slate-600">Sponsored</div>
                     </div>
                   </div>
-                  <div className="mb-3 flex h-20 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03]">
-                    <span className="text-[12px] text-white/15">Property image · {listing?.area}</span>
+                  <div className="mb-3 flex h-20 items-center justify-center rounded-xl border border-slate-800 bg-slate-800/40">
+                    <span className="text-xs text-slate-600">Property image · {listing?.area}</span>
                   </div>
-                  <div className="text-[13px] font-semibold leading-tight text-white/90">{state.headline}</div>
-                  <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-white/45">{state.body}</div>
-                  <div className="mt-2.5 inline-block rounded-md bg-blue-600 px-3 py-1.5 text-[12px] font-semibold text-white">{state.cta}</div>
+                  <div className="text-sm font-semibold leading-tight text-white">{state.headline}</div>
+                  <div className="mt-1 line-clamp-2 text-xs leading-snug text-slate-500">{state.body}</div>
+                  <div className="mt-2.5 inline-block rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">{state.cta}</div>
                 </div>
               </div>
             </div>
@@ -1248,8 +1248,8 @@ export default function CampaignLaunchPage() {
               {/* Display URL */}
               <div>
                 <SectionLabel icon={Globe} label="Display URL" />
-                <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-[13px]">
-                  <span className="text-white/25 shrink-0">freeholdproperty.ae /</span>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm">
+                  <span className="text-slate-600 shrink-0">freeholdproperty.ae /</span>
                   <input
                     type="text"
                     value={state.googleDisplayPath}
@@ -1265,23 +1265,23 @@ export default function CampaignLaunchPage() {
                 <SectionLabel icon={Target} label="Keyword themes" sub="Google uses these to match search intent" />
                 <div className="flex flex-wrap gap-2">
                   {state.googleKeywords.map((kw) => (
-                    <span key={kw} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1 text-[12px] text-[#D4AF37]/80">
+                    <span key={kw} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1 text-xs text-[#D4AF37]/80">
                       {kw}
                       <button onClick={() => removeKeyword(kw)} className="ml-0.5 rounded-full text-[#D4AF37]/40 transition hover:text-[#D4AF37]">
                         <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))}
-                  <div className="flex items-center gap-1 rounded-full border border-white/[0.08] px-3 py-1">
+                  <div className="flex items-center gap-1 rounded-full border border-slate-800 px-3 py-1">
                     <input
                       type="text"
                       value={newKeyword}
                       onChange={(e) => setNewKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
                       placeholder="Add keyword…"
-                      className="w-24 bg-transparent text-[12px] text-white/55 placeholder:text-white/20 focus:outline-none"
+                      className="w-24 bg-transparent text-xs text-slate-400 placeholder:text-slate-600 focus:outline-none"
                     />
-                    <button onClick={addKeyword} className="text-white/25 transition hover:text-[#D4AF37]">
+                    <button onClick={addKeyword} className="text-slate-600 transition hover:text-[#D4AF37]">
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -1298,9 +1298,9 @@ export default function CampaignLaunchPage() {
                       <button key={b.key} onClick={() => patch('googleBidStrategy', b.key)}
                         className={['rounded-xl border p-3 text-center transition',
                           isSelected ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]' :
-                                       'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]'].join(' ')}>
-                        <div className={`text-[12px] font-medium ${isSelected ? 'text-white' : 'text-white/55'}`}>{b.label}</div>
-                        <div className="mt-0.5 text-[11px] text-white/25">{b.sub}</div>
+                                       'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                        <div className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-slate-400'}`}>{b.label}</div>
+                        <div className="mt-0.5 text-xs text-slate-600">{b.sub}</div>
                         {b.key === 'maxConversions' && isSelected && <div className="mt-1.5 flex justify-center"><AIBadge /></div>}
                       </button>
                     )
@@ -1309,19 +1309,19 @@ export default function CampaignLaunchPage() {
               </div>
 
               {/* Google SERP preview */}
-              <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
-                <div className="border-b border-white/[0.05] bg-white/[0.02] px-4 py-2 text-[11px] font-medium uppercase tracking-wider text-white/25">
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40">
+                <div className="border-b border-slate-800 bg-slate-800/40 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
                   Preview · Google Search
                 </div>
                 <div className="p-4">
                   <div className="mb-1 flex items-center gap-1.5">
                     <span className="rounded border border-green-600/40 px-1 text-[10px] text-green-500/70">Sponsored</span>
-                    <span className="text-[12px] text-green-500/70">freeholdproperty.ae/{state.googleDisplayPath}</span>
+                    <span className="text-xs text-green-500/70">freeholdproperty.ae/{state.googleDisplayPath}</span>
                   </div>
-                  <div className="text-[15px] font-medium leading-snug text-blue-400">
+                  <div className="text-sm font-medium leading-snug text-blue-400">
                     {state.googleHeadlines.filter(Boolean).join(' | ')}
                   </div>
-                  <div className="mt-1 text-[13px] leading-snug text-white/50">
+                  <div className="mt-1 text-sm leading-snug text-slate-400">
                     {state.googleDescriptions[0]}
                     {state.googleDescriptions[1] && ` ${state.googleDescriptions[1]}`}
                   </div>
@@ -1347,31 +1347,31 @@ export default function CampaignLaunchPage() {
                 <button key={land.id} onClick={() => patch('landingId', land.id)}
                   className={['w-full rounded-2xl border p-4 text-left transition',
                     isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                                 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]'].join(' ')}>
+                                 'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-[13px] font-medium text-white/80">{land.landingUrl}</span>
-                        <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium',
+                        <span className="truncate text-sm font-medium text-slate-100">{land.landingUrl}</span>
+                        <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
                           isLive ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]' :
                                    'border-amber-400/20 bg-amber-400/10 text-amber-400'].join(' ')}>
                           {land.status}
                         </span>
                         {isLive && <AIBadge label="Recommended" />}
                         {isGenerated && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/20 bg-purple-400/[0.06] px-2 py-0.5 text-[11px] text-purple-400">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/20 bg-purple-400/[0.06] px-2 py-0.5 text-xs text-purple-400">
                             <Sparkles className="h-2.5 w-2.5" /> AI Generated
                           </span>
                         )}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/[0.07]">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800/50">
                           <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${land.completion}%` }} />
                         </div>
-                        <span className="text-[12px] text-white/35">{land.completion}% complete</span>
+                        <span className="text-xs text-slate-500">{land.completion}% complete</span>
                       </div>
                       {land.aiReviewSummary && (
-                        <div className="mt-1.5 text-[12px] text-white/30 line-clamp-1">{land.aiReviewSummary}</div>
+                        <div className="mt-1.5 text-xs text-slate-500 line-clamp-1">{land.aiReviewSummary}</div>
                       )}
                     </div>
                     {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />}
@@ -1383,12 +1383,12 @@ export default function CampaignLaunchPage() {
             {propLandingsFiltered.length === 0 && !alreadyGenerated && (
               <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-5 text-center">
                 <AlertCircle className="mx-auto mb-2 h-5 w-5 text-amber-400" />
-                <div className="text-[13px] font-medium text-amber-300">No landing page for {listing?.projectName}</div>
-                <div className="mt-1 text-[12px] text-white/35">Generate one now or pick from existing landings above.</div>
+                <div className="text-sm font-medium text-amber-300">No landing page for {listing?.projectName}</div>
+                <div className="mt-1 text-xs text-slate-500">Generate one now or pick from existing landings above.</div>
                 <button
                   onClick={() => listing && handleGenerateLanding(listing)}
                   disabled={isGenerating}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
                   {isGenerating
                     ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Generating…</>
                     : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
@@ -1396,12 +1396,12 @@ export default function CampaignLaunchPage() {
               </div>
             )}
 
-            <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] p-4">
-              <div className="mb-2 text-[12px] text-white/40">Or enter a URL directly</div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+              <div className="mb-2 text-xs text-slate-500">Or enter a URL directly</div>
               <input type="text" value={state.landingUrl}
                 onChange={(e) => patch('landingUrl', e.target.value)}
                 placeholder="https://freeholdproperty.ae/…"
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-white/70 placeholder:text-white/20 focus:border-[#D4AF37]/30 focus:outline-none" />
+                className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:border-[#D4AF37]/30 focus:outline-none" />
             </div>
           </div>
         )
@@ -1415,7 +1415,7 @@ export default function CampaignLaunchPage() {
             <EditableField value={campaignName} onChange={(v) => patch('campaignName', v)} rows={1} />
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] divide-y divide-white/[0.04]">
+          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40 divide-y divide-white/[0.04]">
             {([
               { label: 'Property',  value: listing?.projectName ?? '—' },
               { label: 'Strategy',  value: STRATEGIES.find((s) => s.id === state.strategy)?.label ?? '—' },
@@ -1439,14 +1439,14 @@ export default function CampaignLaunchPage() {
               { label: 'Landing',   value: (selectedLanding?.landingUrl ?? state.landingUrl) || 'Not set' },
             ].filter(Boolean) as { label: string; value: string }[]).map(({ label, value }) => (
               <div key={label} className="flex items-baseline justify-between gap-4 px-4 py-3">
-                <span className="w-24 shrink-0 text-[12px] text-white/30">{label}</span>
-                <span className="text-right text-[13px] text-white/70">{value}</span>
+                <span className="w-24 shrink-0 text-xs text-slate-500">{label}</span>
+                <span className="text-right text-sm text-slate-300">{value}</span>
               </div>
             ))}
           </div>
 
           <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-            <div className="mb-3 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-[#D4AF37]/55">
+            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/55">
               <Sparkles className="h-3 w-3" /> Projection
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1457,19 +1457,19 @@ export default function CampaignLaunchPage() {
                 { label: 'Daily Spend',  value: fmt(Math.round(state.budget / state.duration)) },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-white/25">{label}</div>
-                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-white/80">{value}</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">{label}</div>
+                  <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-100">{value}</div>
                 </div>
               ))}
             </div>
-            <div className="mt-3 border-t border-white/[0.06] pt-3 text-[12px] text-white/35">
+            <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-500">
               Account best: <span className="text-[#D4AF37]">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
-              {' · '}30-day avg: <span className="text-white/50">AED {financeSummary.avgCpl30d}</span>
+              {' · '}30-day avg: <span className="text-slate-400">AED {financeSummary.avgCpl30d}</span>
             </div>
           </div>
 
           <button onClick={handleLaunch} disabled={launching}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/15 py-4 text-[15px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/22 disabled:opacity-60">
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/15 py-4 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/22 disabled:opacity-60">
             {launching
               ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Launching…</>
               : <><Rocket className="h-4 w-4" /> Launch Campaign</>}
@@ -1478,15 +1478,15 @@ export default function CampaignLaunchPage() {
       )}
 
       {/* ── Navigation ───────────────────────────────────────────────────────── */}
-      <div className="mt-8 flex items-center justify-between border-t border-white/[0.05] pt-6">
+      <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-6">
         <button onClick={() => setStep((s) => Math.max(1, s - 1) as typeof step)}
           disabled={step === 1}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/40 transition hover:border-white/20 hover:text-white/70 disabled:opacity-25 disabled:cursor-not-allowed">
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:border-white/20 hover:text-slate-300 disabled:opacity-25 disabled:cursor-not-allowed">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
         {step < 7 && (
           <button onClick={() => setStep((s) => (s + 1) as typeof step)}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
+            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
             Continue <ChevronRight className="h-4 w-4" />
           </button>
         )}

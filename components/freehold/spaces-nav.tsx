@@ -29,12 +29,12 @@ export function SpacesNav() {
   const syncedCount = integrationSyncStatuses.filter(s => s.status === 'synced').length
 
   return (
-    <div className="flex h-14 shrink-0 items-center border-b border-white/[0.08] bg-[#090D16] backdrop-blur-xl">
+    <div className="flex h-14 shrink-0 items-center border-b border-slate-800 bg-[#090D16] backdrop-blur-xl">
 
       {/* Brand */}
       <Link
         href="/freehold-intelligence"
-        className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.08] px-5 transition hover:bg-white/[0.03]"
+        className="flex h-full shrink-0 items-center gap-2.5 border-r border-slate-800 px-5 transition hover:bg-slate-800/40"
       >
         <Sparkles className="h-4 w-4 text-[#D4AF37]" />
         <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
@@ -67,7 +67,7 @@ export function SpacesNav() {
       </nav>
 
       {/* Sync status */}
-      <div className="flex h-full shrink-0 items-center gap-3 border-l border-white/[0.08] px-4">
+      <div className="flex h-full shrink-0 items-center gap-3 border-l border-slate-800 px-4">
         <div className="flex items-center gap-1.5">
           {integrationSyncStatuses.map(s => (
             <span

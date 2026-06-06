@@ -150,7 +150,7 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
       <section className="mt-8 flex flex-wrap gap-3">
         <Link
           href={`/freehold-intelligence/notebook?project=${project.id}`}
-          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-white/90"
+          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Open in Notebook

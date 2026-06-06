@@ -33,7 +33,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#131B2B] transition hover:border-[#D4AF37]/25">
+    <article className="group overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/25">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
@@ -42,7 +42,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-6 sm:p-8">
           <div className="min-w-0">
-            <div className="text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
               {listing.area} · {listing.developer}
             </div>
             <h3 className="mt-2 text-2xl font-semibold leading-tight text-white sm:text-[28px]">
@@ -50,7 +50,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
             </h3>
           </div>
           {priceLabel && (
-            <div className="shrink-0 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-[12px] font-medium text-white/85 backdrop-blur">
+            <div className="shrink-0 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
               {priceLabel}
             </div>
           )}
@@ -58,34 +58,34 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
       </div>
 
       <div className="px-6 pb-7 pt-5 sm:px-8">
-        <p className="text-[15px] leading-[1.6] text-white/65">
+        <p className="text-sm leading-[1.6] text-slate-300">
           <span className="font-medium text-white">{readiness(listing)}.</span>{' '}
           {listing.nextAction}
         </p>
 
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px]">
-          <span className="flex items-center gap-2 text-white/55">
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+          <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.landingStatus)}`} />
-            Landing · <span className="capitalize text-white/75">{statusText(listing.landingStatus)}</span>
+            Landing · <span className="capitalize text-slate-200">{statusText(listing.landingStatus)}</span>
           </span>
-          <span className="flex items-center gap-2 text-white/55">
+          <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.adStatus)}`} />
-            Ads · <span className="capitalize text-white/75">{statusText(listing.adStatus)}</span>
+            Ads · <span className="capitalize text-slate-200">{statusText(listing.adStatus)}</span>
           </span>
-          <span className="flex items-center gap-2 text-white/55">
+          <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.blockerStatus)}`} />
-            <span className="capitalize text-white/75">{statusText(listing.blockerStatus)}</span>
+            <span className="capitalize text-slate-200">{statusText(listing.blockerStatus)}</span>
           </span>
-          <span className="text-white/45">
+          <span className="text-slate-500">
             Opportunity{' '}
-            <span className="font-semibold tabular-nums text-white/85">{listing.opportunityScore}</span>
+            <span className="font-semibold tabular-nums text-white">{listing.opportunityScore}</span>
           </span>
         </div>
 
         {listing.missingRequirements.length > 0 && (
-          <div className="mt-5 border-t border-white/[0.08] pt-4">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">Holding it back</div>
-            <ul className="mt-2 grid gap-1 text-[14px] text-white/65">
+          <div className="mt-5 border-t border-slate-800 pt-4">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Holding it back</div>
+            <ul className="mt-2 grid gap-1 text-[14px] text-slate-300">
               {listing.missingRequirements.map((req) => (
                 <li
                   key={req}
@@ -101,13 +101,13 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#06080A] transition hover:gap-2.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0D1117] transition hover:gap-2.5"
           >
             Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-            className="rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
+            className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
           >
             View details
           </Link>
@@ -160,13 +160,13 @@ export default function ListingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <LayoutList className="h-3.5 w-3.5" /> Active Listings
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
           Active Listings
         </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
           <span className="text-white">{total} listings</span> in the current curated set.{' '}
           {ready > 0 ? (
             <>
@@ -182,7 +182,7 @@ export default function ListingsPage() {
       <section className="mt-16">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All</div>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-500">All</div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {isFiltered
                 ? <>{filtered.length} of {total} listings</>
@@ -194,18 +194,18 @@ export default function ListingsPage() {
 
         {/* Search bar */}
         <div className="relative mt-6">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by project, area, or developer…"
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-800/40 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-400 transition"
               aria-label="Clear search"
             >
               <X className="h-4 w-4" />
@@ -219,10 +219,10 @@ export default function ListingsPage() {
             <button
               key={option}
               onClick={() => setReadinessFilter(option)}
-              className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
+              className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 readinessFilter === option
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300'
               }`}
             >
               {option}
@@ -232,10 +232,10 @@ export default function ListingsPage() {
 
         {filtered.length === 0 ? (
           <div className="mt-16 flex flex-col items-center gap-5 text-center">
-            <p className="text-[15px] text-white/45">No listings match these filters</p>
+            <p className="text-sm text-slate-500">No listings match these filters</p>
             <button
               onClick={clearFilters}
-              className="rounded-full border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[13px] text-white/70 transition hover:border-[#D4AF37]/30 hover:text-white"
+              className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
             >
               Clear filters
             </button>

@@ -38,7 +38,7 @@ export default function IntegrationsLayout({ children }: { children: React.React
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-600 bg-slate-700/50">
             <ShieldCheck className="h-3.5 w-3.5 text-slate-300" />
           </div>
-          <span className="text-[15px] font-semibold text-white">Integrations</span>
+          <span className="text-sm font-semibold text-white">Integrations</span>
         </div>
         <div className="ml-auto text-sm text-slate-400">8 connected · 2 pending</div>
       </header>

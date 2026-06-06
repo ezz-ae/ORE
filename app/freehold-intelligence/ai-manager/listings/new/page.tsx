@@ -26,27 +26,27 @@ export default function NewListingPage() {
       {/* Back + Header */}
       <Link
         href="/freehold-intelligence/ai-manager/listings"
-        className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition mb-6"
+        className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition mb-6"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Listings
       </Link>
 
-      <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-white/55/80 mb-3">
+      <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-slate-400/80 mb-3">
         <Sparkles className="h-3.5 w-3.5" />
         AI Manager · New Listing
       </div>
-      <h1 className="text-2xl font-semibold tracking-tight text-white/90">
+      <h1 className="text-2xl font-semibold tracking-tight text-white">
         Create New Listing
       </h1>
 
       {/* Step 1 */}
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">1</span>
-          <h2 className="text-sm font-semibold text-white/80">Property Details</h2>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">1</span>
+          <h2 className="text-sm font-semibold text-slate-100">Property Details</h2>
         </div>
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 space-y-4">
+        <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {[
               { label: 'Property Name', placeholder: 'e.g. Emaar Beachfront Tower 3' },
@@ -55,36 +55,36 @@ export default function NewListingPage() {
               { label: 'Starting Price (AED)', placeholder: 'e.g. 1,200,000' },
             ].map((field) => (
               <div key={field.label}>
-                <label className="mb-1.5 block text-xs font-medium text-white/50">{field.label}</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">{field.label}</label>
                 <input
                   type="text"
                   placeholder={field.placeholder}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-rose-500/40 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
                 />
               </div>
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/50">Type</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">Type</label>
+              <select className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select type…</option>
                 {PROPERTY_TYPES.map((t) => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/50">Status</label>
-              <select className="w-full rounded-xl border border-white/[0.08] bg-[#0B0F1A] px-3.5 py-2.5 text-sm text-white/70 focus:border-rose-500/40 focus:outline-none">
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">Status</label>
+              <select className="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
                 <option value="">Select status…</option>
                 {STATUSES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/50">Bedrooms</label>
+              <label className="mb-1.5 block text-xs font-medium text-slate-400">Bedrooms</label>
               <input
                 type="text"
                 placeholder="e.g. 1–3"
-                className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-rose-500/40 focus:outline-none"
+                className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
               />
             </div>
           </div>
@@ -94,14 +94,14 @@ export default function NewListingPage() {
       {/* Step 2 */}
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">2</span>
-          <h2 className="text-sm font-semibold text-white/80">AI Generate Content</h2>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">2</span>
+          <h2 className="text-sm font-semibold text-slate-100">AI Generate Content</h2>
         </div>
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 space-y-5">
+        <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-6 space-y-5">
           <button
             onClick={handleGenerate}
             disabled={state.generating}
-            className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
           >
             {state.generating ? (
               <>
@@ -124,32 +124,32 @@ export default function NewListingPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/50">Description</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Description</label>
                 <textarea
                   rows={5}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-sm text-white/80 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
                   defaultValue="Discover an exceptional collection of residences offering unrivalled views across the Dubai skyline. This landmark development blends sophisticated architecture with resort-style amenities, positioned in one of the emirate's most sought-after waterfront locations. Residents enjoy access to private beach, infinity pools, and direct marina access — setting a new benchmark for luxury living in Dubai."
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/50">Key Features</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Key Features</label>
                 <textarea
                   rows={4}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-sm text-white/80 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
                   defaultValue="- Direct waterfront access and private beach&#10;- Panoramic views of the Arabian Gulf&#10;- World-class amenities including infinity pool and spa&#10;- Flexible payment plans with post-handover options&#10;- Golden Visa eligibility from AED 2M+"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/50">
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">
                   SEO Meta Description
-                  <span className="ml-1 text-white/30">(160 char limit)</span>
+                  <span className="ml-1 text-slate-500">(160 char limit)</span>
                 </label>
                 <textarea
                   rows={2}
                   maxLength={160}
-                  className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-3 text-sm text-white/80 focus:border-rose-500/40 focus:outline-none resize-none"
+                  className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
                   defaultValue="Luxury waterfront residences in Dubai — stunning views, world-class amenities &amp; flexible payment plans. Golden Visa eligible. Enquire now."
                 />
               </div>
@@ -161,23 +161,23 @@ export default function NewListingPage() {
       {/* Step 3 */}
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-[13px] font-bold text-white/55">3</span>
-          <h2 className="text-sm font-semibold text-white/80">Images &amp; Media</h2>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">3</span>
+          <h2 className="text-sm font-semibold text-slate-100">Images &amp; Media</h2>
         </div>
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6">
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.10] bg-white/[0.02] py-10 gap-3">
-            <Image className="h-8 w-8 text-white/20" />
-            <p className="text-sm text-white/40">Drag and drop images here, or click to upload</p>
-            <button className="rounded-lg border border-white/[0.10] bg-white/[0.04] px-4 py-2 text-xs text-white/60 hover:text-white/80 transition">
+        <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-6">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.10] bg-slate-800/40 py-10 gap-3">
+            <Image className="h-8 w-8 text-slate-600" />
+            <p className="text-sm text-slate-500">Drag and drop images here, or click to upload</p>
+            <button className="rounded-lg border border-white/[0.10] bg-slate-800/40 px-4 py-2 text-xs text-slate-400 hover:text-slate-100 transition">
               Choose Files
             </button>
           </div>
           <div className="mt-4">
-            <label className="mb-1.5 block text-xs font-medium text-white/50">Image Count</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Image Count</label>
             <input
               type="number"
               placeholder="0"
-              className="w-28 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white/80 placeholder:text-white/25 focus:border-rose-500/40 focus:outline-none"
+              className="w-28 rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
             />
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function NewListingPage() {
 
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <button className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white/60 transition hover:text-white/90">
+        <button className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white">
           <Save className="h-4 w-4" />
           Save as Draft
         </button>

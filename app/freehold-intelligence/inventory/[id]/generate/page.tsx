@@ -87,14 +87,14 @@ const AI_VARIANTS: Record<string, (p: InventoryProperty) => Partial<LandingConfi
 
 function PhonePreview({ prop, config }: { prop: InventoryProperty; config: LandingConfig }) {
   return (
-    <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-[#0B0F1A] shadow-2xl overflow-hidden">
+    <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-slate-900 shadow-2xl overflow-hidden">
       {/* notch */}
       <div className="flex justify-center py-2">
         <div className="h-1.5 w-12 rounded-full bg-white/10" />
       </div>
       <div className="h-[520px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* topbar */}
-        <div className="flex items-center justify-between bg-[#0B0F1A]/90 px-3 py-2 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 border-b border-slate-800">
           <span className="text-[7px] font-bold tracking-wide text-[#D4AF37]">FREEHOLD</span>
           <span className="flex items-center gap-0.5 rounded-full border border-[#D4AF37]/20 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">
             <Phone className="h-2 w-2" /> Call
@@ -104,42 +104,42 @@ function PhonePreview({ prop, config }: { prop: InventoryProperty; config: Landi
         <div className="px-4 pt-6 pb-4" style={{ background: 'radial-gradient(ellipse 100% 50% at 50% 0%, rgba(212,175,55,0.15) 0%, transparent 60%)' }}>
           <div className="flex gap-1 mb-2 flex-wrap">
             <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">{prop.area}</span>
-            <span className="rounded-full border border-white/[0.10] bg-white/[0.04] px-1.5 py-0.5 text-[6px] text-white/50">{prop.developer}</span>
+            <span className="rounded-full border border-white/[0.10] bg-slate-800/40 px-1.5 py-0.5 text-[6px] text-slate-400">{prop.developer}</span>
           </div>
-          <div className="text-[11px] font-bold text-white leading-tight">{config.headline}</div>
-          <div className="mt-0.5 text-[7px] text-white/40">{config.subheadline}</div>
-          <button className="mt-3 w-full rounded-[6px] bg-[#D4AF37] py-1.5 text-[7px] font-bold text-[#06080A]">
+          <div className="text-xs font-bold text-white leading-tight">{config.headline}</div>
+          <div className="mt-0.5 text-[7px] text-slate-500">{config.subheadline}</div>
+          <button className="mt-3 w-full rounded-[6px] bg-[#D4AF37] py-1.5 text-[7px] font-bold text-[#0D1117]">
             {config.ctaText} →
           </button>
         </div>
         {/* facts */}
-        <div className="grid grid-cols-4 border-y border-white/[0.06] bg-[#0D1321]">
+        <div className="grid grid-cols-4 border-y border-slate-800 bg-[#0D1321]">
           {[prop.bedrooms + 'BR', prop.sizeRange?.split('–')[0] || '—', prop.roi ? prop.roi.toFixed(1)+'%' : '—', String(prop.handoverYear || '—')].map((v, i) => (
-            <div key={i} className="border-r border-white/[0.06] last:border-r-0 py-2 text-center">
-              <div className="text-[9px] font-semibold text-white/70">{v}</div>
+            <div key={i} className="border-r border-slate-800 last:border-r-0 py-2 text-center">
+              <div className="text-[9px] font-semibold text-slate-300">{v}</div>
             </div>
           ))}
         </div>
         {/* highlights */}
         <div className="px-4 py-4 space-y-1.5">
           {config.highlights.slice(0, 3).map((h, i) => (
-            <div key={i} className="flex items-start gap-1.5 rounded-[8px] border border-white/[0.05] bg-white/[0.02] px-2 py-1.5">
+            <div key={i} className="flex items-start gap-1.5 rounded-[8px] border border-slate-800 bg-slate-800/40 px-2 py-1.5">
               <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 flex items-center justify-center">
                 <Check className="h-1.5 w-1.5 text-[#D4AF37]" />
               </div>
-              <span className="text-[7px] text-white/60 leading-tight">{h}</span>
+              <span className="text-[7px] text-slate-400 leading-tight">{h}</span>
             </div>
           ))}
         </div>
         {/* form */}
-        <div className="mx-4 mb-4 rounded-[12px] border border-[#D4AF37]/15 bg-[#131B2B] p-3">
+        <div className="mx-4 mb-4 rounded-[12px] border border-[#D4AF37]/15 bg-slate-900 p-3">
           <div className="text-[8px] font-bold text-white mb-2">Request Exclusive Pricing</div>
           {['Full Name', 'Phone / WhatsApp', config.leadFields.email ? 'Email' : null].filter(Boolean).map((f) => (
-            <div key={f} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-white/[0.03] px-1.5 flex items-center">
-              <span className="text-[6px] text-white/20">{f}…</span>
+            <div key={f} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-slate-800/40 px-1.5 flex items-center">
+              <span className="text-[6px] text-slate-600">{f}…</span>
             </div>
           ))}
-          <div className="mt-2 rounded-[6px] bg-[#D4AF37] py-1.5 text-center text-[7px] font-bold text-[#06080A]">
+          <div className="mt-2 rounded-[6px] bg-[#D4AF37] py-1.5 text-center text-[7px] font-bold text-[#0D1117]">
             {config.ctaText}
           </div>
         </div>
@@ -154,15 +154,15 @@ function SectionPanel({
   title, open, onToggle, children,
 }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
-    <div className="rounded-[16px] border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+    <div className="rounded-[16px] border border-slate-800 bg-slate-800/40 overflow-hidden">
       <button
         className="flex w-full items-center justify-between px-5 py-4 text-left"
         onClick={onToggle}
       >
-        <span className="text-[13px] font-medium text-white/85">{title}</span>
-        {open ? <ChevronUp className="h-4 w-4 text-white/30" /> : <ChevronDown className="h-4 w-4 text-white/30" />}
+        <span className="text-sm font-medium text-white">{title}</span>
+        {open ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
       </button>
-      {open && <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">{children}</div>}
+      {open && <div className="border-t border-slate-800 px-5 pb-5 pt-4">{children}</div>}
     </div>
   )
 }
@@ -187,7 +187,7 @@ export default function GenerateLandingPage() {
   if (!prop) {
     return (
       <div className="mx-auto max-w-3xl px-5 pt-12 pb-20 text-center">
-        <p className="text-white/40">Property not found.</p>
+        <p className="text-slate-500">Property not found.</p>
         <Link href="/freehold-intelligence/inventory" className="mt-4 inline-block text-amber-400">← Back</Link>
       </div>
     )
@@ -241,31 +241,31 @@ export default function GenerateLandingPage() {
       <div className="mb-7">
         <Link
           href={`/freehold-intelligence/inventory/${prop.id}`}
-          className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-white/30 transition hover:text-white/60"
+          className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to {prop.name}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-[20px] font-semibold text-white">Landing Page Editor</h1>
-            <p className="mt-1 text-[12px] text-white/30">{prop.name} · {prop.area} · {prop.developer}</p>
+            <p className="mt-1 text-xs text-slate-500">{prop.name} · {prop.area} · {prop.developer}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
               href={lpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3.5 py-2 text-[12px] text-white/50 transition hover:text-white/80"
+              className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
             >
               <Eye className="h-3.5 w-3.5" /> Preview
             </a>
             <button
               onClick={publish}
               disabled={publishing || published}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-medium transition ${
+              className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
                 published
                   ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                  : 'bg-[#D4AF37] text-[#06080A] hover:bg-[#F0CB67]'
+                  : 'bg-[#D4AF37] text-[#0D1117] hover:bg-[#F0CB67]'
               }`}
             >
               {publishing ? (
@@ -285,14 +285,14 @@ export default function GenerateLandingPage() {
         <div className="mb-6 flex items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
           <Check className="h-4 w-4 shrink-0 text-emerald-400" />
           <div className="flex-1 min-w-0">
-            <span className="text-[13px] font-medium text-emerald-300">Landing page is live — </span>
+            <span className="text-sm font-medium text-emerald-300">Landing page is live — </span>
             <a href={lpUrl} target="_blank" rel="noopener noreferrer"
-              className="font-mono text-[12px] text-emerald-400/80 underline underline-offset-2 hover:text-emerald-400">
+              className="font-mono text-xs text-emerald-400/80 underline underline-offset-2 hover:text-emerald-400">
               {typeof window !== 'undefined' ? window.location.origin : ''}{lpUrl}
             </a>
           </div>
           <button onClick={copyUrl}
-            className="shrink-0 rounded-full border border-emerald-400/20 px-3 py-1 text-[11px] text-emerald-400/70 hover:bg-emerald-400/10">
+            className="shrink-0 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10">
             {copied ? 'Copied!' : 'Copy URL'}
           </button>
         </div>
@@ -309,11 +309,11 @@ export default function GenerateLandingPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-                <span className="text-[13px] font-medium text-[#D4AF37]">AI Full Redesign</span>
+                <span className="text-sm font-medium text-[#D4AF37]">AI Full Redesign</span>
               </div>
               <button
                 onClick={() => setShowAiBox(!showAiBox)}
-                className="text-[11px] text-white/30 hover:text-white/60 transition"
+                className="text-xs text-slate-500 hover:text-slate-400 transition"
               >
                 {showAiBox ? 'Use presets ↑' : 'Custom prompt ↓'}
               </button>
@@ -326,7 +326,7 @@ export default function GenerateLandingPage() {
                     key={v}
                     onClick={() => aiRedesign(v)}
                     disabled={redesigning}
-                    className={`rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1.5 text-[12px] capitalize text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 disabled:opacity-50`}
+                    className={`rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1.5 text-xs capitalize text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 disabled:opacity-50`}
                   >
                     {redesigning ? '…' : v.replace('_', ' ')}
                   </button>
@@ -339,12 +339,12 @@ export default function GenerateLandingPage() {
                   onChange={(e) => setAiPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCustomAi()}
                   placeholder="e.g. Make it more luxury focused, target GCC buyers…"
-                  className="flex-1 rounded-[10px] border border-white/[0.10] bg-white/[0.04] px-3 py-2 text-[12px] text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/30"
+                  className="flex-1 rounded-[10px] border border-white/[0.10] bg-slate-800/40 px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/30"
                 />
                 <button
                   onClick={handleCustomAi}
                   disabled={redesigning || !aiPrompt.trim()}
-                  className="rounded-[10px] bg-[#D4AF37] px-4 py-2 text-[12px] font-medium text-[#06080A] transition hover:bg-[#F0CB67] disabled:opacity-50"
+                  className="rounded-[10px] bg-[#D4AF37] px-4 py-2 text-xs font-medium text-[#0D1117] transition hover:bg-[#F0CB67] disabled:opacity-50"
                 >
                   {redesigning ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                 </button>
@@ -352,7 +352,7 @@ export default function GenerateLandingPage() {
             )}
 
             {redesigning && (
-              <div className="mt-3 flex items-center gap-2 text-[12px] text-[#D4AF37]/60">
+              <div className="mt-3 flex items-center gap-2 text-xs text-[#D4AF37]/60">
                 <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                 Redesigning all sections…
               </div>
@@ -363,19 +363,19 @@ export default function GenerateLandingPage() {
           <SectionPanel title="Hero Section" open={open === 'hero'} onToggle={() => toggleSection('hero')}>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">Headline</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Headline</label>
                 <input
                   value={config.headline}
                   onChange={(e) => setConfig((p) => ({ ...p, headline: e.target.value }))}
-                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">Subheadline</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Subheadline</label>
                 <input
                   value={config.subheadline}
                   onChange={(e) => setConfig((p) => ({ ...p, subheadline: e.target.value }))}
-                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
                 />
               </div>
             </div>
@@ -386,7 +386,7 @@ export default function GenerateLandingPage() {
             <div className="space-y-3">
               {config.highlights.map((h, i) => (
                 <div key={i}>
-                  <label className="mb-1 block text-[11px] text-white/30">Highlight {i + 1}</label>
+                  <label className="mb-1 block text-xs text-slate-500">Highlight {i + 1}</label>
                   <input
                     value={h}
                     onChange={(e) => {
@@ -394,7 +394,7 @@ export default function GenerateLandingPage() {
                       next[i] = e.target.value
                       setConfig((p) => ({ ...p, highlights: next }))
                     }}
-                    className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                    className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-sm text-white outline-none focus:border-[#D4AF37]/30"
                   />
                 </div>
               ))}
@@ -405,13 +405,13 @@ export default function GenerateLandingPage() {
           <SectionPanel title="Payment Plan" open={open === 'payment'} onToggle={() => toggleSection('payment')}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[13px] text-white/75">Show payment plan section</div>
-                <div className="text-[12px] text-white/30">{prop.paymentPlan ?? 'No plan configured for this property'}</div>
+                <div className="text-sm text-slate-200">Show payment plan section</div>
+                <div className="text-xs text-slate-500">{prop.paymentPlan ?? 'No plan configured for this property'}</div>
               </div>
               <button
                 onClick={() => setConfig((p) => ({ ...p, showPaymentPlan: !p.showPaymentPlan }))}
                 className={`relative h-6 w-11 rounded-full border transition ${
-                  config.showPaymentPlan ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.1] bg-white/[0.04]'
+                  config.showPaymentPlan ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.1] bg-slate-800/40'
                 }`}
               >
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full border transition-all ${
@@ -425,20 +425,20 @@ export default function GenerateLandingPage() {
           <SectionPanel title="Lead Form" open={open === 'form'} onToggle={() => toggleSection('form')}>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-white/30">CTA Button Text</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">CTA Button Text</label>
                 <input
                   value={config.ctaText}
                   onChange={(e) => setConfig((p) => ({ ...p, ctaText: e.target.value }))}
-                  className="w-full rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
                 />
               </div>
               <div>
-                <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-white/30">Form Fields</div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Form Fields</div>
                 <div className="flex flex-wrap gap-2">
                   {(Object.entries(config.leadFields) as [keyof typeof config.leadFields, boolean][]).map(([key, val]) => (
                     <label key={key}
-                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] transition select-none ${
-                        val ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-[#D4AF37]/90' : 'border-white/[0.07] text-white/40'
+                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition select-none ${
+                        val ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-[#D4AF37]/90' : 'border-slate-800 text-slate-500'
                       }`}
                     >
                       <input type="checkbox" className="sr-only" checked={val}
@@ -454,9 +454,9 @@ export default function GenerateLandingPage() {
           </SectionPanel>
 
           {/* Quick property info */}
-          <div className="rounded-[16px] border border-white/[0.06] bg-white/[0.02] px-5 py-4">
-            <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-white/25">Property Data</div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
+          <div className="rounded-[16px] border border-slate-800 bg-slate-800/40 px-5 py-4">
+            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-600">Property Data</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {[
                 ['Status', prop.status.replace('_', ' ')],
                 ['Bedrooms', prop.bedrooms + ' BR'],
@@ -466,8 +466,8 @@ export default function GenerateLandingPage() {
                 ['Ad Readiness', prop.adReadiness + '%'],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-2">
-                  <span className="text-white/30">{k}</span>
-                  <span className="text-white/65 capitalize">{v}</span>
+                  <span className="text-slate-500">{k}</span>
+                  <span className="text-slate-300 capitalize">{v}</span>
                 </div>
               ))}
             </div>
@@ -477,14 +477,14 @@ export default function GenerateLandingPage() {
 
         {/* RIGHT: phone preview */}
         <div className="hidden lg:block shrink-0 sticky top-6">
-          <div className="mb-3 text-center text-[11px] text-white/25 uppercase tracking-wider">Live Preview</div>
+          <div className="mb-3 text-center text-xs text-slate-600 uppercase tracking-wider">Live Preview</div>
           <PhonePreview prop={prop} config={config} />
           <div className="mt-4 text-center">
             <a
               href={lpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] px-4 py-2 text-[11px] text-white/40 transition hover:text-white/70"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
             >
               <Eye className="h-3.5 w-3.5" /> Open full page
             </a>

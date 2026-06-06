@@ -36,7 +36,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-pink-400/25 bg-pink-400/10">
             <Megaphone className="h-3.5 w-3.5 text-pink-400" />
           </div>
-          <span className="text-[15px] font-semibold text-white">Ads Live</span>
+          <span className="text-sm font-semibold text-white">Ads Live</span>
         </div>
         <div className="ml-auto">
           <div className="flex items-center gap-2 text-sm text-slate-400">

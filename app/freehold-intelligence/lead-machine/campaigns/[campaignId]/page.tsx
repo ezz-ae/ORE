@@ -47,7 +47,7 @@ function statusBadge(status: string) {
     case 'ACTIVE':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'PAUSED':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
     case 'DELETED':  return 'border-red-400/25 bg-red-400/10 text-red-300'
-    default:         return 'border-white/10 bg-white/[0.04] text-white/45'
+    default:         return 'border-white/10 bg-slate-800/40 text-slate-500'
   }
 }
 
@@ -131,13 +131,13 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
+      <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> All campaigns
       </Link>
 
       {/* Loading */}
       {loading && (
-        <div className="mt-20 flex items-center justify-center gap-3 text-white/40">
+        <div className="mt-20 flex items-center justify-center gap-3 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-[14px]">Loading campaign…</span>
         </div>
@@ -149,10 +149,10 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Error loading campaign</div>
-              <p className="mt-1 text-[13px] text-white/60">{error}</p>
+              <div className="text-sm font-semibold text-white">Error loading campaign</div>
+              <p className="mt-1 text-sm text-slate-400">{error}</p>
               {error.includes('not configured') && (
-                <Link href="/freehold-intelligence/integrations/meta" className="mt-2 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/80 hover:text-[#D4AF37]">
+                <Link href="/freehold-intelligence/integrations/meta" className="mt-2 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 hover:text-[#D4AF37]">
                   Set up Meta integration <ArrowUpRight className="h-3 w-3" />
                 </Link>
               )}

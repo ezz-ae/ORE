@@ -82,7 +82,7 @@ export default async function CampaignsPage() {
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white/75"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-slate-200"
           >
             <Plus className="h-3.5 w-3.5" /> Manual
           </Link>
@@ -96,7 +96,7 @@ export default async function CampaignsPage() {
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
               <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
-              <p className="mt-1 text-sm text-white/60">{data.error}</p>
+              <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/meta"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
@@ -113,7 +113,7 @@ export default async function CampaignsPage() {
         <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-sm text-white/65">{data.error}</p>
+            <p className="text-sm text-slate-300">{data.error}</p>
           </div>
         </div>
       )}
@@ -146,7 +146,7 @@ export default async function CampaignsPage() {
           <p className="mt-2 text-[14px] text-slate-400">Create the first campaign to start generating leads from Meta and Instagram.</p>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
           >
             <Plus className="h-4 w-4" /> Launch first campaign
           </Link>

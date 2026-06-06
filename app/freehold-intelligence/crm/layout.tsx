@@ -42,7 +42,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
             <Users className="h-3.5 w-3.5 text-[#D4AF37]" />
           </div>
-          <span className="text-[15px] font-semibold text-white">CRM</span>
+          <span className="text-sm font-semibold text-white">CRM</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <Link

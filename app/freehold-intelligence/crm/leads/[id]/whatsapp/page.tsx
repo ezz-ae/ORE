@@ -79,10 +79,10 @@ function initials(name: string) {
 
 function StatusIcon({ status }: { status: WAMessage['status'] }) {
   if (status === 'read')      return <CheckCheck className="h-3.5 w-3.5 text-sky-400" />
-  if (status === 'delivered') return <CheckCheck className="h-3.5 w-3.5 text-white/40" />
-  if (status === 'sent')      return <Check className="h-3.5 w-3.5 text-white/40" />
+  if (status === 'delivered') return <CheckCheck className="h-3.5 w-3.5 text-slate-500" />
+  if (status === 'sent')      return <Check className="h-3.5 w-3.5 text-slate-500" />
   if (status === 'error')     return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-  return <Clock className="h-3.5 w-3.5 text-white/25" />
+  return <Clock className="h-3.5 w-3.5 text-slate-600" />
 }
 
 // ── QR Setup Screen ───────────────────────────────────────────────────────────
@@ -101,29 +101,29 @@ function QRSetup({ status, onRetry }: { status: WAStatus; onRetry: () => void })
         <>
           <div>
             <h2 className="text-[18px] font-semibold text-white">Scan with your phone</h2>
-            <p className="mt-1 text-[13px] text-white/40">
+            <p className="mt-1 text-sm text-slate-500">
               Open WhatsApp → ⋮ Menu → Linked Devices → Link a Device
             </p>
           </div>
           <div className="rounded-[20px] border-4 border-white/90 bg-white p-3 shadow-2xl">
             <Image src={status.qrDataUrl} alt="WhatsApp QR code" width={240} height={240} unoptimized />
           </div>
-          <p className="text-[12px] text-white/30">QR expires in 60 seconds. Scan quickly.</p>
+          <p className="text-xs text-slate-500">QR expires in 60 seconds. Scan quickly.</p>
         </>
       ) : status.status === 'connecting' ? (
         <>
           <h2 className="text-[18px] font-semibold text-white">Connecting…</h2>
-          <p className="text-[13px] text-white/40">Generating QR code, please wait.</p>
+          <p className="text-sm text-slate-500">Generating QR code, please wait.</p>
           <RefreshCw className="h-6 w-6 animate-spin text-emerald-400" />
         </>
       ) : (
         <>
           <h2 className="text-[18px] font-semibold text-white">Connect WhatsApp</h2>
-          <p className="max-w-xs text-[13px] text-white/40">
+          <p className="max-w-xs text-sm text-slate-500">
             Link your WhatsApp to the CRM once. All your conversations will appear here in real-time. No API or business account required.
           </p>
           <button onClick={onRetry}
-            className="rounded-full bg-emerald-500 px-6 py-2.5 text-[13px] font-semibold text-white transition hover:bg-emerald-400">
+            className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400">
             Connect WhatsApp
           </button>
         </>
@@ -182,20 +182,20 @@ function AiPanel({
   return (
     <div className="flex w-72 shrink-0 flex-col border-l border-slate-800 bg-[#0A0E14]">
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-        <div className="flex items-center gap-2 text-[13px] font-semibold text-white">
+        <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Sparkles className="h-4 w-4 text-[#D4AF37]" /> AI Replies
         </div>
-        <button onClick={onClose} className="rounded p-1 text-white/35 hover:text-white">
+        <button onClick={onClose} className="rounded p-1 text-slate-500 hover:text-white">
           <X className="h-4 w-4" />
         </button>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
         {loading && (
-          <div className="flex items-center gap-2 py-4 text-[13px] text-white/35">
+          <div className="flex items-center gap-2 py-4 text-sm text-slate-500">
             <RefreshCw className="h-4 w-4 animate-spin" /> Analysing conversation…
           </div>
         )}
-        {error && <p className="text-[12px] text-red-400/80">{error}</p>}
+        {error && <p className="text-xs text-red-400/80">{error}</p>}
         {suggestions.map((s, i) => (
           <button key={i} onClick={() => onSelect(s)}
             className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white active:scale-[0.98]">
@@ -203,10 +203,10 @@ function AiPanel({
           </button>
         ))}
         {!loading && !error && suggestions.length === 0 && (
-          <p className="py-4 text-center text-[12px] text-white/25">No suggestions generated.</p>
+          <p className="py-4 text-center text-xs text-slate-600">No suggestions generated.</p>
         )}
         <button onClick={generate} disabled={loading}
-          className="mt-1 w-full rounded-full border border-white/[0.08] py-2 text-[12px] text-white/40 transition hover:text-white/70 disabled:opacity-40">
+          className="mt-1 w-full rounded-full border border-slate-800 py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
           {loading ? 'Generating…' : '↻ Regenerate'}
         </button>
       </div>
@@ -366,24 +366,24 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     <div className="flex h-[calc(100vh-100px)] overflow-hidden bg-[#111B21]">
 
       {/* ── Left sidebar: lead + inventory ───────────────────────────────── */}
-      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-white/[0.07] bg-[#202C33] lg:flex">
+      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-800 bg-[#202C33] lg:flex">
 
         {/* Sidebar header */}
-        <div className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3.5">
+        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
-            className="rounded-full p-1 text-white/40 transition hover:text-white">
+            className="rounded-full p-1 text-slate-500 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A3942] text-[13px] font-bold text-white/70">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A3942] text-sm font-bold text-slate-300">
             {initials(lead.name)}
           </div>
           <div className="min-w-0">
             <div className="truncate text-[14px] font-semibold text-white">{lead.name}</div>
-            <div className="text-[12px] text-white/40">{lead.phone}</div>
+            <div className="text-xs text-slate-500">{lead.phone}</div>
           </div>
           {isConnected && (
             <button onClick={disconnect} title="Disconnect WhatsApp"
-              className="ml-auto rounded-full p-1.5 text-white/25 transition hover:text-red-400">
+              className="ml-auto rounded-full p-1.5 text-slate-600 transition hover:text-red-400">
               <LogOut className="h-3.5 w-3.5" />
             </button>
           )}
@@ -391,8 +391,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
         <div className="flex-1 overflow-y-auto">
           {/* Lead info */}
-          <div className="border-b border-white/[0.05] px-4 py-4 space-y-2.5">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-white/25">Lead Details</div>
+          <div className="border-b border-slate-800 px-4 py-4 space-y-2.5">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">Lead Details</div>
             {[
               { label: 'Stage',    value: lead.pipelineStage },
               { label: 'Budget',   value: lead.budgetAED },
@@ -400,42 +400,42 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               { label: 'Agent',    value: lead.assignedAgent },
               { label: 'Intent',   value: `${lead.intentScore}/100` },
             ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between gap-3 text-[12px]">
-                <span className="text-white/30">{label}</span>
-                <span className="truncate text-right text-white/65">{value}</span>
+              <div key={label} className="flex justify-between gap-3 text-xs">
+                <span className="text-slate-500">{label}</span>
+                <span className="truncate text-right text-slate-300">{value}</span>
               </div>
             ))}
           </div>
 
           {/* AI next action */}
-          <div className="border-b border-white/[0.05] px-4 py-3.5">
+          <div className="border-b border-slate-800 px-4 py-3.5">
             <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#D4AF37]/60">
               <Brain className="h-3 w-3" /> AI Next Action
             </div>
-            <p className="text-[12px] leading-relaxed text-white/60">{lead.nextBestAction}</p>
+            <p className="text-xs leading-relaxed text-slate-400">{lead.nextBestAction}</p>
           </div>
 
           {/* Inventory matches */}
           <div className="px-4 py-3.5">
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-white/25">Properties to Share</div>
+            <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-slate-600">Properties to Share</div>
             <div className="space-y-2">
               {invMatches.map((p) => (
                 <button key={p.id}
                   onClick={() => setInput(
                     `I'd like to share a property that matches your requirements:\n\n*${p.name}* — ${p.area}\nFrom ${p.startingPriceAED ? `AED ${(p.startingPriceAED / 1e6).toFixed(1)}M` : 'price on request'} · ${p.bedrooms} BR${p.roi ? ` · ${p.roi}% ROI` : ''}\n${p.paymentPlan ?? ''}\n\nWould you like to know more?`,
                   )}
-                  className="group w-full rounded-[12px] border border-white/[0.07] bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
+                  className="group w-full rounded-[12px] border border-slate-800 bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate text-[11px] font-medium text-white/80 group-hover:text-white">{p.name}</div>
-                      <div className="text-[10px] text-white/35">{p.area} · {p.bedrooms}</div>
+                      <div className="truncate text-xs font-medium text-slate-100 group-hover:text-white">{p.name}</div>
+                      <div className="text-[10px] text-slate-500">{p.area} · {p.bedrooms}</div>
                     </div>
                     {p.startingPriceAED && (
                       <div className="shrink-0 text-right">
-                        <div className="text-[11px] font-semibold text-emerald-400">
+                        <div className="text-xs font-semibold text-emerald-400">
                           AED {(p.startingPriceAED / 1e6).toFixed(1)}M
                         </div>
-                        {p.roi && <div className="text-[10px] text-white/30">{p.roi}%</div>}
+                        {p.roi && <div className="text-[10px] text-slate-500">{p.roi}%</div>}
                       </div>
                     )}
                   </div>
@@ -448,9 +448,9 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
 
           {/* Notebook */}
-          <div className="border-t border-white/[0.05] px-4 py-3">
+          <div className="border-t border-slate-800 px-4 py-3">
             <Link href={`/freehold-intelligence/notebook?lead=${lead.id}`}
-              className="flex items-center gap-2 text-[12px] text-white/35 transition hover:text-[#D4AF37]">
+              className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-[#D4AF37]">
               <BookOpen className="h-3.5 w-3.5" /> View in Notebook
             </Link>
           </div>
@@ -461,37 +461,37 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Chat header — WhatsApp Web style */}
-        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#202C33] px-4">
+        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-slate-800 bg-[#202C33] px-4">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
-            className="flex-shrink-0 rounded-full p-1 text-white/40 transition hover:text-white lg:hidden">
+            className="flex-shrink-0 rounded-full p-1 text-slate-500 transition hover:text-white lg:hidden">
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A3942] text-[13px] font-bold text-white/70">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A3942] text-sm font-bold text-slate-300">
             {initials(lead.name)}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[14px] font-semibold text-white">{lead.name}</div>
-            <div className="flex items-center gap-1.5 text-[12px]">
+            <div className="flex items-center gap-1.5 text-xs">
               {isConnected ? (
                 <><Wifi className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">Connected</span></>
               ) : (
-                <><WifiOff className="h-3 w-3 text-white/30" /><span className="text-white/30">Not connected</span></>
+                <><WifiOff className="h-3 w-3 text-slate-500" /><span className="text-slate-500">Not connected</span></>
               )}
               {waStatus.connectedPhone && (
-                <span className="ml-1 text-white/20">· via {waStatus.connectedPhone}</span>
+                <span className="ml-1 text-slate-600">· via {waStatus.connectedPhone}</span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-1">
             <a href={`tel:${lead.phone}`}
-              className="rounded-full p-2 text-white/40 transition hover:bg-white/[0.06] hover:text-white">
+              className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
               <Phone className="h-4 w-4" />
             </a>
             <button onClick={() => setShowAI((v) => !v)}
-              className={`rounded-full p-2 transition hover:bg-white/[0.06] ${showAI ? 'text-[#D4AF37]' : 'text-white/40 hover:text-white'}`}>
+              className={`rounded-full p-2 transition hover:bg-slate-800/50 ${showAI ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-white'}`}>
               <Sparkles className="h-4 w-4" />
             </button>
-            <button className="rounded-full p-2 text-white/40 transition hover:bg-white/[0.06] hover:text-white">
+            <button className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
               <MoreVertical className="h-4 w-4" />
             </button>
           </div>
@@ -518,8 +518,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.113.55 4.1 1.513 5.826L0 24l6.335-1.492A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 01-4.991-1.366l-.358-.212-3.76.885.924-3.661-.233-.376A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.43-4.388 9.818-9.818 9.818z"/>
                   </svg>
                 </div>
-                <p className="mt-3 text-[14px] font-medium text-white/40">No messages yet</p>
-                <p className="mt-1 max-w-xs text-[12px] text-white/25">Send a message to {lead.name} or wait for them to reach out.</p>
+                <p className="mt-3 text-[14px] font-medium text-slate-500">No messages yet</p>
+                <p className="mt-1 max-w-xs text-xs text-slate-600">Send a message to {lead.name} or wait for them to reach out.</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -527,7 +527,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   <div key={group.label}>
                     {/* Date chip */}
                     <div className="my-4 flex justify-center">
-                      <span className="rounded-full bg-[#182229] px-3 py-1 text-[11px] text-white/40 shadow">
+                      <span className="rounded-full bg-[#182229] px-3 py-1 text-xs text-slate-500 shadow">
                         {group.label}
                       </span>
                     </div>
@@ -547,14 +547,14 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                             }`}>
                               <p className="whitespace-pre-wrap text-[13.5px] leading-[1.55]">{msg.body}</p>
                               <div className={`mt-0.5 flex items-center gap-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <span className="text-[10px] text-white/35">{fmtTime(msg.timestamp)}</span>
+                                <span className="text-[10px] text-slate-500">{fmtTime(msg.timestamp)}</span>
                                 {isMe && <StatusIcon status={msg.status} />}
                               </div>
                             </div>
                             {/* Hover copy */}
                             <button
                               onClick={() => { navigator.clipboard.writeText(msg.body); setCopied(true); setTimeout(() => setCopied(false), 1500) }}
-                              className={`absolute -top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-[#2A3942] text-white/40 transition hover:text-white group-hover:flex ${isMe ? '-left-8' : '-right-8'}`}>
+                              className={`absolute -top-1 hidden h-6 w-6 items-center justify-center rounded-full bg-[#2A3942] text-slate-500 transition hover:text-white group-hover:flex ${isMe ? '-left-8' : '-right-8'}`}>
                               <Copy className="h-3 w-3" />
                             </button>
                           </div>
@@ -587,18 +587,18 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             {/* AI suggestion strip */}
             {input === '' && (
               <button onClick={() => setShowAI(true)}
-                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-[#D4AF37]/20 py-1.5 text-[11px] text-[#D4AF37]/50 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]">
+                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-[#D4AF37]/20 py-1.5 text-xs text-[#D4AF37]/50 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]">
                 <Sparkles className="h-3 w-3" /> Ask AI to suggest a reply
               </button>
             )}
 
             <div className="flex items-end gap-2">
               {/* Emoji */}
-              <button className="shrink-0 rounded-full p-2 text-white/40 transition hover:text-white/70">
+              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <SmilePlus className="h-5 w-5" />
               </button>
               {/* Attachment */}
-              <button className="shrink-0 rounded-full p-2 text-white/40 transition hover:text-white/70">
+              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <Paperclip className="h-5 w-5" />
               </button>
 
@@ -611,7 +611,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   onKeyDown={onKeyDown}
                   placeholder="Type a message"
                   rows={1}
-                  className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-white/30 focus:outline-none"
+                  className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-slate-500 focus:outline-none"
                   style={{ maxHeight: 120, lineHeight: '1.4' }}
                 />
               </div>
@@ -637,7 +637,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
       {/* Copied toast */}
       {copied && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#2A3942] px-4 py-2 text-[12px] text-white/70 shadow-lg">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#2A3942] px-4 py-2 text-xs text-slate-300 shadow-lg">
           Copied
         </div>
       )}

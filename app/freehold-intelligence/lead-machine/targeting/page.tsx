@@ -10,10 +10,10 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 const USE_CASE_CONFIG: Record<TargetingUseCase, { label: string; color: string; badge: string }> = {
   investor:       { label: 'Investor',       color: 'text-[#D4AF37]',   badge: 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'   },
   end_user:       { label: 'End user',       color: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]' },
-  golden_visa:    { label: 'Golden Visa',    color: 'text-white/55',     badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200'           },
-  secondary:      { label: 'Secondary',      color: 'text-white/55',  badge: 'border-violet-400/20 bg-violet-400/10 text-white/55'  },
-  international:  { label: 'International',  color: 'text-white/55',    badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200'        },
-  custom:         { label: 'Custom',         color: 'text-white/60',    badge: 'border-white/10 bg-white/[0.04] text-white/50'          },
+  golden_visa:    { label: 'Golden Visa',    color: 'text-slate-400',     badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200'           },
+  secondary:      { label: 'Secondary',      color: 'text-slate-400',  badge: 'border-violet-400/20 bg-violet-400/10 text-slate-400'  },
+  international:  { label: 'International',  color: 'text-slate-400',    badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200'        },
+  custom:         { label: 'Custom',         color: 'text-slate-400',    badge: 'border-white/10 bg-slate-800/40 text-slate-400'          },
 }
 
 const UAE_CITIES = [
@@ -59,14 +59,14 @@ export default function TargetingPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Target className="h-3.5 w-3.5" /> Targeting
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           Audience templates<br />
-          <span className="text-white/35">{TARGETING_TEMPLATES.length} presets ready.</span>
+          <span className="text-slate-500">{TARGETING_TEMPLATES.length} presets ready.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[15px] leading-[1.65] text-white/55">
+        <p className="mt-5 max-w-xl text-sm leading-[1.65] text-slate-400">
           Pre-built audience configurations for UAE real estate. Apply one to a new campaign — all parameters pre-filled. Customise before launch.
         </p>
       </section>
@@ -78,10 +78,10 @@ export default function TargetingPage() {
           { icon: MapPin,  title: 'Geo-precise',        body: 'City-level targeting within the UAE. Dubai and Abu Dhabi broken out from each other.' },
           { icon: Sliders, title: 'Fully editable',     body: 'All templates are starting points — override any field in the campaign wizard.' },
         ].map(({ icon: Icon, title, body }) => (
-          <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+          <div key={title} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
             <Icon className="h-4 w-4 text-[#D4AF37]/60 mb-2" />
-            <div className="text-[13px] font-semibold text-white">{title}</div>
-            <p className="mt-1 text-[12px] text-white/40 leading-relaxed">{body}</p>
+            <div className="text-sm font-semibold text-white">{title}</div>
+            <p className="mt-1 text-xs text-slate-500 leading-relaxed">{body}</p>
           </div>
         ))}
       </div>
@@ -90,18 +90,18 @@ export default function TargetingPage() {
       <div className="mt-8">
         {/* Search bar */}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search templates by name or description…"
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] py-2.5 pl-9 pr-9 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/40 focus:outline-none"
+            className="w-full rounded-xl border border-slate-800 bg-slate-800/40 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 transition hover:text-white/60"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-400"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -113,10 +113,10 @@ export default function TargetingPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             onClick={() => setUseCaseFilter('All')}
-            className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
+            className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
               useCaseFilter === 'All'
                 ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+                : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300'
             }`}
           >
             All
@@ -125,10 +125,10 @@ export default function TargetingPage() {
             <button
               key={key}
               onClick={() => setUseCaseFilter(key)}
-              className={`rounded-full border px-3 py-1 text-[13px] font-medium transition ${
+              className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 useCaseFilter === key
                   ? USE_CASE_CONFIG[key].badge
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/65'
+                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300'
               }`}
             >
               {USE_CASE_CONFIG[key].label}
@@ -139,16 +139,16 @@ export default function TargetingPage() {
 
       {/* Templates */}
       <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+        <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
           Templates &mdash; {filtered.length} of {TARGETING_TEMPLATES.length}
         </div>
 
         {filtered.length === 0 ? (
           <div className="mt-8 flex flex-col items-center gap-4 py-16 text-center">
-            <p className="text-[15px] text-white/40">No templates match</p>
+            <p className="text-sm text-slate-500">No templates match</p>
             <button
               onClick={() => { setUseCaseFilter('All'); setQuery('') }}
-              className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-white/55 transition hover:text-white/80"
+              className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-100"
             >
               Clear filters
             </button>
@@ -160,19 +160,19 @@ export default function TargetingPage() {
               const campaignUrl = `/freehold-intelligence/lead-machine/campaigns/new?template=${tmpl.id}`
 
               return (
-                <div key={tmpl.id} className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6">
+                <div key={tmpl.id} className="rounded-[24px] border border-slate-800 bg-slate-900 p-6">
                   {/* Top */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap items-center gap-2.5">
                         <h3 className="text-[17px] font-semibold text-white">{tmpl.name}</h3>
-                        <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${uc.badge}`}>{uc.label}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${uc.badge}`}>{uc.label}</span>
                       </div>
-                      <p className="mt-1.5 text-[13px] text-white/55">{tmpl.description}</p>
+                      <p className="mt-1.5 text-sm text-slate-400">{tmpl.description}</p>
                     </div>
                     <Link
                       href={campaignUrl}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-[12px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] shrink-0"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] shrink-0"
                     >
                       Use template <ArrowUpRight className="h-3 w-3" />
                     </Link>
@@ -181,26 +181,26 @@ export default function TargetingPage() {
                   {/* Params grid */}
                   <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Age range</div>
+                      <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">Age range</div>
                       <div className="text-[14px] font-semibold text-white">{tmpl.targeting.ageMin}–{tmpl.targeting.ageMax}</div>
                     </div>
                     <div>
-                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Est. reach</div>
+                      <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">Est. reach</div>
                       <div className="text-[14px] font-semibold text-[#D4AF37]">{tmpl.estimatedReach}</div>
                     </div>
                     <div>
-                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Countries</div>
+                      <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">Countries</div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tmpl.targeting.countries.map((c) => (
-                          <span key={c} className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[12px] font-medium text-white/60">
+                          <span key={c} className="rounded bg-slate-800/40 px-1.5 py-0.5 text-xs font-medium text-slate-400">
                             {countryName(c)}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Cities</div>
-                      <div className="text-[13px] text-white/60">
+                      <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">Cities</div>
+                      <div className="text-sm text-slate-400">
                         {tmpl.targeting.cityKeys.length > 0
                           ? tmpl.targeting.cityKeys.map((k) => cityName(k)).join(', ')
                           : 'All cities'
@@ -211,10 +211,10 @@ export default function TargetingPage() {
 
                   {/* Interests */}
                   <div className="mt-4">
-                    <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30 mb-2">Interests</div>
+                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">Interests</div>
                     <div className="flex flex-wrap gap-2">
                       {tmpl.targeting.interests.map((interest) => (
-                        <span key={interest.id} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/55">
+                        <span key={interest.id} className="rounded-full border border-slate-800 bg-slate-800/40 px-2.5 py-0.5 text-sm text-slate-400">
                           {interest.name}
                         </span>
                       ))}
@@ -222,11 +222,11 @@ export default function TargetingPage() {
                   </div>
 
                   {/* Platforms */}
-                  <div className="mt-3 flex items-center gap-2 text-[12px] text-white/35">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                     <Globe className="h-3 w-3" />
                     {tmpl.targeting.publisherPlatforms.join(' + ')}
-                    <span className="text-white/15">·</span>
-                    <span className="text-white/40">{tmpl.audience}</span>
+                    <span className="text-slate-600">·</span>
+                    <span className="text-slate-500">{tmpl.audience}</span>
                   </div>
                 </div>
               )
@@ -241,13 +241,13 @@ export default function TargetingPage() {
           <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/70" />
           <div>
             <div className="text-[14px] font-semibold text-white">Custom targeting</div>
-            <p className="mt-1 text-[13px] text-white/55">
+            <p className="mt-1 text-sm text-slate-400">
               To build a fully custom audience — Lookalike, Website Custom Audience, or Customer List — create it in Meta Ads Manager first, then attach it in the campaign wizard.
               Templates above are interest-based and work immediately without any custom audience setup.
             </p>
             <Link
               href="/freehold-intelligence/lead-machine/campaigns/new"
-              className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+              className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
             >
               Launch new campaign <ArrowUpRight className="h-3 w-3" />
             </Link>

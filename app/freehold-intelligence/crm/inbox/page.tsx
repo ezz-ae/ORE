@@ -222,7 +222,7 @@ export default function CrmInboxPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[15px] font-semibold text-white">{lead.name}</span>
+                        <span className="text-sm font-semibold text-white">{lead.name}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${tone.badge}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
                           {tone.label}

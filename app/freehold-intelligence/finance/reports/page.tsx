@@ -53,7 +53,7 @@ export default function ReportsPage() {
           {RANGE_OPTIONS.slice(0, 4).map((r) => (
             <button key={r} onClick={() => setRange(r)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
-                range === r ? 'bg-white/[0.08] text-white' : 'text-slate-500 hover:text-slate-300'
+                range === r ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {r.replace('Last ', '')}
             </button>
@@ -128,7 +128,7 @@ export default function ReportsPage() {
                   const googleRow = googleHistory.find((r) => r.month === row.month)
                   const current   = row.month === history[history.length - 1].month
                   return (
-                    <tr key={i} className={`transition hover:bg-white/[0.02] ${current ? 'bg-emerald-400/[0.02]' : ''}`}>
+                    <tr key={i} className={`transition hover:bg-slate-800/40 ${current ? 'bg-emerald-400/[0.02]' : ''}`}>
                       <td className="px-4 py-3 font-medium text-slate-300">
                         {row.month}
                         {current && <span className="ml-2 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] text-emerald-400">Current</span>}

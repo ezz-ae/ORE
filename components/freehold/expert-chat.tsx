@@ -196,7 +196,7 @@ export function ExpertChat() {
           onPointerUp={onDragEnd}
           className="absolute left-0 top-0 z-10 hidden h-full w-1.5 -translate-x-1/2 cursor-col-resize md:block"
         >
-          <div className="mx-auto h-full w-px bg-white/[0.07] transition group-hover:bg-[#D4AF37]/40" />
+          <div className="mx-auto h-full w-px bg-slate-800 transition group-hover:bg-[#D4AF37]/40" />
         </div>
 
         {/* Header */}

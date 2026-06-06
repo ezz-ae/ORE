@@ -161,17 +161,17 @@ export default function NewFormPage() {
           <Check className="h-8 w-8 text-[#D4AF37]" />
         </div>
         <h2 className="text-[28px] font-semibold text-white">Form created.</h2>
-        <p className="mt-3 text-[15px] text-white/55">Your lead gen form is live on Meta and ready to attach to campaigns.</p>
+        <p className="mt-3 text-sm text-slate-400">Your lead gen form is live on Meta and ready to attach to campaigns.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/forms/${created.id}`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
           >
             View form
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/forms"
-            className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-5 py-2.5 text-[13px] text-white/70 transition hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
           >
             All forms
           </Link>
@@ -186,13 +186,13 @@ export default function NewFormPage() {
       {/* Header */}
       <Link
         href="/freehold-intelligence/lead-machine/forms"
-        className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white"
+        className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> All forms
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <FileText className="h-3.5 w-3.5" /> New lead form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white">
@@ -205,7 +205,7 @@ export default function NewFormPage() {
         {([1, 2, 3, 4] as WizardStep[]).map((s) => (
           <div
             key={s}
-            className={`h-1 flex-1 rounded-full transition-all ${s <= step ? 'bg-[#D4AF37]' : 'bg-white/[0.08]'}`}
+            className={`h-1 flex-1 rounded-full transition-all ${s <= step ? 'bg-[#D4AF37]' : 'bg-slate-800/50'}`}
           />
         ))}
       </div>
@@ -214,11 +214,11 @@ export default function NewFormPage() {
       {step === 1 && (
         <div className="mt-8 space-y-5">
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Listing</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Listing</label>
             <select
               value={form.listingId}
               onChange={(e) => onListingChange(e.target.value)}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
             >
               <option value="">Select listing…</option>
               {leadMachineListings.map((l) => (
@@ -228,31 +228,31 @@ export default function NewFormPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Form name</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Form name</label>
             <input
               value={form.formName}
               onChange={(e) => setForm((p) => ({ ...p, formName: e.target.value }))}
               placeholder="e.g. Palm Jumeirah — Lead Form"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Landing page URL</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Landing page URL</label>
             <input
               value={form.landingUrl}
               onChange={(e) => setForm((p) => ({ ...p, landingUrl: e.target.value }))}
               placeholder="https://… (used for thank-you redirect)"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Privacy policy URL</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Privacy policy URL</label>
             <input
               value={form.privacyPolicyUrl}
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function NewFormPage() {
       {step === 2 && (
         <div className="mt-8 space-y-6">
           <div>
-            <div className="mb-3 text-[12px] font-medium text-white/55">Standard fields</div>
+            <div className="mb-3 text-xs font-medium text-slate-400">Standard fields</div>
             <div className="space-y-2">
               {STANDARD_QUESTIONS.map((q) => {
                 const required  = ['FULL_NAME', 'PHONE'].includes(q.type)
@@ -272,21 +272,21 @@ export default function NewFormPage() {
                     key={q.type}
                     onClick={() => toggleStandard(q.type)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#131B2B] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-slate-800 bg-slate-900 hover:border-white/15'
                     } ${required ? 'cursor-not-allowed opacity-80' : ''}`}
                   >
                     {selected
                       ? <CheckSquare className="h-4 w-4 shrink-0 text-[#D4AF37]" />
-                      : <Square className="h-4 w-4 shrink-0 text-white/25" />
+                      : <Square className="h-4 w-4 shrink-0 text-slate-600" />
                     }
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium text-white">{q.label}</span>
+                        <span className="text-sm font-medium text-white">{q.label}</span>
                         {required && (
                           <span className="rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-medium text-[#D4AF37]">Required</span>
                         )}
                       </div>
-                      <div className="text-[13px] text-white/35">{q.description}</div>
+                      <div className="text-sm text-slate-500">{q.description}</div>
                     </div>
                   </button>
                 )
@@ -295,7 +295,7 @@ export default function NewFormPage() {
           </div>
 
           <div>
-            <div className="mb-3 text-[12px] font-medium text-white/55">Qualifying questions (custom)</div>
+            <div className="mb-3 text-xs font-medium text-slate-400">Qualifying questions (custom)</div>
             <div className="space-y-2">
               {CUSTOM_PRESETS.map((preset) => {
                 const selected = form.selectedCustom.includes(preset.key)
@@ -304,16 +304,16 @@ export default function NewFormPage() {
                     key={preset.key}
                     onClick={() => toggleCustom(preset.key)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-white/[0.08] bg-[#131B2B] hover:border-white/15'
+                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-slate-800 bg-slate-900 hover:border-white/15'
                     }`}
                   >
                     {selected
                       ? <CheckSquare className="h-4 w-4 shrink-0 text-[#D4AF37]" />
-                      : <Square className="h-4 w-4 shrink-0 text-white/25" />
+                      : <Square className="h-4 w-4 shrink-0 text-slate-600" />
                     }
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium text-white">{preset.label}</div>
-                      <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[13px] text-white/30">
+                      <div className="text-sm font-medium text-white">{preset.label}</div>
+                      <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-slate-500">
                         {preset.options.map((o) => <span key={o.value}>{o.label}</span>)}
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export default function NewFormPage() {
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-[12px] text-white/35">
+          <div className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-4 py-3 text-xs text-slate-500">
             {buildQuestions().length} questions total — shorter forms convert better. 3–4 questions is optimal for real estate leads.
           </div>
         </div>
@@ -332,34 +332,34 @@ export default function NewFormPage() {
       {/* ── Step 3: Thank you page ── */}
       {step === 3 && (
         <div className="mt-8 space-y-5">
-          <p className="text-[13px] text-white/55">Shown to the lead immediately after form submission. Keep it warm and action-forward.</p>
+          <p className="text-sm text-slate-400">Shown to the lead immediately after form submission. Keep it warm and action-forward.</p>
 
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Thank you headline</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Thank you headline</label>
             <input
               value={form.thankYouTitle}
               onChange={(e) => setForm((p) => ({ ...p, thankYouTitle: e.target.value }))}
               placeholder="Thank you — we'll be in touch."
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[12px] font-medium text-white/55">Thank you message</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">Thank you message</label>
             <textarea
               value={form.thankYouBody}
               onChange={(e) => setForm((p) => ({ ...p, thankYouBody: e.target.value }))}
               rows={3}
               placeholder="A senior advisor will contact you within 24 hours…"
-              className="w-full rounded-[14px] border border-white/[0.08] bg-[#131B2B] px-4 py-3 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-[#D4AF37]/40 transition resize-none"
+              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition resize-none"
             />
           </div>
 
           {/* Preview */}
           <div className="rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-5">
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70 mb-3">Preview</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70 mb-3">Preview</div>
             <div className="text-[17px] font-semibold text-white">{form.thankYouTitle || 'Thank you headline'}</div>
-            <p className="mt-2 text-[13px] text-white/60">{form.thankYouBody || 'Thank you message body…'}</p>
+            <p className="mt-2 text-sm text-slate-400">{form.thankYouBody || 'Thank you message body…'}</p>
           </div>
         </div>
       )}
@@ -392,13 +392,13 @@ export default function NewFormPage() {
               ],
             },
           ].map((section) => (
-            <div key={section.title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="mb-3 text-[13px] font-medium uppercase tracking-[0.18em] text-white/35">{section.title}</div>
+            <div key={section.title} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+              <div className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{section.title}</div>
               <div className="space-y-2">
                 {section.rows.map(([label, value]) => (
                   <div key={label} className="flex items-start justify-between gap-3">
-                    <span className="text-[12px] text-white/35 shrink-0">{label}</span>
-                    <span className="text-[12px] text-white/75 text-right truncate">{value}</span>
+                    <span className="text-xs text-slate-500 shrink-0">{label}</span>
+                    <span className="text-xs text-slate-200 text-right truncate">{value}</span>
                   </div>
                 ))}
               </div>
@@ -408,7 +408,7 @@ export default function NewFormPage() {
           {error && (
             <div className="flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] p-4">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-              <p className="text-[13px] text-red-200">{error}</p>
+              <p className="text-sm text-red-200">{error}</p>
             </div>
           )}
         </div>
@@ -420,7 +420,7 @@ export default function NewFormPage() {
           ? (
             <button
               onClick={() => setStep((s) => (s - 1) as WizardStep)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-[13px] text-white/65 transition hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </button>
@@ -432,7 +432,7 @@ export default function NewFormPage() {
           <button
             onClick={() => setStep((s) => (s + 1) as WizardStep)}
             disabled={step === 1 && (!form.formName || !form.landingUrl)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -440,7 +440,7 @@ export default function NewFormPage() {
           <button
             onClick={handleCreate}
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-6 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-6 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-50"
           >
             {submitting ? 'Creating…' : 'Create form'}
             {!submitting && <Check className="h-4 w-4" />}

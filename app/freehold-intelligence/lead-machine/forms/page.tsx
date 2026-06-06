@@ -45,12 +45,12 @@ export default async function FormsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <FileText className="h-3.5 w-3.5" /> Lead Forms
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
             Lead gen forms<br />
-            <span className="text-white/35">
+            <span className="text-slate-500">
               {isConfigError ? 'not connected.' : `${forms.length} total.`}
             </span>
           </h1>
@@ -58,7 +58,7 @@ export default async function FormsPage() {
 
         <Link
           href="/freehold-intelligence/lead-machine/forms/new"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE] sm:mt-10"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] sm:mt-10"
         >
           <Plus className="h-4 w-4" /> New form
         </Link>
@@ -70,11 +70,11 @@ export default async function FormsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Meta Ads not connected</div>
-              <p className="mt-1 text-[13px] text-white/60">{data.error}</p>
+              <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
+              <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/meta"
-                className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
               >
                 Set up Meta integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -88,7 +88,7 @@ export default async function FormsPage() {
         <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-[13px] text-white/65">{data.error}</p>
+            <p className="text-sm text-slate-300">{data.error}</p>
           </div>
         </div>
       )}
@@ -101,9 +101,9 @@ export default async function FormsPage() {
             { label: 'Total forms',  value: forms.length, color: 'text-white'       },
             { label: 'Total leads',  value: totalLeads,  color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+            <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-              <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
+              <div className="mt-1.5 text-sm text-slate-500">{s.label}</div>
             </div>
           ))}
         </div>
@@ -112,7 +112,7 @@ export default async function FormsPage() {
       {/* Forms list */}
       {forms.length > 0 && (
         <section className="mt-12">
-          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All forms</div>
+          <div className="text-sm font-medium uppercase tracking-wider text-slate-500">All forms</div>
           <div className="mt-4 space-y-3">
             {forms.map((form) => {
               const st = statusConfig(form.status)
@@ -120,30 +120,30 @@ export default async function FormsPage() {
                 <Link
                   key={form.id}
                   href={`/freehold-intelligence/lead-machine/forms/${form.id}`}
-                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/25"
+                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${st.dot}`} />
-                      <h3 className="text-[15px] font-semibold text-white/90 group-hover:text-white truncate">{form.name}</h3>
-                      <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${st.badge} ${st.text}`}>{st.label}</span>
+                      <h3 className="text-sm font-semibold text-white group-hover:text-white truncate">{form.name}</h3>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${st.badge} ${st.text}`}>{st.label}</span>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-white/45">
+                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        <span className="text-white/70">{form.leads_count ?? 0} leads captured</span>
+                        <span className="text-slate-300">{form.leads_count ?? 0} leads captured</span>
                       </span>
                       {form.follow_up_action_url && (
                         <span className="truncate">
-                          URL: <span className="font-mono text-white/55 truncate">{form.follow_up_action_url.replace('https://', '').slice(0, 40)}</span>
+                          URL: <span className="font-mono text-slate-400 truncate">{form.follow_up_action_url.replace('https://', '').slice(0, 40)}</span>
                         </span>
                       )}
                       <span>
-                        Created: <span className="text-white/55">{new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</span>
+                        Created: <span className="text-slate-400">{new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</span>
                       </span>
                     </div>
                   </div>
-                  <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-white/20 transition group-hover:text-[#D4AF37]" />
+                  <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
                 </Link>
               )
             })}
@@ -153,13 +153,13 @@ export default async function FormsPage() {
 
       {/* Empty state */}
       {!isConfigError && !data.error && forms.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No lead forms yet</div>
-          <p className="mt-2 text-[14px] text-white/40">Create your first Meta lead gen form to start capturing leads from campaigns.</p>
+          <p className="mt-2 text-[14px] text-slate-500">Create your first Meta lead gen form to start capturing leads from campaigns.</p>
           <Link
             href="/freehold-intelligence/lead-machine/forms/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
           >
             <Plus className="h-4 w-4" /> Create first form
           </Link>
@@ -174,10 +174,10 @@ export default async function FormsPage() {
             { icon: CheckCircle2, title: 'CRM sync',      body: 'Leads flow into your CRM and WhatsApp sequence the moment the form is submitted.' },
             { icon: Users, title: 'Native experience',    body: 'Forms open inside Meta — no redirect, no page load. 3× higher completion rate than external pages.' },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div key={title} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
               <Icon className="h-5 w-5 text-[#D4AF37]/60 mb-3" />
-              <div className="text-[13px] font-semibold text-white">{title}</div>
-              <p className="mt-1 text-[12px] leading-relaxed text-white/45">{body}</p>
+              <div className="text-sm font-semibold text-white">{title}</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{body}</p>
             </div>
           ))}
         </section>
