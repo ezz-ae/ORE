@@ -38,16 +38,30 @@ export default function AgentAIPage() {
   const connected = connections.filter((c) => c.status === 'connected').length
   const needsSetup = connections.filter((c) => c.status === 'needs_setup').length
 
-  function connect(id: string) {
+  async function connect(id: string) {
     setSettingUp(id)
-    setTimeout(() => {
+    try {
+      // Each connection type in production would open an OAuth flow or API-key entry.
+      // We ping the server-ai endpoint to acknowledge the connection intent and log it.
+      await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Agent connection initiated: ${id}`,
+          role: 'sales_agent',
+          context: { action: 'connection_setup', connectionId: id },
+        }),
+      })
+    } catch {
+      // Non-blocking — connection setup proceeds regardless
+    } finally {
       setConnections((prev) =>
         prev.map((c) =>
           c.id === id ? { ...c, status: 'connected', lastSync: new Date().toISOString() } : c,
         ),
       )
       setSettingUp(null)
-    }, 1500)
+    }
   }
 
   const grouped = (['crm', 'ads', 'portal', 'messaging', 'social', 'ai', 'automation'] as AgentConnection['category'][]).reduce(

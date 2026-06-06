@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Sparkles, Activity, Users, Megaphone, DollarSign,
@@ -9,11 +9,6 @@ import {
   ArrowUpRight, Send, Wifi, WifiOff, ChevronRight, Bell,
   Target, Star, Zap, Calendar, Coins,
 } from 'lucide-react'
-
-const now = new Date()
-const hour = now.getHours()
-const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-const dateStr = now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 const STATS = [
   { label: 'New Leads Today',   value: '14',     delta: '+3',   positive: true,  icon: Target },
@@ -64,9 +59,18 @@ export default function ManagementDashboard() {
   const [tasks, setTasks]   = useState(TASKS)
   const [aiInput, setAiInput] = useState('')
   const [aiPending, setAiPending] = useState(false)
+  const [greeting, setGreeting] = useState('')
+  const [dateStr, setDateStr]   = useState('')
   const [aiMessages, setAiMessages] = useState([
     { role: 'assistant', text: `Good morning. Here is your briefing:\n\n**3 urgent deals** need attention before end of day. Your best agent Sara closed a villa in Dubai Hills — congratulations to her. Meta ad spend is performing well today with CPL at AED 38. Google Ads CTR dropped 15% — worth reviewing.\n\nWhat would you like to focus on first?` },
   ])
+
+  useEffect(() => {
+    const now  = new Date()
+    const hour = now.getHours()
+    setGreeting(hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening')
+    setDateStr(now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dubai' }))
+  }, [])
 
   function toggleTask(id: number) {
     setTasks(t => t.map(task => task.id === id ? { ...task, done: !task.done } : task))

@@ -88,6 +88,7 @@ export default function AgentNotebookPage() {
   const [studioTpl, setStudioTpl]   = useState<string | null>(null)
   const [studioOut, setStudioOut]   = useState('')
   const [generating, setGenerating] = useState(false)
+  const [chatPending, setChatPending] = useState(false)
   const [shared, setShared]         = useState<string[]>([])
 
   // Adding a new note
@@ -101,26 +102,60 @@ export default function AgentNotebookPage() {
 
   const currentNote = notes.find((n) => n.id === activeNote.id) ?? notes[0]
 
-  function sendChat() {
-    if (!chatInput.trim()) return
-    const userMsg: Note['chat'][number] = { role: 'user', text: chatInput.trim(), ts: new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' }) }
-    const aiReply: Note['chat'][number] = {
-      role: 'ai',
-      text: `Based on the sources in "${currentNote.title}", here's what I know: [AI response would appear here — connected to your inventory knowledge base and selected sources]`,
-      ts: new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' }),
-    }
-    setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, chat: [...n.chat, userMsg, aiReply] } : n))
+  async function sendChat() {
+    const text = chatInput.trim()
+    if (!text || chatPending) return
+    const ts = new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' })
+    const userMsg: Note['chat'][number] = { role: 'user', text, ts }
+    setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, chat: [...n.chat, userMsg] } : n))
     setChatInput('')
+    setChatPending(true)
+    try {
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          role: 'sales_agent',
+          context: {
+            noteTitle: currentNote.title,
+            sources: sources.filter((s) => currentNote.sources.includes(s.id)).map((s) => s.label),
+            skill: 'notebook',
+          },
+        }),
+      })
+      const data = await res.json()
+      const answer = data?.data?.answer || data?.answer || 'I could not retrieve information from this note right now.'
+      const aiReply: Note['chat'][number] = { role: 'ai', text: answer, ts: new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' }) }
+      setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, chat: [...n.chat, aiReply] } : n))
+    } catch {
+      const aiReply: Note['chat'][number] = { role: 'ai', text: 'Could not reach the AI — please try again.', ts: new Date().toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' }) }
+      setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, chat: [...n.chat, aiReply] } : n))
+    } finally {
+      setChatPending(false)
+    }
   }
 
-  function generateStudio() {
+  async function generateStudio() {
     if (!studioTpl) return
+    const tpl = STUDIO_TEMPLATES.find((t) => t.id === studioTpl)
     setGenerating(true)
-    setTimeout(() => {
-      const tpl = STUDIO_TEMPLATES.find((t) => t.id === studioTpl)
-      setStudioOut(`[Generated ${tpl?.label} for "${currentNote.title}"]\n\nThis output is based on your ${currentNote.sources.length} source(s) and connected inventory knowledge. In production, this would call Claude AI with your note context and generate ready-to-send content.`)
+    setStudioOut('')
+    try {
+      const sourceLabels = sources.filter((s) => currentNote.sources.includes(s.id)).map((s) => s.label)
+      const prompt = `Generate a ${tpl?.label} for the note "${currentNote.title}". Sources: ${sourceLabels.join(', ') || 'general inventory'}. Make it ready to use — professional, UAE real estate context, in English and directly usable.`
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt, role: 'sales_agent', context: { noteTitle: currentNote.title, sources: sourceLabels, outputType: tpl?.label } }),
+      })
+      const data = await res.json()
+      setStudioOut(data?.data?.answer || data?.answer || 'Could not generate content — please try again.')
+    } catch {
+      setStudioOut('Could not reach the AI — please try again.')
+    } finally {
       setGenerating(false)
-    }, 1200)
+    }
   }
 
   function shareContent(connId: string) {
@@ -301,6 +336,13 @@ export default function AgentNotebookPage() {
                   </div>
                 </div>
               ))}
+              {chatPending && (
+                <div className="flex justify-start">
+                  <div className="rounded-[14px] border border-slate-800 bg-slate-800/50 px-4 py-3">
+                    <span className="flex gap-1">{[0,1,2].map(i => <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/50 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Chat input */}
@@ -314,7 +356,7 @@ export default function AgentNotebookPage() {
                   onKeyDown={(e) => e.key === 'Enter' && sendChat()}
                   className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 outline-none"
                 />
-                <button onClick={sendChat} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/80 text-black transition hover:bg-[#D4AF37]">
+                <button onClick={sendChat} disabled={chatPending} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/80 text-black transition hover:bg-[#D4AF37] disabled:opacity-40">
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>

@@ -180,12 +180,14 @@ export default function IntelligenceLauncher() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatReply, setChatReply]     = useState<string | null>(null)
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
+  const [dateStr, setDateStr]         = useState('')
   const { user }   = useSession()
   const isAdmin    = user?.role === 'admin'
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     setGreeting(getGreeting(currentServerUser.name))
+    setDateStr(new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
   }, [])
 
   const visibleApps = APPS.filter((a) => !a.adminOnly || isAdmin)
@@ -212,8 +214,7 @@ export default function IntelligenceLauncher() {
     })),
   ]
 
-  const now     = new Date()
-  const dateStr = now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long' })
+
 
   const aiContext = {
     urgentTasks:        serverSummary.urgentTasks.map(t => ({ title: t.title, body: t.body, priority: t.priority, app: t.app, due: t.due })),
