@@ -1,4 +1,6 @@
-// Full property inventory for the intelligence platform
+// Full property inventory — 8 curated + 35 mapped from projects data
+
+import { projects } from '@/src/data/projects'
 
 export type PropertyStatus =
   | 'active'
@@ -26,17 +28,17 @@ export interface InventoryProperty {
   maxPriceAED: number | null
   handoverYear: number | null
   paymentPlan: string | null
-  bedrooms: string // e.g. "1-4" or "Studio-3"
+  bedrooms: string
   totalUnits: number | null
   availableUnits: number | null
-  sizeRange: string // e.g. "650–2,400 sqft"
-  roi: number | null // percent
+  sizeRange: string
+  roi: number | null
   landingStatus: LandingStatus
   landingUrl: string | null
   hasImages: boolean
   imageCount: number
-  dataQuality: number // 0–100
-  adReadiness: number // 0–100
+  dataQuality: number
+  adReadiness: number
   linkedCampaigns: number
   leads30d: number
   views30d: number
@@ -44,7 +46,159 @@ export interface InventoryProperty {
   tags: string[]
 }
 
-export const inventoryProperties: InventoryProperty[] = [
+// ── Mapping helpers ───────────────────────────────────────────────────────────
+
+const TYPE_ORDER: Record<string, number> = {
+  Studio: 0, '1BR': 1, '2BR': 2, '3BR': 3, '4BR': 4, '5BR': 5,
+  Loft: 6, Townhouse: 7, Villa: 8, Penthouse: 9, Office: 10, Retail: 11,
+}
+
+function inferType(unitTypes: string[]): InventoryProperty['type'] {
+  const s = unitTypes.join(',')
+  if (s.includes('Office') || s.includes('Retail')) return 'commercial'
+  if (s.includes('Villa') && !s.includes('Townhouse')) return 'villa'
+  if (s.includes('Townhouse') && !s.includes('Villa')) return 'townhouse'
+  if (unitTypes.length === 1 && s.includes('Penthouse')) return 'penthouse'
+  return 'apartment'
+}
+
+function bedroomsLabel(unitTypes: string[]): string {
+  const sorted = [...unitTypes].sort((a, b) => (TYPE_ORDER[a] ?? 99) - (TYPE_ORDER[b] ?? 99))
+  if (sorted.length === 1) return sorted[0]
+  return `${sorted[0]}–${sorted[sorted.length - 1]}`
+}
+
+function parseHandoverYear(h: string): number | null {
+  if (h === 'Ready') return 2024
+  const m = h.match(/(\d{4})/)
+  return m ? parseInt(m[1]) : null
+}
+
+function projectSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+const AREA_ROI: Record<string, number> = {
+  'Jumeirah Village Circle':  8.1,
+  'Arjan':                    8.5,
+  'Dubai South':              9.2,
+  'International City':       10.1,
+  'Dubai Silicon Oasis':      8.8,
+  'Dubai Sports City':        8.3,
+  'Motor City':               7.6,
+  'Al Furjan':                7.9,
+  'Town Square':              7.2,
+  'Mirdif':                   7.1,
+  'Al Jaddaf':                7.0,
+  'Meydan':                   7.4,
+  'Dubai Hills Estate':       6.4,
+  'Dubai Creek Harbour':      6.8,
+  'Mohammed Bin Rashid City': 5.8,
+  'Dubai Marina':             5.6,
+  'Business Bay':             6.9,
+  'Downtown Dubai':           5.5,
+  'Expo City':                6.2,
+  'Bluewaters Island':        5.3,
+  'The Valley':               5.9,
+  'Tilal Al Ghaf':            4.8,
+  'Damac Lagoons':            5.2,
+  'Dubai Islands':            6.5,
+  'Jumeirah Garden City':     7.3,
+  'Jumeirah Lakes Towers':    7.0,
+  'Dubai Maritime City':      6.7,
+  'Mina Rashid':              6.8,
+  'Palm Jumeirah':            5.0,
+  'Al Mamzar Waterfront':     7.5,
+  'Saadiyat Island':          4.9,
+  'Yas Island':               7.2,
+  'Al Reem Island':           7.8,
+  'Al Marjan Island':         8.9,
+  'Ras Al Khaimah':           8.0,
+}
+
+const BEDROOMS_SIZE: Record<string, string> = {
+  'Studio':            '350–520 sqft',
+  'Studio–1BR':        '350–800 sqft',
+  'Studio–2BR':        '350–1,250 sqft',
+  'Studio–2':          '350–1,250 sqft',
+  'Studio–3BR':        '350–1,900 sqft',
+  'Studio–3':          '350–1,900 sqft',
+  '1BR–2BR':           '650–1,350 sqft',
+  '1BR–3BR':           '650–2,050 sqft',
+  '1BR':               '650–950 sqft',
+  '1BR–Loft':          '720–1,200 sqft',
+  '1–2':               '650–1,350 sqft',
+  '1–3':               '650–2,050 sqft',
+  '2BR–3BR':           '1,050–2,050 sqft',
+  '2–3':               '1,050–2,050 sqft',
+  'Townhouse':         '1,850–3,400 sqft',
+  'Townhouse–Villa':   '1,850–5,600 sqft',
+  'Villa':             '3,200–7,800 sqft',
+  'Commercial':        '500–4,200 sqft',
+}
+
+function sizeRangeFor(unitTypes: string[]): string {
+  const label = bedroomsLabel(unitTypes)
+  return BEDROOMS_SIZE[label] ?? '550–1,800 sqft'
+}
+
+function mapProjectToInventory(p: typeof projects[0], index: number): InventoryProperty {
+  const readiness = p.campaignReadiness
+  const landingStatus: LandingStatus = readiness >= 90 ? 'live' : readiness >= 80 ? 'draft' : 'missing'
+  const slug = projectSlug(p.projectName)
+  const handoverYear = parseHandoverYear(p.handover)
+
+  // Deterministic but varied counts
+  const seed = (index + 1) * 7 % 11 + 1
+  const leads30d = landingStatus === 'live'
+    ? Math.round(readiness * seed * 0.08)
+    : landingStatus === 'draft'
+      ? Math.round(readiness * 0.04)
+      : 0
+  const views30d = leads30d > 0 ? leads30d * (13 + (index % 9)) : 0
+
+  const totalUnits = 100 + (index * 19) % 320
+  const isReady = p.status === 'Ready'
+  const availableUnits = isReady
+    ? Math.max(4, Math.round(totalUnits * 0.08))
+    : Math.round(totalUnits * (0.35 + (index % 5) * 0.07))
+
+  const maxPrice = Math.round(p.startingPrice * (1.6 + (index % 6) * 0.2) / 10000) * 10000
+
+  return {
+    id: p.id,
+    slug,
+    name: p.projectName,
+    area: p.area,
+    developer: p.developer,
+    type: inferType(p.unitTypes),
+    status: p.status === 'Off-plan' ? 'off_plan' : p.status === 'Under construction' ? 'under_construction' : 'ready',
+    startingPriceAED: p.startingPrice,
+    maxPriceAED: maxPrice,
+    handoverYear,
+    paymentPlan: p.paymentPlan,
+    bedrooms: bedroomsLabel(p.unitTypes),
+    totalUnits,
+    availableUnits,
+    sizeRange: sizeRangeFor(p.unitTypes),
+    roi: AREA_ROI[p.area] ?? 6.5,
+    landingStatus,
+    landingUrl: landingStatus !== 'missing' ? `/lp/${slug}` : null,
+    hasImages: readiness >= 85,
+    imageCount: readiness >= 85 ? Math.round(readiness / 11) : 0,
+    dataQuality: p.confidence,
+    adReadiness: readiness,
+    linkedCampaigns: readiness >= 90 ? ((index % 3) + 1) : readiness >= 80 ? 1 : 0,
+    leads30d,
+    views30d,
+    lastUpdated: p.lastUpdated,
+    tags: p.tags,
+  }
+}
+
+// ── 8 curated detailed properties ────────────────────────────────────────────
+
+const curatedProperties: InventoryProperty[] = [
   {
     id: 'prop_palm_001',
     slug: 'palm-jumeirah-investor-pack',
@@ -278,6 +432,16 @@ export const inventoryProperties: InventoryProperty[] = [
     tags: ['coming_soon', 'rak', 'affordable'],
   },
 ]
+
+// ── 35 derived from projects data ─────────────────────────────────────────────
+
+const derivedProperties: InventoryProperty[] = projects.map((p, i) => mapProjectToInventory(p, i))
+
+// ── Combined export ───────────────────────────────────────────────────────────
+
+export const inventoryProperties: InventoryProperty[] = [...curatedProperties, ...derivedProperties]
+
+// ── Stats helper ──────────────────────────────────────────────────────────────
 
 export function getInventoryStats() {
   const props = inventoryProperties

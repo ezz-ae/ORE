@@ -1,6 +1,7 @@
 import { query } from "@/lib/db"
 import type { AuditEvent, DashboardSnapshot, Milestone, RbacRow, ReviewItem, SystemModule } from "./types"
 import { fallbackDashboard, fallbackMilestones, fallbackSystems } from "./data/fallbacks"
+import { inventoryProperties, type InventoryProperty } from "./inventory"
 
 const safeQuery = async <T,>(sql: string, params: unknown[] = [], fallback: T[] = []): Promise<T[]> => {
   try {
@@ -103,4 +104,13 @@ export async function getAuditEvents(): Promise<AuditEvent[]> {
     LIMIT 50
   `)
   return rows.map(serializeTemporalFields)
+}
+
+export async function getInventoryProperties(): Promise<InventoryProperty[]> {
+  const rows = await safeQuery<InventoryProperty>(
+    `SELECT * FROM freehold_site_projects ORDER BY campaign_readiness DESC`,
+    [],
+    inventoryProperties,
+  )
+  return rows.length ? rows : inventoryProperties
 }
