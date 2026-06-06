@@ -1,110 +1,222 @@
+'use client'
+
+import { useState } from 'react'
+import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, Wallet, RefreshCw } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
-import { CheckCircle2, Clock } from 'lucide-react'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
+const PAYMENT_METHODS = [
+  { id: 'pm1', brand: 'Visa',       last4: '4242', expiry: '08/27', isDefault: true  },
+  { id: 'pm2', brand: 'Mastercard', last4: '8923', expiry: '03/26', isDefault: false },
+]
+
+const TRANSFERS = [
+  { id: 'TXN-4491', amount: 18500, date: '2026-06-01', method: 'Wire', ref: 'META-JUN-2026', status: 'settled' },
+  { id: 'TXN-4388', amount: 14200, date: '2026-05-01', method: 'Wire', ref: 'META-MAY-2026', status: 'settled' },
+  { id: 'TXN-4280', amount: 12100, date: '2026-05-01', method: 'Wire', ref: 'GADS-MAY-2026', status: 'settled' },
+  { id: 'TXN-4178', amount: 15800, date: '2026-04-01', method: 'Wire', ref: 'META-APR-2026', status: 'settled' },
+  { id: 'TXN-4071', amount: 11400, date: '2026-04-01', method: 'Wire', ref: 'GADS-APR-2026', status: 'settled' },
+]
+
+const SCHEDULED = [
+  { id: 'SCH-001', desc: 'Meta Ads — June cycle', dueDate: 'Jun 15, 2026', amount: 22000, status: 'upcoming'    },
+  { id: 'SCH-002', desc: 'Google Ads — June cycle', dueDate: 'Jun 20, 2026', amount: 16500, status: 'upcoming'  },
+  { id: 'SCH-003', desc: 'Meta Ads — July cycle',   dueDate: 'Jul 15, 2026', amount: 22000, status: 'projected' },
+]
+
+const PENDING_COMMISSIONS = [
+  { agent: 'Noura Al Mansoori', amount: 4200, tier: 'Gold',   property: 'Emaar Beachfront 3BR', status: 'approved' },
+  { agent: 'James Thornton',    amount: 2800, tier: 'Silver', property: 'DAMAC Hills 2 Studio',  status: 'pending'  },
+  { agent: 'Priya Nair',        amount: 1900, tier: 'Bronze', property: 'JVC Studio Unit',        status: 'pending'  },
+]
+
 export default function PaymentsPage() {
-  const paid = financeSummary.invoices.filter((i) => i.status === 'paid')
-  const pending = financeSummary.invoices.filter((i) => i.status === 'processing' || i.status === 'pending')
-  const history = financeSummary.monthlyHistory.filter((r) => r.platform === 'total')
+  const [tab, setTab] = useState<'schedule' | 'history' | 'commissions'>('schedule')
+  const [addingCard, setAddingCard] = useState(false)
+
+  const totalScheduled = SCHEDULED.filter((s) => s.status === 'upcoming').reduce((sum, s) => sum + s.amount, 0)
+  const totalHistory   = TRANSFERS.reduce((sum, t) => sum + t.amount, 0)
+  const pendingCommissions = PENDING_COMMISSIONS.filter((c) => c.status === 'pending').reduce((sum, c) => sum + c.amount, 0)
 
   return (
-    <div className="p-6 lg:p-8 space-y-7">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white/90">Payments</h1>
-        <p className="mt-1 text-sm text-white/40">Payment history and upcoming charges</p>
+    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+
+      <div className="mb-7">
+        <h1 className="text-[20px] font-semibold text-white">Payments</h1>
+        <p className="mt-1 text-[12px] text-white/30">Platform billing, wire transfers, and agent commissions</p>
       </div>
 
-      {/* Upcoming */}
-      {pending.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-amber-400/80">
-            <Clock className="h-3.5 w-3.5" /> Upcoming Payments
+      {/* Summary tiles */}
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        {[
+          { label: 'Due this month', value: fmt(totalScheduled), Icon: Clock,         color: 'text-amber-400'   },
+          { label: 'Paid YTD',       value: fmt(totalHistory),   Icon: CheckCircle2,  color: 'text-emerald-400' },
+          { label: 'Pending payouts',value: fmt(pendingCommissions), Icon: Wallet,    color: 'text-[#D4AF37]'   },
+        ].map(({ label, value, Icon, color }) => (
+          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+            <Icon className={`h-4 w-4 ${color}`} />
+            <div className="mt-2 text-[17px] font-semibold text-white">{value}</div>
+            <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
           </div>
-          <div className="space-y-3">
-            {pending.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between rounded-2xl border border-amber-500/15 bg-amber-500/[0.04] px-5 py-4">
-                <div>
-                  <div className="font-medium text-white/85">{inv.id}</div>
-                  <div className="mt-0.5 text-[13px] text-white/40">{inv.period} · Due {inv.dueDate}</div>
+        ))}
+      </div>
+
+      {/* Payment methods */}
+      <section className="mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/25">Payment Methods</div>
+          <button onClick={() => setAddingCard((v) => !v)}
+            className="flex items-center gap-1 text-[11px] text-emerald-400/70 hover:text-emerald-400 transition">
+            <Plus className="h-3 w-3" /> Add card
+          </button>
+        </div>
+        <div className="space-y-2">
+          {PAYMENT_METHODS.map((pm) => (
+            <div key={pm.id} className="flex items-center gap-4 rounded-[14px] border border-white/[0.07] bg-[#131B2B] px-4 py-3.5">
+              <div className="flex h-9 w-14 items-center justify-center rounded-[8px] border border-white/[0.08] bg-white/[0.04]">
+                <CreditCard className="h-4 w-4 text-white/30" />
+              </div>
+              <div className="flex-1">
+                <div className="text-[13px] font-medium text-white/80">
+                  {pm.brand} ···· {pm.last4}
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold tabular-nums text-amber-400">{fmt(inv.amountAED)}</div>
-                  <div className="mt-0.5 text-[13px] text-amber-400/60 capitalize">{inv.status}</div>
+                <div className="text-[11px] text-white/30">Expires {pm.expiry}</div>
+              </div>
+              {pm.isDefault
+                ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Default</span>
+                : <button className="text-[11px] text-white/25 hover:text-white/60 transition">Set default</button>
+              }
+            </div>
+          ))}
+          <div className="flex items-center gap-4 rounded-[14px] border border-white/[0.07] bg-[#131B2B] px-4 py-3.5">
+            <div className="flex h-9 w-14 items-center justify-center rounded-[8px] border border-white/[0.08] bg-white/[0.04]">
+              <Landmark className="h-4 w-4 text-white/30" />
+            </div>
+            <div className="flex-1">
+              <div className="text-[13px] font-medium text-white/80">Wire Transfer (SWIFT)</div>
+              <div className="text-[11px] text-white/30">ENBD — AE070340****9821</div>
+            </div>
+            <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-0.5 text-[10px] font-medium text-sky-400">Verified</span>
+          </div>
+        </div>
+        {addingCard && (
+          <div className="mt-3 rounded-[14px] border border-emerald-400/15 bg-emerald-400/[0.03] p-4 space-y-2">
+            <div className="text-[12px] font-medium text-white/60 mb-3">Add payment card</div>
+            <input placeholder="Card number" className="w-full rounded-[9px] border border-white/[0.08] bg-white/[0.04] px-3 py-2 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/30" />
+            <div className="flex gap-2">
+              <input placeholder="MM / YY" className="flex-1 rounded-[9px] border border-white/[0.08] bg-white/[0.04] px-3 py-2 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/30" />
+              <input placeholder="CVV" className="w-20 rounded-[9px] border border-white/[0.08] bg-white/[0.04] px-3 py-2 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-emerald-400/30" />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button className="rounded-full bg-emerald-500 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
+              <button onClick={() => setAddingCard(false)} className="rounded-full border border-white/[0.08] px-4 py-1.5 text-[12px] text-white/35 hover:text-white/60 transition">Cancel</button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Tabs */}
+      <div className="mb-4 flex gap-1 rounded-[12px] border border-white/[0.07] bg-[#131B2B] p-1">
+        {[
+          { id: 'schedule'    as const, label: 'Scheduled'   },
+          { id: 'history'     as const, label: 'History'     },
+          { id: 'commissions' as const, label: 'Commissions' },
+        ].map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex-1 rounded-[9px] py-2 text-[12px] font-medium transition ${
+              tab === t.id ? 'bg-white/[0.08] text-white' : 'text-white/35 hover:text-white/60'
+            }`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Scheduled */}
+      {tab === 'schedule' && (
+        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+          {SCHEDULED.map((s) => (
+            <div key={s.id} className="flex items-center gap-4 px-5 py-4">
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                s.status === 'upcoming' ? 'bg-amber-400/10' : 'bg-white/[0.04]'
+              }`}>
+                <Clock className={`h-3.5 w-3.5 ${s.status === 'upcoming' ? 'text-amber-400' : 'text-white/20'}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium text-white/80">{s.desc}</div>
+                <div className="text-[11px] text-white/30">{s.dueDate}</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-[13px] font-semibold text-white/75">{fmt(s.amount)}</div>
+                <div className={`text-[10px] capitalize ${s.status === 'upcoming' ? 'text-amber-400' : 'text-white/25'}`}>{s.status}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* History */}
+      {tab === 'history' && (
+        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+          {TRANSFERS.map((t) => (
+            <div key={t.id} className="flex items-center gap-4 px-5 py-4">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400/60" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium text-white/80">{t.ref}</div>
+                <div className="flex items-center gap-2 text-[11px] text-white/25">
+                  <span className="font-mono">{t.id}</span>
+                  <span>·</span>
+                  <span>{t.method}</span>
+                  <span>·</span>
+                  <span>{new Date(t.date).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-[13px] font-semibold text-emerald-400">{fmt(t.amount)}</span>
+                <button className="text-white/20 hover:text-white/50 transition">
+                  <ArrowDownToLine className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.04]">
+            <span className="text-[11px] text-white/25">{TRANSFERS.length} transactions</span>
+            <span className="text-[11px] text-white/50">Total paid: <span className="text-emerald-400 font-medium">{fmt(totalHistory)}</span></span>
+          </div>
+        </div>
+      )}
+
+      {/* Commissions */}
+      {tab === 'commissions' && (
+        <div className="space-y-3">
+          <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+            {PENDING_COMMISSIONS.map((c) => (
+              <div key={c.agent} className="flex items-center gap-4 px-5 py-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/10 text-[12px] font-bold text-[#D4AF37]">
+                  {c.agent[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium text-white/80">{c.agent}</div>
+                  <div className="text-[11px] text-white/25 truncate">{c.property}</div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[13px] font-semibold text-[#D4AF37]">{fmt(c.amount)}</span>
+                  {c.status === 'approved'
+                    ? <button className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3" /> Pay now
+                      </button>
+                    : <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">Pending</span>
+                  }
                 </div>
               </div>
             ))}
           </div>
-        </section>
+          <div className="rounded-[12px] border border-white/[0.06] bg-white/[0.02] px-4 py-3 flex items-center gap-2 text-[11px] text-white/25">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-400/50" />
+            Approved commissions auto-transfer on the 1st of each month. Pending items require owner approval.
+          </div>
+        </div>
       )}
-
-      {/* Payment history */}
-      <section>
-        <div className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-wider text-white/40">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Payment History
-        </div>
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.05]">
-                {['Invoice', 'Platform', 'Period', 'Paid On', 'Amount'].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-white/35 last:text-right">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {paid.map((inv) => (
-                <tr key={inv.id} className="transition hover:bg-white/[0.02]">
-                  <td className="px-5 py-4 font-mono text-[12px] text-white/55">{inv.id}</td>
-                  <td className="px-5 py-4 text-white/65 capitalize">{inv.platform === 'meta' ? 'Meta Ads' : 'Google Ads'}</td>
-                  <td className="px-5 py-4 text-white/65">{inv.period}</td>
-                  <td className="px-5 py-4 text-white/45 text-[13px]">{inv.dueDate}</td>
-                  <td className="px-5 py-4 text-right tabular-nums font-medium text-[#D4AF37]">{fmt(inv.amountAED)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Monthly totals */}
-      <section>
-        <div className="mb-4 text-[12px] font-medium uppercase tracking-wider text-white/40">Monthly Totals</div>
-        <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.05]">
-                {['Month', 'Budget', 'Actual Spend', 'Leads', 'Avg CPL', 'Δ vs Budget'].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-white/35 last:text-right">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {history.map((row, i) => {
-                const delta = row.spentAED - row.budgetAED
-                const isCurrent = row.month === 'May 2026'
-                return (
-                  <tr key={i} className={`transition hover:bg-white/[0.02] ${isCurrent ? 'bg-[#D4AF37]/[0.02]' : ''}`}>
-                    <td className="px-5 py-4 font-medium text-white/75">
-                      {row.month}
-                      {isCurrent && <span className="ml-2 rounded-full bg-[#D4AF37]/15 px-1.5 py-0.5 text-[11px] text-[#D4AF37]">Current</span>}
-                    </td>
-                    <td className="px-5 py-4 tabular-nums text-white/50">{fmt(row.budgetAED)}</td>
-                    <td className="px-5 py-4 tabular-nums text-white/80">{fmt(row.spentAED)}</td>
-                    <td className="px-5 py-4 tabular-nums text-white/65">{row.leadsGenerated}</td>
-                    <td className="px-5 py-4 tabular-nums text-[#D4AF37]">AED {row.avgCpl}</td>
-                    <td className="px-5 py-4 text-right tabular-nums">
-                      <span className={delta < 0 ? 'text-[#D4AF37]' : 'text-white/40'}>
-                        {delta < 0 ? `−${fmt(Math.abs(delta))}` : `+${fmt(delta)}`}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   )
 }

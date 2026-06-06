@@ -1,131 +1,185 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, CheckCircle2, Clock, AlertCircle, ArrowDownToLine } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
-function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
-  return platform === 'meta' ? (
-    <span className="inline-flex items-center rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[13px] font-medium text-blue-400">Meta</span>
-  ) : (
-    <span className="inline-flex items-center rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-[13px] font-medium text-[#D4AF37]">Google</span>
-  )
+const PLATFORM_STYLE: Record<string, string> = {
+  meta:   'text-blue-400   bg-blue-400/10   border-blue-400/20',
+  google: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    paid:       'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
-    processing: 'border-amber-500/20 bg-amber-500/10 text-amber-400',
-    overdue:    'border-red-500/20 bg-red-500/10 text-red-400',
-    pending:    'border-white/[0.08] bg-white/[0.04] text-white/45',
-  }
-  return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[13px] font-medium ${map[status] ?? map.pending}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  )
+const STATUS_STYLE: Record<string, string> = {
+  paid:       'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  processing: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
+  overdue:    'text-red-400     bg-red-400/10     border-red-400/20',
+  pending:    'text-white/40    bg-white/[0.04]   border-white/10',
+}
+
+const STATUS_ICON: Record<string, React.ElementType> = {
+  paid: CheckCircle2, processing: Clock, overdue: AlertCircle, pending: Clock,
 }
 
 type Filter = 'All' | 'paid' | 'processing' | 'overdue' | 'pending'
 
 export default function InvoicesPage() {
-  const [filter, setFilter] = useState<Filter>('All')
-  const all = financeSummary.invoices
+  const [filter,    setFilter]    = useState<Filter>('All')
+  const [expanded,  setExpanded]  = useState<string | null>(null)
+  const [downloading, setDownloading] = useState<string | null>(null)
+
+  const all     = financeSummary.invoices
   const visible = filter === 'All' ? all : all.filter((i) => i.status === filter)
 
-  const totalPending = all.filter((i) => i.status === 'processing' || i.status === 'pending').reduce((s, i) => s + i.amountAED, 0)
+  const totalPending = all.filter((i) => ['processing', 'pending'].includes(i.status)).reduce((s, i) => s + i.amountAED, 0)
   const totalPaid    = all.filter((i) => i.status === 'paid').reduce((s, i) => s + i.amountAED, 0)
 
+  function download(id: string) {
+    setDownloading(id)
+    setTimeout(() => setDownloading(null), 1500)
+  }
+
+  const FILTERS: { id: Filter; label: string }[] = [
+    { id: 'All',        label: `All (${all.length})` },
+    { id: 'paid',       label: `Paid (${all.filter((i) => i.status === 'paid').length})` },
+    { id: 'processing', label: `Processing (${all.filter((i) => i.status === 'processing').length})` },
+    { id: 'overdue',    label: `Overdue (${all.filter((i) => i.status === 'overdue').length})` },
+    { id: 'pending',    label: `Pending (${all.filter((i) => i.status === 'pending').length})` },
+  ]
+
   return (
-    <div className="p-6 lg:p-8 space-y-7">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+
+      <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white/90">Invoices</h1>
-          <p className="mt-1 text-sm text-white/40">Platform billing — Meta Ads & Google Ads</p>
+          <h1 className="text-[20px] font-semibold text-white">Invoices</h1>
+          <p className="mt-1 text-[12px] text-white/30">Platform billing — Meta Ads &amp; Google Ads</p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2 text-[13px] text-white/55 transition hover:border-white/20 hover:text-white/80">
+        <button className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:text-white/70">
           <Download className="h-3.5 w-3.5" /> Export CSV
         </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* Summary tiles */}
+      <div className="mb-5 grid grid-cols-4 gap-3">
         {[
-          { label: 'Total Invoices', value: all.length.toString() },
-          { label: 'Paid',          value: all.filter((i) => i.status === 'paid').length.toString(), accent: 'text-[#D4AF37]' },
-          { label: 'Processing',    value: all.filter((i) => i.status === 'processing').length.toString(), accent: 'text-amber-400' },
-          { label: 'Amount Pending',value: fmt(totalPending), accent: 'text-amber-400' },
-        ].map(({ label, value, accent }) => (
-          <div key={label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">{label}</div>
-            <div className={`mt-2 text-xl font-semibold tabular-nums ${accent ?? 'text-white/80'}`}>{value}</div>
+          { label: 'Total',    value: all.length.toString(),                              color: 'text-white/70'    },
+          { label: 'Paid',     value: all.filter((i) => i.status === 'paid').length.toString(), color: 'text-emerald-400' },
+          { label: 'Processing', value: all.filter((i) => i.status === 'processing').length.toString(), color: 'text-amber-400' },
+          { label: 'Pending',  value: fmt(totalPending),                                  color: 'text-amber-400'   },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-3.5">
+            <div className="text-[10px] text-white/25 uppercase tracking-wider">{label}</div>
+            <div className={`mt-1.5 text-[17px] font-semibold ${color}`}>{value}</div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-1.5">
-        {(['All', 'paid', 'processing', 'overdue', 'pending'] as Filter[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`rounded-full px-3 py-1 text-[13px] font-medium transition border ${
-              filter === s
-                ? 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-white/[0.08] text-white/40 hover:text-white/65'
-            }`}
-          >
-            {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+      {/* Overdue alert */}
+      {all.some((i) => i.status === 'overdue') && (
+        <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-red-400/15 bg-red-400/[0.04] px-4 py-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+          <div>
+            <div className="text-[13px] font-medium text-red-300">Overdue payment</div>
+            <div className="mt-0.5 text-[12px] text-white/35">
+              {all.filter((i) => i.status === 'overdue').map((i) => `${i.id} — ${fmt(i.amountAED)}`).join(' · ')}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter tabs */}
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {FILTERS.map(({ id, label }) => (
+          <button key={id} onClick={() => setFilter(id)}
+            className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${
+              filter === id
+                ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
+                : 'border-white/[0.07] text-white/35 hover:text-white/65'
+            }`}>
+            {label}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/[0.05]">
-                {['Invoice ID', 'Platform', 'Period', 'Issued', 'Due Date', 'Amount', 'Status', ''].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-white/35 last:text-right">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {visible.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-[13px] text-white/30">No invoices match this filter.</td>
-                </tr>
-              ) : visible.map((inv) => (
-                <tr key={inv.id} className="transition hover:bg-white/[0.02]">
-                  <td className="px-5 py-4 font-mono text-[12px] text-white/55">{inv.id}</td>
-                  <td className="px-5 py-4"><PlatformBadge platform={inv.platform} /></td>
-                  <td className="px-5 py-4 text-white/65">{inv.period}</td>
-                  <td className="px-5 py-4 text-white/45 text-[13px]">{inv.issuedDate}</td>
-                  <td className="px-5 py-4 text-white/45 text-[13px]">{inv.dueDate}</td>
-                  <td className="px-5 py-4 text-right tabular-nums font-medium text-white/85">{fmt(inv.amountAED)}</td>
-                  <td className="px-5 py-4"><StatusBadge status={inv.status} /></td>
-                  <td className="px-5 py-4 text-right">
-                    <button className="inline-flex items-center gap-1.5 text-[13px] text-white/35 transition hover:text-white/65">
-                      <FileText className="h-3.5 w-3.5" /> PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="border-t border-white/[0.04] px-5 py-3 flex items-center justify-between">
-          <span className="text-[13px] text-white/30">{visible.length} invoice{visible.length !== 1 ? 's' : ''}</span>
-          <span className="text-[13px] text-white/45">
-            Paid: <span className="text-[#D4AF37] tabular-nums">{fmt(totalPaid)}</span>
-            <span className="mx-2 text-white/20">·</span>
-            Pending: <span className="text-amber-400 tabular-nums">{fmt(totalPending)}</span>
+      {/* Invoice list */}
+      <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+        {visible.length === 0
+          ? <div className="px-5 py-10 text-center text-[13px] text-white/25">No invoices match this filter.</div>
+          : visible.map((inv) => {
+              const StatusIcon = STATUS_ICON[inv.status] ?? Clock
+              const isExpanded = expanded === inv.id
+              const isDownloading = downloading === inv.id
+              return (
+                <div key={inv.id}>
+                  <button className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-white/[0.02] transition"
+                    onClick={() => setExpanded(isExpanded ? null : inv.id)}>
+                    <StatusIcon className={`h-4 w-4 shrink-0 ${STATUS_STYLE[inv.status].split(' ')[0]}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-[12px] text-white/55">{inv.id}</span>
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${PLATFORM_STYLE[inv.platform]}`}>
+                          {inv.platform === 'meta' ? 'Meta' : 'Google'}
+                        </span>
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLE[inv.status]}`}>
+                          {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-white/25">
+                        {inv.period} · Due {inv.dueDate}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[14px] font-semibold text-white/75 tabular-nums">{fmt(inv.amountAED)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); download(inv.id) }}
+                        className="flex items-center gap-1 text-white/20 hover:text-white/60 transition">
+                        {isDownloading
+                          ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                          : <ArrowDownToLine className="h-4 w-4" />
+                        }
+                      </button>
+                    </div>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t border-white/[0.04] bg-white/[0.01] px-5 py-4">
+                      <div className="grid grid-cols-3 gap-4 text-[12px]">
+                        {[
+                          { label: 'Invoice date', value: inv.issuedDate },
+                          { label: 'Due date',     value: inv.dueDate    },
+                          { label: 'Platform',     value: inv.platform === 'meta' ? 'Meta Platforms Inc.' : 'Google LLC' },
+                        ].map(({ label, value }) => (
+                          <div key={label}>
+                            <div className="text-[10px] text-white/25 uppercase tracking-wider">{label}</div>
+                            <div className="mt-1 text-white/60">{value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 pt-3 border-t border-white/[0.04]">
+                        <button onClick={() => download(inv.id)}
+                          className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-[12px] font-medium text-emerald-400 transition hover:bg-emerald-400/15">
+                          <FileText className="h-3.5 w-3.5" /> Download PDF
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+        }
+
+        {/* Footer total */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.04]">
+          <span className="text-[11px] text-white/25">{visible.length} invoice{visible.length !== 1 ? 's' : ''}</span>
+          <span className="text-[11px] text-white/40">
+            Paid <span className="text-emerald-400 font-medium tabular-nums">{fmt(totalPaid)}</span>
+            <span className="mx-2 text-white/15">·</span>
+            Pending <span className="text-amber-400 font-medium tabular-nums">{fmt(totalPending)}</span>
           </span>
         </div>
       </div>
+
     </div>
   )
 }
