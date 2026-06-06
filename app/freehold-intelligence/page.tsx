@@ -128,6 +128,18 @@ const APPS = [
     card:   'border-slate-800 hover:border-white/[0.15]',
     icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
   },
+  {
+    id:     'management',
+    label:  'Management',
+    sub:    'Admin · Credits · Team · Finance',
+    href:   '/management',
+    Icon:   ShieldCheck,
+    metric: 'Admin control panel',
+    badge:  0,
+    accent: '#D4AF37',
+    card:   'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
+    icon:   'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
+  },
 ]
 
 const ACTIVITY = [

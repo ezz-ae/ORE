@@ -113,6 +113,10 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-screen bg-[#0D1117]">
+      <style>{`
+        body > div > header,
+        body > div > footer { display: none !important; }
+      `}</style>
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-60 border-r border-slate-800 bg-[#090C12] lg:block">
         <Sidebar />
