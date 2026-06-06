@@ -102,12 +102,12 @@ export default function GoogleOverviewPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" /> Google Ads
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
             Google Ads<br />
-            <span className="text-white/35">
+            <span className="text-slate-500">
               {loading ? '…' : configErr ? 'not connected.' : `${campaigns.length} campaigns.`}
             </span>
           </h1>
@@ -117,14 +117,14 @@ export default function GoogleOverviewPage() {
           <button
             onClick={() => fetchAll(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] text-white/50 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#5A97F5]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
             <Zap className="h-4 w-4" /> New campaign
           </Link>
@@ -137,11 +137,11 @@ export default function GoogleOverviewPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Google Ads not connected</div>
-              <p className="mt-1 text-[13px] text-white/60">{error}</p>
+              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <p className="mt-1 text-sm text-white/60">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
-                className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#4285F4]/80 transition hover:text-[#4285F4]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
                 Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -152,17 +152,17 @@ export default function GoogleOverviewPage() {
 
       {/* General error */}
       {error && !configErr && (
-        <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
+        <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-[13px] text-white/65">{error}</p>
+            <p className="text-sm text-white/65">{error}</p>
           </div>
         </div>
       )}
 
       {/* Loading */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-white/35">Loading Google Ads data…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">Loading Google Ads data…</div>
       )}
 
       {!loading && !configErr && (
@@ -171,13 +171,13 @@ export default function GoogleOverviewPage() {
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               { label: 'Active',       value: active,          color: 'text-[#D4AF37]' },
-              { label: 'Paused',       value: paused,          color: 'text-white/50'    },
+              { label: 'Paused',       value: paused,          color: 'text-slate-400'   },
               { label: '30d Spend',    value: fmtMicros(spend), color: 'text-white'       },
               { label: '30d Conversions', value: Math.round(convs), color: 'text-[#FBBC04]' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+              <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
                 <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-                <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
+                <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
               </div>
             ))}
           </div>
@@ -189,9 +189,9 @@ export default function GoogleOverviewPage() {
               { label: 'Clicks',       value: clicks.toLocaleString()   },
               { label: 'Avg CTR',      value: imps > 0 ? fmtPct(clicks / imps) : '—' },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-white/[0.05] bg-[#131B2B] px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3">
                 <div className="text-[18px] font-semibold text-white">{s.value}</div>
-                <div className="text-[12px] text-white/30">{s.label}</div>
+                <div className="text-xs text-slate-500">{s.label}</div>
               </div>
             ))}
           </div>
@@ -199,11 +199,11 @@ export default function GoogleOverviewPage() {
           {/* Channel breakdown */}
           {report && report.byCampaign.length > 0 && (
             <section className="mt-10">
-              <div className="text-[13px] font-medium uppercase tracking-wider text-white/40 mb-4">
+              <div className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-4">
                 Channel breakdown
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B]">
-                <div className="divide-y divide-white/[0.04]">
+              <div className="overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
+                <div className="divide-y divide-slate-800">
                   {['SEARCH', 'PERFORMANCE_MAX', 'DISPLAY', 'VIDEO'].map((type) => {
                     const rows   = report.byCampaign.filter((c) => c.type === type)
                     if (!rows.length) return null
@@ -212,13 +212,13 @@ export default function GoogleOverviewPage() {
                     const clicks = rows.reduce((s, r) => s + r.clicks, 0)
                     return (
                       <div key={type} className="flex items-center gap-4 px-5 py-3.5">
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${CAMPAIGN_TYPE_COLOR[type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${CAMPAIGN_TYPE_COLOR[type] ?? 'bg-slate-800/50 text-slate-400 border-slate-800'}`}>
                           {type.replace('_', ' ')}
                         </span>
-                        <span className="flex-1 text-[13px] font-semibold text-white">{rows.length} campaign{rows.length !== 1 ? 's' : ''}</span>
-                        <span className="text-[12px] text-white/45">{clicks.toLocaleString()} clicks</span>
-                        <span className="text-[12px] text-white/45">{Math.round(convs)} conv.</span>
-                        <span className="text-[13px] font-medium text-white">{fmtMicros(spend)}</span>
+                        <span className="flex-1 text-sm font-semibold text-white">{rows.length} campaign{rows.length !== 1 ? 's' : ''}</span>
+                        <span className="text-xs text-slate-400">{clicks.toLocaleString()} clicks</span>
+                        <span className="text-xs text-slate-400">{Math.round(convs)} conv.</span>
+                        <span className="text-sm font-medium text-white">{fmtMicros(spend)}</span>
                       </div>
                     )
                   })}
@@ -231,12 +231,12 @@ export default function GoogleOverviewPage() {
           {campaigns.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">
+                <div className="text-sm font-medium uppercase tracking-wider text-slate-400">
                   Top campaigns — 30d spend
                 </div>
                 <Link
                   href="/freehold-intelligence/lead-machine/google/campaigns"
-                  className="text-[12px] text-white/40 transition hover:text-white"
+                  className="text-xs text-slate-400 transition hover:text-white"
                 >
                   View all <ArrowUpRight className="inline h-3 w-3" />
                 </Link>
@@ -249,17 +249,17 @@ export default function GoogleOverviewPage() {
                     <Link
                       key={c.id}
                       href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
-                      className="group flex items-center gap-4 rounded-[16px] border border-white/[0.08] bg-[#131B2B] px-4 py-3.5 transition hover:border-[#4285F4]/25"
+                      className="group flex items-center gap-4 rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3.5 transition hover:border-[#4285F4]/25"
                     >
-                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[12px] font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'}`}>
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${CAMPAIGN_TYPE_COLOR[c.type] ?? 'bg-slate-800/50 text-slate-400 border-slate-800'}`}>
                         {c.type.replace('_', ' ')}
                       </span>
-                      <span className="flex-1 min-w-0 text-[13px] font-medium text-white/80 truncate group-hover:text-white">
+                      <span className="flex-1 min-w-0 text-sm font-medium text-white/80 truncate group-hover:text-white">
                         {c.name}
                       </span>
-                      <div className="flex shrink-0 items-center gap-4 text-[12px]">
-                        <span className="text-white/40">{c.metrics?.clicks.toLocaleString() ?? 0} clicks</span>
-                        <span className="text-white/40">{Math.round(c.metrics?.conversions ?? 0)} conv.</span>
+                      <div className="flex shrink-0 items-center gap-4 text-xs">
+                        <span className="text-slate-400">{c.metrics?.clicks.toLocaleString() ?? 0} clicks</span>
+                        <span className="text-slate-400">{Math.round(c.metrics?.conversions ?? 0)} conv.</span>
                         <span className="font-medium text-white">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-white/20'}`} />
                       </div>
@@ -283,12 +283,12 @@ export default function GoogleOverviewPage() {
               <Link
                 key={href}
                 href={href}
-                className="group rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#4285F4]/25"
+                className="group rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#4285F4]/25"
               >
                 <Icon className="mb-2 h-4 w-4 text-[#4285F4]/60" />
-                <div className="text-[13px] font-semibold text-white">{title}</div>
-                <p className="mt-1 text-[12px] leading-relaxed text-white/40">{body}</p>
-                <ArrowUpRight className="mt-3 h-3.5 w-3.5 text-white/20 transition group-hover:text-[#4285F4]/60" />
+                <div className="text-sm font-semibold text-white">{title}</div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">{body}</p>
+                <ArrowUpRight className="mt-3 h-3.5 w-3.5 text-slate-500 transition group-hover:text-[#4285F4]/60" />
               </Link>
             ))}
           </section>
@@ -297,13 +297,13 @@ export default function GoogleOverviewPage() {
 
       {/* Empty state */}
       {!loading && !configErr && !error && campaigns.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
           <Search className="mx-auto h-8 w-8 text-[#4285F4]/40 mb-4" />
           <div className="text-[18px] font-semibold text-white">No Google Ads campaigns yet</div>
-          <p className="mt-2 text-[14px] text-white/40">Create your first Search or Performance Max campaign to start capturing leads from Google.</p>
+          <p className="mt-2 text-[14px] text-slate-400">Create your first Search or Performance Max campaign to start capturing leads from Google.</p>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#5A97F5]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
             <Zap className="h-4 w-4" /> Create first campaign
           </Link>

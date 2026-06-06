@@ -62,12 +62,12 @@ export default async function CampaignsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <Megaphone className="h-3.5 w-3.5" /> Meta Campaigns
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
             Live campaigns<br />
-            <span className="text-white/35">
+            <span className="text-slate-500">
               {isConfigError ? 'not connected.' : `${campaigns.length} total.`}
             </span>
           </h1>
@@ -76,13 +76,13 @@ export default async function CampaignsPage() {
         <div className="mt-4 flex items-center gap-2 sm:mt-8">
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/launch"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2.5 text-[13px] font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
           >
             <Zap className="h-3.5 w-3.5" /> Launch Campaign
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] px-4 py-2.5 text-[13px] font-medium text-white/50 transition hover:border-white/20 hover:text-white/75"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white/75"
           >
             <Plus className="h-3.5 w-3.5" /> Manual
           </Link>
@@ -95,11 +95,11 @@ export default async function CampaignsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Meta Ads not connected</div>
-              <p className="mt-1 text-[13px] text-white/60">{data.error}</p>
+              <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
+              <p className="mt-1 text-sm text-white/60">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/meta"
-                className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
               >
                 Set up Meta integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -110,10 +110,10 @@ export default async function CampaignsPage() {
 
       {/* API error (non-config) */}
       {data.error && !isConfigError && (
-        <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
+        <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-[13px] text-white/65">{data.error}</p>
+            <p className="text-sm text-white/65">{data.error}</p>
           </div>
         </div>
       )}
@@ -127,9 +127,9 @@ export default async function CampaignsPage() {
             { label: 'Total spend', value: fmtSpend(String(totalSpend)),  color: 'text-white' },
             { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+            <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-              <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
+              <div className="mt-1.5 text-sm text-slate-400">{s.label}</div>
             </div>
           ))}
         </div>
@@ -140,13 +140,13 @@ export default async function CampaignsPage() {
 
       {/* Empty state — connected but no campaigns */}
       {!isConfigError && !data.error && campaigns.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No campaigns yet</div>
-          <p className="mt-2 text-[14px] text-white/40">Create the first campaign to start generating leads from Meta and Instagram.</p>
+          <p className="mt-2 text-[14px] text-slate-400">Create the first campaign to start generating leads from Meta and Instagram.</p>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-[13px] font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#06080A] transition hover:bg-[#F8E7AE]"
           >
             <Plus className="h-4 w-4" /> Launch first campaign
           </Link>

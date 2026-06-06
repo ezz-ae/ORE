@@ -96,15 +96,15 @@ export default function IntegrationsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Zap className="h-3.5 w-3.5" /> Connections
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-100">
           What's plugged in,
           <br />
-          <span className="text-white/40">what isn't.</span>
+          <span className="text-slate-400">what isn't.</span>
         </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-white/65">
+        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
           <span className="text-white">{connectedCount} of {integrations.length}</span> external systems are connected. Ads and external writes stay disabled until critical access is granted.
         </p>
       </section>
@@ -112,7 +112,7 @@ export default function IntegrationsPage() {
       {/* Critical blockers */}
       {critical.length > 0 && (
         <section className="mt-20">
-          <div className="text-[13px] font-medium uppercase tracking-wider text-red-300/85">Must clear before launch</div>
+          <div className="text-sm font-medium uppercase tracking-wider text-red-300/85">Must clear before launch</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
             {critical.length} {critical.length === 1 ? 'thing is' : 'things are'} holding back the server
           </h2>
@@ -124,17 +124,17 @@ export default function IntegrationsPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-[12px] font-medium uppercase tracking-wider text-red-300/85">
+                    <div className="text-xs font-medium uppercase tracking-wider text-red-300/85">
                       {String(b.integrationId || b.integration_id || 'system').replace(/-/g, ' ')}
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-white">{b.title || b.message}</h3>
                   </div>
-                  <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-red-200">
+                  <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-red-200">
                     Critical
                   </span>
                 </div>
                 {(b.description || b.resolutionSteps?.[0]) && (
-                  <p className="mt-3 text-[15px] leading-[1.6] text-white/65">
+                  <p className="mt-3 text-[15px] leading-[1.6] text-slate-300">
                     {b.description || b.resolutionSteps?.[0]}
                   </p>
                 )}
@@ -148,7 +148,7 @@ export default function IntegrationsPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">All connections</div>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-400">All connections</div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {totalVisible} of {integrations.length} integrations
             </h2>
@@ -162,25 +162,25 @@ export default function IntegrationsPage() {
               key={key}
               onClick={() => setStatusFilter(key)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 statusFilter === key
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
               {label}
             </button>
           ))}
-          <span className="mx-1 self-center text-white/15">|</span>
+          <span className="mx-1 self-center text-slate-700">|</span>
           {availableCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={[
-                'rounded-full border px-3 py-1 text-[13px] font-medium transition',
+                'rounded-full border px-3 py-1 text-sm font-medium transition',
                 categoryFilter === cat
                   ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/65',
+                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
               {cat}
@@ -192,11 +192,11 @@ export default function IntegrationsPage() {
       {/* Integration cards grouped by category */}
       <div className="mt-8 grid gap-12">
         {visibleCategories.length === 0 ? (
-          <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.02] px-6 py-12 text-center">
-            <p className="text-[14px] text-white/35">No integrations match these filters.</p>
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-6 py-12 text-center">
+            <p className="text-[14px] text-slate-400">No integrations match these filters.</p>
             <button
               onClick={() => { setStatusFilter('All'); setCategoryFilter('All') }}
-              className="mt-3 rounded-full border border-white/[0.08] px-4 py-1.5 text-[12px] text-white/45 transition hover:text-white/70"
+              className="mt-3 rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
               Clear filters
             </button>
@@ -204,7 +204,7 @@ export default function IntegrationsPage() {
         ) : (
           visibleCategories.map((cat) => (
             <div key={cat}>
-              <div className="mb-4 text-[12px] font-medium uppercase tracking-wider text-white/35">{cat}</div>
+              <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{cat}</div>
               <div className="grid gap-3">
                 {filteredGrouped[cat].map((integration: any) => {
                   const meta = META[integration.id]
@@ -213,25 +213,25 @@ export default function IntegrationsPage() {
                   return (
                     <div
                       key={integration.id}
-                      className="flex items-center gap-5 rounded-2xl border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#D4AF37]/20"
+                      className="flex items-center gap-5 rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/20"
                     >
-                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-slate-800 bg-slate-800/50">
                         <Icon className="h-5 w-5 text-white/90" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-[15px] font-semibold text-white">{integration.name}</div>
-                        <div className="mt-0.5 text-[13px] leading-snug text-white/50">{meta?.copy || integration.description}</div>
+                        <div className="mt-0.5 text-sm leading-snug text-slate-400">{meta?.copy || integration.description}</div>
                       </div>
-                      <div className={`flex shrink-0 items-center gap-1.5 text-[12px] ${st.text}`}>
+                      <div className={`flex shrink-0 items-center gap-1.5 text-xs ${st.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                         {st.label}
                       </div>
                       {meta?.href ? (
-                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           View <ArrowUpRight className="h-3 w-3" />
                         </Link>
                       ) : integration.status !== 'connected' ? (
-                        <button className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <button className="hidden shrink-0 items-center gap-1 rounded-full bg-white/[0.04] px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           Connect <ArrowUpRight className="h-3 w-3" />
                         </button>
                       ) : null}
@@ -245,11 +245,11 @@ export default function IntegrationsPage() {
       </div>
 
       {/* AI take footer */}
-      <section className="mt-20 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
+      <section className="mt-20 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
-        <p className="mt-3 text-[17px] font-medium leading-[1.65] text-white/85 sm:text-lg">
+        <p className="mt-3 text-[17px] font-medium leading-[1.65] text-slate-100 sm:text-lg">
           The fastest path to launch is to confirm the Meta billing owner. Once that's cleared, conversion event mapping is a single check on the tracking side, and Dubai Hills can move into a paid campaign immediately.
         </p>
       </section>

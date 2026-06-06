@@ -54,10 +54,10 @@ interface CampaignsResponse {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: string }) {
-  const cls = CAMPAIGN_TYPE_COLOR[type] ?? 'bg-white/[0.04] text-white/40 border-white/[0.08]'
+  const cls = CAMPAIGN_TYPE_COLOR[type] ?? 'bg-slate-800/50 text-slate-400 border-slate-800'
   return (
     <span
-      className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${cls}`}
+      className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}
     >
       {type.replace(/_/g, ' ')}
     </span>
@@ -66,7 +66,7 @@ function TypeBadge({ type }: { type: string }) {
 
 function BiddingBadge({ strategy }: { strategy: string }) {
   return (
-    <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/40">
+    <span className="rounded-full border border-slate-800 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-400">
       {strategy.replace(/_/g, ' ')}
     </span>
   )
@@ -157,14 +157,14 @@ export default function GoogleCampaignsPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#4285F4]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#4285F4]/85">
             <Search className="h-3.5 w-3.5" />
             Google Ads / Campaigns
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
             Search &amp; Performance Max
             <br />
-            <span className="text-white/35">
+            <span className="text-slate-500">
               {loading
                 ? '…'
                 : configErr
@@ -178,14 +178,14 @@ export default function GoogleCampaignsPage() {
           <button
             onClick={() => fetchCampaigns(true)}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[12px] text-white/50 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#5A97F5]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
             <Zap className="h-4 w-4" /> New campaign
           </Link>
@@ -198,13 +198,13 @@ export default function GoogleCampaignsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">
+              <div className="text-sm font-semibold text-white">
                 Google Ads not connected
               </div>
-              <p className="mt-1 text-[13px] text-white/60">{error}</p>
+              <p className="mt-1 text-sm text-white/60">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
-                className="mt-3 inline-flex items-center gap-1 text-[12px] text-[#4285F4]/80 transition hover:text-[#4285F4]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
                 Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -215,17 +215,17 @@ export default function GoogleCampaignsPage() {
 
       {/* ── API error ──────────────────────────────────────────────────────── */}
       {error && !configErr && (
-        <div className="mt-8 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] p-5">
+        <div className="mt-8 rounded-xl border border-orange-400/20 bg-orange-400/[0.04] p-5">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400" />
-            <p className="text-[13px] text-white/65">{error}</p>
+            <p className="text-sm text-white/65">{error}</p>
           </div>
         </div>
       )}
 
       {/* ── Loading ────────────────────────────────────────────────────────── */}
       {loading && (
-        <div className="mt-20 flex items-center justify-center gap-3 text-white/35">
+        <div className="mt-20 flex items-center justify-center gap-3 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-[14px]">Loading campaigns…</span>
         </div>
@@ -244,7 +244,7 @@ export default function GoogleCampaignsPage() {
               {
                 label: 'Paused',
                 value: pausedCount,
-                color: 'text-white/50',
+                color: 'text-slate-400',
               },
               {
                 label: 'Total spend',
@@ -257,17 +257,17 @@ export default function GoogleCampaignsPage() {
               {
                 label: 'Total conversions',
                 value: Math.round(totalConvs).toLocaleString(),
-                color: totalConvs > 0 ? 'text-[#FBBC04]' : 'text-white/50',
+                color: totalConvs > 0 ? 'text-[#FBBC04]' : 'text-slate-400',
               },
             ].map((s) => (
               <div
                 key={s.label}
-                className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4"
+                className="rounded-xl border border-slate-800 bg-slate-900 p-4"
               >
                 <div className={`text-[26px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
-                <div className="mt-1.5 text-[13px] text-white/40">{s.label}</div>
+                <div className="mt-1.5 text-sm text-slate-400">{s.label}</div>
               </div>
             ))}
           </div>
@@ -281,10 +281,10 @@ export default function GoogleCampaignsPage() {
                   key={value}
                   onClick={() => setFilter(value)}
                   className={[
-                    'rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition',
+                    'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                     isActive
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/15 text-[#4285F4]'
-                      : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white/70',
+                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500',
                   ].join(' ')}
                 >
                   {label}
@@ -304,7 +304,7 @@ export default function GoogleCampaignsPage() {
                 return (
                   <div
                     key={campaign.id}
-                    className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5 transition hover:border-[#4285F4]/20"
+                    className="rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#4285F4]/20"
                   >
                     {/* Row 1: type badge + name + status dot */}
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -312,7 +312,7 @@ export default function GoogleCampaignsPage() {
 
                       <Link
                         href={`/freehold-intelligence/lead-machine/google/campaigns/${campaign.id}`}
-                        className="min-w-0 flex-1 truncate text-[15px] font-semibold text-white/90 transition hover:text-white"
+                        className="min-w-0 flex-1 truncate text-[15px] font-semibold text-slate-100 transition hover:text-white"
                       >
                         {campaign.name}
                       </Link>
@@ -326,7 +326,7 @@ export default function GoogleCampaignsPage() {
                     </div>
 
                     {/* Row 2: budget + metrics */}
-                    <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-white/45">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-400">
                       <span>
                         Daily budget:{' '}
                         <span className="text-white/70">
@@ -372,7 +372,7 @@ export default function GoogleCampaignsPage() {
                         onClick={() => toggleStatus(campaign)}
                         disabled={isToggling}
                         className={[
-                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[13px] font-medium transition disabled:opacity-40',
+                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition disabled:opacity-40',
                           isEnabled
                             ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20'
                             : 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20',
@@ -396,18 +396,18 @@ export default function GoogleCampaignsPage() {
 
           {/* ── Empty state (no campaigns at all) ─────────────────────────── */}
           {!error && campaigns.length === 0 && (
-            <div className="mt-16 rounded-[28px] border border-white/[0.08] bg-white/[0.02] px-7 py-14 text-center">
+            <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/40" />
               <div className="text-[18px] font-semibold text-white">
                 No Google Ads campaigns yet
               </div>
-              <p className="mt-2 text-[14px] text-white/40">
+              <p className="mt-2 text-[14px] text-slate-400">
                 Create your first Search or Performance Max campaign to start
                 capturing leads from Google.
               </p>
               <Link
                 href="/freehold-intelligence/lead-machine/google/campaigns/new"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#5A97F5]"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
               >
                 <Zap className="h-4 w-4" /> Create first campaign
               </Link>
@@ -416,8 +416,8 @@ export default function GoogleCampaignsPage() {
 
           {/* ── Filtered empty state ────────────────────────────────────────── */}
           {!error && campaigns.length > 0 && filtered.length === 0 && (
-            <div className="mt-10 rounded-[20px] border border-white/[0.08] bg-white/[0.02] px-6 py-10 text-center">
-              <p className="text-[14px] text-white/40">
+            <div className="mt-10 rounded-[20px] border border-slate-800 bg-slate-800/50 px-6 py-10 text-center">
+              <p className="text-[14px] text-slate-400">
                 No{' '}
                 <span className="text-white/60">
                   {filter.replace(/_/g, ' ').toLowerCase()}

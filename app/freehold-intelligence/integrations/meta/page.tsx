@@ -106,7 +106,7 @@ function accountStatusLabel(status: number) {
     case 3:  return { label: 'Unsettled',  color: 'text-amber-400'   }
     case 7:  return { label: 'Pending',    color: 'text-sky-400'     }
     case 9:  return { label: 'In review',  color: 'text-violet-400'  }
-    default: return { label: `Status ${status}`, color: 'text-white/40' }
+    default: return { label: `Status ${status}`, color: 'text-slate-400' }
   }
 }
 
@@ -114,7 +114,7 @@ const CAMPAIGN_STATUS_COLOR: Record<string, string> = {
   ACTIVE:   'text-emerald-400',
   PAUSED:   'text-amber-400',
   DELETED:  'text-red-400',
-  ARCHIVED: 'text-white/30',
+  ARCHIVED: 'text-slate-500',
 }
 
 // ─── Fetch pipeline ────────────────────────────────────────────────────────────
@@ -283,7 +283,7 @@ export default function MetaIntegrationPage() {
           </div>
           <div>
             <h1 className="text-[20px] font-semibold text-white">Meta Business</h1>
-            <p className="text-[12px] text-white/35">Connect your ad account to see live campaigns</p>
+            <p className="text-xs text-slate-500">Connect your ad account to see live campaigns</p>
           </div>
         </div>
 
@@ -292,15 +292,15 @@ export default function MetaIntegrationPage() {
           <div className="mb-6 flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-red-300">Connection failed</div>
-              <div className="mt-0.5 text-[12px] text-red-300/70 leading-relaxed">{errMsg}</div>
+              <div className="text-sm font-semibold text-red-300">Connection failed</div>
+              <div className="mt-0.5 text-xs text-red-300/70 leading-relaxed">{errMsg}</div>
             </div>
           </div>
         )}
 
         {/* Token form */}
-        <div className="rounded-[20px] border border-white/[0.10] bg-[#131B2B] p-6">
-          <div className="mb-5 text-[13px] font-semibold text-white">Access token</div>
+        <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-6">
+          <div className="mb-5 text-sm font-semibold text-white">Access token</div>
 
           <div className="relative">
             <input
@@ -309,12 +309,12 @@ export default function MetaIntegrationPage() {
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && connect(token)}
               placeholder="EAABwzLixnjYBO..."
-              className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.04] py-3 pl-4 pr-12 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[12px] border border-slate-800 bg-slate-800/50 py-3 pl-4 pr-12 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/50 transition"
             />
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 transition hover:text-white/60"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
             >
               {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -330,8 +330,8 @@ export default function MetaIntegrationPage() {
         </div>
 
         {/* How to get the token */}
-        <div className="mt-6 rounded-[18px] border border-white/[0.07] bg-white/[0.02] p-5">
-          <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.15em] text-white/30">
+        <div className="mt-6 rounded-[18px] border border-slate-800 bg-slate-800/50 p-5">
+          <div className="mb-3 text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
             How to get your token
           </div>
           <ol className="space-y-2.5">
@@ -342,8 +342,8 @@ export default function MetaIntegrationPage() {
               'Enable scopes: ads_management, ads_read, leads_retrieval',
               'Copy the token and paste it above',
             ].map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-[13px] text-white/50">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-white/35">
+              <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-slate-400">
                   {i + 1}
                 </span>
                 {step}
@@ -354,18 +354,18 @@ export default function MetaIntegrationPage() {
             href="https://business.facebook.com/settings/system-users"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
           >
             Open Meta Business Manager <ExternalLink className="h-3 w-3" />
           </a>
         </div>
 
         {/* Permissions required */}
-        <div className="mt-4 rounded-[14px] border border-white/[0.06] bg-transparent px-4 py-3.5">
-          <div className="mb-2 text-[11px] text-white/25 uppercase tracking-wider">Required scopes</div>
+        <div className="mt-4 rounded-[14px] border border-slate-800 bg-transparent px-4 py-3.5">
+          <div className="mb-2 text-xs text-slate-500 uppercase tracking-wider">Required scopes</div>
           <div className="flex flex-wrap gap-1.5">
             {['ads_management', 'ads_read', 'leads_retrieval', 'business_management'].map((s) => (
-              <span key={s} className="rounded bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] text-white/40">{s}</span>
+              <span key={s} className="rounded bg-white/[0.05] px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
             ))}
           </div>
         </div>
@@ -378,8 +378,8 @@ export default function MetaIntegrationPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
-        <div className="text-[14px] text-white/50">Connecting to Meta Business API…</div>
-        <div className="text-[12px] text-white/25">Fetching ad accounts, campaigns, and insights</div>
+        <div className="text-[14px] text-slate-400">Connecting to Meta Business API…</div>
+        <div className="text-xs text-slate-500">Fetching ad accounts, campaigns, and insights</div>
       </div>
     )
   }
@@ -397,38 +397,38 @@ export default function MetaIntegrationPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[15px] font-semibold text-white">Meta Business</span>
-              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Connected
               </span>
             </div>
-            <div className="text-[12px] text-white/30">{user?.name} · {accounts.length} ad account{accounts.length !== 1 ? 's' : ''}</div>
+            <div className="text-xs text-slate-500">{user?.name} · {accounts.length} ad account{accounts.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
           {syncedAt && (
-            <span className="hidden text-[11px] text-white/20 sm:block">
+            <span className="hidden text-xs text-slate-500 sm:block">
               Synced {syncedAt.toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           <button
             onClick={refresh}
             disabled={syncing}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] text-white/35 transition hover:border-white/20 hover:text-white/70 disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-800 text-slate-400 transition hover:border-slate-600 hover:text-slate-200 disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={copyToken}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] text-white/25 transition hover:border-white/20 hover:text-white/60"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-800 text-slate-500 transition hover:border-slate-600 hover:text-slate-300"
             title="Copy token"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
           <button
             onClick={disconnect}
-            className="flex items-center gap-1.5 rounded-full border border-white/[0.07] px-3 py-1.5 text-[12px] text-white/30 transition hover:border-red-400/20 hover:text-red-400"
+            className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-400/20 hover:text-red-400"
           >
             <LogOut className="h-3.5 w-3.5" /> Disconnect
           </button>
@@ -444,28 +444,28 @@ export default function MetaIntegrationPage() {
           { label: 'Leads (30d)',          value: totalLeads > 0 ? String(totalLeads) : '—', Icon: Users, color: 'text-emerald-400' },
           { label: 'Blended CPL',          value: blendedCPL > 0 ? `AED ${fmt(blendedCPL, 0)}` : '—', Icon: Zap, color: blendedCPL > 0 && blendedCPL < 200 ? 'text-emerald-400' : 'text-amber-400' },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[16px] border border-white/[0.06] bg-[#131B2B] px-4 py-3.5">
+          <div key={label} className="rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3.5">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className={`mt-2 text-[17px] font-semibold tabular-nums ${color}`}>{value}</div>
-            <div className="mt-0.5 text-[10px] text-white/25 leading-relaxed">{label}</div>
+            <div className="mt-0.5 text-[10px] text-slate-500 leading-relaxed">{label}</div>
           </div>
         ))}
       </section>
 
       {/* Error banner if partial refresh error */}
       {errMsg && (
-        <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-amber-400/20 bg-amber-400/[0.05] px-4 py-2.5 text-[12px] text-amber-400/80">
+        <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-amber-400/20 bg-amber-400/[0.05] px-4 py-2.5 text-xs text-amber-400/80">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           {errMsg}
-          <button onClick={() => setErrMsg('')} className="ml-auto text-white/25 hover:text-white/60"><XCircle className="h-3.5 w-3.5" /></button>
+          <button onClick={() => setErrMsg('')} className="ml-auto text-slate-500 hover:text-slate-300"><XCircle className="h-3.5 w-3.5" /></button>
         </div>
       )}
 
       {/* Ad accounts */}
       {accounts.length === 0 ? (
-        <div className="rounded-[18px] border border-white/[0.07] bg-[#131B2B] px-6 py-12 text-center">
-          <div className="text-[13px] text-white/35">No ad accounts found for this token.</div>
-          <div className="mt-1 text-[11px] text-white/20">The token may need business_management scope, or no ad accounts are linked.</div>
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 px-6 py-12 text-center">
+          <div className="text-sm text-slate-400">No ad accounts found for this token.</div>
+          <div className="mt-1 text-xs text-slate-500">The token may need business_management scope, or no ad accounts are linked.</div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -478,7 +478,7 @@ export default function MetaIntegrationPage() {
             const avgCPL = accountLeads > 0 ? accountSpend / accountLeads : 0
 
             return (
-              <div key={account.id} className={`rounded-[20px] border bg-[#131B2B] transition ${isOpen ? 'border-white/[0.12]' : 'border-white/[0.07]'}`}>
+              <div key={account.id} className={`rounded-[20px] border bg-slate-900 transition ${isOpen ? 'border-slate-700' : 'border-slate-800'}`}>
 
                 {/* Account header row */}
                 <button
@@ -488,9 +488,9 @@ export default function MetaIntegrationPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[15px] font-semibold text-white">{account.name}</span>
-                      <span className={`text-[11px] font-medium ${st.color}`}>{st.label}</span>
+                      <span className={`text-xs font-medium ${st.color}`}>{st.label}</span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-[11px] text-white/25 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
                       <span>act_{account.account_id}</span>
                       <span>{account.currency}</span>
                       {account.timezone_name && <span>{account.timezone_name}</span>}
@@ -501,40 +501,40 @@ export default function MetaIntegrationPage() {
                   <div className="hidden sm:flex items-center gap-6">
                     <div className="text-right">
                       <div className="text-[14px] font-semibold text-white tabular-nums">{fmtMoney(account.amount_spent, account.currency)}</div>
-                      <div className="text-[10px] text-white/25">total spent</div>
+                      <div className="text-[10px] text-slate-500">total spent</div>
                     </div>
                     <div className="text-right">
-                      <div className={`text-[14px] font-semibold tabular-nums ${activeCampaigns > 0 ? 'text-emerald-400' : 'text-white/40'}`}>{activeCampaigns}</div>
-                      <div className="text-[10px] text-white/25">active</div>
+                      <div className={`text-[14px] font-semibold tabular-nums ${activeCampaigns > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>{activeCampaigns}</div>
+                      <div className="text-[10px] text-slate-500">active</div>
                     </div>
                     {accountLeads > 0 && (
                       <div className="text-right">
                         <div className="text-[14px] font-semibold text-sky-400 tabular-nums">{accountLeads}</div>
-                        <div className="text-[10px] text-white/25">leads 30d</div>
+                        <div className="text-[10px] text-slate-500">leads 30d</div>
                       </div>
                     )}
                     {avgCPL > 0 && (
                       <div className="text-right">
                         <div className="text-[14px] font-semibold text-[#D4AF37] tabular-nums">AED {fmt(avgCPL, 0)}</div>
-                        <div className="text-[10px] text-white/25">CPL</div>
+                        <div className="text-[10px] text-slate-500">CPL</div>
                       </div>
                     )}
                   </div>
 
-                  <div className="shrink-0 text-white/25">
+                  <div className="shrink-0 text-slate-500">
                     {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </button>
 
                 {/* Campaigns table */}
                 {isOpen && (
-                  <div className="border-t border-white/[0.06]">
+                  <div className="border-t border-slate-800">
                     {account.campaigns.length === 0 ? (
-                      <div className="px-6 py-6 text-[13px] text-white/30">No campaigns found for this account.</div>
+                      <div className="px-6 py-6 text-sm text-slate-400">No campaigns found for this account.</div>
                     ) : (
                       <>
                         {/* Table header */}
-                        <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-white/[0.04] px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-white/20">
+                        <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-slate-800 px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                           <div>Campaign</div>
                           <div className="text-right">Status</div>
                           <div className="text-right">Spend</div>
@@ -544,38 +544,38 @@ export default function MetaIntegrationPage() {
                           <div className="text-right">Leads</div>
                         </div>
                         {/* Campaign rows */}
-                        <div className="divide-y divide-white/[0.03]">
+                        <div className="divide-y divide-slate-800">
                           {account.campaigns.map((c) => {
                             const ins   = c.insight
                             const cLeads = leads(ins)
                             const ctr   = ins ? parseFloat(ins.ctr) : 0
-                            const statusColor = CAMPAIGN_STATUS_COLOR[c.status] ?? 'text-white/30'
+                            const statusColor = CAMPAIGN_STATUS_COLOR[c.status] ?? 'text-slate-500'
 
                             return (
                               <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-white/[0.02] transition">
                                 <div className="min-w-0 pr-2">
-                                  <div className="truncate text-[13px] font-medium text-white/80">{c.name}</div>
-                                  <div className="mt-0.5 text-[10px] text-white/25 uppercase tracking-wide">
+                                  <div className="truncate text-sm font-medium text-slate-100">{c.name}</div>
+                                  <div className="mt-0.5 text-[10px] text-slate-500 uppercase tracking-wide">
                                     {c.objective?.replace(/_/g, ' ')}
                                   </div>
                                 </div>
-                                <div className={`text-right text-[12px] font-semibold ${statusColor}`}>
+                                <div className={`text-right text-xs font-semibold ${statusColor}`}>
                                   {c.status === 'ACTIVE' && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 align-middle animate-pulse" />}
                                   {c.status.charAt(0) + c.status.slice(1).toLowerCase()}
                                 </div>
-                                <div className="text-right text-[12px] text-white/60 tabular-nums">
+                                <div className="text-right text-xs text-slate-300 tabular-nums">
                                   {ins?.spend ? `${account.currency} ${fmt(parseFloat(ins.spend), 0)}` : '—'}
                                 </div>
-                                <div className="text-right text-[12px] text-white/50 tabular-nums">
+                                <div className="text-right text-xs text-slate-400 tabular-nums">
                                   {ins?.impressions ? fmt(parseInt(ins.impressions, 10)) : '—'}
                                 </div>
-                                <div className="text-right text-[12px] text-white/50 tabular-nums">
+                                <div className="text-right text-xs text-slate-400 tabular-nums">
                                   {ins?.clicks ? fmt(parseInt(ins.clicks, 10)) : '—'}
                                 </div>
-                                <div className={`text-right text-[12px] font-medium tabular-nums ${ctr > 2 ? 'text-emerald-400' : ctr > 1 ? 'text-white/60' : 'text-white/30'}`}>
+                                <div className={`text-right text-xs font-medium tabular-nums ${ctr > 2 ? 'text-emerald-400' : ctr > 1 ? 'text-slate-300' : 'text-slate-500'}`}>
                                   {ins?.ctr ? `${parseFloat(ins.ctr).toFixed(2)}%` : '—'}
                                 </div>
-                                <div className={`text-right text-[12px] font-semibold tabular-nums ${cLeads > 0 ? 'text-sky-400' : 'text-white/20'}`}>
+                                <div className={`text-right text-xs font-semibold tabular-nums ${cLeads > 0 ? 'text-sky-400' : 'text-slate-600'}`}>
                                   {cLeads > 0 ? cLeads : '—'}
                                 </div>
                               </div>
@@ -587,13 +587,13 @@ export default function MetaIntegrationPage() {
 
                     {/* Account-level insight bar */}
                     {account.insight && (
-                      <div className="border-t border-white/[0.04] px-6 py-4">
-                        <div className="flex flex-wrap gap-6 text-[12px] text-white/35">
+                      <div className="border-t border-slate-800 px-6 py-4">
+                        <div className="flex flex-wrap gap-6 text-xs text-slate-400">
                           <span>30-day account totals:</span>
-                          <span className="text-white/55">Impr. <strong className="text-white/80">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
-                          <span className="text-white/55">Clicks <strong className="text-white/80">{fmt(parseInt(account.insight.clicks || '0', 10))}</strong></span>
-                          <span className="text-white/55">Spend <strong className="text-white/80">{account.currency} {fmt(parseFloat(account.insight.spend || '0'), 0)}</strong></span>
-                          {account.insight.cpm && <span className="text-white/55">CPM <strong className="text-white/80">{account.currency} {parseFloat(account.insight.cpm).toFixed(2)}</strong></span>}
+                          <span className="text-slate-400">Impr. <strong className="text-slate-100">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
+                          <span className="text-slate-400">Clicks <strong className="text-slate-100">{fmt(parseInt(account.insight.clicks || '0', 10))}</strong></span>
+                          <span className="text-slate-400">Spend <strong className="text-slate-100">{account.currency} {fmt(parseFloat(account.insight.spend || '0'), 0)}</strong></span>
+                          {account.insight.cpm && <span className="text-slate-400">CPM <strong className="text-slate-100">{account.currency} {parseFloat(account.insight.cpm).toFixed(2)}</strong></span>}
                           {accountLeads > 0 && <span className="text-sky-400">Leads <strong>{accountLeads}</strong></span>}
                         </div>
                       </div>
@@ -607,15 +607,15 @@ export default function MetaIntegrationPage() {
       )}
 
       {/* Footer: token management */}
-      <div className="mt-8 flex items-center justify-between rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-5 py-3.5">
-        <div className="text-[12px] text-white/25">
+      <div className="mt-8 flex items-center justify-between rounded-[14px] border border-slate-800 bg-slate-800/50 px-5 py-3.5">
+        <div className="text-xs text-slate-500">
           Token stored in browser only · Not sent to any server
         </div>
         <a
           href="https://business.facebook.com/settings/system-users"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[12px] text-white/25 transition hover:text-white/55"
+          className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
         >
           Meta Business Manager <ExternalLink className="h-3 w-3" />
         </a>

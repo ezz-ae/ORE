@@ -108,7 +108,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
   Opportunity: { label: 'Opportunity', className: 'bg-[#D4AF37]/10 border border-emerald-500/25 text-[#D4AF37]' },
-  Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-white/55' },
+  Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-slate-400' },
 }
 
 // ─── content performance table ─────────────────────────────────────────────────
@@ -129,7 +129,7 @@ function seoColor(score: number) {
 function statusBadge(status: string) {
   if (status === 'Good')       return 'bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37]'
   if (status === 'Needs work') return 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-  return 'bg-white/[0.05] border border-white/10 text-white/50'
+  return 'bg-slate-800/50 border border-slate-700 text-slate-400'
 }
 
 // ─── recommended actions ───────────────────────────────────────────────────────
@@ -173,17 +173,17 @@ export default function InsightsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-wider text-white/55/80">
+      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">
         <Bot className="h-3.5 w-3.5" />
         AI Manager · Insights
       </div>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
             AI System Insights
           </h1>
-          <p className="mt-2 max-w-xl text-sm text-white/50">
+          <p className="mt-2 max-w-xl text-sm text-slate-400">
             Machine-generated analysis across inventory, ad spend, site traffic, and lead performance
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function InsightsPage() {
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-rose-500/20 disabled:opacity-60"
+          className="mt-1 flex shrink-0 items-center gap-2 self-start rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
           {generating ? (
             <>
@@ -217,23 +217,23 @@ export default function InsightsPage() {
       {/* ── Section 1: System Snapshot ─────────────────────────────────────── */}
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
-          <BarChart3 className="h-4 w-4 text-white/55" />
-          <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">System Snapshot</h2>
+          <BarChart3 className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">System Snapshot</h2>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {kpiCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
+              className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
             >
-              <div className="text-[13px] font-medium uppercase tracking-widest text-white/35">
+              <div className="text-xs font-medium uppercase tracking-widest text-slate-500">
                 {card.label}
               </div>
               <div className="mt-2 text-2xl font-semibold tracking-tight text-white">
                 {card.value}
               </div>
-              <div className="mt-1 text-xs text-white/40">{card.sub}</div>
+              <div className="mt-1 text-xs text-slate-400">{card.sub}</div>
             </div>
           ))}
         </div>
@@ -242,8 +242,8 @@ export default function InsightsPage() {
       {/* ── Section 2: AI Insights Feed ────────────────────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <Sparkles className="h-4 w-4 text-white/55" />
-          <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">AI Insights Feed</h2>
+          <Sparkles className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">AI Insights Feed</h2>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -253,28 +253,28 @@ export default function InsightsPage() {
             return (
               <div
                 key={insight.title}
-                className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
+                className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
               >
                 <div className="flex items-start gap-4">
                   {/* rose sparkles icon */}
                   <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10">
-                    <Sparkles className="h-4 w-4 text-white/55" />
+                    <Sparkles className="h-4 w-4 text-slate-400" />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-white/90">{insight.title}</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold uppercase tracking-wider ${badge.className}`}>
+                      <span className="text-sm font-semibold text-slate-100">{insight.title}</span>
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-white/55">{insight.detail}</p>
-                    <p className="mt-2 text-[13px] text-white/25">{insight.time}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{insight.detail}</p>
+                    <p className="mt-2 text-sm text-slate-500">{insight.time}</p>
                   </div>
 
                   {/* contextual insight icon */}
                   <div className="hidden shrink-0 sm:block">
-                    <Icon className="h-4 w-4 text-white/20" />
+                    <Icon className="h-4 w-4 text-slate-500" />
                   </div>
                 </div>
               </div>
@@ -286,18 +286,18 @@ export default function InsightsPage() {
       {/* ── Section 3: Content Performance by Section ──────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <BarChart3 className="h-4 w-4 text-white/55" />
-          <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Content Performance by Section</h2>
+          <BarChart3 className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Content Performance by Section</h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/50">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
+              <tr className="border-b border-slate-800">
                 {['Section', 'Items', 'Published', 'Avg SEO', 'Status'].map((h) => (
                   <th
                     key={h}
-                    className="px-5 py-3.5 text-left text-[13px] font-semibold uppercase tracking-widest text-white/30"
+                    className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-widest text-slate-500"
                   >
                     {h}
                   </th>
@@ -309,18 +309,18 @@ export default function InsightsPage() {
                 <tr
                   key={row.section}
                   className={[
-                    'transition hover:bg-white/[0.02]',
-                    i !== contentRows.length - 1 ? 'border-b border-white/[0.04]' : '',
+                    'transition hover:bg-slate-800/30',
+                    i !== contentRows.length - 1 ? 'border-b border-slate-800' : '',
                   ].join(' ')}
                 >
-                  <td className="px-5 py-4 font-medium text-white/80">{row.section}</td>
-                  <td className="px-5 py-4 text-white/50">{row.items}</td>
-                  <td className="px-5 py-4 text-white/50">{row.published}</td>
+                  <td className="px-5 py-4 font-medium text-slate-300">{row.section}</td>
+                  <td className="px-5 py-4 text-slate-400">{row.items}</td>
+                  <td className="px-5 py-4 text-slate-400">{row.published}</td>
                   <td className={`px-5 py-4 font-semibold ${seoColor(row.avgSeo)}`}>
                     {row.avgSeo}/100
                   </td>
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-medium ${statusBadge(row.status)}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${statusBadge(row.status)}`}>
                       {row.status}
                     </span>
                   </td>
@@ -334,23 +334,23 @@ export default function InsightsPage() {
       {/* ── Section 4: Recommended Actions ────────────────────────────────── */}
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
-          <CheckCircle2 className="h-4 w-4 text-white/55" />
-          <h2 className="text-sm font-semibold text-white/90 uppercase tracking-wider">Recommended Actions</h2>
+          <CheckCircle2 className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Recommended Actions</h2>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           {actions.map((action) => (
             <div
               key={action.n}
-              className="flex flex-col gap-4 rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
+              className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
             >
               {/* number badge */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-white/55">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-slate-400">
                 {action.n}
               </div>
               <div>
-                <div className="text-sm font-semibold text-white/90">{action.title}</div>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/50">{action.detail}</p>
+                <div className="text-sm font-semibold text-slate-100">{action.title}</div>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{action.detail}</p>
               </div>
             </div>
           ))}

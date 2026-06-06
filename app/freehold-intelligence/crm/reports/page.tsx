@@ -99,13 +99,13 @@ export default function CrmReportsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
             <TrendingUp className="h-3.5 w-3.5" /> Reports
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-            Lead intelligence<br/><span className="text-white/35">at a glance.</span>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
+            Lead intelligence<br/><span className="text-slate-500">at a glance.</span>
           </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-white/55">
+          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
             Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending.
           </p>
 
@@ -116,10 +116,10 @@ export default function CrmReportsPage() {
                 key={r}
                 onClick={() => setDateRange(r)}
                 className={[
-                  'rounded-full px-3.5 py-1.5 text-[12px] font-medium transition',
+                  'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
                   dateRange === r
                     ? 'bg-[#D4AF37] text-[#06080A]'
-                    : 'border border-white/[0.08] text-white/45 hover:border-white/20 hover:text-white/70',
+                    : 'border border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200',
                 ].join(' ')}
               >
                 {r}
@@ -135,10 +135,10 @@ export default function CrmReportsPage() {
               { label: 'Connect rate',   value: `${connectRate}%`,    delta: `${connected}/${callsLogged} calls`, tone: connectRate >= 50 ? 'text-[#D4AF37]' : 'text-orange-300' },
               { label: 'Revenue MTD',    value: 'AED 32M',           delta: '+16% vs Apr',                tone: 'text-[#D4AF37]' },
             ].map((kpi) => (
-              <div key={kpi.label} className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
-                <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">{kpi.label}</div>
+              <div key={kpi.label} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{kpi.label}</div>
                 <div className="mt-3 text-[28px] font-semibold text-white">{kpi.value}</div>
-                <div className={`mt-1 text-[12px] ${kpi.tone}`}>{kpi.delta}</div>
+                <div className={`mt-1 text-xs ${kpi.tone}`}>{kpi.delta}</div>
               </div>
             ))}
           </div>
@@ -148,17 +148,17 @@ export default function CrmReportsPage() {
             <div className="mb-5 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-[#D4AF37]" />
               <h2 className="text-[18px] font-semibold text-white">Lead Sources (30d)</h2>
-              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-[12px] text-white/55">Static · paid channels</span>
+              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Static · paid channels</span>
             </div>
-            <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
+            <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6 sm:p-8">
               <div className="space-y-5">
                 {LEAD_SOURCES.map((src) => (
                   <div key={src.label}>
-                    <div className="flex items-center justify-between text-[13px] mb-2">
-                      <span className="font-medium text-white/80">{src.label}</span>
-                      <span className="text-white/45">{src.count} leads</span>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="font-medium text-slate-300">{src.label}</span>
+                      <span className="text-slate-400">{src.count} leads</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/[0.04]">
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
                       <div
                         className={`h-full rounded-full ${src.bar}`}
                         style={{ width: `${(src.count / MAX_LEAD_SOURCE) * 100}%` }}
@@ -175,9 +175,9 @@ export default function CrmReportsPage() {
             <div className="mb-5 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-[#D4AF37]" />
               <h2 className="text-[18px] font-semibold text-white">Monthly Lead Trend</h2>
-              <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-[12px] text-amber-300">Jan – May</span>
+              <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>
             </div>
-            <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-6 sm:p-8">
+            <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6 sm:p-8">
               <div className="overflow-x-auto">
                 <svg
                   width={SVG_W}
@@ -197,14 +197,14 @@ export default function CrmReportsPage() {
                           width={BAR_W}
                           height={barH}
                           rx={6}
-                          fill={m.current ? '#D4AF37' : 'rgba(255,255,255,0.10)'}
+                          fill={m.current ? '#D4AF37' : 'rgba(148,163,184,0.15)'}
                         />
                         <text
                           x={x + BAR_W / 2}
                           y={SVG_H + 18}
                           textAnchor="middle"
                           fontSize={10}
-                          fill="rgba(255,255,255,0.40)"
+                          fill="rgba(148,163,184,0.60)"
                           fontFamily="inherit"
                         >
                           {m.month}
@@ -234,19 +234,19 @@ export default function CrmReportsPage() {
             <div className="mb-5 flex items-center gap-2">
               <Target className="h-4 w-4 text-[#D4AF37]" />
               <h2 className="text-[18px] font-semibold text-white">Lead sources</h2>
-              <span className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-[12px] text-[#D4AF37]">Live</span>
+              <span className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-xs text-[#D4AF37]">Live</span>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-slate-800 bg-slate-900 p-6 sm:p-8">
               <div className="space-y-5">
                 {sources.map((src) => (
                   <div key={src.source}>
-                    <div className="flex items-center justify-between text-[13px]">
-                      <span className="font-medium text-white/80">{src.source}</span>
-                      <span className="text-white/45">{src.count} lead{src.count !== 1 ? 's' : ''}</span>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-300">{src.source}</span>
+                      <span className="text-slate-400">{src.count} lead{src.count !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.04]">
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
                       <div
-                        className={`h-full rounded-full ${SOURCE_COLORS[src.source] ?? 'bg-white/30'}`}
+                        className={`h-full rounded-full ${SOURCE_COLORS[src.source] ?? 'bg-slate-500'}`}
                         style={{ width: `${(src.count / maxSource) * 100}%` }}
                       />
                     </div>
@@ -269,10 +269,10 @@ export default function CrmReportsPage() {
                     key={f}
                     onClick={() => setIntentFilter(f)}
                     className={[
-                      'rounded-full px-3 py-1 text-[13px] font-medium transition',
+                      'rounded-full px-3 py-1 text-sm font-medium transition',
                       intentFilter === f
                         ? 'bg-[#D4AF37] text-[#06080A]'
-                        : 'border border-white/[0.08] text-white/40 hover:text-white/65',
+                        : 'border border-slate-700 text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
                     {f}
@@ -282,30 +282,30 @@ export default function CrmReportsPage() {
               <select
                 value={agentFilter}
                 onChange={(e) => setAgentFilter(e.target.value)}
-                className="rounded-full border border-white/[0.08] bg-transparent px-3 py-1 text-[13px] text-white/40 outline-none transition hover:border-white/20 hover:text-white/65"
+                className="rounded-full border border-slate-700 bg-transparent px-3 py-1 text-sm text-slate-400 outline-none transition hover:border-slate-500 hover:text-slate-200"
               >
                 {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-[#0B0F1A]">{a === 'All' ? 'All agents' : a}</option>)}
               </select>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-slate-800 bg-slate-900 p-6 sm:p-8">
               {filteredLeads.length === 0 ? (
-                <div className="py-8 text-center text-[13px] text-white/35">No leads match these filters.</div>
+                <div className="py-8 text-center text-sm text-slate-500">No leads match these filters.</div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {filteredLeads.map((lead) => (
                     <div key={lead.id} className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="truncate text-[13px] font-medium text-white/80">{lead.name}</div>
-                        <div className="text-[13px] text-white/40">{lead.stage} · {lead.assignedAgent}</div>
+                        <div className="truncate text-sm font-medium text-slate-300">{lead.name}</div>
+                        <div className="text-sm text-slate-500">{lead.stage} · {lead.assignedAgent}</div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800">
                           <div
                             className={`h-full rounded-full ${lead.intentScore >= 85 ? 'bg-[#D4AF37]' : lead.intentScore >= 70 ? 'bg-[#D4AF37]' : 'bg-orange-400'}`}
                             style={{ width: `${lead.intentScore}%` }}
                           />
                         </div>
-                        <span className="w-6 text-right text-[12px] font-semibold text-white/70">{lead.intentScore}</span>
+                        <span className="w-6 text-right text-xs font-semibold text-slate-300">{lead.intentScore}</span>
                       </div>
                     </div>
                   ))}
@@ -319,21 +319,21 @@ export default function CrmReportsPage() {
             <div className="mb-5 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-[#D4AF37]" />
               <h2 className="text-[18px] font-semibold text-white">Monthly revenue</h2>
-              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-[12px] text-white/55">Seeded data — live in V1.1</span>
+              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Seeded data — live in V1.1</span>
             </div>
-            <div className="rounded-[24px] border border-white/[0.08] bg-[#131B2B] p-6 sm:p-8">
+            <div className="rounded-[24px] border border-slate-800 bg-slate-900 p-6 sm:p-8">
               <div className="grid grid-cols-5 gap-3 sm:gap-5">
                 {MONTHLY.map((m) => (
                   <div key={m.month} className="flex flex-col items-center gap-3">
-                    <div className="flex h-32 w-full items-end overflow-hidden rounded-lg bg-white/[0.03]">
+                    <div className="flex h-32 w-full items-end overflow-hidden rounded-lg bg-slate-800/50">
                       <div
                         className="w-full rounded-lg bg-gradient-to-t from-[#D4AF37]/70 to-[#D4AF37]/30"
                         style={{ height: `${(m.revenue / MAX_REV) * 100}%` }}
                       />
                     </div>
                     <div className="text-center">
-                      <div className="text-[13px] font-semibold text-white">AED {m.revenue}M</div>
-                      <div className="text-[12px] uppercase tracking-[0.18em] text-white/35">{m.month} · {m.deals}d</div>
+                      <div className="text-sm font-semibold text-white">AED {m.revenue}M</div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{m.month} · {m.deals}d</div>
                     </div>
                   </div>
                 ))}
@@ -356,25 +356,25 @@ export default function CrmReportsPage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.06] to-transparent p-5">
-              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Top channel</div>
+            <div className="rounded-xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.06] to-transparent p-5">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Top channel</div>
               <div className="mt-3 text-[16px] font-semibold text-white">{sources[0]?.source ?? '—'}</div>
-              <div className="mt-1 text-[12px] text-white/55">{sources[0]?.count ?? 0} leads · highest volume</div>
+              <div className="mt-1 text-xs text-slate-400">{sources[0]?.count ?? 0} leads · highest volume</div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Users className="h-3 w-3" /> Cohort watch
               </div>
               <div className="mt-3 text-[14px] font-semibold text-white">Golden Visa buyers</div>
-              <div className="mt-2 text-[12px] leading-relaxed text-white/55">
+              <div className="mt-2 text-xs leading-relaxed text-slate-400">
                 1 lead tagged GV-eligible · AED 2.5M+ budget · at Qualified stage.
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Activity this week</div>
-              <div className="mt-3 space-y-2 text-[13px] text-white/70">
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Activity this week</div>
+              <div className="mt-3 space-y-2 text-sm text-slate-300">
                 <div className="flex justify-between">
                   <span>Calls logged</span>
                   <span className="font-semibold text-white">{callsLogged}</span>
@@ -390,10 +390,10 @@ export default function CrmReportsPage() {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/35">Next report</div>
-              <div className="mt-3 text-[14px] text-white/80">Weekly · Mondays 09:00 GST</div>
-              <div className="mt-1 text-[12px] text-white/45">Sent to owner + sales leads.</div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Next report</div>
+              <div className="mt-3 text-[14px] text-slate-300">Weekly · Mondays 09:00 GST</div>
+              <div className="mt-1 text-xs text-slate-400">Sent to owner + sales leads.</div>
             </div>
           </div>
         </aside>

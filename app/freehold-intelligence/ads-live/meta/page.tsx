@@ -95,7 +95,7 @@ export default function MetaAdsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
           <div
-            className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider"
+            className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider"
             style={{ color: `${META_BLUE}CC` }}
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill={META_BLUE}>
@@ -103,27 +103,27 @@ export default function MetaAdsPage() {
             </svg>
             Meta Ads
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
             Meta campaigns<br />
-            <span className="text-white/35">Freehold Property Dubai.</span>
+            <span className="text-slate-500">Freehold Property Dubai.</span>
           </h1>
         </section>
 
         <div className="mt-7 flex flex-col items-end gap-2 sm:mt-10">
           {/* Connected badge */}
-          <span className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-[13px] font-medium text-[#D4AF37]">
+          <span className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-3 py-1.5 text-sm font-medium text-[#D4AF37]">
             <CheckCircle2 className="h-3 w-3" />
             Connected
           </span>
           {/* Manage external link */}
-          <button className="inline-flex items-center gap-1 text-[12px] text-white/35 transition hover:text-white/60">
+          <button className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
             Manage in Meta <ArrowUpRight className="h-3 w-3" />
           </button>
         </div>
       </div>
 
       {/* Account status */}
-      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/[0.05] bg-white/[0.03] px-5 py-4">
+      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-4">
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
           style={{ backgroundColor: `${META_BLUE}18`, border: `1px solid ${META_BLUE}30` }}
@@ -133,8 +133,8 @@ export default function MetaAdsPage() {
           </svg>
         </div>
         <div>
-          <div className="text-[13px] font-semibold text-white">Freehold Property Dubai</div>
-          <div className="text-[13px] text-white/40">Facebook Page · Business Account connected</div>
+          <div className="text-sm font-semibold text-white">Freehold Property Dubai</div>
+          <div className="text-sm text-slate-400">Facebook Page · Business Account connected</div>
         </div>
       </div>
 
@@ -148,9 +148,9 @@ export default function MetaAdsPage() {
           { label: 'CPL',          value: 'AED 74.3' },
           { label: 'CTR',          value: '2.1%' },
         ].map((k) => (
-          <div key={k.label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/40">{k.label}</div>
-            <div className={`mt-2 text-[20px] font-semibold leading-none ${k.color ?? 'text-white'}`}>{k.value}</div>
+          <div key={k.label} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-4">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{k.label}</div>
+            <div className={`mt-2 text-xl font-semibold leading-none ${k.color ?? 'text-white'}`}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -158,17 +158,17 @@ export default function MetaAdsPage() {
       {/* Campaigns table */}
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Campaigns</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Campaigns</div>
           <div className="flex gap-1.5">
             {(['All', 'Active', 'Paused'] as StatusFilter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
                 className={[
-                  'rounded-full px-3 py-1 text-[13px] font-medium transition',
+                  'rounded-full px-3 py-1 text-sm font-medium transition',
                   statusFilter === f
                     ? 'border border-[#1877F2]/40 bg-[#1877F2]/15 text-[#6BA3F5]'
-                    : 'border border-white/[0.08] text-white/40 hover:text-white/65',
+                    : 'border border-slate-700 text-slate-400 hover:text-slate-200',
                 ].join(' ')}
               >
                 {f}
@@ -177,9 +177,9 @@ export default function MetaAdsPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <div className="min-w-[700px] overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.03]">
+          <div className="min-w-[700px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/50">
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 border-b border-white/[0.05] px-5 py-3">
+            <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 border-b border-slate-800 px-5 py-3">
               {[
                 { label: 'Campaign', col: null },
                 { label: 'Status',   col: null },
@@ -194,9 +194,9 @@ export default function MetaAdsPage() {
                   key={label}
                   onClick={() => col && handleSort(col)}
                   className={[
-                    'flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.16em] transition',
-                    col ? 'text-white/30 hover:text-white/60 cursor-pointer' : 'text-white/30 cursor-default',
-                    col && sortCol === col ? 'text-white/60' : '',
+                    'flex items-center gap-1 text-xs font-medium uppercase tracking-[0.16em] transition',
+                    col ? 'text-slate-500 hover:text-slate-300 cursor-pointer' : 'text-slate-500 cursor-default',
+                    col && sortCol === col ? 'text-slate-300' : '',
                   ].join(' ')}
                 >
                   {label}
@@ -207,7 +207,7 @@ export default function MetaAdsPage() {
               ))}
             </div>
             {/* Rows */}
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-slate-800">
               {visibleCampaigns.map((c) => (
                 <div
                   key={c.name}
@@ -215,11 +215,11 @@ export default function MetaAdsPage() {
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-[#D4AF37]' : 'bg-[#D4AF37]'}`} />
-                    <span className="truncate text-[13px] font-semibold text-white/90">{c.name}</span>
+                    <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                   </div>
                   <div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         c.status === 'Active'
                           ? 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
@@ -228,22 +228,22 @@ export default function MetaAdsPage() {
                       {c.status}
                     </span>
                   </div>
-                  <div className="text-[12px] text-white/70">
+                  <div className="text-xs text-slate-300">
                     {c.dailyBudget > 0 ? `AED ${c.dailyBudget}/d` : '—'}
                   </div>
-                  <div className="text-[12px] text-white/70">
+                  <div className="text-xs text-slate-300">
                     {c.spend > 0 ? `AED ${c.spend.toLocaleString()}` : '—'}
                   </div>
-                  <div className="text-[12px] text-white/60">
+                  <div className="text-xs text-slate-400">
                     {c.impressions > 0 ? c.impressions.toLocaleString() : '—'}
                   </div>
-                  <div className="text-[12px] text-white/60">
+                  <div className="text-xs text-slate-400">
                     {c.clicks > 0 ? c.clicks.toLocaleString() : '—'}
                   </div>
-                  <div className={`text-[13px] font-semibold ${c.leads > 0 ? 'text-[#D4AF37]' : 'text-white/30'}`}>
+                  <div className={`text-sm font-semibold ${c.leads > 0 ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
                     {c.leads > 0 ? c.leads : '—'}
                   </div>
-                  <div className="text-[12px] text-white/70">
+                  <div className="text-xs text-slate-300">
                     {c.cpl > 0 ? `AED ${c.cpl}` : '—'}
                   </div>
                 </div>
@@ -255,17 +255,17 @@ export default function MetaAdsPage() {
 
       {/* Ad sets */}
       <section className="mt-10">
-        <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">Ad Sets</div>
+        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">Ad Sets</div>
         <div className="grid gap-3 sm:grid-cols-3">
           {adSets.map((s) => (
             <div
               key={s.name}
-              className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-5"
+              className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[13px] font-semibold text-white/90">{s.name}</span>
+                <span className="text-sm font-semibold text-slate-100">{s.name}</span>
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium ${
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                     s.status === 'Active'
                       ? 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
                       : 'border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
@@ -274,9 +274,9 @@ export default function MetaAdsPage() {
                   {s.status}
                 </span>
               </div>
-              <div className="mt-3 space-y-1.5 text-[12px] text-white/50">
-                <div>Budget <span className="text-white/75">{s.budget}</span></div>
-                <div>Audience size <span className="text-white/75">{s.audience}</span></div>
+              <div className="mt-3 space-y-1.5 text-xs text-slate-400">
+                <div>Budget <span className="text-slate-300">{s.budget}</span></div>
+                <div>Audience size <span className="text-slate-300">{s.audience}</span></div>
               </div>
             </div>
           ))}
@@ -287,13 +287,13 @@ export default function MetaAdsPage() {
       <div className="mt-10 flex flex-wrap gap-3">
         <Link
           href="/freehold-intelligence/lead-machine/campaigns/new"
-          className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-3 text-[13px] font-semibold text-white/80 transition hover:border-[#D4AF37]/30 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
         >
           <Plus className="h-4 w-4 text-[#D4AF37]" /> Create Campaign
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/creatives"
-          className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-3 text-[13px] font-semibold text-white/80 transition hover:border-[#D4AF37]/30 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
         >
           <Palette className="h-4 w-4 text-[#D4AF37]" /> View Creatives
         </Link>

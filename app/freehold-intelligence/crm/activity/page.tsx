@@ -158,16 +158,16 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
   whatsapp: {
     Icon: MessageCircle,
     label: 'Message',
-    iconColor: 'text-white/55',
+    iconColor: 'text-slate-400',
     iconBg: 'bg-sky-400/10 border-sky-400/20',
-    badgeColor: 'border-sky-400/20 bg-sky-400/10 text-white/55',
+    badgeColor: 'border-sky-400/20 bg-sky-400/10 text-slate-400',
   },
   note: {
     Icon: FileText,
     label: 'Note',
-    iconColor: 'text-white/55',
-    iconBg: 'bg-white/[0.04] border-white/10',
-    badgeColor: 'border-white/10 bg-white/[0.04] text-white/50',
+    iconColor: 'text-slate-400',
+    iconBg: 'bg-slate-800/50 border-slate-700',
+    badgeColor: 'border-slate-700 bg-slate-800/50 text-slate-400',
   },
   stage_change: {
     Icon: ArrowLeftRight,
@@ -179,9 +179,9 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
   assignment: {
     Icon: UserCog,
     label: 'Assignment',
-    iconColor: 'text-white/55',
+    iconColor: 'text-slate-400',
     iconBg: 'bg-violet-400/10 border-violet-400/20',
-    badgeColor: 'border-violet-400/20 bg-violet-400/10 text-white/55',
+    badgeColor: 'border-violet-400/20 bg-violet-400/10 text-slate-400',
   },
   follow_up: {
     Icon: Bell,
@@ -193,9 +193,9 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
   system: {
     Icon: Zap,
     label: 'System',
-    iconColor: 'text-white/55',
+    iconColor: 'text-slate-400',
     iconBg: 'bg-rose-400/10 border-rose-400/20',
-    badgeColor: 'border-rose-400/20 bg-rose-400/10 text-white/55',
+    badgeColor: 'border-rose-400/20 bg-rose-400/10 text-slate-400',
   },
 }
 
@@ -238,10 +238,10 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
   if (!outcome) return null
   const map: Record<string, string> = {
     connected:         'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
-    no_answer:         'border-white/10 bg-white/[0.04] text-white/40',
+    no_answer:         'border-slate-700 bg-slate-800/50 text-slate-400',
     progressed:        'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
-    callback_requested:'border-sky-400/20 bg-sky-400/10 text-white/55',
-    not_interested:    'border-rose-400/20 bg-rose-400/10 text-white/55',
+    callback_requested:'border-sky-400/20 bg-sky-400/10 text-slate-400',
+    not_interested:    'border-rose-400/20 bg-rose-400/10 text-slate-400',
   }
   const label: Record<string, string> = {
     connected:          'Connected',
@@ -250,9 +250,9 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
     callback_requested: 'Callback requested',
     not_interested:     'Not interested',
   }
-  const cls = map[outcome] ?? 'border-white/10 bg-white/[0.04] text-white/40'
+  const cls = map[outcome] ?? 'border-slate-700 bg-slate-800/50 text-slate-400'
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${cls}`}>
+    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}>
       {label[outcome] ?? outcome}
     </span>
   )
@@ -260,9 +260,9 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
 
 function StatCard({ value, label, valueColor }: { value: number | string; label: string; valueColor?: string }) {
   return (
-    <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
       <div className={`text-[30px] font-semibold leading-none ${valueColor ?? 'text-white'}`}>{value}</div>
-      <div className="mt-1.5 text-[13px] text-white/40">{label}</div>
+      <div className="mt-1.5 text-sm text-slate-400">{label}</div>
     </div>
   )
 }
@@ -279,10 +279,10 @@ function FilterPill({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all ${
+      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all ${
         active
           ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-          : 'border-white/[0.08] bg-white/[0.03] text-white/45 hover:border-white/20 hover:text-white/70'
+          : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
       }`}
     >
       {label}
@@ -308,15 +308,15 @@ function EventCard({
           <Icon className={`h-4.5 w-4.5 ${cfg.iconColor}`} strokeWidth={1.8} />
         </div>
         {!isLast && (
-          <div className="mt-1 w-px flex-1 bg-white/[0.06]" style={{ minHeight: '24px' }} />
+          <div className="mt-1 w-px flex-1 bg-slate-800" style={{ minHeight: '24px' }} />
         )}
       </div>
 
       {/* Card */}
-      <div className="mb-4 min-w-0 flex-1 rounded-[18px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
+      <div className="mb-4 min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-900 px-5 py-4">
         {/* Top row */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className={`rounded-full border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide ${cfg.badgeColor}`}>
+          <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${cfg.badgeColor}`}>
             {cfg.label}
           </span>
           <Link
@@ -326,7 +326,7 @@ function EventCard({
             {event.leadName}
           </Link>
           {typeof event.durationMin === 'number' && event.durationMin > 0 && (
-            <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2 py-0.5 text-[12px] text-white/35">
+            <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-500">
               {event.durationMin} min
             </span>
           )}
@@ -334,11 +334,11 @@ function EventCard({
         </div>
 
         {/* Content */}
-        <p className="mt-2 text-[13px] leading-relaxed text-white/60">{event.content}</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">{event.content}</p>
 
         {/* Footer */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-white/30">
-          <span className="font-medium text-white/45">{event.actor === 'system' ? 'System' : event.actor}</span>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
+          <span className="font-medium text-slate-400">{event.actor === 'system' ? 'System' : event.actor}</span>
           <span>·</span>
           <span title={formatTimestamp(event.createdAt)}>{timeAgo(event.createdAt)}</span>
           <span>·</span>
@@ -361,15 +361,15 @@ function BreakdownList({
   const max = Math.max(...items.map((i) => i.count), 1)
   return (
     <div>
-      <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.2em] text-white/30">{title}</div>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{title}</div>
       <div className="space-y-2.5">
         {items.map((item) => (
           <div key={item.label}>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-[12px] text-white/60">{item.label}</span>
-              <span className="text-[12px] font-semibold text-white/80">{item.count}</span>
+              <span className="text-xs text-slate-400">{item.label}</span>
+              <span className="text-xs font-semibold text-slate-300">{item.count}</span>
             </div>
-            <div className="h-[3px] rounded-full bg-white/[0.05]">
+            <div className="h-[3px] rounded-full bg-slate-800">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -463,15 +463,15 @@ export default function CrmActivityPage() {
       <div className="mx-auto max-w-6xl">
 
         {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Activity className="h-3.5 w-3.5" />
           Activity Log
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
           Everything that<br />
-          <span className="text-white/35">happened.</span>
+          <span className="text-slate-500">happened.</span>
         </h1>
-        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-white/50">
+        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-slate-400">
           {sortedAll.length} events logged — every call, message, note and stage change in chronological order.
         </p>
 
@@ -479,7 +479,7 @@ export default function CrmActivityPage() {
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard value={stats.total}         label="Total events"    valueColor="text-white" />
           <StatCard value={stats.callsToday}    label="Calls today"     valueColor="text-[#D4AF37]" />
-          <StatCard value={stats.messagesToday} label="Messages today"  valueColor="text-white/55" />
+          <StatCard value={stats.messagesToday} label="Messages today"  valueColor="text-slate-400" />
           <StatCard value={stats.stageChanges}  label="Stage changes"   valueColor="text-[#D4AF37]" />
         </div>
 
@@ -501,7 +501,7 @@ export default function CrmActivityPage() {
           {/* ── Timeline ──────────────────────────────────────────────────── */}
           <div>
             {grouped.length === 0 ? (
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] px-8 py-12 text-center text-white/30">
+              <div className="rounded-xl border border-slate-800 bg-slate-900 px-8 py-12 text-center text-slate-500">
                 No events match this filter.
               </div>
             ) : (
@@ -509,11 +509,11 @@ export default function CrmActivityPage() {
                 <div key={dateKey} className="mb-8">
                   {/* Date group header */}
                   <div className="mb-5 flex items-center gap-3">
-                    <span className="text-[12px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                       {dateLabel(dateKey)}
                     </span>
-                    <span className="flex-1 border-t border-white/[0.05]" />
-                    <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/30">
+                    <span className="flex-1 border-t border-slate-800" />
+                    <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-500">
                       {events.length}
                     </span>
                   </div>
@@ -536,13 +536,13 @@ export default function CrmActivityPage() {
           {/* ── Sidebar ───────────────────────────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="sticky top-8 space-y-6">
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
                 <BreakdownList
                   title="By agent"
                   items={byAgent}
                 />
               </div>
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
                 <BreakdownList
                   title="By type"
                   items={byType}
@@ -550,8 +550,8 @@ export default function CrmActivityPage() {
               </div>
 
               {/* Quick legend */}
-              <div className="rounded-[22px] border border-white/[0.08] bg-[#131B2B] p-6">
-                <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.2em] text-white/30">Legend</div>
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Legend</div>
                 <div className="space-y-2.5">
                   {(Object.entries(TYPE_CONFIG) as [CRMActivityEvent['type'], EventConfig][]).map(([, cfg]) => {
                     const { Icon } = cfg
@@ -560,7 +560,7 @@ export default function CrmActivityPage() {
                         <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${cfg.iconBg}`}>
                           <Icon className={`h-3 w-3 ${cfg.iconColor}`} strokeWidth={2} />
                         </div>
-                        <span className="text-[12px] text-white/50">{cfg.label}</span>
+                        <span className="text-xs text-slate-400">{cfg.label}</span>
                       </div>
                     )
                   })}

@@ -23,7 +23,7 @@ const INITIAL_AGENTS: Agent[] = [
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   bg-orange-400/10   border-orange-400/25',
-  Silver:   'text-white/65     bg-white/[0.06]    border-white/15',
+  Silver:   'text-slate-300    bg-slate-800/50    border-slate-600',
   Gold:     'text-[#D4AF37]    bg-[#D4AF37]/10    border-[#D4AF37]/25',
   Platinum: 'text-violet-300   bg-violet-400/10   border-violet-400/25',
 }
@@ -75,7 +75,7 @@ export default function AgentCreditsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-[20px] font-semibold text-white">Agent Lead Credits</h1>
-        <p className="mt-1 text-[13px] text-white/35">
+        <p className="mt-1 text-sm text-slate-400">
           Control how many leads each agent receives per month. Credits reset on the 1st of each month.
         </p>
       </div>
@@ -87,10 +87,10 @@ export default function AgentCreditsPage() {
           { label: 'Used this month', value: totalUsed,                        Icon: Users, color: 'text-sky-400'    },
           { label: 'Remaining',       value: totalQuota - totalUsed,           Icon: CheckCircle, color: 'text-emerald-400' },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-white/[0.06] bg-[#131B2B] px-4 py-3.5">
+          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3.5">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className={`mt-2 text-[20px] font-semibold tabular-nums ${color}`}>{value}</div>
-            <div className="mt-0.5 text-[11px] text-white/30">{label}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{label}</div>
           </div>
         ))}
       </div>
@@ -104,11 +104,11 @@ export default function AgentCreditsPage() {
           const isSaved = saved.includes(agent.id)
 
           return (
-            <div key={agent.id} className="rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+            <div key={agent.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
 
               {/* Agent identity */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[13px] font-bold text-[#D4AF37]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-sm font-bold text-[#D4AF37]">
                   {agent.initials}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -117,11 +117,11 @@ export default function AgentCreditsPage() {
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
                       {agent.tier}
                     </span>
-                    <span className="text-[11px] text-white/25">Resets {new Date(agent.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-xs text-slate-500">Resets {new Date(agent.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
                   </div>
                 </div>
                 {isSaved && (
-                  <div className="flex items-center gap-1 text-[11px] text-emerald-400">
+                  <div className="flex items-center gap-1 text-xs text-emerald-400">
                     <CheckCircle className="h-3.5 w-3.5" /> Saved
                   </div>
                 )}
@@ -129,15 +129,15 @@ export default function AgentCreditsPage() {
 
               {/* Usage bar */}
               <div className="mb-4">
-                <div className="mb-1.5 flex items-center justify-between text-[11px]">
-                  <span className="text-white/35">{agent.used} of {agent.quota} leads used</span>
+                <div className="mb-1.5 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">{agent.used} of {agent.quota} leads used</span>
                   {agent.pending > 0 && (
                     <span className="flex items-center gap-1 text-amber-400/70">
                       <Clock className="h-3 w-3" /> {agent.pending} pending
                     </span>
                   )}
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-700">
                   <div
                     className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
@@ -150,14 +150,14 @@ export default function AgentCreditsPage() {
 
                 {/* Tier selector */}
                 <div>
-                  <div className="mb-1.5 text-[10px] text-white/25 uppercase tracking-wider">Tier</div>
+                  <div className="mb-1.5 text-[10px] text-slate-500 uppercase tracking-wider">Tier</div>
                   <div className="flex gap-1.5">
                     {(['Bronze', 'Silver', 'Gold', 'Platinum'] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setTier(agent.id, t)}
-                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                          agent.tier === t ? TIER_COLOR[t] : 'border-white/[0.07] text-white/25 hover:text-white/50'
+                        className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                          agent.tier === t ? TIER_COLOR[t] : 'border-slate-700 text-slate-500 hover:text-slate-300'
                         }`}
                       >
                         {t}
@@ -168,20 +168,20 @@ export default function AgentCreditsPage() {
 
                 {/* Manual quota adjustment */}
                 <div className="ml-auto flex items-center gap-2">
-                  <div className="text-[10px] text-white/25 uppercase tracking-wider">Bonus credits</div>
-                  <div className="flex items-center gap-1.5 rounded-[10px] border border-white/[0.08] bg-white/[0.03] px-1 py-1">
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">Bonus credits</div>
+                  <div className="flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-1 py-1">
                     <button
                       onClick={() => adjust(agent.id, -1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="min-w-[28px] text-center text-[13px] font-semibold text-white tabular-nums">
+                    <span className="min-w-[28px] text-center text-sm font-semibold text-white tabular-nums">
                       {adj > 0 ? `+${adj}` : adj}
                     </span>
                     <button
                       onClick={() => adjust(agent.id, 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-white/40 transition hover:bg-white/[0.06] hover:text-white/70"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-slate-200"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -189,7 +189,7 @@ export default function AgentCreditsPage() {
                   {adj !== 0 && (
                     <button
                       onClick={() => applyAdjustment(agent.id)}
-                      className="rounded-full bg-[#D4AF37] px-3 py-1.5 text-[12px] font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                      className="rounded-full bg-[#D4AF37] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
                     >
                       Apply
                     </button>
