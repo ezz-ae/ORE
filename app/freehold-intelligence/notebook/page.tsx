@@ -1,16 +1,22 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { BookOpen, Pin, Sparkles, ArrowUpRight, MessageSquare, FileText, Megaphone, GitBranch, Hash, Search, X } from 'lucide-react'
+import {
+  BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
+  Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
+  Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
+  BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper,
+} from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-function outputTypeIcon(type: string) {
-  if (type === 'ad_copy' || type === 'script') return <Megaphone className="h-3 w-3" />
-  if (type === 'comparison') return <GitBranch className="h-3 w-3" />
-  if (type === 'brochure' || type === 'pdf') return <FileText className="h-3 w-3" />
-  return <MessageSquare className="h-3 w-3" />
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function outputTypeIcon(type: string, className = 'h-3.5 w-3.5') {
+  if (type === 'ad_copy' || type === 'script') return <Megaphone className={className} />
+  if (type === 'comparison') return <GitBranch className={className} />
+  if (type === 'brochure' || type === 'pdf') return <FileText className={className} />
+  return <MessageSquare className={className} />
 }
 
 function statusTone(status: string) {
@@ -28,289 +34,660 @@ function relativeTime(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
+// ── data ─────────────────────────────────────────────────────────────────────
+
 const allOutputs = notebookConversations.flatMap(c => c.savedOutputs)
 const pinnedOutputs = allOutputs.filter(o => o.pinned)
-const totalMessages = notebookConversations.reduce((s, c) => s + c.messages.length, 0)
 
-type OutputType = 'All' | 'ad_copy' | 'script' | 'comparison' | 'brochure' | 'pdf' | 'message'
-type OutputStatus = 'All' | 'approved' | 'sent_for_review' | 'saved' | 'draft'
+type CenterTab = 'chat' | 'saved' | 'pinned'
 
-const OUTPUT_TYPES: { key: OutputType; label: string }[] = [
-  { key: 'All',        label: 'All'        },
-  { key: 'ad_copy',    label: 'Ad copy'    },
-  { key: 'comparison', label: 'Comparison' },
-  { key: 'brochure',   label: 'Brochure'   },
-  { key: 'script',     label: 'Script'     },
-  { key: 'message',    label: 'Message'    },
+// ── studio generate grid ─────────────────────────────────────────────────────
+
+const GENERATE_TYPES = [
+  { key: 'brochure',      label: 'Brochure',       icon: <FileText className="h-5 w-5" /> },
+  { key: 'ad_copy',       label: 'Ad Copy',         icon: <Megaphone className="h-5 w-5" /> },
+  { key: 'whatsapp',      label: 'WhatsApp',        icon: <Phone className="h-5 w-5" /> },
+  { key: 'comparison',    label: 'Comparison',      icon: <GitBranch className="h-5 w-5" /> },
+  { key: 'offer_letter',  label: 'Offer Letter',    icon: <FileImage className="h-5 w-5" /> },
+  { key: 'script',        label: 'Script',          icon: <Layers className="h-5 w-5" /> },
+  { key: 'market_report', label: 'Market Report',   icon: <BarChart2 className="h-5 w-5" /> },
+  { key: 'social_post',   label: 'Social Post',     icon: <Newspaper className="h-5 w-5" /> },
 ]
 
-const STATUS_FILTERS: { key: OutputStatus; label: string }[] = [
-  { key: 'All',             label: 'All'            },
-  { key: 'approved',        label: 'Approved'       },
-  { key: 'sent_for_review', label: 'In review'      },
-  { key: 'saved',           label: 'Saved'          },
-  { key: 'draft',           label: 'Draft'          },
+const SEND_DESTINATIONS = [
+  { key: 'crm',       label: 'CRM',       icon: <Users className="h-3.5 w-3.5" /> },
+  { key: 'ads_live',  label: 'Ads Live',  icon: <Globe className="h-3.5 w-3.5" /> },
+  { key: 'whatsapp',  label: 'WhatsApp',  icon: <Phone className="h-3.5 w-3.5" /> },
+  { key: 'email',     label: 'Email',     icon: <Mail className="h-3.5 w-3.5" /> },
 ]
+
+const MOCK_UPLOADS = [
+  { id: 'upload_1', name: 'Palm_Investor_Pack_v3.pdf', type: 'pdf', size: '2.4 MB' },
+  { id: 'upload_2', name: 'Dubai_Hills_Brochure.pdf',  type: 'pdf', size: '1.8 MB' },
+  { id: 'upload_3', name: 'Market_Report_Q2_2026.pdf', type: 'pdf', size: '4.1 MB' },
+]
+
+const CHAT_SUGGESTIONS = [
+  'Draft a WhatsApp for the hottest lead.',
+  'Comparison: Palm vs Hills for AED 2.5M investor.',
+  'Three Meta ad angles for Dubai Hills.',
+  'Offer letter for Business Bay entry.',
+]
+
+// ── components ────────────────────────────────────────────────────────────────
+
+function SourceCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button onClick={onChange} className="shrink-0 text-slate-400 hover:text-[#D4AF37] transition">
+      {checked
+        ? <CheckSquare className="h-3.5 w-3.5 text-[#D4AF37]" />
+        : <Square className="h-3.5 w-3.5" />}
+    </button>
+  )
+}
+
+// ── main page ─────────────────────────────────────────────────────────────────
 
 export default function NotebookPage() {
-  const [query, setQuery] = useState('')
-  const [typeFilter, setTypeFilter] = useState<OutputType>('All')
-  const [statusFilter, setStatusFilter] = useState<OutputStatus>('All')
+  // left panel
+  const [sourceQuery, setSourceQuery] = useState('')
+  const [checkedSources, setCheckedSources] = useState<Record<string, boolean>>({
+    all_conversations: true,
+    live_projects: false,
+    crm_leads: false,
+    uploads: false,
+    ...Object.fromEntries(MOCK_UPLOADS.map(u => [u.id, false])),
+  })
+  const [isDragOver, setIsDragOver] = useState(false)
 
-  const filteredConversations = useMemo(() => {
-    const q = query.trim().toLowerCase()
+  // center panel
+  const [centerTab, setCenterTab] = useState<CenterTab>('chat')
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [chatPending, setChatPending] = useState(false)
+  const [convQuery, setConvQuery] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [notebookTitle, setNotebookTitle] = useState('Freehold Intelligence')
+  const chatBottomRef = useRef<HTMLDivElement>(null)
+  const taRef = useRef<HTMLTextAreaElement>(null)
+
+  // right panel
+  const [activeGenerate, setActiveGenerate] = useState<string | null>(null)
+  const [activeSendDest, setActiveSendDest] = useState<string | null>(null)
+  const [activeSendOutput, setActiveSendOutput] = useState<string | null>(null)
+
+  // auto-resize textarea
+  useEffect(() => {
+    if (!taRef.current) return
+    taRef.current.style.height = 'auto'
+    taRef.current.style.height = Math.min(taRef.current.scrollHeight, 120) + 'px'
+  }, [chatInput])
+
+  // scroll to bottom on new messages
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages, chatPending])
+
+  // source toggle
+  function toggleSource(key: string) {
+    setCheckedSources(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+  function toggleAll(val: boolean) {
+    setCheckedSources(prev => Object.fromEntries(Object.keys(prev).map(k => [k, val])))
+  }
+  const allChecked = Object.values(checkedSources).every(Boolean)
+  const noneChecked = Object.values(checkedSources).every(v => !v)
+
+  // filtered conversations
+  const filteredConvs = useMemo(() => {
+    const q = convQuery.trim().toLowerCase()
     const base = [...notebookConversations].reverse()
     if (!q) return base
-    return base.filter((c) =>
+    return base.filter(c =>
       c.title.toLowerCase().includes(q) ||
-      c.messages.some((m) => m.content.toLowerCase().includes(q))
+      c.messages.some(m => m.content.toLowerCase().includes(q))
     )
-  }, [query])
+  }, [convQuery])
 
-  const filteredOutputs = useMemo(() => {
-    return allOutputs.filter((o) => {
-      if (typeFilter !== 'All' && o.type !== typeFilter) return false
-      if (statusFilter !== 'All' && o.status !== statusFilter) return false
-      return true
-    })
-  }, [typeFilter, statusFilter])
+  // chat send
+  async function sendChat(text?: string) {
+    const message = (text ?? chatInput).trim()
+    if (!message || chatPending) return
+    setChatMessages(m => [...m, { role: 'user', content: message }])
+    setChatInput('')
+    setChatPending(true)
+    try {
+      const res = await fetch('/api/freehold/server-ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, role: 'owner' }),
+      })
+      const data = await res.json()
+      const answer =
+        data?.data?.answer || data?.answer || data?.message || data?.reply ||
+        'I reviewed your notebook sources. Try one of the suggested prompts.'
+      setChatMessages(m => [...m, { role: 'assistant', content: answer }])
+    } catch {
+      setChatMessages(m => [...m, { role: 'assistant', content: 'Could not reach the server. Try again in a moment.' }])
+    } finally {
+      setChatPending(false)
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+    <div className="flex overflow-hidden bg-[#0D1117]" style={{ height: 'calc(100dvh - 56px)' }}>
 
-      {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
-          <BookOpen className="h-3.5 w-3.5" /> Notebook
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          Generate, save,
-          <br />
-          <span className="text-slate-400">send what matters.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
-          Brochures, ad copy, WhatsApp drafts, comparisons, offer letters — all grounded in live project, lead, and campaign context. Everything saved here is ready to use.
-        </p>
-      </section>
+      {/* ── LEFT PANEL — Sources ─────────────────────────────────────────── */}
+      <aside className="flex w-[280px] shrink-0 flex-col border-r border-slate-800 bg-[#0A0E14] overflow-hidden">
 
-      {/* Stats */}
-      <section className="mt-8 grid grid-cols-3 gap-3">
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
-          <p className="text-[26px] font-semibold text-white">{notebookConversations.length}</p>
-          <p className="mt-1 text-xs text-slate-500">Conversations</p>
-        </div>
-        <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] p-4 text-center">
-          <p className="text-[26px] font-semibold text-[#F8E7AE]">{allOutputs.length}</p>
-          <p className="mt-1 text-xs text-[#D4AF37]/60">Saved outputs</p>
-        </div>
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
-          <p className="text-[26px] font-semibold text-white">{totalMessages}</p>
-          <p className="mt-1 text-xs text-slate-500">Messages</p>
-        </div>
-      </section>
-
-      {/* New conversation prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder="Generate an offer, comparison, WhatsApp message, ad copy…"
-          suggestions={[
-            'Draft a WhatsApp for the hottest lead.',
-            'Comparison: Palm vs Hills for AED 2.5M investor.',
-            'Three Meta ad angles for Dubai Hills.',
-            'Offer letter for Business Bay entry.',
-          ]}
-        />
-      </section>
-
-      {/* Pinned outputs */}
-      {pinnedOutputs.length > 0 && (
-        <section className="mt-12">
-          <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80">
-            <Pin className="h-3 w-3" /> Pinned outputs
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {pinnedOutputs.map(output => (
-              <Link
-                key={output.id}
-                href={`/freehold-intelligence/notebook/${output.conversationId}`}
-                className="group rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-5 transition hover:border-[#D4AF37]/30"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-[#D4AF37]/70">
-                    {outputTypeIcon(output.type)}
-                    <span className="capitalize">{output.type.replace(/_/g, ' ')}</span>
-                  </div>
-                  <Pin className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]" />
-                </div>
-                <h3 className="mt-2 text-sm font-semibold text-white">{output.title}</h3>
-                <p className="mt-1.5 line-clamp-2 text-xs leading-[1.6] text-slate-400">{output.content}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusTone(output.status)}`}>
-                    {output.status.replace(/_/g, ' ')}
-                  </span>
-                  {output.tags.slice(0, 3).map(t => (
-                    <span key={t} className="flex items-center gap-0.5 text-sm text-slate-500">
-                      <Hash className="h-2.5 w-2.5" />{t}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Conversations — with search */}
-      <section className="mt-12">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Threads</div>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
-              {filteredConversations.length} of {notebookConversations.length} conversation{notebookConversations.length !== 1 ? 's' : ''}
-            </h2>
-          </div>
+        {/* header */}
+        <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3.5">
+          <span className="text-sm font-semibold text-white">Sources</span>
+          <button className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]">
+            <Plus className="h-3 w-3" /> Add source
+          </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        {/* search */}
+        <div className="relative border-b border-slate-800 px-3 py-2.5">
+          <Search className="absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations…"
-            className="w-full rounded-[14px] border border-slate-800 bg-slate-900 py-2.5 pl-10 pr-10 text-sm text-white placeholder-slate-500 outline-none transition focus:border-[#D4AF37]/30 focus:bg-slate-800/60"
+            value={sourceQuery}
+            onChange={e => setSourceQuery(e.target.value)}
+            placeholder="Search sources…"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-slate-600"
           />
-          {query && (
-            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
-              <X className="h-3.5 w-3.5" />
+          {sourceQuery && (
+            <button onClick={() => setSourceQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
 
-        {filteredConversations.length === 0 ? (
-          <div className="py-12 text-center text-sm text-slate-400">No conversations match your search.</div>
-        ) : (
-          <div className="space-y-3">
-            {filteredConversations.map(conv => {
-              const lastMsg = conv.messages[conv.messages.length - 1]
-              const outputCount = conv.savedOutputs.length
-              return (
+        {/* select all / deselect all */}
+        <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2">
+          <button
+            onClick={() => toggleAll(true)}
+            className={`text-xs transition ${allChecked ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Select all
+          </button>
+          <span className="text-slate-700">·</span>
+          <button
+            onClick={() => toggleAll(false)}
+            className={`text-xs transition ${noneChecked ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Deselect all
+          </button>
+        </div>
+
+        {/* sources list */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+
+          {/* All Conversations */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+            onClick={() => toggleSource('all_conversations')}>
+            <SourceCheckbox checked={!!checkedSources.all_conversations} onChange={() => toggleSource('all_conversations')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-100">All Conversations</span>
+                  <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">{notebookConversations.length}</span>
+                </div>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">All notebook threads</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual conversations (when all_conversations is checked) */}
+          {checkedSources.all_conversations && (
+            <div className="ml-6 space-y-0.5 pb-1">
+              {notebookConversations.map(conv => (
                 <Link
                   key={conv.id}
                   href={`/freehold-intelligence/notebook/${conv.id}`}
-                  className="group flex items-start gap-5 rounded-[22px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/20 sm:p-6"
+                  className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 transition"
                 >
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-700 bg-slate-800/60 transition group-hover:border-[#D4AF37]/20">
-                    <Sparkles className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="truncate text-sm font-semibold text-white">{conv.title}</h3>
-                      <div className="flex shrink-0 items-center gap-2 text-sm text-slate-500">
-                        <span>{relativeTime(conv.updatedAt)}</span>
-                        <ArrowUpRight className="h-3.5 w-3.5 transition group-hover:text-[#D4AF37]" />
-                      </div>
-                    </div>
-
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-400">
-                      {lastMsg.role === 'assistant' ? 'AI: ' : 'You: '}{lastMsg.content.slice(0, 120)}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                      <span>{conv.messages.length} messages</span>
-                      {outputCount > 0 && (
-                        <span className="text-[#D4AF37]/60">{outputCount} saved output{outputCount !== 1 ? 's' : ''}</span>
-                      )}
-                      {conv.relatedProjectIds.length > 0 && (
-                        <span>{conv.relatedProjectIds.length} project{conv.relatedProjectIds.length !== 1 ? 's' : ''}</span>
-                      )}
-                      {conv.relatedLeadIds.length > 0 && (
-                        <span>{conv.relatedLeadIds.length} lead{conv.relatedLeadIds.length !== 1 ? 's' : ''}</span>
-                      )}
-                    </div>
-                  </div>
+                  <ChevronRight className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{conv.title}</span>
                 </Link>
-              )
-            })}
-          </div>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
 
-      {/* All saved outputs — with type + status filters */}
-      <section className="mt-12">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            {filteredOutputs.length} of {allOutputs.length} saved output{allOutputs.length !== 1 ? 's' : ''}
+          {/* Live Projects */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+            onClick={() => toggleSource('live_projects')}>
+            <SourceCheckbox checked={!!checkedSources.live_projects} onChange={() => toggleSource('live_projects')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-100">Live Projects</span>
+                  <Link
+                    href="/freehold-intelligence/inventory"
+                    onClick={e => e.stopPropagation()}
+                    className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-[#D4AF37] transition"
+                  >
+                    Inventory ↗
+                  </Link>
+                </div>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">933 project records</p>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {OUTPUT_TYPES.map(({ key, label }) => (
+
+          {/* CRM Leads */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+            onClick={() => toggleSource('crm_leads')}>
+            <SourceCheckbox checked={!!checkedSources.crm_leads} onChange={() => toggleSource('crm_leads')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-100">CRM Leads</span>
+                  <Link
+                    href="/freehold-intelligence/crm"
+                    onClick={e => e.stopPropagation()}
+                    className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-[#D4AF37] transition"
+                  >
+                    CRM ↗
+                  </Link>
+                </div>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">18 active leads</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Uploads */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+            onClick={() => toggleSource('uploads')}>
+            <SourceCheckbox checked={!!checkedSources.uploads} onChange={() => toggleSource('uploads')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <FolderOpen className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-slate-100">Uploads</span>
+                  <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">{MOCK_UPLOADS.length}</span>
+                </div>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">PDFs & documents</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual uploads */}
+          {checkedSources.uploads && (
+            <div className="ml-6 space-y-0.5 pb-1">
+              {MOCK_UPLOADS.map(u => (
+                <div
+                  key={u.id}
+                  className="flex items-center gap-1.5 rounded px-2 py-1.5 hover:bg-slate-800/40 transition cursor-pointer"
+                  onClick={() => toggleSource(u.id)}
+                >
+                  <SourceCheckbox checked={!!checkedSources[u.id]} onChange={() => toggleSource(u.id)} />
+                  <FileText className="h-3 w-3 shrink-0 text-slate-500" />
+                  <div className="min-w-0">
+                    <p className="truncate text-[11px] text-slate-300">{u.name}</p>
+                    <p className="text-[10px] text-slate-600">{u.size}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* drop zone */}
+        <div
+          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={e => { e.preventDefault(); setIsDragOver(false) }}
+          className={[
+            'mx-3 mb-3 flex flex-col items-center gap-1.5 rounded-xl border-2 border-dashed px-3 py-4 text-center transition cursor-pointer',
+            isDragOver
+              ? 'border-[#D4AF37]/50 bg-[#D4AF37]/5 text-[#D4AF37]'
+              : 'border-slate-800 text-slate-600 hover:border-slate-600 hover:text-slate-400',
+          ].join(' ')}
+        >
+          <Upload className="h-4 w-4" />
+          <p className="text-[11px] leading-tight">Drop files here<br /><span className="text-slate-700">or click to upload</span></p>
+        </div>
+
+      </aside>
+
+      {/* ── CENTER PANEL — Chat / Outputs ─────────────────────────────────── */}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-r border-slate-800">
+
+        {/* title bar */}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-6 py-3.5">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-[#D4AF37]/70" />
+            {editingTitle ? (
+              <input
+                autoFocus
+                value={notebookTitle}
+                onChange={e => setNotebookTitle(e.target.value)}
+                onBlur={() => setEditingTitle(false)}
+                onKeyDown={e => { if (e.key === 'Enter') setEditingTitle(false) }}
+                className="rounded border border-[#D4AF37]/30 bg-transparent px-2 py-0.5 text-sm font-semibold text-white outline-none"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-white">{notebookTitle}</span>
+            )}
+            <button
+              onClick={() => setEditingTitle(true)}
+              className="text-slate-600 hover:text-slate-400 transition"
+              aria-label="Edit title"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-1">
+            {((['chat', 'saved', 'pinned'] as CenterTab[])).map(tab => (
               <button
-                key={key}
-                onClick={() => setTypeFilter(key)}
+                key={tab}
+                onClick={() => setCenterTab(tab)}
                 className={[
-                  'rounded-full px-3 py-1 text-sm font-medium transition',
-                  typeFilter === key
-                    ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border border-slate-800 text-slate-400 hover:text-slate-100',
+                  'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition',
+                  centerTab === tab
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
-                {label}
+                {tab === 'saved' ? 'Saved Outputs' : tab === 'pinned' ? 'Pinned' : 'Chat'}
               </button>
             ))}
           </div>
         </div>
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {STATUS_FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setStatusFilter(key)}
-              className={[
-                'rounded-full px-3 py-1 text-sm font-medium transition',
-                statusFilter === key
-                  ? 'bg-slate-700/50 text-white'
-                  : 'text-slate-400 hover:text-slate-100',
-              ].join(' ')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
-        {filteredOutputs.length === 0 ? (
-          <div className="rounded-[22px] border border-slate-800 py-12 text-center text-sm text-slate-400">
-            No outputs match these filters.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-            <div className="divide-y divide-slate-800">
-              {filteredOutputs.map(output => (
-                <Link
-                  key={output.id}
-                  href={`/freehold-intelligence/notebook/${output.conversationId}`}
-                  className="flex items-center gap-4 px-6 py-4 transition hover:bg-slate-800/50"
+        {/* ── tab: chat ── */}
+        {centerTab === 'chat' && (
+          <>
+            {/* messages */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
+              {chatMessages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center gap-3">
+                  <Sparkles className="h-8 w-8 text-[#D4AF37]/30" />
+                  <p className="text-sm text-slate-500 max-w-xs">
+                    Ask anything about your projects, leads, or campaigns. Your active sources are used as context.
+                  </p>
+                </div>
+              )}
+              {chatMessages.map((m, i) => (
+                <div
+                  key={i}
+                  className={
+                    m.role === 'user'
+                      ? 'ml-8 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3'
+                      : 'mr-8 rounded-2xl border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-4 py-3'
+                  }
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-400">
-                    {outputTypeIcon(output.type)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-slate-100">{output.title}</span>
-                      {output.pinned && <Pin className="h-3 w-3 shrink-0 text-[#D4AF37]" />}
-                    </div>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">{output.content.slice(0, 100)}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className={`hidden rounded-full border px-2 py-0.5 text-xs font-medium capitalize sm:inline-flex ${statusTone(output.status)}`}>
-                      {output.status.replace(/_/g, ' ')}
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    {m.role === 'assistant'
+                      ? <Sparkles className="h-3 w-3 text-[#D4AF37]/60" />
+                      : <div className="h-3 w-3 rounded-full bg-slate-600" />}
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      {m.role === 'assistant' ? 'Freehold AI' : 'You'}
                     </span>
-                    <span className="text-xs text-slate-500">{relativeTime(output.createdAt)}</span>
                   </div>
-                </Link>
+                  <p className="whitespace-pre-wrap text-sm leading-[1.7] text-slate-100">{m.content}</p>
+                </div>
               ))}
+              {chatPending && (
+                <div className="mr-8 flex items-center gap-2 rounded-2xl border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-4 py-3">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D4AF37]/60" />
+                  <span className="text-xs text-slate-500">Thinking…</span>
+                </div>
+              )}
+              <div ref={chatBottomRef} />
+            </div>
+
+            {/* suggestions + input */}
+            <div className="border-t border-slate-800 px-4 py-4 space-y-3">
+              {chatMessages.length === 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {CHAT_SUGGESTIONS.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => sendChat(s)}
+                      className="rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-400 transition hover:border-[#D4AF37]/25 hover:text-slate-200"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-end gap-3 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 transition focus-within:border-[#D4AF37]/30">
+                <Sparkles className="mb-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50" />
+                <textarea
+                  ref={taRef}
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() } }}
+                  rows={1}
+                  placeholder="Generate an offer, comparison, WhatsApp message, ad copy…"
+                  className="flex-1 resize-none bg-transparent text-sm leading-7 text-white outline-none placeholder:text-slate-600"
+                />
+                <button
+                  onClick={() => sendChat()}
+                  disabled={!chatInput.trim() || chatPending}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30"
+                >
+                  {chatPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── tab: saved outputs ── */}
+        {centerTab === 'saved' && (
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-4 relative">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              <input
+                value={convQuery}
+                onChange={e => setConvQuery(e.target.value)}
+                placeholder="Search conversations…"
+                className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-slate-600"
+              />
+            </div>
+            <div className="space-y-2">
+              {filteredConvs.map(conv => {
+                const lastMsg = conv.messages[conv.messages.length - 1]
+                const outputCount = conv.savedOutputs.length
+                return (
+                  <Link
+                    key={conv.id}
+                    href={`/freehold-intelligence/notebook/${conv.id}`}
+                    className="group flex items-start gap-3.5 rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-[#D4AF37]/20"
+                  >
+                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-slate-700 bg-slate-800/60">
+                      <Sparkles className="h-3.5 w-3.5 text-slate-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="truncate text-sm font-semibold text-white">{conv.title}</h3>
+                        <span className="shrink-0 text-xs text-slate-500">{relativeTime(conv.updatedAt)}</span>
+                      </div>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
+                        {lastMsg.role === 'assistant' ? 'AI: ' : 'You: '}{lastMsg.content.slice(0, 100)}
+                      </p>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                        <span>{conv.messages.length} msgs</span>
+                        {outputCount > 0 && <span className="text-[#D4AF37]/60">{outputCount} outputs</span>}
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         )}
-      </section>
+
+        {/* ── tab: pinned ── */}
+        {centerTab === 'pinned' && (
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            {pinnedOutputs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 gap-2 text-slate-500">
+                <Pin className="h-6 w-6 opacity-30" />
+                <p className="text-sm">No pinned outputs yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pinnedOutputs.map(output => (
+                  <Link
+                    key={output.id}
+                    href={`/freehold-intelligence/notebook/${output.conversationId}`}
+                    className="group block rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-4 transition hover:border-[#D4AF37]/30"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]/70">
+                        {outputTypeIcon(output.type)}
+                        <span className="capitalize">{output.type.replace(/_/g, ' ')}</span>
+                      </div>
+                      <Pin className="h-3 w-3 shrink-0 text-[#D4AF37]" />
+                    </div>
+                    <h3 className="mt-2 text-sm font-semibold text-white">{output.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-xs leading-[1.6] text-slate-400">{output.content}</p>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusTone(output.status)}`}>
+                        {output.status.replace(/_/g, ' ')}
+                      </span>
+                      {output.tags.slice(0, 3).map(t => (
+                        <span key={t} className="flex items-center gap-0.5 text-xs text-slate-500">
+                          <Hash className="h-2.5 w-2.5" />{t}
+                        </span>
+                      ))}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+      </main>
+
+      {/* ── RIGHT PANEL — Studio ─────────────────────────────────────────── */}
+      <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l border-slate-800 bg-slate-900">
+
+        {/* header */}
+        <div className="border-b border-slate-800 px-4 py-3.5">
+          <span className="text-sm font-semibold text-white">Studio</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+
+          {/* generate section */}
+          <div className="border-b border-slate-800 px-4 py-4">
+            <p className="mb-3 text-xs font-medium text-slate-400">Generate</p>
+            <div className="grid grid-cols-4 gap-2">
+              {GENERATE_TYPES.map(g => (
+                <button
+                  key={g.key}
+                  onClick={() => setActiveGenerate(activeGenerate === g.key ? null : g.key)}
+                  className={[
+                    'flex flex-col items-center gap-1.5 rounded-xl border p-2.5 text-center transition',
+                    activeGenerate === g.key
+                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                      : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+                  ].join(' ')}
+                >
+                  {g.icon}
+                  <span className="text-[10px] leading-tight">{g.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {activeGenerate && (
+              <div className="mt-3 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-3">
+                <p className="mb-2 text-xs font-medium text-[#D4AF37]/80 capitalize">
+                  {GENERATE_TYPES.find(g => g.key === activeGenerate)?.label}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    placeholder="Describe what to generate…"
+                    className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white placeholder-slate-600 outline-none transition focus:border-[#D4AF37]/30"
+                    onKeyDown={e => { if (e.key === 'Enter') setActiveGenerate(null) }}
+                  />
+                  <button
+                    onClick={() => setActiveGenerate(null)}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657]"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* recent outputs */}
+          <div className="px-4 py-4">
+            <p className="mb-3 text-xs font-medium text-slate-400">Recent Outputs</p>
+            <div className="space-y-2">
+              {allOutputs.slice(0, 6).map(output => (
+                <div
+                  key={output.id}
+                  className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-800/40 p-3 transition hover:border-slate-700"
+                >
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-400">
+                    {outputTypeIcon(output.type, 'h-3 w-3')}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-xs font-medium text-slate-100">{output.title}</span>
+                      {output.pinned && <Pin className="h-2.5 w-2.5 shrink-0 text-[#D4AF37]" />}
+                    </div>
+                    <span className={`mt-0.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium capitalize ${statusTone(output.status)}`}>
+                      {output.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setActiveSendOutput(activeSendOutput === output.id ? null : output.id)}
+                    className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+                  >
+                    Send
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* send to */}
+          {activeSendOutput && (
+            <div className="border-t border-slate-800 px-4 py-4">
+              <p className="mb-2 text-xs font-medium text-slate-400">Send to…</p>
+              <div className="flex flex-wrap gap-2">
+                {SEND_DESTINATIONS.map(d => (
+                  <button
+                    key={d.key}
+                    onClick={() => setActiveSendDest(activeSendDest === d.key ? null : d.key)}
+                    className={[
+                      'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition',
+                      activeSendDest === d.key
+                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                        : 'border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+                    ].join(' ')}
+                  >
+                    {d.icon} {d.label}
+                  </button>
+                ))}
+              </div>
+              {activeSendDest && (
+                <button
+                  onClick={() => { setActiveSendDest(null); setActiveSendOutput(null) }}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#06080A] transition hover:bg-[#E8C657]"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Send to {SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.label}
+                </button>
+              )}
+            </div>
+          )}
+
+        </div>
+      </aside>
 
     </div>
   )
