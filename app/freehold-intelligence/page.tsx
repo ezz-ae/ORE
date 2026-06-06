@@ -1,16 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Users, Zap, Megaphone, TrendingUp, Bot, DollarSign, Package,
   ShieldCheck, Settings, AlertCircle, CheckCircle2, Activity,
-  ArrowUpRight, X, Sparkles, Globe, ChevronRight,
+  ArrowUpRight, X, Globe, ChevronRight, Send, Clock, AlertTriangle,
+  Sparkles,
 } from 'lucide-react'
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
+import {
+  serverSummary,
+  currentServerUser,
+  type ServerActionCard,
+} from '@/src/features/freehold-intelligence/server-session'
 
-const stats = getInventoryStats()
-const totalVisitors = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
+const stats          = getInventoryStats()
+const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
 const avgDataQuality = Math.round(inventoryProperties.reduce((s, p) => s + p.dataQuality, 0) / inventoryProperties.length)
 
 const APPS = [
@@ -125,19 +131,49 @@ const APPS = [
 ]
 
 const ACTIVITY = [
-  { time: '09:14',     label: 'New lead',          detail: 'Palm Jumeirah — Meta Ads',        type: 'lead'    },
-  { time: '08:52',     label: 'Campaign paused',    detail: 'Off Plan Dubai 2025 — Google',    type: 'warning' },
-  { time: '08:30',     label: 'Landing published',  detail: 'JVC Investor · /lp/jvc-investor', type: 'success' },
-  { time: 'Yesterday', label: '88 leads',           detail: 'Dubai Hills Yield — 24h',         type: 'lead'    },
-  { time: 'Yesterday', label: 'Invoice issued',     detail: 'INV-META-0526 · AED 18,420',      type: 'info'    },
+  { time: '09:14',     label: 'New lead',         detail: 'Palm Jumeirah — Meta Ads',        type: 'lead'    },
+  { time: '08:52',     label: 'Campaign paused',   detail: 'Off Plan Dubai 2025 — Google',    type: 'warning' },
+  { time: '08:30',     label: 'Landing published', detail: 'JVC Investor · /lp/jvc-investor', type: 'success' },
+  { time: 'Yesterday', label: '88 leads',          detail: 'Dubai Hills Yield — 24h',         type: 'lead'    },
+  { time: 'Yesterday', label: 'Invoice issued',    detail: 'INV-META-0526 · AED 18,420',      type: 'info'    },
 ]
 
+function getGreeting(name: string) {
+  const h = new Date().getHours()
+  const t = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  return `${t}, ${name}.`
+}
+
+function urgentCardCls(p: ServerActionCard['priority']) {
+  if (p === 'critical') return 'border-red-500/25 bg-red-500/[0.06]'
+  if (p === 'high')     return 'border-amber-500/25 bg-amber-500/[0.06]'
+  return 'border-white/[0.08] bg-white/[0.02]'
+}
+function urgentDotCls(p: ServerActionCard['priority']) {
+  if (p === 'critical') return 'bg-red-500'
+  if (p === 'high')     return 'bg-amber-400'
+  return 'bg-white/30'
+}
+function urgentTitleCls(p: ServerActionCard['priority']) {
+  if (p === 'critical') return 'text-red-400'
+  if (p === 'high')     return 'text-amber-300'
+  return 'text-white/70'
+}
+
 export default function IntelligenceLauncher() {
+  const [greeting, setGreeting]       = useState('')
+  const [chatInput, setChatInput]     = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatReply, setChatReply]     = useState<string | null>(null)
+  const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
+  const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
+
+  useEffect(() => { setGreeting(getGreeting(currentServerUser.name)) }, [])
+
   const lowAdReadiness  = inventoryProperties.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')
   const noImages        = inventoryProperties.filter((p) => !p.hasImages)
 
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const priorities = [
     ...missingLandings.filter((p) => !dismissed.has(p.id)).map((p) => ({
       id: p.id, name: p.name,
@@ -159,38 +195,190 @@ export default function IntelligenceLauncher() {
   const now     = new Date()
   const dateStr = now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long' })
 
+  const aiContext = {
+    urgentTasks:        serverSummary.urgentTasks.map(t => ({ title: t.title, body: t.body, priority: t.priority, app: t.app, due: t.due })),
+    blockedItems:       serverSummary.blockedItems.map(t => ({ title: t.title, body: t.body })),
+    crmAlerts:          serverSummary.crmAlerts.map(t => ({ title: t.title, body: t.body })),
+    leadMachineAlerts:  serverSummary.leadMachineAlerts.map(t => ({ title: t.title, body: t.body })),
+    pendingApprovals:   serverSummary.pendingApprovals.map(t => ({ title: t.title, app: t.app })),
+    recommendedActions: serverSummary.recommendedActions.map(t => ({ title: t.title, body: t.body })),
+  }
+
+  async function sendChat(message: string) {
+    const msg = message.trim()
+    if (!msg || chatLoading) return
+    setChatInput('')
+    setChatLoading(true)
+    setChatReply(null)
+    try {
+      const res  = await fetch('/api/freehold/server/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: msg, sessionId: sessionRef.current, context: aiContext }),
+      })
+      const data = await res.json() as { answer?: string; error?: string }
+      setChatReply(data.answer ?? data.error ?? '(no response)')
+    } catch {
+      setChatReply('Unable to reach the Intelligence Server AI.')
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-5 pb-20 pt-6 sm:px-8 sm:pt-8">
 
-      {/* ── Header bar ── */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-            <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-          </div>
-          <div>
-            <div className="text-[16px] font-semibold text-white">Freehold Intelligence</div>
-            <div className="text-[12px] text-white/30">{dateStr}</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-[12px] text-white/25">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_6px_rgba(212,175,55,0.8)]" />
-            6 live
-          </div>
-          <div className="hidden sm:block h-4 w-px bg-white/[0.08]" />
-          <Link href="/" className="hidden sm:flex items-center gap-1.5 text-[12px] text-white/25 hover:text-white/50 transition">
-            <Globe className="h-3.5 w-3.5" />
-            freeholdproperty.ae
-          </Link>
-          <Link href="/freehold-intelligence/agent"
-            className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] text-white/40 transition hover:border-white/20 hover:text-white/70">
-            Agent view <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-      </div>
+      {/* ── Morning Briefing ─────────────────────────────────────────────────── */}
+      <section className="mb-8 overflow-hidden rounded-[24px] border border-[#D4AF37]/12 bg-gradient-to-br from-[#D4AF37]/[0.04] to-transparent">
+        <div className="p-6">
 
-      {/* ── App grid ── */}
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+                <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+              </div>
+              <div>
+                <div className="text-[15px] font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
+                <div className="text-[11px] text-white/30">{dateStr}</div>
+              </div>
+            </div>
+            {/* Stat chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-[11px] font-medium text-red-400">
+                <span className="h-1 w-1 rounded-full bg-red-500 animate-pulse" />
+                {serverSummary.urgentTasks.length} urgent
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-400">
+                {serverSummary.blockedItems.length} blocked
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/35">
+                {serverSummary.pendingApprovals.length} pending
+              </span>
+              <Link href="/" className="flex items-center gap-1 text-[11px] text-white/20 hover:text-white/45 transition">
+                <Globe className="h-3 w-3" />
+                <span className="hidden sm:inline">freeholdproperty.ae</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Summary text */}
+          <p className="mt-4 text-[13px] leading-relaxed text-white/50 max-w-2xl">
+            {serverSummary.summaryText}
+          </p>
+
+          {/* Divider */}
+          <div className="my-5 border-t border-white/[0.06]" />
+
+          {/* AI Chat */}
+          <div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
+                placeholder="Ask anything about today's priorities…"
+                className="flex-1 rounded-xl border border-white/[0.08] bg-black/20 px-4 py-2.5 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/30 transition"
+              />
+              <button
+                type="button"
+                onClick={() => sendChat(chatInput)}
+                disabled={chatLoading || !chatInput.trim()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#06080A] transition hover:bg-[#D4AF37]/80 disabled:opacity-40"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Suggested questions */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {serverSummary.askableQuestions.slice(0, 4).map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => sendChat(q)}
+                  disabled={chatLoading}
+                  className="rounded-full border border-white/[0.08] bg-black/10 px-3 py-1 text-[11px] text-white/35 transition hover:border-white/[0.18] hover:text-white/65 disabled:opacity-40"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            {/* AI response */}
+            {(chatLoading || chatReply) && (
+              <div className="mt-4 rounded-xl border border-[#D4AF37]/12 bg-black/20 p-4">
+                {chatLoading ? (
+                  <div className="flex items-center gap-2.5 text-[13px] text-white/35">
+                    <span className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/60 animate-bounce"
+                          style={{ animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </span>
+                    Thinking…
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[13px] text-white/70 whitespace-pre-wrap leading-relaxed">
+                      {chatReply}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between border-t border-white/[0.05] pt-3">
+                      <Link href="/freehold-intelligence/agent"
+                        className="flex items-center gap-1 text-[11px] text-white/30 hover:text-white/55 transition">
+                        Full conversation <ChevronRight className="h-3 w-3" />
+                      </Link>
+                      <button type="button" onClick={() => setChatReply(null)}
+                        className="text-[11px] text-white/20 hover:text-white/40 transition">
+                        Dismiss
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Urgent actions ──────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em] text-white/25">
+            <AlertTriangle className="h-3 w-3 text-red-400/60" />
+            Urgent
+          </div>
+          <span className="text-[12px] text-white/20">{serverSummary.urgentTasks.length} open</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {serverSummary.urgentTasks.map((task) => (
+            <div key={task.id} className={`rounded-[18px] border p-4 ${urgentCardCls(task.priority)}`}>
+              <div className="flex items-start gap-2.5">
+                <div className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${urgentDotCls(task.priority)}`} />
+                <div className="min-w-0 flex-1">
+                  <div className={`text-[13px] font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
+                    {task.title}
+                  </div>
+                  <div className="mt-1 text-[12px] text-white/38 leading-snug">{task.body}</div>
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-white/22">
+                    <span>{task.app}</span>
+                    {task.due && (
+                      <>
+                        <span>·</span>
+                        <Clock className="h-3 w-3" />
+                        <span>{task.due}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── App grid ──────────────────────────────────────────────────────────── */}
       <section>
         <div className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/25">Apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -213,7 +401,7 @@ export default function IntelligenceLauncher() {
                 <div className="mt-0.5 text-[11px] text-white/28">{app.sub}</div>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <div className="text-[12px] font-medium text-white/45" style={{ color: `${app.accent}99` }}>
+                <div className="text-[12px] font-medium" style={{ color: `${app.accent}99` }}>
                   {app.metric}
                 </div>
                 <ArrowUpRight className="h-3.5 w-3.5 text-white/15 transition group-hover:text-white/40" />
@@ -223,7 +411,7 @@ export default function IntelligenceLauncher() {
         </div>
       </section>
 
-      {/* ── Executive overview ── */}
+      {/* ── Executive overview ─────────────────────────────────────────────── */}
       <section className="mt-10 grid gap-4 lg:grid-cols-2">
 
         {/* Priority queue */}
@@ -274,7 +462,7 @@ export default function IntelligenceLauncher() {
             {ACTIVITY.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                  item.type === 'lead' ? 'bg-[#D4AF37]' :
+                  item.type === 'lead'    ? 'bg-[#D4AF37]' :
                   item.type === 'warning' ? 'bg-amber-400' :
                   item.type === 'success' ? 'bg-emerald-400' : 'bg-white/20'
                 }`} />
