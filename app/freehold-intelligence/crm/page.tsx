@@ -35,7 +35,7 @@ const TEMP_STYLE: Record<string, { label: string; badge: string }> = {
   priority: { label: '★ Priority', badge: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25' },
   hot:      { label: '● Hot',      badge: 'bg-red-400/10 text-red-400 border-red-400/20'         },
   warm:     { label: '◎ Warm',     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'   },
-  cold:     { label: '○ Cold',     badge: 'bg-white/[0.05] text-white/30 border-white/[0.07]'    },
+  cold:     { label: '○ Cold',     badge: 'bg-slate-800/50 text-slate-500 border-slate-700'      },
 }
 
 const STAGE_CONFIG: Record<PipelineStage, { label: string; dot: string; badge: string }> = {
@@ -66,14 +66,14 @@ function syncDot(status: string) {
   if (status === 'synced')  return 'bg-emerald-400'
   if (status === 'syncing') return 'bg-amber-400 animate-pulse'
   if (status === 'error')   return 'bg-red-400'
-  return 'bg-white/15'
+  return 'bg-slate-600'
 }
 
 function syncLabel(s: typeof integrationSyncStatuses[0]) {
-  if (s.status === 'synced')        return <span className="text-[11px] text-white/30">{s.leadsIn} leads</span>
-  if (s.status === 'not_connected') return <span className="text-[11px] text-white/20">Not connected</span>
-  if (s.status === 'syncing')       return <span className="text-[11px] text-amber-400/70">Syncing…</span>
-  return <span className="text-[11px] text-red-400/70">Error</span>
+  if (s.status === 'synced')        return <span className="text-xs text-slate-500">{s.leadsIn} leads</span>
+  if (s.status === 'not_connected') return <span className="text-xs text-slate-600">Not connected</span>
+  if (s.status === 'syncing')       return <span className="text-xs text-amber-400/70">Syncing…</span>
+  return <span className="text-xs text-red-400/70">Error</span>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export default function FreeholdCrmPage() {
     { label: 'Hot',         value: String(hotCount),                           sub: 'hot + priority',      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
     { label: 'Qualified',   value: String(qualifiedCount),                     sub: 'in qualification',    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
     { label: 'Pipeline',    value: `AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`, sub: 'active AED est.', color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
-    { label: 'Closed MTD',  value: String(closedCount),                        sub: 'this month',          color: 'text-white/55',    border: 'border-white/[0.07]',   bg: 'bg-white/[0.03]'       },
+    { label: 'Closed MTD',  value: String(closedCount),                        sub: 'this month',          color: 'text-slate-400',   border: 'border-slate-700',      bg: 'bg-slate-800/50'       },
   ]
 
   const lastSyncStr = integrationSyncStatuses.find(s => s.lastSyncAt)?.lastSyncAt
@@ -131,13 +131,13 @@ export default function FreeholdCrmPage() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h1 className="text-[17px] font-semibold text-white">CRM Command Centre</h1>
-              <p className="mt-0.5 text-[12px] text-white/30">
+              <p className="mt-0.5 text-xs text-slate-500">
                 {crmLeads.length} leads · {STAGES.length} pipeline stages
               </p>
             </div>
             <Link
               href="/freehold-intelligence/crm/board"
-              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/40 transition hover:text-white/70"
+              className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
               Board <ChevronRight className="h-3 w-3" />
             </Link>
@@ -147,16 +147,16 @@ export default function FreeholdCrmPage() {
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {TILES.map(t => (
               <div key={t.label} className={`rounded-[14px] border p-3.5 ${t.bg} ${t.border}`}>
-                <div className="text-[10px] font-medium uppercase tracking-wider text-white/25">{t.label}</div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t.label}</div>
                 <div className={`mt-1.5 text-[22px] font-semibold leading-none tabular-nums ${t.color}`}>{t.value}</div>
-                <div className="mt-1 text-[10px] text-white/20">{t.sub}</div>
+                <div className="mt-1 text-[10px] text-slate-600">{t.sub}</div>
               </div>
             ))}
           </div>
 
           {/* ── Pipeline stage funnel ── */}
-          <div className="mb-5 rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
-            <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-white/25">Pipeline</div>
+          <div className="mb-5 rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Pipeline</div>
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
               {STAGES.map(stage => {
                 const sc    = STAGE_CONFIG[stage]
@@ -170,14 +170,14 @@ export default function FreeholdCrmPage() {
                       'flex min-w-[66px] flex-1 flex-col items-center gap-1.5 rounded-[10px] border px-2 py-2.5 transition',
                       active
                         ? `${sc.badge} border-current`
-                        : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.04]',
+                        : 'border-slate-800 bg-slate-800/30 hover:bg-slate-800',
                     ].join(' ')}
                   >
                     <span className={`h-2 w-2 rounded-full ${sc.dot}`} />
-                    <span className={`text-[18px] font-semibold leading-none tabular-nums ${active ? '' : 'text-white/70'}`}>
+                    <span className={`text-[18px] font-semibold leading-none tabular-nums ${active ? '' : 'text-slate-300'}`}>
                       {count}
                     </span>
-                    <span className={`text-[9px] whitespace-nowrap font-medium uppercase tracking-wide ${active ? '' : 'text-white/25'}`}>
+                    <span className={`text-[9px] whitespace-nowrap font-medium uppercase tracking-wide ${active ? '' : 'text-slate-500'}`}>
                       {sc.label}
                     </span>
                   </button>
@@ -189,17 +189,17 @@ export default function FreeholdCrmPage() {
           {/* ── Search bar ── */}
           <div className="mb-2.5 flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/20" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search leads, projects, agents…"
-                className="w-full rounded-[10px] border border-white/[0.07] bg-[#131B2B] py-2 pl-8 pr-8 text-[13px] text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/30"
+                className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
               />
               {query && (
                 <button
                   onClick={() => setQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -208,25 +208,25 @@ export default function FreeholdCrmPage() {
             {stageFilter !== 'all' && (
               <button
                 onClick={() => setStageFilter('all')}
-                className="flex items-center gap-1 rounded-[10px] border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-[12px] text-white/45 transition hover:text-white/70"
+                className="flex items-center gap-1 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-slate-200"
               >
                 <X className="h-3 w-3" /> Clear
               </button>
             )}
           </div>
 
-          <div className="mb-1.5 px-0.5 text-[11px] text-white/20">
+          <div className="mb-1.5 px-0.5 text-xs text-slate-500">
             {filtered.length} {filtered.length === 1 ? 'lead' : 'leads'}
             {stageFilter !== 'all' && ` · ${STAGE_CONFIG[stageFilter].label}`}
             {query && ` matching "${query}"`}
           </div>
 
           {/* ── Lead table ── */}
-          <div className="overflow-hidden rounded-[16px] border border-white/[0.07] bg-[#131B2B]">
+          <div className="overflow-hidden rounded-[16px] border border-slate-800 bg-slate-900">
 
             {/* Desktop header row */}
             <div
-              className="hidden items-center gap-4 border-b border-white/[0.05] px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-white/20 lg:grid"
+              className="hidden items-center gap-4 border-b border-slate-800 px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 lg:grid"
               style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
             >
               <div>Lead</div>
@@ -239,7 +239,7 @@ export default function FreeholdCrmPage() {
             </div>
 
             {filtered.length === 0 && (
-              <div className="py-12 text-center text-[13px] text-white/20">
+              <div className="py-12 text-center text-sm text-slate-500">
                 No leads match this filter.
               </div>
             )}
@@ -250,22 +250,22 @@ export default function FreeholdCrmPage() {
               return (
                 <div
                   key={lead.id}
-                  className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 transition last:border-0 hover:bg-white/[0.02] lg:grid lg:gap-4"
+                  className="flex items-center gap-3 border-b border-slate-800 px-4 py-3 transition last:border-0 hover:bg-slate-800/50 lg:grid lg:gap-4"
                   style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
                 >
                   {/* Avatar + name */}
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-white/[0.07] text-[10px] font-bold text-white/50">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-slate-800 text-[10px] font-bold text-slate-400">
                       {initials(lead.name)}
                     </div>
                     <div className="min-w-0">
                       <Link
                         href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                        className="block truncate text-[13px] font-medium text-white/85 hover:text-white"
+                        className="block truncate text-sm font-medium text-slate-200 hover:text-white"
                       >
                         {lead.name}
                       </Link>
-                      <div className="truncate text-[11px] text-white/30 lg:hidden">
+                      <div className="truncate text-xs text-slate-500 lg:hidden">
                         {lead.budgetAED} · {lead.projectInterest}
                       </div>
                     </div>
@@ -288,17 +288,17 @@ export default function FreeholdCrmPage() {
 
                   {/* Project + budget */}
                   <div className="hidden min-w-0 lg:block">
-                    <div className="truncate text-[12px] text-white/50">{lead.projectInterest}</div>
-                    <div className="text-[11px] font-medium text-[#D4AF37]/65">{lead.budgetAED}</div>
+                    <div className="truncate text-xs text-slate-400">{lead.projectInterest}</div>
+                    <div className="text-xs font-medium text-[#D4AF37]/65">{lead.budgetAED}</div>
                   </div>
 
                   {/* Agent */}
-                  <div className="hidden truncate text-[12px] text-white/35 lg:block">
+                  <div className="hidden truncate text-xs text-slate-500 lg:block">
                     {lead.assignedAgent}
                   </div>
 
                   {/* Last contact */}
-                  <div className="hidden text-[12px] text-white/25 lg:block">
+                  <div className="hidden text-xs text-slate-500 lg:block">
                     {relTime(lead.lastContactAt)}
                   </div>
 
@@ -306,19 +306,19 @@ export default function FreeholdCrmPage() {
                   <div className="ml-auto flex items-center gap-1 lg:ml-0">
                     <button
                       title="Call"
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/[0.07] text-white/25 transition hover:border-white/15 hover:text-white/55"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <PhoneCall className="h-3 w-3" />
                     </button>
                     <button
                       title="WhatsApp"
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/[0.07] text-white/25 transition hover:border-white/15 hover:text-white/55"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <MessageCircle className="h-3 w-3" />
                     </button>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-white/[0.07] text-white/25 transition hover:border-white/15 hover:text-white/55"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <ArrowUpRight className="h-3 w-3" />
                     </Link>
@@ -335,10 +335,10 @@ export default function FreeholdCrmPage() {
           <div className="sticky top-14 space-y-3">
 
             {/* Integration sync panel */}
-            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] p-4">
+            <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-[11px] font-medium uppercase tracking-wider text-white/25">Integrations</div>
-                <button className="flex items-center gap-1 text-[11px] text-white/25 transition hover:text-white/50">
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Integrations</div>
+                <button className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
                   <RefreshCw className="h-3 w-3" /> Sync now
                 </button>
               </div>
@@ -348,7 +348,7 @@ export default function FreeholdCrmPage() {
                   <div key={s.id} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${syncDot(s.status)}`} />
-                      <span className="text-[13px] text-white/65">{s.name}</span>
+                      <span className="text-sm text-slate-300">{s.name}</span>
                     </div>
                     {syncLabel(s)}
                   </div>
@@ -356,31 +356,31 @@ export default function FreeholdCrmPage() {
               </div>
 
               {lastSyncStr && (
-                <div className="mt-3 border-t border-white/[0.05] pt-2.5 text-[11px] text-white/20">
+                <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs text-slate-600">
                   Last sync {relTime(lastSyncStr)} ago · {totalLeadsIn} leads imported
                 </div>
               )}
             </div>
 
             {/* Top by intent */}
-            <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] p-4">
-              <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-white/25">Top by Intent</div>
+            <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+              <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Top by Intent</div>
               <div className="space-y-2">
                 {[...crmLeads]
                   .sort((a, b) => b.intentScore - a.intentScore)
                   .slice(0, 6)
                   .map(l => (
                     <div key={l.id} className="flex items-center gap-2.5">
-                      <div className="w-[70px] shrink-0 truncate text-[12px] text-white/60">
+                      <div className="w-[70px] shrink-0 truncate text-xs text-slate-400">
                         {l.name.split(' ')[0]}
                       </div>
-                      <div className="flex-1 overflow-hidden rounded-full bg-white/[0.05]">
+                      <div className="flex-1 overflow-hidden rounded-full bg-slate-800">
                         <div
                           className="h-1.5 rounded-full bg-[#D4AF37]"
                           style={{ width: `${l.intentScore}%` }}
                         />
                       </div>
-                      <div className="w-7 text-right text-[12px] font-medium tabular-nums text-white/40">
+                      <div className="w-7 text-right text-xs font-medium tabular-nums text-slate-400">
                         {l.intentScore}
                       </div>
                     </div>
