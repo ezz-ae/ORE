@@ -1,6 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import fs from "node:fs"
 import path from "node:path"
+import {
+  vertexGenerateText,
+  normalizeVertexModel,
+  vertexConfigured,
+  type VertexContent,
+} from "@/lib/google/vertex-auth"
 
 // Initialize Gemini API
 const geminiApiKey =
@@ -9,6 +15,7 @@ const geminiApiKey =
   process.env.google_api_key ||
   ""
 const genAI = new GoogleGenerativeAI(geminiApiKey)
+const hasGeminiApiKey = Boolean(geminiApiKey)
 
 // System prompts for different AI contexts
 const DEFAULT_PUBLIC_SYSTEM_PROMPT = `You are Freehold AI, the digital private advisor of Freehold Property UAE. Freehold stands for verified market guidance, careful property selection, and practical execution for Dubai buyers, sellers, tenants, investors, and owners. Your job is to guide investors and end-users toward the right Dubai opportunities with calm confidence, premium positioning, and data-backed clarity.
@@ -194,15 +201,79 @@ export async function listGeminiModels(): Promise<string[]> {
   return []
 }
 
+type SdkModel = ReturnType<typeof genAI.getGenerativeModel>
+
+const SHARED_GEN_CONFIG = { temperature: 0.7, topK: 40, topP: 0.95, maxOutputTokens: 8192 }
+
+function promptToText(prompt: unknown): string {
+  if (typeof prompt === "string") return prompt
+  if (prompt && typeof prompt === "object") {
+    const parts = (prompt as { parts?: Array<{ text?: string }> }).parts
+    if (Array.isArray(parts)) return parts.map((p) => p.text ?? "").join("")
+  }
+  return String(prompt ?? "")
+}
+
+function toVertexContents(history?: Array<{ role?: string; parts?: Array<{ text?: string }> }>): VertexContent[] {
+  return (history ?? []).map((h) => ({
+    role: h.role === "user" ? "user" : "model",
+    parts: (h.parts ?? []).map((p) => ({ text: p.text ?? "" })),
+  }))
+}
+
+/**
+ * Vertex-backed stand-in for a @google/generative-ai model. Implements the exact
+ * subset the routes use (`generateContent`, `startChat().sendMessage`,
+ * `.response.text()`) so existing callers work unchanged when no GEMINI_API_KEY
+ * is set but a Vertex service account is.
+ */
+function vertexBackedModel(modelName: string): SdkModel {
+  const model = normalizeVertexModel(modelName)
+  const shim = {
+    async generateContent(prompt: unknown) {
+      const text = await vertexGenerateText({
+        model,
+        contents: [{ role: "user", parts: [{ text: promptToText(prompt) }] }],
+        generationConfig: SHARED_GEN_CONFIG,
+      })
+      return { response: { text: () => text } }
+    },
+    startChat(opts?: { history?: Array<{ role?: string; parts?: Array<{ text?: string }> }>; systemInstruction?: unknown; generationConfig?: Record<string, unknown> }) {
+      const history = toVertexContents(opts?.history)
+      const sys =
+        typeof opts?.systemInstruction === "string"
+          ? opts.systemInstruction
+          : (opts?.systemInstruction as { parts?: Array<{ text?: string }> } | undefined)?.parts
+              ?.map((p) => p.text ?? "")
+              .join("")
+      return {
+        async sendMessage(text: string) {
+          const contents: VertexContent[] = [...history, { role: "user", parts: [{ text }] }]
+          const out = await vertexGenerateText({
+            model,
+            contents,
+            systemInstruction: sys || undefined,
+            generationConfig: opts?.generationConfig ?? SHARED_GEN_CONFIG,
+          })
+          history.push({ role: "user", parts: [{ text }] })
+          history.push({ role: "model", parts: [{ text: out }] })
+          return { response: { text: () => out } }
+        },
+      }
+    },
+  }
+  return shim as unknown as SdkModel
+}
+
 export function getGeminiModelByName(modelName: string) {
+  // Prefer the Google AI Studio SDK when an API key is present; otherwise fall
+  // back to the Vertex service account so AI works with a single credential.
+  if (!hasGeminiApiKey && vertexConfigured()) {
+    return vertexBackedModel(modelName)
+  }
   return genAI.getGenerativeModel({
     model: modelName,
-    generationConfig: {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 8192,
-    },
+    generationConfig: SHARED_GEN_CONFIG,
   })
 }
 
