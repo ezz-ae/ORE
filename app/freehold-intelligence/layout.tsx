@@ -1,5 +1,7 @@
 'use client'
 
+import { SpacesNav } from '@/components/freehold/spaces-nav'
+
 export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0B0F1A] text-[#F7F2E7] antialiased">
@@ -16,6 +18,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
             radial-gradient(ellipse 60% 30% at 100% 100%, rgba(212,175,55,0.03) 0%, transparent 50%);
         }
       `}</style>
+      <SpacesNav />
       <main className="fi-content flex-1 overflow-y-auto">
         {children}
       </main>

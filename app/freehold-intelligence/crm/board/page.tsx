@@ -1,253 +1,185 @@
 'use client'
 
+import { useState, useRef, type DragEvent } from 'react'
 import Link from 'next/link'
-import { useState, useRef, DragEvent } from 'react'
-import { Users, Plus, Phone, MessageCircle, MoveHorizontal } from 'lucide-react'
+import { MoveHorizontal } from 'lucide-react'
+import {
+  crmLeads,
+  type CRMLeadIntelligence,
+  type PipelineStage,
+} from '@/src/features/freehold-intelligence/server-session'
 
-type LeadSource = 'Meta' | 'Google' | 'WhatsApp'
-type ColumnId = 'new' | 'contacted' | 'qualified' | 'proposal' | 'won-lost'
+// ─── Stage config ──────────────────────────────────────────────────────────────
 
-interface Lead {
-  id: string
-  name: string
-  propertyInterest: string
-  source: LeadSource
-  timeAgo: string
-  budget: string
-  note?: string
-}
+type StageConfig = { id: PipelineStage; label: string; dot: string; color: string }
 
-interface Column {
-  id: ColumnId
-  label: string
-  dotColor: string
-  headerColor: string
-  leads: Lead[]
-}
-
-const initialColumns: Column[] = [
-  {
-    id: 'new',
-    label: 'New Lead',
-    dotColor: 'bg-sky-400',
-    headerColor: 'text-white/55',
-    leads: [
-      { id: 'l1', name: 'Ahmed Al Rashid',  propertyInterest: 'Palm Jumeirah',  source: 'Meta',      timeAgo: '1h ago',  budget: 'AED 3–5M' },
-      { id: 'l2', name: 'Sarah Johnson',    propertyInterest: 'Dubai Hills',    source: 'Google',    timeAgo: '3h ago',  budget: 'AED 1.5–2.5M' },
-      { id: 'l3', name: 'Mohammed Al Farsi', propertyInterest: 'JVC',           source: 'WhatsApp',  timeAgo: '5h ago',  budget: 'AED 700K–1M' },
-    ],
-  },
-  {
-    id: 'contacted',
-    label: 'Contacted',
-    dotColor: 'bg-amber-400',
-    headerColor: 'text-amber-400',
-    leads: [
-      { id: 'l4', name: 'David Chen',       propertyInterest: 'Sobha Hartland', source: 'Meta',      timeAgo: '1d ago',  budget: 'AED 5–8M' },
-      { id: 'l5', name: 'Priya Sharma',     propertyInterest: 'Creek Harbour',  source: 'Google',    timeAgo: '2d ago',  budget: 'AED 1.2–2M' },
-      { id: 'l6', name: 'Omar Hassan',      propertyInterest: 'Business Bay',   source: 'Meta',      timeAgo: '3d ago',  budget: 'AED 900K–1.5M' },
-    ],
-  },
-  {
-    id: 'qualified',
-    label: 'Qualified',
-    dotColor: 'bg-violet-400',
-    headerColor: 'text-white/55',
-    leads: [
-      { id: 'l7', name: 'Elena Petrova',    propertyInterest: 'Marina Luxury',  source: 'Meta',      timeAgo: '4d ago',  budget: 'AED 5–10M' },
-      { id: 'l8', name: 'James Wilson',     propertyInterest: 'Dubai Hills',    source: 'Google',    timeAgo: '5d ago',  budget: 'AED 2–3M' },
-    ],
-  },
-  {
-    id: 'proposal',
-    label: 'Proposal Sent',
-    dotColor: 'bg-orange-400',
-    headerColor: 'text-orange-400',
-    leads: [
-      { id: 'l9',  name: 'Fatima Al Zaabi', propertyInterest: 'Palm Jumeirah',  source: 'WhatsApp',  timeAgo: '6d ago',  budget: 'AED 4–6M' },
-      { id: 'l10', name: 'Ali Khalid',      propertyInterest: 'JVC',            source: 'Meta',      timeAgo: '7d ago',  budget: 'AED 800K–1.2M' },
-    ],
-  },
-  {
-    id: 'won-lost',
-    label: 'Won / Lost',
-    dotColor: 'bg-[#D4AF37]',
-    headerColor: 'text-[#D4AF37]',
-    leads: [
-      { id: 'l11', name: 'Carlos Mendez',   propertyInterest: 'Sobha Hartland', source: 'Google',    timeAgo: '10d ago', budget: 'AED 6M',  note: 'WON' },
-      { id: 'l12', name: 'Noor Al Saeed',   propertyInterest: 'Dubai Hills',    source: 'Meta',      timeAgo: '12d ago', budget: 'AED 2M',  note: 'LOST' },
-    ],
-  },
+const STAGES: StageConfig[] = [
+  { id: 'new',         label: 'New',         dot: 'bg-sky-400',     color: 'text-sky-400'     },
+  { id: 'contacted',   label: 'Contacted',   dot: 'bg-amber-400',   color: 'text-amber-400'   },
+  { id: 'qualified',   label: 'Qualified',   dot: 'bg-violet-400',  color: 'text-violet-400'  },
+  { id: 'viewing',     label: 'Viewing',     dot: 'bg-blue-400',    color: 'text-blue-400'    },
+  { id: 'negotiation', label: 'Negotiation', dot: 'bg-orange-400',  color: 'text-orange-400'  },
+  { id: 'closed',      label: 'Closed',      dot: 'bg-emerald-400', color: 'text-emerald-400' },
+  { id: 'lost',        label: 'Lost',        dot: 'bg-red-400/50',  color: 'text-red-400/50'  },
 ]
 
-function sourceBadge(source: LeadSource) {
-  if (source === 'Meta')      return 'text-blue-400 bg-blue-500/10 border-blue-500/20'
-  if (source === 'Google')    return 'text-white/55 bg-sky-500/10 border-sky-500/20'
-  return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
+// ─── Temperature config ────────────────────────────────────────────────────────
+
+const TEMP_BADGE: Record<string, string> = {
+  priority: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25',
+  hot:      'bg-red-400/10 text-red-400 border-red-400/20',
+  warm:     'bg-amber-400/10 text-amber-400 border-amber-400/20',
+  cold:     'bg-white/[0.05] text-white/30 border-white/[0.07]',
+}
+const TEMP_LABEL: Record<string, string> = {
+  priority: '★ Priority',
+  hot:      '● Hot',
+  warm:     '◎ Warm',
+  cold:     '○ Cold',
 }
 
-function sourceIcon(source: LeadSource) {
-  if (source === 'WhatsApp') return <MessageCircle className="h-3 w-3" />
-  if (source === 'Google')   return <Phone className="h-3 w-3" />
-  return null
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function initials(name: string) {
+  return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
 }
+
+// ─── State init ───────────────────────────────────────────────────────────────
+
+type StageMap = Record<PipelineStage, CRMLeadIntelligence[]>
+
+function buildMap(): StageMap {
+  const m = {} as StageMap
+  STAGES.forEach(s => { m[s.id] = [] })
+  crmLeads.forEach(l => { m[l.pipelineStage] = [...(m[l.pipelineStage] ?? []), l] })
+  return m
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CrmBoardPage() {
-  const [columns, setColumns] = useState<Column[]>(initialColumns)
-  const [draggingCardId, setDraggingCardId] = useState<string | null>(null)
-  const [dragOverColumnId, setDragOverColumnId] = useState<ColumnId | null>(null)
-  const dragSourceColumnId = useRef<ColumnId | null>(null)
+  const [stageMap, setStageMap] = useState<StageMap>(buildMap)
+  const [draggingId, setDraggingId]   = useState<string | null>(null)
+  const [dragOverStage, setDragOver]  = useState<PipelineStage | null>(null)
+  const fromStage = useRef<PipelineStage | null>(null)
 
-  function handleDragStart(cardId: string, fromColumnId: ColumnId) {
-    setDraggingCardId(cardId)
-    dragSourceColumnId.current = fromColumnId
+  function onDragStart(id: string, stage: PipelineStage) {
+    setDraggingId(id)
+    fromStage.current = stage
   }
 
-  function handleDragOver(e: DragEvent<HTMLDivElement>, colId: ColumnId) {
+  function onDragOver(e: DragEvent, stage: PipelineStage) {
     e.preventDefault()
-    setDragOverColumnId(colId)
+    setDragOver(stage)
   }
 
-  function handleDrop(e: DragEvent<HTMLDivElement>, toColumnId: ColumnId) {
+  function onDrop(e: DragEvent, to: PipelineStage) {
     e.preventDefault()
-    const fromColumnId = dragSourceColumnId.current
-    if (!draggingCardId || !fromColumnId || fromColumnId === toColumnId) {
-      setDraggingCardId(null)
-      setDragOverColumnId(null)
-      dragSourceColumnId.current = null
-      return
-    }
-
-    setColumns((prev: Column[]) => {
-      const fromCol = prev.find((c: Column) => c.id === fromColumnId)
-      const card = fromCol?.leads.find((l: Lead) => l.id === draggingCardId)
-      if (!card) return prev
-      return prev.map((col: Column) => {
-        if (col.id === fromColumnId) {
-          return { ...col, leads: col.leads.filter((l: Lead) => l.id !== draggingCardId) }
-        }
-        if (col.id === toColumnId) {
-          return { ...col, leads: [...col.leads, card] }
-        }
-        return col
-      })
+    const from = fromStage.current
+    if (!draggingId || !from || from === to) { reset(); return }
+    setStageMap(prev => {
+      const lead = prev[from].find(l => l.id === draggingId)
+      if (!lead) return prev
+      return {
+        ...prev,
+        [from]: prev[from].filter(l => l.id !== draggingId),
+        [to]:   [...prev[to], lead],
+      }
     })
-
-    setDraggingCardId(null)
-    setDragOverColumnId(null)
-    dragSourceColumnId.current = null
+    reset()
   }
 
-  function handleDragEnd() {
-    setDraggingCardId(null)
-    setDragOverColumnId(null)
-    dragSourceColumnId.current = null
+  function reset() {
+    setDraggingId(null)
+    setDragOver(null)
+    fromStage.current = null
   }
 
   return (
-    <div className="flex h-full min-h-screen flex-col bg-[#0B0F1A]">
-
-      {/* Page header */}
-      <div className="border-b border-white/[0.05] px-6 py-5 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/80">
-              <Users className="h-3.5 w-3.5" />
-              CRM · Kanban Board
-            </div>
-            <h1 className="mt-1.5 text-xl font-semibold tracking-tight text-white/90">Lead Pipeline</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-white/40">
-              <MoveHorizontal className="h-3.5 w-3.5" />
-              Drag cards to move leads
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 100px)' }}>
 
       {/* Board */}
-      <div className="flex flex-1 gap-4 overflow-x-auto p-6 lg:p-8">
-        {columns.map((col: Column) => {
-          const isDragOver = dragOverColumnId === col.id
+      <div className="flex flex-1 gap-3 overflow-x-auto p-4 lg:p-5">
+        {STAGES.map(col => {
+          const leads  = stageMap[col.id] ?? []
+          const isOver = dragOverStage === col.id
           return (
             <div
               key={col.id}
-              onDragOver={(e: DragEvent<HTMLDivElement>) => handleDragOver(e, col.id)}
-              onDrop={(e: DragEvent<HTMLDivElement>) => handleDrop(e, col.id)}
-              className={`flex w-72 flex-shrink-0 flex-col rounded-2xl border transition-all duration-150 ${
-                isDragOver
-                  ? 'border-white/20 bg-white/[0.05]'
-                  : 'border-white/[0.05] bg-white/[0.02]'
-              }`}
+              onDragOver={e => onDragOver(e, col.id)}
+              onDrop={e => onDrop(e, col.id)}
+              onDragLeave={() => setDragOver(null)}
+              className={[
+                'flex w-[238px] flex-shrink-0 flex-col rounded-[16px] border transition-all',
+                isOver ? 'border-white/15 bg-white/[0.04]' : 'border-white/[0.06] bg-white/[0.02]',
+              ].join(' ')}
             >
               {/* Column header */}
-              <div className="flex items-center justify-between px-4 py-3.5">
+              <div className="flex items-center justify-between px-3.5 pb-2.5 pt-3.5">
                 <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${col.dotColor}`} />
-                  <span className={`text-sm font-semibold ${col.headerColor}`}>{col.label}</span>
+                  <span className={`h-2 w-2 rounded-full ${col.dot}`} />
+                  <span className={`text-[13px] font-semibold ${col.color}`}>{col.label}</span>
                 </div>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-medium text-white/50">
-                  {col.leads.length}
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-medium text-white/40">
+                  {leads.length}
                 </span>
               </div>
 
-              {/* Add Lead button — only on New Lead column */}
-              {col.id === 'new' && (
-                <div className="px-3 pb-2">
-                  <button className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.10] py-2 text-xs font-medium text-white/30 transition hover:border-white/20 hover:text-white/60">
-                    <Plus className="h-3.5 w-3.5" />
-                    Add Lead
-                  </button>
-                </div>
-              )}
-
               {/* Cards */}
-              <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-3 pt-1">
-                {col.leads.length === 0 && (
+              <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2.5 pb-2.5">
+                {leads.length === 0 && (
                   <div className="flex flex-1 items-center justify-center py-8">
-                    <p className="text-xs text-white/20">Drop leads here</p>
+                    <p className="text-[11px] text-white/15">Drop here</p>
                   </div>
                 )}
-                {col.leads.map((lead: Lead) => {
-                  const isDragging = draggingCardId === lead.id
+                {leads.map(lead => {
+                  const isDragging = draggingId === lead.id
                   return (
                     <div
                       key={lead.id}
                       draggable
-                      onDragStart={() => handleDragStart(lead.id, col.id)}
-                      onDragEnd={handleDragEnd}
-                      className={`cursor-grab select-none rounded-xl border border-white/[0.08] bg-white/[0.04] p-3.5 transition active:cursor-grabbing ${
-                        isDragging ? 'opacity-50 scale-95' : 'hover:border-white/10 hover:bg-white/[0.06]'
-                      }`}
+                      onDragStart={() => onDragStart(lead.id, col.id)}
+                      onDragEnd={reset}
+                      className={[
+                        'cursor-grab select-none rounded-[12px] border border-white/[0.07] bg-[#131B2B] p-3 transition active:cursor-grabbing',
+                        isDragging ? 'scale-95 opacity-40' : 'hover:border-white/[0.12]',
+                      ].join(' ')}
                     >
-                      {/* Name + note */}
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold leading-snug text-white/90">{lead.name}</p>
-                        {lead.note && (
-                          <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[12px] font-bold ${
-                            lead.note === 'WON'
-                              ? 'bg-[#D4AF37]/20 text-[#D4AF37]'
-                              : 'bg-rose-500/20 text-white/55'
-                          }`}>
-                            {lead.note}
-                          </span>
-                        )}
+                      {/* Avatar + name */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-white/[0.07] text-[10px] font-bold text-white/50">
+                          {initials(lead.name)}
+                        </div>
+                        <Link
+                          href={`/freehold-intelligence/crm/leads/${lead.id}`}
+                          onClick={e => e.stopPropagation()}
+                          className="line-clamp-1 text-[12px] font-medium text-white/85 hover:text-white"
+                        >
+                          {lead.name}
+                        </Link>
                       </div>
 
-                      {/* Property interest */}
-                      <p className="mt-1 text-xs text-white/50">{lead.propertyInterest}</p>
+                      {/* Temperature badge */}
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${TEMP_BADGE[lead.temperature]}`}>
+                          {TEMP_LABEL[lead.temperature]}
+                        </span>
+                      </div>
 
                       {/* Budget */}
-                      <p className="mt-1.5 text-xs font-medium text-[#D4AF37]/80">{lead.budget}</p>
+                      <div className="mt-2 text-[11px] font-medium text-[#D4AF37]/65">{lead.budgetAED}</div>
 
-                      {/* Footer */}
-                      <div className="mt-3 flex items-center justify-between gap-2">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium ${sourceBadge(lead.source)}`}>
-                          {sourceIcon(lead.source)}
-                          {lead.source}
+                      {/* Project */}
+                      <div className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-white/30">
+                        {lead.projectInterest}
+                      </div>
+
+                      {/* Footer: agent + intent score */}
+                      <div className="mt-2.5 flex items-center justify-between border-t border-white/[0.05] pt-2">
+                        <span className="truncate text-[10px] text-white/30">{lead.assignedAgent}</span>
+                        <span className="ml-1 shrink-0 text-[10px] font-medium tabular-nums text-white/35">
+                          {lead.intentScore}
                         </span>
-                        <span className="text-[12px] text-white/30">{lead.timeAgo}</span>
                       </div>
                     </div>
                   )
@@ -258,6 +190,11 @@ export default function CrmBoardPage() {
         })}
       </div>
 
+      {/* Drag hint */}
+      <div className="flex items-center justify-center gap-1.5 border-t border-white/[0.05] py-2.5 text-[11px] text-white/20">
+        <MoveHorizontal className="h-3.5 w-3.5" />
+        Drag cards to move leads through the pipeline
+      </div>
     </div>
   )
 }

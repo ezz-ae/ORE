@@ -59,7 +59,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1">
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-52 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-[#0B0F1A]">
+        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-100px)] w-52 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-[#0B0F1A]">
           <nav className="flex-1 px-3 py-4 space-y-0.5">
             {tabs.map((tab) => {
               const active = isActive(tab)
