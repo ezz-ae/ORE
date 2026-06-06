@@ -57,11 +57,12 @@ const _history = new Map<string, Turn[]>()
 export interface ServerQueryOptions {
   sessionId?: string
   context?: Record<string, unknown>
+  systemPrompt?: string
 }
 
 export async function queryServerAgent(
   message: string,
-  { sessionId, context }: ServerQueryOptions = {},
+  { sessionId, context, systemPrompt }: ServerQueryOptions = {},
 ): Promise<string> {
   const authHeaders = await getAuthHeaders()
   const sid     = sessionId ?? 'server-anon'
@@ -81,7 +82,7 @@ export async function queryServerAgent(
     method:  'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: systemPrompt ?? SYSTEM_PROMPT }] },
       contents,
       generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
     }),

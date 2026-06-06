@@ -174,6 +174,25 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               `Compare options for ${lead.name}'s budget.`,
               `Write a re-engagement message for ${lead.name}.`,
             ]}
+            context={{
+              lead: {
+                name: lead.name,
+                phone: lead.phone,
+                stage: lead.pipelineStage,
+                temperature: lead.temperature,
+                budget: lead.budgetAED,
+                project: lead.projectInterest,
+                intentScore: lead.intentScore,
+                urgency: lead.urgency,
+                source: lead.source,
+                assignedAgent: lead.assignedAgent,
+                aiSummary: lead.aiSummary,
+                nextBestAction: lead.nextBestAction,
+                suggestedMessage: lead.suggestedMessage,
+                duplicateRisk: lead.duplicateRisk,
+                wrongNumberRisk: lead.wrongNumberRisk,
+              },
+            }}
           />
         </div>
 
