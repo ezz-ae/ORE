@@ -1,52 +1,95 @@
-import Link from "next/link"
-import type { Metadata } from "next"
+'use client'
 
-export const metadata: Metadata = {
-  title: "Server — Freehold",
-  robots: { index: false, follow: false },
-}
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Eye, EyeOff, Shield, Lock } from 'lucide-react'
 
-export default function ServerPage() {
+const PASSCODE = 'FreeHold_in26'
+const SESSION_KEY = 'fh_mgmt_auth'
+
+export default function ServerAuth() {
+  const router = useRouter()
+  const [code, setCode]       = useState('')
+  const [show, setShow]       = useState(false)
+  const [error, setError]     = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!code || loading) return
+    setLoading(true)
+    setTimeout(() => {
+      if (code === PASSCODE) {
+        sessionStorage.setItem(SESSION_KEY, '1')
+        router.replace('/management')
+      } else {
+        setError(true)
+        setLoading(false)
+      }
+    }, 500)
+  }
+
   return (
-    <div className="min-h-screen bg-[#06080A] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="p-8 rounded-3xl border border-white/[0.06] bg-white/[0.02]">
-          {/* Wordmark */}
-          <div className="text-center">
-            <p className="text-[24px] font-semibold tracking-[0.15em] text-[#D4AF37]">FREEHOLD</p>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mt-1">Private Intelligence Server</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D1117] px-6">
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:48px_48px]" />
+
+      <div className="relative w-full max-w-[360px]">
+        <div className="mb-10 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/10">
+            <Shield className="h-8 w-8 text-[#D4AF37]" />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Freehold Admin</h1>
+          <p className="mt-1.5 text-sm text-slate-500">Server Control Panel — Restricted Access</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-7 backdrop-blur-xl">
+          <div className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <Lock className="h-3 w-3" /> Secure Authentication
           </div>
 
-          {/* Access code input */}
-          <input
-            type="password"
-            placeholder="Access code"
-            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-[#D4AF37]/30 mt-8"
-          />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-300">Access Code</label>
+              <div className="relative">
+                <input
+                  type={show ? 'text' : 'password'}
+                  value={code}
+                  onChange={e => { setCode(e.target.value); setError(false) }}
+                  placeholder="Enter your access code"
+                  autoFocus
+                  autoComplete="off"
+                  className={[
+                    'w-full rounded-xl border bg-slate-800/60 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-700 pr-11',
+                    error
+                      ? 'border-red-500/60 focus:border-red-500/80'
+                      : 'border-slate-700 focus:border-[#D4AF37]/50',
+                  ].join(' ')}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShow(s => !s)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                >
+                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {error && <p className="mt-2 text-xs text-red-400">Incorrect access code. Please try again.</p>}
+            </div>
 
-          {/* Enter button */}
-          <button
-            type="button"
-            className="w-full mt-4 rounded-xl bg-[#D4AF37] py-3 text-sm font-semibold text-[#06080A] transition hover:bg-[#D4AF37]/90"
-          >
-            Enter
-          </button>
-
-          {/* Disclaimer */}
-          <p className="mt-6 text-center text-[11px] text-white/25">
-            This server is for Freehold team members only.
-          </p>
+            <button
+              type="submit"
+              disabled={!code || loading}
+              className="w-full rounded-xl bg-[#D4AF37] py-3 text-sm font-semibold text-[#0D1117] transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-40"
+            >
+              {loading ? 'Verifying…' : 'Enter Control Panel'}
+            </button>
+          </form>
         </div>
 
-        {/* Entry link */}
-        <div className="mt-10 text-center">
-          <Link
-            href="/freehold-intelligence"
-            className="text-[11px] text-white/15 hover:text-white/40 transition-colors"
-          >
-            → Enter server
-          </Link>
-        </div>
+        <p className="mt-6 text-center text-xs text-slate-700">
+          Freehold Intelligence Platform &middot; Authorized Personnel Only
+        </p>
       </div>
     </div>
   )
