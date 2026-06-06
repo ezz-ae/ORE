@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, Lock, Mail, Check } from 'lucide-react'
+import { authenticate, persistSession } from '@/lib/freehold/session'
 
-// NOTE: temporary client-side credentials — replace with real server auth later.
+// NOTE: temporary pre-filled admin credentials — replace with real server auth.
 const USERNAME = 'admin@freehold.ae'
 const PASSWORD = 'FreeHold_in26'
-const SESSION_KEY = 'fh_mgmt_auth'
 
 export default function ServerAuth() {
   const router = useRouter()
@@ -24,11 +24,11 @@ export default function ServerAuth() {
     if (!email || !password || loading) return
     setLoading(true)
     setTimeout(() => {
-      if (email.trim().toLowerCase() === USERNAME && password === PASSWORD) {
-        // remember me → persist across browser restarts; else session-only
-        if (remember) localStorage.setItem(SESSION_KEY, '1')
-        sessionStorage.setItem(SESSION_KEY, '1')
-        router.replace('/management')
+      const user = authenticate(email, password)
+      if (user) {
+        // role-aware: persist the session and route to the role's landing
+        persistSession(user, remember)
+        router.replace(user.home)
       } else {
         setError(true)
         setLoading(false)
@@ -45,8 +45,8 @@ export default function ServerAuth() {
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/10">
             <Shield className="h-8 w-8 text-[#D4AF37]" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Freehold Admin</h1>
-          <p className="mt-1.5 text-sm text-slate-500">Server Control Panel — Restricted Access</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Freehold Server</h1>
+          <p className="mt-1.5 text-sm text-slate-500">One sign-in — your workspace adapts to your role</p>
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-7 backdrop-blur-xl">
@@ -126,9 +126,14 @@ export default function ServerAuth() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-700">
-          Freehold Intelligence Platform &middot; Authorized Personnel Only
-        </p>
+        <div className="mt-6 space-y-2 text-center">
+          <p className="text-xs text-slate-600">
+            Admins land on the control panel · Brokers land on their workspace
+          </p>
+          <p className="text-xs text-slate-700">
+            Freehold Intelligence Platform &middot; Authorized Personnel Only
+          </p>
+        </div>
       </div>
     </div>
   )

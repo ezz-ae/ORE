@@ -2,8 +2,19 @@
 
 import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { ExpertChat } from '@/components/freehold/expert-chat'
+import { useSessionGuard } from '@/lib/freehold/use-session'
 
 export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
+  const { ready } = useSessionGuard()   // any signed-in role; landing differs by role
+
+  if (!ready) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0D1117]">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-700 border-t-[#D4AF37]" />
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0D1117] text-slate-100 antialiased">
       <style>{`

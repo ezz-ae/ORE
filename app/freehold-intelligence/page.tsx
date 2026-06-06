@@ -14,6 +14,7 @@ import {
   currentServerUser,
   type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
+import { getSession } from '@/lib/freehold/session'
 
 const stats          = getInventoryStats()
 const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
@@ -129,16 +130,17 @@ const APPS = [
     icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
   },
   {
-    id:     'management',
-    label:  'Management',
-    sub:    'Admin · Credits · Team · Finance',
-    href:   '/management',
-    Icon:   ShieldCheck,
-    metric: 'Admin control panel',
-    badge:  0,
-    accent: '#D4AF37',
-    card:   'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
-    icon:   'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
+    id:        'management',
+    label:     'Management',
+    sub:       'Admin · Credits · Team · Finance',
+    href:      '/management',
+    Icon:      ShieldCheck,
+    metric:    'Admin control panel',
+    badge:     0,
+    accent:    '#D4AF37',
+    card:      'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
+    icon:      'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
+    adminOnly: true,
   },
 ]
 
@@ -178,9 +180,15 @@ export default function IntelligenceLauncher() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatReply, setChatReply]     = useState<string | null>(null)
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
+  const [isAdmin, setIsAdmin]         = useState(false)
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
-  useEffect(() => { setGreeting(getGreeting(currentServerUser.name)) }, [])
+  useEffect(() => {
+    setGreeting(getGreeting(currentServerUser.name))
+    setIsAdmin(getSession()?.role === 'admin')
+  }, [])
+
+  const visibleApps = APPS.filter((a) => !a.adminOnly || isAdmin)
 
   const lowAdReadiness  = inventoryProperties.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')
@@ -394,7 +402,7 @@ export default function IntelligenceLauncher() {
       <section>
         <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {APPS.map((app) => (
+          {visibleApps.map((app) => (
             <Link
               key={app.id}
               href={app.href}

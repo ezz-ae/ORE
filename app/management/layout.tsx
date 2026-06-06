@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -8,8 +8,8 @@ import {
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
   LogOut, Shield, ChevronRight, Menu, X, Coins,
 } from 'lucide-react'
-
-const SESSION_KEY = 'fh_mgmt_auth'
+import { clearSession } from '@/lib/freehold/session'
+import { useSessionGuard } from '@/lib/freehold/use-session'
 
 const NAV = [
   { href: '/management',            label: 'Dashboard',   icon: LayoutDashboard, exact: true },
@@ -28,28 +28,15 @@ const NAV = [
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const [ready,      setReady]      = useState(false)
+  const { ready } = useSessionGuard('admin')   // admins only; brokers bounce to their home
   const [mobileOpen, setMobileOpen] = useState(false)
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // session-only OR "remember me" (localStorage) both grant access
-      const authed = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY)
-      if (!authed) {
-        router.replace('/server')
-      } else {
-        setReady(true)
-      }
-    }
-  }, [router])
 
   function isActive(item: typeof NAV[0]) {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href)
   }
 
   function handleLogout() {
-    sessionStorage.removeItem(SESSION_KEY)
-    localStorage.removeItem(SESSION_KEY)
+    clearSession()
     router.replace('/server')
   }
 
