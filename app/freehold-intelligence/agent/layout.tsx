@@ -9,6 +9,7 @@ const APP_LABELS: Record<string, string> = {
   '/freehold-intelligence/agent/leads':     'My Leads',
   '/freehold-intelligence/agent/account':   'Account',
   '/freehold-intelligence/agent/campaigns': 'My Campaigns',
+  '/freehold-intelligence/agent/credits':   'Credits',
   '/freehold-intelligence/agent/notebook':  'Inventory',
   '/freehold-intelligence/agent/ai':        'My AI',
 }

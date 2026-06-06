@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Minus, CheckCircle, Clock, Users, Zap } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight } from 'lucide-react'
 
 type Agent = {
   id: string
@@ -71,6 +72,25 @@ export default function AgentCreditsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
+
+      {/* Credit Economy banner */}
+      <Link
+        href="/management/credits"
+        className="group mb-6 flex items-center gap-4 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-5 py-4 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+          <Coins className="h-5 w-5 text-[#D4AF37]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white">Ad-credit economy &amp; AI financial analysis now live in the Admin panel</p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            Broker ad budgets, blended ROI, and AI-recommended refills — the full Credit Economy dashboard.
+          </p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#D4AF37]">
+          Open <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </span>
+      </Link>
 
       {/* Header */}
       <div className="mb-8">

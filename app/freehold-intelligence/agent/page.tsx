@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import {
   Users, Wallet, Megaphone, BookOpen, Sparkles,
-  Settings, ChevronRight, TrendingUp, Clock, Zap,
+  Settings, ChevronRight, TrendingUp, Clock, Zap, Coins,
 } from 'lucide-react'
 import { agentProfile, agentPipelineLeads, agentWallet, agentLeadPool } from '@/src/features/freehold-intelligence/agent'
+import { brokerMetrics } from '@/src/features/freehold-intelligence/credits'
+
+const myCredits = brokerMetrics.find((b) => b.id === 'bc_ahmed')
 
 const criticalLeads   = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
 const activeLeads     = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
@@ -44,6 +47,16 @@ const APPS = [
     badge:   0,
     accent:  'blue',
     sub:     'Ads & Spend',
+  },
+  {
+    id:      'credits',
+    label:   'Credits',
+    Icon:    Coins,
+    href:    '/freehold-intelligence/agent/credits',
+    metric:  `${(myCredits?.remaining ?? 0).toLocaleString()} credits left`,
+    badge:   0,
+    accent:  'gold',
+    sub:     'Ad Budget',
   },
   {
     id:      'notebook',
