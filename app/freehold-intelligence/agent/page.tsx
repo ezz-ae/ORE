@@ -83,7 +83,7 @@ const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   gold:   { icon: 'text-[#D4AF37]',   card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/35', badge: 'bg-[#D4AF37]'     },
   blue:   { icon: 'text-blue-400',     card: 'border-blue-400/15 hover:border-blue-400/30',   badge: 'bg-blue-500'      },
   violet: { icon: 'text-violet-400',   card: 'border-violet-400/15 hover:border-violet-400/30',badge: 'bg-violet-500'   },
-  gray:   { icon: 'text-white/35',     card: 'border-white/[0.08] hover:border-white/20',     badge: 'bg-white/30'      },
+  gray:   { icon: 'text-slate-400',    card: 'border-slate-700 hover:border-slate-500',        badge: 'bg-slate-500'     },
 }
 
 function timeAgo(iso: string) {
@@ -102,8 +102,8 @@ export default function AgentHomePage() {
 
       {/* Greeting */}
       <section>
-        <div className="text-[13px] text-white/35">{now}</div>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-white/90">
+        <div className="text-sm text-slate-500">{now}</div>
+        <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-100">
           Good morning, {agentProfile.name.split(' ')[0]}.
         </h1>
 
@@ -115,7 +115,7 @@ export default function AgentHomePage() {
             { Icon: Users,      label: `${agentProfile.leadToViewingPct}% viewing rate`,           color: 'text-sky-400'     },
             { Icon: Zap,        label: `${agentProfile.wins} wins this month`,                      color: 'text-[#D4AF37]'   },
           ].map(({ Icon, label, color }) => (
-            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium ${color}`}>
+            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-medium ${color}`}>
               <Icon className="h-3 w-3" />
               {label}
             </div>
@@ -126,7 +126,7 @@ export default function AgentHomePage() {
       {/* Today's Priority */}
       {(offerLead || viewingLead || criticalLeads > 0) && (
         <section className="mt-8">
-          <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Today's focus</div>
+          <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Today's focus</div>
           <div className="space-y-2">
             {offerLead && (
               <Link
@@ -137,10 +137,10 @@ export default function AgentHomePage() {
                   <span className="text-[16px]">🔥</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-white">{offerLead.name} — {offerLead.property}</div>
-                  <div className="mt-0.5 text-[12px] text-white/45">{offerLead.note}</div>
+                  <div className="text-sm font-semibold text-white">{offerLead.name} — {offerLead.property}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{offerLead.note}</div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#D4AF37]">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]">
                   Offer <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -154,10 +154,10 @@ export default function AgentHomePage() {
                   <span className="text-[16px]">📅</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-white">{viewingLead.name} — Viewing June 8</div>
-                  <div className="mt-0.5 text-[12px] text-white/45">{viewingLead.property} · Confirm details + pre-arrival pack</div>
+                  <div className="text-sm font-semibold text-white">{viewingLead.name} — Viewing June 8</div>
+                  <div className="mt-0.5 text-xs text-slate-400">{viewingLead.property} · Confirm details + pre-arrival pack</div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-orange-400">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-orange-400">
                   Viewing <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -171,10 +171,10 @@ export default function AgentHomePage() {
                   <span className="text-[16px]">⚡</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold text-white">{criticalLeads} critical lead{criticalLeads !== 1 ? 's' : ''} need immediate action</div>
-                  <div className="mt-0.5 text-[12px] text-white/45">Response delay detected — act before competitor contact</div>
+                  <div className="text-sm font-semibold text-white">{criticalLeads} critical lead{criticalLeads !== 1 ? 's' : ''} need immediate action</div>
+                  <div className="mt-0.5 text-xs text-slate-400">Response delay detected — act before competitor contact</div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[12px] font-medium text-red-400">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-red-400">
                   Leads <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -185,7 +185,7 @@ export default function AgentHomePage() {
 
       {/* App Grid */}
       <section className="mt-10">
-        <div className="mb-4 text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">My apps</div>
+        <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">My apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => {
             const a = ACCENT[app.accent]
@@ -193,21 +193,21 @@ export default function AgentHomePage() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-[22px] border bg-[#131B2B] p-5 transition ${a.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition ${a.card}`}
               >
                 {app.badge > 0 && (
-                  <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${a.badge}`}>
+                  <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white ${a.badge}`}>
                     {app.badge}
                   </span>
                 )}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/[0.08] bg-white/[0.04] ${a.icon}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-800 bg-slate-800/50 ${a.icon}`}>
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4">
                   <div className="text-[14px] font-semibold text-white group-hover:text-white/90">{app.label}</div>
-                  <div className="mt-0.5 text-[11px] text-white/30">{app.sub}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{app.sub}</div>
                 </div>
-                <div className={`mt-3 text-[12px] font-medium ${a.icon} opacity-80`}>{app.metric}</div>
+                <div className={`mt-3 text-xs font-medium ${a.icon} opacity-80`}>{app.metric}</div>
               </Link>
             )
           })}
@@ -216,24 +216,24 @@ export default function AgentHomePage() {
 
       {/* Lead pool bar */}
       <section className="mt-8">
-        <div className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[12px] font-medium text-white/35 uppercase tracking-[0.15em]">Lead Pool — {agentLeadPool.tier} Tier</div>
-              <div className="mt-0.5 text-[13px] text-white/70">{agentLeadPool.used} used of {agentLeadPool.monthlyQuota} this month</div>
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-[0.15em]">Lead Pool — {agentLeadPool.tier} Tier</div>
+              <div className="mt-0.5 text-sm text-slate-300">{agentLeadPool.used} used of {agentLeadPool.monthlyQuota} this month</div>
             </div>
             <div className="text-right">
               <div className="text-[22px] font-semibold text-[#D4AF37] tabular-nums">{poolRemaining}</div>
-              <div className="text-[11px] text-white/30">remaining</div>
+              <div className="text-xs text-slate-500">remaining</div>
             </div>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-700">
             <div
               className="h-full rounded-full bg-[#D4AF37] transition-all"
               style={{ width: `${(agentLeadPool.used / agentLeadPool.monthlyQuota) * 100}%` }}
             />
           </div>
-          <div className="mt-1.5 text-[11px] text-white/25">Resets {new Date(agentLeadPool.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })}</div>
+          <div className="mt-1.5 text-xs text-slate-500">Resets {new Date(agentLeadPool.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })}</div>
         </div>
       </section>
 
@@ -241,7 +241,7 @@ export default function AgentHomePage() {
       <div className="mt-8 flex justify-center">
         <Link
           href="/freehold-intelligence"
-          className="text-[12px] text-white/20 transition hover:text-white/40"
+          className="text-xs text-slate-600 transition hover:text-slate-400"
         >
           Switch to manager view →
         </Link>

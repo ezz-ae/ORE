@@ -343,7 +343,7 @@ export default function MetaIntegrationPage() {
               'Copy the token and paste it above',
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-slate-400">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-xs font-semibold text-slate-400">
                   {i + 1}
                 </span>
                 {step}
