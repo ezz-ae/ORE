@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   DollarSign, TrendingUp, FileText, CreditCard,
   ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, AlertCircle,
-  ChevronDown, ChevronUp, Calendar, Users,
+  ChevronDown, ChevronUp, Calendar, Users, Coins,
 } from 'lucide-react'
+import { creditPortfolio, CREDIT_VALUE_AED } from '@/src/features/freehold-intelligence/credits'
 
 const STATS = [
   { label: 'Revenue MTD',        value: 'AED 320,000', delta: '+18%',  positive: true,  icon: DollarSign,  sub: 'vs last month AED 310K' },
@@ -134,6 +136,68 @@ export default function FinancePage() {
             </div>
           ))}
         </div>
+
+        {/* Broker Ad-Credit Investment */}
+        {(() => {
+          const cp = creditPortfolio()
+          const netReturn = cp.revenue - cp.investedAed
+          return (
+            <div className="rounded-xl border border-[#D4AF37]/20 bg-slate-900">
+              <div className="flex items-center justify-between border-b border-[#D4AF37]/15 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+                    <Coins className="h-4 w-4 text-[#D4AF37]" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-white">Broker Ad-Credit Investment</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">{cp.brokers} brokers · self-served AI ads · 1 credit = AED {CREDIT_VALUE_AED}</p>
+                  </div>
+                </div>
+                <Link href="/management/credits" className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                  Manage credits <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 xl:grid-cols-5">
+                <div>
+                  <p className="text-xs text-slate-500">Credits funded</p>
+                  <p className="mt-1 text-xl font-semibold text-white tabular-nums">{cp.allocated.toLocaleString()}</p>
+                  <p className="mt-0.5 text-xs text-slate-600">AED {(cp.allocated * CREDIT_VALUE_AED).toLocaleString()} equiv.</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Ad investment to date</p>
+                  <p className="mt-1 text-xl font-semibold text-white tabular-nums">AED {cp.investedAed.toLocaleString()}</p>
+                  <p className="mt-0.5 text-xs text-slate-600">{cp.spent.toLocaleString()} credits spent</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Revenue attributed</p>
+                  <p className="mt-1 text-xl font-semibold text-emerald-400 tabular-nums">AED {cp.revenue.toLocaleString()}</p>
+                  <p className="mt-0.5 text-xs text-slate-600">{cp.deals} deals · {cp.leads} leads</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Blended ROI</p>
+                  <p className="mt-1 text-xl font-semibold text-[#D4AF37] tabular-nums">{cp.blendedRoi.toFixed(1)}×</p>
+                  <p className="mt-0.5 text-xs text-slate-600">{cp.blendedRoiPct.toFixed(0)}% return</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Net return</p>
+                  <p className={[
+                    'mt-1 text-xl font-semibold tabular-nums',
+                    netReturn >= 0 ? 'text-emerald-400' : 'text-red-400',
+                  ].join(' ')}>
+                    {netReturn >= 0 ? '+' : '−'}AED {Math.abs(netReturn).toLocaleString()}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">revenue − investment</p>
+                </div>
+              </div>
+              <div className="border-t border-slate-800 px-5 py-3">
+                <p className="text-xs text-slate-400">
+                  <span className="text-[#D4AF37]">AI recommends</span> {cp.recommendedNextCycle.toLocaleString()} credits next cycle
+                  <span className="text-slate-600"> · AED {(cp.recommendedNextCycle * CREDIT_VALUE_AED).toLocaleString()}</span>
+                </p>
+              </div>
+            </div>
+          )
+        })()}
 
         <div className="grid gap-6 xl:grid-cols-5">
 

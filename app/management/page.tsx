@@ -7,7 +7,7 @@ import {
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
   MessageSquare, Phone, Mail, Clock, CheckCircle2, AlertCircle,
   ArrowUpRight, Send, Wifi, WifiOff, ChevronRight, Bell,
-  Target, Star, Zap, Calendar,
+  Target, Star, Zap, Calendar, Coins,
 } from 'lucide-react'
 
 const now = new Date()
@@ -54,6 +54,7 @@ const QUICK_NAV = [
   { href: '/management/deals',     label: 'Deals',       icon: Briefcase,      color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
   { href: '/management/marketing', label: 'Marketing',   icon: Megaphone,      color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
   { href: '/management/finance',   label: 'Finance',     icon: DollarSign,     color: 'text-green-400 border-green-400/20 bg-green-400/10' },
+  { href: '/management/credits',   label: 'Credits',     icon: Coins,          color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
   { href: '/management/ai',        label: 'AI Chat',     icon: Bot,            color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
   { href: '/management/inventory', label: 'Inventory',   icon: Building2,      color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
   { href: '/management/reports',   label: 'Reports',     icon: FileBarChart2,  color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
