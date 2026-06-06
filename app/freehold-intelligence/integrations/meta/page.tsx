@@ -1,176 +1,625 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Megaphone, AlertCircle, CheckCircle2, ArrowUpRight, XCircle } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Eye, EyeOff, Loader2, CheckCircle, XCircle, RefreshCw,
+  LogOut, TrendingUp, TrendingDown, Users, DollarSign,
+  Megaphone, MousePointer, Zap, ChevronDown, ChevronUp,
+  AlertTriangle, ExternalLink, Copy, Check,
+} from 'lucide-react'
 
-const REQUIREMENTS = [
-  { id: 'app-id',        label: 'Meta App ID',                     met: false, critical: true,  note: 'Required to authenticate Freehold with Meta Business.' },
-  { id: 'access-token',  label: 'Access token',                    met: false, critical: true,  note: 'Long-lived system user token with `ads_management` scope.' },
-  { id: 'billing-owner', label: 'Billing owner confirmed',          met: false, critical: true,  note: 'An owner or admin must be assigned as the billing owner on the ad account.' },
-  { id: 'ad-account',    label: 'Ad account ID linked',            met: false, critical: true,  note: 'Meta Business ad account ID must be mapped to this workspace.' },
-  { id: 'pixel',         label: 'Meta Pixel installed on site',    met: false, critical: false, note: 'Pixel on property pages enables lead event matching.' },
-  { id: 'capi',          label: 'Conversions API (CAPI) enabled',  met: false, critical: false, note: 'Server-side event sending for stronger signal matching.' },
-  { id: 'catalog',       label: 'Property catalog created',        met: false, critical: false, note: 'Dynamic property catalog enables retargeting and DPA campaigns.' },
-]
+// ─── Meta Graph API ────────────────────────────────────────────────────────────
 
-const CHECKLIST = [
-  'Log in to Meta Business Manager',
-  'Create or locate the Freehold ad account',
-  'Add a billing payment method and confirm the billing owner',
-  'Generate a system user token with `ads_management` + `ads_read` scopes',
-  'Copy the token and App ID into the Freehold integration settings',
-  'Verify the pixel fires on a property detail page',
-]
+const GRAPH = 'https://graph.facebook.com/v20.0'
+
+async function graph<T = any>(
+  path: string,
+  token: string,
+  params: Record<string, string> = {},
+): Promise<T> {
+  const url = new URL(`${GRAPH}${path}`)
+  url.searchParams.set('access_token', token)
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
+  const res = await fetch(url.toString())
+  const json = await res.json()
+  if (json.error) {
+    const e = json.error
+    throw Object.assign(new Error(e.message), { code: e.code, type: e.type })
+  }
+  return json
+}
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type MetaUser = {
+  id: string
+  name: string
+  email?: string
+}
+
+type AdAccount = {
+  id: string           // act_XXXXXXXX
+  name: string
+  account_id: string
+  account_status: number
+  currency: string
+  amount_spent: string // cents
+  timezone_name?: string
+}
+
+type Campaign = {
+  id: string
+  name: string
+  status: 'ACTIVE' | 'PAUSED' | 'DELETED' | 'ARCHIVED'
+  objective: string
+  daily_budget?: string   // cents
+  lifetime_budget?: string
+  budget_remaining?: string
+  created_time: string
+}
+
+type Insight = {
+  impressions: string
+  clicks: string
+  spend: string
+  cpm: string
+  cpc: string
+  ctr: string
+  reach?: string
+  actions?: { action_type: string; value: string }[]
+}
+
+type CampaignFull = Campaign & { insight: Insight | null }
+
+type AccountFull = AdAccount & {
+  campaigns: CampaignFull[]
+  insight: Insight | null
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmt(n: number | string, decimals = 0) {
+  const v = typeof n === 'string' ? parseFloat(n) : n
+  if (isNaN(v)) return '—'
+  return v.toLocaleString('en-AE', { maximumFractionDigits: decimals })
+}
+
+function fmtMoney(cents: string | undefined, currency = 'AED') {
+  if (!cents) return '—'
+  const aed = parseFloat(cents) / 100
+  if (aed >= 1_000_000) return `${currency} ${(aed / 1_000_000).toFixed(2)}M`
+  if (aed >= 1_000)     return `${currency} ${(aed / 1_000).toFixed(1)}K`
+  return `${currency} ${fmt(aed, 2)}`
+}
+
+function leads(insight: Insight | null) {
+  if (!insight?.actions) return 0
+  return insight.actions
+    .filter((a) => a.action_type === 'lead' || a.action_type === 'offsite_conversion.fb_pixel_lead')
+    .reduce((s, a) => s + parseInt(a.value, 10), 0)
+}
+
+function accountStatusLabel(status: number) {
+  switch (status) {
+    case 1:  return { label: 'Active',     color: 'text-emerald-400' }
+    case 2:  return { label: 'Disabled',   color: 'text-red-400'     }
+    case 3:  return { label: 'Unsettled',  color: 'text-amber-400'   }
+    case 7:  return { label: 'Pending',    color: 'text-sky-400'     }
+    case 9:  return { label: 'In review',  color: 'text-violet-400'  }
+    default: return { label: `Status ${status}`, color: 'text-white/40' }
+  }
+}
+
+const CAMPAIGN_STATUS_COLOR: Record<string, string> = {
+  ACTIVE:   'text-emerald-400',
+  PAUSED:   'text-amber-400',
+  DELETED:  'text-red-400',
+  ARCHIVED: 'text-white/30',
+}
+
+// ─── Fetch pipeline ────────────────────────────────────────────────────────────
+
+async function fetchAll(token: string): Promise<{ user: MetaUser; accounts: AccountFull[] }> {
+  // 1. Verify token & get user
+  const user = await graph<MetaUser>('/me', token, { fields: 'id,name,email' })
+
+  // 2. Get ad accounts
+  const accountsRes = await graph<{ data: AdAccount[] }>(
+    '/me/adaccounts', token,
+    { fields: 'id,name,account_id,account_status,currency,amount_spent,timezone_name', limit: '20' },
+  )
+  const accounts = accountsRes.data ?? []
+
+  // 3. For each account — campaigns + account-level insights in parallel
+  const accountsFull = await Promise.all(
+    accounts.map(async (account) => {
+      const [campaignsRes, insightRes] = await Promise.allSettled([
+        graph<{ data: Campaign[] }>(
+          `/${account.id}/campaigns`, token,
+          { fields: 'id,name,status,objective,daily_budget,lifetime_budget,budget_remaining,created_time', limit: '50' },
+        ),
+        graph<{ data: Insight[] }>(
+          `/${account.id}/insights`, token,
+          { fields: 'impressions,clicks,spend,cpm,cpc,ctr,reach,actions', date_preset: 'last_30d', level: 'account' },
+        ),
+      ])
+
+      const campaigns: Campaign[] = campaignsRes.status === 'fulfilled' ? (campaignsRes.value.data ?? []) : []
+      const accountInsight: Insight | null =
+        insightRes.status === 'fulfilled' ? (insightRes.value.data?.[0] ?? null) : null
+
+      // 4. For each campaign, fetch campaign-level insights
+      const campaignsFull: CampaignFull[] = await Promise.all(
+        campaigns.slice(0, 20).map(async (c) => {
+          try {
+            const r = await graph<{ data: Insight[] }>(
+              `/${c.id}/insights`, token,
+              { fields: 'impressions,clicks,spend,cpm,cpc,ctr,reach,actions', date_preset: 'last_30d' },
+            )
+            return { ...c, insight: r.data?.[0] ?? null }
+          } catch {
+            return { ...c, insight: null }
+          }
+        }),
+      )
+
+      return { ...account, campaigns: campaignsFull, insight: accountInsight }
+    }),
+  )
+
+  return { user, accounts: accountsFull }
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'fh_meta_access_token'
+
+type Phase = 'idle' | 'connecting' | 'connected' | 'error'
 
 export default function MetaIntegrationPage() {
-  const [checked, setChecked] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(REQUIREMENTS.map((r) => [r.id, r.met]))
-  )
-  function toggle(id: string) {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+  const [phase, setPhase]       = useState<Phase>('idle')
+  const [token, setToken]       = useState('')
+  const [showToken, setShowToken] = useState(false)
+  const [user, setUser]         = useState<MetaUser | null>(null)
+  const [accounts, setAccounts] = useState<AccountFull[]>([])
+  const [errMsg, setErrMsg]     = useState('')
+  const [syncedAt, setSyncedAt] = useState<Date | null>(null)
+  const [syncing, setSyncing]   = useState(false)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [copied, setCopied]     = useState(false)
+
+  // Restore saved token on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(TOKEN_KEY)
+    if (saved) {
+      setToken(saved)
+      connect(saved)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const connect = useCallback(async (t: string) => {
+    const tok = t.trim()
+    if (!tok) return
+    setPhase('connecting')
+    setErrMsg('')
+    try {
+      const data = await fetchAll(tok)
+      localStorage.setItem(TOKEN_KEY, tok)
+      setUser(data.user)
+      setAccounts(data.accounts)
+      setSyncedAt(new Date())
+      setPhase('connected')
+      // Auto-expand first account
+      if (data.accounts[0]) setExpanded(new Set([data.accounts[0].id]))
+    } catch (err: any) {
+      setPhase('error')
+      if (err.code === 190) {
+        setErrMsg('Token expired or invalid. Generate a new user token from Meta Business Manager.')
+      } else if (err.code === 200 || err.code === 10) {
+        setErrMsg('Permission denied. Your token needs ads_management and ads_read scopes.')
+      } else {
+        setErrMsg(err.message ?? 'Unknown error from Meta API')
+      }
+    }
+  }, [])
+
+  async function refresh() {
+    setSyncing(true)
+    try {
+      const saved = localStorage.getItem(TOKEN_KEY) ?? token
+      const data = await fetchAll(saved)
+      setUser(data.user)
+      setAccounts(data.accounts)
+      setSyncedAt(new Date())
+    } catch (err: any) {
+      setErrMsg(err.message)
+    } finally {
+      setSyncing(false)
+    }
   }
-  const metCount  = Object.values(checked).filter(Boolean).length
-  const criticalUnmet = REQUIREMENTS.filter((r) => r.critical && !checked[r.id]).length
 
-  return (
-    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+  function disconnect() {
+    localStorage.removeItem(TOKEN_KEY)
+    setPhase('idle')
+    setToken('')
+    setUser(null)
+    setAccounts([])
+    setSyncedAt(null)
+  }
 
-      <Link href="/freehold-intelligence/integrations" className="inline-flex items-center gap-1.5 text-[12px] text-white/40 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> Integrations
-      </Link>
+  function toggleAccount(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
-      <section className="mt-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
-            <Megaphone className="h-3.5 w-3.5" /> Meta Ads
+  function copyToken() {
+    const saved = localStorage.getItem(TOKEN_KEY) ?? token
+    navigator.clipboard.writeText(saved).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  // ── Totals across all accounts ─────────────────────────────────────────────
+  const totalSpend = accounts.reduce((s, a) => s + parseFloat(a.amount_spent || '0') / 100, 0)
+  const totalImpressions = accounts.reduce((s, a) => s + parseInt(a.insight?.impressions || '0', 10), 0)
+  const totalClicks = accounts.reduce((s, a) => s + parseInt(a.insight?.clicks || '0', 10), 0)
+  const totalLeads  = accounts.reduce((s, a) => s + leads(a.insight), 0)
+  const blendedCPL  = totalLeads > 0 ? totalSpend / totalLeads : 0
+
+  // ── RENDER ─────────────────────────────────────────────────────────────────
+
+  // ── Idle / Error: connection form ──────────────────────────────────────────
+  if (phase === 'idle' || phase === 'error') {
+    return (
+      <div className="mx-auto max-w-2xl px-5 pb-20 pt-8 sm:px-8">
+
+        {/* Header */}
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-blue-500/25 bg-blue-500/10">
+            <span className="text-[20px]">🔵</span>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/25 bg-red-400/10 px-2.5 py-0.5 text-[12px] font-medium text-red-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> Not connected
-          </span>
+          <div>
+            <h1 className="text-[20px] font-semibold text-white">Meta Business</h1>
+            <p className="text-[12px] text-white/35">Connect your ad account to see live campaigns</p>
+          </div>
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
-          Meta Ads<br /><span className="text-white/35">blocked by {criticalUnmet} item{criticalUnmet !== 1 ? 's' : ''}.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-white/60">
-          Meta & Instagram campaigns are the primary paid traffic channel. Connection is blocked until billing ownership and API credentials are confirmed.
-        </p>
-      </section>
 
-      {/* Critical blocker banner */}
-      {criticalUnmet > 0 && (
-        <div className="mt-8 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5 sm:p-6">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+        {/* Error banner */}
+        {phase === 'error' && errMsg && (
+          <div className="mb-6 flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-[13px] font-semibold text-white">Campaign launch is blocked</div>
-              <p className="mt-1 text-[13px] text-white/60">
-                The Palm Jumeirah and Dubai Hills campaigns cannot launch until the Meta billing owner is confirmed and API credentials are connected. This is the highest-priority blocker in the system.
-              </p>
+              <div className="text-[13px] font-semibold text-red-300">Connection failed</div>
+              <div className="mt-0.5 text-[12px] text-red-300/70 leading-relaxed">{errMsg}</div>
             </div>
           </div>
+        )}
+
+        {/* Token form */}
+        <div className="rounded-[20px] border border-white/[0.10] bg-[#131B2B] p-6">
+          <div className="mb-5 text-[13px] font-semibold text-white">Access token</div>
+
+          <div className="relative">
+            <input
+              type={showToken ? 'text' : 'password'}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && connect(token)}
+              placeholder="EAABwzLixnjYBO..."
+              className="w-full rounded-[12px] border border-white/[0.08] bg-white/[0.04] py-3 pl-4 pr-12 font-mono text-[13px] text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/40 transition"
+            />
+            <button
+              type="button"
+              onClick={() => setShowToken((v) => !v)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 transition hover:text-white/60"
+            >
+              {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+
+          <button
+            onClick={() => connect(token)}
+            disabled={!token.trim()}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#D4AF37] py-3 text-[14px] font-semibold text-black transition hover:bg-[#D4AF37]/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Connect Meta account
+          </button>
+        </div>
+
+        {/* How to get the token */}
+        <div className="mt-6 rounded-[18px] border border-white/[0.07] bg-white/[0.02] p-5">
+          <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.15em] text-white/30">
+            How to get your token
+          </div>
+          <ol className="space-y-2.5">
+            {[
+              'Go to Meta Business Manager → Settings → System Users',
+              'Create or select a System User with Admin role',
+              'Click "Generate New Token" → select your Ad Account',
+              'Enable scopes: ads_management, ads_read, leads_retrieval',
+              'Copy the token and paste it above',
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-3 text-[13px] text-white/50">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-semibold text-white/35">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+          <a
+            href="https://business.facebook.com/settings/system-users"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+          >
+            Open Meta Business Manager <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+
+        {/* Permissions required */}
+        <div className="mt-4 rounded-[14px] border border-white/[0.06] bg-transparent px-4 py-3.5">
+          <div className="mb-2 text-[11px] text-white/25 uppercase tracking-wider">Required scopes</div>
+          <div className="flex flex-wrap gap-1.5">
+            {['ads_management', 'ads_read', 'leads_retrieval', 'business_management'].map((s) => (
+              <span key={s} className="rounded bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] text-white/40">{s}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Connecting spinner ─────────────────────────────────────────────────────
+  if (phase === 'connecting') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+        <div className="text-[14px] text-white/50">Connecting to Meta Business API…</div>
+        <div className="text-[12px] text-white/25">Fetching ad accounts, campaigns, and insights</div>
+      </div>
+    )
+  }
+
+  // ── Connected dashboard ────────────────────────────────────────────────────
+  return (
+    <div className="mx-auto max-w-5xl px-5 pb-20 pt-7 sm:px-8">
+
+      {/* Connected header */}
+      <div className="mb-7 flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-blue-500/25 bg-blue-500/10 text-[16px]">
+            🔵
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[15px] font-semibold text-white">Meta Business</span>
+              <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Connected
+              </span>
+            </div>
+            <div className="text-[12px] text-white/30">{user?.name} · {accounts.length} ad account{accounts.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          {syncedAt && (
+            <span className="hidden text-[11px] text-white/20 sm:block">
+              Synced {syncedAt.toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            onClick={refresh}
+            disabled={syncing}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] text-white/35 transition hover:border-white/20 hover:text-white/70 disabled:opacity-40"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={copyToken}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] text-white/25 transition hover:border-white/20 hover:text-white/60"
+            title="Copy token"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+          <button
+            onClick={disconnect}
+            className="flex items-center gap-1.5 rounded-full border border-white/[0.07] px-3 py-1.5 text-[12px] text-white/30 transition hover:border-red-400/20 hover:text-red-400"
+          >
+            <LogOut className="h-3.5 w-3.5" /> Disconnect
+          </button>
+        </div>
+      </div>
+
+      {/* Summary tiles — 30-day totals */}
+      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {[
+          { label: 'Total spend (30d)',    value: `AED ${fmt(totalSpend, 0)}`,         Icon: DollarSign,    color: 'text-[#D4AF37]'  },
+          { label: 'Impressions (30d)',    value: totalImpressions > 0 ? fmt(totalImpressions) : '—', Icon: Megaphone, color: 'text-blue-400' },
+          { label: 'Clicks (30d)',         value: totalClicks > 0 ? fmt(totalClicks) : '—', Icon: MousePointer, color: 'text-sky-400' },
+          { label: 'Leads (30d)',          value: totalLeads > 0 ? String(totalLeads) : '—', Icon: Users, color: 'text-emerald-400' },
+          { label: 'Blended CPL',          value: blendedCPL > 0 ? `AED ${fmt(blendedCPL, 0)}` : '—', Icon: Zap, color: blendedCPL > 0 && blendedCPL < 200 ? 'text-emerald-400' : 'text-amber-400' },
+        ].map(({ label, value, Icon, color }) => (
+          <div key={label} className="rounded-[16px] border border-white/[0.06] bg-[#131B2B] px-4 py-3.5">
+            <Icon className={`h-4 w-4 ${color}`} />
+            <div className={`mt-2 text-[17px] font-semibold tabular-nums ${color}`}>{value}</div>
+            <div className="mt-0.5 text-[10px] text-white/25 leading-relaxed">{label}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* Error banner if partial refresh error */}
+      {errMsg && (
+        <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-amber-400/20 bg-amber-400/[0.05] px-4 py-2.5 text-[12px] text-amber-400/80">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          {errMsg}
+          <button onClick={() => setErrMsg('')} className="ml-auto text-white/25 hover:text-white/60"><XCircle className="h-3.5 w-3.5" /></button>
         </div>
       )}
 
-      {/* Requirements checklist */}
-      <section className="mt-12">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Access requirements</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{metCount}/{REQUIREMENTS.length} requirements met</h2>
-        {/* progress bar */}
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
-            style={{ width: `${(metCount / REQUIREMENTS.length) * 100}%` }}
-          />
+      {/* Ad accounts */}
+      {accounts.length === 0 ? (
+        <div className="rounded-[18px] border border-white/[0.07] bg-[#131B2B] px-6 py-12 text-center">
+          <div className="text-[13px] text-white/35">No ad accounts found for this token.</div>
+          <div className="mt-1 text-[11px] text-white/20">The token may need business_management scope, or no ad accounts are linked.</div>
         </div>
-        <div className="mt-5 space-y-2">
-          {REQUIREMENTS.map((req) => (
-            <button
-              key={req.id}
-              type="button"
-              onClick={() => toggle(req.id)}
-              className={`flex w-full text-left items-start gap-4 rounded-[18px] border p-5 ${
-                checked[req.id]
-                  ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]'
-                  : req.critical
-                    ? 'border-red-400/15 bg-red-400/[0.03]'
-                    : 'border-white/[0.08] bg-[#131B2B]'
-              }`}
-            >
-              {checked[req.id]
-                ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
-                : req.critical
-                  ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                  : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-white/25" />
-              }
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-white">{req.label}</div>
-                <p className="mt-0.5 text-[12px] text-white/50">{req.note}</p>
+      ) : (
+        <div className="space-y-3">
+          {accounts.map((account) => {
+            const isOpen = expanded.has(account.id)
+            const st = accountStatusLabel(account.account_status)
+            const activeCampaigns = account.campaigns.filter((c) => c.status === 'ACTIVE').length
+            const accountLeads = leads(account.insight)
+            const accountSpend = parseFloat(account.amount_spent || '0') / 100
+            const avgCPL = accountLeads > 0 ? accountSpend / accountLeads : 0
+
+            return (
+              <div key={account.id} className={`rounded-[20px] border bg-[#131B2B] transition ${isOpen ? 'border-white/[0.12]' : 'border-white/[0.07]'}`}>
+
+                {/* Account header row */}
+                <button
+                  className="flex w-full items-center gap-4 px-6 py-5 text-left"
+                  onClick={() => toggleAccount(account.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[15px] font-semibold text-white">{account.name}</span>
+                      <span className={`text-[11px] font-medium ${st.color}`}>{st.label}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-3 text-[11px] text-white/25 flex-wrap">
+                      <span>act_{account.account_id}</span>
+                      <span>{account.currency}</span>
+                      {account.timezone_name && <span>{account.timezone_name}</span>}
+                    </div>
+                  </div>
+
+                  {/* Account summary metrics */}
+                  <div className="hidden sm:flex items-center gap-6">
+                    <div className="text-right">
+                      <div className="text-[14px] font-semibold text-white tabular-nums">{fmtMoney(account.amount_spent, account.currency)}</div>
+                      <div className="text-[10px] text-white/25">total spent</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-[14px] font-semibold tabular-nums ${activeCampaigns > 0 ? 'text-emerald-400' : 'text-white/40'}`}>{activeCampaigns}</div>
+                      <div className="text-[10px] text-white/25">active</div>
+                    </div>
+                    {accountLeads > 0 && (
+                      <div className="text-right">
+                        <div className="text-[14px] font-semibold text-sky-400 tabular-nums">{accountLeads}</div>
+                        <div className="text-[10px] text-white/25">leads 30d</div>
+                      </div>
+                    )}
+                    {avgCPL > 0 && (
+                      <div className="text-right">
+                        <div className="text-[14px] font-semibold text-[#D4AF37] tabular-nums">AED {fmt(avgCPL, 0)}</div>
+                        <div className="text-[10px] text-white/25">CPL</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 text-white/25">
+                    {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </button>
+
+                {/* Campaigns table */}
+                {isOpen && (
+                  <div className="border-t border-white/[0.06]">
+                    {account.campaigns.length === 0 ? (
+                      <div className="px-6 py-6 text-[13px] text-white/30">No campaigns found for this account.</div>
+                    ) : (
+                      <>
+                        {/* Table header */}
+                        <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-white/[0.04] px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-white/20">
+                          <div>Campaign</div>
+                          <div className="text-right">Status</div>
+                          <div className="text-right">Spend</div>
+                          <div className="text-right">Impr.</div>
+                          <div className="text-right">Clicks</div>
+                          <div className="text-right">CTR</div>
+                          <div className="text-right">Leads</div>
+                        </div>
+                        {/* Campaign rows */}
+                        <div className="divide-y divide-white/[0.03]">
+                          {account.campaigns.map((c) => {
+                            const ins   = c.insight
+                            const cLeads = leads(ins)
+                            const ctr   = ins ? parseFloat(ins.ctr) : 0
+                            const statusColor = CAMPAIGN_STATUS_COLOR[c.status] ?? 'text-white/30'
+
+                            return (
+                              <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-white/[0.02] transition">
+                                <div className="min-w-0 pr-2">
+                                  <div className="truncate text-[13px] font-medium text-white/80">{c.name}</div>
+                                  <div className="mt-0.5 text-[10px] text-white/25 uppercase tracking-wide">
+                                    {c.objective?.replace(/_/g, ' ')}
+                                  </div>
+                                </div>
+                                <div className={`text-right text-[12px] font-semibold ${statusColor}`}>
+                                  {c.status === 'ACTIVE' && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 align-middle animate-pulse" />}
+                                  {c.status.charAt(0) + c.status.slice(1).toLowerCase()}
+                                </div>
+                                <div className="text-right text-[12px] text-white/60 tabular-nums">
+                                  {ins?.spend ? `${account.currency} ${fmt(parseFloat(ins.spend), 0)}` : '—'}
+                                </div>
+                                <div className="text-right text-[12px] text-white/50 tabular-nums">
+                                  {ins?.impressions ? fmt(parseInt(ins.impressions, 10)) : '—'}
+                                </div>
+                                <div className="text-right text-[12px] text-white/50 tabular-nums">
+                                  {ins?.clicks ? fmt(parseInt(ins.clicks, 10)) : '—'}
+                                </div>
+                                <div className={`text-right text-[12px] font-medium tabular-nums ${ctr > 2 ? 'text-emerald-400' : ctr > 1 ? 'text-white/60' : 'text-white/30'}`}>
+                                  {ins?.ctr ? `${parseFloat(ins.ctr).toFixed(2)}%` : '—'}
+                                </div>
+                                <div className={`text-right text-[12px] font-semibold tabular-nums ${cLeads > 0 ? 'text-sky-400' : 'text-white/20'}`}>
+                                  {cLeads > 0 ? cLeads : '—'}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Account-level insight bar */}
+                    {account.insight && (
+                      <div className="border-t border-white/[0.04] px-6 py-4">
+                        <div className="flex flex-wrap gap-6 text-[12px] text-white/35">
+                          <span>30-day account totals:</span>
+                          <span className="text-white/55">Impr. <strong className="text-white/80">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
+                          <span className="text-white/55">Clicks <strong className="text-white/80">{fmt(parseInt(account.insight.clicks || '0', 10))}</strong></span>
+                          <span className="text-white/55">Spend <strong className="text-white/80">{account.currency} {fmt(parseFloat(account.insight.spend || '0'), 0)}</strong></span>
+                          {account.insight.cpm && <span className="text-white/55">CPM <strong className="text-white/80">{account.currency} {parseFloat(account.insight.cpm).toFixed(2)}</strong></span>}
+                          {accountLeads > 0 && <span className="text-sky-400">Leads <strong>{accountLeads}</strong></span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <span className={`shrink-0 text-[13px] font-medium ${
-                checked[req.id] ? 'text-[#D4AF37]' : req.critical ? 'text-red-300' : 'text-white/35'
-              }`}>
-                {checked[req.id] ? 'Met' : req.critical ? 'Critical' : 'Optional'}
-              </span>
-            </button>
-          ))}
+            )
+          })}
         </div>
-      </section>
+      )}
 
-      {/* Setup checklist */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Setup guide</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">How to connect</h2>
-        <div className="mt-5 space-y-2">
-          {CHECKLIST.map((step, i) => (
-            <div key={i} className="flex items-start gap-4 rounded-[16px] border border-white/[0.05] bg-[#131B2B] px-5 py-4">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[13px] font-semibold text-white/40">
-                {i + 1}
-              </span>
-              <p className="text-[13px] leading-relaxed text-white/70">{step}</p>
-            </div>
-          ))}
+      {/* Footer: token management */}
+      <div className="mt-8 flex items-center justify-between rounded-[14px] border border-white/[0.06] bg-white/[0.02] px-5 py-3.5">
+        <div className="text-[12px] text-white/25">
+          Token stored in browser only · Not sent to any server
         </div>
-      </section>
-
-      {/* Campaign preview */}
-      <section className="mt-14">
-        <div className="text-[13px] font-medium uppercase tracking-wider text-white/40">Pending campaigns</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Ready to launch once connected</h2>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {[
-            { name: 'Palm Jumeirah Investor Pack', blocker: 'Meta billing owner + API', status: 'Blocked' },
-            { name: 'Dubai Hills Yield Campaign',  blocker: 'API credentials only', status: 'Blocked' },
-          ].map((campaign) => (
-            <div key={campaign.name} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-[14px] font-semibold text-white">{campaign.name}</div>
-                <span className="shrink-0 rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-[12px] text-red-300">{campaign.status}</span>
-              </div>
-              <p className="mt-1.5 text-[12px] text-white/45">{campaign.blocker}</p>
-              <Link
-                href="/freehold-intelligence/lead-machine/ad-requests"
-                className="mt-3 inline-flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
-              >
-                View ad request <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about Meta Ads setup, campaigns, billing…"
-          suggestions={[
-            'What is blocking the Meta ad launch?',
-            'How do I find my Meta App ID?',
-            'Which campaigns are ready to launch once Meta is connected?',
-          ]}
-        />
-      </section>
-
+        <a
+          href="https://business.facebook.com/settings/system-users"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[12px] text-white/25 transition hover:text-white/55"
+        >
+          Meta Business Manager <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
     </div>
   )
 }
