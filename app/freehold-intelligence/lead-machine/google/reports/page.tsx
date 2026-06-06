@@ -352,29 +352,77 @@ export default function GoogleReportsPage() {
           {last14Days.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 text-[13px] font-medium uppercase tracking-wider text-white/40">
-                Daily spend trend — last {last14Days.length} days
+                Daily performance — last {last14Days.length} days
               </div>
-              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] px-5 py-4">
-                <div className="space-y-2">
-                  {last14Days.map((day) => {
-                    const barPct = Math.round((day.costMicros / maxDaySpend) * 100)
-                    return (
-                      <div key={day.date} className="flex items-center gap-3">
-                        <span className="w-16 shrink-0 text-[13px] text-white/35">
-                          {formatShortDate(day.date)}
-                        </span>
-                        <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
-                          <div
-                            className="absolute inset-y-0 left-0 rounded-full bg-[#4285F4]/50"
-                            style={{ width: `${barPct}%` }}
-                          />
-                        </div>
-                        <span className="w-24 shrink-0 text-right text-[13px] font-medium text-white/60">
-                          {fmtMicros(day.costMicros)}
-                        </span>
+              <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#131B2B] p-5">
+                {/* SVG line chart */}
+                {(() => {
+                  const W = 560, H = 88, pad = 6
+                  const maxSpend  = Math.max(...last14Days.map((d) => d.costMicros), 1)
+                  const maxClicks = Math.max(...last14Days.map((d) => d.clicks), 1)
+                  const maxConv   = Math.max(...last14Days.map((d) => d.conversions), 1)
+
+                  function pts(key: 'costMicros' | 'clicks' | 'conversions', max: number) {
+                    return last14Days.map((d, i) => {
+                      const x = pad + (i / Math.max(last14Days.length - 1, 1)) * (W - pad * 2)
+                      const y = H - pad - (d[key] / max) * (H - pad * 2)
+                      return `${x.toFixed(1)},${y.toFixed(1)}`
+                    }).join(' ')
+                  }
+
+                  const spendPts  = pts('costMicros', maxSpend)
+                  const clicksPts = pts('clicks', maxClicks)
+                  const convPts   = pts('conversions', maxConv)
+                  const firstX = pad, firstY = H - pad
+                  const lastX  = W - pad
+                  const areaPoints = `${firstX},${firstY} ${spendPts} ${lastX},${firstY}`
+
+                  return (
+                    <>
+                      <div className="mb-3 flex items-center gap-5 text-[11px] text-white/35">
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#4285F4]" /> Spend</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-[#D4AF37]" /> Clicks</span>
+                        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-emerald-400" /> Conversions</span>
                       </div>
-                    )
-                  })}
+                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 88 }} preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="rSpendGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#4285F4" stopOpacity="0.15" />
+                            <stop offset="100%" stopColor="#4285F4" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {[0.25, 0.5, 0.75].map((t) => (
+                          <line key={t} x1={pad} y1={pad + t * (H - pad * 2)} x2={W - pad} y2={pad + t * (H - pad * 2)}
+                            stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                        ))}
+                        <polygon points={areaPoints} fill="url(#rSpendGrad)" />
+                        <polyline points={spendPts}  fill="none" stroke="#4285F4" strokeWidth="1.5" strokeLinejoin="round" />
+                        <polyline points={clicksPts} fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="4 2" />
+                        <polyline points={convPts}   fill="none" stroke="#34D399" strokeWidth="1.5" strokeLinejoin="round" strokeDasharray="2 3" />
+                      </svg>
+                      <div className="mt-2 flex justify-between text-[11px] text-white/25">
+                        {last14Days
+                          .filter((_, i) => i === 0 || i === Math.floor(last14Days.length / 2) || i === last14Days.length - 1)
+                          .map((d) => (
+                            <span key={d.date}>{formatShortDate(d.date)}</span>
+                          ))}
+                      </div>
+                    </>
+                  )
+                })()}
+
+                {/* Summary row below chart */}
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
+                  {[
+                    { label: 'Total spend',  value: fmtMicros(last14Days.reduce((s, d) => s + d.costMicros, 0)) },
+                    { label: 'Total clicks', value: last14Days.reduce((s, d) => s + d.clicks, 0).toLocaleString() },
+                    { label: 'Conversions',  value: Math.round(last14Days.reduce((s, d) => s + d.conversions, 0)).toLocaleString() },
+                  ].map((m) => (
+                    <div key={m.label}>
+                      <div className="text-[17px] font-semibold text-white">{m.value}</div>
+                      <div className="text-[11px] text-white/35">{m.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
