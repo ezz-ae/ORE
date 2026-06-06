@@ -46,14 +46,14 @@ export default function ReportsPage() {
       <div className="mb-7 flex items-center justify-between">
         <div>
           <h1 className="text-[20px] font-semibold text-white">Reports</h1>
-          <p className="mt-1 text-[12px] text-white/30">Generate and schedule financial reports</p>
+          <p className="mt-1 text-xs text-slate-500">Generate and schedule financial reports</p>
         </div>
         {/* Range selector */}
-        <div className="flex gap-1 rounded-[10px] border border-white/[0.07] bg-[#131B2B] p-1">
+        <div className="flex gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
           {RANGE_OPTIONS.slice(0, 4).map((r) => (
             <button key={r} onClick={() => setRange(r)}
-              className={`rounded-[8px] px-2.5 py-1 text-[11px] font-medium transition ${
-                range === r ? 'bg-white/[0.08] text-white' : 'text-white/30 hover:text-white/60'
+              className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
+                range === r ? 'bg-white/[0.08] text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {r.replace('Last ', '')}
             </button>
@@ -64,22 +64,22 @@ export default function ReportsPage() {
       {/* YTD tiles */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         {[
-          { label: 'YTD Spend',    value: fmt(ytdSpend), sub: 'Jan – Jun 2026',  color: 'text-white/80'    },
-          { label: 'YTD Leads',    value: ytdLeads.toLocaleString(), sub: 'All platforms', color: 'text-white/80' },
+          { label: 'YTD Spend',    value: fmt(ytdSpend), sub: 'Jan – Jun 2026',  color: 'text-slate-100'    },
+          { label: 'YTD Leads',    value: ytdLeads.toLocaleString(), sub: 'All platforms', color: 'text-slate-100' },
           { label: 'Avg CPL',      value: `AED ${avgCpl}`, sub: 'Cost per lead', color: 'text-emerald-400' },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
-            <div className="text-[11px] text-white/25 uppercase tracking-wider">{label}</div>
+          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+            <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
             <div className={`mt-2 text-[18px] font-semibold ${color}`}>{value}</div>
-            <div className="mt-0.5 text-[11px] text-white/20">{sub}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{sub}</div>
           </div>
         ))}
       </div>
 
       {/* Spend chart */}
       <section className="mb-6">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/25">Monthly Spend</div>
-        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] p-5">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Spend</div>
+        <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-5">
           <div className="flex items-end gap-2 h-28">
             {history.map((row) => {
               const metaRow   = metaHistory.find((r) => r.month === row.month)
@@ -93,16 +93,16 @@ export default function ReportsPage() {
                     <div className="w-full rounded-t-sm bg-blue-400/40" style={{ height: `${metaH}%` }} title={`Meta: ${fmt(metaRow?.spentAED ?? 0)}`} />
                     <div className="w-full bg-emerald-400/40" style={{ height: `${googleH}%` }} title={`Google: ${fmt(googleRow?.spentAED ?? 0)}`} />
                   </div>
-                  <div className="text-[9px] text-white/25 whitespace-nowrap">{row.month.split(' ')[0]}</div>
+                  <div className="text-[9px] text-slate-500 whitespace-nowrap">{row.month.split(' ')[0]}</div>
                 </div>
               )
             })}
           </div>
-          <div className="mt-3 flex items-center gap-4 border-t border-white/[0.05] pt-3">
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40">
+          <div className="mt-3 flex items-center gap-4 border-t border-slate-800 pt-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <div className="h-2 w-3 rounded-sm bg-blue-400/40" /> Meta
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <div className="h-2 w-3 rounded-sm bg-emerald-400/40" /> Google
             </div>
           </div>
@@ -111,34 +111,34 @@ export default function ReportsPage() {
 
       {/* Monthly breakdown table */}
       <section className="mb-6">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/25">Monthly Breakdown</div>
-        <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] overflow-hidden">
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Breakdown</div>
+        <div className="rounded-[16px] border border-slate-800 bg-slate-900 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.05]">
+                <tr className="border-b border-slate-800">
                   {['Month', 'Meta', 'Google', 'Total', 'Leads', 'CPL', 'Budget'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-white/25 last:text-right">{h}</th>
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 last:text-right">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-slate-800">
                 {history.map((row, i) => {
                   const metaRow   = metaHistory.find((r) => r.month === row.month)
                   const googleRow = googleHistory.find((r) => r.month === row.month)
                   const current   = row.month === history[history.length - 1].month
                   return (
                     <tr key={i} className={`transition hover:bg-white/[0.02] ${current ? 'bg-emerald-400/[0.02]' : ''}`}>
-                      <td className="px-4 py-3 font-medium text-white/75">
+                      <td className="px-4 py-3 font-medium text-slate-300">
                         {row.month}
                         {current && <span className="ml-2 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] text-emerald-400">Current</span>}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-blue-400/70">{metaRow ? fmt(metaRow.spentAED) : '—'}</td>
                       <td className="px-4 py-3 tabular-nums text-emerald-400/70">{googleRow ? fmt(googleRow.spentAED) : '—'}</td>
-                      <td className="px-4 py-3 tabular-nums font-medium text-white/80">{fmt(row.spentAED)}</td>
-                      <td className="px-4 py-3 tabular-nums text-white/55">{row.leadsGenerated}</td>
+                      <td className="px-4 py-3 tabular-nums font-medium text-slate-100">{fmt(row.spentAED)}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-400">{row.leadsGenerated}</td>
                       <td className="px-4 py-3 tabular-nums text-emerald-400">AED {row.avgCpl}</td>
-                      <td className="px-4 py-3 tabular-nums text-right text-white/35">{fmt(row.budgetAED)}</td>
+                      <td className="px-4 py-3 tabular-nums text-right text-slate-500">{fmt(row.budgetAED)}</td>
                     </tr>
                   )
                 })}
@@ -150,23 +150,23 @@ export default function ReportsPage() {
 
       {/* Report templates */}
       <section>
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/25">Report Templates</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Report Templates</div>
         <div className="space-y-2">
           {REPORT_TEMPLATES.map((r) => {
             const Icon    = r.icon
             const isDone  = done.includes(r.id)
             const isRunning = running === r.id
             return (
-              <div key={r.id} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+              <div key={r.id} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-emerald-400/20 bg-emerald-400/10">
                       <Icon className="h-3.5 w-3.5 text-emerald-400" />
                     </div>
                     <div>
-                      <div className="text-[13px] font-medium text-white/85">{r.name}</div>
-                      <div className="mt-0.5 text-[11px] text-white/35 leading-relaxed">{r.desc}</div>
-                      <div className="mt-1.5 flex items-center gap-3 text-[10px] text-white/20">
+                      <div className="text-sm font-medium text-slate-100">{r.name}</div>
+                      <div className="mt-0.5 text-xs text-slate-400 leading-relaxed">{r.desc}</div>
+                      <div className="mt-1.5 flex items-center gap-3 text-[10px] text-slate-500">
                         <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {r.schedule}</span>
                         <span>Last: {r.lastRun}</span>
                         <span>{r.formats.join(' · ')}</span>
@@ -174,10 +174,10 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <button onClick={() => runReport(r.id)} disabled={isRunning}
-                    className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                    className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       isDone
                         ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                        : 'border-white/[0.08] text-white/35 hover:border-emerald-400/25 hover:text-emerald-400'
+                        : 'border-slate-800 text-slate-400 hover:border-emerald-400/25 hover:text-emerald-400'
                     } disabled:opacity-50`}>
                     {isRunning ? <RefreshCw className="h-3 w-3 animate-spin" /> : isDone ? <CheckCircle2 className="h-3 w-3" /> : <Download className="h-3 w-3" />}
                     {isRunning ? 'Building…' : isDone ? 'Ready' : 'Generate'}

@@ -134,7 +134,7 @@ type FilterKey = 'All' | 'Complete' | 'Incomplete' | 'Draft'
 const STATUS_STYLE: Record<DeveloperRow['profileStatus'], string> = {
   Complete:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   Incomplete: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
-  Draft:      'text-white/40    bg-white/[0.04]   border-white/10',
+  Draft:      'text-slate-400   bg-slate-800/50   border-slate-700',
 }
 
 export default function DeveloperProfilesPage() {
@@ -166,10 +166,10 @@ export default function DeveloperProfilesPage() {
       {/* Header */}
       <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-[20px] font-semibold text-white">Developer Profiles</h1>
-          <p className="mt-1 text-[12px] text-white/30">SEO pages for each developer — drives organic ranking</p>
+          <h1 className="text-xl font-semibold text-white">Developer Profiles</h1>
+          <p className="mt-1 text-xs text-slate-500">SEO pages for each developer — drives organic ranking</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-[12px] font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
           <Plus className="h-3.5 w-3.5" /> Add developer
         </button>
       </div>
@@ -181,23 +181,23 @@ export default function DeveloperProfilesPage() {
           { label: 'Avg SEO',   value: avgSeo,                             Icon: TrendingUp,   color: 'text-sky-400'     },
           { label: '30d Leads', value: totalLeads,                         Icon: Globe,        color: 'text-[#D4AF37]'   },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
             <Icon className={`h-4 w-4 ${color}`} />
-            <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
-            <div className="mt-0.5 text-[11px] text-white/25">{label}</div>
+            <div className="mt-2 text-xl font-semibold text-white">{value}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{label}</div>
           </div>
         ))}
       </div>
 
       {/* Missing profiles alert */}
       {DEVELOPERS.some((d) => d.profileStatus !== 'Complete') && (
-        <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-amber-400/15 bg-amber-400/[0.03] px-4 py-3.5">
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.03] px-4 py-3.5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400/70" />
           <div>
-            <div className="text-[13px] font-medium text-amber-300/90">
+            <div className="text-sm font-medium text-amber-300/90">
               {DEVELOPERS.filter((d) => d.profileStatus !== 'Complete').length} profiles incomplete
             </div>
-            <div className="mt-0.5 text-[12px] text-white/35">
+            <div className="mt-0.5 text-xs text-slate-500">
               Incomplete profiles reduce Google ranking for developer searches. Use AI Write to complete them.
             </div>
           </div>
@@ -207,20 +207,20 @@ export default function DeveloperProfilesPage() {
       {/* Filters + search */}
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input
             type="text"
             placeholder="Search developers…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-white/[0.07] bg-[#131B2B] py-2 pl-8 pr-3 text-[13px] text-white placeholder-white/20 outline-none focus:border-sky-400/30"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-[10px] border border-white/[0.07] bg-[#131B2B] p-1">
+        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
           {(['All', 'Complete', 'Incomplete', 'Draft'] as FilterKey[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-[8px] px-2.5 py-1 text-[11px] font-medium transition ${
-                filter === f ? 'bg-white/[0.08] text-white' : 'text-white/30 hover:text-white/60'
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                filter === f ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {f}
             </button>
@@ -231,7 +231,7 @@ export default function DeveloperProfilesPage() {
       {/* Developer cards */}
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] px-5 py-10 text-center text-[13px] text-white/25">
+          <div className="rounded-xl border border-slate-800 bg-slate-900 px-5 py-10 text-center text-sm text-slate-500">
             No developers match.
           </div>
         )}
@@ -243,20 +243,20 @@ export default function DeveloperProfilesPage() {
           const total      = d.checklist.length
 
           return (
-            <div key={d.name} className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] overflow-hidden">
+            <div key={d.name} className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
               <button className="w-full flex items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isExpanded ? null : d.name)}>
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-bold ${d.color}`}>
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${d.color}`}>
                   {d.initials}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-medium text-white/85">{d.name}</span>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[d.profileStatus]}`}>
+                    <span className="text-sm font-medium text-slate-300">{d.name}</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[d.profileStatus]}`}>
                       {d.profileStatus}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5 text-[11px] text-white/25">
+                  <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-500">
                     <span>{d.listings} listings</span>
                     <span>·</span>
                     <span>SEO {d.seo}</span>
@@ -269,24 +269,24 @@ export default function DeveloperProfilesPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="flex items-center gap-1">
                     {d.checklist.map((_, i) => (
-                      <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneCount ? 'bg-sky-400' : 'bg-white/[0.12]'}`} />
+                      <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneCount ? 'bg-sky-400' : 'bg-slate-700'}`} />
                     ))}
                   </div>
-                  <span className="text-[10px] text-white/25">{doneCount}/{total}</span>
+                  <span className="text-xs text-slate-500">{doneCount}/{total}</span>
                 </div>
               </button>
 
               {isExpanded && (
-                <div className="border-t border-white/[0.05] px-5 py-4">
-                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-white/25">Profile checklist</div>
+                <div className="border-t border-slate-800 px-5 py-4">
+                  <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Profile checklist</div>
                   <div className="space-y-2 mb-4">
                     {d.checklist.map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
                         {item.done
                           ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />
-                          : <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/[0.15]" />
+                          : <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-600" />
                         }
-                        <span className={`text-[12px] ${item.done ? 'text-white/55' : 'text-white/30'}`}>{item.item}</span>
+                        <span className={`text-xs ${item.done ? 'text-slate-400' : 'text-slate-500'}`}>{item.item}</span>
                       </div>
                     ))}
                   </div>
@@ -294,7 +294,7 @@ export default function DeveloperProfilesPage() {
                     <button
                       onClick={() => aiWrite(d.name)}
                       disabled={isWriting}
-                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${
+                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                         isWritten
                           ? 'border-emerald-400/25 text-emerald-400'
                           : 'border-sky-400/25 bg-sky-400/[0.06] text-sky-400 hover:bg-sky-400/15'
@@ -302,7 +302,7 @@ export default function DeveloperProfilesPage() {
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
                     </button>
-                    <button className="flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] text-white/35 hover:text-white/60 transition">
+                    <button className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
                       <Globe className="h-3 w-3" /> Preview
                     </button>
                   </div>

@@ -11,8 +11,8 @@ function QualityBand({ value }: { value: number }) {
       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
       </div>
-      <span className={`text-[12px] font-medium tabular-nums ${textColor}`}>{value}</span>
-      <span className={`text-[11px] ${textColor} opacity-60`}>{label}</span>
+      <span className={`text-xs font-medium tabular-nums ${textColor}`}>{value}</span>
+      <span className={`text-xs ${textColor} opacity-60`}>{label}</span>
     </div>
   )
 }
@@ -36,8 +36,8 @@ export default function DataQualityPage() {
   return (
     <div className="p-6 lg:p-8 space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white/90">Data Quality</h1>
-        <p className="mt-1 text-sm text-white/40">Completeness and readiness scores across all inventory</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Data Quality</h1>
+        <p className="mt-1 text-sm text-slate-400">Completeness and readiness scores across all inventory</p>
       </div>
 
       {/* KPIs */}
@@ -48,9 +48,9 @@ export default function DataQualityPage() {
           { label: 'Needs Work',   value: needsCount,        accent: 'text-amber-400' },
           { label: 'Poor (<50)',   value: poorCount,         accent: poorCount > 0 ? 'text-red-400' : undefined },
         ].map(({ label, value, accent }) => (
-          <div key={label} className="rounded-2xl border border-white/[0.05] bg-white/[0.03] p-4">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-white/35">{label}</div>
-            <div className={`mt-2 text-xl font-semibold tabular-nums ${accent ?? 'text-white/80'}`}>{value}</div>
+          <div key={label} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-4">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
+            <div className={`mt-2 text-xl font-semibold tabular-nums ${accent ?? 'text-slate-300'}`}>{value}</div>
           </div>
         ))}
       </div>
@@ -72,7 +72,7 @@ export default function DataQualityPage() {
                   ? <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
                   : <AlertTriangle className="h-4 w-4 text-amber-400" />
                 }
-                <span className="text-[13px] text-white/70">{label}</span>
+                <span className="text-sm text-white/70">{label}</span>
               </div>
               <span className={`text-[15px] font-semibold tabular-nums ${
                 affected === 0 ? 'text-[#D4AF37]' : affected <= 2 ? 'text-amber-400' : 'text-red-400'
@@ -83,31 +83,31 @@ export default function DataQualityPage() {
       </div>
 
       {/* Full table */}
-      <div className="rounded-2xl border border-white/[0.05] bg-white/[0.03] overflow-hidden">
+      <div className="rounded-2xl border border-slate-800 bg-slate-800/50 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.05]">
+              <tr className="border-b border-slate-800">
                 {['Property', 'Developer', 'Images', 'Landing', 'Campaigns', 'Data Quality', 'Ad Readiness', ''].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-white/35">{h}</th>
+                  <th key={h} className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-slate-800">
               {sorted.map((p) => (
                 <tr key={p.id} className={`transition hover:bg-white/[0.02] ${p.dataQuality < 50 ? 'bg-red-400/[0.02]' : ''}`}>
                   <td className="max-w-[200px] pl-5 pr-4 py-3.5">
-                    <div className="truncate font-medium text-white/85">{p.name}</div>
-                    <div className="mt-0.5 text-[12px] text-white/35">{p.area}</div>
+                    <div className="truncate font-medium text-slate-100">{p.name}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{p.area}</div>
                   </td>
                   <td className="px-4 py-3.5 text-white/55">{p.developer}</td>
-                  <td className="px-4 py-3.5 text-[13px]">
+                  <td className="px-4 py-3.5 text-sm">
                     <span className={p.hasImages ? (p.imageCount >= 5 ? 'text-[#D4AF37]' : 'text-amber-400') : 'text-red-400'}>
                       {p.hasImages ? `${p.imageCount}` : '0'}
                     </span>
-                    <span className="ml-1 text-white/30">img</span>
+                    <span className="ml-1 text-slate-500">img</span>
                   </td>
-                  <td className="px-4 py-3.5 text-[13px]">
+                  <td className="px-4 py-3.5 text-sm">
                     <span className={
                       p.landingStatus === 'live' ? 'text-[#D4AF37]' :
                       p.landingStatus === 'missing' ? 'text-red-400' : 'text-amber-400'
@@ -115,7 +115,7 @@ export default function DataQualityPage() {
                       {p.landingStatus === 'live' ? 'Live' : p.landingStatus === 'missing' ? 'Missing' : 'Draft'}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-[13px]">
+                  <td className="px-4 py-3.5 text-sm">
                     <span className={p.linkedCampaigns > 0 ? 'text-white/65' : 'text-red-400'}>
                       {p.linkedCampaigns}
                     </span>
@@ -124,7 +124,7 @@ export default function DataQualityPage() {
                   <td className="px-4 py-3.5"><QualityBand value={p.adReadiness} /></td>
                   <td className="pr-5 pl-4 py-3.5">
                     <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                      className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[12px] text-white/50 transition hover:border-white/20 hover:text-white">
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-xs text-slate-400 transition hover:border-white/20 hover:text-white">
                       Fix <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </td>

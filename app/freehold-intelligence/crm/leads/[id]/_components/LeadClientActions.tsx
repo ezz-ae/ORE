@@ -20,7 +20,7 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1 text-[13px] text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+      className="flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
     >
       {copied ? <CheckCircle className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
@@ -42,7 +42,7 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
       {/* Full in-app WhatsApp chat */}
       <Link
         href={`/freehold-intelligence/crm/leads/${leadId}/whatsapp`}
-        className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-emerald-400"
+        className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-400"
       >
         <MessageSquare className="h-3.5 w-3.5" />
         Open WhatsApp Chat
@@ -53,14 +53,14 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => setSent(true)}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-2 text-[12px] text-emerald-400 transition hover:bg-emerald-500/15"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-2 text-xs text-emerald-400 transition hover:bg-emerald-500/15"
       >
         <MessageSquare className="h-3.5 w-3.5" />
         {sent ? 'Opened' : 'wa.me'}
       </a>
       <Link
         href={`/freehold-intelligence/notebook?lead=${leadId}`}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.025] px-4 py-2 text-[12px] text-white/65 transition hover:border-[#D4AF37]/30 hover:text-white"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-slate-800 bg-slate-800/50 px-4 py-2 text-xs text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
       >
         <BookOpen className="h-3.5 w-3.5" />
         Notebook
@@ -106,10 +106,10 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
               onClick={() => handleAction(action.key, action.label)}
               disabled={done}
               className={[
-                'flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-[13px] transition',
+                'flex w-full items-center gap-2.5 rounded-[12px] border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm transition',
                 done
                   ? 'text-[#D4AF37]/60 border-emerald-400/15 cursor-default'
-                  : `text-white/55 ${action.accent}`,
+                  : `text-slate-400 ${action.accent}`,
               ].join(' ')}
             >
               {done ? <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Icon className="h-3.5 w-3.5" />}
@@ -119,7 +119,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
         })}
         <Link
           href="/freehold-intelligence/crm/pipeline"
-          className="flex w-full items-center gap-2.5 rounded-[12px] border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-[13px] text-white/55 transition hover:border-white/20 hover:text-white"
+          className="flex w-full items-center gap-2.5 rounded-[12px] border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-400 transition hover:border-slate-600 hover:text-white"
         >
           <ArrowUpRight className="h-3.5 w-3.5" />
           View in pipeline
@@ -127,7 +127,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
       </div>
 
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-[#131B2B] px-5 py-2.5 text-[13px] font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-slate-900 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-lg">
           {flash}
         </div>
       )}

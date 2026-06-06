@@ -9,7 +9,7 @@ function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Critical' }
   if (u === 'high')     return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',  label: 'High'     }
   if (u === 'medium')   return { dot: 'bg-sky-400',     text: 'text-sky-200',    badge: 'border-sky-400/20 bg-sky-400/10',       label: 'Medium'   }
-  return                       { dot: 'bg-white/30',    text: 'text-white/45',   badge: 'border-white/10 bg-white/[0.04]',       label: 'Low'      }
+  return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-700 bg-slate-800/50',      label: 'Low'      }
 }
 
 function scoreColor(n: number) {
@@ -23,7 +23,7 @@ function stageColor(stage: string) {
   if (stage === 'Qualified') return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (stage === 'Follow-up') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
   if (stage === 'New')       return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
-  return 'text-white/50 border-white/10 bg-white/[0.04]'
+  return 'text-slate-400 border-slate-700 bg-slate-800/50'
 }
 
 const ALL_STAGES  = ['All', ...Array.from(new Set(crmLeads.map((l) => l.stage)))]
@@ -73,12 +73,12 @@ export default function CrmLeadsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-[13px] font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
           <Target className="h-3.5 w-3.5" /> CRM · All Leads
         </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white/90">
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
           {crmLeads.length} leads tracked.<br />
-          <span className="text-white/35">{hot} need action now.</span>
+          <span className="text-slate-500">{hot} need action now.</span>
         </h1>
       </section>
 
@@ -90,38 +90,38 @@ export default function CrmLeadsPage() {
           { label: 'Avg intent',   value: avgIntent,       color: 'text-[#D4AF37]'                                },
           { label: 'Risk flags',   value: withRisk,        color: withRisk > 0 ? 'text-orange-300' : 'text-white' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-white/[0.08] bg-[#131B2B] p-4 text-center">
+          <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-center">
             <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-[12px] text-white/35">{s.label}</div>
+            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Search */}
       <div className="mt-8 relative">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30 pointer-events-none" />
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, source, stage or agent…"
-          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-sm text-white/80 placeholder:text-white/25 focus:border-[#D4AF37]/30 focus:outline-none"
+          className="w-full rounded-xl border border-slate-800 bg-slate-800/50 py-2.5 pl-10 pr-4 text-sm text-slate-300 placeholder:text-slate-500 focus:border-[#D4AF37]/50 focus:outline-none"
         />
       </div>
 
       {/* Stage filter */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="text-[13px] text-white/35 shrink-0">Stage:</span>
+        <span className="text-sm text-slate-500 shrink-0">Stage:</span>
         {ALL_STAGES.map((stage) => (
           <button
             key={stage}
             onClick={() => setActiveStage(stage)}
-            className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium transition ${
+            className={`rounded-full border px-2.5 py-0.5 text-sm font-medium transition ${
               activeStage === stage
                 ? stage === 'All'
                   ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                   : stageColor(stage)
-                : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70 hover:border-white/20'
+                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500'
             }`}
           >
             {stage}
@@ -131,15 +131,15 @@ export default function CrmLeadsPage() {
 
       {/* Agent filter */}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="text-[13px] text-white/35 shrink-0">Agent:</span>
+        <span className="text-sm text-slate-500 shrink-0">Agent:</span>
         {ALL_AGENTS.map((agent) => (
           <button
             key={agent}
             onClick={() => setActiveAgent(agent)}
-            className={`rounded-full border px-2.5 py-0.5 text-[13px] font-medium transition ${
+            className={`rounded-full border px-2.5 py-0.5 text-sm font-medium transition ${
               activeAgent === agent
                 ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white/70 hover:border-white/20'
+                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500'
             }`}
           >
             {agent}
@@ -148,7 +148,7 @@ export default function CrmLeadsPage() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-0.5 text-[13px] text-white/40 transition hover:text-white/70"
+            className="ml-1 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-200 hover:border-slate-500"
           >
             <X className="h-3 w-3" /> Clear
           </button>
@@ -156,30 +156,30 @@ export default function CrmLeadsPage() {
       </div>
 
       {/* Result count */}
-      <p className="mt-3 text-[13px] text-white/30">
+      <p className="mt-3 text-sm text-slate-500">
         {filtered.length} of {crmLeads.length} leads
         {hasFilters && <span className="ml-1.5 text-[#D4AF37]/60">· filtered</span>}
       </p>
 
       {/* Lead table */}
       <section className="mt-4">
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#131B2B]">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
           {/* Table header */}
-          <div className="hidden grid-cols-[2fr_1fr_80px_100px_120px_40px] items-center gap-4 border-b border-white/[0.05] px-6 py-3 sm:grid">
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Lead</div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Stage</div>
-            <div className="text-center text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Score</div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Agent</div>
-            <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-white/30">Source</div>
+          <div className="hidden grid-cols-[2fr_1fr_80px_100px_120px_40px] items-center gap-4 border-b border-slate-800 px-6 py-3 sm:grid">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Lead</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Stage</div>
+            <div className="text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Score</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Agent</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Source</div>
             <div />
           </div>
 
           {filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm text-white/25">
+            <div className="py-16 text-center text-sm text-slate-500">
               No leads match these filters.
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-slate-800">
               {filtered.map((lead) => {
                 const ug      = urgencyConfig(lead.urgency)
                 const hasRisk = lead.duplicateRisk || lead.wrongNumberRisk
@@ -188,14 +188,14 @@ export default function CrmLeadsPage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group flex items-center gap-4 px-6 py-4 transition hover:bg-white/[0.025]"
+                    className="group flex items-center gap-4 px-6 py-4 transition hover:bg-slate-800/50"
                   >
                     {/* Name + urgency */}
                     <div className="min-w-0 flex-[2] flex items-center gap-2.5">
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${ug.dot}`} />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[14px] font-semibold text-white/90 group-hover:text-white truncate">
+                          <span className="text-[14px] font-semibold text-slate-100 group-hover:text-white truncate">
                             {lead.name}
                           </span>
                           {hasRisk && (
@@ -204,7 +204,7 @@ export default function CrmLeadsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-0.5 text-[13px] text-white/35 truncate sm:hidden">
+                        <div className="mt-0.5 text-sm text-slate-500 truncate sm:hidden">
                           {lead.stage} · {lead.assignedAgent} · score {lead.intentScore}
                         </div>
                       </div>
@@ -212,7 +212,7 @@ export default function CrmLeadsPage() {
 
                     {/* Stage */}
                     <div className="hidden flex-1 sm:flex">
-                      <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${stageColor(lead.stage)}`}>
+                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${stageColor(lead.stage)}`}>
                         {lead.stage}
                       </span>
                     </div>
@@ -222,7 +222,7 @@ export default function CrmLeadsPage() {
                       <span className={`text-[15px] font-semibold tabular-nums ${scoreColor(lead.intentScore)}`}>
                         {lead.intentScore}
                       </span>
-                      <div className="mx-auto mt-1 h-1 w-12 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="mx-auto mt-1 h-1 w-12 overflow-hidden rounded-full bg-slate-800">
                         <div
                           className={`h-full rounded-full ${scoreColor(lead.intentScore).replace('text-', 'bg-').replace('/30', '').replace('/300', '')}`}
                           style={{ width: `${lead.intentScore}%` }}
@@ -232,16 +232,16 @@ export default function CrmLeadsPage() {
 
                     {/* Agent */}
                     <div className="hidden w-28 sm:block">
-                      <span className="text-[12px] text-white/55 truncate block">{lead.assignedAgent}</span>
+                      <span className="text-xs text-slate-400 truncate block">{lead.assignedAgent}</span>
                     </div>
 
                     {/* Source */}
                     <div className="hidden flex-1 sm:block">
-                      <span className="line-clamp-1 text-[13px] text-white/35">{lead.source}</span>
+                      <span className="line-clamp-1 text-sm text-slate-500">{lead.source}</span>
                     </div>
 
                     {/* Arrow */}
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-white/15 transition group-hover:text-[#D4AF37]" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
                   </Link>
                 )
               })}
@@ -251,7 +251,7 @@ export default function CrmLeadsPage() {
       </section>
 
       {/* Footer */}
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-white/30">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-500">
         <span>{filtered.length} leads · sorted by intent score</span>
         <Link href="/freehold-intelligence/crm" className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
           → Intelligence view

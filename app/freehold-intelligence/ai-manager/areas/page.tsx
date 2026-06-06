@@ -41,10 +41,10 @@ function seoBar(score: number) {
   const color = score >= 80 ? 'bg-sky-400' : score >= 60 ? 'bg-amber-400' : 'bg-red-400'
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1 w-14 rounded-full bg-white/[0.07]">
+      <div className="h-1 w-14 rounded-full bg-slate-700">
         <div className={`h-1 rounded-full ${color}`} style={{ width: `${score}%` }} />
       </div>
-      <span className={`text-[12px] tabular-nums ${score >= 80 ? 'text-sky-400' : score >= 60 ? 'text-amber-400' : 'text-red-400/80'}`}>{score}</span>
+      <span className={`text-xs tabular-nums ${score >= 80 ? 'text-sky-400' : score >= 60 ? 'text-amber-400' : 'text-red-400/80'}`}>{score}</span>
     </div>
   )
 }
@@ -54,10 +54,10 @@ function wordProgress(words: number) {
   const pct    = Math.min(Math.round((words / target) * 100), 100)
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1 w-14 rounded-full bg-white/[0.07]">
+      <div className="h-1 w-14 rounded-full bg-slate-700">
         <div className="h-1 rounded-full bg-sky-400/60" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[12px] text-white/35 tabular-nums">{(words / 1000).toFixed(1)}k</span>
+      <span className="text-xs text-slate-500 tabular-nums">{(words / 1000).toFixed(1)}k</span>
     </div>
   )
 }
@@ -90,10 +90,10 @@ export default function AreaGuidesPage() {
       {/* Header */}
       <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-[20px] font-semibold text-white">Area Guides</h1>
-          <p className="mt-1 text-[12px] text-white/30">SEO-optimised location pages for each area you serve</p>
+          <h1 className="text-xl font-semibold text-white">Area Guides</h1>
+          <p className="mt-1 text-xs text-slate-500">SEO-optimised location pages for each area you serve</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-[12px] font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
           <Plus className="h-3.5 w-3.5" /> New area
         </button>
       </div>
@@ -105,10 +105,10 @@ export default function AreaGuidesPage() {
           { label: 'Avg SEO',   value: avgSeo,    sub: '/ 100 score',           Icon: TrendingUp,  color: 'text-sky-400'     },
           { label: '30d Leads', value: totalLeads, sub: 'from area pages',      Icon: FileText,    color: 'text-[#D4AF37]'   },
         ].map(({ label, value, sub, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-white/[0.07] bg-[#131B2B] p-4">
+          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
             <Icon className={`h-4 w-4 ${color}`} />
-            <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
-            <div className="mt-0.5 text-[11px] text-white/25">{label} · {sub}</div>
+            <div className="mt-2 text-xl font-semibold text-white">{value}</div>
+            <div className="mt-0.5 text-xs text-slate-500">{label} · {sub}</div>
           </div>
         ))}
       </div>
@@ -116,20 +116,20 @@ export default function AreaGuidesPage() {
       {/* Filters + search */}
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/25" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input
             type="text"
             placeholder="Search areas…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-white/[0.07] bg-[#131B2B] py-2 pl-8 pr-3 text-[13px] text-white placeholder-white/20 outline-none focus:border-sky-400/30"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-[10px] border border-white/[0.07] bg-[#131B2B] p-1">
+        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
           {(['All', 'Published', 'Draft', 'Missing'] as FilterKey[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`rounded-[8px] px-3 py-1 text-[11px] font-medium transition ${
-                filter === f ? 'bg-white/[0.08] text-white' : 'text-white/30 hover:text-white/60'
+              className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                filter === f ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {f}
             </button>
@@ -138,9 +138,9 @@ export default function AreaGuidesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-[16px] border border-white/[0.07] bg-[#131B2B] divide-y divide-white/[0.04] overflow-hidden">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[1fr,auto,auto,auto,auto] gap-4 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/20">
+        <div className="grid grid-cols-[1fr,auto,auto,auto,auto] gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <div>Area</div>
           <div className="text-center">Status</div>
           <div className="text-center">SEO</div>
@@ -149,7 +149,7 @@ export default function AreaGuidesPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="px-5 py-10 text-center text-[13px] text-white/25">No areas match your filter.</div>
+          <div className="px-5 py-10 text-center text-sm text-slate-500">No areas match your filter.</div>
         )}
 
         {filtered.map((a) => {
@@ -161,16 +161,16 @@ export default function AreaGuidesPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400/50" />
-                  <span className="text-[13px] font-medium text-white/80 truncate">{a.name}</span>
+                  <span className="text-sm font-medium text-slate-300 truncate">{a.name}</span>
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-white/25 pl-5">
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500 pl-5">
                   <span>{a.properties} prop.</span>
                   {a.leads30d > 0 && <><span>·</span><span className="text-sky-400/70">{a.leads30d} leads</span></>}
                 </div>
               </div>
               {/* Status */}
               <div className="flex justify-center">
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[a.status]}`}>
+                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[a.status]}`}>
                   {a.status}
                 </span>
               </div>
@@ -183,7 +183,7 @@ export default function AreaGuidesPage() {
                 <button
                   onClick={() => aiWrite(a.name)}
                   disabled={isWriting}
-                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                     isWritten
                       ? 'border-emerald-400/20 text-emerald-400'
                       : 'border-sky-400/20 bg-sky-400/[0.06] text-sky-400/80 hover:bg-sky-400/15'
@@ -197,7 +197,7 @@ export default function AreaGuidesPage() {
         })}
       </div>
 
-      <p className="mt-3 text-center text-[11px] text-white/20">
+      <p className="mt-3 text-center text-xs text-slate-500">
         AI Write generates SEO-optimised content using property data and area context. Review before publishing.
       </p>
     </div>
