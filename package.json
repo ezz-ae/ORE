@@ -58,6 +58,7 @@
     "embla-carousel-react": "8.5.1",
     "formidable": "^3.5.4",
     "framer-motion": "12.23.27",
+    "google-auth-library": "^10.7.0",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "16.0.10",

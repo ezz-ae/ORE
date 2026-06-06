@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, RefreshCw, AlertCircle, Zap } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
+import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
 const GOOGLE_BLUE = '#4285F4'
 
@@ -398,6 +399,19 @@ export default function GoogleAdsPage() {
               </Link>
             </div>
           )}
+
+          {/* Marketing Expert Agent */}
+          <MarketingExpertPanel
+            scope="google-ads"
+            context={{
+              platform: 'Google Ads (Live)',
+              activeCampaigns: campaigns.filter((c) => c.status === 'ENABLED').length,
+              totalCampaigns: campaigns.length,
+              spend30d: fmtMicros(campaigns.reduce((s, c) => s + (c.metrics?.costMicros ?? 0), 0)),
+              conversions: Math.round(campaigns.reduce((s, c) => s + (c.metrics?.conversions ?? 0), 0)),
+              clicks: campaigns.reduce((s, c) => s + (c.metrics?.clicks ?? 0), 0),
+            }}
+          />
         </>
       )}
     </div>

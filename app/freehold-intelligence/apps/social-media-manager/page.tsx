@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Megaphone, CheckCircle2, Clock, AlertCircle, ArrowUpRight, Sparkles, X } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
 type AngleItem = { id: string; title: string; platform: string; headline: string; hook: string; status: 'pending_approval' | 'draft' | 'approved' }
 type AngleGroup = { listing: string; area: string; listingHref: string; items: AngleItem[] }
@@ -325,6 +326,17 @@ export default function SocialMediaManagerPage() {
           ]}
         />
       </section>
+
+      <MarketingExpertPanel
+        scope="social"
+        context={{
+          platform: 'Social Media',
+          pendingAngles: ALL_ANGLES.flatMap((g) => g.items).filter((i) => i.status === 'pending_approval').length,
+          draftAngles: ALL_ANGLES.flatMap((g) => g.items).filter((i) => i.status === 'draft').length,
+          approvedAngles: ALL_ANGLES.flatMap((g) => g.items).filter((i) => i.status === 'approved').length,
+          listings: ALL_ANGLES.map((g) => g.listing),
+        }}
+      />
 
       {/* Flash toast */}
       {flash && (

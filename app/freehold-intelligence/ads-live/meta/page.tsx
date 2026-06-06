@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
+import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
 const META_BLUE = '#1877F2'
 
@@ -297,6 +298,19 @@ export default function MetaAdsPage() {
           <Palette className="h-4 w-4 text-[#D4AF37]" /> View Creatives
         </Link>
       </div>
+
+      {/* Marketing Expert Agent */}
+      <MarketingExpertPanel
+        scope="meta-ads"
+        context={{
+          platform: 'Meta Ads',
+          totalCampaigns: campaigns.length,
+          activeCampaigns: campaigns.filter((c) => c.status === 'Active').length,
+          totalSpend: campaigns.reduce((s, c) => s + c.spend, 0),
+          totalLeads: campaigns.reduce((s, c) => s + c.leads, 0),
+          avgCpl: (campaigns.reduce((s, c) => s + c.cpl, 0) / (campaigns.length || 1)).toFixed(0),
+        }}
+      />
 
     </div>
   )
