@@ -41,7 +41,7 @@ const ACTION_ICON: Record<ExpertAction['kind'], React.ElementType> = {
 function actionClass(style?: string) {
   if (style === 'primary') return 'bg-[#D4AF37] text-[#06080A] hover:bg-[#E8C657] border-transparent'
   if (style === 'danger') return 'border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/20'
-  return 'border-white/[0.10] bg-white/[0.03] text-white/75 hover:border-[#D4AF37]/30 hover:text-white'
+  return 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-[#D4AF37]/40 hover:text-white'
 }
 
 export function ExpertChat() {
@@ -146,15 +146,15 @@ export function ExpertChat() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open Freehold Expert"
-        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-white/[0.07] bg-[#080C14] py-4 transition hover:bg-[#0D1424] md:flex"
+        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-slate-800 bg-[#0A0E14] py-4 transition hover:bg-slate-800/50 md:flex"
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
           <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
         </span>
-        <span className="mt-1 text-[11px] font-semibold tracking-wider text-white/40 [writing-mode:vertical-rl]">
+        <span className="mt-1 text-xs font-semibold tracking-wider text-slate-500 [writing-mode:vertical-rl]">
           EXPERT
         </span>
-        <PanelRightOpen className="mt-auto h-4 w-4 text-white/25" />
+        <PanelRightOpen className="mt-auto h-4 w-4 text-slate-600" />
       </button>
     )
   }
@@ -170,7 +170,7 @@ export function ExpertChat() {
 
       <aside
         style={{ width }}
-        className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-white/[0.08] bg-[#0A0E18] md:static md:z-auto md:w-auto"
+        className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-slate-800 bg-[#0A0E14] md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}
         <div
@@ -183,23 +183,23 @@ export function ExpertChat() {
         </div>
 
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/[0.07] px-3.5 py-2.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3">
           <div className="flex items-center gap-2.5">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
               <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
             </span>
             <div>
-              <div className="text-[13px] font-semibold text-white/90">Freehold Expert</div>
-              <div className="text-[10px] text-white/30">Full-system · {pageLabel(pathname)}</div>
+              <div className="text-sm font-semibold text-slate-100">Freehold Expert</div>
+              <div className="text-xs text-slate-500">Full-system · {pageLabel(pathname)}</div>
             </div>
           </div>
           <div className="flex items-center gap-0.5">
             {messages.length > 0 && (
-              <button onClick={reset} title="New chat" className="grid h-8 w-8 place-items-center rounded-lg text-white/35 transition hover:bg-white/[0.05] hover:text-white/70">
+              <button onClick={reset} title="New chat" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200">
                 <Plus className="h-4 w-4" />
               </button>
             )}
-            <button onClick={() => setOpen(false)} title="Collapse (⌘J)" className="grid h-8 w-8 place-items-center rounded-lg text-white/35 transition hover:bg-white/[0.05] hover:text-white/70">
+            <button onClick={() => setOpen(false)} title="Collapse (⌘J)" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200">
               <PanelRightClose className="hidden h-4 w-4 md:block" />
               <X className="h-4 w-4 md:hidden" />
             </button>
@@ -210,8 +210,8 @@ export function ExpertChat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-3.5 py-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col">
-              <div className="mb-4 rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-                <p className="text-[13px] leading-relaxed text-white/60">
+              <div className="mb-4 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05] p-4">
+                <p className="text-sm leading-relaxed text-slate-300">
                   I'm your full-system partner. Ask me to plan, design a landing page, pick colours,
                   draft a campaign, review or launch — I'll build it right here in the conversation,
                   grounded in your live data.
@@ -220,7 +220,7 @@ export function ExpertChat() {
               <div className="grid gap-2">
                 {STARTERS.map((q) => (
                   <button key={q} onClick={() => send(q)}
-                    className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-2.5 text-left text-[13px] text-white/60 transition hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.05] hover:text-white">
+                    className="rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.06] hover:text-white">
                     {q}
                   </button>
                 ))}
@@ -230,7 +230,7 @@ export function ExpertChat() {
             <div className="grid gap-4">
               {messages.map((m, i) =>
                 m.role === 'user' ? (
-                  <div key={i} className="ml-auto max-w-[90%] rounded-2xl rounded-br-md border border-white/[0.06] bg-white/[0.04] px-4 py-2.5 text-[14px] leading-relaxed text-white/85">
+                  <div key={i} className="ml-auto max-w-[90%] rounded-xl rounded-br-md border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
                     {m.content}
                   </div>
                 ) : (
@@ -242,7 +242,7 @@ export function ExpertChat() {
                 ),
               )}
               {pending && (
-                <div className="mr-auto flex items-center gap-2 rounded-2xl rounded-bl-md border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3 text-[13px] text-white/45">
+                <div className="mr-auto flex items-center gap-2 rounded-xl rounded-bl-md border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-3 text-sm text-slate-300">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D4AF37]" />
                   Reading the system & building…
                 </div>
@@ -252,14 +252,14 @@ export function ExpertChat() {
         </div>
 
         {/* Composer */}
-        <div className="shrink-0 border-t border-white/[0.07] p-2.5">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-1.5 transition focus-within:border-[#D4AF37]/35 focus-within:bg-white/[0.04]">
-            <div className="flex items-end gap-2 px-2.5 py-1">
+        <div className="shrink-0 border-t border-slate-800 p-3">
+          <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-2 transition-colors focus-within:border-[#D4AF37]/40 focus-within:bg-slate-800">
+            <div className="flex items-end gap-2 px-2 py-1">
               <textarea
                 ref={taRef} value={value} onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
                 rows={1} placeholder="Ask, design, plan, or launch…"
-                className="flex-1 resize-none bg-transparent py-1 text-[14px] leading-6 text-white outline-none placeholder:text-white/30"
+                className="flex-1 resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
               <button onClick={() => send()} disabled={!value.trim() || pending} aria-label="Send"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
@@ -287,25 +287,25 @@ function BlockView({
   switch (block.type) {
     case 'text':
       return (
-        <div className="rounded-2xl rounded-bl-md border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3 text-[14px] leading-relaxed text-white/85">
+        <div className="rounded-xl rounded-bl-md border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
           <div className="whitespace-pre-wrap">{block.content}</div>
         </div>
       )
 
     case 'plan':
       return (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-          <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-[#D4AF37]/80">
+        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]">
             <ListChecks className="h-3.5 w-3.5" /> {block.title ?? 'Plan'}
           </div>
-          <ol className="grid gap-2.5">
+          <ol className="grid gap-3">
             {block.steps.map((s, i) => (
               <li key={i} className="flex gap-3">
-                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37]/15 text-[11px] font-bold text-[#D4AF37]">{i + 1}</span>
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37]">{i + 1}</span>
                 <div className="min-w-0">
-                  <div className="text-[13px] font-medium text-white/85">{s.step}</div>
-                  {s.detail && <div className="mt-0.5 text-[12px] leading-relaxed text-white/45">{s.detail}</div>}
-                  {s.owner && <div className="mt-1 inline-block rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/40">{s.owner}</div>}
+                  <div className="text-sm font-medium text-slate-200">{s.step}</div>
+                  {s.detail && <div className="mt-0.5 text-xs leading-relaxed text-slate-400">{s.detail}</div>}
+                  {s.owner && <div className="mt-1 inline-block rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">{s.owner}</div>}
                 </div>
               </li>
             ))}
@@ -321,14 +321,14 @@ function BlockView({
             if (a.kind === 'navigate' && a.href) {
               return (
                 <Link key={i} href={a.href}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${actionClass(a.style)}`}>
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${actionClass(a.style)}`}>
                   <Icon className="h-3.5 w-3.5" /> {a.label}
                 </Link>
               )
             }
             return (
               <button key={i} onClick={() => onAction(a.prompt || a.label)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition ${actionClass(a.style)}`}>
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${actionClass(a.style)}`}>
                 <Icon className="h-3.5 w-3.5" /> {a.label}
               </button>
             )
@@ -338,15 +338,15 @@ function BlockView({
 
     case 'color':
       return (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-          {block.label && <div className="mb-3 text-[13px] font-medium text-white/70">{block.label}</div>}
-          <div className="flex flex-wrap gap-2.5">
+        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+          {block.label && <div className="mb-3 text-sm font-medium text-slate-300">{block.label}</div>}
+          <div className="flex flex-wrap gap-3">
             {block.colors.map((c) => (
               <button key={c} onClick={() => onAction(`Use the accent colour ${c} — apply it and show the result.`)}
                 title={c}
                 className="group flex flex-col items-center gap-1.5">
-                <span className="h-9 w-9 rounded-full ring-2 ring-white/10 transition group-hover:ring-[#D4AF37]/60" style={{ backgroundColor: c }} />
-                <span className="text-[10px] font-medium text-white/40 group-hover:text-white/70">{c}</span>
+                <span className="h-10 w-10 rounded-full ring-2 ring-slate-700 transition group-hover:ring-[#D4AF37]/60" style={{ backgroundColor: c }} />
+                <span className="text-xs font-medium text-slate-500 group-hover:text-slate-300">{c}</span>
               </button>
             ))}
           </div>
@@ -361,40 +361,40 @@ function BlockView({
         block.cta ? `\nCTA: ${block.cta}` : '',
       ].filter(Boolean).join('\n')
       return (
-        <div className="overflow-hidden rounded-2xl border border-white/[0.10] bg-[#0D1424]">
+        <div className="overflow-hidden rounded-xl border border-slate-700 bg-[#0D1117]">
           {/* Hero preview */}
           <div className="relative px-5 py-6" style={{ background: `linear-gradient(135deg, ${accent}1A, transparent 70%)` }}>
-            <div className="text-[10px] font-medium uppercase tracking-[0.18em]" style={{ color: accent }}>Landing preview</div>
-            <h3 className="mt-2 text-[19px] font-semibold leading-tight text-white">{block.title}</h3>
-            {block.subhead && <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">{block.subhead}</p>}
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>Landing preview</div>
+            <h3 className="mt-2 text-lg font-semibold leading-tight text-white">{block.title}</h3>
+            {block.subhead && <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{block.subhead}</p>}
             {block.cta && (
-              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold text-[#06080A]" style={{ backgroundColor: accent }}>
-                {block.cta} <ArrowRight className="h-3 w-3" />
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold text-[#06080A]" style={{ backgroundColor: accent }}>
+                {block.cta} <ArrowRight className="h-3.5 w-3.5" />
               </span>
             )}
           </div>
           {/* Sections */}
-          <div className="grid gap-px bg-white/[0.05]">
+          <div className="grid gap-px bg-slate-800">
             {block.sections.map((s, i) => (
-              <div key={i} className="bg-[#0D1424] px-5 py-3">
-                <div className="text-[12px] font-semibold text-white/80">{s.heading}</div>
-                <div className="mt-1 text-[12px] leading-relaxed text-white/50">{s.body}</div>
+              <div key={i} className="bg-[#0D1117] px-5 py-3">
+                <div className="text-sm font-semibold text-slate-200">{s.heading}</div>
+                <div className="mt-1 text-sm leading-relaxed text-slate-400">{s.body}</div>
               </div>
             ))}
           </div>
           {/* Toolbar */}
-          <div className="flex items-center gap-2 border-t border-white/[0.07] px-3 py-2.5">
+          <div className="flex items-center gap-2 border-t border-slate-800 px-3 py-2.5">
             <button onClick={() => onAction('Edit this landing — rewrite the hero headline 3 ways and tighten the sections.')}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:text-white">
-              <Pencil className="h-3 w-3" /> Edit
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              <Pencil className="h-3.5 w-3.5" /> Edit
             </button>
             <button onClick={() => onAction('Launch this landing — give me the publish + tracking + ad-request plan.')}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-3 py-1.5 text-[12px] font-semibold text-[#06080A] transition hover:bg-[#E8C657]">
-              <Rocket className="h-3 w-3" /> Launch
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D4AF37] px-3 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90">
+              <Rocket className="h-3.5 w-3.5" /> Launch
             </button>
             <button onClick={() => onCopy(full, `landing-${idx}`)}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] text-white/40 transition hover:text-white/70">
-              {copied === `landing-${idx}` ? <Check className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:text-slate-200">
+              {copied === `landing-${idx}` ? <Check className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Copy className="h-3.5 w-3.5" />}
               {copied === `landing-${idx}` ? 'Copied' : 'Copy'}
             </button>
           </div>
@@ -404,22 +404,22 @@ function BlockView({
 
     case 'media':
       return (
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
-          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider text-white/60">
+        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             <ImageIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> Media brief
-            {block.aspect && <span className="ml-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/40">{block.aspect}</span>}
+            {block.aspect && <span className="ml-1 rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-400">{block.aspect}</span>}
           </div>
-          <div className="text-[13px] font-medium text-white/80">{block.label}</div>
-          <div className="mt-2 rounded-xl border border-white/[0.06] bg-[#0A0E18] px-3 py-2.5 text-[12px] leading-relaxed text-white/50">{block.prompt}</div>
+          <div className="text-sm font-medium text-slate-200">{block.label}</div>
+          <div className="mt-2 rounded-lg border border-slate-700 bg-[#0A0E14] px-3 py-2.5 text-sm leading-relaxed text-slate-400">{block.prompt}</div>
           <div className="mt-3 flex gap-2">
             <button onClick={() => onCopy(block.prompt, `media-${idx}`)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:text-white">
-              {copied === `media-${idx}` ? <Check className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              {copied === `media-${idx}` ? <Check className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Copy className="h-3.5 w-3.5" />}
               {copied === `media-${idx}` ? 'Copied prompt' : 'Copy prompt'}
             </button>
             <button onClick={() => onAction(`Refine this media brief: "${block.label}". Give 3 stronger variations of the prompt.`)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1.5 text-[12px] font-medium text-white/70 transition hover:text-white">
-              <Sparkles className="h-3 w-3" /> Refine
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              <Sparkles className="h-3.5 w-3.5" /> Refine
             </button>
           </div>
         </div>
@@ -428,13 +428,13 @@ function BlockView({
     case 'path':
       return (
         <Link href={block.href}
-          className="group flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 transition hover:border-[#D4AF37]/25 hover:bg-[#D4AF37]/[0.04]">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#D4AF37]/12 text-[#D4AF37]">
+          className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-800/30 px-4 py-3 transition-colors hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.06]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#D4AF37]/15 text-[#D4AF37]">
             <ArrowRight className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-medium text-white/85 group-hover:text-white">{block.label}</div>
-            {block.description && <div className="text-[12px] text-white/40">{block.description}</div>}
+            <div className="text-sm font-medium text-slate-200 group-hover:text-white">{block.label}</div>
+            {block.description && <div className="text-xs text-slate-500">{block.description}</div>}
           </div>
         </Link>
       )

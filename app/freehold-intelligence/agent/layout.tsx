@@ -19,38 +19,38 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const label    = APP_LABELS[pathname] ?? ''
 
   return (
-    <div className="min-h-screen bg-[#0B0F1A]">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#0B0F1A]/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#0D1117]">
+      <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#0D1117]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4 sm:px-6">
           {isHome ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-                <span className="text-[11px] font-bold text-[#D4AF37]">F</span>
+                <span className="text-xs font-bold text-[#D4AF37]">F</span>
               </div>
-              <span className="text-[13px] font-semibold text-white/75">Freehold</span>
+              <span className="text-sm font-semibold text-slate-200">Freehold</span>
             </div>
           ) : (
             <Link
               href="/freehold-intelligence/agent"
-              className="flex items-center gap-1.5 text-[13px] text-white/55 transition hover:text-white"
+              className="flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Apps
+              <ArrowLeft className="h-4 w-4" /> Apps
             </Link>
           )}
 
           {label && (
-            <div className="flex items-center gap-1 text-white/35">
-              <ChevronRight className="h-3.5 w-3.5" />
-              <span className="text-[13px] font-semibold text-white/80">{label}</span>
+            <div className="flex items-center gap-1.5 text-slate-600">
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-sm font-semibold text-slate-200">{label}</span>
             </div>
           )}
 
           <div className="ml-auto flex items-center gap-3">
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] text-white/40 transition hover:border-white/20 hover:text-white/70">
-              <Bell className="h-3.5 w-3.5" />
+            <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-200">
+              <Bell className="h-4 w-4" />
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">2</span>
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D4AF37]/20 text-[12px] font-bold text-[#D4AF37]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D4AF37]/20 text-xs font-bold text-[#D4AF37]">
               {agentProfile.initials}
             </div>
           </div>
