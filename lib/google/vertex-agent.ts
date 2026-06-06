@@ -1,41 +1,48 @@
 import { GoogleAuth } from 'google-auth-library'
 
 const REASONING_ENGINE_URL =
-  'https://us-west1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0814069297/locations/us-west1/reasoningEngines/5025322292796719104:query'
+  'https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0814069297/locations/us-central1/reasoningEngines/2989271399492747264:query'
 
-// Vertex AI token — cached for up to 55 minutes to avoid re-fetching on every request
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+// Bearer token cache (service-account path) — valid 55 min
 let _cachedToken: string | null = null
 let _tokenExpiry = 0
 
-async function getVertexToken(): Promise<string> {
-  if (_cachedToken && Date.now() < _tokenExpiry) return _cachedToken
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Preferred: API key (simpler, no service-account JSON needed)
+  const apiKey = process.env.VERTEX_AI_API_KEY
+  if (apiKey) {
+    return { 'x-goog-api-key': apiKey }
+  }
 
+  // Fallback: service-account JSON → OAuth bearer token
   const credJson = process.env.VERTEX_AI_SERVICE_ACCOUNT_JSON
   if (!credJson) {
     throw new Error(
-      'VERTEX_AI_SERVICE_ACCOUNT_JSON is not configured. ' +
-      'Add a service account JSON key with Vertex AI User role for project gen-lang-client-0814069297.',
+      'Neither VERTEX_AI_API_KEY nor VERTEX_AI_SERVICE_ACCOUNT_JSON is configured. ' +
+      'Set VERTEX_AI_API_KEY (from the agent deployment output) in your environment variables.',
     )
+  }
+
+  if (_cachedToken && Date.now() < _tokenExpiry) {
+    return { Authorization: `Bearer ${_cachedToken}` }
   }
 
   const auth = new GoogleAuth({
     credentials: JSON.parse(credJson),
     scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   })
-
-  const client = await auth.getClient()
-  const tokenRes = await client.getAccessToken()
+  const client    = await auth.getClient()
+  const tokenRes  = await client.getAccessToken()
   if (!tokenRes.token) throw new Error('Failed to obtain Vertex AI access token')
 
   _cachedToken = tokenRes.token
   _tokenExpiry = Date.now() + 55 * 60 * 1000
-  return _cachedToken
+  return { Authorization: `Bearer ${_cachedToken}` }
 }
 
-export interface AgentMessage {
-  role: 'user' | 'agent'
-  content: string
-}
+// ─── Query ────────────────────────────────────────────────────────────────────
 
 export interface AgentQueryOptions {
   sessionId?: string
@@ -46,7 +53,7 @@ export async function queryAdsAgent(
   message: string,
   { sessionId, context }: AgentQueryOptions = {},
 ): Promise<string> {
-  const token = await getVertexToken()
+  const authHeaders = await getAuthHeaders()
 
   const inputText = context
     ? `Account context:\n${JSON.stringify(context, null, 2)}\n\nUser question: ${message}`
@@ -60,17 +67,14 @@ export async function queryAdsAgent(
   }
 
   const res = await fetch(REASONING_ENGINE_URL, {
-    method: 'POST',
-    headers: {
-      Authorization:  `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    method:  'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
   })
 
   if (!res.ok) {
     const err = await res.text().catch(() => `HTTP ${res.status}`)
-    throw new Error(`Vertex AI AdExpert error (${res.status}): ${err}`)
+    throw new Error(`Marketing Expert error (${res.status}): ${err}`)
   }
 
   const data = await res.json() as { output?: string }

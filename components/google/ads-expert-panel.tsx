@@ -178,7 +178,7 @@ export function MarketingExpertPanel({ context, initiallyOpen = true, scope = 'g
             <div className="mx-4 mt-3 flex items-start gap-2 rounded-[12px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
               <p className="text-[12px] text-white/60">
-                Set <code className="rounded bg-white/[0.07] px-1 text-red-300/80">VERTEX_AI_SERVICE_ACCOUNT_JSON</code> in your environment to enable the Marketing Expert agent.
+                Set <code className="rounded bg-white/[0.07] px-1 text-red-300/80">VERTEX_AI_API_KEY</code> in your environment variables to enable the Marketing Expert agent.
               </p>
             </div>
           )}
