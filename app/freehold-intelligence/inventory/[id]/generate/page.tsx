@@ -202,7 +202,7 @@ export default function GenerateLandingPage() {
   function aiRedesign(variant: 'investor' | 'luxury' | 'end_user') {
     setRedesigning(true)
     setTimeout(() => {
-      const patch = AI_VARIANTS[variant](prop)
+      const patch = AI_VARIANTS[variant](prop!)
       setConfig((prev) => ({ ...prev, ...patch }))
       setRedesigning(false)
     }, 1400)
@@ -215,7 +215,7 @@ export default function GenerateLandingPage() {
       const variant = aiPrompt.toLowerCase().includes('luxury') ? 'luxury'
         : aiPrompt.toLowerCase().includes('end user') || aiPrompt.toLowerCase().includes('family') ? 'end_user'
         : 'investor'
-      const patch = AI_VARIANTS[variant](prop)
+      const patch = AI_VARIANTS[variant](prop!)
       setConfig((prev) => ({ ...prev, ...patch }))
       setAiPrompt('')
       setShowAiBox(false)

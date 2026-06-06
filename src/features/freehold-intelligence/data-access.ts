@@ -13,13 +13,13 @@ const safeQuery = async <T,>(sql: string, params: unknown[] = [], fallback: T[] 
 }
 
 const serializeTemporalFields = <T extends Record<string, unknown>>(row: T): T => {
-  const copy = { ...row }
+  const copy = { ...row } as Record<string, unknown>
   for (const key of ["deadline", "created_at", "resolved_at"] as const) {
     if (copy[key] instanceof Date) {
-      copy[key] = copy[key].toISOString() as T[typeof key]
+      copy[key] = (copy[key] as Date).toISOString()
     }
   }
-  return copy
+  return copy as T
 }
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {

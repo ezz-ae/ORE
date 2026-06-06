@@ -3,11 +3,14 @@ import postgres from "postgres"
 const DB_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL
 const sql = DB_URL ? postgres(DB_URL) : null
 
+type TrendingRow = { name: string; slug: string; area: string; developer_name: string; price_from_aed: number; rental_yield: string | null; market_score: string | null; golden_visa_eligible: boolean; hero_image: string | null; pf_url: string | null; sort_score: string | null; safe_yield: string | null; flip: string | null; hotness: string | null }
+type BelowMarketRow = { name: string; slug: string; area: string; price_from_aed: number; rental_yield: string | null; hero_image: string | null; vs_cohort: number | null; psf: number | null }
+
 const EMPTY_RESULT = {
-  trending: [],
+  trending: [] as TrendingRow[],
   best_areas: [],
   pulse: null,
-  below_market: [],
+  below_market: [] as BelowMarketRow[],
   generated_at: new Date().toISOString(),
 }
 
@@ -66,10 +69,10 @@ export async function getIntelligenceBlockData() {
   ])
 
   return {
-    trending: trending.map((r) => ({ ...r, price_from_aed: Number(r.price_from_aed) })),
+    trending: trending.map((r) => ({ ...r as TrendingRow, price_from_aed: Number(r.price_from_aed) })),
     best_areas: bestAreas,
     pulse: pulse[0],
-    below_market: belowMarket,
+    below_market: belowMarket.map((r) => ({ ...r as BelowMarketRow, price_from_aed: Number(r.price_from_aed) })),
     generated_at: new Date().toISOString(),
   }
 }

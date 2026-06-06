@@ -42,6 +42,7 @@ export interface LaunchBlockerCard {
   blockerId: string;
   message: string;
   resolutionSteps: string[];
+  severity?: 'critical' | 'warning' | 'info';
 }
 
 export interface RequirementCard {

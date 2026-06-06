@@ -122,7 +122,7 @@ const buildGroundedProjectContext = (
     const roi = Number.isFinite(p.investmentHighlights?.expectedROI)
       ? `${p.investmentHighlights.expectedROI}% ROI`
       : ""
-    return `- ${prop.title} | slug: ${p.slug} | ${prop.location.area} | ${price}${roi ? ` | ${roi}` : ""} | ${p.developerName || ""}`
+    return `- ${prop.title} | slug: ${p.slug} | ${prop.location.area} | ${price}${roi ? ` | ${roi}` : ""} | ${p.developer || ""}`
   })
   return `\n\nVERIFIED PROJECT ROWS (use only these for names, slugs, prices, ROI):\n${lines.join("\n")}`
 }

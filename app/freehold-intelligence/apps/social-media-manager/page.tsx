@@ -5,7 +5,10 @@ import Link from 'next/link'
 import { ArrowLeft, Megaphone, CheckCircle2, Clock, AlertCircle, ArrowUpRight, Sparkles, X } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-const ALL_ANGLES = [
+type AngleItem = { id: string; title: string; platform: string; headline: string; hook: string; status: 'pending_approval' | 'draft' | 'approved' }
+type AngleGroup = { listing: string; area: string; listingHref: string; items: AngleItem[] }
+
+const ALL_ANGLES: AngleGroup[] = [
   {
     listing: 'Palm Jumeirah Investor Pack',
     area: 'Palm Jumeirah',

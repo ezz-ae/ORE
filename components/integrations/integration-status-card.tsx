@@ -11,16 +11,22 @@ interface Props {
 }
 
 export function IntegrationStatusCard({ card, onConnect }: Props) {
-  const statusColor = {
+  const statusColor: Record<string, string> = {
     connected: 'bg-green-50 border-green-200',
     disconnected: 'bg-red-50 border-red-200',
+    not_connected: 'bg-red-50 border-red-200',
     pending: 'bg-yellow-50 border-yellow-200',
+    partial: 'bg-yellow-50 border-yellow-200',
+    needs_access: 'bg-orange-50 border-orange-200',
   };
 
-  const statusBadgeColor = {
+  const statusBadgeColor: Record<string, string> = {
     connected: 'bg-green-100 text-green-800',
     disconnected: 'bg-red-100 text-red-800',
+    not_connected: 'bg-red-100 text-red-800',
     pending: 'bg-yellow-100 text-yellow-800',
+    partial: 'bg-yellow-100 text-yellow-800',
+    needs_access: 'bg-orange-100 text-orange-800',
   };
 
   return (

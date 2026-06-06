@@ -122,7 +122,7 @@ async function mutate(operations: unknown[]): Promise<unknown> {
 // ─── Campaigns ───────────────────────────────────────────────────────────────
 
 export async function listCampaigns(): Promise<GoogleCampaign[]> {
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       campaign.id,
       campaign.resource_name,
@@ -172,7 +172,7 @@ export async function listCampaigns(): Promise<GoogleCampaign[]> {
 }
 
 export async function getCampaign(campaignId: string): Promise<GoogleCampaign> {
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       campaign.id, campaign.resource_name, campaign.name, campaign.status,
       campaign.advertising_channel_type, campaign.bidding_strategy_type,
@@ -229,7 +229,7 @@ export async function listAdGroups(campaignId?: string): Promise<GoogleAdGroup[]
     ? `WHERE campaign.id = ${campaignId} AND ad_group.status != 'REMOVED'`
     : `WHERE ad_group.status != 'REMOVED'`
 
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       ad_group.id, ad_group.resource_name, ad_group.name, ad_group.status,
       ad_group.type, ad_group.cpc_bid_micros, campaign.id,
@@ -267,7 +267,7 @@ export async function listKeywords(campaignId?: string): Promise<GoogleKeyword[]
     ? `WHERE campaign.id = ${campaignId} AND ad_group_criterion.status != 'REMOVED'`
     : `WHERE ad_group_criterion.status != 'REMOVED' AND ad_group_criterion.type = 'KEYWORD'`
 
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       ad_group_criterion.criterion_id,
       ad_group_criterion.resource_name,
@@ -311,7 +311,7 @@ export async function listNegativeKeywords(campaignId?: string): Promise<Negativ
     ? `WHERE campaign.id = ${campaignId}`
     : 'WHERE campaign.id != 0'
 
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       campaign_criterion.criterion_id,
       campaign_criterion.keyword.text,
@@ -340,7 +340,7 @@ export async function listResponsiveSearchAds(campaignId?: string): Promise<Goog
     ? `WHERE campaign.id = ${campaignId} AND ad_group_ad.status != 'REMOVED'`
     : `WHERE ad_group_ad.status != 'REMOVED' AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'`
 
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       ad_group_ad.ad.id,
       ad_group_ad.resource_name,
@@ -393,7 +393,7 @@ export async function listResponsiveSearchAds(campaignId?: string): Promise<Goog
 // ─── Audiences ───────────────────────────────────────────────────────────────
 
 export async function listAudiences(): Promise<GoogleAudience[]> {
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       user_list.id,
       user_list.resource_name,
@@ -423,7 +423,7 @@ export async function listAudiences(): Promise<GoogleAudience[]> {
 // ─── Extensions ──────────────────────────────────────────────────────────────
 
 export async function listExtensions(): Promise<GoogleExtension[]> {
-  const rows = await gaqlQuery<Record<string, Record<string, unknown>>>(`
+  const rows = await gaqlQuery<Record<string, any>>(`
     SELECT
       asset.id,
       asset.resource_name,
@@ -476,7 +476,7 @@ export async function getReportSummary(dateRange: '7d' | '30d' | '90d'): Promise
   const during = `LAST_${days}_DAYS`
 
   const [campaignRows, searchTermRows, dayRows, deviceRows] = await Promise.all([
-    gaqlQuery<Record<string, Record<string, unknown>>>(`
+    gaqlQuery<Record<string, any>>(`
       SELECT campaign.id, campaign.name, campaign.advertising_channel_type,
         metrics.impressions, metrics.clicks, metrics.cost_micros,
         metrics.conversions, metrics.ctr, metrics.average_cpc
@@ -484,7 +484,7 @@ export async function getReportSummary(dateRange: '7d' | '30d' | '90d'): Promise
       WHERE campaign.status != 'REMOVED'
       AND segments.date DURING ${during}
     `),
-    gaqlQuery<Record<string, Record<string, unknown>>>(`
+    gaqlQuery<Record<string, any>>(`
       SELECT search_term_view.search_term, search_term_view.status,
         segments.keyword.info.match_type,
         ad_group.name, campaign.name,
@@ -495,14 +495,14 @@ export async function getReportSummary(dateRange: '7d' | '30d' | '90d'): Promise
       ORDER BY metrics.impressions DESC
       LIMIT 200
     `),
-    gaqlQuery<Record<string, Record<string, unknown>>>(`
+    gaqlQuery<Record<string, any>>(`
       SELECT segments.date,
         metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM campaign
       WHERE campaign.status != 'REMOVED'
       AND segments.date DURING ${during}
     `),
-    gaqlQuery<Record<string, Record<string, unknown>>>(`
+    gaqlQuery<Record<string, any>>(`
       SELECT segments.device,
         metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions
       FROM campaign

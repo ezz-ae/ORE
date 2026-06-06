@@ -22,10 +22,11 @@ export function LaunchBlockerCard({ card }: Props) {
     info: 'ℹ️',
   };
 
+  const sev = card.severity ?? 'warning'
   return (
-    <div className={`border rounded-lg p-4 ${severityColor[card.severity]}`}>
+    <div className={`border rounded-lg p-4 ${severityColor[sev]}`}>
       <div className="flex items-start gap-3">
-        <span className="text-2xl">{severityIcon[card.severity]}</span>
+        <span className="text-2xl">{severityIcon[sev]}</span>
         <div className="flex-1">
           <h3 className="font-semibold mb-2">{card.message}</h3>
           <div className="text-sm">

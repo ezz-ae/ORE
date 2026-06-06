@@ -17,6 +17,7 @@ interface CreativeDetail {
       name?: string
       description?: string
       picture?: string
+      call_to_action?: { type?: string }
     }
   }
 }
