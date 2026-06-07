@@ -80,11 +80,11 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   function exportCsv() {
     if (!leads.length) return
-    const allFields = [...new Set(leads.flatMap((l) => l.field_data.map((f) => f.name)))]
+    const allFields = [...new Set(leads.flatMap((l) => (l.field_data ?? []).map((f) => f.name)))]
     const header    = ['id', 'created_time', ...allFields].join(',')
     const rows      = leads.map((l) => {
       const cells = [l.id, l.created_time, ...allFields.map((f) => {
-        const val = l.field_data.find((fd) => fd.name === f)?.values?.[0] ?? ''
+        const val = (l.field_data ?? []).find((fd) => fd.name === f)?.values?.[0] ?? ''
         return `"${val.replace(/"/g, '""')}"`
       })]
       return cells.join(',')
