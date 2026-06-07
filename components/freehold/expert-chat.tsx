@@ -270,13 +270,16 @@ export function ExpertChat() {
 
         {/* Composer */}
         <div className="shrink-0 border-t border-line p-3">
-          <div className="rounded-xl border border-line-strong bg-surface-2 p-2 transition-colors focus-within:border-gold/40 focus-within:bg-surface-2">
+          <div
+            className="cursor-text rounded-xl border border-white/[0.14] bg-surface-2 p-2 transition-all focus-within:border-gold/60 focus-within:bg-white/[0.07] focus-within:ring-1 focus-within:ring-gold/15"
+            onClick={() => taRef.current?.focus()}
+          >
             <div className="flex items-end gap-2 px-2 py-1">
               <textarea
                 ref={taRef} value={value} onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
                 rows={1} placeholder="Ask, design, plan, or launch…"
-                className="flex-1 resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
+                className="flex-1 cursor-text resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
               <button onClick={() => send()} disabled={!value.trim() || pending} aria-label="Send"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">

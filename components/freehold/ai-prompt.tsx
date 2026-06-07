@@ -38,7 +38,10 @@ export function AiPrompt({
 
   return (
     <div className="grid gap-3">
-      <div className="rounded-2xl border border-line-strong bg-surface-2 p-2 transition-colors focus-within:border-gold/40 focus-within:bg-surface-2">
+      <div
+        className="cursor-text rounded-2xl border border-white/[0.14] bg-surface-2 p-2 transition-all focus-within:border-gold/60 focus-within:bg-white/[0.07] focus-within:ring-1 focus-within:ring-gold/15"
+        onClick={() => taRef.current?.focus()}
+      >
         <div className="flex items-end gap-3 px-3 py-2">
           <Sparkles className="mt-1.5 h-5 w-5 shrink-0 text-gold" />
           <textarea
@@ -48,7 +51,7 @@ export function AiPrompt({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             rows={1}
             placeholder={placeholder}
-            className="flex-1 resize-none bg-transparent text-base leading-7 text-white outline-none placeholder:text-slate-500"
+            className="flex-1 cursor-text resize-none bg-transparent text-base leading-7 text-white outline-none placeholder:text-slate-500"
           />
           <button
             onClick={() => send()}

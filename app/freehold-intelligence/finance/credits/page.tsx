@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight } from 'lucide-react'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 type Agent = {
   id: string
@@ -93,26 +94,19 @@ export default function AgentCreditsPage() {
       </Link>
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-[20px] font-semibold text-white">Agent Lead Credits</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Control how many leads each agent receives per month. Credits reset on the 1st of each month.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={Coins}
+        title="Agent Lead Credits"
+        subtitle="Control how many leads each agent receives per month. Credits reset on the 1st of each month."
+        className="mb-8"
+      />
 
       {/* Summary row */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { label: 'Total quota',    value: totalQuota,                       Icon: Zap,   color: 'text-gold'  },
-          { label: 'Used this month', value: totalUsed,                        Icon: Users, color: 'text-sky-400'    },
-          { label: 'Remaining',       value: totalQuota - totalUsed,           Icon: CheckCircle, color: 'text-emerald-400' },
-        ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface px-4 py-3.5">
-            <Icon className={`h-4 w-4 ${color}`} />
-            <div className={`mt-2 text-[20px] font-semibold tabular-nums ${color}`}>{value}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{label}</div>
-          </div>
-        ))}
+        <StatCard label="Total quota"    value={totalQuota}              Icon={Zap}         hint="credits allocated" />
+        <StatCard label="Used this month" value={totalUsed}              Icon={Users}       hint="credits consumed"  />
+        <StatCard label="Remaining"       value={totalQuota - totalUsed} Icon={CheckCircle} hint="available now"     />
       </div>
 
       {/* Agents */}

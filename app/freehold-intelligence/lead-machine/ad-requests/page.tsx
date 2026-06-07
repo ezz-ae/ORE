@@ -8,6 +8,7 @@ import {
   leadMachineListings,
   type LeadMachineAdRequest,
 } from '@/src/features/freehold-intelligence/lead-machine'
+import { PageHeader, EmptyState } from '@/components/freehold/ui'
 
 type StatusFilter = 'All' | 'Running' | 'Pending Review' | 'Blocked' | 'Paused'
 type PlatformFilter = 'All' | 'Meta' | 'Google'
@@ -139,15 +140,12 @@ export default function AdRequestsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Megaphone className="h-3.5 w-3.5" /> Ad Requests
-        </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-          Ad Requests
-        </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
-          {leadMachineAdRequests.length > 0 ? (
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={Megaphone}
+        title="Ad Requests"
+        subtitle={
+          leadMachineAdRequests.length > 0 ? (
             <>
               <span className="text-white">{leadMachineAdRequests.length} campaign request{leadMachineAdRequests.length !== 1 ? 's' : ''}</span> across active listings.{' '}
               {running > 0 && <>{running} running. </>}
@@ -156,9 +154,10 @@ export default function AdRequestsPage() {
             </>
           ) : (
             'No ad requests have been created yet. Open a listing workspace to draft a campaign.'
-          )}
-        </p>
-      </section>
+          )
+        }
+        className="mb-10"
+      />
 
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -214,16 +213,19 @@ export default function AdRequestsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="mt-8 rounded-[28px] border border-line bg-surface-2 px-7 py-12 text-center sm:px-10">
-            <Megaphone className="mx-auto h-8 w-8 text-slate-600" />
-            <p className="mt-4 text-sm text-slate-500">No requests match these filters.</p>
-            <button
-              onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
-              className="mt-3 rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            Icon={Megaphone}
+            title="No requests match these filters"
+            action={
+              <button
+                onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
+                className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+              >
+                Clear filters
+              </button>
+            }
+            className="mt-8"
+          />
         )}
       </section>
     </div>

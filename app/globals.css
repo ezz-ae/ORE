@@ -178,6 +178,14 @@ html {
   outline-offset: 2px;
   border-radius: 8px;
 }
+/* Input / textarea / select focus: gold ring so the active field is unmistakably
+ * visible. Individual outline-none overrides still suppress the browser default
+ * rectangle, but this shadow-based ring kicks in on top. */
+.fi-root :where(input, textarea, select):focus {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 40%, transparent),
+              inset 0 0 0 1px color-mix(in srgb, var(--color-gold) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 65%, transparent) !important;
+}
 
 @layer base {
   * {

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { BarChart2, TrendingUp, FileText, Table, Download, Calendar, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
@@ -43,42 +44,35 @@ export default function ReportsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-semibold text-white">Reports</h1>
-          <p className="mt-1 text-xs text-slate-500">Generate and schedule financial reports</p>
-        </div>
-        {/* Range selector */}
-        <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
-          {RANGE_OPTIONS.slice(0, 4).map((r) => (
-            <button key={r} onClick={() => setRange(r)}
-              className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
-                range === r ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-300'
-              }`}>
-              {r.replace('Last ', '')}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={BarChart2}
+        title="Reports"
+        subtitle="Generate and schedule financial reports"
+        actions={
+          <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
+            {RANGE_OPTIONS.slice(0, 4).map((r) => (
+              <button key={r} onClick={() => setRange(r)}
+                className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
+                  range === r ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-300'
+                }`}>
+                {r.replace('Last ', '')}
+              </button>
+            ))}
+          </div>
+        }
+        className="mb-7"
+      />
 
       {/* YTD tiles */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { label: 'YTD Spend',    value: fmt(ytdSpend), sub: 'Jan – Jun 2026',  color: 'text-slate-100'    },
-          { label: 'YTD Leads',    value: ytdLeads.toLocaleString(), sub: 'All platforms', color: 'text-slate-100' },
-          { label: 'Avg CPL',      value: `AED ${avgCpl}`, sub: 'Cost per lead', color: 'text-emerald-400' },
-        ].map(({ label, value, sub, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-2 text-[18px] font-semibold ${color}`}>{value}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{sub}</div>
-          </div>
-        ))}
+        <StatCard label="YTD Spend" value={fmt(ytdSpend)} hint="Jan – Jun 2026" Icon={TrendingUp} />
+        <StatCard label="YTD Leads" value={ytdLeads.toLocaleString()} hint="All platforms" Icon={BarChart2} />
+        <StatCard label="Avg CPL" value={`AED ${avgCpl}`} hint="Cost per lead" Icon={FileText} />
       </div>
 
       {/* Spend chart */}
-      <section className="mb-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Spend</div>
+      <Section title="Monthly Spend" className="mb-6">
         <div className="rounded-[16px] border border-line bg-surface p-5">
           <div className="flex items-end gap-2 h-28">
             {history.map((row) => {
@@ -107,11 +101,10 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* Monthly breakdown table */}
-      <section className="mb-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Breakdown</div>
+      <Section title="Monthly Breakdown" className="mb-6">
         <div className="rounded-[16px] border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -146,11 +139,10 @@ export default function ReportsPage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* Report templates */}
-      <section>
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Report Templates</div>
+      <Section title="Report Templates">
         <div className="space-y-2">
           {REPORT_TEMPLATES.map((r) => {
             const Icon    = r.icon
@@ -187,7 +179,7 @@ export default function ReportsPage() {
             )
           })}
         </div>
-      </section>
+      </Section>
 
     </div>
   )

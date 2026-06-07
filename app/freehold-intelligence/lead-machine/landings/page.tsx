@@ -7,6 +7,7 @@ import {
   AlertTriangle, Clock, Pencil,
 } from 'lucide-react'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
 
@@ -54,45 +55,39 @@ export default function LandingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[20px] font-semibold text-white">Landing Pages</h1>
-          <p className="mt-1 text-xs text-slate-500">
-            {inventoryProperties.length} properties — each property has a dedicated ad landing page
-          </p>
-        </div>
-        <button
-          onClick={bulkCreate}
-          disabled={bulkCreating || bulkDone}
-          className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
-            bulkDone
-              ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-              : 'bg-gold text-ink hover:bg-[#F0CB67] disabled:opacity-60'
-          }`}
-        >
-          {bulkCreating ? (
-            <><Sparkles className="h-3.5 w-3.5 animate-spin" /> Creating all…</>
-          ) : bulkDone ? (
-            <><CheckCircle2 className="h-3.5 w-3.5" /> All created</>
-          ) : (
-            <><Plus className="h-3.5 w-3.5" /> Create all missing</>
-          )}
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={Globe}
+        title="Landing Pages"
+        subtitle={`${inventoryProperties.length} properties — each property has a dedicated ad landing page`}
+        actions={
+          <button
+            onClick={bulkCreate}
+            disabled={bulkCreating || bulkDone}
+            className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
+              bulkDone
+                ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
+                : 'bg-gold text-ink hover:bg-[#F0CB67] disabled:opacity-60'
+            }`}
+          >
+            {bulkCreating ? (
+              <><Sparkles className="h-3.5 w-3.5 animate-spin" /> Creating all…</>
+            ) : bulkDone ? (
+              <><CheckCircle2 className="h-3.5 w-3.5" /> All created</>
+            ) : (
+              <><Plus className="h-3.5 w-3.5" /> Create all missing</>
+            )}
+          </button>
+        }
+        className="mb-7"
+      />
 
       {/* Summary tiles */}
       <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Live',    value: live,    color: 'text-emerald-400' },
-          { label: 'Pending', value: pending, color: 'text-gold'  },
-          { label: 'Draft',   value: draft,   color: 'text-amber-400'  },
-          { label: 'Missing', value: missing, color: 'text-red-400'    },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
-            <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+        <StatCard label="Live"    value={live}    hint="active pages"    Icon={CheckCircle2} />
+        <StatCard label="Pending" value={pending} hint="in review"       Icon={Clock}        />
+        <StatCard label="Draft"   value={draft}   hint="unpublished"     Icon={Pencil}       />
+        <StatCard label="Missing" value={missing} hint="need pages"      Icon={AlertTriangle} />
       </div>
 
       {/* Missing alert */}

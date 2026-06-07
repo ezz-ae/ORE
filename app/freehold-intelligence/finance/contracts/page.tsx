@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { FileCheck, Calendar, RefreshCw, CheckCircle2, AlertCircle, Clock, ExternalLink, Plus, ChevronDown, ChevronRight } from 'lucide-react'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 type ContractStatus = 'active' | 'expiring' | 'expired' | 'draft'
 type ContractType   = 'platform' | 'data' | 'agency' | 'legal' | 'service'
@@ -106,31 +107,27 @@ export default function ContractsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-semibold text-white">Contracts</h1>
-          <p className="mt-1 text-xs text-slate-500">Active agreements, renewals, and platform terms</p>
-        </div>
-        <button
-          onClick={() => toast.success('New contract — opening form')}
-          className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
-          <Plus className="h-3.5 w-3.5" /> Add contract
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={FileCheck}
+        title="Contracts"
+        subtitle="Active agreements, renewals, and platform terms"
+        actions={
+          <button
+            onClick={() => toast.success('New contract — opening form')}
+            className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
+            <Plus className="h-3.5 w-3.5" /> Add contract
+          </button>
+        }
+        className="mb-7"
+      />
 
       {/* Summary tiles */}
       <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Total',       value: CONTRACTS.length,    color: 'text-slate-200'   },
-          { label: 'Active',      value: active,              color: 'text-emerald-400' },
-          { label: 'Expiring',    value: expiring.length,     color: expiring.length > 0 ? 'text-amber-400' : 'text-slate-200' },
-          { label: 'Auto-renew',  value: autoRenewCount,      color: 'text-sky-400'     },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
-            <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+        <StatCard label="Total"      value={CONTRACTS.length} Icon={FileCheck}   />
+        <StatCard label="Active"     value={active}           Icon={CheckCircle2} />
+        <StatCard label="Expiring"   value={expiring.length}  Icon={AlertCircle}  />
+        <StatCard label="Auto-renew" value={autoRenewCount}   Icon={RefreshCw}    />
       </div>
 
       {/* Expiring alert */}

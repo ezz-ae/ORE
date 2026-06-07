@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { AlertCircle, CheckCircle2, Clock, ArrowUpRight, Search, X } from 'lucide-react'
 import { leadMachineRequirements, leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
+import { PageHeader, EmptyState } from '@/components/freehold/ui'
 
 type SeverityFilter = 'All' | 'critical' | 'high' | 'medium' | 'low'
 type StatusFilter   = 'All' | 'Open' | 'Done'
@@ -68,19 +69,12 @@ export default function RequirementsPage() {
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <AlertCircle className="h-3.5 w-3.5" /> Requirements
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          {totalOpen} open.
-          <br />
-          <span className="text-slate-500">{criticalCount} critical.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-[16px] leading-[1.65] text-slate-400">
-          Everything blocking landing generation, ad launch, and campaign go-live. Resolve in priority order.
-        </p>
-      </section>
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={AlertCircle}
+        title={<>{totalOpen} open. <span className="text-slate-500">{criticalCount} critical.</span></>}
+        subtitle="Everything blocking landing generation, ad launch, and campaign go-live. Resolve in priority order."
+      />
 
       {/* Stat tiles */}
       <section className="mt-8 grid grid-cols-3 gap-3">
@@ -177,15 +171,18 @@ export default function RequirementsPage() {
       {/* Requirements list */}
       <section className="mt-6 space-y-4">
         {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-line bg-surface-2 px-6 py-12 text-center">
-            <p className="text-[14px] text-slate-500">No requirements match these filters.</p>
-            <button
-              onClick={clearFilters}
-              className="mt-3 rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            Icon={AlertCircle}
+            title="No requirements match these filters"
+            action={
+              <button
+                onClick={clearFilters}
+                className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+              >
+                Clear filters
+              </button>
+            }
+          />
         ) : (
           filtered.map((req) => {
             const tone = severityTone(req.severity)
