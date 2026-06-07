@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
 import { crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
-import { PageHeader, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
+import { PageHeader, StatCard, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
 
@@ -113,23 +113,11 @@ export default function FollowUpQueuePage() {
           />
 
           {/* Stats strip */}
-          <div className="mt-8 grid grid-cols-4 gap-3">
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="text-[26px] font-semibold text-white">{stats.total}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Overdue</div>
-            </div>
-            <div className="rounded-xl border border-red-400/15 bg-red-400/[0.04] p-5">
-              <div className="text-[26px] font-semibold text-red-400">{stats.critical}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Critical</div>
-            </div>
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="text-[26px] font-semibold text-white">{stats.avgOverdue}<span className="text-[14px] font-normal text-slate-400">h</span></div>
-              <div className="mt-0.5 text-sm text-slate-400">Avg delay</div>
-            </div>
-            <div className="rounded-xl border border-emerald-400/15 bg-gold/[0.04] p-5">
-              <div className="text-[26px] font-semibold text-gold">{stats.doneCount}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Done this session</div>
-            </div>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Overdue"          value={stats.total}     hint="in queue"    />
+            <StatCard label="Critical"         value={stats.critical}  hint="act now"     delta={stats.critical > 0 ? { value: 'urgent', direction: 'down' } : undefined} />
+            <StatCard label="Avg delay"        value={`${stats.avgOverdue}h`} hint="average hours" />
+            <StatCard label="Done this session" value={stats.doneCount} hint="actioned"   delta={stats.doneCount > 0 ? { value: 'completed', direction: 'up' } : undefined} />
           </div>
 
           {/* Filters */}
