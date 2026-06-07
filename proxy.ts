@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const marketPublicGuideRoutes = new Set(["areas", "financing", "golden-visa", "regulations", "trends", "why-dubai"])
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
   const { pathname } = url
 
+  // ── Market routing ────────────────────────────────────────────────────────
   if (pathname === "/market" || pathname.startsWith("/market/")) {
     const [, , segment] = pathname.split("/")
     url.pathname = segment && !marketPublicGuideRoutes.has(segment)
@@ -16,28 +19,44 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url, { status: 307 })
   }
 
-  // crm.orerealestate.ae → orerealestate.ae/crm
+  // ── CRM subdomain redirect ─────────────────────────────────────────────────
   if (hostname.startsWith("crm.")) {
-    // Keep same-origin API calls on crm.* to avoid redirecting fetch/XHR to a different
-    // origin (which can break cookies/CORS and method semantics for POST requests).
     if (pathname.startsWith("/api")) {
       const res = NextResponse.next()
       res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
       return res
     }
-
     url.hostname = "orerealestate.ae"
     url.protocol = "https:"
     if (!pathname.startsWith("/crm")) {
       url.pathname = `/crm${pathname}`
     }
-    // Preserve method/body semantics for non-GET requests.
     return NextResponse.redirect(url, { status: 308 })
+  }
+
+  // ── Session auth for protected routes ─────────────────────────────────────
+  if (pathname.startsWith('/management') || pathname.startsWith('/freehold-intelligence')) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value
+    const user = await verifySession(token)
+
+    if (!user) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/server'
+      loginUrl.search = ''
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (pathname.startsWith('/management') && !MANAGEMENT_ROLES.includes(user.role)) {
+      const homeUrl = request.nextUrl.clone()
+      homeUrl.pathname = user.home
+      homeUrl.search = ''
+      return NextResponse.redirect(homeUrl)
+    }
   }
 
   const res = NextResponse.next()
 
-  // CRM and API: never cache — always fresh from server
+  // ── Cache control ──────────────────────────────────────────────────────────
   if (pathname.startsWith("/crm") || pathname.startsWith("/api")) {
     res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
   }
