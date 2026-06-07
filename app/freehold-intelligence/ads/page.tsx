@@ -6,6 +6,7 @@ import {
   ImageIcon, Sparkles, LayoutTemplate, Target, GitBranch,
   TrendingUp, Inbox, ArrowUpRight,
 } from 'lucide-react'
+import { Section } from '@/components/freehold/ui'
 
 type SubApp = {
   id: string
@@ -160,22 +161,19 @@ export default function AdsLauncher() {
       </section>
 
       {/* Platforms */}
-      <section className="mb-8">
-        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Platforms</div>
+      <Section title="Platforms" className="mb-8">
         <Grid apps={PLATFORMS} />
-      </section>
+      </Section>
 
       {/* Build */}
-      <section className="mb-8">
-        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Build &amp; Create</div>
+      <Section title="Build & Create" className="mb-8">
         <Grid apps={BUILD} />
-      </section>
+      </Section>
 
       {/* Optimize */}
-      <section>
-        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Optimize &amp; Track</div>
+      <Section title="Optimize & Track">
         <Grid apps={OPTIMIZE} />
-      </section>
+      </Section>
 
     </div>
   )

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 const STATUS_CONFIG = {
   available:    { label: 'Available',    classes: 'bg-gold/10 text-gold border-gold/20' },
@@ -61,15 +62,12 @@ export default function CrmAgentsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <UserCheck className="h-3.5 w-3.5" /> Agents
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Sales team<br/><span className="text-slate-500">performance.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            {agents.length} active advisors · {totalLeads} live leads · {totalOverdue} overdue follow-up{totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.
-          </p>
+          <PageHeader
+            eyebrow="CRM"
+            Icon={UserCheck}
+            title="Sales team performance"
+            subtitle={`${agents.length} active advisors · ${totalLeads} live leads · ${totalOverdue} overdue follow-up${totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.`}
+          />
 
           {overloaded.length > 0 && (
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4">
@@ -118,7 +116,12 @@ export default function CrmAgentsPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="mt-10 py-16 text-center text-[14px] text-slate-500">No agents match this filter.</div>
+            <EmptyState
+              Icon={UserCheck}
+              title="No agents match this filter"
+              description="Try selecting a different status or clearing the filter."
+              className="mt-6"
+            />
           ) : (
             <div className="mt-6 space-y-4">
               {filtered.map((agent) => {
@@ -223,20 +226,22 @@ export default function CrmAgentsPage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <TrendingUp className="h-3 w-3" /> Team load
+            <Panel>
+              <PanelHeader title="Team load" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">{totalLeads}</div>
+                <div className="mt-1 text-xs text-slate-400">leads across {agents.length} agents</div>
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">{totalLeads}</div>
-              <div className="mt-1 text-xs text-slate-400">leads across {agents.length} agents</div>
-            </div>
+            </Panel>
 
             {topPerformer && (
-              <div className="rounded-xl border border-line bg-surface p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Top performer</div>
-                <div className="mt-3 text-[18px] font-semibold text-white">{topPerformer.name}</div>
-                <div className="mt-1 text-xs text-slate-400">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
-              </div>
+              <Panel>
+                <PanelHeader title="Top performer" />
+                <div className="p-5">
+                  <div className="text-[18px] font-semibold text-white">{topPerformer.name}</div>
+                  <div className="mt-1 text-xs text-slate-400">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
+                </div>
+              </Panel>
             )}
 
             {overloaded.length > 0 && (
@@ -249,11 +254,13 @@ export default function CrmAgentsPage() {
               </div>
             )}
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Avg. time-to-close</div>
-              <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
-              <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
-            </div>
+            <Panel>
+              <PanelHeader title="Avg. time-to-close" />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">18d</div>
+                <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
+              </div>
+            </Panel>
           </div>
         </aside>
       </div>

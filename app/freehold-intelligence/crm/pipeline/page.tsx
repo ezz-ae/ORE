@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 
 // Static pipeline value data per stage
 const PIPELINE_VALUE_DATA = [
@@ -71,15 +72,12 @@ export default function CrmPipelinePage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Users className="h-3.5 w-3.5" /> Pipeline
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Sales pipeline<br/><span className="text-slate-500">by stage.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            {totalLeads} active lead{totalLeads !== 1 ? 's' : ''} · AED 50.2M pipeline · MTD won AED 9.8M. Stage transitions tracked nightly from HubSpot.
-          </p>
+          <PageHeader
+            eyebrow="CRM"
+            Icon={Users}
+            title="Sales pipeline by stage"
+            subtitle={`${totalLeads} active lead${totalLeads !== 1 ? 's' : ''} · AED 50.2M pipeline · MTD won AED 9.8M. Stage transitions tracked nightly from HubSpot.`}
+          />
 
           {/* Pipeline Value strip */}
           <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -190,21 +188,21 @@ export default function CrmPipelinePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <TrendingUp className="h-3 w-3" /> Conversion rate
+            <Panel>
+              <PanelHeader title="Conversion rate" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">23%</div>
+                <div className="mt-1 text-xs text-gold">+4pp vs last month</div>
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">23%</div>
-              <div className="mt-1 text-xs text-gold">+4pp vs last month</div>
-            </div>
+            </Panel>
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Clock className="h-3 w-3" /> Avg. time-to-close
+            <Panel>
+              <PanelHeader title="Avg. time-to-close" icon={<Clock className="h-3.5 w-3.5" />} />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">18d</div>
+                <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
-              <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
-            </div>
+            </Panel>
 
             <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-red-300/80">

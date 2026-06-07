@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle } from 'lucide-react'
+import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle, Home } from 'lucide-react'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -51,24 +52,20 @@ export default function ReadyPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7">
-        <h1 className="text-[20px] font-semibold text-white">Ready Properties</h1>
-        <p className="mt-1 text-xs text-slate-500">Available and move-in-ready inventory</p>
-      </div>
+      <PageHeader
+        eyebrow="Inventory"
+        Icon={Home}
+        title="Ready Properties"
+        subtitle="Available and move-in-ready inventory"
+        className="mb-6"
+      />
 
       {/* Tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Ready',        value: props.length,   color: 'text-amber-400'   },
-          { label: 'Live pages',   value: liveLandings,   color: 'text-emerald-400' },
-          { label: '30d Leads',    value: totalLeads,     color: 'text-gold'   },
-          { label: 'Avg readiness',value: `${avgReadiness}%`, color: 'text-slate-300' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Ready Units" value={props.length} hint="available now" />
+        <StatCard label="Live Pages" value={liveLandings} hint="can run ads" delta={{ value: 'published', direction: 'up' }} />
+        <StatCard label="30d Leads" value={totalLeads} hint="this month" />
+        <StatCard label="Avg Readiness" value={`${avgReadiness}%`} hint="ad-readiness score" />
       </div>
 
       {/* Missing landing alert */}

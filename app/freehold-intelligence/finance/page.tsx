@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { DollarSign } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { PageHeader, StatCard, Section, Panel, StatusPill } from '@/components/freehold/ui'
 
 function fmt(n: number) {
   return 'AED ' + n.toLocaleString('en-US')
@@ -20,32 +22,10 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === 'paid') {
-    return (
-      <span className="inline-flex items-center rounded-md border border-gold/20 bg-gold/10 px-2 py-0.5 text-sm font-medium text-gold">
-        Paid
-      </span>
-    )
-  }
-  if (status === 'processing') {
-    return (
-      <span className="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-sm font-medium text-amber-400">
-        Processing
-      </span>
-    )
-  }
-  if (status === 'overdue') {
-    return (
-      <span className="inline-flex items-center rounded-md border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-sm font-medium text-red-400">
-        Overdue
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center rounded-md border border-line bg-surface-2 px-2 py-0.5 text-sm font-medium text-slate-400">
-      {status}
-    </span>
-  )
+  if (status === 'paid')       return <StatusPill tone="gold">Paid</StatusPill>
+  if (status === 'processing') return <StatusPill tone="amber">Processing</StatusPill>
+  if (status === 'overdue')    return <StatusPill tone="red">Overdue</StatusPill>
+  return <StatusPill tone="neutral">{status}</StatusPill>
 }
 
 function ProgressBar({ label, spent, budget, utilization, color }: {
@@ -99,39 +79,28 @@ export default function FinancePage() {
     <div className="p-6 lg:p-8 space-y-8">
 
       {/* ── Page header ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Finance & Billing</h1>
-          <p className="mt-1 text-sm text-slate-400">Ad spend, budget utilization, and invoices</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-slate-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-          May 2026
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={DollarSign}
+        title="Finance & Billing"
+        subtitle="Ad spend, budget utilization, and invoices"
+        actions={
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-slate-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+            May 2026
+          </div>
+        }
+      />
 
       {/* ── Top KPI row ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Spend</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{fmt(f.totalSpend30d)}</div>
-          <div className="mt-1 text-xs text-slate-500">Last 30 days · all platforms</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Leads</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{f.totalLeads30d}</div>
-          <div className="mt-1 text-xs text-slate-500">Last 30 days · all campaigns</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg CPL</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-gold">AED {f.avgCpl30d}</div>
-          <div className="mt-1 text-xs text-slate-500">Cost per lead · 30d average</div>
-        </div>
+        <StatCard label="Total Spend" value={fmt(f.totalSpend30d)} hint="Last 30 days · all platforms" />
+        <StatCard label="Total Leads" value={f.totalLeads30d} hint="Last 30 days · all campaigns" delta={{ value: 'incoming', direction: 'up' }} />
+        <StatCard label="Avg CPL" value={`AED ${f.avgCpl30d}`} hint="Cost per lead · 30d average" />
       </div>
 
       {/* ── Budget Utilization ── */}
-      <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Budget Utilization</div>
+      <Section title="Budget Utilization">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ProgressBar
             label="Meta Ads"
@@ -148,12 +117,11 @@ export default function FinancePage() {
             color="bg-gold"
           />
         </div>
-      </section>
+      </Section>
 
       {/* ── Spend Trend ── */}
-      <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Spend Trend</div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
+      <Section title="Spend Trend">
+        <Panel className="p-5">
           {(() => {
             const maxValue = 43000
             const chartWidth = 600
@@ -246,13 +214,12 @@ export default function FinancePage() {
               </>
             )
           })()}
-        </div>
-      </section>
+        </Panel>
+      </Section>
 
       {/* ── Monthly Spend History ── */}
-      <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Monthly Spend History</div>
-        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+      <Section title="Monthly Spend History">
+        <div className="rounded-xl border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -293,12 +260,12 @@ export default function FinancePage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── Top Spend Campaigns ── */}
-      <section>
-        <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Top Spend Campaigns</div>
+      <Section
+        title="Top Spend Campaigns"
+        action={
           <div className="flex gap-1.5">
             {(['All', 'meta', 'google'] as const).map((p) => {
               const isActive = platformFilter === p
@@ -320,8 +287,9 @@ export default function FinancePage() {
               )
             })}
           </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+        }
+      >
+        <div className="rounded-xl border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -357,12 +325,12 @@ export default function FinancePage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── Invoices ── */}
-      <section>
-        <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Invoices</div>
+      <Section
+        title="Invoices"
+        action={
           <div className="flex gap-1.5">
             {(['All', 'paid', 'processing', 'overdue'] as const).map((s) => (
               <button
@@ -378,8 +346,9 @@ export default function FinancePage() {
               </button>
             ))}
           </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+        }
+      >
+        <div className="rounded-xl border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -417,7 +386,7 @@ export default function FinancePage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
     </div>
   )

@@ -14,6 +14,7 @@ import {
   type AdVerdict,
 } from '@/src/features/freehold-intelligence/inventory'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -151,34 +152,20 @@ export default function InventoryPage() {
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <LayoutGrid className="h-3.5 w-3.5" /> Freehold Intelligence
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-          Inventory
-        </h1>
+      <PageHeader
+        eyebrow="Inventory"
+        Icon={LayoutGrid}
+        title="Property Inventory"
+        subtitle="Ad readiness, landing status, and ROI across all tracked properties"
+      />
 
-        {/* Stats row */}
-        <div className="mt-6 flex flex-wrap gap-3">
-          {[
-            { label: 'Total properties', value: stats.total },
-            { label: 'Live landings', value: stats.live, accent: 'text-gold' },
-            { label: 'Missing landing', value: stats.missingLanding, accent: 'text-slate-400' },
-            { label: 'Ad-ready', value: stats.adReady, accent: 'text-gold' },
-          ].map(({ label, value, accent }) => (
-            <div
-              key={label}
-              className="rounded-[14px] border border-line bg-surface-2 px-4 py-3"
-            >
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{label}</div>
-              <div className={`mt-1 text-[24px] font-semibold tabular-nums leading-none ${accent ?? 'text-white'}`}>
-                {value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Stats row */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total Properties" value={stats.total} hint="in portfolio" />
+        <StatCard label="Live Landings" value={stats.live} hint="pages published" delta={{ value: 'live', direction: 'up' }} />
+        <StatCard label="Missing Landing" value={stats.missingLanding} hint="need pages built" delta={stats.missingLanding > 0 ? { value: 'action needed', direction: 'down' } : undefined} />
+        <StatCard label="Ad-Ready" value={stats.adReady} hint="cleared for launch" delta={{ value: 'ready to run', direction: 'up' }} />
+      </div>
 
       {/* ── Ad-readiness analysis ─────────────────────────────────────────── */}
       <section className="mt-10">
@@ -330,8 +317,13 @@ export default function InventoryPage() {
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-16 text-center text-sm text-slate-500">
-                  No properties match your filters.
+                <td colSpan={11}>
+                  <EmptyState
+                    Icon={LayoutGrid}
+                    title="No properties match your filters"
+                    description="Try a different status or clear the search."
+                    className="rounded-none border-x-0 border-b-0"
+                  />
                 </td>
               </tr>
             ) : (

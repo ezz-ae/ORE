@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Sparkles, Search, Calendar, TrendingUp } from 'lucide-react'
+import { ArrowUpRight, Sparkles, Search, Calendar, TrendingUp, Building2 } from 'lucide-react'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -59,24 +60,20 @@ export default function OffPlanPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7">
-        <h1 className="text-[20px] font-semibold text-white">Off-Plan</h1>
-        <p className="mt-1 text-xs text-slate-500">Pre-launch and under-construction properties</p>
-      </div>
+      <PageHeader
+        eyebrow="Inventory"
+        Icon={Building2}
+        title="Off-Plan Properties"
+        subtitle="Pre-launch and under-construction properties"
+        className="mb-6"
+      />
 
       {/* Tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Off Plan',     value: offPlanCount,           color: 'text-blue-400'   },
-          { label: 'Under Const.', value: underConstCount,        color: 'text-amber-400'  },
-          { label: '30d Leads',    value: totalLeads,             color: 'text-gold'  },
-          { label: 'Handovers',    value: Object.keys(handovers).length + ' yrs', color: 'text-slate-400' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[18px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Off Plan" value={offPlanCount} hint="pre-launch" />
+        <StatCard label="Under Const." value={underConstCount} hint="being built" />
+        <StatCard label="30d Leads" value={totalLeads} hint="this month" delta={{ value: 'active demand', direction: 'up' }} />
+        <StatCard label="Handover Years" value={Object.keys(handovers).length} hint="distinct years" />
       </div>
 
       {/* Handover timeline chips */}
@@ -126,7 +123,12 @@ export default function OffPlanPage() {
       {/* Property list */}
       <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {props.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-slate-500">No off-plan properties match.</div>
+          <EmptyState
+            Icon={Building2}
+            title="No off-plan properties match"
+            description="Try adjusting the handover year or clearing the search."
+            className="rounded-none border-none"
+          />
         )}
         {props.map((p) => (
           <div key={p.id} className="px-5 py-4">

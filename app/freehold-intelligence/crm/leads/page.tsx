@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Search, Target, X } from 'lucide-react'
+import { ArrowUpRight, Search, Target, X, Users } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Critical' }
@@ -72,29 +73,24 @@ export default function CrmLeadsPage() {
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Target className="h-3.5 w-3.5" /> CRM · All Leads
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-          {crmLeads.length} leads tracked.<br />
-          <span className="text-slate-500">{hot} need action now.</span>
-        </h1>
-      </section>
+      <PageHeader
+        eyebrow="CRM · All Leads"
+        Icon={Users}
+        title={`${crmLeads.length} leads tracked`}
+        subtitle={`${hot} need immediate action · sorted by intent score`}
+      />
 
       {/* Stats */}
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Total',        value: crmLeads.length, color: 'text-white'                                    },
-          { label: 'Hot / urgent', value: hot,             color: 'text-red-300'                                  },
-          { label: 'Avg intent',   value: avgIntent,       color: 'text-gold'                                },
-          { label: 'Risk flags',   value: withRisk,        color: withRisk > 0 ? 'text-orange-300' : 'text-white' },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-line bg-surface p-4 text-center">
-            <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-            <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
-          </div>
-        ))}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total Leads" value={crmLeads.length} hint="in pipeline" />
+        <StatCard label="Hot / Urgent" value={hot} hint="need action now" delta={{ value: 'high priority', direction: 'up' }} />
+        <StatCard label="Avg Intent" value={avgIntent} hint="intent score" />
+        <StatCard
+          label="Risk Flags"
+          value={withRisk}
+          hint={withRisk > 0 ? 'needs review' : 'all clear'}
+          delta={withRisk > 0 ? { value: 'review needed', direction: 'down' } : undefined}
+        />
       </div>
 
       {/* Search */}
@@ -175,9 +171,12 @@ export default function CrmLeadsPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm text-slate-500">
-              No leads match these filters.
-            </div>
+            <EmptyState
+              Icon={Target}
+              title="No leads match these filters"
+              description="Try adjusting the stage or agent filter, or clear the search."
+              className="rounded-none border-x-0 border-b-0"
+            />
           ) : (
             <div className="divide-y divide-line">
               {filtered.map((lead) => {

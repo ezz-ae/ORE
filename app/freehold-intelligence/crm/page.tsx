@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
-  RefreshCw, ChevronRight,
+  RefreshCw, ChevronRight, Users, Filter,
 } from 'lucide-react'
 import {
   crmLeads,
@@ -15,6 +15,7 @@ import {
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, EmptyState, Panel, PanelHeader, buttonClass } from '@/components/freehold/ui'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -134,20 +135,20 @@ export default function FreeholdCrmPage() {
         <div className="min-w-0">
 
           {/* Header */}
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-[17px] font-semibold text-white">CRM Command Centre</h1>
-              <p className="mt-0.5 text-xs text-slate-500">
-                {crmLeads.length} leads · {STAGES.length} pipeline stages
-              </p>
-            </div>
-            <Link
-              href="/freehold-intelligence/crm/board"
-              className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
-            >
-              Board <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
+          <PageHeader
+            className="mb-6"
+            Icon={Users}
+            title="CRM Command Centre"
+            subtitle={`${crmLeads.length} leads across ${STAGES.length} pipeline stages`}
+            actions={
+              <Link
+                href="/freehold-intelligence/crm/board"
+                className={buttonClass('secondary', 'sm')}
+              >
+                Board view <ChevronRight className="h-3 w-3" />
+              </Link>
+            }
+          />
 
           {/* ── 6 Metric tiles ── */}
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -245,9 +246,12 @@ export default function FreeholdCrmPage() {
             </div>
 
             {filtered.length === 0 && (
-              <div className="py-12 text-center text-sm text-slate-500">
-                No leads match this filter.
-              </div>
+              <EmptyState
+                Icon={Filter}
+                title="No leads match this filter"
+                description="Try a different stage or clear the search query."
+                className="rounded-none border-x-0 border-b-0"
+              />
             )}
 
             {filtered.map(lead => {
@@ -343,18 +347,19 @@ export default function FreeholdCrmPage() {
           <div className="sticky top-14 space-y-3">
 
             {/* Integration sync panel */}
-            <div className="rounded-[16px] border border-line bg-surface p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Integrations</div>
-                <button
-                  onClick={() => toast.success('CRM sync started')}
-                  className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
-                >
-                  <RefreshCw className="h-3 w-3" /> Sync now
-                </button>
-              </div>
-
-              <div className="space-y-2.5">
+            <Panel>
+              <PanelHeader
+                title="Integrations"
+                action={
+                  <button
+                    onClick={() => toast.success('CRM sync started')}
+                    className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Sync now
+                  </button>
+                }
+              />
+              <div className="p-4 space-y-2.5">
                 {integrationSyncStatuses.map(s => (
                   <div key={s.id} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -364,19 +369,18 @@ export default function FreeholdCrmPage() {
                     {syncLabel(s)}
                   </div>
                 ))}
+                {lastSyncStr && mounted && (
+                  <div className="border-t border-line pt-2.5 text-xs text-slate-600">
+                    Last sync {relTime(lastSyncStr)} ago · {totalLeadsIn} leads imported
+                  </div>
+                )}
               </div>
-
-              {lastSyncStr && mounted && (
-                <div className="mt-3 border-t border-line pt-2.5 text-xs text-slate-600">
-                  Last sync {relTime(lastSyncStr)} ago · {totalLeadsIn} leads imported
-                </div>
-              )}
-            </div>
+            </Panel>
 
             {/* Top by intent */}
-            <div className="rounded-[16px] border border-line bg-surface p-4">
-              <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Top by Intent</div>
-              <div className="space-y-2">
+            <Panel>
+              <PanelHeader title="Top by Intent" />
+              <div className="p-4 space-y-2">
                 {[...crmLeads]
                   .sort((a, b) => b.intentScore - a.intentScore)
                   .slice(0, 6)
@@ -397,7 +401,7 @@ export default function FreeholdCrmPage() {
                     </div>
                   ))}
               </div>
-            </div>
+            </Panel>
 
             {/* AI prompt */}
             <AiPrompt
