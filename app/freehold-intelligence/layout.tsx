@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { ExpertChat } from '@/components/freehold/expert-chat'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { BRAND } from '@/lib/freehold/brand'
 
 export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard()   // any signed-in role; landing differs by role
@@ -17,7 +18,10 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased">
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased"
+      style={{ ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}
+    >
       <style>{`
         body > div > header,
         body > div > footer { display: none !important; }
@@ -28,8 +32,8 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
         .fi-content {
           background:
-            radial-gradient(ellipse 90% 40% at 50% 0%, rgba(212,175,55,0.06) 0%, transparent 55%),
-            radial-gradient(ellipse 50% 25% at 100% 100%, rgba(212,175,55,0.03) 0%, transparent 50%);
+            radial-gradient(ellipse 90% 40% at 50% 0%, color-mix(in srgb, var(--color-gold) 6%, transparent) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 25% at 100% 100%, color-mix(in srgb, var(--color-gold) 3%, transparent) 0%, transparent 50%);
         }
       `}</style>
       <SpacesNav />

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, ChevronDown, LogOut, Home } from 'lucide-react'
 import { spineApps } from '@/lib/freehold/apps'
+import { BRAND } from '@/lib/freehold/brand'
 import { useSession } from '@/lib/freehold/use-session'
 import { clearSession } from '@/lib/freehold/session'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
@@ -51,8 +52,8 @@ export function SpacesNav() {
       >
         <Sparkles className="h-4 w-4 text-gold" />
         <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
-          Freehold
-          <span className="ml-1 text-gold">Intelligence</span>
+          {BRAND.company}
+          <span className="ml-1 text-gold">{BRAND.product}</span>
         </span>
       </Link>
 

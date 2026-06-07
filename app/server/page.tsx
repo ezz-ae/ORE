@@ -6,6 +6,7 @@ import { Eye, EyeOff, Shield, Lock, Mail, Check, Search } from 'lucide-react'
 import { login } from '@/lib/freehold/session'
 import type { Role } from '@/lib/freehold/session-types'
 import { ROLE_COLORS } from '@/lib/freehold/session-types'
+import { BRAND, brandName } from '@/lib/freehold/brand'
 
 type UserHint = { email: string; name: string; initials: string; role: Role; password: string }
 
@@ -100,14 +101,17 @@ export default function ServerAuth() {
   const selectedUser = USERS.find((u) => u.email === selected)
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-app px-5 py-10">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center bg-app px-5 py-10"
+      style={{ ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}
+    >
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:48px_48px]" />
       <div
         className="pointer-events-none fixed inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 55%),' +
-            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(212,175,55,0.04) 0%, transparent 50%)',
+            'radial-gradient(ellipse 70% 50% at 50% 0%, color-mix(in srgb, var(--color-gold) 10%, transparent) 0%, transparent 55%),' +
+            'radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in srgb, var(--color-gold) 4%, transparent) 0%, transparent 50%)',
         }}
       />
 
@@ -118,7 +122,7 @@ export default function ServerAuth() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/30 bg-gold/10">
             <Shield className="h-7 w-7 text-gold" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">Freehold Server</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-white">{BRAND.company} Server</h1>
           <p className="mt-1 text-sm text-slate-500">Select your profile to sign in</p>
         </div>
 
@@ -284,7 +288,7 @@ export default function ServerAuth() {
         </div>
 
         <p className="mt-4 text-center text-xs text-slate-700">
-          Freehold Intelligence Platform &middot; Authorized Personnel Only
+          {brandName} Platform &middot; {BRAND.tagline}
         </p>
       </div>
     </div>

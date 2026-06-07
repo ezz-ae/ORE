@@ -57,6 +57,13 @@ html {
 }
 
 
+/* Brand accent — kept non-inline so `bg-gold`, `text-gold`, `border-gold/30`,
+ * etc. resolve to var(--color-gold). A white-label instance overrides this one
+ * variable (e.g. on the workspace root) to re-skin the whole product. */
+@theme {
+  --color-gold: #D4AF37;
+}
+
 @theme inline {
   --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
@@ -97,7 +104,8 @@ html {
   --color-surface-3:    rgba(255,255,255,0.10);  /* hover / tracks / chips     */
   --color-line:         rgba(255,255,255,0.08);  /* hairline dividers & borders*/
   --color-line-strong:  rgba(255,255,255,0.14);  /* control & emphasis borders */
-  --color-gold:         #D4AF37;              /* brand accent (re-brandable)   */
+  /* --color-gold lives in the non-inline @theme block below so it can be
+   * overridden at runtime per customer (white-label). */
 
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
