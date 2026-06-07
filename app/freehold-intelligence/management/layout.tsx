@@ -12,18 +12,20 @@ import { clearSession } from '@/lib/freehold/session'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { ROLE_LABELS } from '@/lib/freehold/session-types'
 
+const BASE = '/freehold-intelligence/management'
+
 const NAV = [
-  { href: '/management',            label: 'Dashboard',   icon: LayoutDashboard, exact: true },
-  { href: '/management/events',     label: 'Events Log',  icon: Activity },
-  { href: '/management/team',       label: 'Team',        icon: Users },
-  { href: '/management/marketing',  label: 'Marketing',   icon: Megaphone },
-  { href: '/management/finance',    label: 'Finance',     icon: DollarSign },
-  { href: '/management/credits',    label: 'Credits',     icon: Coins },
-  { href: '/management/deals',      label: 'Deals',       icon: Briefcase },
-  { href: '/management/inventory',  label: 'Inventory',   icon: Building2 },
-  { href: '/management/roi',        label: 'ROI',         icon: TrendingUp },
-  { href: '/management/reports',    label: 'Reports',     icon: FileBarChart2 },
-  { href: '/management/ai',         label: 'AI Chat',     icon: Bot },
+  { href: BASE,                   label: 'Dashboard',  icon: LayoutDashboard, exact: true },
+  { href: `${BASE}/events`,       label: 'Events Log', icon: Activity },
+  { href: `${BASE}/team`,         label: 'Team',       icon: Users },
+  { href: `${BASE}/marketing`,    label: 'Marketing',  icon: Megaphone },
+  { href: `${BASE}/finance`,      label: 'Finance',    icon: DollarSign },
+  { href: `${BASE}/credits`,      label: 'Credits',    icon: Coins },
+  { href: `${BASE}/deals`,        label: 'Deals',      icon: Briefcase },
+  { href: `${BASE}/inventory`,    label: 'Inventory',  icon: Building2 },
+  { href: `${BASE}/roi`,          label: 'ROI',        icon: TrendingUp },
+  { href: `${BASE}/reports`,      label: 'Reports',    icon: FileBarChart2 },
+  { href: `${BASE}/ai`,           label: 'AI Chat',    icon: Bot },
 ]
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +51,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
 
   const Sidebar = ({ onClose }: { onClose?: () => void }) => (
     <div className="flex h-full flex-col">
+      {/* Identity */}
       <div className="flex h-14 shrink-0 items-center gap-3 border-b border-slate-800 px-5">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
           <Shield className="h-3.5 w-3.5 text-[#D4AF37]" />
@@ -65,15 +68,17 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        {/* Back to hub */}
         <Link
           href="/freehold-intelligence"
           onClick={() => onClose?.()}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-800/60 hover:text-slate-300 mb-2"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-800/60 hover:text-slate-300 mb-1"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" />
           All Apps
         </Link>
-        <div className="mb-2 border-t border-slate-800/60" />
+        <div className="mb-3 border-t border-slate-800/60" />
+
         {NAV.map(item => {
           const active = isActive(item)
           return (
@@ -114,12 +119,10 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
         body > div > header,
         body > div > footer { display: none !important; }
       `}</style>
-      {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-60 border-r border-slate-800 bg-[#090C12] lg:block">
         <Sidebar />
       </aside>
 
-      {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
@@ -129,7 +132,6 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
         </div>
       )}
 
-      {/* Mobile top bar */}
       <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-slate-800 bg-[#090C12]/95 px-4 backdrop-blur-xl lg:hidden">
         <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-slate-200">
           <Menu className="h-5 w-5" />
@@ -138,14 +140,12 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
           <div className="flex h-6 w-6 items-center justify-center rounded-md border border-[#D4AF37]/25 bg-[#D4AF37]/10">
             <Shield className="h-3 w-3 text-[#D4AF37]" />
           </div>
-          <span className="text-sm font-semibold text-white">{user?.name ?? 'Freehold'} <span className="text-[#D4AF37]">{user?.role ? ROLE_LABELS[user.role] : 'Management'}</span></span>
+          <span className="text-sm font-semibold text-white">
+            {user?.name ?? 'Freehold'} <span className="text-[#D4AF37]">{user?.role ? ROLE_LABELS[user.role] : 'Management'}</span>
+          </span>
         </div>
-        <Link href="/freehold-intelligence" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" /> Apps
-        </Link>
       </header>
 
-      {/* Main */}
       <div className="flex-1 lg:ml-60 pt-14 lg:pt-0">
         {children}
       </div>

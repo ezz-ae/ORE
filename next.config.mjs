@@ -30,6 +30,13 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  async redirects() {
+    return [
+      { source: '/management', destination: '/freehold-intelligence/management', permanent: true },
+      { source: '/management/:path*', destination: '/freehold-intelligence/management/:path*', permanent: true },
+    ]
+  },
+
   // ── Security & cache headers ──────────────────────────────────────
   async headers() {
     return [

@@ -136,7 +136,7 @@ const APPS = [
     id:             'management',
     label:          'Management',
     sub:            'Admin · Credits · Team · Finance',
-    href:           '/management',
+    href:           '/freehold-intelligence/management',
     Icon:           ShieldCheck,
     metric:         'Admin control panel',
     badge:          0,

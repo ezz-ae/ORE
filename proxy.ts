@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (pathname.startsWith('/management') && !MANAGEMENT_ROLES.includes(user.role)) {
+    if (pathname.startsWith('/freehold-intelligence/management') && !MANAGEMENT_ROLES.includes(user.role)) {
       const homeUrl = request.nextUrl.clone()
       homeUrl.pathname = user.home
       homeUrl.search = ''
