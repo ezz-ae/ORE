@@ -93,10 +93,10 @@ html {
   --color-chrome:       #06090F;              /* nav, headers, sidebars        */
   --color-surface:      #0D1520;              /* cards & panels                */
   --color-ink:          #0D1117;              /* deepest surface / on-gold text*/
-  --color-surface-2:    rgba(255,255,255,0.045); /* raised glass / inputs      */
-  --color-surface-3:    rgba(255,255,255,0.08);  /* hover / tracks / chips     */
-  --color-line:         rgba(255,255,255,0.07);  /* hairline dividers & borders*/
-  --color-line-strong:  rgba(255,255,255,0.12);  /* control & emphasis borders */
+  --color-surface-2:    rgba(255,255,255,0.06);  /* raised glass / inputs      */
+  --color-surface-3:    rgba(255,255,255,0.10);  /* hover / tracks / chips     */
+  --color-line:         rgba(255,255,255,0.08);  /* hairline dividers & borders*/
+  --color-line-strong:  rgba(255,255,255,0.14);  /* control & emphasis borders */
   --color-gold:         #D4AF37;              /* brand accent (re-brandable)   */
 
   --color-chart-1: hsl(var(--chart-1));
