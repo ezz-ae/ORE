@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
+import { PageHeader } from '@/components/freehold/ui'
 
 type IntMeta = { category: string; icon: LucideIcon; copy: string }
 
@@ -95,20 +96,12 @@ export default function IntegrationsPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
-      {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Zap className="h-3.5 w-3.5" /> Connections
-        </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-100">
-          What's plugged in,
-          <br />
-          <span className="text-slate-400">what isn't.</span>
-        </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
-          <span className="text-white">{connectedCount} of {integrations.length}</span> external systems are connected. Ads and external writes stay disabled until critical access is granted.
-        </p>
-      </section>
+      <PageHeader
+        eyebrow="Connections"
+        Icon={Zap}
+        title="Integrations"
+        subtitle={`${connectedCount} of ${integrations.length} external systems connected. Ads and writes stay disabled until critical access is granted.`}
+      />
 
       {/* Critical blockers */}
       {critical.length > 0 && (

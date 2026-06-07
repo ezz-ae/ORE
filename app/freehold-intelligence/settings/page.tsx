@@ -7,6 +7,7 @@ import {
   Check, AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
   Palette, Sliders, Save,
 } from 'lucide-react'
+import { PageHeader, buttonClass } from '@/components/freehold/ui'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -167,28 +168,22 @@ export default function SettingsPage() {
     <div className="p-6 lg:p-8">
       <div className="mx-auto max-w-4xl">
 
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-              <SettingsIcon className="h-3.5 w-3.5 text-gold" /> System Settings
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight text-white">Settings</h1>
-            <p className="mt-1 text-sm text-slate-400">Configure AI permissions, data mapping, and platform thresholds</p>
-          </div>
-          <button
-            onClick={handleSave}
-            className={[
-              'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition',
-              saved
-                ? 'border border-gold/30 bg-gold/10 text-gold'
-                : 'border border-line bg-surface-2 text-slate-300 hover:border-gold/30 hover:text-white',
-            ].join(' ')}
-          >
-            {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saved ? 'Saved' : 'Save Changes'}
-          </button>
-        </div>
+        <PageHeader
+          eyebrow="System Settings"
+          Icon={SettingsIcon}
+          title="Settings"
+          subtitle="Configure AI permissions, data mapping, and platform thresholds"
+          actions={
+            <button
+              onClick={handleSave}
+              className={saved ? buttonClass('primary', 'md') : buttonClass('secondary', 'md')}
+            >
+              {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {saved ? 'Saved' : 'Save Changes'}
+            </button>
+          }
+          className="mb-8"
+        />
 
         {/* ── Tab bar ── */}
         <div className="mb-8 flex flex-wrap gap-1 rounded-2xl border border-line bg-surface p-1">

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, CheckCircle2, Pause, ArrowUpRight, Zap } from 'lucide-react'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { CampaignList } from './_components/CampaignList'
+import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 
 interface Campaign {
   id: string
@@ -60,34 +61,22 @@ export default async function CampaignsPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <section>
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Megaphone className="h-3.5 w-3.5" /> Meta Campaigns
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Live campaigns<br />
-            <span className="text-slate-500">
-              {isConfigError ? 'not connected.' : `${campaigns.length} total.`}
-            </span>
-          </h1>
-        </section>
-
-        <div className="mt-4 flex items-center gap-2 sm:mt-8">
-          <Link
-            href="/freehold-intelligence/lead-machine/campaigns/launch"
-            className="inline-flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/15"
-          >
-            <Zap className="h-3.5 w-3.5" /> Launch Campaign
-          </Link>
-          <Link
-            href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-slate-200"
-          >
-            <Plus className="h-3.5 w-3.5" /> Manual
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={Megaphone}
+        title="Meta Campaigns"
+        subtitle={isConfigError ? 'Meta Ads not connected.' : `${campaigns.length} campaigns tracked.`}
+        actions={
+          <>
+            <Link href="/freehold-intelligence/lead-machine/campaigns/launch" className={buttonClass('primary', 'md')}>
+              <Zap className="h-3.5 w-3.5" /> Launch Campaign
+            </Link>
+            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass('secondary', 'md')}>
+              <Plus className="h-3.5 w-3.5" /> Manual
+            </Link>
+          </>
+        }
+      />
 
       {/* Config error state */}
       {isConfigError && (
@@ -118,20 +107,12 @@ export default async function CampaignsPage() {
         </div>
       )}
 
-      {/* Stats row */}
       {!isConfigError && (
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: 'Active',      value: active,                        color: 'text-gold' },
-            { label: 'Paused',      value: paused,                        color: 'text-gold' },
-            { label: 'Total spend', value: fmtSpend(String(totalSpend)),  color: 'text-white' },
-            { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-gold' : 'text-white' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-line bg-surface p-4">
-              <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
-              <div className="mt-1.5 text-sm text-slate-400">{s.label}</div>
-            </div>
-          ))}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Active"      value={active}                       delta={{ value: 'live now', direction: 'up' }} />
+          <StatCard label="Paused"      value={paused}                       hint="campaigns" />
+          <StatCard label="Total spend" value={fmtSpend(String(totalSpend))} hint="all time" />
+          <StatCard label="Total leads" value={totalLeads}                   delta={totalLeads > 0 ? { value: 'generated', direction: 'up' } : undefined} />
         </div>
       )}
 
