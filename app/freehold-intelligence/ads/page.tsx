@@ -119,7 +119,7 @@ function Grid({ apps }: { apps: SubApp[] }) {
         <Link
           key={app.id}
           href={app.href}
-          className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition-colors ${app.card}`}
+          className={`group relative flex flex-col rounded-xl border bg-[#0D1520] p-5 transition-all duration-200 ${app.card}`}
         >
           <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${app.icon}`}>
             <app.Icon className="h-5 w-5" />
@@ -130,7 +130,7 @@ function Grid({ apps }: { apps: SubApp[] }) {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-slate-400 font-medium">{app.metric}</div>
-            <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-slate-400" />
+            <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-white" />
           </div>
         </Link>
       ))}
@@ -143,7 +143,7 @@ export default function AdsLauncher() {
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
       {/* Header */}
-      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/15 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.09] via-[#D4AF37]/[0.03] to-transparent">
         <div className="p-6 sm:p-7">
           <div className="flex items-center gap-3.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">

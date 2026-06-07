@@ -26,7 +26,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     <div className="flex flex-col min-h-full">
 
       {/* App header */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-slate-800 bg-[#0A0E14]/95 px-4 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-[#06090F]/97 px-4 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence"
           className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 shrink-0"
@@ -47,7 +47,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div className="flex flex-1">
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0A0E14]">
+        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-[#060910]">
           <nav className="flex-1 px-2 py-4 space-y-0.5">
             {tabs.map((tab) => {
               const active = isActive(tab)
@@ -57,7 +57,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                   href={tab.href}
                   className={[
                     'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition',
-                    active ? 'bg-slate-700/50 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60',
+                    active ? 'bg-[#D4AF37]/10 text-white border border-[#D4AF37]/15' : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
                   ].join(' ')}
                 >
                   {tab.label}
@@ -70,7 +70,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Mobile tabs */}
-          <div className="lg:hidden sticky top-14 z-30 overflow-x-auto border-b border-slate-800 bg-[#0A0E14]/90 backdrop-blur-xl">
+          <div className="lg:hidden sticky top-14 z-30 overflow-x-auto border-b border-white/[0.07] bg-[#06090F]/95 backdrop-blur-xl">
             <nav className="flex min-w-max px-4">
               {tabs.map((tab) => {
                 const active = isActive(tab)

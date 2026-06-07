@@ -22,7 +22,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     <div className="min-h-full">
 
       {/* Lightweight secondary breadcrumb bar — identity/sign-out are in SpacesNav */}
-      <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#0D1117]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#06090F]/95 backdrop-blur-xl">
         <div className="mx-auto flex h-12 max-w-5xl items-center gap-2 px-4 sm:px-6">
 
           {isHome ? (
@@ -51,7 +51,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
           <div className="ml-auto">
             <button
-              className="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-200"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 transition-colors hover:border-white/[0.2] hover:text-slate-200"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />

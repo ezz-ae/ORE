@@ -44,7 +44,7 @@ function getGreeting(name: string) {
 function urgentCardCls(p: ServerActionCard['priority']) {
   if (p === 'critical') return 'border-red-500/25 bg-red-500/[0.06]'
   if (p === 'high')     return 'border-amber-500/25 bg-amber-500/[0.06]'
-  return 'border-slate-800 bg-slate-800/40'
+  return 'border-white/[0.07] bg-white/[0.03]'
 }
 function urgentDotCls(p: ServerActionCard['priority']) {
   if (p === 'critical') return 'bg-red-500'
@@ -135,7 +135,7 @@ export default function IntelligenceLauncher() {
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
       {/* ── Morning Briefing ──────────────────────────────────────────────── */}
-      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/15 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.09] via-[#D4AF37]/[0.03] to-transparent">
         <div className="p-6 sm:p-7">
 
           {/* Header row */}
@@ -185,7 +185,7 @@ export default function IntelligenceLauncher() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
                 placeholder="Ask anything about today's priorities…"
-                className="flex-1 rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
+                className="flex-1 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
               />
               <button
                 type="button"
@@ -205,7 +205,7 @@ export default function IntelligenceLauncher() {
                   type="button"
                   onClick={() => sendChat(q)}
                   disabled={chatLoading}
-                  className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-slate-500 hover:text-slate-200 disabled:opacity-40"
+                  className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-white/[0.2] hover:text-slate-200 disabled:opacity-40"
                 >
                   {q}
                 </button>
@@ -214,7 +214,7 @@ export default function IntelligenceLauncher() {
 
             {/* AI response */}
             {(chatLoading || chatReply) && (
-              <div className="mt-4 rounded-xl border border-[#D4AF37]/15 bg-slate-800/40 p-4">
+              <div className="mt-4 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-4">
                 {chatLoading ? (
                   <div className="flex items-center gap-3 text-sm text-slate-400">
                     <span className="flex gap-1">
@@ -295,7 +295,7 @@ export default function IntelligenceLauncher() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition-colors ${app.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-[#0D1520] p-5 transition-all duration-200 ${app.card}`}
               >
                 {badge > 0 && (
                   <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
@@ -313,7 +313,7 @@ export default function IntelligenceLauncher() {
                   <div className="text-sm text-slate-400 font-medium">
                     {metric}
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-slate-400" />
+                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-[#D4AF37]" />
                 </div>
               </Link>
             )
@@ -325,15 +325,15 @@ export default function IntelligenceLauncher() {
       <section className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Priority queue */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5">
+        <div className="rounded-xl border border-white/[0.07] bg-[#0D1520] overflow-hidden">
+          <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
               <AlertCircle className="h-4 w-4 text-amber-400" />
               Priorities
             </div>
             <span className="text-sm text-slate-500">{priorities.length} open</span>
           </div>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-white/[0.06]">
             {priorities.slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
                 <div className={`h-2 w-2 shrink-0 rounded-full ${p.sev === 'red' ? 'bg-red-400' : 'bg-amber-400'}`} />
@@ -343,7 +343,7 @@ export default function IntelligenceLauncher() {
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <Link href={p.href}
-                    className="rounded-lg border border-slate-700 px-3 py-1 text-sm text-slate-300 transition-colors hover:text-white hover:border-slate-500">
+                    className="rounded-lg border border-white/[0.1] px-3 py-1 text-sm text-slate-300 transition-colors hover:text-white hover:border-white/[0.25]">
                     Fix
                   </Link>
                   <button type="button" onClick={() => setDismissed((s) => new Set([...s, p.id]))}
@@ -363,12 +363,12 @@ export default function IntelligenceLauncher() {
         </div>
 
         {/* Live activity */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-slate-800 px-5 py-3.5 text-sm font-medium text-slate-300">
+        <div className="rounded-xl border border-white/[0.07] bg-[#0D1520] overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3.5 text-sm font-medium text-slate-300">
             <Activity className="h-4 w-4" />
             Live activity
           </div>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-white/[0.06]">
             {ACTIVITY.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${

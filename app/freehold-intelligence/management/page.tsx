@@ -102,9 +102,9 @@ export default function ManagementDashboard() {
   }
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="pb-16">
       {/* Page header */}
-      <div className="border-b border-slate-800 bg-[#090C12]/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
+      <div className="border-b border-white/[0.07] px-6 py-5">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-white">{greeting}</h1>
@@ -115,7 +115,7 @@ export default function ManagementDashboard() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs font-medium text-emerald-400">All systems live</span>
             </div>
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200">
+            <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 hover:text-slate-200 transition-colors">
               <Bell className="h-4 w-4" />
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">5</span>
             </button>
@@ -128,7 +128,7 @@ export default function ManagementDashboard() {
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {STATS.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div key={stat.label} className="rounded-xl border border-white/[0.07] bg-[#0D1520] p-4">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <stat.icon className="h-4 w-4 text-slate-500" />
                 <span className={['text-xs font-medium', stat.positive ? 'text-emerald-400' : 'text-red-400'].join(' ')}>
@@ -146,7 +146,7 @@ export default function ManagementDashboard() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* AI Morning Briefing chat */}
-            <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03]">
+            <div className="rounded-xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.07] via-[#D4AF37]/[0.03] to-transparent">
               <div className="flex items-center gap-3 border-b border-[#D4AF37]/15 px-5 py-3.5">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
                   <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
@@ -198,7 +198,7 @@ export default function ManagementDashboard() {
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
                   placeholder="Ask about performance, decisions, market…"
-                  className="flex-1 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40"
+                  className="flex-1 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40"
                 />
                 <button
                   type="submit"
@@ -211,15 +211,15 @@ export default function ManagementDashboard() {
             </div>
 
             {/* AI Task Planner */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+              <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Zap className="h-4 w-4 text-[#D4AF37]" />
                 <span className="text-sm font-semibold text-white">AI Task Planner</span>
                 <span className="ml-auto text-xs text-slate-500">
                   {tasks.filter(t => !t.done).length} pending
                 </span>
               </div>
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-white/[0.07]">
                 {tasks.map(task => (
                   <div key={task.id} className="flex items-start gap-3 px-5 py-3.5">
                     <button
@@ -252,15 +252,15 @@ export default function ManagementDashboard() {
             </div>
 
             {/* AI Emails Scanner */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+              <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Mail className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-semibold text-white">AI Emails Scanner</span>
                 <span className="ml-auto rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-400">
                   2 urgent
                 </span>
               </div>
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-white/[0.07]">
                 {EMAILS.map(email => (
                   <div key={email.id} className="flex items-center gap-4 px-5 py-3.5">
                     <div className={[
@@ -286,8 +286,8 @@ export default function ManagementDashboard() {
           <div className="space-y-6">
 
             {/* Quick Navigation */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+              <div className="border-b border-white/[0.07] px-5 py-3.5">
                 <p className="text-sm font-semibold text-white">Quick Access</p>
               </div>
               <div className="grid grid-cols-2 gap-2 p-3">
@@ -295,7 +295,7 @@ export default function ManagementDashboard() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="group flex flex-col items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/30 p-3.5 transition hover:border-slate-700 hover:bg-slate-800/60"
+                    className="group flex flex-col items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] p-3.5 transition hover:border-white/[0.15] hover:bg-white/[0.07]"
                   >
                     <div className={['flex h-8 w-8 items-center justify-center rounded-lg border', item.color].join(' ')}>
                       <item.icon className="h-4 w-4" />
@@ -307,15 +307,15 @@ export default function ManagementDashboard() {
             </div>
 
             {/* Live Events Feed */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+              <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-sm font-semibold text-white">Live Events</span>
                 <Link href="/freehold-intelligence/management/events" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
                   All <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-white/[0.07]">
                 {EVENTS.map(ev => (
                   <div key={ev.id} className="px-5 py-3.5">
                     <div className="flex items-center justify-between gap-2 mb-1">
@@ -332,8 +332,8 @@ export default function ManagementDashboard() {
             </div>
 
             {/* WhatsApp Connector */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+              <div className="border-b border-white/[0.07] px-5 py-3.5">
                 <p className="text-sm font-semibold text-white">WhatsApp Web</p>
               </div>
               <div className="px-5 py-4">
@@ -349,7 +349,7 @@ export default function ManagementDashboard() {
                     <WifiOff className="h-4 w-4 text-slate-600" />
                   </div>
                 </div>
-                <button className="w-full rounded-lg border border-slate-700 bg-slate-800/50 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
+                <button className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
                   Connect WhatsApp
                 </button>
                 <p className="mt-2.5 text-center text-xs text-slate-600">

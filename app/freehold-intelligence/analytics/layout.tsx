@@ -8,7 +8,7 @@ export default function AnalyticsLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col min-h-full">
 
       {/* App header */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-slate-800 bg-[#0D1117]/95 px-5 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-[#06090F]/97 px-5 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence"
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
