@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
-  LogOut, Shield, ChevronRight, Menu, X, Coins,
+  LogOut, Shield, ChevronRight, Menu, X, Coins, ArrowLeft,
 } from 'lucide-react'
 import { clearSession } from '@/lib/freehold/session'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -65,6 +65,15 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        <Link
+          href="/freehold-intelligence"
+          onClick={() => onClose?.()}
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-800/60 hover:text-slate-300 mb-2"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          All Apps
+        </Link>
+        <div className="mb-2 border-t border-slate-800/60" />
         {NAV.map(item => {
           const active = isActive(item)
           return (
@@ -131,6 +140,9 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
           </div>
           <span className="text-sm font-semibold text-white">{user?.name ?? 'Freehold'} <span className="text-[#D4AF37]">{user?.role ? ROLE_LABELS[user.role] : 'Management'}</span></span>
         </div>
+        <Link href="/freehold-intelligence" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5" /> Apps
+        </Link>
       </header>
 
       {/* Main */}
