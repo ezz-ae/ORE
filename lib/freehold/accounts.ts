@@ -40,7 +40,7 @@ const ACCOUNTS: Record<string, Account> = {
   // ── Admin / Office ────────────────────────────────────────────────────────
   'admin@freeholdproperty.ae': {
     password: 'FH_Admin_2026',
-    user: { email: 'admin@freeholdproperty.ae', name: 'Admin Desk', initials: 'AD', role: 'admin', home: '/freehold-intelligence' },
+    user: { email: 'admin@freeholdproperty.ae', name: 'Cor', initials: 'CO', role: 'admin', home: '/freehold-intelligence' },
   },
   'info@freeholdproperty.ae': {
     password: 'FH_Admin_2026',

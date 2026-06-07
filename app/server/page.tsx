@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, Lock, Mail, Check, Search } from 'lucide-react'
 import { login } from '@/lib/freehold/session'
 import type { Role } from '@/lib/freehold/session-types'
-import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
+import { ROLE_COLORS } from '@/lib/freehold/session-types'
 
 type UserHint = { email: string; name: string; initials: string; role: Role; password: string }
 
@@ -18,7 +18,7 @@ const USERS: UserHint[] = [
   { email: 'yamen@freeholdproperty.ae',        name: 'Yamen',        initials: 'YA', role: 'director',      password: 'FH_Mgmt_2026'   },
   { email: 'majd@freeholdproperty.ae',         name: 'Majd',         initials: 'MJ', role: 'director',      password: 'FH_Mgmt_2026'   },
   // Admin / Office
-  { email: 'admin@freeholdproperty.ae',        name: 'Admin Desk',   initials: 'AD', role: 'admin',         password: 'FH_Admin_2026'  },
+  { email: 'admin@freeholdproperty.ae',        name: 'Cor',          initials: 'CO', role: 'admin',         password: 'FH_Admin_2026'  },
   { email: 'info@freeholdproperty.ae',         name: 'Office',       initials: 'OF', role: 'admin',         password: 'FH_Admin_2026'  },
   // Brokers (alphabetical)
   { email: 'ahmad@freeholdproperty.ae',        name: 'Ahmad',        initials: 'AH', role: 'broker',        password: 'FH_Broker_2026' },
@@ -45,6 +45,19 @@ const USERS: UserHint[] = [
 ]
 
 type FilterTab = 'all' | 'management' | 'admin' | 'broker'
+
+const TAB_META: Record<FilterTab, { label: string; desc: string }> = {
+  all:        { label: 'All',    desc: 'Everyone on the team' },
+  management: { label: 'Mgmt',   desc: 'Leadership — full access including Management' },
+  admin:      { label: 'Admin',  desc: 'Office desk — day-to-day operations' },
+  broker:     { label: 'Broker', desc: 'Agents — personal workspace & leads' },
+}
+
+function inTab(role: UserHint['role'], t: FilterTab): boolean {
+  if (t === 'all') return true
+  if (t === 'management') return role === 'ceo' || role === 'director'
+  return role === t
+}
 
 export default function ServerAuth() {
   const router = useRouter()
@@ -81,15 +94,8 @@ export default function ServerAuth() {
   }
 
   const q = search.toLowerCase()
-  const visible = USERS.filter((u) => {
-    const matchesTab =
-      tab === 'all' ? true :
-      tab === 'management' ? (u.role === 'ceo' || u.role === 'director') :
-      tab === 'admin'      ? u.role === 'admin' :
-      tab === 'broker'     ? u.role === 'broker' : true
-    const matchesSearch = !q || u.name.toLowerCase().includes(q)
-    return matchesTab && matchesSearch
-  })
+  const visible = USERS.filter((u) => inTab(u.role, tab) && (!q || u.name.toLowerCase().includes(q)))
+  const tabCount = (t: FilterTab) => USERS.filter((u) => inTab(u.role, t)).length
 
   const selectedUser = USERS.find((u) => u.email === selected)
 
@@ -118,15 +124,21 @@ export default function ServerAuth() {
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setTab(t)}
+                  onClick={() => { setTab(t); setSearch('') }}
                   className={[
-                    'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors capitalize',
+                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
                     tab === t
                       ? 'bg-slate-700 text-white'
                       : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/60',
                   ].join(' ')}
                 >
-                  {t === 'management' ? 'Mgmt' : t.charAt(0).toUpperCase() + t.slice(1)}
+                  {TAB_META[t].label}
+                  <span className={[
+                    'rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums',
+                    tab === t ? 'bg-slate-900/60 text-slate-300' : 'bg-slate-800 text-slate-500',
+                  ].join(' ')}>
+                    {tabCount(t)}
+                  </span>
                 </button>
               ))}
             </div>
@@ -140,6 +152,11 @@ export default function ServerAuth() {
                 className="w-28 rounded-lg border border-slate-800 bg-slate-800/50 py-1 pl-7 pr-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-600 transition-colors"
               />
             </div>
+          </div>
+
+          {/* Active-tab description */}
+          <div className="border-b border-slate-800/60 px-4 py-2">
+            <p className="text-[11px] text-slate-500">{TAB_META[tab].desc}</p>
           </div>
 
           {/* User grid */}
@@ -156,7 +173,7 @@ export default function ServerAuth() {
                       key={u.email}
                       type="button"
                       onClick={() => selectUser(u)}
-                      title={`${u.name} · ${ROLE_LABELS[u.role]}`}
+                      title={u.name}
                       className={[
                         'flex flex-col items-center gap-1.5 rounded-xl border px-2 py-2.5 text-center transition-all',
                         isSel
@@ -173,12 +190,6 @@ export default function ServerAuth() {
                       </div>
                       <div className="w-full min-w-0">
                         <div className="truncate text-[11px] font-medium text-slate-200 leading-tight">{u.name}</div>
-                        <div
-                          className="mt-0.5 truncate text-[9px] font-semibold leading-tight"
-                          style={{ color }}
-                        >
-                          {ROLE_LABELS[u.role]}
-                        </div>
                       </div>
                     </button>
                   )
@@ -196,8 +207,6 @@ export default function ServerAuth() {
               <span>
                 Signing in as{' '}
                 <span style={{ color: ROLE_COLORS[selectedUser.role] }}>{selectedUser.name}</span>
-                {' '}·{' '}
-                <span style={{ color: ROLE_COLORS[selectedUser.role] }}>{ROLE_LABELS[selectedUser.role]}</span>
               </span>
             ) : (
               'Secure Authentication'
