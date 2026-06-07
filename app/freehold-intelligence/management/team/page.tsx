@@ -6,6 +6,7 @@ import {
   Clock, MessageSquare, Star, Award, Activity,
   CheckCircle2, Circle,
 } from 'lucide-react'
+import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,19 +283,9 @@ export default function TeamPerformancePage() {
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
 
-        {/* ── Summary stats ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {SUMMARY_STATS.map(stat => (
-            <div key={stat.label} className="rounded-xl border border-line bg-surface p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className={['flex h-8 w-8 items-center justify-center rounded-lg border', stat.bg].join(' ')}>
-                  <stat.icon className={['h-4 w-4', stat.color].join(' ')} />
-                </div>
-                <span className="text-xs text-slate-500">{stat.label}</span>
-              </div>
-              <p className="text-2xl font-semibold text-white tabular-nums">{stat.value}</p>
-              <p className="mt-1 text-xs text-slate-600">{stat.sub}</p>
-            </div>
+            <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.sub} Icon={stat.icon} />
           ))}
         </div>
 
@@ -302,11 +293,10 @@ export default function TeamPerformancePage() {
           {/* ── Left + center: table + rankings ──────────────────────────── */}
           <div className="xl:col-span-2 space-y-6">
 
-            {/* Agent table */}
-            <div className="rounded-xl border border-line bg-surface">
-              <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5">
-                <span className="text-sm font-semibold text-white">All Agents</span>
-                <div className="flex items-center gap-2">
+            <Panel>
+              <PanelHeader
+                title="All Agents"
+                action={<div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Sort by:</span>
                   {(['leadsClosed', 'conversion', 'calls'] as const).map(key => (
                     <button
@@ -322,8 +312,7 @@ export default function TeamPerformancePage() {
                       {key === 'leadsClosed' ? 'Closed' : key === 'conversion' ? 'Conv %' : 'Calls'}
                     </button>
                   ))}
-                </div>
-              </div>
+                </div>} />
 
               {/* Table header */}
               <div className="hidden md:grid grid-cols-[1fr_100px_80px_80px_80px_90px_100px_90px] gap-3 border-b border-line px-5 py-2.5">
@@ -436,14 +425,10 @@ export default function TeamPerformancePage() {
                   )
                 })}
               </div>
-            </div>
+            </Panel>
 
-            {/* Performance rankings */}
-            <div className="rounded-xl border border-line bg-surface">
-              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-                <Award className="h-4 w-4 text-gold" />
-                <span className="text-sm font-semibold text-white">Top Performers — This Month</span>
-              </div>
+            <Panel>
+              <PanelHeader title="Top Performers — This Month" icon={<Award className="h-4 w-4 text-gold" />} />
               <div className="grid gap-3 p-4 sm:grid-cols-3">
                 {top3.map((agent, i) => (
                   <div
@@ -481,18 +466,17 @@ export default function TeamPerformancePage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </Panel>
           </div>
 
           {/* ── Right column ─────────────────────────────────────────────── */}
           <div className="space-y-6">
 
-            {/* CRM activity feed */}
-            <div className="rounded-xl border border-line bg-surface">
-              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-sm font-semibold text-white">Recent CRM Activity</span>
-              </div>
+            <Panel>
+              <PanelHeader
+                title="Recent CRM Activity"
+                icon={<span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              />
               <div className="divide-y divide-line">
                 {CRM_FEED.map(item => {
                   const Icon   = ACTIVITY_ICONS[item.type]
@@ -517,15 +501,10 @@ export default function TeamPerformancePage() {
                   )
                 })}
               </div>
-            </div>
+            </Panel>
 
-            {/* Response time heatmap */}
-            <div className="rounded-xl border border-line bg-surface">
-              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-                <Clock className="h-4 w-4 text-slate-400" />
-                <span className="text-sm font-semibold text-white">Activity Heatmap</span>
-                <span className="ml-auto text-xs text-slate-500">This week</span>
-              </div>
+            <Panel>
+              <PanelHeader title="Activity Heatmap" icon={<Clock className="h-4 w-4 text-slate-400" />} action={<span className="text-xs text-slate-500">This week</span>} />
               <div className="p-4">
                 {/* Hour labels */}
                 <div className="mb-2 grid gap-1" style={{ gridTemplateColumns: `36px repeat(${HEATMAP_HOURS.length}, 1fr)` }}>
@@ -556,10 +535,9 @@ export default function TeamPerformancePage() {
                   <span className="text-[10px] text-slate-600">Peak</span>
                 </div>
               </div>
-            </div>
+            </Panel>
 
-            {/* Response time by agent */}
-            <div className="rounded-xl border border-line bg-surface">
+            <Panel>
               <div className="border-b border-line px-5 py-3.5">
                 <span className="text-sm font-semibold text-white">Response Time</span>
                 <p className="mt-0.5 text-xs text-slate-500">Avg minutes to first contact</p>
@@ -597,7 +575,7 @@ export default function TeamPerformancePage() {
                     )
                   })}
               </div>
-            </div>
+            </Panel>
           </div>
         </div>
       </div>

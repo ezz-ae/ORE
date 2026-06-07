@@ -7,6 +7,7 @@ import {
   leadMachineListings,
   type LeadMachineListing,
 } from '@/src/features/freehold-intelligence/lead-machine'
+import { PageHeader } from '@/components/freehold/ui'
 
 function dot(value: string) {
   const v = value.toLowerCase()
@@ -158,26 +159,17 @@ export default function ListingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <LayoutList className="h-3.5 w-3.5" /> Active Listings
-        </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-          Active Listings
-        </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
-          <span className="text-white">{total} listings</span> in the current curated set.{' '}
-          {ready > 0 ? (
-            <>
-              <span className="text-white">{ready}</span> ready for paid traffic — the rest are pending
-              data, approvals, or landing generation.
-            </>
-          ) : (
-            'None are fully ready yet — resolve blockers to unlock campaigns.'
-          )}
-        </p>
-      </section>
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-8">
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={LayoutList}
+        title={`${total} listings`}
+        subtitle={
+          ready > 0
+            ? `${ready} ready for paid traffic — the rest pending data, approvals, or landing generation.`
+            : 'None are fully ready yet — resolve blockers to unlock campaigns.'
+        }
+      />
 
       <section className="mt-16">
         <div className="flex items-end justify-between">
