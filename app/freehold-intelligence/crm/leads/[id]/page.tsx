@@ -9,7 +9,6 @@ import {
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
 
 function urgencyTone(u: string) {
@@ -165,35 +164,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <SuggestedMessageActions message={lead.suggestedMessage} phone={lead.phone} leadId={lead.id} />
           </div>
 
-          {/* AI Prompt */}
-          <AiPrompt
-            placeholder={`Ask about ${lead.name}…`}
-            suggestions={[
-              `Draft a follow-up for ${lead.name} about payment plan.`,
-              `What project best matches ${lead.name}'s intent?`,
-              `Compare options for ${lead.name}'s budget.`,
-              `Write a re-engagement message for ${lead.name}.`,
-            ]}
-            context={{
-              lead: {
-                name: lead.name,
-                phone: lead.phone,
-                stage: lead.pipelineStage,
-                temperature: lead.temperature,
-                budget: lead.budgetAED,
-                project: lead.projectInterest,
-                intentScore: lead.intentScore,
-                urgency: lead.urgency,
-                source: lead.source,
-                assignedAgent: lead.assignedAgent,
-                aiSummary: lead.aiSummary,
-                nextBestAction: lead.nextBestAction,
-                suggestedMessage: lead.suggestedMessage,
-                duplicateRisk: lead.duplicateRisk,
-                wrongNumberRisk: lead.wrongNumberRisk,
-              },
-            }}
-          />
         </div>
 
         {/* Sidebar */}

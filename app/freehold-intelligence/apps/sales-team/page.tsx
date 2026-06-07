@@ -9,7 +9,6 @@ import {
   crmInboxLeads,
   crmFollowUpQueue,
 } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
   available:   { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', label: 'Available'   },
@@ -367,17 +366,6 @@ export default function SalesTeamPage() {
         </section>
       )}
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about agents, capacity, assignments, wins…"
-          suggestions={[
-            'Which agent should take the next high-intent lead?',
-            'Who has the most overdue follow-ups?',
-            'Reassign Ahmad\'s hottest lead to an available agent.',
-            'Show team win rate ranking.',
-          ]}
-        />
-      </section>
 
     </div>
   )

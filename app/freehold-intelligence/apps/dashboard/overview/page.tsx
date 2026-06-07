@@ -7,7 +7,6 @@ import {
   serverSummary, serverApps, crmLeads, crmAgentRoster, crmFollowUpQueue,
 } from '@/src/features/freehold-intelligence/server-session'
 import { getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { ActionItems } from './_components/ActionItems'
 
 const INFRA = [
@@ -145,17 +144,6 @@ export default async function DashboardOverviewPage() {
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about the operating overview…"
-          suggestions={[
-            'What needs my attention first today?',
-            'Which apps have unresolved blockers?',
-            'Give me a health summary of the server.',
-          ]}
-        />
       </section>
 
       <section className="mt-8 flex flex-wrap gap-3">

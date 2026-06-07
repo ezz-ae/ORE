@@ -9,7 +9,6 @@ import {
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type PlatformFilter = 'All' | 'Meta' | 'Google'
 
@@ -301,18 +300,6 @@ export default function CampaignAttributionPage() {
         })}
       </div>
 
-      {/* AI Prompt */}
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about campaign performance, attribution gaps, CPL trends…"
-          suggestions={[
-            'Which campaign has the lowest CPL this month?',
-            'Why is Palm Google Search paused?',
-            'How much did we spend vs. leads generated per platform?',
-            'Which campaigns need a landing page assigned?',
-          ]}
-        />
-      </section>
     </div>
   )
 }

@@ -3,8 +3,6 @@
 import { useState, useMemo } from 'react'
 import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus, X } from 'lucide-react'
 import Link from 'next/link'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 type Task = {
   id: string
   priority: 'critical' | 'high' | 'medium' | 'low'
@@ -504,18 +502,6 @@ export default function TasksPage() {
         </p>
       </section>
 
-      {/* AI prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder="Ask about tasks, owners, deadlines, blockers…"
-          suggestions={[
-            'What is due today?',
-            'Show tasks blocked on access.',
-            'Which tasks does the owner need to action?',
-            'Group tasks by milestone.',
-          ]}
-        />
-      </section>
 
     </div>
   )

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, BarChart3, Clock, TrendingUp, ArrowUpRight } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const FUNNEL = [
   { stage: 'Impressions',    value: 84200, prev: 72000, pct: 100, tone: 'bg-sky-400' },
@@ -234,17 +233,6 @@ export default function DashboardAnalyticsPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about performance, channels, conversions…"
-          suggestions={[
-            'Which source has the best conversion rate?',
-            'How does this month compare to last month?',
-            'What is our cost per lead from Meta?',
-          ]}
-        />
       </section>
 
       <section className="mt-6 flex flex-wrap gap-3">

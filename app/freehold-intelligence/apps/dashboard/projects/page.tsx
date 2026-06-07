@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, FolderKanban, ArrowUpRight, AlertCircle } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type AdFilter     = 'All' | 'ready' | 'blocked' | 'needs_assets'
 type ReviewFilter = 'All' | 'approved' | 'pending_approval' | 'open'
@@ -195,17 +194,6 @@ export default function DashboardProjectsPage() {
             })}
           </div>
         )}
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about projects, readiness, status…"
-          suggestions={[
-            'Which projects are ready to launch ads right now?',
-            'What is blocking the Palm Jumeirah campaign?',
-            'List all projects missing landing pages.',
-          ]}
-        />
       </section>
 
       <section className="mt-6 flex flex-wrap gap-3">

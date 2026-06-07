@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 import { crmInboxLeads, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type FilterTab = 'All' | 'Unassigned' | 'Assigned' | 'Contacted'
@@ -284,14 +283,6 @@ export default function CrmInboxPage() {
               </div>
             </Panel>
 
-            <AiPrompt
-              placeholder="Ask about new leads…"
-              suggestions={[
-                'Who should handle the critical referral?',
-                'Which source sent the highest-intent lead today?',
-                'Assign all unassigned leads to best-fit agents.',
-              ]}
-            />
 
           </div>
         </aside>

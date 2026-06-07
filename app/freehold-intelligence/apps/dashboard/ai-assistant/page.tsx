@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Bot, ArrowUpRight, Zap, BookOpen, Loader2, X, Copy, CheckCircle2 } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const QUICK_ACTIONS = [
   { label: 'Brief me on today', prompt: 'Give me a 60-second briefing on the most important things across CRM, Lead Machine, and approvals right now.' },
@@ -77,19 +76,6 @@ export default function DashboardAiAssistantPage() {
         <p className="mt-5 max-w-xl text-[17px] leading-[1.65] text-slate-400">
           Briefings, ad copy, follow-up scripts, comparisons, summaries. The AI follows context across CRM, Lead Machine, and Notebook.
         </p>
-      </section>
-
-      {/* Main prompt */}
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about leads, campaigns, performance, copy…"
-          suggestions={[
-            'Brief me on today across all surfaces.',
-            'Draft a WhatsApp for the hottest lead.',
-            'Which listings are ready for Meta ads?',
-            'Give me the top 3 investor angles for Palm Jumeirah.',
-          ]}
-        />
       </section>
 
       {/* Quick action prompts */}

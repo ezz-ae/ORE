@@ -7,7 +7,6 @@ import {
   leadMachineLandings,
   getLeadMachineSummary,
 } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
 
 function scoreBg(score: number) {
@@ -239,18 +238,6 @@ export default function LeadMachineOverviewPage() {
         </p>
       </section>
 
-      {/* AI prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder="Ask about listings, landings, blockers, campaign readiness…"
-          suggestions={[
-            'Which listings are ready for ads?',
-            'What is blocking Meta launch today?',
-            'Show the full readiness matrix.',
-            'Draft a landing request for Business Bay.',
-          ]}
-        />
-      </section>
 
     </div>
   )

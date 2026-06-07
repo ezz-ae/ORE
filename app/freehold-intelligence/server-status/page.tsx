@@ -1,7 +1,5 @@
 import { ShieldCheck } from 'lucide-react'
 import { getAuditEvents, getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 const INFRA = [
   { label: 'Neon database',    status: 'live',    note: 'freehold_site_projects and related tables' },
   { label: 'Vercel deployment',status: 'live',    note: 'Production and preview pipelines' },
@@ -36,17 +34,6 @@ export default async function ServerStatusPage() {
         <p className="mt-7 max-w-2xl text-lg leading-[1.6] text-slate-300">
           <span className="text-white">{Number(snapshot.total_projects).toLocaleString()} projects</span> across {snapshot.total_areas} areas and {snapshot.total_developers} developers. {snapshot.audit_events_24h} actions logged in the last 24 hours.
         </p>
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about uptime, audit, infrastructure…"
-          suggestions={[
-            'What is pending production hardening?',
-            'Show recent audit events.',
-            'How many projects today vs last week?',
-          ]}
-        />
       </section>
 
       <section className="mt-20">

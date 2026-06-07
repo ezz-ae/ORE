@@ -1,6 +1,5 @@
 import { Flag } from 'lucide-react'
 import { getMilestones } from '@/src/features/freehold-intelligence/data-access'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { MilestonesList } from './_components/MilestonesList'
 
 export default async function MilestonesPage() {
@@ -23,17 +22,6 @@ export default async function MilestonesPage() {
         <p className="mt-7 max-w-2xl text-lg leading-[1.6] text-slate-300">
           <span className="text-white">{overall}% overall</span> across {milestones.length} milestones, with {done} {done === 1 ? 'complete' : 'completed'}. Each milestone carries an owner, a deadline and a clear success event.
         </p>
-      </section>
-
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about milestones, deadlines, owners…"
-          suggestions={[
-            'Which milestones are at risk?',
-            'What is M5 waiting on?',
-            'Show milestones due in 30 days.',
-          ]}
-        />
       </section>
 
       <section className="mt-16">

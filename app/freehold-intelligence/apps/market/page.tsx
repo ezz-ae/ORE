@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Database, Search, TrendingUp, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { projects } from '@/src/data/projects'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import type { ProjectStatus } from '@/src/types/project'
 
 type SortKey    = 'readiness' | 'price' | 'name'
@@ -104,19 +103,6 @@ export default function MarketIntelligencePage() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* AI Prompt */}
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about any project, area, payment plan, buyer profile…"
-          suggestions={[
-            'Which projects are ready for Meta ads today?',
-            'Compare Palm Jumeirah vs Dubai Hills for HNW buyers.',
-            'Show all off-plan below AED 1M.',
-            'What is the best Business Bay angle?',
-          ]}
-        />
       </section>
 
       {/* Search + Filters */}

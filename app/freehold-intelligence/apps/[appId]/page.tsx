@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, AlertCircle, MessageSquare, Clock, CheckCircle2, Blocks } from 'lucide-react'
 import { getServerApp } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 function statusTone(s: string) {
   if (s === 'live')        return { dot: 'bg-gold', text: 'text-gold', bg: 'bg-gold/10 border-gold/20', label: 'Live' }
@@ -77,17 +77,6 @@ export default async function GenericServerAppPage({ params }: { params: Promise
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-100">{app.nextAction}</p>
         </div>
-      </section>
-
-      <section className="mt-8">
-        <AiPrompt
-          placeholder={`Ask about ${app.name}…`}
-          suggestions={[
-            `What is blocking ${app.name}?`,
-            `Summarise the current status of ${app.name}.`,
-            `What should be done next in ${app.name}?`,
-          ]}
-        />
       </section>
 
       <section className="mt-8 rounded-[20px] border border-line bg-surface p-6">

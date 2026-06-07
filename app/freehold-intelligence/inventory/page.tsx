@@ -13,7 +13,6 @@ import {
   type AdCandidate,
   type AdVerdict,
 } from '@/src/features/freehold-intelligence/inventory'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
@@ -230,28 +229,6 @@ export default function InventoryPage() {
           </div>
         )}
 
-        {/* Web Designer AI */}
-        <div className="mt-5 rounded-xl border border-gold/12 bg-gradient-to-br from-gold/[0.04] to-transparent p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gold/80">
-            <Sparkles className="h-3.5 w-3.5" /> Web Designer
-          </div>
-          <AiPrompt
-            skill="web_designer"
-            placeholder="Ask the Web Designer which properties to advertise, or to design a landing page…"
-            suggestions={[
-              'Which 3 properties should we advertise this week, and why?',
-              'Design a landing page hero for the top pick.',
-              'Which listings are wasting budget and should pause?',
-              'What single fix unblocks the most properties?',
-            ]}
-            context={{
-              topPicks: analysis.topPicks.map((c) => ({ name: c.name, area: c.area, score: c.score, roi: c.roi, leads30d: c.leads30d, landing: c.landingStatus, verdict: c.verdict })),
-              fixFirst: analysis.fixFirst.map((c) => ({ name: c.name, nextAction: c.nextAction })),
-              missedOpportunities: analysis.missedOpportunities.map((c) => ({ name: c.name, roi: c.roi })),
-              counts: analysis.counts,
-            }}
-          />
-        </div>
       </section>
 
       {/* Controls */}

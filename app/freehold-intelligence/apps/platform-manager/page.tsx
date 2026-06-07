@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowLeft, Globe, Database, ArrowUpRight } from 'lucide-react'
 import { getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { RouteSections } from './_components/RouteSections'
 
 type RouteStatus = 'live' | 'pending' | 'planned' | 'down'
@@ -140,17 +139,6 @@ export default async function PlatformManagerPage() {
         </Link>
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about routes, deployment, infrastructure…"
-          suggestions={[
-            'Which pages need auth middleware before wider exposure?',
-            'What is the current deployment health status?',
-            'Show all pending route items.',
-            'How many API routes are live vs planned?',
-          ]}
-        />
-      </section>
 
     </div>
   )

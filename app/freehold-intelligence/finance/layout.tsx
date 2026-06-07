@@ -2,15 +2,18 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, DollarSign } from 'lucide-react'
+import {
+  ArrowLeft, DollarSign,
+  LayoutDashboard, Receipt, CreditCard, FileCheck2, BarChart3, Wallet,
+} from 'lucide-react'
 
 const tabs = [
-  { label: 'Overview',       href: '/freehold-intelligence/finance',                exact: true },
-  { label: 'Invoices',       href: '/freehold-intelligence/finance/invoices' },
-  { label: 'Payments',       href: '/freehold-intelligence/finance/payments' },
-  { label: 'Contracts',      href: '/freehold-intelligence/finance/contracts' },
-  { label: 'Reports',        href: '/freehold-intelligence/finance/reports' },
-  { label: 'Agent Credits',  href: '/freehold-intelligence/finance/credits', divider: true },
+  { label: 'Overview',       href: '/freehold-intelligence/finance',                exact: true, Icon: LayoutDashboard },
+  { label: 'Invoices',       href: '/freehold-intelligence/finance/invoices',                    Icon: Receipt         },
+  { label: 'Payments',       href: '/freehold-intelligence/finance/payments',                    Icon: CreditCard      },
+  { label: 'Contracts',      href: '/freehold-intelligence/finance/contracts',                   Icon: FileCheck2      },
+  { label: 'Reports',        href: '/freehold-intelligence/finance/reports',                     Icon: BarChart3       },
+  { label: 'Agent Credits',  href: '/freehold-intelligence/finance/credits',                     Icon: Wallet          },
 ]
 
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
@@ -45,24 +48,27 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
       {/* Body */}
       <div className="flex flex-1">
 
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-chrome">
+        {/* Desktop sidebar — auto-collapse */}
+        <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-0.5">
             {tabs.map((tab) => {
               const active = isActive(tab)
+              const Icon   = tab.Icon
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
                   className={[
-                    'flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                    'flex items-center rounded-lg px-[13px] py-2.5 text-sm font-medium transition-colors',
                     active
                       ? 'bg-gold/10 text-white border border-gold/15'
                       : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
-                    tab.divider ? 'mt-4 pt-4 border-t border-white/[0.07]' : '',
                   ].join(' ')}
                 >
-                  {tab.label}
+                  <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
+                  <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
+                    {tab.label}
+                  </span>
                 </Link>
               )
             })}

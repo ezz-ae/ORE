@@ -2,8 +2,6 @@
 
 import Link from 'next/link'
 import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 const CONTENT_TYPES = [
   { label: 'Listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,      summary: '28 listings',          alert: '5 need updates',       alertColor: 'text-slate-400' },
   { label: 'Areas',      href: '/freehold-intelligence/ai-manager/areas',      icon: MapPin,   summary: '12 area guides',        alert: '3 missing content',    alertColor: 'text-amber-400' },
@@ -90,17 +88,6 @@ export default function AiManagerPage() {
           <p className="mb-4 text-sm text-slate-400">
             Ask about content gaps, publishing priorities, SEO fixes, or landing page health.
           </p>
-          <AiPrompt
-            skill="web_manager"
-            placeholder="What content needs publishing or fixing?"
-            suggestions={[
-              'What pages or listings are missing content?',
-              'Which landing pages should be published first?',
-              'Prioritise SEO fixes by traffic impact.',
-              'Any live ads pointing at missing or draft pages?',
-            ]}
-            context={SITE_CONTEXT}
-          />
         </div>
 
       </div>

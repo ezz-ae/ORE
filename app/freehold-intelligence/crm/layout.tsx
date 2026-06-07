@@ -105,13 +105,16 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
       {/* ── Body ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-1">
 
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-chrome">
-          <nav className="flex-1 px-3 py-4 space-y-5">
+        {/* Desktop sidebar — auto-collapse: icon-only at rest, full width on hover */}
+        <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
+          <nav className="flex-1 px-2 py-4 space-y-5">
             {NAV_SECTIONS.map((section) => (
               <div key={section.label}>
-                <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  {section.label}
+                {/* Section label — fades in on hover */}
+                <div className="mb-1.5 h-4 px-2.5">
+                  <span className="block whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150">
+                    {section.label}
+                  </span>
                 </div>
                 <div className="space-y-0.5">
                   {section.items.map((item) => {
@@ -123,22 +126,25 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
                         key={item.href}
                         href={item.href}
                         className={[
-                          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
+                          'flex items-center rounded-lg px-[13px] py-2 text-sm font-medium transition-colors',
                           active
                             ? 'bg-gold/10 text-white border border-gold/15'
                             : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
                         ].join(' ')}
                       >
                         <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
-                        <span className="flex-1 truncate">{item.label}</span>
+                        <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
+                          {item.label}
+                        </span>
                         {badge !== undefined && (
-                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                          <span className={[
+                            'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums overflow-hidden max-w-0 opacity-0 group-hover/nav:max-w-[3rem] group-hover/nav:opacity-100 transition-all duration-150',
                             item.href.includes('follow-up') && criticalCount > 0
                               ? 'bg-red-400/15 text-red-300'
                               : active
                                 ? 'bg-gold/20 text-gold'
-                                : 'bg-surface-3 text-slate-400'
-                          }`}>
+                                : 'bg-surface-3 text-slate-400',
+                          ].join(' ')}>
                             {badge}
                           </span>
                         )}

@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 
 // Static pipeline value data per stage
@@ -173,16 +172,6 @@ export default function CrmPipelinePage() {
             </section>
           ))}
 
-          <section className="mt-14">
-            <AiPrompt
-              placeholder="Ask about pipeline, stage velocity, conversion…"
-              suggestions={[
-                'Which stage has the most stalled leads?',
-                'Which agents have the most hot leads right now?',
-                'What is the average time to move from Qualified to Hot?',
-              ]}
-            />
-          </section>
         </div>
 
         {/* Sidebar */}

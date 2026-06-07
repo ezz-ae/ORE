@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, Section, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 // Static lead-source data (30-day window)
@@ -320,16 +319,6 @@ export default function CrmReportsPage() {
             </Panel>
           </Section>
 
-          <section className="mt-10">
-            <AiPrompt
-              placeholder="Ask about lead volume, conversion, agent performance…"
-              suggestions={[
-                'Which source has the highest conversion rate?',
-                'How many leads came in this week vs last?',
-                'Summarise the call connect rate by agent.',
-              ]}
-            />
-          </section>
         </div>
 
         {/* Sidebar */}

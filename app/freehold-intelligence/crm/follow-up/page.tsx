@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
 import { crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
@@ -249,14 +248,6 @@ export default function FollowUpQueuePage() {
               </div>
             </Panel>
 
-            <AiPrompt
-              placeholder="Ask about follow-ups…"
-              suggestions={[
-                'Which leads are most overdue?',
-                'Draft a follow-up for the most critical lead.',
-                'Which agent has the most overdue follow-ups?',
-              ]}
-            />
 
           </div>
         </aside>

@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Building2, MapPin, Calendar, CreditCard, Users, Megaphone, TrendingUp, BookOpen, Target } from 'lucide-react'
 import { projects } from '@/src/data/projects'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
   if (s === 'Ready') return { dot: 'bg-gold', text: 'text-gold', bg: 'bg-gold/10 border-gold/20' }
@@ -131,19 +130,6 @@ export default async function MarketProjectDetailPage({ params }: { params: Prom
             ))}
           </div>
         </div>
-      </section>
-
-      {/* AI Prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder={`Ask about ${project.projectName}…`}
-          suggestions={[
-            `Draft a WhatsApp opener for ${project.projectName}.`,
-            `Write a Meta ad for ${project.area} targeting ${project.buyerProfile.split(',')[0]}.`,
-            `Compare ${project.projectName} vs similar in ${project.area}.`,
-            `Create a 1-page briefing for ${project.developer}.`,
-          ]}
-        />
       </section>
 
       {/* Action bar */}

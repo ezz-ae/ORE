@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Database, CheckCircle2, AlertCircle, Image, FileText, ArrowUpRight } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type FieldStatus = true | false | 'partial'
 
@@ -297,16 +296,6 @@ export default function DataEngineeringPage() {
         </div>
       </section>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about data gaps, media quality, field completeness…"
-          suggestions={[
-            'Which listing has the most critical missing fields?',
-            'What data does Business Bay still need before launch?',
-            'Which areas have the strongest data coverage?',
-          ]}
-        />
-      </section>
 
     </div>
   )

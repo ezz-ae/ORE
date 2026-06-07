@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Megaphone, CheckCircle2, Clock, AlertCircle, ArrowUpRight, Sparkles, X } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
 type AngleItem = { id: string; title: string; platform: string; headline: string; hook: string; status: 'pending_approval' | 'draft' | 'approved' }
@@ -314,17 +313,6 @@ export default function SocialMediaManagerPage() {
         <p className="mt-3 text-base leading-[1.65] text-slate-100">
           The Dubai Hills yield angle is approved and ready for launch. The Palm angle is one approval away — the scarcity + yield combination is the strongest angle for this market right now. Approve it before the weekend schedule.
         </p>
-      </section>
-
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about campaign angles, captions, approval queue…"
-          suggestions={[
-            'Which angle should launch first this week?',
-            'Write a LinkedIn caption for the Hills yield data.',
-            'What Palm angle would perform best with UAE investors?',
-          ]}
-        />
       </section>
 
       <MarketingExpertPanel

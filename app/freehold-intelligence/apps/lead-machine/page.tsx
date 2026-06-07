@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Zap, BarChart2 } from 'lucide-react'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import {
   leadMachineListings,
   type LeadMachineListing,
@@ -170,14 +169,6 @@ export default async function LeadMachinePage() {
             </div>
           </div>
 
-          {/* Mobile AI prompt */}
-          <section className="mt-8 lg:hidden">
-            <AiPrompt
-              placeholder="Ask about listings, landings, ads, blockers…"
-              suggestions={['Which listings are ready for ads?', 'What is blocking Meta launch?', 'Show the readiness matrix.']}
-            />
-          </section>
-
           {/* Listings */}
           <section className="mt-12">
             <div className="flex items-end justify-between">
@@ -268,16 +259,6 @@ export default async function LeadMachinePage() {
               </div>
             </div>
 
-            {/* AI Prompt */}
-            <AiPrompt
-              placeholder="Ask about listings, landings, ads, blockers…"
-              suggestions={[
-                'Which listings are ready for ads?',
-                'What is blocking Meta launch?',
-                'Show the readiness matrix.',
-                'Draft a landing request for Business Bay.',
-              ]}
-            />
 
           </div>
         </aside>

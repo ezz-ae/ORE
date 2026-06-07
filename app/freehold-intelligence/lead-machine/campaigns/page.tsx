@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, CheckCircle2, Pause, ArrowUpRight, Zap } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 
@@ -134,16 +133,6 @@ export default async function CampaignsPage() {
         </div>
       )}
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about campaign performance, spend, leads…"
-          suggestions={[
-            'Which campaign has the lowest cost per lead?',
-            'How much did we spend on Meta this month?',
-            'Which campaigns should I pause?',
-          ]}
-        />
-      </section>
 
     </div>
   )

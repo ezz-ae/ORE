@@ -6,7 +6,7 @@ import {
   Zap, BookOpen, Users, Globe, Settings,
 } from 'lucide-react'
 import { agentConnections, agentProfile, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 const CATEGORY_META: Record<AgentConnection['category'], { label: string; color: string }> = {
   crm:        { label: 'CRM',        color: 'text-orange-400' },
@@ -199,29 +199,6 @@ export default function AgentAIPage() {
         </div>
       </section>
 
-      {/* Agent AI — real CRM Advisor */}
-      <section className="mt-8">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Ask your agent</div>
-        <AiPrompt
-          skill="crm_advisor"
-          placeholder="How many critical leads? Draft a WhatsApp? Who to call first?"
-          suggestions={[
-            'How many critical leads do I have right now?',
-            'Draft a WhatsApp for my offer lead.',
-            'Which connection needs setup?',
-            'Summarise my Palm Jumeirah performance.',
-          ]}
-          context={{
-            agent: { name: agentProfile.name, tier: agentProfile.tier, title: agentProfile.title },
-            pipeline: { activeLeads, criticalLeads },
-            leads: agentPipelineLeads.slice(0, 8).map(l => ({
-              name: l.name, stage: l.pipelineStage, urgency: l.urgency,
-              property: l.property, note: l.note,
-            })),
-            connections: connections.map(c => ({ name: c.name, status: c.status, category: c.category })),
-          }}
-        />
-      </section>
 
     </div>
   )

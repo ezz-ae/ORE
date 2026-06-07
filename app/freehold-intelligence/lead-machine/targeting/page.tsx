@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders, Search, X } from 'lucide-react'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import type { TargetingUseCase } from '@/lib/meta/types'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 const USE_CASE_CONFIG: Record<TargetingUseCase, { label: string; color: string; badge: string }> = {
   investor:       { label: 'Investor',       color: 'text-gold',   badge: 'border-gold/25 bg-gold/10 text-[#F8E7AE]'   },
@@ -255,17 +255,6 @@ export default function TargetingPage() {
         </div>
       </section>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about targeting, audiences, reach, demographics…"
-          suggestions={[
-            'Which audience template works best for Palm Jumeirah?',
-            'How do I target Golden Visa buyers specifically?',
-            'What age range converts best for investment property in Dubai?',
-            'Should I use broad or narrow targeting for a new listing?',
-          ]}
-        />
-      </section>
 
     </div>
   )

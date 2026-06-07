@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 interface LeadForm {
   id: string
@@ -183,16 +182,6 @@ export default async function FormsPage() {
         </section>
       )}
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about forms, lead quality, submission rates…"
-          suggestions={[
-            'Which form has the best lead quality?',
-            'How many leads came from forms this month?',
-            'What questions convert best on UAE real estate forms?',
-          ]}
-        />
-      </section>
 
     </div>
   )

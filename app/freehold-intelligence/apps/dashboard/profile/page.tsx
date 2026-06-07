@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, UserCog, Shield, Users, ArrowUpRight, CheckCircle2, Bell } from 'lucide-react'
 import { currentServerUser, getRoleScope, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const ACCOUNT_LEVELS: Record<string, { label: string; description: string }> = {
   owner:    { label: 'Owner',    description: 'Full access — all modules, all data, all configuration.' },
@@ -157,15 +156,6 @@ export default function DashboardProfilePage() {
             </div>
           </div>
 
-          {/* AI prompt */}
-          <AiPrompt
-            placeholder="Ask about access, roles, permissions…"
-            suggestions={[
-              'What can a sales agent see in the system?',
-              'How do I add a new team member?',
-              'What is the difference between owner and admin access?',
-            ]}
-          />
         </div>
 
         {/* Sidebar: team */}

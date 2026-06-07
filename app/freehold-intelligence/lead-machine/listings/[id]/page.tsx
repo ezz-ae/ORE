@@ -8,7 +8,6 @@ import {
   leadMachineListings, leadMachineLandings, leadMachineAdRequests,
   getLeadMachineRequirements, getLeadMachineComments
 } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { ListingWorkspace } from './_components/ListingWorkspace'
 
 function scoreTone(n: number) {
@@ -251,17 +250,6 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </Link>
       </section>
 
-      {/* AI Prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder={`Ask about ${listing.projectName}…`}
-          suggestions={[
-            `What is blocking ${listing.projectName} from launch?`,
-            `Draft a landing brief for ${listing.projectName}.`,
-            `Best ad angle for ${listing.area} campaign.`,
-          ]}
-        />
-      </section>
     </div>
   )
 }

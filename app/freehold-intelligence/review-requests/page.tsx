@@ -3,8 +3,6 @@
 import { useState, useMemo } from 'react'
 import { CheckSquare, AlertCircle, Clock, MessageSquare, CheckCircle2, ArrowUpRight, Sparkles, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 type ReviewType = 'approval' | 'decision' | 'correction' | 'access request' | 'comment'
 type ReviewPriority = 'critical' | 'high' | 'medium' | 'low'
 
@@ -364,19 +362,6 @@ export default function ReviewRequestsPage() {
         </p>
       </section>
 
-      {/* AI prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          skill="server_ops"
-          placeholder="Ask about approvals, reviews, blockers…"
-          suggestions={[
-            'What needs my approval today?',
-            'What is the fastest path to launch?',
-            'Show all landing reviews pending.',
-            'Which approvals are time-sensitive?',
-          ]}
-        />
-      </section>
 
     </div>
   )

@@ -7,29 +7,20 @@ import { toast } from 'sonner'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
   ArrowRight, Users, AlertTriangle, Zap, Clock,
-  TrendingUp, Target,
+  TrendingUp, Target, UserCircle2,
 } from 'lucide-react'
 import {
   crmLeads,
   type PipelineStage,
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
+import { useSession } from '@/lib/freehold/use-session'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function initials(name: string) {
   return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
-}
-
-function relTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const m = Math.floor(diff / 60_000)
-  if (m < 60)  return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24)  return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
 }
 
 function intentColor(n: number) {
@@ -60,7 +51,6 @@ const STAGE_CONFIG: Record<PipelineStage, { label: string; dot: string; badge: s
 const ACTIVE_STAGES: PipelineStage[] = ['new', 'contacted', 'qualified', 'viewing', 'negotiation']
 const ALL_STAGES:    PipelineStage[] = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed', 'lost']
 
-// Pipeline budget midpoints (AED)
 const BUDGET_MID: Record<string, number> = {
   lead_001: 4_000_000, lead_002: 1_750_000, lead_011: 3_500_000,
   lead_004: 1_800_000, lead_012: 2_500_000, lead_013: 2_000_000, lead_014: 900_000,
@@ -70,13 +60,48 @@ const BUDGET_MID: Record<string, number> = {
 }
 const PIPELINE_VALUE = Object.values(BUDGET_MID).reduce((s, v) => s + v, 0)
 
+// ─── Agent stats (for manager view) ──────────────────────────────────────────
+
+interface AgentStat {
+  name: string
+  total: number
+  hot: number
+  urgent: number
+  avgIntent: number
+}
+
+function computeAgentStats(): AgentStat[] {
+  const map = new Map<string, { scores: number[]; hot: number; urgent: number }>()
+  crmLeads.forEach(lead => {
+    if (!map.has(lead.assignedAgent)) map.set(lead.assignedAgent, { scores: [], hot: 0, urgent: 0 })
+    const a = map.get(lead.assignedAgent)!
+    a.scores.push(lead.intentScore)
+    if (lead.temperature === 'hot' || lead.temperature === 'priority') a.hot++
+    if (lead.urgency === 'critical' || lead.urgency === 'high') a.urgent++
+  })
+  return Array.from(map.entries())
+    .map(([name, a]) => ({
+      name,
+      total:     a.scores.length,
+      hot:       a.hot,
+      urgent:    a.urgent,
+      avgIntent: Math.round(a.scores.reduce((s, n) => s + n, 0) / a.scores.length),
+    }))
+    .sort((a, b) => b.total - a.total)
+}
+
+const AGENT_STATS = computeAgentStats()
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
   const router = useRouter()
-  const [query, setQuery]           = useState('')
+  const { user } = useSession()
+  const isManager = user?.role === 'owner' || user?.role === 'admin'
+
+  const [query, setQuery]             = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted]         = useState(false)
   useEffect(() => setMounted(true), [])
 
   const isActive = (l: CRMLeadIntelligence) =>
@@ -103,7 +128,6 @@ export default function FreeholdCrmPage() {
       .sort((a, b) => b.intentScore - a.intentScore)
   }, [query, stageFilter])
 
-  // Top hot leads for sidebar
   const hotLeads = useMemo(() =>
     [...crmLeads]
       .filter(l => isActive(l) && (l.temperature === 'hot' || l.temperature === 'priority'))
@@ -136,44 +160,29 @@ export default function FreeholdCrmPage() {
 
           {/* ── KPI row ── */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatCard
-              label="New leads"
-              value={newCount}
-              hint="awaiting first response"
-              delta={{ value: 'needs action', direction: 'up' }}
-              Icon={Zap}
-            />
-            <StatCard
-              label="Urgent follow-ups"
-              value={urgentCount}
-              hint="critical + high"
-              delta={urgentCount > 0 ? { value: 'act now', direction: 'down' } : undefined}
-              Icon={AlertTriangle}
-            />
-            <StatCard
-              label="Hot leads"
-              value={hotCount}
-              hint="hot + priority"
-              Icon={Target}
-            />
-            <StatCard
-              label="Qualified"
-              value={qualifiedCount}
-              hint="in qualification"
-              Icon={TrendingUp}
-            />
-            <StatCard
-              label="Pipeline"
-              value={`AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`}
-              hint="active estimate"
-              Icon={TrendingUp}
-            />
-            <StatCard
-              label="Avg intent score"
-              value={avgIntent}
-              hint={`${closedCount} closed MTD`}
-              Icon={Users}
-            />
+            {isManager ? (
+              <>
+                <StatCard label="Total leads"    value={crmLeads.length} hint="in pipeline"         Icon={Users}         />
+                <StatCard label="Urgent"         value={urgentCount}     hint="need action now"
+                  delta={urgentCount > 0 ? { value: 'act now', direction: 'down' } : undefined}    Icon={AlertTriangle} />
+                <StatCard label="Hot leads"      value={hotCount}        hint="hot + priority"       Icon={Target}        />
+                <StatCard label="New this cycle" value={newCount}        hint="awaiting response"
+                  delta={{ value: 'assign now', direction: 'up' }}                                  Icon={Zap}           />
+                <StatCard label="Pipeline"       value={`AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`} hint="active estimate" Icon={TrendingUp} />
+                <StatCard label="Closed MTD"     value={closedCount}     hint={`avg intent ${avgIntent}`} Icon={Users}    />
+              </>
+            ) : (
+              <>
+                <StatCard label="New leads"           value={newCount}       hint="awaiting first response"
+                  delta={{ value: 'needs action', direction: 'up' }}         Icon={Zap}           />
+                <StatCard label="Urgent follow-ups"   value={urgentCount}    hint="critical + high"
+                  delta={urgentCount > 0 ? { value: 'act now', direction: 'down' } : undefined}   Icon={AlertTriangle} />
+                <StatCard label="Hot leads"           value={hotCount}       hint="hot + priority"  Icon={Target}        />
+                <StatCard label="Qualified"           value={qualifiedCount} hint="in qualification" Icon={TrendingUp}    />
+                <StatCard label="Pipeline"            value={`AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`} hint="active estimate" Icon={TrendingUp} />
+                <StatCard label="Avg intent score"    value={avgIntent}      hint={`${closedCount} closed MTD`} Icon={Users} />
+              </>
+            )}
           </div>
 
           {/* ── Pipeline flow ── */}
@@ -252,6 +261,77 @@ export default function FreeholdCrmPage() {
             </div>
           </div>
 
+          {/* ── Management view: agent performance table ── */}
+          {isManager && (
+            <div className="mb-5 overflow-hidden rounded-xl border border-line bg-surface">
+              <div className="flex items-center justify-between border-b border-line px-4 py-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agent performance</span>
+                <Link
+                  href="/freehold-intelligence/crm/assignment"
+                  className="text-xs text-gold/70 transition hover:text-gold"
+                >
+                  Manage assignment →
+                </Link>
+              </div>
+              {/* Header */}
+              <div className="hidden grid-cols-[1fr_60px_60px_60px_80px] gap-4 border-b border-line px-4 py-2 sm:grid">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Agent</div>
+                <div className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">Leads</div>
+                <div className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hot</div>
+                <div className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">Urgent</div>
+                <div className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500">Avg intent</div>
+              </div>
+              <div className="divide-y divide-line">
+                {AGENT_STATS.map(agent => (
+                  <div
+                    key={agent.name}
+                    className="flex items-center gap-3 px-4 py-3 sm:grid sm:grid-cols-[1fr_60px_60px_60px_80px] sm:gap-4"
+                  >
+                    {/* Agent name */}
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-[10px] font-bold text-slate-400">
+                        {initials(agent.name)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-slate-200">{agent.name}</div>
+                        <div className="text-xs text-slate-500 sm:hidden">
+                          {agent.total} leads · {agent.hot} hot · {agent.urgent} urgent
+                        </div>
+                      </div>
+                    </div>
+                    {/* Leads */}
+                    <div className="hidden text-center text-sm font-semibold tabular-nums text-slate-200 sm:block">
+                      {agent.total}
+                    </div>
+                    {/* Hot */}
+                    <div className="hidden text-center sm:block">
+                      {agent.hot > 0 ? (
+                        <span className="text-sm font-semibold tabular-nums text-red-400">{agent.hot}</span>
+                      ) : (
+                        <span className="text-sm text-slate-600">—</span>
+                      )}
+                    </div>
+                    {/* Urgent */}
+                    <div className="hidden text-center sm:block">
+                      {agent.urgent > 0 ? (
+                        <span className="text-sm font-semibold tabular-nums text-orange-400">{agent.urgent}</span>
+                      ) : (
+                        <span className="text-sm text-slate-600">—</span>
+                      )}
+                    </div>
+                    {/* Avg intent */}
+                    <div className="hidden flex-col items-center gap-1 sm:flex">
+                      <span className="text-sm font-semibold tabular-nums text-slate-200">{agent.avgIntent}</span>
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
+                        <div className={`h-full rounded-full ${intentColor(agent.avgIntent)}`} style={{ width: `${agent.avgIntent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Search + result count ── */}
           <div className="mb-3">
             <div className="relative">
@@ -259,7 +339,7 @@ export default function FreeholdCrmPage() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search leads, projects, agents…"
+                placeholder={isManager ? 'Search all leads, agents, projects…' : 'Search leads, projects, agents…'}
                 className="w-full rounded-xl border border-line bg-surface py-2.5 pl-9 pr-9 text-sm text-white placeholder-slate-500 outline-none transition focus:border-gold/50"
               />
               {query && (
@@ -280,7 +360,6 @@ export default function FreeholdCrmPage() {
 
           {/* ── Lead table ── */}
           <div className="overflow-hidden rounded-xl border border-line bg-surface">
-            {/* Header */}
             <div
               className="hidden items-center gap-4 border-b border-line px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 lg:grid"
               style={{ gridTemplateColumns: '1fr 120px 120px 1fr 80px 60px' }}
@@ -465,6 +544,35 @@ export default function FreeholdCrmPage() {
               </div>
             </Panel>
 
+            {/* Manager: agent workload summary */}
+            {isManager && (
+              <Panel>
+                <PanelHeader
+                  title="Team workload"
+                  action={
+                    <Link href="/freehold-intelligence/crm/agents" className="text-xs text-gold/70 transition hover:text-gold">
+                      Agents →
+                    </Link>
+                  }
+                />
+                <div className="divide-y divide-line">
+                  {AGENT_STATS.slice(0, 4).map(agent => (
+                    <div key={agent.name} className="flex items-center gap-3 px-4 py-2.5">
+                      <UserCircle2 className="h-4 w-4 shrink-0 text-slate-500" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-medium text-slate-300">{agent.name.split(' ')[0]}</div>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] tabular-nums">
+                        <span className="text-slate-400">{agent.total}</span>
+                        {agent.hot > 0 && <span className="text-red-400">{agent.hot}🔥</span>}
+                        {agent.urgent > 0 && <span className="text-orange-400">{agent.urgent}!</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
+
             {/* Urgent follow-ups shortcut */}
             {urgentCount > 0 && (
               <Link
@@ -479,28 +587,6 @@ export default function FreeholdCrmPage() {
                 <ArrowRight className="h-4 w-4 shrink-0 text-slate-600" />
               </Link>
             )}
-
-            {/* AI prompt */}
-            <AiPrompt
-              skill="crm_advisor"
-              placeholder="Ask about leads, pipeline, follow-ups…"
-              suggestions={[
-                'Which leads need urgent follow-up?',
-                'Who is closest to closing?',
-                'Flag any duplicate or wrong-number risks.',
-              ]}
-              context={{
-                pipeline: {
-                  totalLeads: crmLeads.length,
-                  newLeads: newCount,
-                  urgentFollowUps: urgentCount,
-                  hotLeads: hotCount,
-                  qualified: qualifiedCount,
-                  closedMTD: closedCount,
-                  pipelineValueAED: PIPELINE_VALUE,
-                },
-              }}
-            />
 
           </div>
         </aside>

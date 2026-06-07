@@ -5,7 +5,6 @@ import React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, GitBranch, CheckCircle2, AlertCircle, ArrowUpRight, Zap, Clock } from 'lucide-react'
 import { crmInboxLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type RuleStatus = 'active' | 'pending' | 'planned'
 
@@ -257,16 +256,6 @@ export default function LeadWorkflowPage() {
         ))}
       </section>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about intake rules, routing, follow-up automation…"
-          suggestions={[
-            'How does a Palm landing lead get assigned to an agent?',
-            'What triggers the 48h follow-up automation?',
-            'Which integrations are needed to complete the workflow?',
-          ]}
-        />
-      </section>
 
     </div>
   )

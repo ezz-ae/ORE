@@ -2,15 +2,18 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft, ShieldCheck,
+  LayoutDashboard, Megaphone, Search, Users, MessageCircle, GitBranch,
+} from 'lucide-react'
 
 const tabs = [
-  { label: 'Overview',  href: '/freehold-intelligence/integrations',            exact: true },
-  { label: 'Meta',      href: '/freehold-intelligence/integrations/meta' },
-  { label: 'Google',    href: '/freehold-intelligence/integrations/google' },
-  { label: 'HubSpot',   href: '/freehold-intelligence/integrations/hubspot' },
-  { label: 'WhatsApp',  href: '/freehold-intelligence/integrations/whatsapp' },
-  { label: 'GitHub',    href: '/freehold-intelligence/integrations/github' },
+  { label: 'Overview',  href: '/freehold-intelligence/integrations',            exact: true, Icon: LayoutDashboard },
+  { label: 'Meta',      href: '/freehold-intelligence/integrations/meta',                    Icon: Megaphone        },
+  { label: 'Google',    href: '/freehold-intelligence/integrations/google',                  Icon: Search           },
+  { label: 'HubSpot',   href: '/freehold-intelligence/integrations/hubspot',                 Icon: Users            },
+  { label: 'WhatsApp',  href: '/freehold-intelligence/integrations/whatsapp',                Icon: MessageCircle    },
+  { label: 'GitHub',    href: '/freehold-intelligence/integrations/github',                  Icon: GitBranch        },
 ]
 
 export default function IntegrationsLayout({ children }: { children: React.ReactNode }) {
@@ -46,23 +49,27 @@ export default function IntegrationsLayout({ children }: { children: React.React
       {/* Body */}
       <div className="flex flex-1">
 
-        {/* Desktop sidebar */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-chrome">
+        {/* Desktop sidebar — auto-collapse */}
+        <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-0.5">
             {tabs.map((tab) => {
               const active = isActive(tab)
+              const Icon   = tab.Icon
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
                   className={[
-                    'flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                    'flex items-center rounded-md px-[13px] py-2.5 text-sm font-medium transition-colors',
                     active
                       ? 'bg-gold/10 text-white border border-gold/15'
                       : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
                   ].join(' ')}
                 >
-                  {tab.label}
+                  <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
+                  <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
+                    {tab.label}
+                  </span>
                 </Link>
               )
             })}

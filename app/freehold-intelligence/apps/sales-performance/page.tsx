@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp, AlertCircle, Clock, Phone, CheckCircle2, ArrowUpRight } from 'lucide-react'
 import { crmAgentRoster, crmLeads, crmActivityLog, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 // Seeded response-time data (no timestamp-per-lead-arrival in V1)
 const AGENT_METRICS: Record<string, { avgResponseH: number; leadToViewing: number; viewingToOffer: number; revMTD: string }> = {
@@ -296,16 +296,6 @@ export default function SalesPerformancePage() {
         </div>
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about agent performance, response times, conversion…"
-          suggestions={[
-            'Which agent is most at risk of losing a hot lead?',
-            'How does the team response time compare to target?',
-            'Who should take the next unassigned lead?',
-          ]}
-        />
-      </section>
 
     </div>
   )

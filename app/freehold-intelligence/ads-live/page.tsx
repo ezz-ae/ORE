@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { ArrowUpRight, Radio, TrendingDown, TrendingUp } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 // 4-week CPL trend: Meta vs Google
@@ -336,41 +335,6 @@ export default function AdsLivePage() {
         </Link>
       </div>
 
-      {/* Marketing Expert AI */}
-      <Section className="mt-10" title="Marketing Expert">
-        <AiPrompt
-          skill="marketing_expert"
-          placeholder="Ask about campaign strategy, budgets, RSA copy, or optimisation…"
-          suggestions={[
-            'How should I split budget between Meta and Google?',
-            'Write RSA headlines for a Dubai Hills yield campaign.',
-            'Which campaigns are underperforming and why?',
-            'Suggest 3 Meta ad angles for Palm investors.',
-          ]}
-          context={{
-            accounts: {
-              metaSpend30d: 18420,
-              googleSpend30d: 12870,
-              totalLeads30d: 415,
-              avgCPL: 75.4,
-              metaCPL: 74.3,
-              googleCPL: 77.1,
-              metaBudgetUtil: 73.7,
-              googleBudgetUtil: 71.5,
-              activeCampaigns: 6,
-            },
-            campaigns: financeSummary.topSpendCampaigns.map(c => ({
-              name: c.name,
-              platform: c.platform,
-              spend: c.spendAED,
-              leads: c.leads,
-              cpl: c.cpl,
-              status: c.status,
-            })),
-            cplTrend: CPL_TREND,
-          }}
-        />
-      </Section>
 
     </div>
   )

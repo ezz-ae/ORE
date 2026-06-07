@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Copy, AlertCircle, CheckCircle2, ArrowUpRight, Phone, Mail, User, GitMerge } from 'lucide-react'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 type DuplicateCluster = {
   id: string
@@ -330,16 +330,6 @@ export default function CrmDuplicatesPage() {
         </div>
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about duplicate resolution, merge rules…"
-          suggestions={[
-            'How do I decide which record is the primary?',
-            'What happens to the agent assignment after a merge?',
-            'Show all leads with duplicate risk flags.',
-          ]}
-        />
-      </section>
 
     </div>
   )

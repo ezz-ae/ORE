@@ -7,7 +7,6 @@ import {
   ArrowUpRight, Zap, BarChart3, ChevronRight,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const AVG = financeSummary.avgCpl30d
 
@@ -337,17 +336,6 @@ export default function CampaignOptimizePage() {
         </Link>
       </div>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about budget reallocation, CPL targets, platform efficiency…"
-          suggestions={[
-            'Which campaign should get more budget this week?',
-            'How much would CPL drop if we paused Palm Search?',
-            'Should I split budget equally between Meta and Google?',
-            'What is the minimum budget for a 60 CPL on Google?',
-          ]}
-        />
-      </section>
     </div>
   )
 }

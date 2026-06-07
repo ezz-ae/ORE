@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Activity, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { crmActivityLog, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+
 
 const DAYS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
@@ -269,17 +269,6 @@ export default function ScreentimePage() {
         </p>
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about activity patterns, agent behaviour, response gaps…"
-          suggestions={[
-            'When is the team least active and why might that matter?',
-            'Which agent has the best call connect rate?',
-            'Show response time gaps by day of week.',
-            'Who should handle WhatsApp leads arriving overnight?',
-          ]}
-        />
-      </section>
 
     </div>
   )

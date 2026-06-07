@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Pin, BookOpen, Sparkles } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 export async function generateStaticParams() {
   return notebookConversations.map((c) => ({ conversationId: c.id }))
@@ -60,18 +59,6 @@ export default async function NotebookConversationPage({ params }: { params: Pro
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Continue the conversation */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder="Continue this conversation…"
-          suggestions={[
-            'Expand on the last response.',
-            'Create a follow-up WhatsApp for this.',
-            'Export this as a client brief.',
-          ]}
-        />
       </section>
 
       {/* Saved outputs */}

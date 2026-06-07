@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 const STATUS_CONFIG = {
@@ -211,16 +210,6 @@ export default function CrmAgentsPage() {
             </div>
           )}
 
-          <section className="mt-14">
-            <AiPrompt
-              placeholder="Ask about agent performance, capacity, follow-ups…"
-              suggestions={[
-                'Which agent needs coaching right now?',
-                'Who should I reassign overloaded leads to?',
-                'What is the team average follow-up delay?',
-              ]}
-            />
-          </section>
         </div>
 
         {/* Sidebar */}
