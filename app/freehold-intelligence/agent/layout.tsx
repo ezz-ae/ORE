@@ -6,6 +6,7 @@ import { ArrowLeft, Bell, ChevronRight, LogOut, Shield } from 'lucide-react'
 import { agentProfile } from '@/src/features/freehold-intelligence/agent'
 import { clearSession } from '@/lib/freehold/session'
 import { useSession } from '@/lib/freehold/use-session'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const APP_LABELS: Record<string, string> = {
   '/freehold-intelligence/agent/leads':     'My Leads',
@@ -25,7 +26,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
   const { user } = useSession()
   const name     = user?.name ?? agentProfile.name
   const initials = user?.initials ?? agentProfile.initials
-  const isAdmin  = user?.role === 'admin'
+  const isAdmin  = !!user?.role && MANAGEMENT_ROLES.includes(user.role)
 
   async function signOut() {
     await clearSession()

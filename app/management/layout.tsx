@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { clearSession } from '@/lib/freehold/session'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { ROLE_LABELS } from '@/lib/freehold/session-types'
 
 const NAV = [
   { href: '/management',            label: 'Dashboard',   icon: LayoutDashboard, exact: true },
@@ -28,7 +29,7 @@ const NAV = [
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const { ready } = useSessionGuard(['admin', 'ceo', 'director'])
+  const { ready, user } = useSessionGuard(['admin', 'ceo', 'director'])
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function isActive(item: typeof NAV[0]) {
@@ -52,9 +53,9 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
         <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
           <Shield className="h-3.5 w-3.5 text-[#D4AF37]" />
         </div>
-        <div className="flex-1">
-          <span className="text-sm font-semibold text-white">Freehold</span>
-          <span className="ml-1 text-sm font-semibold text-[#D4AF37]">Admin</span>
+        <div className="flex-1 min-w-0">
+          <div className="truncate text-sm font-semibold text-white">{user?.name ?? 'Freehold'}</div>
+          <div className="text-xs text-[#D4AF37]">{user?.role ? ROLE_LABELS[user.role] : 'Management'}</div>
         </div>
         {onClose && (
           <button onClick={onClose} className="text-slate-500 hover:text-slate-300">
@@ -128,7 +129,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
           <div className="flex h-6 w-6 items-center justify-center rounded-md border border-[#D4AF37]/25 bg-[#D4AF37]/10">
             <Shield className="h-3 w-3 text-[#D4AF37]" />
           </div>
-          <span className="text-sm font-semibold text-white">Freehold <span className="text-[#D4AF37]">Admin</span></span>
+          <span className="text-sm font-semibold text-white">{user?.name ?? 'Freehold'} <span className="text-[#D4AF37]">{user?.role ? ROLE_LABELS[user.role] : 'Management'}</span></span>
         </div>
       </header>
 
