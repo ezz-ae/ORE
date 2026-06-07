@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  Users, Megaphone, TrendingUp, Bot, DollarSign, Package,
-  ShieldCheck, Settings, AlertCircle, CheckCircle2, Activity,
+  AlertCircle, CheckCircle2, Activity,
   ArrowUpRight, X, Globe, ChevronRight, Send, Clock, AlertTriangle,
   Sparkles,
 } from 'lucide-react'
@@ -15,126 +14,18 @@ import {
   type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
-import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
+import { visibleApps } from '@/lib/freehold/apps'
 
 const stats          = getInventoryStats()
 const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
 const avgDataQuality = Math.round(inventoryProperties.reduce((s, p) => s + p.dataQuality, 0) / inventoryProperties.length)
 
-const APPS = [
-  {
-    id:     'crm',
-    label:  'CRM',
-    sub:    'Leads · Agents · Pipeline',
-    href:   '/freehold-intelligence/crm',
-    Icon:   Users,
-    metric: '415 leads · 12 urgent',
-    badge:  12,
-    accent: '#D4AF37',
-    card:   'border-[#D4AF37]/15 hover:border-[#D4AF37]/35',
-    icon:   'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
-  },
-  {
-    id:     'ads',
-    label:  'Ads',
-    sub:    'Meta · Google · Forms · Live',
-    href:   '/freehold-intelligence/ads',
-    Icon:   Megaphone,
-    metric: 'Campaigns · creatives · attribution',
-    badge:  0,
-    accent: '#60A5FA',
-    card:   'border-blue-400/15 hover:border-blue-400/30',
-    icon:   'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  },
-  {
-    id:          'finance',
-    label:       'Finance',
-    sub:         'Invoices · Payments · Agent Credits',
-    href:        '/freehold-intelligence/finance',
-    Icon:        DollarSign,
-    metric:      'AED 31.3K · 73% budget',
-    badge:       1,
-    accent:      '#34D399',
-    card:        'border-emerald-400/15 hover:border-emerald-400/30',
-    icon:        'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-    managementOnly: false,
-    brokerHide:  true,
-  },
-  {
-    id:     'analytics',
-    label:  'Analytics',
-    sub:    'Traffic · Conversions · Pages',
-    href:   '/freehold-intelligence/analytics',
-    Icon:   TrendingUp,
-    metric: `${(totalVisitors / 1000).toFixed(1)}K visitors · 30d`,
-    badge:  0,
-    accent: '#A78BFA',
-    card:   'border-violet-400/15 hover:border-violet-400/30',
-    icon:   'text-violet-400 bg-violet-400/10 border-violet-400/20',
-  },
-  {
-    id:     'ai-manager',
-    label:  'AI Manager',
-    sub:    'Data quality · SEO · Auto-content',
-    href:   '/freehold-intelligence/ai-manager',
-    Icon:   Bot,
-    metric: `Data quality ${avgDataQuality} · ${stats.total} listings`,
-    badge:  avgDataQuality < 70 ? 1 : 0,
-    accent: '#38BDF8',
-    card:   'border-sky-400/15 hover:border-sky-400/30',
-    icon:   'text-sky-400 bg-sky-400/10 border-sky-400/20',
-  },
-  {
-    id:     'inventory',
-    label:  'Inventory',
-    sub:    'Properties · Projects · Off-plan',
-    href:   '/freehold-intelligence/inventory',
-    Icon:   Package,
-    metric: `${stats.total} properties · ${stats.missingLanding} missing`,
-    badge:  stats.missingLanding,
-    accent: '#FBBF24',
-    card:   'border-amber-400/15 hover:border-amber-400/30',
-    icon:   'text-amber-400 bg-amber-400/10 border-amber-400/20',
-  },
-  {
-    id:     'integrations',
-    label:  'Integrations',
-    sub:    'Meta · Google · HubSpot · Zapier',
-    href:   '/freehold-intelligence/integrations',
-    Icon:   ShieldCheck,
-    metric: '8 connected · 2 pending',
-    badge:  0,
-    accent: 'rgba(255,255,255,0.4)',
-    card:   'border-slate-800 hover:border-white/[0.15]',
-    icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
-  },
-  {
-    id:     'settings',
-    label:  'Settings',
-    sub:    'Team · Roles · Billing',
-    href:   '/freehold-intelligence/settings',
-    Icon:   Settings,
-    metric: '3 users active',
-    badge:  0,
-    accent: 'rgba(255,255,255,0.4)',
-    card:   'border-slate-800 hover:border-white/[0.15]',
-    icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
-  },
-  {
-    id:             'management',
-    label:          'Management',
-    sub:            'Admin · Credits · Team · Finance',
-    href:           '/freehold-intelligence/management',
-    Icon:           ShieldCheck,
-    metric:         'Admin control panel',
-    badge:          0,
-    accent:         '#D4AF37',
-    card:           'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
-    icon:           'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
-    managementOnly: true,
-    brokerHide:     false,
-  },
-]
+// Live values that override the registry's static defaults on the hub cards.
+const DYNAMIC_META: Record<string, { metric?: string; badge?: number }> = {
+  analytics:    { metric: `${(totalVisitors / 1000).toFixed(1)}K visitors · 30d` },
+  'ai-manager': { metric: `Data quality ${avgDataQuality} · ${stats.total} listings`, badge: avgDataQuality < 70 ? 1 : 0 },
+  inventory:    { metric: `${stats.total} properties · ${stats.missingLanding} missing`, badge: stats.missingLanding },
+}
 
 const ACTIVITY = [
   { time: '09:14',     label: 'New lead',         detail: 'Palm Jumeirah — Meta Ads',        type: 'lead'    },
@@ -184,11 +75,7 @@ export default function IntelligenceLauncher() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name])
 
-  const visibleApps = APPS.filter((a) => {
-    if ('managementOnly' in a && a.managementOnly) return role ? MANAGEMENT_ROLES.includes(role) : false
-    if ('brokerHide' in a && a.brokerHide) return role !== 'broker'
-    return true
-  })
+  const apps = visibleApps(role)
 
   const lowAdReadiness  = inventoryProperties.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')
@@ -401,32 +288,36 @@ export default function IntelligenceLauncher() {
       <section>
         <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Apps</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {visibleApps.map((app) => (
-            <Link
-              key={app.id}
-              href={app.href}
-              className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition-colors ${app.card}`}
-            >
-              {app.badge > 0 && (
-                <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                  {app.badge}
-                </span>
-              )}
-              <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${app.icon}`}>
-                <app.Icon className="h-5 w-5" />
-              </div>
-              <div className="mt-4 flex-1">
-                <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
-                <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-sm text-slate-400 font-medium">
-                  {app.metric}
+          {apps.map((app) => {
+            const metric = DYNAMIC_META[app.id]?.metric ?? app.metric
+            const badge  = DYNAMIC_META[app.id]?.badge ?? app.badge
+            return (
+              <Link
+                key={app.id}
+                href={app.href}
+                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition-colors ${app.card}`}
+              >
+                {badge > 0 && (
+                  <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                    {badge}
+                  </span>
+                )}
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${app.icon}`}>
+                  <app.Icon className="h-5 w-5" />
                 </div>
-                <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-slate-400" />
-              </div>
-            </Link>
-          ))}
+                <div className="mt-4 flex-1">
+                  <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
+                  <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-slate-400 font-medium">
+                    {metric}
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-slate-400" />
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </section>
 

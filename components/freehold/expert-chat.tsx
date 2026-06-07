@@ -25,7 +25,7 @@ const PAGE_LABELS: { match: (p: string) => boolean; label: string }[] = [
   { match: (p) => p.startsWith('/freehold-intelligence/crm'), label: 'CRM' },
   { match: (p) => p.startsWith('/freehold-intelligence/inventory'), label: 'Inventory' },
   { match: (p) => p.startsWith('/freehold-intelligence/ads'), label: 'Ads' },
-  { match: (p) => p.startsWith('/freehold-intelligence/ai-manager'), label: 'Web Manager' },
+  { match: (p) => p.startsWith('/freehold-intelligence/ai-manager'), label: 'Web Studio' },
   { match: (p) => p.startsWith('/freehold-intelligence/integrations'), label: 'Integrations' },
   { match: (p) => p.startsWith('/freehold-intelligence/analytics'), label: 'Analytics' },
 ]
