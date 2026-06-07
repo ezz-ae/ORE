@@ -64,7 +64,7 @@ export default function GoogleCampaignNewPage() {
     biddingStrategy: 'MAXIMIZE_CONVERSIONS',
     dailyBudgetAED:  200,
     targetCpaAED:    150,
-    finalUrl:        '',
+    finalUrl:        listing0?.landingUrl ? `https://freeholdproperty.ae${listing0.landingUrl}` : '',
     selectedThemes:  [],
     customKeywords:  '',
     headlines:       DEFAULT_HEADLINES,
@@ -82,6 +82,9 @@ export default function GoogleCampaignNewPage() {
       patch({
         listingId:    id,
         campaignName: `${l.projectName} — ${form.type === 'PERFORMANCE_MAX' ? 'PMax' : 'Search'}`,
+        // Auto-fill the landing URL when a listing with an active landing page is selected.
+        // The user can still override it manually.
+        finalUrl: l.landingUrl ? `https://freeholdproperty.ae${l.landingUrl}` : form.finalUrl,
       })
     }
   }
@@ -147,7 +150,7 @@ export default function GoogleCampaignNewPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Launch failed')
-      setSuccess(json.campaignId ?? 'created')
+      setSuccess(json.campaignId ?? '')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unexpected error')
     } finally {
@@ -168,20 +171,25 @@ export default function GoogleCampaignNewPage() {
         </div>
         <h2 className="mt-5 text-[28px] font-semibold text-white">Campaign created</h2>
         <p className="mt-2 text-[14px] text-slate-400">
-          Your campaign has been created in Google Ads in PAUSED state. Review it in Google Ads Manager before activating.
+          Created in PAUSED state — review before activating in Google Ads Manager.
         </p>
+        {success && (
+          <p className="mt-1 font-mono text-xs text-slate-600">ID: {success}</p>
+        )}
         <div className="mt-8 flex justify-center gap-3">
+          {success && (
+            <Link
+              href={`/freehold-intelligence/lead-machine/google/campaigns/${success}`}
+              className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
+            >
+              Open this campaign
+            </Link>
+          )}
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns"
-            className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
-          >
-            View campaigns
-          </Link>
-          <Link
-            href="/freehold-intelligence/lead-machine/google"
             className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
           >
-            Back to overview
+            All campaigns
           </Link>
         </div>
       </div>

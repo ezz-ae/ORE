@@ -30,6 +30,8 @@ export type LeadMachineListing = {
   adReadinessScore: number
   opportunityScore: number
   landingStatus: LeadMachineStatus
+  /** Full relative path to the live landing page, e.g. /lp/palm-investor-preview. Populated when landingStatus === "Landing Active". */
+  landingUrl?: string
   adStatus: LeadMachineStatus
   blockerStatus: "Clear" | "Needs Access" | "Needs Data" | "Blocked"
   currentCampaignStatus: LeadMachineStatus
@@ -173,6 +175,7 @@ export const leadMachineListings: LeadMachineListing[] = [
     adReadinessScore: 81,
     opportunityScore: 83,
     landingStatus: "Landing Active",
+    landingUrl: "/lp/dubai-hills-yield-preview",
     adStatus: "Ready for Ads",
     blockerStatus: "Clear",
     currentCampaignStatus: "Approved",

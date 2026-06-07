@@ -18,7 +18,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Users, Megaphone, DollarSign, TrendingUp, Bot, Package,
-  ShieldCheck, Settings, BookOpen, BarChart3,
+  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle,
 } from 'lucide-react'
 import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
@@ -42,6 +42,8 @@ export interface AppDef {
   managementOnly?: boolean
   /** hidden from brokers */
   brokerHide?: boolean
+  /** visible ONLY to brokers — e.g. the personal agent workspace */
+  brokerOnly?: boolean
   /** show in the persistent top spine (defaults true) */
   spine?: boolean
 }
@@ -119,13 +121,24 @@ export const APPS: AppDef[] = [
     icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
     managementOnly: true,
   },
+  // The broker's personal workspace — only brokers see this tab.
+  // Managers can still visit /agent but don't need a spine tab for it.
+  {
+    id: 'agent', label: 'My Workspace', sub: 'Leads · Campaigns · Credits · AI',
+    href: '/freehold-intelligence/agent', Icon: UserCircle,
+    metric: 'My pipeline', badge: 0, accent: '#60A5FA',
+    card: 'border-blue-400/15 hover:border-blue-400/30',
+    icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    brokerOnly: true,
+  },
 ]
 
 /** Apps a given role is allowed to see. */
 export function visibleApps(role?: Role): AppDef[] {
   return APPS.filter((a) => {
+    if (a.brokerOnly)     return role === 'broker'
     if (a.managementOnly) return role ? MANAGEMENT_ROLES.includes(role) : false
-    if (a.brokerHide) return role !== 'broker'
+    if (a.brokerHide)     return role !== 'broker'
     return true
   })
 }
