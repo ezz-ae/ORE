@@ -5,6 +5,7 @@ import {
   TrendingUp, DollarSign, Target, Sparkles,
   ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle2,
 } from 'lucide-react'
+import { StatCard, Section, Panel, PanelHeader } from '@/components/freehold/ui'
 
 const PLATFORM_ROI = [
   {
@@ -158,23 +159,11 @@ export default function ROIPage() {
             </div>
           </div>
 
-          {/* Summary stats */}
           <div className="xl:col-span-3 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { label: 'Total Ad Spend',   value: fmtAED(totalSpend),   icon: DollarSign,  color: 'text-slate-400', sub: 'Across all platforms' },
-              { label: 'Total Revenue',    value: fmtAED(totalRevenue), icon: TrendingUp,  color: 'text-emerald-400', sub: 'Attributed to ads' },
-              { label: 'Total Leads',      value: totalLeads.toString(), icon: Target,      color: 'text-sky-400',    sub: 'From paid channels' },
-              { label: 'Closed Deals',     value: totalDeals.toString(), icon: CheckCircle2, color: 'text-violet-400', sub: `Avg ${fmtAED(Math.round(totalRevenue / totalDeals))} / deal` },
-            ].map(s => (
-              <div key={s.label} className="rounded-xl border border-line bg-surface p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <s.icon className={['h-4 w-4', s.color].join(' ')} />
-                  <p className="text-xs text-slate-500">{s.label}</p>
-                </div>
-                <p className={['text-2xl font-bold tabular-nums tracking-tight', s.color].join(' ')}>{s.value}</p>
-                <p className="mt-1 text-xs text-slate-600">{s.sub}</p>
-              </div>
-            ))}
+            <StatCard label="Total Ad Spend"  value={fmtAED(totalSpend)}    Icon={DollarSign}   hint="Across all platforms" />
+            <StatCard label="Total Revenue"   value={fmtAED(totalRevenue)}  Icon={TrendingUp}   delta={{ value: '+12% vs last month', direction: 'up' }} />
+            <StatCard label="Total Leads"     value={totalLeads}             Icon={Target}       hint="From paid channels" />
+            <StatCard label="Closed Deals"    value={totalDeals}             Icon={CheckCircle2} hint={`Avg ${fmtAED(Math.round(totalRevenue / totalDeals))} / deal`} />
           </div>
         </div>
 
@@ -194,12 +183,8 @@ export default function ROIPage() {
           </div>
         </div>
 
-        {/* Platform ROI Comparison */}
-        <div className="rounded-xl border border-line bg-surface">
-          <div className="border-b border-line px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">Platform ROI Comparison</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Revenue, spend, CAC and ROI per channel</p>
-          </div>
+        <Panel>
+          <PanelHeader title="Platform ROI Comparison" action={<span className="text-xs text-slate-500">Revenue, spend, CAC and ROI per channel</span>} />
           <div className="p-5 space-y-4">
             {PLATFORM_ROI.sort((a, b) => b.roi - a.roi).map((p) => (
               <div key={p.platform} className={['rounded-xl border p-4', p.bgColor, p.borderColor].join(' ')}>
@@ -241,14 +226,10 @@ export default function ROIPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
 
-        {/* Revenue Attribution Table */}
-        <div className="rounded-xl border border-line bg-surface">
-          <div className="border-b border-line px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">Revenue Attribution</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Channel breakdown — leads, deals, revenue, ROI</p>
-          </div>
+        <Panel>
+          <PanelHeader title="Revenue Attribution" action={<span className="text-xs text-slate-500">Channel breakdown — leads, deals, revenue, ROI</span>} />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -300,16 +281,12 @@ export default function ROIPage() {
               </tfoot>
             </table>
           </div>
-        </div>
+        </Panel>
 
         <div className="grid gap-6 xl:grid-cols-2">
 
-          {/* Top Performing Campaigns */}
-          <div className="rounded-xl border border-line bg-surface">
-            <div className="border-b border-line px-5 py-4">
-              <h2 className="text-sm font-semibold text-white">Top 5 Campaigns by ROI</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Best performing campaigns — June 2026</p>
-            </div>
+          <Panel>
+            <PanelHeader title="Top 5 Campaigns by ROI" action={<span className="text-xs text-slate-500">Best performing campaigns — June 2026</span>} />
             <div className="divide-y divide-line">
               {TOP_CAMPAIGNS.map((c, idx) => (
                 <div key={c.name} className="px-5 py-4">
@@ -348,14 +325,10 @@ export default function ROIPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Panel>
 
-          {/* CAC Trend Table */}
-          <div className="rounded-xl border border-line bg-surface">
-            <div className="border-b border-line px-5 py-4">
-              <h2 className="text-sm font-semibold text-white">Cost per Acquisition Trend</h2>
-              <p className="text-xs text-slate-500 mt-0.5">CAC per platform — last 6 months (AED)</p>
-            </div>
+          <Panel>
+            <PanelHeader title="Cost per Acquisition Trend" action={<span className="text-xs text-slate-500">CAC per platform — last 6 months (AED)</span>} />
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -412,7 +385,7 @@ export default function ROIPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </Panel>
         </div>
 
       </div>

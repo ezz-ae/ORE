@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, Wallet, RefreshCw } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
@@ -43,35 +44,29 @@ export default function PaymentsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7">
-        <h1 className="text-[20px] font-semibold text-white">Payments</h1>
-        <p className="mt-1 text-xs text-slate-500">Platform billing, wire transfers, and agent commissions</p>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={CreditCard}
+        title="Payments"
+        subtitle="Platform billing, wire transfers, and agent commissions"
+      />
+
+      <div className="mt-5 mb-6 grid grid-cols-3 gap-3">
+        <StatCard label="Due this month"  value={fmt(totalScheduled)}      delta={{ value: 'upcoming', direction: 'down' }} />
+        <StatCard label="Paid YTD"        value={fmt(totalHistory)}         delta={{ value: 'settled',  direction: 'up'   }} />
+        <StatCard label="Pending payouts" value={fmt(pendingCommissions)}   hint="agent commissions" />
       </div>
 
-      {/* Summary tiles */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { label: 'Due this month', value: fmt(totalScheduled), Icon: Clock,         color: 'text-amber-400'   },
-          { label: 'Paid YTD',       value: fmt(totalHistory),   Icon: CheckCircle2,  color: 'text-emerald-400' },
-          { label: 'Pending payouts',value: fmt(pendingCommissions), Icon: Wallet,    color: 'text-gold'   },
-        ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
-            <Icon className={`h-4 w-4 ${color}`} />
-            <div className="mt-2 text-[17px] font-semibold text-white">{value}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Payment methods */}
-      <section className="mb-6">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Payment Methods</div>
+      <Section
+        className="mb-6"
+        title="Payment Methods"
+        action={
           <button onClick={() => setAddingCard((v) => !v)}
             className="flex items-center gap-1 text-xs text-emerald-400/70 hover:text-emerald-400 transition">
             <Plus className="h-3 w-3" /> Add card
           </button>
-        </div>
+        }
+      >
         <div className="space-y-2">
           {PAYMENT_METHODS.map((pm) => (
             <div key={pm.id} className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-4 py-3.5">
@@ -115,7 +110,7 @@ export default function PaymentsPage() {
             </div>
           </div>
         )}
-      </section>
+      </Section>
 
       {/* Tabs */}
       <div className="mb-4 flex gap-1 rounded-[12px] border border-line bg-surface p-1">

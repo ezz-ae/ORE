@@ -6,6 +6,7 @@ import {
   Briefcase, TrendingUp, CheckCircle2, Clock, AlertCircle,
   ArrowUpRight, Calendar, Users, Building2, ChevronRight,
 } from 'lucide-react'
+import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 
 const STATS = [
   { label: 'Total Active Deals',  value: '12',       delta: '+2 this week', positive: true,  icon: Briefcase },
@@ -106,33 +107,20 @@ export default function DealsPage() {
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
 
-        {/* Stats row */}
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           {STATS.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex items-start justify-between gap-2 mb-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-line-strong bg-surface-2">
-                  <stat.icon className="h-4 w-4 text-slate-400" />
-                </div>
-                <span className={[
-                  'text-xs font-semibold',
-                  stat.positive ? 'text-emerald-400' : 'text-red-400',
-                ].join(' ')}>
-                  {stat.delta}
-                </span>
-              </div>
-              <p className="text-2xl font-semibold text-white tabular-nums tracking-tight">{stat.value}</p>
-              <p className="mt-1 text-sm font-medium text-slate-400">{stat.label}</p>
-            </div>
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              Icon={stat.icon}
+              delta={{ value: stat.delta, direction: stat.positive ? 'up' : 'down' }}
+            />
           ))}
         </div>
 
-        {/* Pipeline Kanban Summary */}
-        <div className="rounded-xl border border-line bg-surface">
-          <div className="border-b border-line px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">Pipeline Overview</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Deal count and value per stage</p>
-          </div>
+        <Panel>
+          <PanelHeader title="Pipeline Overview" action={<span className="text-xs text-slate-500">Deal count and value per stage</span>} />
           <div className="p-5">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
               {PIPELINE_STAGES.map(({ stage, color, bgColor, borderColor }, idx) => {
@@ -190,7 +178,7 @@ export default function DealsPage() {
               )}
             </div>
           </div>
-        </div>
+        </Panel>
 
         {/* At Risk Section */}
         {atRisk.length > 0 && (

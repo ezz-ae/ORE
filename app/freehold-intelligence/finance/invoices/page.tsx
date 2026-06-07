@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Download, FileText, CheckCircle2, Clock, AlertCircle, ArrowDownToLine } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
@@ -59,37 +60,31 @@ export default function InvoicesPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-semibold text-white">Invoices</h1>
-          <p className="mt-1 text-xs text-slate-500">Platform billing — Meta Ads &amp; Google Ads</p>
-        </div>
-        <button
-          onClick={() => {
-            const header = 'Invoice ID,Platform,Period,Amount (AED),Status,Issued,Due'
-            const lines = visible.map((i) =>
-              [i.id, i.platform === 'meta' ? 'Meta' : 'Google', `"${i.period}"`, i.amountAED, i.status, i.issuedDate, i.dueDate].join(',')
-            )
-            downloadCsv('invoices.csv', [header, ...lines].join('\n'))
-          }}
-          className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
-          <Download className="h-3.5 w-3.5" /> Export CSV
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={FileText}
+        title="Invoices"
+        subtitle="Platform billing — Meta Ads & Google Ads"
+        actions={
+          <button
+            onClick={() => {
+              const header = 'Invoice ID,Platform,Period,Amount (AED),Status,Issued,Due'
+              const lines = visible.map((i) =>
+                [i.id, i.platform === 'meta' ? 'Meta' : 'Google', `"${i.period}"`, i.amountAED, i.status, i.issuedDate, i.dueDate].join(',')
+              )
+              downloadCsv('invoices.csv', [header, ...lines].join('\n'))
+            }}
+            className={buttonClass('secondary', 'sm')}>
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+        }
+      />
 
-      {/* Summary tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Total',    value: all.length.toString(),                              color: 'text-slate-300'    },
-          { label: 'Paid',     value: all.filter((i) => i.status === 'paid').length.toString(), color: 'text-emerald-400' },
-          { label: 'Processing', value: all.filter((i) => i.status === 'processing').length.toString(), color: 'text-amber-400' },
-          { label: 'Pending',  value: fmt(totalPending),                                  color: 'text-amber-400'   },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[17px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+      <div className="mt-5 mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total"      value={all.length} />
+        <StatCard label="Paid"       value={all.filter((i) => i.status === 'paid').length}       delta={{ value: fmt(totalPaid), direction: 'up' }} />
+        <StatCard label="Processing" value={all.filter((i) => i.status === 'processing').length} hint="in progress" />
+        <StatCard label="Pending"    value={fmt(totalPending)}                                   delta={{ value: 'outstanding', direction: 'down' }} />
       </div>
 
       {/* Overdue alert */}
