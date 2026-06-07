@@ -38,7 +38,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
     <div className="flex flex-col min-h-full">
 
       {/* App header — consistent with every other app layout */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-slate-800 bg-[#0D1117]/95 px-5 backdrop-blur-xl sm:px-6">
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-[#06090F]/97 px-5 backdrop-blur-xl sm:px-6">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
             <BarChart3 className="h-3.5 w-3.5 text-[#D4AF37]" />
@@ -51,7 +51,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
       <div className="flex flex-1">
 
         {/* Desktop sidebar — sticky within scroll container, no viewport escape */}
-        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-slate-800 bg-[#0A0E14]">
+        <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-[#060910]">
           <nav className="flex-1 px-2 py-4 space-y-0.5">
             {NAV.map((item) => {
               const active = isActive(item)
@@ -62,8 +62,8 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
                   className={[
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                     active
-                      ? 'bg-slate-700/60 text-white'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100',
+                      ? 'bg-[#D4AF37]/10 text-white border border-[#D4AF37]/15'
+                      : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-100 border border-transparent',
                   ].join(' ')}
                 >
                   <item.icon className={['h-4 w-4 shrink-0', active ? 'text-[#D4AF37]' : 'text-slate-500'].join(' ')} />
@@ -79,7 +79,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
         <div className="flex-1 min-w-0">
 
           {/* Mobile tabs */}
-          <div className="lg:hidden sticky top-14 z-30 overflow-x-auto border-b border-slate-800 bg-[#0D1117]/95 backdrop-blur-xl">
+          <div className="lg:hidden sticky top-14 z-30 overflow-x-auto border-b border-white/[0.07] bg-[#06090F]/95 backdrop-blur-xl">
             <nav className="flex min-w-max px-4">
               {NAV.map((item) => {
                 const active = isActive(item)

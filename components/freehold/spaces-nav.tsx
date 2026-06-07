@@ -42,12 +42,12 @@ export function SpacesNav() {
   }
 
   return (
-    <div className="flex h-14 shrink-0 items-center border-b border-slate-800 bg-[#090D16] backdrop-blur-xl">
+    <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] bg-[#06090F] backdrop-blur-xl">
 
       {/* Brand */}
       <Link
         href={HOME_HREF}
-        className="flex h-full shrink-0 items-center gap-2.5 border-r border-slate-800 px-5 transition hover:bg-slate-800/40"
+        className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.07] px-5 transition hover:bg-white/[0.04]"
       >
         <Sparkles className="h-4 w-4 text-[#D4AF37]" />
         <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
@@ -66,7 +66,7 @@ export function SpacesNav() {
               'flex h-full items-center gap-1.5 border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
               isActive(HOME_HREF, true)
                 ? 'border-[#D4AF37] text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600',
+                : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
             ].join(' ')}
           >
             <Home className="h-3.5 w-3.5" />
@@ -83,7 +83,7 @@ export function SpacesNav() {
                   'flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                   active
                     ? 'border-[#D4AF37] text-white'
-                    : 'border-transparent text-slate-400 hover:text-slate-100 hover:border-slate-600',
+                    : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
                 ].join(' ')}
               >
                 {app.label}
@@ -94,10 +94,10 @@ export function SpacesNav() {
       </nav>
 
       {/* User menu — identity, role, sign-out */}
-      <div ref={menuRef} className="relative flex h-full shrink-0 items-center border-l border-slate-800 px-3">
+      <div ref={menuRef} className="relative flex h-full shrink-0 items-center border-l border-white/[0.07] px-3">
         <button
           onClick={() => setMenuOpen((o) => !o)}
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-800/60"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
         >
           <span
             className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
@@ -115,8 +115,8 @@ export function SpacesNav() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-slate-700 bg-[#0D1117] shadow-2xl">
-            <div className="border-b border-slate-800 px-4 py-3">
+          <div className="absolute right-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-white/[0.12] bg-[#08111C] shadow-[0_24px_60px_rgba(0,0,0,0.75)]">
+            <div className="border-b border-white/[0.07] px-4 py-3">
               <div className="text-sm font-semibold text-white">{user?.name ?? 'Account'}</div>
               <div className="text-xs text-slate-500">{user?.email ?? ''}</div>
               {role && (
@@ -131,13 +131,13 @@ export function SpacesNav() {
             <Link
               href="/freehold-intelligence/settings"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-white"
+              className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
             >
               Settings
             </Link>
             <button
               onClick={signOut}
-              className="flex w-full items-center gap-2 border-t border-slate-800 px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-white"
+              className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
             >
               <LogOut className="h-4 w-4" />
               Sign out
