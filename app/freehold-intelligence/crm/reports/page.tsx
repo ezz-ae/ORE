@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
 import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, StatCard, Section, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 // Static lead-source data (30-day window)
 const LEAD_SOURCES = [
@@ -99,58 +100,44 @@ export default function CrmReportsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <TrendingUp className="h-3.5 w-3.5" /> Reports
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Lead intelligence<br/><span className="text-slate-500">at a glance.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending.
-          </p>
-
-          {/* Date range pills */}
-          <div className="mt-8 flex items-center gap-2">
-            {DATE_RANGES.map((r) => (
-              <button
-                key={r}
-                onClick={() => setDateRange(r)}
-                className={[
-                  'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
-                  dateRange === r
-                    ? 'bg-gold text-ink'
-                    : 'border border-line-strong text-slate-400 hover:border-slate-500 hover:text-slate-200',
-                ].join(' ')}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-
-          {/* KPI tiles — live where available */}
-          <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {[
-              { label: 'Active leads',   value: String(totalLeads),   delta: `${critical} critical`,       tone: critical > 0 ? 'text-red-300' : 'text-gold' },
-              { label: 'High intent',    value: String(highIntent),   delta: `${avgIntent} avg score`,     tone: 'text-gold' },
-              { label: 'Connect rate',   value: `${connectRate}%`,    delta: `${connected}/${callsLogged} calls`, tone: connectRate >= 50 ? 'text-gold' : 'text-orange-300' },
-              { label: 'Revenue MTD',    value: 'AED 32M',           delta: '+16% vs Apr',                tone: 'text-gold' },
-            ].map((kpi) => (
-              <div key={kpi.label} className="rounded-xl border border-line bg-surface p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{kpi.label}</div>
-                <div className="mt-3 text-[28px] font-semibold text-white">{kpi.value}</div>
-                <div className={`mt-1 text-xs ${kpi.tone}`}>{kpi.delta}</div>
+          <PageHeader
+            eyebrow="CRM · Reports"
+            Icon={TrendingUp}
+            title="Lead Intelligence"
+            subtitle="Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending."
+            actions={
+              <div className="flex items-center gap-2">
+                {DATE_RANGES.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setDateRange(r)}
+                    className={[
+                      'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
+                      dateRange === r
+                        ? 'bg-gold text-ink'
+                        : 'border border-line-strong text-slate-400 hover:border-slate-500 hover:text-slate-200',
+                    ].join(' ')}
+                  >
+                    {r}
+                  </button>
+                ))}
               </div>
-            ))}
+            }
+          />
+
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard label="Active leads"  value={totalLeads}        delta={{ value: `${critical} critical`, direction: critical > 0 ? 'down' : 'flat' }} />
+            <StatCard label="High intent"   value={highIntent}        hint={`${avgIntent} avg score`} delta={{ value: 'high intent', direction: 'up' }} />
+            <StatCard label="Connect rate"  value={`${connectRate}%`} hint={`${connected}/${callsLogged} calls`} delta={{ value: connectRate >= 50 ? 'good' : 'low', direction: connectRate >= 50 ? 'up' : 'down' }} />
+            <StatCard label="Revenue MTD"   value="AED 32M"           delta={{ value: '+16% vs Apr', direction: 'up' }} />
           </div>
 
-          {/* Lead Sources (30d) — static bar chart */}
-          <section className="mt-14">
-            <div className="mb-5 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-gold" />
-              <h2 className="text-[18px] font-semibold text-white">Lead Sources (30d)</h2>
-              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Static · paid channels</span>
-            </div>
-            <div className="rounded-2xl border border-line bg-surface-2 p-6 sm:p-8">
+          <Section
+            className="mt-10"
+            title="Lead Sources (30d)"
+            action={<span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Static · paid channels</span>}
+          >
+            <Panel className="p-6 sm:p-8">
               <div className="space-y-5">
                 {LEAD_SOURCES.map((src) => (
                   <div key={src.label}>
@@ -167,17 +154,15 @@ export default function CrmReportsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
+            </Panel>
+          </Section>
 
-          {/* Monthly Lead Trend — SVG bar chart */}
-          <section className="mt-14">
-            <div className="mb-5 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-gold" />
-              <h2 className="text-[18px] font-semibold text-white">Monthly Lead Trend</h2>
-              <span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>
-            </div>
-            <div className="rounded-2xl border border-line bg-surface-2 p-6 sm:p-8">
+          <Section
+            className="mt-10"
+            title="Monthly Lead Trend"
+            action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>}
+          >
+            <Panel className="p-6 sm:p-8">
               <div className="overflow-x-auto">
                 <svg
                   width={SVG_W}
@@ -226,17 +211,15 @@ export default function CrmReportsPage() {
                   })}
                 </svg>
               </div>
-            </div>
-          </section>
+            </Panel>
+          </Section>
 
-          {/* Source breakdown — live */}
-          <section className="mt-14">
-            <div className="mb-5 flex items-center gap-2">
-              <Target className="h-4 w-4 text-gold" />
-              <h2 className="text-[18px] font-semibold text-white">Lead sources</h2>
-              <span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">Live</span>
-            </div>
-            <div className="rounded-[24px] border border-line bg-surface p-6 sm:p-8">
+          <Section
+            className="mt-10"
+            title="Lead sources"
+            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">Live</span>}
+          >
+            <Panel className="p-6 sm:p-8">
               <div className="space-y-5">
                 {sources.map((src) => (
                   <div key={src.source}>
@@ -253,23 +236,20 @@ export default function CrmReportsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
+            </Panel>
+          </Section>
 
-          {/* Intent score breakdown */}
-          <section className="mt-14">
-            <div className="mb-5 flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-gold" />
-                <h2 className="text-[18px] font-semibold text-white">Intent distribution</h2>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
+          <Section
+            className="mt-10"
+            title="Intent distribution"
+            action={
+              <div className="flex flex-wrap items-center gap-2">
                 {INTENT_FILTERS.map((f) => (
                   <button
                     key={f}
                     onClick={() => setIntentFilter(f)}
                     className={[
-                      'rounded-full px-3 py-1 text-sm font-medium transition',
+                      'rounded-full px-3 py-1 text-xs font-medium transition',
                       intentFilter === f
                         ? 'bg-gold text-ink'
                         : 'border border-line-strong text-slate-400 hover:text-slate-200',
@@ -278,18 +258,19 @@ export default function CrmReportsPage() {
                     {f}
                   </button>
                 ))}
+                <select
+                  value={agentFilter}
+                  onChange={(e) => setAgentFilter(e.target.value)}
+                  className="rounded-full border border-line-strong bg-transparent px-3 py-1 text-xs text-slate-400 outline-none transition hover:border-slate-500 hover:text-slate-200"
+                >
+                  {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-surface">{a === 'All' ? 'All agents' : a}</option>)}
+                </select>
               </div>
-              <select
-                value={agentFilter}
-                onChange={(e) => setAgentFilter(e.target.value)}
-                className="rounded-full border border-line-strong bg-transparent px-3 py-1 text-sm text-slate-400 outline-none transition hover:border-slate-500 hover:text-slate-200"
-              >
-                {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-surface">{a === 'All' ? 'All agents' : a}</option>)}
-              </select>
-            </div>
-            <div className="rounded-[24px] border border-line bg-surface p-6 sm:p-8">
+            }
+          >
+            <Panel className="p-6 sm:p-8">
               {filteredLeads.length === 0 ? (
-                <div className="py-8 text-center text-sm text-slate-500">No leads match these filters.</div>
+                <EmptyState Icon={Target} title="No leads match these filters" />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {filteredLeads.map((lead) => (
@@ -301,7 +282,7 @@ export default function CrmReportsPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
                           <div
-                            className={`h-full rounded-full ${lead.intentScore >= 85 ? 'bg-gold' : lead.intentScore >= 70 ? 'bg-gold' : 'bg-orange-400'}`}
+                            className={`h-full rounded-full ${lead.intentScore >= 70 ? 'bg-gold' : 'bg-orange-400'}`}
                             style={{ width: `${lead.intentScore}%` }}
                           />
                         </div>
@@ -311,17 +292,15 @@ export default function CrmReportsPage() {
                   ))}
                 </div>
               )}
-            </div>
-          </section>
+            </Panel>
+          </Section>
 
-          {/* Monthly trend — seeded */}
-          <section className="mt-14">
-            <div className="mb-5 flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-gold" />
-              <h2 className="text-[18px] font-semibold text-white">Monthly revenue</h2>
-              <span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Seeded data — live in V1.1</span>
-            </div>
-            <div className="rounded-[24px] border border-line bg-surface p-6 sm:p-8">
+          <Section
+            className="mt-10"
+            title="Monthly revenue"
+            action={<span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Seeded — live in V1.1</span>}
+          >
+            <Panel className="p-6 sm:p-8">
               <div className="grid grid-cols-5 gap-3 sm:gap-5">
                 {MONTHLY.map((m) => (
                   <div key={m.month} className="flex flex-col items-center gap-3">
@@ -338,10 +317,10 @@ export default function CrmReportsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
+            </Panel>
+          </Section>
 
-          <section className="mt-14">
+          <section className="mt-10">
             <AiPrompt
               placeholder="Ask about lead volume, conversion, agent performance…"
               suggestions={[
@@ -362,18 +341,16 @@ export default function CrmReportsPage() {
               <div className="mt-1 text-xs text-slate-400">{sources[0]?.count ?? 0} leads · highest volume</div>
             </div>
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Users className="h-3 w-3" /> Cohort watch
-              </div>
+            <Panel className="p-5">
+              <PanelHeader title="Cohort watch" icon={<Users className="h-3.5 w-3.5" />} />
               <div className="mt-3 text-[14px] font-semibold text-white">Golden Visa buyers</div>
               <div className="mt-2 text-xs leading-relaxed text-slate-400">
                 1 lead tagged GV-eligible · AED 2.5M+ budget · at Qualified stage.
               </div>
-            </div>
+            </Panel>
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Activity this week</div>
+            <Panel className="p-5">
+              <PanelHeader title="Activity this week" />
               <div className="mt-3 space-y-2 text-sm text-slate-300">
                 <div className="flex justify-between">
                   <span>Calls logged</span>
@@ -388,13 +365,13 @@ export default function CrmReportsPage() {
                   <span className={`font-semibold ${connectRate >= 50 ? 'text-gold' : 'text-orange-300'}`}>{connectRate}%</span>
                 </div>
               </div>
-            </div>
+            </Panel>
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Next report</div>
+            <Panel className="p-5">
+              <PanelHeader title="Next report" />
               <div className="mt-3 text-[14px] text-slate-300">Weekly · Mondays 09:00 GST</div>
               <div className="mt-1 text-xs text-slate-400">Sent to owner + sales leads.</div>
-            </div>
+            </Panel>
           </div>
         </aside>
       </div>
