@@ -63,7 +63,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
           <div className="ml-auto flex items-center gap-3">
             {isAdmin && (
               <Link
-                href="/management"
+                href="/freehold-intelligence/management"
                 className="hidden items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-medium text-[#D4AF37] transition-colors hover:border-[#D4AF37]/45 sm:flex"
               >
                 <Shield className="h-3.5 w-3.5" /> Control panel

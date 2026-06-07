@@ -91,7 +91,7 @@ export default function CreditsPage() {
             </p>
           </div>
           <Link
-            href="/management/finance"
+            href="/freehold-intelligence/management/finance"
             className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:text-white"
           >
             <DollarSign className="h-4 w-4" /> Finance

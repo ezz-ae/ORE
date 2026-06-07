@@ -23,7 +23,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   marketing:     '#38BDF8',
 }
 
-/** Roles that can access /management. */
+/** Roles that can access /freehold-intelligence/management. */
 export const MANAGEMENT_ROLES: Role[] = ['admin', 'ceo', 'director']
 
 export interface SessionUser {

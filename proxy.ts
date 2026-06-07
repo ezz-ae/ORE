@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── Session auth for protected routes ─────────────────────────────────────
-  if (pathname.startsWith('/management') || pathname.startsWith('/freehold-intelligence')) {
+  if (pathname.startsWith('/freehold-intelligence')) {
     const token = request.cookies.get(SESSION_COOKIE)?.value
     const user = await verifySession(token)
 

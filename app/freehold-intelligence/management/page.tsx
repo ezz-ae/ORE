@@ -44,15 +44,15 @@ const EMAILS = [
 ]
 
 const QUICK_NAV = [
-  { href: '/management/events',    label: 'Events Log',  icon: Activity,       color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
-  { href: '/management/team',      label: 'Team',        icon: Users,          color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
-  { href: '/management/deals',     label: 'Deals',       icon: Briefcase,      color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
-  { href: '/management/marketing', label: 'Marketing',   icon: Megaphone,      color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
-  { href: '/management/finance',   label: 'Finance',     icon: DollarSign,     color: 'text-green-400 border-green-400/20 bg-green-400/10' },
-  { href: '/management/credits',   label: 'Credits',     icon: Coins,          color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
-  { href: '/management/ai',        label: 'AI Chat',     icon: Bot,            color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
-  { href: '/management/inventory', label: 'Inventory',   icon: Building2,      color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
-  { href: '/management/reports',   label: 'Reports',     icon: FileBarChart2,  color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
+  { href: '/freehold-intelligence/management/events',    label: 'Events Log',  icon: Activity,       color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
+  { href: '/freehold-intelligence/management/team',      label: 'Team',        icon: Users,          color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
+  { href: '/freehold-intelligence/management/deals',     label: 'Deals',       icon: Briefcase,      color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
+  { href: '/freehold-intelligence/management/marketing', label: 'Marketing',   icon: Megaphone,      color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
+  { href: '/freehold-intelligence/management/finance',   label: 'Finance',     icon: DollarSign,     color: 'text-green-400 border-green-400/20 bg-green-400/10' },
+  { href: '/freehold-intelligence/management/credits',   label: 'Credits',     icon: Coins,          color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
+  { href: '/freehold-intelligence/management/ai',        label: 'AI Chat',     icon: Bot,            color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
+  { href: '/freehold-intelligence/management/inventory', label: 'Inventory',   icon: Building2,      color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
+  { href: '/freehold-intelligence/management/reports',   label: 'Reports',     icon: FileBarChart2,  color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
 ]
 
 export default function ManagementDashboard() {
@@ -310,7 +310,7 @@ export default function ManagementDashboard() {
               <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-sm font-semibold text-white">Live Events</span>
-                <Link href="/management/events" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+                <Link href="/freehold-intelligence/management/events" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
                   All <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>

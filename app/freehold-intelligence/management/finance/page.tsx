@@ -153,7 +153,7 @@ export default function FinancePage() {
                     <p className="text-xs text-slate-500 mt-0.5">{cp.brokers} brokers · self-served AI ads · 1 credit = AED {CREDIT_VALUE_AED}</p>
                   </div>
                 </div>
-                <Link href="/management/credits" className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                <Link href="/freehold-intelligence/management/credits" className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
                   Manage credits <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
