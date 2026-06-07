@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { BarChart2 } from 'lucide-react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
+import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 const FLAG: Record<string, string> = {
   AE: '🇦🇪',
@@ -225,88 +227,53 @@ export default function AnalyticsPage() {
     <div className="p-6 lg:p-8 space-y-8">
 
       {/* ── Page header ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Site Analytics</h1>
-          <p className="mt-1 text-sm text-slate-400">Traffic, conversions, and audience insights</p>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
-          Last 30 days
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Analytics"
+        Icon={BarChart2}
+        title="Site Analytics"
+        subtitle="Traffic, conversions, and audience insights"
+        actions={
+          <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
+            Last 30 days
+          </div>
+        }
+      />
 
       {/* ── Top KPI row ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Page Views</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {a.totalPageViews.toLocaleString('en-US')}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">Total impressions</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Unique Visitors</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {a.totalUniqueSessions.toLocaleString('en-US')}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">Sessions · 30d</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Conversions</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-gold">
-            {a.totalConversions.toLocaleString('en-US')}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {(a.conversionRate * 100).toFixed(1)}% conv. rate
-          </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg Session</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {formatDuration(a.avgSessionDuration)}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">Avg duration</div>
-        </div>
+        <StatCard label="Page Views" value={a.totalPageViews.toLocaleString('en-US')} hint="Total impressions" delta={{ value: '+12%', direction: 'up' }} />
+        <StatCard label="Unique Visitors" value={a.totalUniqueSessions.toLocaleString('en-US')} hint="Sessions · 30d" />
+        <StatCard label="Conversions" value={a.totalConversions.toLocaleString('en-US')} hint={`${(a.conversionRate * 100).toFixed(1)}% conv. rate`} delta={{ value: `${(a.conversionRate * 100).toFixed(1)}%`, direction: 'up' }} />
+        <StatCard label="Avg Session" value={formatDuration(a.avgSessionDuration)} hint="Avg duration" />
       </div>
 
       {/* ── Daily Traffic Chart ── */}
-      <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Daily Traffic · 30 Days</div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
+      <Section title="Daily Traffic · 30 Days">
+        <div className="rounded-xl border border-line bg-surface p-5">
           <SparklineChart daily={a.daily} />
         </div>
-      </section>
+      </Section>
 
       {/* ── Sources Bar Chart ── */}
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Sessions by Source</div>
-          <FilterPills
-            options={SOURCE_FILTER_OPTIONS}
-            active={sourceFilter}
-            onChange={setSourceFilter}
-          />
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 p-5">
+      <Section
+        title="Sessions by Source"
+        action={<FilterPills options={SOURCE_FILTER_OPTIONS} active={sourceFilter} onChange={setSourceFilter} />}
+      >
+        <div className="rounded-xl border border-line bg-surface p-5">
           {filteredSources.length > 0 ? (
             <SourcesBarChart sources={filteredSources} />
           ) : (
             <p className="py-6 text-center text-sm text-slate-500">No sources match the selected filter.</p>
           )}
         </div>
-      </section>
+      </Section>
 
       {/* ── Traffic Sources ── */}
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Traffic Sources</div>
-          <FilterPills
-            options={SOURCE_FILTER_OPTIONS}
-            active={sourceFilter}
-            onChange={setSourceFilter}
-          />
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+      <Section
+        title="Traffic Sources"
+        action={<FilterPills options={SOURCE_FILTER_OPTIONS} active={sourceFilter} onChange={setSourceFilter} />}
+      >
+        <div className="rounded-xl border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -348,12 +315,11 @@ export default function AnalyticsPage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── Top Pages ── */}
-      <section>
-        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Top Pages</div>
-        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+      <Section title="Top Pages">
+        <div className="rounded-xl border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -388,18 +354,13 @@ export default function AnalyticsPage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── Device Breakdown ── */}
-      <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Device Breakdown</div>
-          <FilterPills
-            options={DEVICE_FILTER_OPTIONS}
-            active={deviceFilter}
-            onChange={setDeviceFilter}
-          />
-        </div>
+      <Section
+        title="Device Breakdown"
+        action={<FilterPills options={DEVICE_FILTER_OPTIONS} active={deviceFilter} onChange={setDeviceFilter} />}
+      >
         {filteredDevices.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {filteredDevices.map(({ label, data, color, bar }) => {
@@ -436,15 +397,14 @@ export default function AnalyticsPage() {
             No device data matches the selected filter.
           </div>
         )}
-      </section>
+      </Section>
 
       {/* ── Countries + Conversion Funnel ── */}
       <div className="grid gap-6 lg:grid-cols-2">
 
         {/* Countries */}
-        <section>
-          <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Countries</div>
-          <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
+        <Section title="Countries">
+          <div className="rounded-xl border border-line bg-surface overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line">
@@ -469,12 +429,11 @@ export default function AnalyticsPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </Section>
 
         {/* Conversion Funnel */}
-        <section>
-          <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Conversion Funnel</div>
-          <div className="rounded-xl border border-line bg-surface-2 p-5 space-y-4">
+        <Section title="Conversion Funnel">
+          <div className="rounded-xl border border-line bg-surface p-5 space-y-4">
             {a.funnel.map((step, i) => {
               const widthPct = Math.round((step.users / funnelMax) * 100)
               const isLast = i === a.funnel.length - 1
@@ -503,7 +462,7 @@ export default function AnalyticsPage() {
               )
             })}
           </div>
-        </section>
+        </Section>
 
       </div>
 

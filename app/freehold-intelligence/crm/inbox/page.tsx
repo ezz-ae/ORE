@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 import { crmInboxLeads, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type FilterTab = 'All' | 'Unassigned' | 'Assigned' | 'Contacted'
 
@@ -90,19 +91,13 @@ export default function CrmInboxPage() {
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
         <div className="min-w-0">
 
-          {/* Eyebrow */}
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Inbox className="h-3.5 w-3.5" /> Inbox
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-            New leads<br /><span className="text-slate-400">arriving.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-400">
-            {crmInboxLeads.length} leads in the last 48 hours.{' '}
-            {unassignedCount > 0 && (
-              <span className="text-gold">{unassignedCount} still unassigned.</span>
-            )}
-          </p>
+          <PageHeader
+            eyebrow="CRM"
+            Icon={Inbox}
+            title="Incoming leads"
+            subtitle={`${crmInboxLeads.length} leads in the last 48 hours${unassignedCount > 0 ? ` · ${unassignedCount} still unassigned` : ''}`}
+            className="mb-6"
+          />
 
           {/* Filter pills */}
           <div className="mt-6 flex flex-wrap gap-2">
@@ -267,25 +262,27 @@ export default function CrmInboxPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
 
-            <div className="rounded-[20px] border border-line bg-surface p-5">
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Available agents</div>
-              <div className="space-y-3">
-                {available.map((agent) => (
-                  <div key={agent.id} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
-                        {agent.initials}
+            <Panel>
+              <PanelHeader title="Available agents" />
+              <div className="p-5">
+                <div className="space-y-3">
+                  {available.map((agent) => (
+                    <div key={agent.id} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
+                          {agent.initials}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-white">{agent.name}</div>
+                          <div className="text-xs text-slate-400">{agent.totalLeads} leads</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-white">{agent.name}</div>
-                        <div className="text-xs text-slate-400">{agent.totalLeads} leads</div>
-                      </div>
+                      <span className="text-sm text-gold">{agent.utilization}%</span>
                     </div>
-                    <span className="text-sm text-gold">{agent.utilization}%</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            </Panel>
 
             <AiPrompt
               placeholder="Ask about new leads…"

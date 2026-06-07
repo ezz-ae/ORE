@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
 import { crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
 
@@ -103,16 +104,13 @@ export default function FollowUpQueuePage() {
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-10">
         <div className="min-w-0">
 
-          {/* Header */}
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Clock className="h-3.5 w-3.5" /> Follow-up Queue
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Overdue<br /><span className="text-slate-500">right now.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-slate-400">
-            {stats.total} leads past their follow-up window. Sorted by delay — longest first.
-          </p>
+          <PageHeader
+            eyebrow="CRM"
+            Icon={Clock}
+            title="Follow-up queue"
+            subtitle={`${stats.total} items · ${stats.critical} critical`}
+            className="mb-6"
+          />
 
           {/* Stats strip */}
           <div className="mt-8 grid grid-cols-4 gap-3">
@@ -240,24 +238,28 @@ export default function FollowUpQueuePage() {
           <div className="sticky top-[112px] space-y-4">
 
             {riskLeads > 0 && (
-              <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.04] p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-orange-300/70">Risk alerts</div>
-                <div className="mt-2 text-[28px] font-semibold text-orange-300">{riskLeads}</div>
-                <div className="mt-1 text-xs text-slate-400">leads flagged for duplicate or wrong number — resolve before outreach.</div>
-              </div>
+              <Panel>
+                <PanelHeader title="Risk alerts" />
+                <div className="p-5">
+                  <div className="text-[28px] font-semibold text-orange-300">{riskLeads}</div>
+                  <div className="mt-1 text-xs text-slate-400">leads flagged for duplicate or wrong number — resolve before outreach.</div>
+                </div>
+              </Panel>
             )}
 
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Overdue by agent</div>
-              <div className="space-y-2">
-                {Object.entries(byAgent).sort((a, b) => b[1] - a[1]).map(([agent, count]) => (
-                  <div key={agent} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{agent}</span>
-                    <span className="font-medium tabular-nums text-white">{count}</span>
-                  </div>
-                ))}
+            <Panel>
+              <PanelHeader title="Overdue by agent" />
+              <div className="p-5">
+                <div className="space-y-2">
+                  {Object.entries(byAgent).sort((a, b) => b[1] - a[1]).map(([agent, count]) => (
+                    <div key={agent} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-300">{agent}</span>
+                      <span className="font-medium tabular-nums text-white">{count}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </Panel>
 
             <AiPrompt
               placeholder="Ask about follow-ups…"
