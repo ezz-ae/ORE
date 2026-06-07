@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  Users, Zap, Megaphone, TrendingUp, Bot, DollarSign, Package,
+  Users, Megaphone, TrendingUp, Bot, DollarSign, Package,
   ShieldCheck, Settings, AlertCircle, CheckCircle2, Activity,
   ArrowUpRight, X, Globe, ChevronRight, Send, Clock, AlertTriangle,
   Sparkles,
@@ -35,28 +35,16 @@ const APPS = [
     icon:   'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
   },
   {
-    id:     'lead-machine',
-    label:  'Lead Machine',
-    sub:    'Campaigns · Ads · Attribution',
-    href:   '/freehold-intelligence/lead-machine',
-    Icon:   Zap,
-    metric: '6 campaigns · AED 31K/mo',
+    id:     'ads',
+    label:  'Ads',
+    sub:    'Meta · Google · Forms · Live',
+    href:   '/freehold-intelligence/ads',
+    Icon:   Megaphone,
+    metric: 'Campaigns · creatives · attribution',
     badge:  0,
     accent: '#60A5FA',
     card:   'border-blue-400/15 hover:border-blue-400/30',
     icon:   'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  },
-  {
-    id:     'ads-live',
-    label:  'Ads Live',
-    sub:    'Meta · Google · Live preview',
-    href:   '/freehold-intelligence/ads-live',
-    Icon:   Megaphone,
-    metric: '3 platforms · 6 live ads',
-    badge:  0,
-    accent: '#F472B6',
-    card:   'border-pink-400/15 hover:border-pink-400/30',
-    icon:   'text-pink-400 bg-pink-400/10 border-pink-400/20',
   },
   {
     id:          'finance',

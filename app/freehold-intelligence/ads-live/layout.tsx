@@ -25,11 +25,11 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
       {/* App header */}
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-slate-800 bg-[#0D1117]/95 px-5 backdrop-blur-xl sm:px-6">
         <Link
-          href="/freehold-intelligence"
+          href="/freehold-intelligence/ads"
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Apps</span>
+          <span className="hidden sm:block">Ads</span>
         </Link>
         <div className="h-5 w-px bg-slate-700 shrink-0" />
         <div className="flex items-center gap-2.5">
