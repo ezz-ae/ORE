@@ -19,7 +19,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased"
+      className="fi-root fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased"
       style={{ ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}
     >
       <style>{`

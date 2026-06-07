@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import type { LucideIcon } from 'lucide-react'
 import {
   Sparkles, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
@@ -11,14 +12,15 @@ import {
   ArrowUpRight, Send, WifiOff, Bell,
   Target, Zap, Coins,
 } from 'lucide-react'
+import { StatCard, type StatDelta } from '@/components/freehold/ui'
 
-const STATS = [
-  { label: 'New Leads Today',   value: '14',     delta: '+3',   positive: true,  icon: Target },
-  { label: 'Pipeline Value',    value: 'AED 8.4M', delta: '+12%', positive: true,  icon: TrendingUp },
-  { label: 'Deals Closing',     value: '3',       delta: 'this week', positive: true, icon: Briefcase },
-  { label: 'Ad Spend Today',    value: 'AED 2,180', delta: '-4%', positive: false, icon: Megaphone },
-  { label: 'Revenue MTD',       value: 'AED 320K', delta: '+18%', positive: true,  icon: DollarSign },
-  { label: 'Team Online',       value: '7 / 12',  delta: 'agents', positive: true, icon: Users },
+const STATS: { label: string; value: string; delta?: StatDelta; hint?: string; icon: LucideIcon }[] = [
+  { label: 'New Leads Today', value: '14',        delta: { value: '+3',  direction: 'up' },   icon: Target },
+  { label: 'Pipeline Value',  value: 'AED 8.4M',  delta: { value: '+12%', direction: 'up' },  icon: TrendingUp },
+  { label: 'Deals Closing',   value: '3',         hint: 'this week',                           icon: Briefcase },
+  { label: 'Ad Spend Today',  value: 'AED 2,180', delta: { value: '-4%', direction: 'down' },  icon: Megaphone },
+  { label: 'Revenue MTD',     value: 'AED 320K',  delta: { value: '+18%', direction: 'up' },   icon: DollarSign },
+  { label: 'Team Online',     value: '7 / 12',    hint: 'agents',                              icon: Users },
 ]
 
 const TASKS = [
@@ -133,16 +135,14 @@ export default function ManagementDashboard() {
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {STATS.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-white/[0.07] bg-surface p-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <stat.icon className="h-4 w-4 text-slate-500" />
-                <span className={['text-xs font-medium', stat.positive ? 'text-emerald-400' : 'text-red-400'].join(' ')}>
-                  {stat.delta}
-                </span>
-              </div>
-              <p className="text-xl font-semibold text-white tabular-nums">{stat.value}</p>
-              <p className="mt-1 text-xs text-slate-500">{stat.label}</p>
-            </div>
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              delta={stat.delta}
+              hint={stat.hint}
+              Icon={stat.icon}
+            />
           ))}
         </div>
 

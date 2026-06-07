@@ -102,7 +102,7 @@ export default function ServerAuth() {
 
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center bg-app px-5 py-10"
+      className="fi-root flex min-h-screen flex-col items-center justify-center bg-app px-5 py-10"
       style={{ ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}
     >
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:48px_48px]" />

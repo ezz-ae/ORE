@@ -165,6 +165,20 @@ html {
 
 }
 
+/* ── Freehold Intelligence workspace polish (scoped to .fi-root) ───────────── */
+/* Brand-accent text selection. */
+.fi-root ::selection {
+  background: color-mix(in srgb, var(--color-gold) 28%, transparent);
+  color: #fff;
+}
+/* Consistent keyboard focus ring on interactive controls that don't define one.
+ * Scoped to buttons/links/roles so it never fights input focus treatments. */
+.fi-root :where(button, a, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
