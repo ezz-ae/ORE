@@ -5,9 +5,9 @@ import Link from 'next/link'
 import {
   Sparkles, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
-  MessageSquare, Phone, Mail, Clock, CheckCircle2, AlertCircle,
-  ArrowUpRight, Send, Wifi, WifiOff, ChevronRight, Bell,
-  Target, Star, Zap, Calendar, Coins,
+  MessageSquare, Mail, CheckCircle2, AlertCircle,
+  ArrowUpRight, Send, WifiOff, Bell,
+  Target, Zap, Coins,
 } from 'lucide-react'
 
 const STATS = [
@@ -44,15 +44,16 @@ const EMAILS = [
 ]
 
 const QUICK_NAV = [
-  { href: '/freehold-intelligence/management/events',    label: 'Events Log',  icon: Activity,       color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
-  { href: '/freehold-intelligence/management/team',      label: 'Team',        icon: Users,          color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
-  { href: '/freehold-intelligence/management/deals',     label: 'Deals',       icon: Briefcase,      color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
-  { href: '/freehold-intelligence/management/marketing', label: 'Marketing',   icon: Megaphone,      color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
-  { href: '/freehold-intelligence/management/finance',   label: 'Finance',     icon: DollarSign,     color: 'text-green-400 border-green-400/20 bg-green-400/10' },
-  { href: '/freehold-intelligence/management/credits',   label: 'Credits',     icon: Coins,          color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
-  { href: '/freehold-intelligence/management/ai',        label: 'AI Chat',     icon: Bot,            color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
-  { href: '/freehold-intelligence/management/inventory', label: 'Inventory',   icon: Building2,      color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
-  { href: '/freehold-intelligence/management/reports',   label: 'Reports',     icon: FileBarChart2,  color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
+  { href: '/freehold-intelligence/management/events',   label: 'Events Log', icon: Activity,      color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
+  { href: '/freehold-intelligence/management/team',     label: 'Team',       icon: Users,         color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
+  { href: '/freehold-intelligence/management/deals',    label: 'Deals',      icon: Briefcase,     color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
+  { href: '/freehold-intelligence/management/roi',      label: 'ROI',        icon: TrendingUp,    color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
+  { href: '/freehold-intelligence/management/reports',  label: 'Reports',    icon: FileBarChart2, color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
+  { href: '/freehold-intelligence/ads',                 label: 'Ads',        icon: Megaphone,     color: 'text-blue-400 border-blue-400/20 bg-blue-400/10' },
+  { href: '/freehold-intelligence/finance',             label: 'Finance',    icon: DollarSign,    color: 'text-green-400 border-green-400/20 bg-green-400/10' },
+  { href: '/freehold-intelligence/inventory',           label: 'Inventory',  icon: Building2,     color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
+  { href: '/freehold-intelligence/agent/ai',            label: 'AI Chat',    icon: Bot,           color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
+  { href: '/freehold-intelligence/finance/credits',     label: 'Credits',    icon: Coins,         color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
 ]
 
 export default function ManagementDashboard() {

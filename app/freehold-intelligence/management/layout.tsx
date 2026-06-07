@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
-  LayoutDashboard, Activity, Users, Megaphone, DollarSign,
-  Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
-  LogOut, Shield, ChevronRight, Menu, X, Coins, ArrowLeft,
+  LayoutDashboard, Activity, Users,
+  Briefcase, TrendingUp, FileBarChart2,
+  LogOut, Shield, ChevronRight, Menu, X, ArrowLeft,
 } from 'lucide-react'
 import { clearSession } from '@/lib/freehold/session'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -15,17 +15,12 @@ import { ROLE_LABELS } from '@/lib/freehold/session-types'
 const BASE = '/freehold-intelligence/management'
 
 const NAV = [
-  { href: BASE,                   label: 'Dashboard',  icon: LayoutDashboard, exact: true },
-  { href: `${BASE}/events`,       label: 'Events Log', icon: Activity },
-  { href: `${BASE}/team`,         label: 'Team',       icon: Users },
-  { href: `${BASE}/marketing`,    label: 'Marketing',  icon: Megaphone },
-  { href: `${BASE}/finance`,      label: 'Finance',    icon: DollarSign },
-  { href: `${BASE}/credits`,      label: 'Credits',    icon: Coins },
-  { href: `${BASE}/deals`,        label: 'Deals',      icon: Briefcase },
-  { href: `${BASE}/inventory`,    label: 'Inventory',  icon: Building2 },
-  { href: `${BASE}/roi`,          label: 'ROI',        icon: TrendingUp },
-  { href: `${BASE}/reports`,      label: 'Reports',    icon: FileBarChart2 },
-  { href: `${BASE}/ai`,           label: 'AI Chat',    icon: Bot },
+  { href: BASE,             label: 'Dashboard',  icon: LayoutDashboard, exact: true },
+  { href: `${BASE}/events`, label: 'Events Log', icon: Activity },
+  { href: `${BASE}/team`,   label: 'Team',       icon: Users },
+  { href: `${BASE}/deals`,  label: 'Deals',      icon: Briefcase },
+  { href: `${BASE}/roi`,    label: 'ROI',        icon: TrendingUp },
+  { href: `${BASE}/reports`,label: 'Reports',    icon: FileBarChart2 },
 ]
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
