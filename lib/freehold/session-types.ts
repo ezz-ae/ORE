@@ -23,8 +23,12 @@ export const ROLE_COLORS: Record<Role, string> = {
   marketing:     '#38BDF8',
 }
 
-/** Roles that can access /freehold-intelligence/management. */
-export const MANAGEMENT_ROLES: Role[] = ['admin', 'ceo', 'director']
+/**
+ * Roles that can access /freehold-intelligence/management — company-wide,
+ * system-level reporting (team, deals, ROI, reports, events).
+ * Sales managers are included: they own team performance reporting.
+ */
+export const MANAGEMENT_ROLES: Role[] = ['admin', 'ceo', 'director', 'sales_manager']
 
 export interface SessionUser {
   email: string

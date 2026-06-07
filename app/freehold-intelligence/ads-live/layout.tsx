@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import { ArrowLeft, Megaphone } from 'lucide-react'
 
 const tabs = [
-  { label: 'Overview',   href: '/freehold-intelligence/ads-live',         exact: true },
-  { label: 'Meta Ads',   href: '/freehold-intelligence/ads-live/meta' },
-  { label: 'Google Ads', href: '/freehold-intelligence/ads-live/google' },
-  { label: 'Ad Preview', href: '/freehold-intelligence/ads-live/preview' },
+  { label: 'Live Overview',  href: '/freehold-intelligence/ads-live',         exact: true },
+  { label: 'Meta Ads',       href: '/freehold-intelligence/ads-live/meta' },
+  { label: 'Google Ads',     href: '/freehold-intelligence/ads-live/google' },
+  { label: 'Ad Preview',     href: '/freehold-intelligence/ads-live/preview' },
+  { label: 'Build & manage', href: '/freehold-intelligence/lead-machine', divider: true },
 ]
 
 export default function AdsLiveLayout({ children }: { children: React.ReactNode }) {
@@ -29,14 +30,14 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Ads</span>
+          <span className="hidden sm:block">All ad tools</span>
         </Link>
         <div className="h-5 w-px bg-slate-700 shrink-0" />
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-pink-400/25 bg-pink-400/10">
-            <Megaphone className="h-3.5 w-3.5 text-pink-400" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+            <Megaphone className="h-3.5 w-3.5 text-[#D4AF37]" />
           </div>
-          <span className="text-sm font-semibold text-white">Ads Live</span>
+          <span className="text-sm font-semibold text-white">Ads <span className="text-slate-500 font-normal">· Live</span></span>
         </div>
         <div className="ml-auto">
           <div className="flex items-center gap-2 text-sm text-slate-400">

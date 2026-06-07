@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, Zap } from 'lucide-react'
+import { ArrowLeft, Megaphone } from 'lucide-react'
 
 const tabs = [
-  { label: 'Overview',     href: '/freehold-intelligence/lead-machine',                         exact: true },
+  { label: 'Pipeline',     href: '/freehold-intelligence/lead-machine',                         exact: true },
   { label: 'Listings',     href: '/freehold-intelligence/lead-machine/listings' },
   { label: 'Campaigns',    href: '/freehold-intelligence/lead-machine/campaigns',               exact: true },
   { label: 'Attribution',  href: '/freehold-intelligence/lead-machine/campaigns/attribution' },
@@ -15,6 +15,7 @@ const tabs = [
   { label: 'Targeting',    href: '/freehold-intelligence/lead-machine/targeting' },
   { label: 'Creatives',    href: '/freehold-intelligence/lead-machine/creatives' },
   { label: 'Google Ads',   href: '/freehold-intelligence/lead-machine/google' },
+  { label: 'Live',         href: '/freehold-intelligence/ads-live' },
   { label: 'Ad Requests',  href: '/freehold-intelligence/lead-machine/ad-requests' },
   { label: 'Requirements', href: '/freehold-intelligence/lead-machine/requirements' },
   { label: 'Permissions',  href: '/freehold-intelligence/lead-machine/permissions', divider: true },
@@ -38,14 +39,14 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Ads</span>
+          <span className="hidden sm:block">All ad tools</span>
         </Link>
         <div className="h-5 w-px bg-slate-700 shrink-0" />
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-blue-400/25 bg-blue-400/10">
-            <Zap className="h-3.5 w-3.5 text-blue-400" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
+            <Megaphone className="h-3.5 w-3.5 text-[#D4AF37]" />
           </div>
-          <span className="text-sm font-semibold text-white">Lead Machine</span>
+          <span className="text-sm font-semibold text-white">Ads</span>
         </div>
       </header>
 

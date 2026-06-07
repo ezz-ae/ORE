@@ -7,6 +7,7 @@ import {
   TrendingUp, FileBarChart2, ChevronRight, BarChart3,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const BASE = '/freehold-intelligence/management'
 
@@ -21,7 +22,7 @@ const NAV = [
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { ready } = useSessionGuard(['admin', 'ceo', 'director'])
+  const { ready } = useSessionGuard(MANAGEMENT_ROLES)
 
   function isActive(item: typeof NAV[0]) {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href)
