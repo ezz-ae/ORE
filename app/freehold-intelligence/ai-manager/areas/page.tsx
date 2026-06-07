@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { MapPin, Sparkles, Globe, Plus, RefreshCw, TrendingUp, FileText, Search } from 'lucide-react'
 
 interface AreaRow {
@@ -93,7 +94,7 @@ export default function AreaGuidesPage() {
           <h1 className="text-xl font-semibold text-white">Area Guides</h1>
           <p className="mt-1 text-xs text-slate-500">SEO-optimised location pages for each area you serve</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button onClick={() => toast.success('New area — editor ready')} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
           <Plus className="h-3.5 w-3.5" /> New area
         </button>
       </div>

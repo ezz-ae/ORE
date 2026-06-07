@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
 import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
 
@@ -116,7 +117,7 @@ export default function MetaAdsPage() {
             Connected
           </span>
           {/* Manage external link */}
-          <button className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
+          <button onClick={() => { window.open('https://business.facebook.com/adsmanager', '_blank'); toast.info('Opening Meta Ads Manager') }} className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
             Manage in Meta <ArrowUpRight className="h-3 w-3" />
           </button>
         </div>

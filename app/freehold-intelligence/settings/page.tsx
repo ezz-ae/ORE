@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
   Check, AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
@@ -128,6 +129,7 @@ export default function SettingsPage() {
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
   const [saved,       setSaved]       = useState(false)
+  const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
@@ -373,12 +375,16 @@ export default function SettingsPage() {
                 <label className="block text-xs font-medium text-slate-500 mb-3">Dashboard Theme</label>
                 <div className="flex gap-3">
                   {[
-                    { label: 'Dark (current)', bg: 'bg-slate-900', ring: 'ring-[#D4AF37] ring-2' },
-                    { label: 'Darker',         bg: 'bg-black',     ring: 'ring-slate-700' },
-                    { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-slate-700' },
+                    { label: 'Dark (current)', bg: 'bg-slate-900' },
+                    { label: 'Darker',         bg: 'bg-black'     },
+                    { label: 'Navy',           bg: 'bg-[#0a0f1e]' },
                   ].map((t) => (
-                    <button key={t.label} className="flex flex-col items-center gap-1.5">
-                      <div className={`h-8 w-8 rounded-lg border border-slate-700 ${t.bg} ${t.ring}`} />
+                    <button
+                      key={t.label}
+                      onClick={() => { setTheme(t.label); toast.success(t.label + ' theme applied') }}
+                      className="flex flex-col items-center gap-1.5"
+                    >
+                      <div className={`h-8 w-8 rounded-lg border border-slate-700 ${t.bg} ${theme === t.label ? 'ring-[#D4AF37] ring-2' : 'ring-slate-700'}`} />
                       <span className="text-xs text-slate-500">{t.label}</span>
                     </button>
                   ))}

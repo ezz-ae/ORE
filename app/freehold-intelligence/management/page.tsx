@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Sparkles, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
@@ -57,6 +59,7 @@ const QUICK_NAV = [
 ]
 
 export default function ManagementDashboard() {
+  const router = useRouter()
   const [tasks, setTasks]   = useState(TASKS)
   const [aiInput, setAiInput] = useState('')
   const [aiPending, setAiPending] = useState(false)
@@ -115,7 +118,9 @@ export default function ManagementDashboard() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs font-medium text-emerald-400">All systems live</span>
             </div>
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 hover:text-slate-200 transition-colors">
+            <button
+              onClick={() => toast.info('You have 5 new notifications')}
+              className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 hover:text-slate-200 transition-colors">
               <Bell className="h-4 w-4" />
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">5</span>
             </button>
@@ -349,7 +354,9 @@ export default function ManagementDashboard() {
                     <WifiOff className="h-4 w-4 text-slate-600" />
                   </div>
                 </div>
-                <button className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
+                <button
+                  onClick={() => router.push('/freehold-intelligence/integrations/whatsapp')}
+                  className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
                   Connect WhatsApp
                 </button>
                 <p className="mt-2.5 text-center text-xs text-slate-600">

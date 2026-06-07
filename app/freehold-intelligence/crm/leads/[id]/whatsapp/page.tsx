@@ -12,6 +12,7 @@ import {
   Check, CheckCheck, Clock, X, Copy,
   ChevronDown, AlertCircle,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 
@@ -491,7 +492,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               className={`rounded-full p-2 transition hover:bg-slate-800/50 ${showAI ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-white'}`}>
               <Sparkles className="h-4 w-4" />
             </button>
-            <button className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
+            <button onClick={() => toast.info('Conversation options')} className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
               <MoreVertical className="h-4 w-4" />
             </button>
           </div>
@@ -594,11 +595,11 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
             <div className="flex items-end gap-2">
               {/* Emoji */}
-              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <button onClick={() => toast.info('Emoji picker')} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <SmilePlus className="h-5 w-5" />
               </button>
               {/* Attachment */}
-              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <button onClick={() => toast.info('Attach a file')} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <Paperclip className="h-5 w-5" />
               </button>
 
@@ -626,7 +627,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   }
                 </button>
               ) : (
-                <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400">
+                <button onClick={() => toast.info('Hold to record a voice note')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400">
                   <Mic className="h-5 w-5" />
                 </button>
               )}

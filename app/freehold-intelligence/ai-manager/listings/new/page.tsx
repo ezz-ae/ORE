@@ -1,13 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Sparkles, ArrowLeft, Check, Image, Save } from 'lucide-react'
 
 const PROPERTY_TYPES = ['Apartment', 'Villa', 'Townhouse', 'Penthouse', 'Duplex', 'Commercial']
 const STATUSES = ['Off Plan', 'Ready', 'Under Construction', 'Coming Soon', 'Sold Out']
 
 export default function NewListingPage() {
+  const router = useRouter()
+  const fileRef = useRef<HTMLInputElement>(null)
   const [state, setState] = useState<{ generating: boolean; generated: boolean }>({
     generating: false,
     generated: false,
@@ -168,7 +172,17 @@ export default function NewListingPage() {
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.10] bg-slate-800/40 py-10 gap-3">
             <Image className="h-8 w-8 text-slate-600" />
             <p className="text-sm text-slate-500">Drag and drop images here, or click to upload</p>
-            <button className="rounded-lg border border-white/[0.10] bg-slate-800/40 px-4 py-2 text-xs text-slate-400 hover:text-slate-100 transition">
+            <input
+              type="file"
+              ref={fileRef}
+              multiple
+              className="hidden"
+              onChange={(e) => toast.success(`${e.target.files?.length ?? 0} file(s) added`)}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="rounded-lg border border-white/[0.10] bg-slate-800/40 px-4 py-2 text-xs text-slate-400 hover:text-slate-100 transition"
+            >
               Choose Files
             </button>
           </div>
@@ -185,11 +199,17 @@ export default function NewListingPage() {
 
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <button className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white">
+        <button
+          onClick={() => { toast.success('Saved as draft'); router.push('/freehold-intelligence/ai-manager/listings') }}
+          className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
+        >
           <Save className="h-4 w-4" />
           Save as Draft
         </button>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rose-500/80">
+        <button
+          onClick={() => { toast.success('Listing published'); router.push('/freehold-intelligence/ai-manager/listings') }}
+          className="flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rose-500/80"
+        >
           <Check className="h-4 w-4" />
           Publish
         </button>

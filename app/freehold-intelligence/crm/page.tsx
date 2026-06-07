@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
   RefreshCw, ChevronRight,
@@ -79,6 +81,7 @@ function syncLabel(s: typeof integrationSyncStatuses[0]) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
+  const router = useRouter()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
@@ -309,12 +312,14 @@ export default function FreeholdCrmPage() {
                   <div className="ml-auto flex items-center gap-1 lg:ml-0">
                     <button
                       title="Call"
+                      onClick={() => lead.phone ? window.open('tel:' + lead.phone) : toast.info('Calling ' + lead.name)}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <PhoneCall className="h-3 w-3" />
                     </button>
                     <button
                       title="WhatsApp"
+                      onClick={() => router.push(`/freehold-intelligence/crm/leads/${lead.id}/whatsapp`)}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <MessageCircle className="h-3 w-3" />
@@ -341,7 +346,10 @@ export default function FreeholdCrmPage() {
             <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Integrations</div>
-                <button className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
+                <button
+                  onClick={() => toast.success('CRM sync started')}
+                  className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
+                >
                   <RefreshCw className="h-3 w-3" /> Sync now
                 </button>
               </div>

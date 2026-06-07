@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Coins, Sparkles, Plus, Pause, Play, MessageCircle,
   TrendingUp, Users, Trophy, Target, DollarSign, Gauge,
@@ -234,7 +235,7 @@ export default function AgentCreditsPage() {
                   <div className="text-sm font-semibold text-white">Connect WhatsApp</div>
                   <div className="mt-0.5 text-xs text-slate-400">Let the AI scan your conversations and qualify leads automatically.</div>
                 </div>
-                <button className="shrink-0 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
+                <button onClick={() => toast.success('Auto-qualify connected')} className="shrink-0 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
                   Connect
                 </button>
               </div>

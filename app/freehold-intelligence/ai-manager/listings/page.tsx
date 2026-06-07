@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Bot, Plus, Edit2, Sparkles, Package } from 'lucide-react'
 import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 
@@ -92,15 +93,15 @@ export default function AiManagerListingsPage() {
 
       {/* Bulk AI actions */}
       <div className="mt-6 flex flex-wrap gap-2">
-        <button className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('Meta descriptions refreshed across listings')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Refresh Meta Descriptions
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('SEO audit started for all listings')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Check All SEO
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('AI summaries regenerating')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Regenerate Summaries
         </button>
@@ -171,10 +172,10 @@ export default function AiManagerListingsPage() {
                   <td className="px-4 py-3.5 text-xs text-slate-400">{prop.lastUpdated}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
-                      <button className="text-xs text-slate-400 hover:text-slate-200 transition">
+                      <button onClick={() => toast.info('Opening listing editor')} className="text-xs text-slate-400 hover:text-slate-200 transition">
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
-                      <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+                      <button onClick={() => toast.success('AI improvements applied to listing')} className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
                         <Sparkles className="h-3 w-3" />
                         AI Improve
                       </button>

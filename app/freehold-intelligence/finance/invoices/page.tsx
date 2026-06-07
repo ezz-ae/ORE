@@ -1,10 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Download, FileText, CheckCircle2, Clock, AlertCircle, ArrowDownToLine } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
+
+function downloadCsv(filename: string, rows: string) {
+  const blob = new Blob([rows], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob); const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
+  toast.success(filename + ' downloaded')
+}
 
 const PLATFORM_STYLE: Record<string, string> = {
   meta:   'text-blue-400   bg-blue-400/10   border-blue-400/20',
@@ -56,7 +64,15 @@ export default function InvoicesPage() {
           <h1 className="text-[20px] font-semibold text-white">Invoices</h1>
           <p className="mt-1 text-xs text-slate-500">Platform billing — Meta Ads &amp; Google Ads</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
+        <button
+          onClick={() => {
+            const header = 'Invoice ID,Platform,Period,Amount (AED),Status,Issued,Due'
+            const lines = visible.map((i) =>
+              [i.id, i.platform === 'meta' ? 'Meta' : 'Google', `"${i.period}"`, i.amountAED, i.status, i.issuedDate, i.dueDate].join(',')
+            )
+            downloadCsv('invoices.csv', [header, ...lines].join('\n'))
+          }}
+          className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
           <Download className="h-3.5 w-3.5" /> Export CSV
         </button>
       </div>

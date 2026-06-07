@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { BookOpen, Plus, Sparkles, Calendar, Check, CheckCircle } from 'lucide-react'
 
 type TopicStatus = 'Published' | 'Draft' | 'Scheduled' | 'Idea'
@@ -178,7 +179,7 @@ export default function TopicsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           Topics &amp; Content Calendar
         </h1>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+        <button onClick={() => toast.success('Generating topic ideas with AI')} className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
           <Plus className="h-4 w-4" />
           Generate Topic
         </button>
@@ -304,7 +305,7 @@ export default function TopicsPage() {
                       </span>
                     ) : (
                       <>
-                        <button className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
+                        <button onClick={() => toast.info('Opening topic editor')} className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
                         <button
                           onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
                           className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20"

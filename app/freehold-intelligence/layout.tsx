@@ -1,5 +1,6 @@
 'use client'
 
+import { Toaster } from 'sonner'
 import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { ExpertChat } from '@/components/freehold/expert-chat'
 import { useSessionGuard } from '@/lib/freehold/use-session'
@@ -38,6 +39,17 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
         </main>
         <ExpertChat />
       </div>
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0D1520',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#E2E8F0',
+          },
+        }}
+      />
     </div>
   )
 }

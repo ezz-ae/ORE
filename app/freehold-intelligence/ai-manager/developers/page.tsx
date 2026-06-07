@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Building2, Plus, Sparkles, CheckCircle2, AlertCircle, Search, Globe, RefreshCw, TrendingUp } from 'lucide-react'
 
 interface DeveloperRow {
@@ -169,7 +170,7 @@ export default function DeveloperProfilesPage() {
           <h1 className="text-xl font-semibold text-white">Developer Profiles</h1>
           <p className="mt-1 text-xs text-slate-500">SEO pages for each developer — drives organic ranking</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button onClick={() => toast.success('Developer profile created — fill in details')} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
           <Plus className="h-3.5 w-3.5" /> Add developer
         </button>
       </div>
@@ -302,7 +303,7 @@ export default function DeveloperProfilesPage() {
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
                     </button>
-                    <button className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
+                    <button onClick={() => toast.info('Opening developer profile preview')} className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
                       <Globe className="h-3 w-3" /> Preview
                     </button>
                   </div>

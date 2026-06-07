@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Briefcase, TrendingUp, CheckCircle2, Clock, AlertCircle,
   ArrowUpRight, Calendar, Users, Building2, ChevronRight,
@@ -94,7 +95,9 @@ export default function DealsPage() {
                 <span className="text-xs font-medium text-amber-400">{atRisk.length} at risk</span>
               </div>
             )}
-            <button className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
+            <button
+              onClick={() => toast.success('New deal — opening deal form')}
+              className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
               + New Deal
             </button>
           </div>
@@ -214,7 +217,9 @@ export default function DealsPage() {
                     <p className="text-sm font-semibold text-white tabular-nums">{fmtAED(deal.value)}</p>
                     <p className="text-xs text-amber-400 font-medium">{deal.lastActivity}d no activity</p>
                   </div>
-                  <button className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
+                  <button
+                    onClick={() => toast.success('Follow-up reminder scheduled')}
+                    className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
                     Follow Up
                   </button>
                 </div>

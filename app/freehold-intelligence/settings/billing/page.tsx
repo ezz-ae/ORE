@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   CreditCard, CheckCircle, Clock, AlertCircle,
   Download, TrendingUp, Zap, Users,
@@ -81,7 +82,10 @@ export default function BillingPage() {
           >
             Update payment method
           </button>
-          <button className="rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300">
+          <button
+            onClick={() => toast.message('Cancel plan', { description: 'Contact support to downgrade or cancel.' })}
+            className="rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
+          >
             Cancel plan
           </button>
         </div>
@@ -158,7 +162,7 @@ export default function BillingPage() {
                     AED {inv.amount.toLocaleString()}
                   </div>
                   {inv.status === 'paid' && (
-                    <button className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-500 transition hover:border-slate-600 hover:text-slate-300">
+                    <button onClick={() => toast.success('Invoice downloading')} className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-500 transition hover:border-slate-600 hover:text-slate-300">
                       <Download className="h-3.5 w-3.5" />
                     </button>
                   )}

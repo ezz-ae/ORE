@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Sparkles,
   ArrowUpRight,
@@ -231,7 +232,7 @@ export default function IntegrationsPage() {
                           View <ArrowUpRight className="h-3 w-3" />
                         </Link>
                       ) : integration.status !== 'connected' ? (
-                        <button className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <button onClick={() => toast.success('Connecting ' + integration.name + '…')} className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           Connect <ArrowUpRight className="h-3 w-3" />
                         </button>
                       ) : null}

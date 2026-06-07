@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   FileBarChart2, Sparkles, Download, Eye, AlertTriangle,
   CheckCircle2, TrendingUp, Calendar, Clock, ChevronDown,
@@ -105,6 +106,7 @@ export default function ReportsPage() {
   const [dateTo,     setDateTo]     = useState('2026-06-06')
   const [generating, setGenerating] = useState(false)
   const [generated,  setGenerated]  = useState(false)
+  const [format,     setFormat]     = useState('PDF')
 
   function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
@@ -222,7 +224,9 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed mb-4">{insight.body}</p>
-                <button className={[
+                <button
+                  onClick={() => toast.info(insight.action)}
+                  className={[
                   'text-xs font-semibold flex items-center gap-1 transition-opacity hover:opacity-80',
                   insight.color,
                 ].join(' ')}>
@@ -262,11 +266,15 @@ export default function ReportsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition-colors">
+                      <button
+                        onClick={() => toast.info('Opening report')}
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition-colors">
                         <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
-                      <button className="flex items-center gap-1.5 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
+                      <button
+                        onClick={() => toast.success('Report PDF downloading')}
+                        className="flex items-center gap-1.5 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         PDF
                       </button>
@@ -340,9 +348,10 @@ export default function ReportsPage() {
                     <button
                       key={fmt}
                       type="button"
+                      onClick={() => setFormat(fmt)}
                       className={[
                         'rounded-lg border py-2 text-xs font-medium transition-colors',
-                        fmt === 'PDF'
+                        fmt === format
                           ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
                           : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
                       ].join(' ')}
@@ -378,7 +387,9 @@ export default function ReportsPage() {
                     <p className="text-xs font-semibold text-emerald-400">Report Ready</p>
                     <p className="text-xs text-slate-500">Your report has been generated successfully</p>
                   </div>
-                  <button className="ml-auto flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                  <button
+                    onClick={() => toast.success('Export downloading')}
+                    className="ml-auto flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
                     Download
                   </button>
@@ -421,12 +432,16 @@ export default function ReportsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors">
+                        <button
+                          onClick={() => toast.info('Opening report')}
+                          className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors">
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
                         <span className="text-slate-700">·</span>
-                        <button className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                        <button
+                          onClick={() => toast.success('Report PDF downloading')}
+                          className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
                           PDF
                         </button>

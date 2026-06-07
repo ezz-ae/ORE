@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
   Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
@@ -183,7 +184,7 @@ export default function NotebookPage() {
         {/* header */}
         <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3.5">
           <span className="text-sm font-semibold text-white">Sources</span>
-          <button className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]">
+          <button onClick={() => toast.success('Add a source — paste a URL or upload a document')} className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]">
             <Plus className="h-3 w-3" /> Add source
           </button>
         </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { toast } from 'sonner'
 import {
   TrendingUp, DollarSign, Target, Sparkles,
   ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle2,
@@ -98,6 +99,13 @@ function fmtAED(n: number) {
   return `AED ${n.toLocaleString()}`
 }
 
+function downloadCsv(filename: string, rows: string) {
+  const blob = new Blob([rows], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob); const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
+  toast.success(filename + ' downloaded')
+}
+
 export default function ROIPage() {
   const totalRevenue  = PLATFORM_ROI.reduce((s, p) => s + p.revenue, 0)
   const totalSpend    = PLATFORM_ROI.reduce((s, p) => s + p.spend, 0)
@@ -115,7 +123,15 @@ export default function ROIPage() {
             <h1 className="text-lg font-semibold text-white">ROI Dashboard</h1>
             <p className="mt-0.5 text-sm text-slate-500">Marketing return on investment · June 2026</p>
           </div>
-          <button className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
+          <button
+            onClick={() => {
+              const header = 'Channel,Leads,Deals,Revenue (AED),Ad Spend (AED),ROI %,CAC (AED)'
+              const lines = PLATFORM_ROI.map(p =>
+                [`"${p.platform}"`, p.leads, p.deals, p.revenue, p.spend, p.roi, p.cac].join(',')
+              )
+              downloadCsv('roi-report-jun-2026.csv', [header, ...lines].join('\n'))
+            }}
+            className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
             Export Report
           </button>
         </div>

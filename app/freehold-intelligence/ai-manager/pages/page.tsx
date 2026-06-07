@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { FileText, Sparkles, Globe, Check, AlertCircle } from 'lucide-react'
 
 interface PageRow {
@@ -67,7 +68,7 @@ export default function WebsitePagesPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           Website Pages
         </h1>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+        <button onClick={() => toast.success('AI review started for all pages')} className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
           <Sparkles className="h-4 w-4" />
           AI Review All
         </button>
@@ -153,7 +154,7 @@ export default function WebsitePagesPage() {
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
                 <td className="px-4 py-3.5">
-                  <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+                  <button onClick={() => toast.success('AI review started for this page')} className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
                     <Sparkles className="h-3 w-3" />
                     AI Review
                   </button>

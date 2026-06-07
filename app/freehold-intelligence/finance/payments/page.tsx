@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, Wallet, RefreshCw } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 
@@ -85,7 +86,7 @@ export default function PaymentsPage() {
               </div>
               {pm.isDefault
                 ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Default</span>
-                : <button className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
+                : <button onClick={() => toast.success('Default payment method updated')} className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
               }
             </div>
           ))}
@@ -109,7 +110,7 @@ export default function PaymentsPage() {
               <input placeholder="CVV" className="w-20 rounded-[9px] border border-slate-800 bg-slate-800/50 px-3 py-2 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50" />
             </div>
             <div className="flex gap-2 pt-1">
-              <button className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
+              <button onClick={() => toast.success('Card saved')} className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
               <button onClick={() => setAddingCard(false)} className="rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">Cancel</button>
             </div>
           </div>
@@ -173,7 +174,7 @@ export default function PaymentsPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-sm font-semibold text-emerald-400">{fmt(t.amount)}</span>
-                <button className="text-slate-600 hover:text-slate-400 transition">
+                <button onClick={() => toast.success('Receipt downloading')} className="text-slate-600 hover:text-slate-400 transition">
                   <ArrowDownToLine className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -202,7 +203,7 @@ export default function PaymentsPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-sm font-semibold text-[#D4AF37]">{fmt(c.amount)}</span>
                   {c.status === 'approved'
-                    ? <button className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1">
+                    ? <button onClick={() => toast.success('Payment initiated')} className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1">
                         <RefreshCw className="h-3 w-3" /> Pay now
                       </button>
                     : <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">Pending</span>

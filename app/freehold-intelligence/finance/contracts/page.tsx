@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { FileCheck, Calendar, RefreshCw, CheckCircle2, AlertCircle, Clock, ExternalLink, Plus, ChevronDown, ChevronRight } from 'lucide-react'
 
 type ContractStatus = 'active' | 'expiring' | 'expired' | 'draft'
@@ -110,7 +111,9 @@ export default function ContractsPage() {
           <h1 className="text-[20px] font-semibold text-white">Contracts</h1>
           <p className="mt-1 text-xs text-slate-500">Active agreements, renewals, and platform terms</p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
+        <button
+          onClick={() => toast.success('New contract — opening form')}
+          className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
           <Plus className="h-3.5 w-3.5" /> Add contract
         </button>
       </div>
@@ -221,7 +224,9 @@ export default function ContractsPage() {
                         <CheckCircle2 className="h-3.5 w-3.5" /> Renewal requested
                       </span>
                     )}
-                    <button className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition ml-auto">
+                    <button
+                      onClick={() => toast.info('Opening contract document')}
+                      className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition ml-auto">
                       <ExternalLink className="h-3.5 w-3.5" /> View document
                     </button>
                   </div>

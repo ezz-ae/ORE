@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { toast } from 'sonner'
 import {
   BookOpen, Plus, Send, Sparkles, Link2, Upload, FileText,
   Share2, MessageSquare, ChevronRight, X, Check,
@@ -80,6 +81,7 @@ const SHARE_CONNECTIONS = agentConnections.filter((c) =>
 )
 
 export default function AgentNotebookPage() {
+  const brochureRef = useRef<HTMLInputElement>(null)
   const [notes, setNotes]           = useState<Note[]>(INITIAL_NOTES)
   const [sources, setSources]       = useState<Source[]>(INITIAL_SOURCES)
   const [activeNote, setActiveNote] = useState<Note>(INITIAL_NOTES[0])
@@ -242,10 +244,17 @@ export default function AgentNotebookPage() {
         </div>
 
         <div className="border-t border-slate-800 p-2">
-          <button className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
+          <input
+            type="file"
+            ref={brochureRef}
+            multiple
+            className="hidden"
+            onChange={() => toast.success('Brochure uploaded — analyzing')}
+          />
+          <button onClick={() => brochureRef.current?.click()} className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
             <Upload className="h-3 w-3" /> Upload brochure
           </button>
-          <button className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
+          <button onClick={() => toast.success('Add a URL to your research')} className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
             <Link2 className="h-3 w-3" /> Add URL
           </button>
         </div>

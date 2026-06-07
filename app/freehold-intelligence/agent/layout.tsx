@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { toast } from 'sonner'
 import { ArrowLeft, Bell, ChevronRight, UserCircle } from 'lucide-react'
 
 const APP_LABELS: Record<string, string> = {
@@ -51,6 +52,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
 
           <div className="ml-auto">
             <button
+              onClick={() => toast.info('You have 2 new notifications')}
               className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 transition-colors hover:border-white/[0.2] hover:text-slate-200"
               aria-label="Notifications"
             >
