@@ -4,56 +4,124 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, Lock, Mail, Check } from 'lucide-react'
 import { login } from '@/lib/freehold/session'
+import type { Role } from '@/lib/freehold/session-types'
+import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
 
-// NOTE: temporary pre-filled admin credentials — replace with real server auth.
-const USERNAME = 'admin@freehold.ae'
-const PASSWORD = 'FreeHold_in26'
+// Hint cards — display only, no passwords. Keeps the UI informative.
+const USERS: { email: string; name: string; initials: string; role: Role; password: string }[] = [
+  { email: 'm@freehold.ae',         name: 'Mubarak',       initials: 'MB', role: 'ceo',           password: 'CEO_in26'       },
+  { email: 'director@freehold.ae',  name: 'Omar Al Rashid',initials: 'OR', role: 'director',      password: 'Director_in26'  },
+  { email: 'admin@freehold.ae',     name: 'Admin Desk',    initials: 'AD', role: 'admin',         password: 'FreeHold_in26'  },
+  { email: 'sales@freehold.ae',     name: 'Khalid Hassan', initials: 'KH', role: 'sales_manager', password: 'Sales_in26'     },
+  { email: 'marketing@freehold.ae', name: 'Layla Nasser',  initials: 'LN', role: 'marketing',     password: 'Marketing_in26' },
+  { email: 'ahmad@freehold.ae',     name: 'Ahmad Khalil',  initials: 'AK', role: 'broker',        password: 'Broker_in26'    },
+]
 
 export default function ServerAuth() {
   const router = useRouter()
-  // pre-filled so the owner finds the credentials already there
-  const [email, setEmail]       = useState(USERNAME)
-  const [password, setPassword] = useState(PASSWORD)
-  const [remember, setRemember] = useState(true)
-  const [show, setShow]         = useState(false)
-  const [error, setError]       = useState(false)
-  const [loading, setLoading]   = useState(false)
+
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [remember, setRemember]     = useState(true)
+  const [show, setShow]             = useState(false)
+  const [error, setError]           = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [selected, setSelected]     = useState<string | null>(null)
+
+  function selectUser(u: typeof USERS[0]) {
+    setSelected(u.email)
+    setEmail(u.email)
+    setPassword(u.password)
+    setError(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email || !password || loading) return
     setLoading(true)
     setError(false)
-    // server-side auth: sets a signed httpOnly cookie, returns the user
     const user = await login(email, password, remember)
     if (user) {
-      router.replace(user.home)   // admin → /management, broker → /agent
+      router.replace(user.home)
     } else {
       setError(true)
       setLoading(false)
     }
   }
 
+  const selectedUser = USERS.find((u) => u.email === selected)
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D1117] px-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0D1117] px-6 py-10">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:48px_48px]" />
 
-      <div className="relative w-full max-w-[380px]">
-        <div className="mb-10 text-center">
+      <div className="relative w-full max-w-[440px]">
+
+        {/* Header */}
+        <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/10">
             <Shield className="h-8 w-8 text-[#D4AF37]" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Freehold Server</h1>
-          <p className="mt-1.5 text-sm text-slate-500">One sign-in — your workspace adapts to your role</p>
+          <p className="mt-1.5 text-sm text-slate-500">Select your profile — your workspace adapts to your role</p>
         </div>
 
+        {/* Role selector */}
+        <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-xl">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Who are you signing in as?
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {USERS.map((u) => {
+              const color = ROLE_COLORS[u.role]
+              const isSelected = selected === u.email
+              return (
+                <button
+                  key={u.email}
+                  type="button"
+                  onClick={() => selectUser(u)}
+                  className={[
+                    'flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all',
+                    isSelected
+                      ? 'border-opacity-60 bg-slate-800/80'
+                      : 'border-slate-800 bg-slate-800/20 hover:bg-slate-800/50 hover:border-slate-700',
+                  ].join(' ')}
+                  style={isSelected ? { borderColor: color + '60', boxShadow: `0 0 0 1px ${color}20` } : {}}
+                >
+                  {/* Avatar */}
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold"
+                    style={{ background: color + '18', borderColor: color + '40', color }}
+                  >
+                    {u.initials}
+                  </div>
+                  {/* Name */}
+                  <div className="min-w-0 w-full">
+                    <div className="truncate text-xs font-medium text-slate-200">{u.name}</div>
+                    <div
+                      className="mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                      style={{ background: color + '20', color }}
+                    >
+                      {ROLE_LABELS[u.role]}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Login form */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-7 backdrop-blur-xl">
           <div className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <Lock className="h-3 w-3" /> Secure Authentication
+            <Lock className="h-3 w-3" />
+            {selectedUser
+              ? <span>Signing in as <span style={{ color: ROLE_COLORS[selectedUser.role] }}>{selectedUser.name}</span> · {ROLE_LABELS[selectedUser.role]}</span>
+              : 'Secure Authentication'
+            }
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email / username */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-300">Email</label>
               <div className="relative">
@@ -61,7 +129,7 @@ export default function ServerAuth() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => { setEmail(e.target.value); setError(false) }}
+                  onChange={e => { setEmail(e.target.value); setError(false); setSelected(null) }}
                   placeholder="you@freehold.ae"
                   autoComplete="username"
                   className={[
@@ -72,7 +140,6 @@ export default function ServerAuth() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-300">Password</label>
               <div className="relative">
@@ -99,7 +166,6 @@ export default function ServerAuth() {
               {error && <p className="mt-2 text-xs text-red-400">Incorrect email or password. Please try again.</p>}
             </div>
 
-            {/* Remember me */}
             <label className="flex cursor-pointer items-center gap-2.5 select-none">
               <button
                 type="button"
@@ -119,19 +185,14 @@ export default function ServerAuth() {
               disabled={!email || !password || loading}
               className="w-full rounded-xl bg-[#D4AF37] py-3 text-sm font-semibold text-[#0D1117] transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Verifying…' : 'Sign in to Control Panel'}
+              {loading ? 'Verifying…' : 'Sign in to your workspace'}
             </button>
           </form>
         </div>
 
-        <div className="mt-6 space-y-2 text-center">
-          <p className="text-xs text-slate-600">
-            Admins land on the control panel · Brokers land on their workspace
-          </p>
-          <p className="text-xs text-slate-700">
-            Freehold Intelligence Platform &middot; Authorized Personnel Only
-          </p>
-        </div>
+        <p className="mt-5 text-center text-xs text-slate-700">
+          Freehold Intelligence Platform &middot; Authorized Personnel Only
+        </p>
       </div>
     </div>
   )

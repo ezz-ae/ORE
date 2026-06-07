@@ -28,7 +28,7 @@ const NAV = [
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const { ready } = useSessionGuard('admin')   // admins only; brokers bounce to their home
+  const { ready } = useSessionGuard(['admin', 'ceo', 'director'])
   const [mobileOpen, setMobileOpen] = useState(false)
 
   function isActive(item: typeof NAV[0]) {

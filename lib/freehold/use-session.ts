@@ -32,10 +32,16 @@ export function useSession(): SessionState {
  * shouldn't be here, and returns `ready` only once the correct role is confirmed.
  *   - no session   → /server
  *   - wrong role   → that user's own home
+ *
+ * Pass a single role or an array of allowed roles.
  */
-export function useSessionGuard(requireRole?: Role): SessionState {
+export function useSessionGuard(requireRole?: Role | Role[]): SessionState {
   const router = useRouter()
   const { ready, user } = useSession()
+
+  const roles: Role[] = requireRole
+    ? Array.isArray(requireRole) ? requireRole : [requireRole]
+    : []
 
   useEffect(() => {
     if (!ready) return
@@ -43,11 +49,12 @@ export function useSessionGuard(requireRole?: Role): SessionState {
       router.replace('/server')
       return
     }
-    if (requireRole && user.role !== requireRole) {
+    if (roles.length > 0 && !roles.includes(user.role)) {
       router.replace(user.home)
     }
-  }, [ready, user, requireRole, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user])
 
-  const allowed = !!user && (!requireRole || user.role === requireRole)
+  const allowed = !!user && (roles.length === 0 || roles.includes(user.role))
   return { ready: ready && allowed, user }
 }

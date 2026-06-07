@@ -15,6 +15,7 @@ import {
   type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const stats          = getInventoryStats()
 const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
@@ -58,16 +59,18 @@ const APPS = [
     icon:   'text-pink-400 bg-pink-400/10 border-pink-400/20',
   },
   {
-    id:     'finance',
-    label:  'Finance',
-    sub:    'Invoices · Payments · Agent Credits',
-    href:   '/freehold-intelligence/finance',
-    Icon:   DollarSign,
-    metric: 'AED 31.3K · 73% budget',
-    badge:  1,
-    accent: '#34D399',
-    card:   'border-emerald-400/15 hover:border-emerald-400/30',
-    icon:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+    id:          'finance',
+    label:       'Finance',
+    sub:         'Invoices · Payments · Agent Credits',
+    href:        '/freehold-intelligence/finance',
+    Icon:        DollarSign,
+    metric:      'AED 31.3K · 73% budget',
+    badge:       1,
+    accent:      '#34D399',
+    card:        'border-emerald-400/15 hover:border-emerald-400/30',
+    icon:        'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+    managementOnly: false,
+    brokerHide:  true,
   },
   {
     id:     'analytics',
@@ -130,17 +133,18 @@ const APPS = [
     icon:   'text-slate-400 bg-slate-800/40 border-slate-800',
   },
   {
-    id:        'management',
-    label:     'Management',
-    sub:       'Admin · Credits · Team · Finance',
-    href:      '/management',
-    Icon:      ShieldCheck,
-    metric:    'Admin control panel',
-    badge:     0,
-    accent:    '#D4AF37',
-    card:      'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
-    icon:      'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
-    adminOnly: true,
+    id:             'management',
+    label:          'Management',
+    sub:            'Admin · Credits · Team · Finance',
+    href:           '/management',
+    Icon:           ShieldCheck,
+    metric:         'Admin control panel',
+    badge:          0,
+    accent:         '#D4AF37',
+    card:           'border-[#D4AF37]/20 hover:border-[#D4AF37]/40',
+    icon:           'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/25',
+    managementOnly: true,
+    brokerHide:     false,
   },
 ]
 
@@ -182,15 +186,21 @@ export default function IntelligenceLauncher() {
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
   const [dateStr, setDateStr]         = useState('')
   const { user }   = useSession()
-  const isAdmin    = user?.role === 'admin'
+  const role       = user?.role
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
-    setGreeting(getGreeting(currentServerUser.name))
+    const displayName = user?.name ?? currentServerUser.name
+    setGreeting(getGreeting(displayName))
     setDateStr(new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.name])
 
-  const visibleApps = APPS.filter((a) => !a.adminOnly || isAdmin)
+  const visibleApps = APPS.filter((a) => {
+    if ('managementOnly' in a && a.managementOnly) return role ? MANAGEMENT_ROLES.includes(role) : false
+    if ('brokerHide' in a && a.brokerHide) return role !== 'broker'
+    return true
+  })
 
   const lowAdReadiness  = inventoryProperties.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryProperties.filter((p) => p.landingStatus === 'missing')

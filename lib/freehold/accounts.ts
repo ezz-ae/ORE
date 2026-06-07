@@ -15,25 +15,65 @@ interface Account {
 }
 
 const ACCOUNTS: Record<string, Account> = {
+  'm@freehold.ae': {
+    password: 'CEO_in26',
+    user: {
+      email:    'm@freehold.ae',
+      name:     'Mubarak',
+      initials: 'MB',
+      role:     'ceo',
+      home:     '/freehold-intelligence',
+    },
+  },
+  'director@freehold.ae': {
+    password: 'Director_in26',
+    user: {
+      email:    'director@freehold.ae',
+      name:     'Omar Al Rashid',
+      initials: 'OR',
+      role:     'director',
+      home:     '/freehold-intelligence',
+    },
+  },
   'admin@freehold.ae': {
     password: 'FreeHold_in26',
     user: {
-      email: 'admin@freehold.ae',
-      name: 'Administrator',
+      email:    'admin@freehold.ae',
+      name:     'Admin Desk',
       initials: 'AD',
-      role: 'admin',
-      home: '/management',
+      role:     'admin',
+      home:     '/freehold-intelligence',
+    },
+  },
+  'sales@freehold.ae': {
+    password: 'Sales_in26',
+    user: {
+      email:    'sales@freehold.ae',
+      name:     'Khalid Hassan',
+      initials: 'KH',
+      role:     'sales_manager',
+      home:     '/freehold-intelligence',
+    },
+  },
+  'marketing@freehold.ae': {
+    password: 'Marketing_in26',
+    user: {
+      email:    'marketing@freehold.ae',
+      name:     'Layla Nasser',
+      initials: 'LN',
+      role:     'marketing',
+      home:     '/freehold-intelligence',
     },
   },
   'ahmad@freehold.ae': {
     password: 'Broker_in26',
     user: {
-      email: 'ahmad@freehold.ae',
-      name: 'Ahmad Khalil',
+      email:    'ahmad@freehold.ae',
+      name:     'Ahmad Khalil',
       initials: 'AK',
-      role: 'broker',
+      role:     'broker',
       brokerId: 'bc_ahmed',
-      home: '/freehold-intelligence/agent',
+      home:     '/freehold-intelligence/agent',
     },
   },
 }
@@ -44,3 +84,4 @@ export function authenticate(email: string, password: string): SessionUser | nul
   if (!acct || acct.password !== password) return null
   return acct.user
 }
+
