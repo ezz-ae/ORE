@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listCampaigns, getCampaignInsights } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
+import { demoCampaigns } from '@/lib/meta/demo-data'
 
 export async function GET() {
   try {
@@ -24,7 +25,7 @@ export async function GET() {
     return NextResponse.json({ campaigns: withInsights })
   } catch (err) {
     if (err instanceof MetaConfigError) {
-      return NextResponse.json({ error: err.message, type: 'config' }, { status: 503 })
+      return NextResponse.json({ campaigns: demoCampaigns, demo: true })
     }
     if (err instanceof MetaApiError) {
       return NextResponse.json(

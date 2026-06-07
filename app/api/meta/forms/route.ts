@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listLeadForms, createLeadForm, MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { CreateLeadFormPayload } from '@/lib/meta/types'
+import { demoForms } from '@/lib/meta/demo-data'
 
 export async function GET() {
   try {
@@ -8,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ forms })
   } catch (err) {
     if (err instanceof MetaConfigError)
-      return NextResponse.json({ error: err.message, type: 'config' }, { status: 503 })
+      return NextResponse.json({ forms: demoForms, demo: true })
     if (err instanceof MetaApiError)
       return NextResponse.json({ error: err.message, code: err.code, type: err.type }, { status: 400 })
     const message = err instanceof Error ? err.message : 'Unexpected error'
