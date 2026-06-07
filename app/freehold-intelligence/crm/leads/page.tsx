@@ -7,23 +7,23 @@ import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',     text: 'text-red-300',     badge: 'border-red-400/20 bg-red-400/10',       label: 'Critical' }
-  if (u === 'high')     return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',  label: 'High'     }
+  if (u === 'high')     return { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  badge: 'border-gold/20 bg-gold/10',  label: 'High'     }
   if (u === 'medium')   return { dot: 'bg-sky-400',     text: 'text-sky-200',    badge: 'border-sky-400/20 bg-sky-400/10',       label: 'Medium'   }
-  return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-slate-700 bg-slate-800/50',      label: 'Low'      }
+  return                       { dot: 'bg-slate-500',   text: 'text-slate-400',  badge: 'border-line-strong bg-surface-2',      label: 'Low'      }
 }
 
 function scoreColor(n: number) {
-  if (n >= 85) return 'text-[#D4AF37]'
-  if (n >= 65) return 'text-[#D4AF37]'
+  if (n >= 85) return 'text-gold'
+  if (n >= 65) return 'text-gold'
   return 'text-red-300'
 }
 
 function stageColor(stage: string) {
   if (stage === 'Hot')       return 'text-red-300 border-red-400/20 bg-red-400/10'
-  if (stage === 'Qualified') return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
-  if (stage === 'Follow-up') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
+  if (stage === 'Qualified') return 'text-gold border-gold/20 bg-gold/10'
+  if (stage === 'Follow-up') return 'text-[#F8E7AE] border-gold/20 bg-gold/10'
   if (stage === 'New')       return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
-  return 'text-slate-400 border-slate-700 bg-slate-800/50'
+  return 'text-slate-400 border-line-strong bg-surface-2'
 }
 
 const ALL_STAGES  = ['All', ...Array.from(new Set(crmLeads.map((l) => l.stage)))]
@@ -73,7 +73,7 @@ export default function CrmLeadsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <Target className="h-3.5 w-3.5" /> CRM · All Leads
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -87,10 +87,10 @@ export default function CrmLeadsPage() {
         {[
           { label: 'Total',        value: crmLeads.length, color: 'text-white'                                    },
           { label: 'Hot / urgent', value: hot,             color: 'text-red-300'                                  },
-          { label: 'Avg intent',   value: avgIntent,       color: 'text-[#D4AF37]'                                },
+          { label: 'Avg intent',   value: avgIntent,       color: 'text-gold'                                },
           { label: 'Risk flags',   value: withRisk,        color: withRisk > 0 ? 'text-orange-300' : 'text-white' },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-center">
+          <div key={s.label} className="rounded-xl border border-line bg-surface p-4 text-center">
             <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -105,7 +105,7 @@ export default function CrmLeadsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, source, stage or agent…"
-          className="w-full rounded-xl border border-slate-800 bg-slate-800/50 py-2.5 pl-10 pr-4 text-sm text-slate-300 placeholder:text-slate-500 focus:border-[#D4AF37]/50 focus:outline-none"
+          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-300 placeholder:text-slate-500 focus:border-gold/50 focus:outline-none"
         />
       </div>
 
@@ -119,9 +119,9 @@ export default function CrmLeadsPage() {
             className={`rounded-full border px-2.5 py-0.5 text-sm font-medium transition ${
               activeStage === stage
                 ? stage === 'All'
-                  ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
+                  ? 'border-gold/30 bg-gold/10 text-gold'
                   : stageColor(stage)
-                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500'
             }`}
           >
             {stage}
@@ -138,8 +138,8 @@ export default function CrmLeadsPage() {
             onClick={() => setActiveAgent(agent)}
             className={`rounded-full border px-2.5 py-0.5 text-sm font-medium transition ${
               activeAgent === agent
-                ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500'
+                ? 'border-gold/30 bg-gold/10 text-gold'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500'
             }`}
           >
             {agent}
@@ -148,7 +148,7 @@ export default function CrmLeadsPage() {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-200 hover:border-slate-500"
+            className="ml-1 flex items-center gap-1 rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-200 hover:border-slate-500"
           >
             <X className="h-3 w-3" /> Clear
           </button>
@@ -158,14 +158,14 @@ export default function CrmLeadsPage() {
       {/* Result count */}
       <p className="mt-3 text-sm text-slate-500">
         {filtered.length} of {crmLeads.length} leads
-        {hasFilters && <span className="ml-1.5 text-[#D4AF37]/60">· filtered</span>}
+        {hasFilters && <span className="ml-1.5 text-gold/60">· filtered</span>}
       </p>
 
       {/* Lead table */}
       <section className="mt-4">
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
           {/* Table header */}
-          <div className="hidden grid-cols-[2fr_1fr_80px_100px_120px_40px] items-center gap-4 border-b border-slate-800 px-6 py-3 sm:grid">
+          <div className="hidden grid-cols-[2fr_1fr_80px_100px_120px_40px] items-center gap-4 border-b border-line px-6 py-3 sm:grid">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Lead</div>
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Stage</div>
             <div className="text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Score</div>
@@ -179,7 +179,7 @@ export default function CrmLeadsPage() {
               No leads match these filters.
             </div>
           ) : (
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-line">
               {filtered.map((lead) => {
                 const ug      = urgencyConfig(lead.urgency)
                 const hasRisk = lead.duplicateRisk || lead.wrongNumberRisk
@@ -188,7 +188,7 @@ export default function CrmLeadsPage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group flex items-center gap-4 px-6 py-4 transition hover:bg-slate-800/50"
+                    className="group flex items-center gap-4 px-6 py-4 transition hover:bg-surface-2"
                   >
                     {/* Name + urgency */}
                     <div className="min-w-0 flex-[2] flex items-center gap-2.5">
@@ -222,7 +222,7 @@ export default function CrmLeadsPage() {
                       <span className={`text-sm font-semibold tabular-nums ${scoreColor(lead.intentScore)}`}>
                         {lead.intentScore}
                       </span>
-                      <div className="mx-auto mt-1 h-1 w-12 overflow-hidden rounded-full bg-slate-800">
+                      <div className="mx-auto mt-1 h-1 w-12 overflow-hidden rounded-full bg-surface-2">
                         <div
                           className={`h-full rounded-full ${scoreColor(lead.intentScore).replace('text-', 'bg-').replace('/30', '').replace('/300', '')}`}
                           style={{ width: `${lead.intentScore}%` }}
@@ -241,7 +241,7 @@ export default function CrmLeadsPage() {
                     </div>
 
                     {/* Arrow */}
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />
                   </Link>
                 )
               })}
@@ -253,10 +253,10 @@ export default function CrmLeadsPage() {
       {/* Footer */}
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-500">
         <span>{filtered.length} leads · sorted by intent score</span>
-        <Link href="/freehold-intelligence/crm" className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+        <Link href="/freehold-intelligence/crm" className="text-gold/60 transition hover:text-gold">
           → Intelligence view
         </Link>
-        <Link href="/freehold-intelligence/crm/inbox" className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+        <Link href="/freehold-intelligence/crm/inbox" className="text-gold/60 transition hover:text-gold">
           → Unassigned inbox
         </Link>
       </div>

@@ -61,10 +61,10 @@ export default function ReadyPage() {
         {[
           { label: 'Ready',        value: props.length,   color: 'text-amber-400'   },
           { label: 'Live pages',   value: liveLandings,   color: 'text-emerald-400' },
-          { label: '30d Leads',    value: totalLeads,     color: 'text-[#D4AF37]'   },
+          { label: '30d Leads',    value: totalLeads,     color: 'text-gold'   },
           { label: 'Avg readiness',value: `${avgReadiness}%`, color: 'text-slate-300' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
           </div>
@@ -95,19 +95,19 @@ export default function ReadyPage() {
             placeholder="Search by name or developer…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
+            className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
           />
         </div>
         <select value={area} onChange={(e) => setArea(e.target.value)}
-          className="rounded-[10px] border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-400 outline-none focus:border-amber-400/30">
+          className="rounded-[10px] border border-line bg-surface px-3 py-2 text-xs text-slate-400 outline-none focus:border-amber-400/30">
           {areas.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <div className="flex items-center gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
+        <div className="flex items-center gap-1 rounded-[10px] border border-line bg-surface p-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500 ml-1" />
           {(['leads', 'price', 'readiness', 'roi'] as SortKey[]).map((s) => (
             <button key={s} onClick={() => setSort(s)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
-                sort === s ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
+                sort === s ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
               {s}
             </button>
@@ -116,7 +116,7 @@ export default function ReadyPage() {
       </div>
 
       {/* Property list */}
-      <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+      <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {props.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-slate-500">No ready properties match.</div>
         )}
@@ -142,7 +142,7 @@ export default function ReadyPage() {
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-24 rounded-full bg-slate-800/50">
+                  <div className="h-1 w-24 rounded-full bg-surface-2">
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/60'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
@@ -154,7 +154,7 @@ export default function ReadyPage() {
                 <div className="text-sm font-semibold text-slate-300">{formatPrice(p.startingPriceAED)}</div>
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
+                    className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
                     View <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

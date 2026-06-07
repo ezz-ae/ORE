@@ -135,14 +135,14 @@ export default function IntelligenceLauncher() {
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
       {/* ── Morning Briefing ──────────────────────────────────────────────── */}
-      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.09] via-[#D4AF37]/[0.03] to-transparent">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.09] via-gold/[0.03] to-transparent">
         <div className="p-6 sm:p-7">
 
           {/* Header row */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-                <Sparkles className="h-5 w-5 text-[#D4AF37]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/25 bg-gold/10">
+                <Sparkles className="h-5 w-5 text-gold" />
               </div>
               <div>
                 <div className="text-base font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
@@ -158,7 +158,7 @@ export default function IntelligenceLauncher() {
               <span className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-400">
                 {serverSummary.blockedItems.length} blocked
               </span>
-              <span className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm text-slate-400">
+              <span className="flex items-center gap-2 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-sm text-slate-400">
                 {serverSummary.pendingApprovals.length} pending
               </span>
               <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
@@ -174,7 +174,7 @@ export default function IntelligenceLauncher() {
           </p>
 
           {/* Divider */}
-          <div className="my-5 border-t border-slate-800" />
+          <div className="my-5 border-t border-line" />
 
           {/* AI Chat */}
           <div>
@@ -185,13 +185,13 @@ export default function IntelligenceLauncher() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
                 placeholder="Ask anything about today's priorities…"
-                className="flex-1 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#D4AF37]/50 transition-colors"
+                className="flex-1 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-gold/50 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => sendChat(chatInput)}
                 disabled={chatLoading || !chatInput.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#D4AF37] text-[#0D1117] transition-opacity hover:opacity-85 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold text-ink transition-opacity hover:opacity-85 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -214,12 +214,12 @@ export default function IntelligenceLauncher() {
 
             {/* AI response */}
             {(chatLoading || chatReply) && (
-              <div className="mt-4 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-4">
+              <div className="mt-4 rounded-xl border border-gold/20 bg-gold/[0.04] p-4">
                 {chatLoading ? (
                   <div className="flex items-center gap-3 text-sm text-slate-400">
                     <span className="flex gap-1">
                       {[0, 1, 2].map((i) => (
-                        <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/60 animate-bounce"
+                        <span key={i} className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce"
                           style={{ animationDelay: `${i * 0.15}s` }} />
                       ))}
                     </span>
@@ -230,7 +230,7 @@ export default function IntelligenceLauncher() {
                     <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
                       {chatReply}
                     </p>
-                    <div className="mt-3 flex items-center justify-between border-t border-slate-700 pt-3">
+                    <div className="mt-3 flex items-center justify-between border-t border-line-strong pt-3">
                       <Link href="/freehold-intelligence/agent"
                         className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors">
                         Full conversation <ChevronRight className="h-3.5 w-3.5" />
@@ -295,7 +295,7 @@ export default function IntelligenceLauncher() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-xl border bg-[#0D1520] p-5 transition-all duration-200 ${app.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-surface p-5 transition-all duration-200 ${app.card}`}
               >
                 {badge > 0 && (
                   <span className="absolute right-4 top-4 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
@@ -313,7 +313,7 @@ export default function IntelligenceLauncher() {
                   <div className="text-sm text-slate-400 font-medium">
                     {metric}
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-[#D4AF37]" />
+                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-gold" />
                 </div>
               </Link>
             )
@@ -325,7 +325,7 @@ export default function IntelligenceLauncher() {
       <section className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Priority queue */}
-        <div className="rounded-xl border border-white/[0.07] bg-[#0D1520] overflow-hidden">
+        <div className="rounded-xl border border-white/[0.07] bg-surface overflow-hidden">
           <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
               <AlertCircle className="h-4 w-4 text-amber-400" />
@@ -355,7 +355,7 @@ export default function IntelligenceLauncher() {
             ))}
             {priorities.length === 0 && (
               <div className="flex items-center gap-3 px-5 py-4">
-                <CheckCircle2 className="h-4 w-4 text-[#D4AF37]" />
+                <CheckCircle2 className="h-4 w-4 text-gold" />
                 <span className="text-sm text-slate-300">All clear — no open priorities</span>
               </div>
             )}
@@ -363,7 +363,7 @@ export default function IntelligenceLauncher() {
         </div>
 
         {/* Live activity */}
-        <div className="rounded-xl border border-white/[0.07] bg-[#0D1520] overflow-hidden">
+        <div className="rounded-xl border border-white/[0.07] bg-surface overflow-hidden">
           <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3.5 text-sm font-medium text-slate-300">
             <Activity className="h-4 w-4" />
             Live activity
@@ -372,9 +372,9 @@ export default function IntelligenceLauncher() {
             {ACTIVITY.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${
-                  item.type === 'lead'    ? 'bg-[#D4AF37]' :
+                  item.type === 'lead'    ? 'bg-gold' :
                   item.type === 'warning' ? 'bg-amber-400' :
-                  item.type === 'success' ? 'bg-emerald-400' : 'bg-slate-600'
+                  item.type === 'success' ? 'bg-emerald-400' : 'bg-surface-3'
                 }`} />
                 <div className="min-w-0 flex-1">
                   <span className="text-sm font-medium text-slate-200">{item.label}</span>

@@ -64,7 +64,7 @@ export default function CreativesPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <Palette className="h-3.5 w-3.5" /> Ad Creatives
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -77,7 +77,7 @@ export default function CreativesPage() {
 
         <Link
           href="/freehold-intelligence/lead-machine/creatives/generate"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] sm:mt-10"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
         >
           <Wand2 className="h-4 w-4" /> Generate copy
         </Link>
@@ -91,7 +91,7 @@ export default function CreativesPage() {
             <div>
               <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
-              <Link href="/freehold-intelligence/integrations/meta" className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]">
+              <Link href="/freehold-intelligence/integrations/meta" className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold">
                 Set up Meta integration <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
@@ -118,7 +118,7 @@ export default function CreativesPage() {
               { label: 'With image',        value: creatives.filter((c) => c.object_story_spec?.link_data?.picture).length },
               { label: 'Named creatives',   value: creatives.filter((c) => c.name && c.name !== 'Unnamed').length },
             ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3">
+              <div key={s.label} className="rounded-[14px] border border-line bg-surface px-4 py-3">
                 <div className="text-[20px] font-semibold text-white">{s.value}</div>
                 <div className="text-xs text-slate-500">{s.label}</div>
               </div>
@@ -127,7 +127,7 @@ export default function CreativesPage() {
           <button
             onClick={() => fetchCreatives(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -155,15 +155,15 @@ export default function CreativesPage() {
               const pageUrl  = ld?.link
 
               return (
-                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+                <div key={creative.id} className="overflow-hidden rounded-[22px] border border-line bg-surface">
                   {/* Image preview */}
                   {imgUrl ? (
-                    <div className="relative h-40 w-full overflow-hidden bg-slate-800/40">
+                    <div className="relative h-40 w-full overflow-hidden bg-surface-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imgUrl} alt={headline} className="h-full w-full object-cover" />
                     </div>
                   ) : (
-                    <div className="flex h-32 items-center justify-center bg-slate-800/40">
+                    <div className="flex h-32 items-center justify-center bg-surface-2">
                       <Palette className="h-8 w-8 text-slate-700" />
                     </div>
                   )}
@@ -173,7 +173,7 @@ export default function CreativesPage() {
                       <h3 className="text-[14px] font-semibold text-white leading-snug">{truncate(headline, 60)}</h3>
                       {creative.status && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-medium ${
-                          creative.status === 'ACTIVE' ? 'bg-[#D4AF37]/10 text-[#D4AF37]' : 'bg-slate-800/40 text-slate-500'
+                          creative.status === 'ACTIVE' ? 'bg-gold/10 text-gold' : 'bg-surface-2 text-slate-500'
                         }`}>
                           {creative.status}
                         </span>
@@ -189,7 +189,7 @@ export default function CreativesPage() {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex gap-2">
                         {ctaType && (
-                          <span className="rounded-full border border-slate-800 px-2.5 py-0.5 text-xs text-slate-500">
+                          <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-slate-500">
                             {ctaType.replace(/_/g, ' ')}
                           </span>
                         )}
@@ -200,7 +200,7 @@ export default function CreativesPage() {
                             href={pageUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-[#D4AF37]"
+                            className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-gold"
                           >
                             <ExternalLink className="h-3 w-3" /> Landing
                           </a>
@@ -208,7 +208,7 @@ export default function CreativesPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 border-t border-slate-800 pt-3 text-xs font-mono text-slate-600 truncate">
+                    <div className="mt-3 border-t border-line pt-3 text-xs font-mono text-slate-600 truncate">
                       {creative.id}
                     </div>
                   </div>
@@ -221,13 +221,13 @@ export default function CreativesPage() {
 
       {/* Empty state */}
       {!loading && !isConfigError && creatives.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-14 text-center">
-          <Palette className="mx-auto h-8 w-8 text-[#D4AF37]/40 mb-4" />
+        <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
+          <Palette className="mx-auto h-8 w-8 text-gold/40 mb-4" />
           <div className="text-[18px] font-semibold text-white">No creatives yet</div>
           <p className="mt-2 text-[14px] text-slate-500">Generate ad copy with AI or launch a campaign to create creatives automatically.</p>
           <Link
             href="/freehold-intelligence/lead-machine/creatives/generate"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             <Wand2 className="h-4 w-4" /> Generate first creative
           </Link>

@@ -51,12 +51,12 @@ export default function BillingPage() {
       <h1 className="mb-8 text-xl font-semibold text-white">Billing</h1>
 
       {/* Current plan */}
-      <section className="mb-6 rounded-[20px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.07] to-transparent p-6">
+      <section className="mb-6 rounded-[20px] border border-gold/20 bg-gradient-to-br from-gold/[0.07] to-transparent p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-white">Professional</span>
-              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2 py-0.5 text-xs font-semibold text-[#D4AF37]">
+              <span className="rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-xs font-semibold text-gold">
                 Active
               </span>
             </div>
@@ -70,7 +70,7 @@ export default function BillingPage() {
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {PLAN_FEATURES.map(({ Icon, label }) => (
             <div key={label} className="flex items-center gap-2 text-xs text-slate-400">
-              <Icon className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/70" />
+              <Icon className="h-3.5 w-3.5 shrink-0 text-gold/70" />
               {label}
             </div>
           ))}
@@ -78,13 +78,13 @@ export default function BillingPage() {
         <div className="mt-5 flex items-center gap-2">
           <button
             onClick={() => setShowPayment((v) => !v)}
-            className="rounded-full border border-slate-700 bg-slate-800/50 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white"
+            className="rounded-full border border-line-strong bg-surface-2 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-surface-2 hover:text-white"
           >
             Update payment method
           </button>
           <button
             onClick={() => toast.message('Cancel plan', { description: 'Contact support to downgrade or cancel.' })}
-            className="rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
+            className="rounded-full border border-line px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
           >
             Cancel plan
           </button>
@@ -93,25 +93,25 @@ export default function BillingPage() {
 
       {/* Payment form */}
       {showPayment && (
-        <div className="mb-6 rounded-[18px] border border-slate-800 bg-slate-900 p-5 space-y-3">
+        <div className="mb-6 rounded-[18px] border border-line bg-surface p-5 space-y-3">
           <div className="text-sm font-semibold text-white">Update payment method</div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input placeholder="Cardholder name" className="col-span-2 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40" />
-            <div className="col-span-2 flex items-center gap-2 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5">
+            <input placeholder="Cardholder name" className="col-span-2 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+            <div className="col-span-2 flex items-center gap-2 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5">
               <CreditCard className="h-4 w-4 shrink-0 text-slate-500" />
               <input placeholder="Card number" className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 outline-none" />
             </div>
-            <input placeholder="MM / YY" className="rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40" />
-            <input placeholder="CVC" className="rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40" />
+            <input placeholder="MM / YY" className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+            <input placeholder="CVC" className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
           </div>
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setShowPayment(false)}
-              className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
             >
               <CheckCircle className="h-3.5 w-3.5" /> Save card
             </button>
-            <button onClick={() => setShowPayment(false)} className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
+            <button onClick={() => setShowPayment(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
               Cancel
             </button>
           </div>
@@ -127,11 +127,11 @@ export default function BillingPage() {
             { label: 'Leads this month', value: '415',     max: '500',   pct: 83 },
             { label: 'API calls',        value: '12.4K',   max: '50K',   pct: 25 },
           ].map(({ label, value, max, pct }) => (
-            <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+            <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
               <div className="text-lg font-semibold text-white tabular-nums">{value}</div>
               <div className="mt-0.5 text-xs text-slate-500">{label}</div>
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-800/60">
-                <div className={`h-full rounded-full ${pct > 85 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`} style={{ width: `${pct}%` }} />
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-2">
+                <div className={`h-full rounded-full ${pct > 85 ? 'bg-amber-400' : 'bg-gold'}`} style={{ width: `${pct}%` }} />
               </div>
               <div className="mt-1 text-xs text-slate-600">of {max}</div>
             </div>
@@ -142,8 +142,8 @@ export default function BillingPage() {
       {/* Invoices */}
       <section>
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Invoice history</div>
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="divide-y divide-slate-800">
+        <div className="rounded-[18px] border border-line bg-surface overflow-hidden">
+          <div className="divide-y divide-line">
             {INVOICES.map((inv) => {
               const sm = STATUS_META[inv.status]
               return (
@@ -162,7 +162,7 @@ export default function BillingPage() {
                     AED {inv.amount.toLocaleString()}
                   </div>
                   {inv.status === 'paid' && (
-                    <button onClick={() => toast.success('Invoice downloading')} className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-500 transition hover:border-slate-600 hover:text-slate-300">
+                    <button onClick={() => toast.success('Invoice downloading')} className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-slate-500 transition hover:border-line-strong hover:text-slate-300">
                       <Download className="h-3.5 w-3.5" />
                     </button>
                   )}

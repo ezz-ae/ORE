@@ -11,13 +11,13 @@ import {
 const TOP_EVENTS = [
   { rank: 1,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Sara Al Mansoori closed Palm Jumeirah Villa deal — AED 4.2M commission AED 63K' },
   { rank: 2,  type: 'lead',     icon: TrendingUp,    color: 'text-sky-400 bg-sky-500/15',         text: 'Meta CPL hit all-time low of AED 32 — 68 new leads in 24 hours from Dubai Hills campaign' },
-  { rank: 3,  type: 'finance',  icon: DollarSign,    color: 'text-[#D4AF37] bg-[#D4AF37]/15',    text: 'Monthly revenue target of AED 300K exceeded — current MTD AED 320K (+6.7% above target)' },
+  { rank: 3,  type: 'finance',  icon: DollarSign,    color: 'text-gold bg-gold/15',    text: 'Monthly revenue target of AED 300K exceeded — current MTD AED 320K (+6.7% above target)' },
   { rank: 4,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Khalid Rashid progressed 2 deals to Contract Review stage — combined value AED 8M' },
   { rank: 5,  type: 'warning',  icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/15',     text: 'Tariq Bin Zayed deal (AED 4.2M) at risk — 12 days without agent follow-up action required' },
   { rank: 6,  type: 'ads',      icon: Megaphone,     color: 'text-violet-400 bg-violet-500/15',   text: 'Google Ads CTR dropped 15% week-over-week — "Palm Q3" campaign underperforming, review keywords' },
   { rank: 7,  type: 'team',     icon: Users,         color: 'text-indigo-400 bg-indigo-500/15',   text: '7 of 12 agents logged in before 9AM — team engagement highest since January 2026' },
   { rank: 8,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Ahmed Hassan signed MOU for Downtown Dubai 3BR — deal value AED 950K, expected close June 14' },
-  { rank: 9,  type: 'finance',  icon: DollarSign,    color: 'text-[#D4AF37] bg-[#D4AF37]/15',    text: '3 invoices overdue — total AED 64,500 outstanding. Emirates Hills and DIFC deals flagged for follow-up' },
+  { rank: 9,  type: 'finance',  icon: DollarSign,    color: 'text-gold bg-gold/15',    text: '3 invoices overdue — total AED 64,500 outstanding. Emirates Hills and DIFC deals flagged for follow-up' },
   { rank: 10, type: 'ads',      icon: Megaphone,     color: 'text-violet-400 bg-violet-500/15',   text: 'WhatsApp broadcast to 148 warm leads generated 18 deal conversions — highest ROI channel at 1,200%' },
 ]
 
@@ -86,7 +86,7 @@ const REPORT_HISTORY: { id: string; type: string; date: string; status: ReportSt
 const STATUS_STYLES: Record<ReportStatus, string> = {
   ready:      'bg-emerald-500/15 text-emerald-400',
   generating: 'bg-amber-500/15 text-amber-400',
-  scheduled:  'bg-slate-700/60 text-slate-400',
+  scheduled:  'bg-surface-3 text-slate-400',
 }
 
 const REPORT_TYPES = [
@@ -119,18 +119,18 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="min-h-screen pb-16 bg-[#0D1117]">
+    <div className="min-h-screen pb-16 bg-ink">
       {/* Header */}
-      <div className="border-b border-slate-800 bg-[#090C12]/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
+      <div className="border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-white">Smart Reports</h1>
             <p className="mt-0.5 text-sm text-slate-500">Executive intelligence · AI-powered insights · June 2026</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1">
-              <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-              <span className="text-xs font-medium text-[#D4AF37]">AI-Powered</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-3 py-1">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
+              <span className="text-xs font-medium text-gold">AI-Powered</span>
             </div>
           </div>
         </div>
@@ -139,10 +139,10 @@ export default function ReportsPage() {
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
 
         {/* Top Events This Week */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-              <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
             </div>
             <div>
               <h2 className="text-sm font-semibold text-white">Top Events This Week</h2>
@@ -153,7 +153,7 @@ export default function ReportsPage() {
               <span className="text-xs text-slate-500">Updated 6 Jun 2026, 09:00 AM</span>
             </div>
           </div>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-line">
             {TOP_EVENTS.map((ev) => {
               const Icon = ev.icon
               return (
@@ -170,12 +170,12 @@ export default function ReportsPage() {
         </div>
 
         {/* Weekly Summary Card */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-5 py-4">
             <h2 className="text-sm font-semibold text-white">Weekly Summary</h2>
             <p className="text-xs text-slate-500 mt-0.5">Week of 2–6 June 2026 · Key metrics at a glance</p>
           </div>
-          <div className="grid grid-cols-2 gap-0 divide-y divide-slate-800 md:grid-cols-3 md:divide-y-0 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-0 divide-y divide-line md:grid-cols-3 md:divide-y-0 xl:grid-cols-6">
             {[
               { label: 'New Leads',       ...WEEKLY_SUMMARY.leads,   icon: TrendingUp,    unit: '' },
               { label: 'Deals Closed',    ...WEEKLY_SUMMARY.deals,   icon: CheckCircle2,  unit: '' },
@@ -190,8 +190,8 @@ export default function ReportsPage() {
                   key={item.label}
                   className={[
                     'p-5',
-                    idx < 5 ? 'xl:border-r xl:border-slate-800' : '',
-                    idx % 2 === 0 && idx < 4 ? 'border-r border-slate-800 md:border-r-0' : '',
+                    idx < 5 ? 'xl:border-r xl:border-line' : '',
+                    idx % 2 === 0 && idx < 4 ? 'border-r border-line md:border-r-0' : '',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -215,7 +215,7 @@ export default function ReportsPage() {
             return (
               <div key={insight.title} className={['rounded-xl border p-5', insight.bgColor, insight.borderColor].join(' ')}>
                 <div className="flex items-start gap-3 mb-3">
-                  <div className={['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900/60', insight.color].join(' ')}>
+                  <div className={['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface', insight.color].join(' ')}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
@@ -240,17 +240,17 @@ export default function ReportsPage() {
         <div className="grid gap-6 xl:grid-cols-3">
 
           {/* Automated Reports */}
-          <div className="xl:col-span-2 rounded-xl border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-5 py-4">
+          <div className="xl:col-span-2 rounded-xl border border-line bg-surface">
+            <div className="border-b border-line px-5 py-4">
               <h2 className="text-sm font-semibold text-white">Automated Reports</h2>
               <p className="text-xs text-slate-500 mt-0.5">Scheduled reports — download or view online</p>
             </div>
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-line">
               {AUTOMATED_REPORTS.map((report) => {
                 const Icon = report.icon
                 return (
                   <div key={report.id} className="flex items-center gap-4 px-5 py-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line-strong bg-surface-2">
                       <Icon className="h-4 w-4 text-slate-400" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -268,13 +268,13 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => toast.info('Opening report')}
-                        className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-600 hover:text-white transition-colors">
+                        className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-line-strong hover:text-white transition-colors">
                         <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
                       <button
                         onClick={() => toast.success('Report PDF downloading')}
-                        className="flex items-center gap-1.5 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
+                        className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         PDF
                       </button>
@@ -286,10 +286,10 @@ export default function ReportsPage() {
           </div>
 
           {/* Generate New Report */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-5 py-4">
+          <div className="rounded-xl border border-line bg-surface">
+            <div className="border-b border-line px-5 py-4">
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-[#D4AF37]" />
+                <Zap className="h-4 w-4 text-gold" />
                 <h2 className="text-sm font-semibold text-white">Generate New Report</h2>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">Custom date range · instant generation</p>
@@ -303,7 +303,7 @@ export default function ReportsPage() {
                   <select
                     value={reportType}
                     onChange={e => setReportType(e.target.value)}
-                    className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/40 pr-8"
+                    className="w-full appearance-none rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40 pr-8"
                   >
                     {REPORT_TYPES.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -324,7 +324,7 @@ export default function ReportsPage() {
                       type="date"
                       value={dateFrom}
                       onChange={e => setDateFrom(e.target.value)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white outline-none focus:border-[#D4AF37]/40"
+                      className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white outline-none focus:border-gold/40"
                     />
                   </div>
                   <div>
@@ -333,7 +333,7 @@ export default function ReportsPage() {
                       type="date"
                       value={dateTo}
                       onChange={e => setDateTo(e.target.value)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white outline-none focus:border-[#D4AF37]/40"
+                      className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white outline-none focus:border-gold/40"
                     />
                   </div>
                 </div>
@@ -352,8 +352,8 @@ export default function ReportsPage() {
                       className={[
                         'rounded-lg border py-2 text-xs font-medium transition-colors',
                         fmt === format
-                          ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                          : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
+                          ? 'border-gold/30 bg-gold/10 text-gold'
+                          : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200',
                       ].join(' ')}
                     >
                       {fmt}
@@ -368,8 +368,8 @@ export default function ReportsPage() {
                 className={[
                   'w-full rounded-lg py-2.5 text-sm font-semibold transition-all',
                   generating
-                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                    : 'bg-[#D4AF37] text-[#0D1117] hover:opacity-90',
+                    ? 'bg-surface-3 text-slate-400 cursor-not-allowed'
+                    : 'bg-gold text-ink hover:opacity-90',
                 ].join(' ')}
               >
                 {generating ? (
@@ -389,7 +389,7 @@ export default function ReportsPage() {
                   </div>
                   <button
                     onClick={() => toast.success('Export downloading')}
-                    className="ml-auto flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                    className="ml-auto flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
                     Download
                   </button>
@@ -400,8 +400,8 @@ export default function ReportsPage() {
         </div>
 
         {/* Report History */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-white">Report History</h2>
               <p className="text-xs text-slate-500 mt-0.5">Last {REPORT_HISTORY.length} generated reports</p>
@@ -411,15 +411,15 @@ export default function ReportsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2">
                   {['Report ID', 'Report Type', 'Generated', 'Generated By', 'Size', 'Status', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {REPORT_HISTORY.map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={report.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3 text-xs font-mono text-slate-500">{report.id}</td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-100 whitespace-nowrap">{report.type}</td>
                     <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.date}</td>
@@ -441,7 +441,7 @@ export default function ReportsPage() {
                         <span className="text-slate-700">·</span>
                         <button
                           onClick={() => toast.success('Report PDF downloading')}
-                          className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] hover:opacity-80 transition-opacity">
+                          className="flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
                           PDF
                         </button>

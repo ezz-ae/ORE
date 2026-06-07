@@ -21,8 +21,8 @@ interface Milestone {
 function healthTone(health?: string | null) {
   switch (health) {
     case 'complete':
-    case 'on_track': return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bar: 'bg-[#D4AF37]' }
-    case 'at_risk':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#F8E7AE]',  bar: 'bg-[#D4AF37]'  }
+    case 'on_track': return { dot: 'bg-gold', text: 'text-gold', bar: 'bg-gold' }
+    case 'at_risk':  return { dot: 'bg-gold',  text: 'text-[#F8E7AE]',  bar: 'bg-gold'  }
     case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
     default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500'  }
   }
@@ -85,8 +85,8 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
             className={[
               'rounded-full border px-3 py-1 text-sm font-medium transition',
               healthFilter === key
-                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100',
+                ? 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface text-slate-400 hover:text-slate-100',
             ].join(' ')}
           >
             {label}
@@ -100,8 +100,8 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
             className={[
               'rounded-full border px-3 py-1 text-sm font-medium transition',
               statusFilter === key
-                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100',
+                ? 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface text-slate-400 hover:text-slate-100',
             ].join(' ')}
           >
             {label}
@@ -118,11 +118,11 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
       {/* List */}
       <ol className="mt-6 grid gap-3">
         {filtered.length === 0 ? (
-          <li className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-10 text-center text-sm text-slate-400">
+          <li className="rounded-2xl border border-line bg-surface px-6 py-10 text-center text-sm text-slate-400">
             No milestones match these filters.{' '}
             <button
               onClick={() => { setHealthFilter('All'); setStatusFilter('All') }}
-              className="ml-1 text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+              className="ml-1 text-gold/60 transition hover:text-gold"
             >
               Clear
             </button>
@@ -135,9 +135,9 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
               <li key={m.code}>
                 <Link
                   href={`/freehold-intelligence/milestones/${m.code}`}
-                  className="group flex items-stretch gap-5 rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/20 hover:bg-slate-800/60 sm:p-6"
+                  className="group flex items-stretch gap-5 rounded-2xl border border-line bg-surface p-5 transition hover:border-gold/20 hover:bg-surface-2 sm:p-6"
                 >
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-sm font-semibold tracking-tight text-[#D4AF37]">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-gold/20 bg-gold/[0.06] text-sm font-semibold tracking-tight text-gold">
                     {m.code}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -159,11 +159,11 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
                         </>
                       )}
                     </div>
-                    <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-slate-800/60">
+                    <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-surface-2">
                       <div className={`h-full transition-all ${tone.bar}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
-                  <ArrowUpRight className="h-4 w-4 shrink-0 self-center text-slate-500 transition group-hover:text-[#D4AF37]" />
+                  <ArrowUpRight className="h-4 w-4 shrink-0 self-center text-slate-500 transition group-hover:text-gold" />
                 </Link>
               </li>
             )

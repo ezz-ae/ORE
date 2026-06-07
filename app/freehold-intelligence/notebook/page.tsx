@@ -21,10 +21,10 @@ function outputTypeIcon(type: string, className = 'h-3.5 w-3.5') {
 }
 
 function statusTone(status: string) {
-  if (status === 'approved') return 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10'
-  if (status === 'sent_for_review') return 'text-[#F8E7AE] border-[#D4AF37]/20 bg-[#D4AF37]/10'
+  if (status === 'approved') return 'text-gold border-gold/20 bg-gold/10'
+  if (status === 'sent_for_review') return 'text-[#F8E7AE] border-gold/20 bg-gold/10'
   if (status === 'saved') return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
-  return 'text-slate-400 border-slate-700 bg-slate-800/50'
+  return 'text-slate-400 border-line-strong bg-surface-2'
 }
 
 function relativeTime(iso: string) {
@@ -79,9 +79,9 @@ const CHAT_SUGGESTIONS = [
 
 function SourceCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
-    <button onClick={onChange} className="shrink-0 text-slate-400 hover:text-[#D4AF37] transition">
+    <button onClick={onChange} className="shrink-0 text-slate-400 hover:text-gold transition">
       {checked
-        ? <CheckSquare className="h-3.5 w-3.5 text-[#D4AF37]" />
+        ? <CheckSquare className="h-3.5 w-3.5 text-gold" />
         : <Square className="h-3.5 w-3.5" />}
     </button>
   )
@@ -176,27 +176,27 @@ export default function NotebookPage() {
   }
 
   return (
-    <div className="flex overflow-hidden bg-[#0D1117]" style={{ height: 'calc(100dvh - 56px)' }}>
+    <div className="flex overflow-hidden bg-ink" style={{ height: 'calc(100dvh - 56px)' }}>
 
       {/* ── LEFT PANEL — Sources ─────────────────────────────────────────── */}
-      <aside className="flex w-[280px] shrink-0 flex-col border-r border-slate-800 bg-[#0A0E14] overflow-hidden">
+      <aside className="flex w-[280px] shrink-0 flex-col border-r border-line bg-app overflow-hidden">
 
         {/* header */}
-        <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
           <span className="text-sm font-semibold text-white">Sources</span>
-          <button onClick={() => toast.success('Add a source — paste a URL or upload a document')} className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]">
+          <button onClick={() => toast.success('Add a source — paste a URL or upload a document')} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
             <Plus className="h-3 w-3" /> Add source
           </button>
         </div>
 
         {/* search */}
-        <div className="relative border-b border-slate-800 px-3 py-2.5">
+        <div className="relative border-b border-line px-3 py-2.5">
           <Search className="absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             value={sourceQuery}
             onChange={e => setSourceQuery(e.target.value)}
             placeholder="Search sources…"
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-slate-600"
+            className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
           />
           {sourceQuery && (
             <button onClick={() => setSourceQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
@@ -206,17 +206,17 @@ export default function NotebookPage() {
         </div>
 
         {/* select all / deselect all */}
-        <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2">
+        <div className="flex items-center gap-2 border-b border-line px-4 py-2">
           <button
             onClick={() => toggleAll(true)}
-            className={`text-xs transition ${allChecked ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`text-xs transition ${allChecked ? 'text-gold' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Select all
           </button>
           <span className="text-slate-700">·</span>
           <button
             onClick={() => toggleAll(false)}
-            className={`text-xs transition ${noneChecked ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`text-xs transition ${noneChecked ? 'text-gold' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Deselect all
           </button>
@@ -226,7 +226,7 @@ export default function NotebookPage() {
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
 
           {/* All Conversations */}
-          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
             onClick={() => toggleSource('all_conversations')}>
             <SourceCheckbox checked={!!checkedSources.all_conversations} onChange={() => toggleSource('all_conversations')} />
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -234,7 +234,7 @@ export default function NotebookPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-medium text-slate-100">All Conversations</span>
-                  <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">{notebookConversations.length}</span>
+                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{notebookConversations.length}</span>
                 </div>
                 <p className="mt-0.5 text-[10px] text-slate-500 truncate">All notebook threads</p>
               </div>
@@ -248,7 +248,7 @@ export default function NotebookPage() {
                 <Link
                   key={conv.id}
                   href={`/freehold-intelligence/notebook/${conv.id}`}
-                  className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 transition"
+                  className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-slate-400 hover:bg-surface-2 hover:text-slate-200 transition"
                 >
                   <ChevronRight className="h-3 w-3 shrink-0" />
                   <span className="truncate">{conv.title}</span>
@@ -258,7 +258,7 @@ export default function NotebookPage() {
           )}
 
           {/* Live Projects */}
-          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
             onClick={() => toggleSource('live_projects')}>
             <SourceCheckbox checked={!!checkedSources.live_projects} onChange={() => toggleSource('live_projects')} />
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -269,7 +269,7 @@ export default function NotebookPage() {
                   <Link
                     href="/freehold-intelligence/inventory"
                     onClick={e => e.stopPropagation()}
-                    className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-[#D4AF37] transition"
+                    className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-gold transition"
                   >
                     Inventory ↗
                   </Link>
@@ -280,7 +280,7 @@ export default function NotebookPage() {
           </div>
 
           {/* CRM Leads */}
-          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
             onClick={() => toggleSource('crm_leads')}>
             <SourceCheckbox checked={!!checkedSources.crm_leads} onChange={() => toggleSource('crm_leads')} />
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -291,7 +291,7 @@ export default function NotebookPage() {
                   <Link
                     href="/freehold-intelligence/crm"
                     onClick={e => e.stopPropagation()}
-                    className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-[#D4AF37] transition"
+                    className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-gold transition"
                   >
                     CRM ↗
                   </Link>
@@ -302,7 +302,7 @@ export default function NotebookPage() {
           </div>
 
           {/* Uploads */}
-          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-slate-800/40 transition cursor-pointer"
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
             onClick={() => toggleSource('uploads')}>
             <SourceCheckbox checked={!!checkedSources.uploads} onChange={() => toggleSource('uploads')} />
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -310,7 +310,7 @@ export default function NotebookPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-medium text-slate-100">Uploads</span>
-                  <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">{MOCK_UPLOADS.length}</span>
+                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{MOCK_UPLOADS.length}</span>
                 </div>
                 <p className="mt-0.5 text-[10px] text-slate-500 truncate">PDFs & documents</p>
               </div>
@@ -323,7 +323,7 @@ export default function NotebookPage() {
               {MOCK_UPLOADS.map(u => (
                 <div
                   key={u.id}
-                  className="flex items-center gap-1.5 rounded px-2 py-1.5 hover:bg-slate-800/40 transition cursor-pointer"
+                  className="flex items-center gap-1.5 rounded px-2 py-1.5 hover:bg-surface-2 transition cursor-pointer"
                   onClick={() => toggleSource(u.id)}
                 >
                   <SourceCheckbox checked={!!checkedSources[u.id]} onChange={() => toggleSource(u.id)} />
@@ -346,8 +346,8 @@ export default function NotebookPage() {
           className={[
             'mx-3 mb-3 flex flex-col items-center gap-1.5 rounded-xl border-2 border-dashed px-3 py-4 text-center transition cursor-pointer',
             isDragOver
-              ? 'border-[#D4AF37]/50 bg-[#D4AF37]/5 text-[#D4AF37]'
-              : 'border-slate-800 text-slate-600 hover:border-slate-600 hover:text-slate-400',
+              ? 'border-gold/50 bg-gold/5 text-gold'
+              : 'border-line text-slate-600 hover:border-line-strong hover:text-slate-400',
           ].join(' ')}
         >
           <Upload className="h-4 w-4" />
@@ -357,12 +357,12 @@ export default function NotebookPage() {
       </aside>
 
       {/* ── CENTER PANEL — Chat / Outputs ─────────────────────────────────── */}
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-r border-slate-800">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden border-r border-line">
 
         {/* title bar */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-6 py-3.5">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-6 py-3.5">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-[#D4AF37]/70" />
+            <BookOpen className="h-4 w-4 text-gold/70" />
             {editingTitle ? (
               <input
                 autoFocus
@@ -370,7 +370,7 @@ export default function NotebookPage() {
                 onChange={e => setNotebookTitle(e.target.value)}
                 onBlur={() => setEditingTitle(false)}
                 onKeyDown={e => { if (e.key === 'Enter') setEditingTitle(false) }}
-                className="rounded border border-[#D4AF37]/30 bg-transparent px-2 py-0.5 text-sm font-semibold text-white outline-none"
+                className="rounded border border-gold/30 bg-transparent px-2 py-0.5 text-sm font-semibold text-white outline-none"
               />
             ) : (
               <span className="text-sm font-semibold text-white">{notebookTitle}</span>
@@ -391,7 +391,7 @@ export default function NotebookPage() {
                 className={[
                   'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition',
                   centerTab === tab
-                    ? 'bg-slate-800 text-white'
+                    ? 'bg-surface-2 text-white'
                     : 'text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
@@ -408,7 +408,7 @@ export default function NotebookPage() {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
               {chatMessages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center gap-3">
-                  <Sparkles className="h-8 w-8 text-[#D4AF37]/30" />
+                  <Sparkles className="h-8 w-8 text-gold/30" />
                   <p className="text-sm text-slate-500 max-w-xs">
                     Ask anything about your projects, leads, or campaigns. Your active sources are used as context.
                   </p>
@@ -419,14 +419,14 @@ export default function NotebookPage() {
                   key={i}
                   className={
                     m.role === 'user'
-                      ? 'ml-8 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3'
-                      : 'mr-8 rounded-2xl border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-4 py-3'
+                      ? 'ml-8 rounded-2xl border border-line bg-surface px-4 py-3'
+                      : 'mr-8 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3'
                   }
                 >
                   <div className="mb-1.5 flex items-center gap-1.5">
                     {m.role === 'assistant'
-                      ? <Sparkles className="h-3 w-3 text-[#D4AF37]/60" />
-                      : <div className="h-3 w-3 rounded-full bg-slate-600" />}
+                      ? <Sparkles className="h-3 w-3 text-gold/60" />
+                      : <div className="h-3 w-3 rounded-full bg-surface-3" />}
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                       {m.role === 'assistant' ? 'Freehold AI' : 'You'}
                     </span>
@@ -435,8 +435,8 @@ export default function NotebookPage() {
                 </div>
               ))}
               {chatPending && (
-                <div className="mr-8 flex items-center gap-2 rounded-2xl border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-4 py-3">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D4AF37]/60" />
+                <div className="mr-8 flex items-center gap-2 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gold/60" />
                   <span className="text-xs text-slate-500">Thinking…</span>
                 </div>
               )}
@@ -444,22 +444,22 @@ export default function NotebookPage() {
             </div>
 
             {/* suggestions + input */}
-            <div className="border-t border-slate-800 px-4 py-4 space-y-3">
+            <div className="border-t border-line px-4 py-4 space-y-3">
               {chatMessages.length === 0 && (
                 <div className="flex flex-wrap gap-2">
                   {CHAT_SUGGESTIONS.map(s => (
                     <button
                       key={s}
                       onClick={() => sendChat(s)}
-                      className="rounded-full border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-400 transition hover:border-[#D4AF37]/25 hover:text-slate-200"
+                      className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-400 transition hover:border-gold/25 hover:text-slate-200"
                     >
                       {s}
                     </button>
                   ))}
                 </div>
               )}
-              <div className="flex items-end gap-3 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 transition focus-within:border-[#D4AF37]/30">
-                <Sparkles className="mb-0.5 h-4 w-4 shrink-0 text-[#D4AF37]/50" />
+              <div className="flex items-end gap-3 rounded-2xl border border-line-strong bg-surface px-4 py-3 transition focus-within:border-gold/30">
+                <Sparkles className="mb-0.5 h-4 w-4 shrink-0 text-gold/50" />
                 <textarea
                   ref={taRef}
                   value={chatInput}
@@ -472,7 +472,7 @@ export default function NotebookPage() {
                 <button
                   onClick={() => sendChat()}
                   disabled={!chatInput.trim() || chatPending}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#0D1117] transition hover:bg-[#E8C657] disabled:opacity-30"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-30"
                 >
                   {chatPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
                 </button>
@@ -490,7 +490,7 @@ export default function NotebookPage() {
                 value={convQuery}
                 onChange={e => setConvQuery(e.target.value)}
                 placeholder="Search conversations…"
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-slate-600"
+                className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
               />
             </div>
             <div className="space-y-2">
@@ -501,9 +501,9 @@ export default function NotebookPage() {
                   <Link
                     key={conv.id}
                     href={`/freehold-intelligence/notebook/${conv.id}`}
-                    className="group flex items-start gap-3.5 rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-[#D4AF37]/20"
+                    className="group flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4 transition hover:border-gold/20"
                   >
-                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-slate-700 bg-slate-800/60">
+                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line-strong bg-surface-2">
                       <Sparkles className="h-3.5 w-3.5 text-slate-400" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -516,7 +516,7 @@ export default function NotebookPage() {
                       </p>
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
                         <span>{conv.messages.length} msgs</span>
-                        {outputCount > 0 && <span className="text-[#D4AF37]/60">{outputCount} outputs</span>}
+                        {outputCount > 0 && <span className="text-gold/60">{outputCount} outputs</span>}
                       </div>
                     </div>
                   </Link>
@@ -540,14 +540,14 @@ export default function NotebookPage() {
                   <Link
                     key={output.id}
                     href={`/freehold-intelligence/notebook/${output.conversationId}`}
-                    className="group block rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-4 transition hover:border-[#D4AF37]/30"
+                    className="group block rounded-xl border border-gold/15 bg-gold/[0.03] p-4 transition hover:border-gold/30"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]/70">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-gold/70">
                         {outputTypeIcon(output.type)}
                         <span className="capitalize">{output.type.replace(/_/g, ' ')}</span>
                       </div>
-                      <Pin className="h-3 w-3 shrink-0 text-[#D4AF37]" />
+                      <Pin className="h-3 w-3 shrink-0 text-gold" />
                     </div>
                     <h3 className="mt-2 text-sm font-semibold text-white">{output.title}</h3>
                     <p className="mt-1 line-clamp-2 text-xs leading-[1.6] text-slate-400">{output.content}</p>
@@ -571,17 +571,17 @@ export default function NotebookPage() {
       </main>
 
       {/* ── RIGHT PANEL — Studio ─────────────────────────────────────────── */}
-      <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l border-slate-800 bg-slate-900">
+      <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-surface">
 
         {/* header */}
-        <div className="border-b border-slate-800 px-4 py-3.5">
+        <div className="border-b border-line px-4 py-3.5">
           <span className="text-sm font-semibold text-white">Studio</span>
         </div>
 
         <div className="flex-1 overflow-y-auto">
 
           {/* generate section */}
-          <div className="border-b border-slate-800 px-4 py-4">
+          <div className="border-b border-line px-4 py-4">
             <p className="mb-3 text-xs font-medium text-slate-400">Generate</p>
             <div className="grid grid-cols-4 gap-2">
               {GENERATE_TYPES.map(g => (
@@ -591,8 +591,8 @@ export default function NotebookPage() {
                   className={[
                     'flex flex-col items-center gap-1.5 rounded-xl border p-2.5 text-center transition',
                     activeGenerate === g.key
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                      : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+                      ? 'border-gold/40 bg-gold/10 text-gold'
+                      : 'border-line bg-surface-2 text-slate-400 hover:border-line-strong hover:text-slate-200',
                   ].join(' ')}
                 >
                   {g.icon}
@@ -602,19 +602,19 @@ export default function NotebookPage() {
             </div>
 
             {activeGenerate && (
-              <div className="mt-3 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-3">
-                <p className="mb-2 text-xs font-medium text-[#D4AF37]/80 capitalize">
+              <div className="mt-3 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
+                <p className="mb-2 text-xs font-medium text-gold/80 capitalize">
                   {GENERATE_TYPES.find(g => g.key === activeGenerate)?.label}
                 </p>
                 <div className="flex items-center gap-2">
                   <input
                     placeholder="Describe what to generate…"
-                    className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white placeholder-slate-600 outline-none transition focus:border-[#D4AF37]/30"
+                    className="flex-1 rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-xs text-white placeholder-slate-600 outline-none transition focus:border-gold/30"
                     onKeyDown={e => { if (e.key === 'Enter') setActiveGenerate(null) }}
                   />
                   <button
                     onClick={() => setActiveGenerate(null)}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#D4AF37] text-[#0D1117] transition hover:bg-[#E8C657]"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold text-ink transition hover:bg-[#E8C657]"
                   >
                     <ArrowUp className="h-3.5 w-3.5" />
                   </button>
@@ -630,15 +630,15 @@ export default function NotebookPage() {
               {allOutputs.slice(0, 6).map(output => (
                 <div
                   key={output.id}
-                  className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-800/40 p-3 transition hover:border-slate-700"
+                  className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-3 transition hover:border-line-strong"
                 >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-400">
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line-strong text-slate-400">
                     {outputTypeIcon(output.type, 'h-3 w-3')}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="truncate text-xs font-medium text-slate-100">{output.title}</span>
-                      {output.pinned && <Pin className="h-2.5 w-2.5 shrink-0 text-[#D4AF37]" />}
+                      {output.pinned && <Pin className="h-2.5 w-2.5 shrink-0 text-gold" />}
                     </div>
                     <span className={`mt-0.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium capitalize ${statusTone(output.status)}`}>
                       {output.status.replace(/_/g, ' ')}
@@ -646,7 +646,7 @@ export default function NotebookPage() {
                   </div>
                   <button
                     onClick={() => setActiveSendOutput(activeSendOutput === output.id ? null : output.id)}
-                    className="shrink-0 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+                    className="shrink-0 rounded-lg border border-line-strong bg-surface-2 px-2 py-1 text-[10px] text-slate-400 transition hover:border-gold/30 hover:text-gold"
                   >
                     Send
                   </button>
@@ -657,7 +657,7 @@ export default function NotebookPage() {
 
           {/* send to */}
           {activeSendOutput && (
-            <div className="border-t border-slate-800 px-4 py-4">
+            <div className="border-t border-line px-4 py-4">
               <p className="mb-2 text-xs font-medium text-slate-400">Send to…</p>
               <div className="flex flex-wrap gap-2">
                 {SEND_DESTINATIONS.map(d => (
@@ -667,8 +667,8 @@ export default function NotebookPage() {
                     className={[
                       'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs transition',
                       activeSendDest === d.key
-                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-200',
+                        ? 'border-gold/40 bg-gold/10 text-gold'
+                        : 'border-line-strong text-slate-400 hover:border-line-strong hover:text-slate-200',
                     ].join(' ')}
                   >
                     {d.icon} {d.label}
@@ -678,7 +678,7 @@ export default function NotebookPage() {
               {activeSendDest && (
                 <button
                   onClick={() => { setActiveSendDest(null); setActiveSendOutput(null) }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-[#0D1117] transition hover:bg-[#E8C657]"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#E8C657]"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Send to {SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.label}

@@ -47,7 +47,7 @@ const FILTER_TABS: { label: string; value: ExtensionFilter }[] = [
 const TYPE_ICON: Record<string, React.ReactNode> = {
   SITELINK:  <LinkIcon   className="h-4 w-4 text-[#4285F4]/60" />,
   CALLOUT:   <Tag        className="h-4 w-4 text-slate-400/60" />,
-  CALL:      <Phone      className="h-4 w-4 text-[#D4AF37]/60" />,
+  CALL:      <Phone      className="h-4 w-4 text-gold/60" />,
   LOCATION:  <MapPin     className="h-4 w-4 text-orange-400/60" />,
   LEAD_FORM: <FileText   className="h-4 w-4 text-slate-400/60" />,
 }
@@ -65,7 +65,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 function SitelinkCard({ ext }: { ext: GoogleSitelinkExtension }) {
   return (
-    <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4 transition hover:border-[#4285F4]/20">
+    <div className="rounded-[16px] border border-line bg-surface p-4 transition hover:border-[#4285F4]/20">
       <div className="text-sm font-semibold text-white">{ext.linkText}</div>
       {ext.description1 && (
         <div className="mt-1 text-xs text-slate-400">{ext.description1}</div>
@@ -92,15 +92,15 @@ function CalloutCard({ ext }: { ext: GoogleCalloutExtension }) {
 
 function CallCard({ ext }: { ext: GoogleCallExtension }) {
   return (
-    <div className="flex items-center gap-4 rounded-[16px] border border-slate-800 bg-slate-900 p-4 transition hover:border-[#D4AF37]/20">
-      <Phone className="h-5 w-5 shrink-0 text-[#D4AF37]/60" />
+    <div className="flex items-center gap-4 rounded-[16px] border border-line bg-surface p-4 transition hover:border-gold/20">
+      <Phone className="h-5 w-5 shrink-0 text-gold/60" />
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold text-white">
           +{ext.countryCode} {ext.phoneNumber}
         </div>
       </div>
       {ext.callOnly && (
-        <span className="shrink-0 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-xs font-medium text-[#D4AF37]">
+        <span className="shrink-0 rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
           Call-only
         </span>
       )}
@@ -110,7 +110,7 @@ function CallCard({ ext }: { ext: GoogleCallExtension }) {
 
 function LocationCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LOCATION' }> }) {
   return (
-    <div className="flex items-start gap-4 rounded-[16px] border border-slate-800 bg-slate-900 p-4 transition hover:border-orange-400/20">
+    <div className="flex items-start gap-4 rounded-[16px] border border-line bg-surface p-4 transition hover:border-orange-400/20">
       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-orange-400/60" />
       <div className="min-w-0">
         <div className="text-sm font-semibold text-white">{ext.businessName}</div>
@@ -124,7 +124,7 @@ function LocationCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LOCATION
 
 function LeadFormCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LEAD_FORM' }> }) {
   return (
-    <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4 transition hover:border-violet-400/20">
+    <div className="rounded-[16px] border border-line bg-surface p-4 transition hover:border-violet-400/20">
       <div className="text-sm font-semibold text-white">{ext.headline}</div>
       <p className="mt-1 text-xs leading-relaxed text-slate-500">{ext.description}</p>
       {ext.fields.length > 0 && (
@@ -160,7 +160,7 @@ function ExtensionGroup({
       <div className="mb-4 flex items-center gap-2">
         {icon}
         <span className="text-sm font-semibold text-white">{label}</span>
-        <span className="rounded-full border border-slate-800 bg-slate-800/40 px-2 py-0.5 text-xs font-medium text-slate-500">
+        <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs font-medium text-slate-500">
           {extensions.length}
         </span>
       </div>
@@ -213,7 +213,7 @@ function RecommendedCard({
   description: string
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-[16px] border border-dashed border-slate-800 bg-slate-800/40 p-5">
+    <div className="flex items-start gap-4 rounded-[16px] border border-dashed border-line bg-surface-2 p-5">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-white">{title}</div>
@@ -291,7 +291,7 @@ export default function GoogleExtensionsPage() {
     })
   if (calls.length === 0)
     recommended.push({
-      icon: <Phone className="h-4 w-4 text-[#D4AF37]/60" />,
+      icon: <Phone className="h-4 w-4 text-gold/60" />,
       title: 'Add a call extension',
       description:
         'Let users call your team directly from the ad on mobile. Particularly effective for high-intent property enquiries.',
@@ -337,7 +337,7 @@ export default function GoogleExtensionsPage() {
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -397,7 +397,7 @@ export default function GoogleExtensionsPage() {
                     'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                     isActive
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/15 text-[#4285F4]'
-                      : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                      : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
                   {label}
@@ -413,7 +413,7 @@ export default function GoogleExtensionsPage() {
               <ExtensionGroup key={type} type={type} extensions={exts} />
             ))
           ) : (
-            <div className="mt-8 rounded-[24px] border border-slate-800 bg-slate-900 px-6 py-12 text-center">
+            <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-12 text-center">
               <MessageSquare className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
               <div className="text-sm font-semibold text-white">No extensions found</div>
               <p className="mt-2 text-sm text-slate-500">
@@ -462,7 +462,7 @@ export default function GoogleExtensionsPage() {
           <div className="mt-8 flex justify-end">
             <button
               disabled
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-500"
+              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-500"
               title="Create and manage extensions directly in Google Ads Manager"
             >
               Create in Google Ads Manager

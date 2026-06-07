@@ -53,9 +53,9 @@ const QUICK_NAV = [
   { href: '/freehold-intelligence/management/reports',  label: 'Reports',    icon: FileBarChart2, color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
   { href: '/freehold-intelligence/ads',                 label: 'Ads',        icon: Megaphone,     color: 'text-blue-400 border-blue-400/20 bg-blue-400/10' },
   { href: '/freehold-intelligence/finance',             label: 'Finance',    icon: DollarSign,    color: 'text-green-400 border-green-400/20 bg-green-400/10' },
-  { href: '/freehold-intelligence/inventory',           label: 'Inventory',  icon: Building2,     color: 'text-slate-300 border-slate-700 bg-slate-800/50' },
-  { href: '/freehold-intelligence/agent/ai',            label: 'AI Chat',    icon: Bot,           color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
-  { href: '/freehold-intelligence/finance/credits',     label: 'Credits',    icon: Coins,         color: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/10' },
+  { href: '/freehold-intelligence/inventory',           label: 'Inventory',  icon: Building2,     color: 'text-slate-300 border-line-strong bg-surface-2' },
+  { href: '/freehold-intelligence/agent/ai',            label: 'AI Chat',    icon: Bot,           color: 'text-gold border-gold/20 bg-gold/10' },
+  { href: '/freehold-intelligence/finance/credits',     label: 'Credits',    icon: Coins,         color: 'text-gold border-gold/20 bg-gold/10' },
 ]
 
 export default function ManagementDashboard() {
@@ -133,7 +133,7 @@ export default function ManagementDashboard() {
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
           {STATS.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-white/[0.07] bg-[#0D1520] p-4">
+            <div key={stat.label} className="rounded-xl border border-white/[0.07] bg-surface p-4">
               <div className="flex items-center justify-between gap-2 mb-3">
                 <stat.icon className="h-4 w-4 text-slate-500" />
                 <span className={['text-xs font-medium', stat.positive ? 'text-emerald-400' : 'text-red-400'].join(' ')}>
@@ -151,10 +151,10 @@ export default function ManagementDashboard() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* AI Morning Briefing chat */}
-            <div className="rounded-xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.07] via-[#D4AF37]/[0.03] to-transparent">
-              <div className="flex items-center gap-3 border-b border-[#D4AF37]/15 px-5 py-3.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-                  <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+            <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.07] via-gold/[0.03] to-transparent">
+              <div className="flex items-center gap-3 border-b border-gold/15 px-5 py-3.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+                  <Sparkles className="h-3.5 w-3.5 text-gold" />
                 </div>
                 <span className="text-sm font-semibold text-white">AI Briefing</span>
                 <span className="ml-auto text-xs text-slate-500">Updated 08:00 AM</span>
@@ -166,16 +166,16 @@ export default function ManagementDashboard() {
                     <div className={[
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
                       msg.role === 'assistant'
-                        ? 'bg-[#D4AF37]/15 text-[#D4AF37]'
-                        : 'bg-slate-700 text-slate-200',
+                        ? 'bg-gold/15 text-gold'
+                        : 'bg-surface-3 text-slate-200',
                     ].join(' ')}>
                       {msg.role === 'assistant' ? <Sparkles className="h-3.5 w-3.5" /> : 'M'}
                     </div>
                     <div className={[
                       'max-w-[85%] rounded-xl px-4 py-2.5 text-sm leading-relaxed',
                       msg.role === 'assistant'
-                        ? 'bg-slate-800/60 text-slate-200'
-                        : 'bg-slate-700/60 text-white',
+                        ? 'bg-surface-2 text-slate-200'
+                        : 'bg-surface-3 text-white',
                     ].join(' ')}>
                       {msg.text.split('\n').map((line, j) => (
                         <span key={j}>
@@ -188,27 +188,27 @@ export default function ManagementDashboard() {
                 ))}
                 {aiPending && (
                   <div className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-[#D4AF37]">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
                       <Sparkles className="h-3.5 w-3.5" />
                     </div>
-                    <div className="max-w-[85%] rounded-xl bg-slate-800/60 px-4 py-2.5 text-sm leading-relaxed text-slate-400">
+                    <div className="max-w-[85%] rounded-xl bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-400">
                       Thinking…
                     </div>
                   </div>
                 )}
               </div>
 
-              <form onSubmit={sendAi} className="flex gap-2 border-t border-[#D4AF37]/15 px-4 py-3">
+              <form onSubmit={sendAi} className="flex gap-2 border-t border-gold/15 px-4 py-3">
                 <input
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
                   placeholder="Ask about performance, decisions, market…"
-                  className="flex-1 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40"
+                  className="flex-1 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-gold/40"
                 />
                 <button
                   type="submit"
                   disabled={!aiInput.trim() || aiPending}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37] text-[#0D1117] transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gold text-ink transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -216,9 +216,9 @@ export default function ManagementDashboard() {
             </div>
 
             {/* AI Task Planner */}
-            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+            <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
-                <Zap className="h-4 w-4 text-[#D4AF37]" />
+                <Zap className="h-4 w-4 text-gold" />
                 <span className="text-sm font-semibold text-white">AI Task Planner</span>
                 <span className="ml-auto text-xs text-slate-500">
                   {tasks.filter(t => !t.done).length} pending
@@ -233,7 +233,7 @@ export default function ManagementDashboard() {
                         'mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border transition-colors',
                         task.done
                           ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-400'
-                          : 'border-slate-700 hover:border-slate-500',
+                          : 'border-line-strong hover:border-slate-500',
                       ].join(' ')}
                     >
                       {task.done && <CheckCircle2 className="h-4 w-4" />}
@@ -247,7 +247,7 @@ export default function ManagementDashboard() {
                       'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
                       task.priority === 'high'   ? 'bg-red-500/15 text-red-400' :
                       task.priority === 'medium' ? 'bg-amber-500/15 text-amber-400' :
-                                                    'bg-slate-700/50 text-slate-500',
+                                                    'bg-surface-3 text-slate-500',
                     ].join(' ')}>
                       {task.priority}
                     </span>
@@ -257,7 +257,7 @@ export default function ManagementDashboard() {
             </div>
 
             {/* AI Emails Scanner */}
-            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+            <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Mail className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-semibold text-white">AI Emails Scanner</span>
@@ -270,7 +270,7 @@ export default function ManagementDashboard() {
                   <div key={email.id} className="flex items-center gap-4 px-5 py-3.5">
                     <div className={[
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                      email.urgent ? 'bg-red-500/15 text-red-400' : 'bg-slate-800 text-slate-500',
+                      email.urgent ? 'bg-red-500/15 text-red-400' : 'bg-surface-2 text-slate-500',
                     ].join(' ')}>
                       {email.urgent ? <AlertCircle className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
                     </div>
@@ -291,7 +291,7 @@ export default function ManagementDashboard() {
           <div className="space-y-6">
 
             {/* Quick Navigation */}
-            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+            <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="border-b border-white/[0.07] px-5 py-3.5">
                 <p className="text-sm font-semibold text-white">Quick Access</p>
               </div>
@@ -312,7 +312,7 @@ export default function ManagementDashboard() {
             </div>
 
             {/* Live Events Feed */}
-            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+            <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-sm font-semibold text-white">Live Events</span>
@@ -337,7 +337,7 @@ export default function ManagementDashboard() {
             </div>
 
             {/* WhatsApp Connector */}
-            <div className="rounded-xl border border-white/[0.07] bg-[#0D1520]">
+            <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="border-b border-white/[0.07] px-5 py-3.5">
                 <p className="text-sm font-semibold text-white">WhatsApp Web</p>
               </div>
@@ -356,7 +356,7 @@ export default function ManagementDashboard() {
                 </div>
                 <button
                   onClick={() => router.push('/freehold-intelligence/integrations/whatsapp')}
-                  className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
+                  className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-line-strong hover:bg-surface-2 hover:text-white">
                   Connect WhatsApp
                 </button>
                 <p className="mt-2.5 text-center text-xs text-slate-600">

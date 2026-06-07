@@ -3,9 +3,9 @@ import { ArrowUpRight, Grid3x3 } from 'lucide-react'
 import { currentServerUser, getVisibleServerApps } from '@/src/features/freehold-intelligence/server-session'
 
 const statusTone: Record<string, { dot: string; text: string; label: string }> = {
-  live:        { dot: 'bg-[#D4AF37]',   text: 'text-[#D4AF37]',  label: 'Live'        },
+  live:        { dot: 'bg-gold',   text: 'text-gold',  label: 'Live'        },
   in_progress: { dot: 'bg-slate-500',   text: 'text-slate-400',   label: 'In progress' },
-  planned:     { dot: 'bg-slate-600',   text: 'text-slate-500',   label: 'Planned'     },
+  planned:     { dot: 'bg-surface-3',   text: 'text-slate-500',   label: 'Planned'     },
   blocked:     { dot: 'bg-red-400',     text: 'text-red-300',     label: 'Blocked'     },
 }
 
@@ -16,7 +16,7 @@ export default function ServerAppsPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Grid3x3 className="h-3.5 w-3.5" /> All apps
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
@@ -36,9 +36,9 @@ export default function ServerAppsPage() {
             <Link
               key={app.id}
               href={app.href}
-              className="group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 p-6 transition hover:border-[#D4AF37]/20 hover:bg-slate-800/50"
+              className="group relative overflow-hidden rounded-3xl border border-line bg-surface p-6 transition hover:border-gold/20 hover:bg-surface-2"
             >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.06] to-transparent opacity-0 transition group-hover:opacity-100" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-gold/[0.06] to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="relative">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{app.linkedMilestoneId}</span>
@@ -49,12 +49,12 @@ export default function ServerAppsPage() {
                 </div>
                 <div className="mt-7 text-lg font-semibold tracking-tight text-white">{app.name}</div>
                 <p className="mt-1.5 text-sm leading-snug text-slate-400">{app.description}</p>
-                <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-800 pt-4">
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4">
                   <div className="flex gap-3 text-sm text-slate-500">
                     {app.urgentCount > 0 && <span className="text-red-300/80">{app.urgentCount} urgent</span>}
-                    {app.pendingApprovalCount > 0 && <span className="text-[#D4AF37]/80">{app.pendingApprovalCount} approval</span>}
+                    {app.pendingApprovalCount > 0 && <span className="text-gold/80">{app.pendingApprovalCount} approval</span>}
                   </div>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:text-[#D4AF37]" />
+                  <ArrowUpRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:text-gold" />
                 </div>
               </div>
             </Link>

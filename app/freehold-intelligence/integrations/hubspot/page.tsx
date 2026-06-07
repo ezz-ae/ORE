@@ -75,7 +75,7 @@ const STAGE_COLORS: Record<string, string> = {
 
 function stageStyle(stage?: string) {
   const key = (stage ?? '').toLowerCase().replace(/[^a-z]/g, '')
-  return STAGE_COLORS[key] ?? 'text-slate-500 bg-slate-800/40 border-white/10'
+  return STAGE_COLORS[key] ?? 'text-slate-500 bg-surface-2 border-white/10'
 }
 
 function stageName(stage?: string) {
@@ -162,7 +162,7 @@ export default function HubSpotPage() {
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
-              className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
+              className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
             <button onClick={disconnect}
@@ -190,7 +190,7 @@ export default function HubSpotPage() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
-                className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-orange-400/40"
+                className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-orange-400/40"
               />
               <button onClick={() => setShow((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
@@ -229,7 +229,7 @@ export default function HubSpotPage() {
               { label: 'Active deals', value: data.deals.filter((d) => !['closedwon','closedlost'].includes((d.properties.dealstage ?? '').toLowerCase())).length.toString(), Icon: DollarSign, color: 'text-amber-400' },
               { label: 'Won',          value: data.deals.filter((d) => (d.properties.dealstage ?? '').toLowerCase() === 'closedwon').length.toString(), Icon: CheckCircle2, color: 'text-emerald-400' },
             ].map(({ label, value, Icon, color }) => (
-              <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+              <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
                 <div className="mt-2 text-[20px] font-semibold text-white">{value}</div>
                 <div className="mt-0.5 text-xs text-slate-600">{label}</div>
@@ -242,7 +242,7 @@ export default function HubSpotPage() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
               Recent Contacts <span className="text-slate-600 normal-case font-normal">({data.contactTotal.toLocaleString()} total)</span>
             </div>
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.contacts.length === 0
                 ? <div className="px-5 py-8 text-center text-sm text-slate-600">No contacts found</div>
                 : data.contacts.map((c) => {
@@ -288,7 +288,7 @@ export default function HubSpotPage() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
               Recent Deals <span className="text-slate-600 normal-case font-normal">({data.dealTotal.toLocaleString()} total)</span>
             </div>
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.deals.length === 0
                 ? <div className="px-5 py-8 text-center text-sm text-slate-600">No deals found</div>
                 : data.deals.map((d) => (

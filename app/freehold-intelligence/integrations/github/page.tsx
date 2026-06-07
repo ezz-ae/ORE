@@ -138,7 +138,7 @@ export default function GitHubPage() {
       <div className="mb-7 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-slate-800/50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-2">
               <Github className="h-4 w-4 text-slate-300" />
             </div>
             <h1 className="text-[20px] font-semibold text-white">GitHub</h1>
@@ -148,7 +148,7 @@ export default function GitHubPage() {
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
-              className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
+              className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
             <button onClick={disconnect}
@@ -161,7 +161,7 @@ export default function GitHubPage() {
 
       {/* Connect form */}
       {phase !== 'connected' && (
-        <div className="mb-6 rounded-[18px] border border-slate-800 bg-slate-800/40 p-5 space-y-3">
+        <div className="mb-6 rounded-[18px] border border-line bg-surface-2 p-5 space-y-3">
           <div>
             <div className="mb-1 text-sm font-medium text-slate-300">Repository</div>
             <input
@@ -169,7 +169,7 @@ export default function GitHubPage() {
               placeholder="owner/repository-name"
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
-              className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
+              className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
             />
           </div>
           <div>
@@ -181,7 +181,7 @@ export default function GitHubPage() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
-                className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
+                className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
               />
               <button onClick={() => setShowTok((v) => !v)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
@@ -216,7 +216,7 @@ export default function GitHubPage() {
           </div>
 
           {/* Repo card */}
-          <section className="mb-5 rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+          <section className="mb-5 rounded-[18px] border border-line bg-surface p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export default function GitHubPage() {
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-3 border-t border-slate-800 pt-4">
+            <div className="mt-4 grid grid-cols-4 gap-3 border-t border-line pt-4">
               {[
                 { label: 'Branch',     value: data.repo.default_branch,              Icon: GitBranch,     color: 'text-sky-400'    },
                 { label: 'Stars',      value: data.repo.stargazers_count.toString(),  Icon: Star,          color: 'text-amber-400'  },
@@ -254,14 +254,14 @@ export default function GitHubPage() {
           </section>
 
           {/* Tabs */}
-          <div className="mb-3 flex gap-1 rounded-[12px] border border-slate-800 bg-slate-900 p-1">
+          <div className="mb-3 flex gap-1 rounded-[12px] border border-line bg-surface p-1">
             {tabs.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-[9px] px-3 py-2 text-xs font-medium transition ${
-                  tab === t.id ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
+                  tab === t.id ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
                 }`}>
                 {t.label}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${tab === t.id ? 'bg-white/[0.12] text-slate-100' : 'bg-slate-800/40 text-slate-600'}`}>
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${tab === t.id ? 'bg-white/[0.12] text-slate-100' : 'bg-surface-2 text-slate-600'}`}>
                   {t.count}
                 </span>
               </button>
@@ -270,12 +270,12 @@ export default function GitHubPage() {
 
           {/* Commits */}
           {tab === 'commits' && (
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.commits.length === 0
                 ? <div className="px-5 py-8 text-center text-sm text-slate-600">No commits</div>
                 : data.commits.map((c) => (
                     <a key={c.sha} href={c.html_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-slate-800/40">
+                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
                       <GitCommit className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-slate-100 truncate">{c.commit.message.split('\n')[0]}</div>
@@ -296,12 +296,12 @@ export default function GitHubPage() {
 
           {/* Pull Requests */}
           {tab === 'prs' && (
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.prs.length === 0
                 ? <div className="px-5 py-8 text-center text-sm text-slate-600">No open pull requests</div>
                 : data.prs.map((pr) => (
                     <a key={pr.number} href={pr.html_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-slate-800/40">
+                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
                       <GitPullRequest className={`mt-0.5 h-4 w-4 shrink-0 ${pr.draft ? 'text-slate-600' : 'text-emerald-400/70'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-slate-100 truncate">{pr.title}</div>
@@ -323,12 +323,12 @@ export default function GitHubPage() {
 
           {/* Issues */}
           {tab === 'issues' && (
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.issues.length === 0
                 ? <div className="px-5 py-8 text-center text-sm text-slate-600">No open issues</div>
                 : data.issues.map((issue) => (
                     <a key={issue.number} href={issue.html_url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-slate-800/40">
+                      className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-400/60" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-slate-100 truncate">{issue.title}</div>

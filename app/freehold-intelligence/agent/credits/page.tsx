@@ -35,7 +35,7 @@ const INITIAL_ADS: BrokerAd[] = [
 
 const PERF = [
   { Icon: Users,      label: 'Leads',        value: `${me.leads}`,                       color: 'text-sky-400'     },
-  { Icon: Trophy,     label: 'Deals',        value: `${me.deals}`,                       color: 'text-[#D4AF37]'   },
+  { Icon: Trophy,     label: 'Deals',        value: `${me.deals}`,                       color: 'text-gold'   },
   { Icon: Target,     label: 'Closing rate', value: `${me.closingRate.toFixed(1)}%`,     color: 'text-violet-400'  },
   { Icon: TrendingUp, label: 'ROI',          value: `${me.roi.toFixed(1)}×`,             color: me.roi >= 5 ? 'text-emerald-400' : 'text-amber-400' },
   { Icon: DollarSign, label: 'Cost / lead',  value: `AED ${Math.round(me.costPerLead).toLocaleString()}`, color: 'text-slate-300' },
@@ -58,15 +58,15 @@ export default function AgentCreditsPage() {
     <div className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6">
 
       {/* 1 — Balance hero */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+      <section className="rounded-xl border border-line bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
-              <Coins className="h-3.5 w-3.5 text-[#D4AF37]" />
+              <Coins className="h-3.5 w-3.5 text-gold" />
               Credit balance
             </div>
             <div className="mt-2 flex items-end gap-2">
-              <span className="text-[44px] font-semibold leading-none tracking-tight text-[#D4AF37] tabular-nums">{me.remaining.toLocaleString()}</span>
+              <span className="text-[44px] font-semibold leading-none tracking-tight text-gold tabular-nums">{me.remaining.toLocaleString()}</span>
               <span className="pb-1 text-base text-slate-500">of {me.allocated.toLocaleString()} credits</span>
             </div>
             <div className="mt-1.5 text-sm text-slate-400">
@@ -82,9 +82,9 @@ export default function AgentCreditsPage() {
             <span className="text-slate-400">{me.spent.toLocaleString()} credits used</span>
             <span className="text-slate-500">{Math.round(me.spentPct)}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div
-              className={`h-full rounded-full transition-all ${me.spentPct > 90 ? 'bg-red-400' : me.spentPct > 70 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`}
+              className={`h-full rounded-full transition-all ${me.spentPct > 90 ? 'bg-red-400' : me.spentPct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
               style={{ width: `${Math.min(me.spentPct, 100)}%` }}
             />
           </div>
@@ -94,9 +94,9 @@ export default function AgentCreditsPage() {
 
       {/* 2 — Create Ad CTA */}
       <section className="mt-4">
-        <div className={`rounded-xl border p-6 ${LOW_BALANCE ? 'border-amber-400/25 bg-amber-400/[0.04]' : 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]'}`}>
+        <div className={`rounded-xl border p-6 ${LOW_BALANCE ? 'border-amber-400/25 bg-amber-400/[0.04]' : 'border-gold/25 bg-gold/[0.05]'}`}>
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-gold/25 bg-gold/10 text-gold">
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -105,8 +105,8 @@ export default function AgentCreditsPage() {
                 Pick your studied project → next → next → live. The AI writes the creative, targets the right buyers,
                 and routes every lead straight into your CRM.
               </p>
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-xs font-medium text-slate-300">
-                <Target className="h-3 w-3 text-[#D4AF37]" />
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 py-1 text-xs font-medium text-slate-300">
+                <Target className="h-3 w-3 text-gold" />
                 Focus project: {me.focusProject}
               </div>
 
@@ -121,7 +121,7 @@ export default function AgentCreditsPage() {
                 {LOW_BALANCE ? (
                   <span
                     aria-disabled
-                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full bg-slate-700/60 px-4 py-2 text-xs font-semibold text-slate-400"
+                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full bg-surface-3 px-4 py-2 text-xs font-semibold text-slate-400"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Low balance — refill needed
@@ -129,7 +129,7 @@ export default function AgentCreditsPage() {
                 ) : (
                   <Link
                     href="/freehold-intelligence/lead-machine/campaigns/new"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Create ad
@@ -146,7 +146,7 @@ export default function AgentCreditsPage() {
         <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">My performance</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {PERF.map(({ Icon, label, value, color }) => (
-            <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div key={label} className="rounded-xl border border-line bg-surface p-4">
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Icon className={`h-3.5 w-3.5 ${color}`} />
                 {label}
@@ -163,7 +163,7 @@ export default function AgentCreditsPage() {
           <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Active ads</div>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/optimize"
-            className="flex items-center gap-1 text-xs font-medium text-[#D4AF37] transition hover:text-[#D4AF37]/80"
+            className="flex items-center gap-1 text-xs font-medium text-gold transition hover:text-gold/80"
           >
             Optimize <ChevronRight className="h-3.5 w-3.5" />
           </Link>
@@ -172,7 +172,7 @@ export default function AgentCreditsPage() {
           {ads.map((ad) => {
             const isActive = ad.status === 'Active'
             return (
-              <div key={ad.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+              <div key={ad.id} className="rounded-xl border border-line bg-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold text-white">{ad.name}</div>
@@ -185,7 +185,7 @@ export default function AgentCreditsPage() {
                     </span>
                     <button
                       onClick={() => toggleAd(ad.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 transition hover:border-slate-600 hover:text-slate-300"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-line-strong bg-surface-2 text-slate-400 transition hover:border-line-strong hover:text-slate-300"
                       aria-label={isActive ? 'Pause ad' : 'Resume ad'}
                     >
                       {isActive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
@@ -195,7 +195,7 @@ export default function AgentCreditsPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-4">
                   <div>
                     <div className="text-xs text-slate-500">Spend / day</div>
-                    <div className="mt-0.5 text-sm font-semibold text-[#D4AF37] tabular-nums">{ad.perDay} credits</div>
+                    <div className="mt-0.5 text-sm font-semibold text-gold tabular-nums">{ad.perDay} credits</div>
                   </div>
                   <div>
                     <div className="text-xs text-slate-500">Leads</div>
@@ -217,9 +217,9 @@ export default function AgentCreditsPage() {
       {/* 5 — WhatsApp connector */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">WhatsApp</div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-xl border border-line bg-surface p-5">
           <div className="flex items-center gap-4">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border ${me.whatsappConnected ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400' : 'border-slate-700 bg-slate-800/50 text-slate-400'}`}>
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border ${me.whatsappConnected ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
               <MessageCircle className="h-5 w-5" />
             </div>
             {me.whatsappConnected ? (
@@ -235,7 +235,7 @@ export default function AgentCreditsPage() {
                   <div className="text-sm font-semibold text-white">Connect WhatsApp</div>
                   <div className="mt-0.5 text-xs text-slate-400">Let the AI scan your conversations and qualify leads automatically.</div>
                 </div>
-                <button onClick={() => toast.success('Auto-qualify connected')} className="shrink-0 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
+                <button onClick={() => toast.success('Auto-qualify connected')} className="shrink-0 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
                   Connect
                 </button>
               </div>
@@ -247,16 +247,16 @@ export default function AgentCreditsPage() {
       {/* 6 — Earn more credits */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Earn more credits</div>
-        <div className="rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.05] p-6">
+        <div className="rounded-xl border border-gold/25 bg-gold/[0.05] p-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-gold/25 bg-gold/10 text-gold">
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-base font-semibold text-white">Your next AI refill</div>
                 <div className="text-right">
-                  <div className="text-xl font-semibold text-[#D4AF37] tabular-nums">+{me.recommendedRefill.toLocaleString()}</div>
+                  <div className="text-xl font-semibold text-gold tabular-nums">+{me.recommendedRefill.toLocaleString()}</div>
                   <div className="text-xs text-slate-500">credits</div>
                 </div>
               </div>
@@ -266,13 +266,13 @@ export default function AgentCreditsPage() {
               <div className="mt-4">
                 <div className="mb-1.5 flex items-center justify-between text-xs">
                   <span className="flex items-center gap-1.5 text-slate-400">
-                    <Gauge className="h-3.5 w-3.5 text-[#D4AF37]" /> Efficiency score
+                    <Gauge className="h-3.5 w-3.5 text-gold" /> Efficiency score
                   </span>
                   <span className="font-medium text-slate-200 tabular-nums">{me.efficiency}/100</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
-                    className="h-full rounded-full bg-[#D4AF37] transition-all"
+                    className="h-full rounded-full bg-gold transition-all"
                     style={{ width: `${me.efficiency}%` }}
                   />
                 </div>

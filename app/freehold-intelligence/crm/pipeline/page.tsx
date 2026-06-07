@@ -12,7 +12,7 @@ const PIPELINE_VALUE_DATA = [
   { stage: 'Follow-up', leads:  8, value: 'AED 9.4M',  label: 'pipeline',  dot: 'bg-amber-400'   },
   { stage: 'Qualified', leads:  5, value: 'AED 7.2M',  label: 'pipeline',  dot: 'bg-violet-400'  },
   { stage: 'Hot',       leads:  6, value: 'AED 11.2M', label: 'pipeline',  dot: 'bg-red-400'     },
-  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-[#D4AF37]' },
+  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-gold' },
 ]
 
 const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
@@ -20,9 +20,9 @@ const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string; value: string }> = {
   'New':       { tone: 'text-slate-400',       dot: 'bg-sky-400',      dotBg: 'bg-sky-400/20',      value: 'AED 12.6M' },
   'Follow-up': { tone: 'text-slate-400',        dot: 'bg-violet-400',   dotBg: 'bg-violet-400/20',   value: 'AED 9.4M'  },
-  'Qualified': { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 7.2M'  },
+  'Qualified': { tone: 'text-gold',        dot: 'bg-gold',    dotBg: 'bg-gold/20',    value: 'AED 7.2M'  },
   'Hot':       { tone: 'text-red-300',          dot: 'bg-red-400',      dotBg: 'bg-red-400/20',      value: 'AED 11.2M' },
-  'Won':       { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 9.8M'  },
+  'Won':       { tone: 'text-gold',        dot: 'bg-gold',    dotBg: 'bg-gold/20',    value: 'AED 9.8M'  },
 }
 
 const STAGE_DELTA: Record<string, string> = {
@@ -49,7 +49,7 @@ export default function CrmPipelinePage() {
     name,
     leads: stageCounts[name] || [],
     count: (stageCounts[name] || []).length,
-    ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-slate-700', value: '—' }),
+    ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-surface-3', value: '—' }),
     delta: STAGE_DELTA[name] ?? '',
   })), [stageCounts])
 
@@ -71,7 +71,7 @@ export default function CrmPipelinePage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <Users className="h-3.5 w-3.5" /> Pipeline
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -86,7 +86,7 @@ export default function CrmPipelinePage() {
             {PIPELINE_VALUE_DATA.map((item) => (
               <div
                 key={item.stage}
-                className="rounded-2xl border border-slate-800 bg-slate-800/50 p-4"
+                className="rounded-2xl border border-line bg-surface-2 p-4"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
@@ -113,8 +113,8 @@ export default function CrmPipelinePage() {
                   className={[
                     'rounded-xl border p-5 text-left transition',
                     isSelected
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                      : 'border-slate-800 bg-slate-900 hover:border-slate-700',
+                      ? 'border-gold/40 bg-gold/[0.06]'
+                      : 'border-line bg-surface hover:border-line-strong',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function CrmPipelinePage() {
           {activeStage && (
             <div className="mt-4 flex items-center gap-2">
               <span className="text-xs text-slate-400">Showing</span>
-              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-sm font-medium text-[#D4AF37]">{activeStage}</span>
+              <span className="rounded-full border border-gold/30 bg-gold/[0.08] px-3 py-1 text-sm font-medium text-gold">{activeStage}</span>
               <button
                 onClick={() => setActiveStage(null)}
                 className="text-xs text-slate-500 transition hover:text-slate-300"
@@ -154,18 +154,18 @@ export default function CrmPipelinePage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
+                    className="group rounded-xl border border-line bg-surface p-5 transition hover:border-gold/25"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-semibold text-white group-hover:text-white">{lead.name}</div>
                         <div className="mt-0.5 truncate text-xs text-slate-400">{lead.source}</div>
                       </div>
-                      <span className="shrink-0 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs font-medium text-[#D4AF37]">
+                      <span className="shrink-0 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 text-xs font-medium text-gold">
                         {lead.intentScore}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-3 text-sm text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-sm text-slate-400">
                       <span>Agent: <span className="text-slate-300">{lead.assignedAgent}</span></span>
                       <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     </div>
@@ -190,15 +190,15 @@ export default function CrmPipelinePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <TrendingUp className="h-3 w-3" /> Conversion rate
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">23%</div>
-              <div className="mt-1 text-xs text-[#D4AF37]">+4pp vs last month</div>
+              <div className="mt-1 text-xs text-gold">+4pp vs last month</div>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Clock className="h-3 w-3" /> Avg. time-to-close
               </div>

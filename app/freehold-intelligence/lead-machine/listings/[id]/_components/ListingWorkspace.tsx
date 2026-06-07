@@ -27,10 +27,10 @@ interface Props {
 }
 
 function severityClass(severity: string, resolved: boolean) {
-  if (resolved) return 'border-slate-800 bg-slate-900 opacity-60'
+  if (resolved) return 'border-line bg-surface opacity-60'
   if (severity === 'critical') return 'border-red-400/20 bg-red-400/[0.05]'
-  if (severity === 'high')     return 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]'
-  return 'border-slate-800 bg-slate-900'
+  if (severity === 'high')     return 'border-gold/20 bg-gold/[0.05]'
+  return 'border-line bg-surface'
 }
 
 function severityTextClass(severity: string, resolved: boolean) {
@@ -93,14 +93,14 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
   return (
     <>
       {/* Tab bar */}
-      <div className="mt-8 flex items-center gap-1 border-b border-slate-800 pb-0">
+      <div className="mt-8 flex items-center gap-1 border-b border-line pb-0">
         <button
           type="button"
           onClick={() => setTab('requirements')}
           className={[
             'flex items-center gap-2 px-4 py-3 text-[14px] font-medium transition border-b-2',
             tab === 'requirements'
-              ? 'border-[#D4AF37] text-white'
+              ? 'border-gold text-white'
               : 'border-transparent text-slate-500 hover:text-slate-300',
           ].join(' ')}
         >
@@ -118,13 +118,13 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
           className={[
             'flex items-center gap-2 px-4 py-3 text-[14px] font-medium transition border-b-2',
             tab === 'comments'
-              ? 'border-[#D4AF37] text-white'
+              ? 'border-gold text-white'
               : 'border-transparent text-slate-500 hover:text-slate-300',
           ].join(' ')}
         >
           <MessageSquare className="h-3.5 w-3.5" />
           Comments
-          <span className="rounded-full border border-slate-800 bg-slate-800/40 px-1.5 py-0.5 text-xs font-medium text-slate-500 leading-none">
+          <span className="rounded-full border border-line bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-slate-500 leading-none">
             {localComments.length}
           </span>
         </button>
@@ -162,8 +162,8 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
                     className={[
                       'shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition',
                       isResolved
-                        ? 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                        ? 'border-gold/25 bg-gold/10 text-gold'
+                        : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
                     ].join(' ')}
                   >
                     {isResolved
@@ -183,9 +183,9 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
         <div className="mt-6 space-y-4">
           {/* Existing comments */}
           {localComments.map((comment) => (
-            <div key={comment.id} className="rounded-[18px] border border-slate-800 bg-slate-900 p-6">
+            <div key={comment.id} className="rounded-[18px] border border-line bg-surface p-6">
               <div className="flex items-center justify-between gap-3">
-                <span className="rounded-full border border-slate-800 bg-slate-800/40 px-2.5 py-0.5 text-xs text-slate-500 capitalize">
+                <span className="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-xs text-slate-500 capitalize">
                   {comment.type}
                 </span>
                 <span className="text-sm text-slate-500">{comment.owner}</span>
@@ -198,7 +198,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
           ))}
 
           {/* Add comment form */}
-          <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-[18px] border border-line bg-surface p-5">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">
               Add note
             </div>
@@ -208,7 +208,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
               onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postComment() }}
               placeholder={`Note about ${projectName}…`}
               rows={3}
-              className="w-full resize-none rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-[14px] text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none transition"
+              className="w-full resize-none rounded-xl border border-line bg-surface-2 px-4 py-3 text-[14px] text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none transition"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               <span className="text-xs text-slate-600">⌘↵ to post</span>
@@ -216,7 +216,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
                 type="button"
                 onClick={postComment}
                 disabled={!draft.trim()}
-                className="flex items-center gap-2 rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/[0.08] px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-lg border border-gold/25 bg-gold/[0.08] px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <Send className="h-3.5 w-3.5" />
                 Post
@@ -228,7 +228,7 @@ export function ListingWorkspace({ requirements, comments, projectName }: Props)
 
       {/* Flash toast */}
       {flash && (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/30 bg-slate-900/95 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-xl backdrop-blur">
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/30 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-xl backdrop-blur">
           {flash}
         </div>
       )}

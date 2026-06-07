@@ -37,23 +37,23 @@ function fmtPct(n: number): string {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
+  DISPLAY:         'bg-gold/10 text-gold border-gold/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
   VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
 }
 
 const AD_STRENGTH_COLOR: Record<GoogleAdStrength, string> = {
-  PENDING:   'text-slate-500 bg-slate-800/40 border-slate-800',
+  PENDING:   'text-slate-500 bg-surface-2 border-line',
   POOR:      'text-red-400 bg-red-400/10 border-red-400/20',
   AVERAGE:   'text-[#FBBC04] bg-[#FBBC04]/10 border-[#FBBC04]/20',
-  GOOD:      'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
+  GOOD:      'text-gold bg-gold/10 border-gold/20',
   EXCELLENT: 'text-[#4285F4] bg-[#4285F4]/10 border-[#4285F4]/20',
 }
 
 const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
-  BROAD:  'bg-slate-800/40 text-slate-500 border-slate-800',
+  BROAD:  'bg-surface-2 text-slate-500 border-line',
   PHRASE: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
-  EXACT:  'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
+  EXACT:  'bg-gold/10 text-gold border-gold/20',
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ function StatCard({
   accent?: string
 }) {
   return (
-    <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+    <div className="rounded-[16px] border border-line bg-surface p-4">
       <div className="text-xs text-slate-500">{label}</div>
       <div className={`mt-2 text-[20px] font-semibold leading-tight tabular-nums ${accent ?? 'text-white'}`}>
         {value}
@@ -87,9 +87,9 @@ function StatCard({
 
 function QualityScoreDots({ score }: { score: number }) {
   const color =
-    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-[#D4AF37]'
+    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-gold'
   const textColor =
-    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-[#D4AF37]'
+    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-gold'
 
   return (
     <div className="flex items-center gap-1.5">
@@ -98,7 +98,7 @@ function QualityScoreDots({ score }: { score: number }) {
           <span
             key={i}
             className={`inline-block h-1.5 w-1.5 rounded-full ${
-              i < score ? color : 'bg-slate-800/50'
+              i < score ? color : 'bg-surface-2'
             }`}
           />
         ))}
@@ -329,7 +329,7 @@ export default function GoogleCampaignDetailPage({
                   <span
                     className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                       CAMPAIGN_TYPE_COLOR[campaign.type] ??
-                      'bg-slate-800/40 text-slate-500 border-slate-800'
+                      'bg-surface-2 text-slate-500 border-line'
                     }`}
                   >
                     {campaign.type.replace(/_/g, ' ')}
@@ -337,8 +337,8 @@ export default function GoogleCampaignDetailPage({
                   <span
                     className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                       isEnabled
-                        ? 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-slate-800 bg-slate-800/40 text-slate-500'
+                        ? 'border-gold/25 bg-gold/10 text-gold'
+                        : 'border-line bg-surface-2 text-slate-500'
                     }`}
                   >
                     {campaign.status}
@@ -381,7 +381,7 @@ export default function GoogleCampaignDetailPage({
                 <button
                   onClick={() => campaignId && fetchAll(campaignId, true)}
                   disabled={refreshing || togglingStatus}
-                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
                 >
                   <RefreshCw
                     className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
@@ -395,8 +395,8 @@ export default function GoogleCampaignDetailPage({
                   className={[
                     'inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition disabled:opacity-40',
                     isEnabled
-                      ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20'
-                      : 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20',
+                      ? 'border-gold/20 bg-gold/10 text-gold hover:bg-gold/20'
+                      : 'border-gold/20 bg-gold/10 text-gold hover:bg-gold/20',
                   ].join(' ')}
                 >
                   {togglingStatus ? (
@@ -485,9 +485,9 @@ export default function GoogleCampaignDetailPage({
                 {adGroups.length !== 1 ? 's' : ''}
               </h2>
 
-              <div className="mt-5 overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
+              <div className="mt-5 overflow-hidden rounded-[20px] border border-line bg-surface">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_80px_80px_80px_72px_72px] gap-x-3 border-b border-slate-800 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+                <div className="grid grid-cols-[1fr_80px_80px_80px_72px_72px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                   <span>Name</span>
                   <span>Status</span>
                   <span className="text-right">Bid</span>
@@ -500,13 +500,13 @@ export default function GoogleCampaignDetailPage({
                   {adGroups.map((ag) => (
                     <div
                       key={ag.id}
-                      className="grid grid-cols-[1fr_80px_80px_80px_72px_72px] items-center gap-x-3 px-5 py-3.5 text-xs transition hover:bg-slate-800/40"
+                      className="grid grid-cols-[1fr_80px_80px_80px_72px_72px] items-center gap-x-3 px-5 py-3.5 text-xs transition hover:bg-surface-2"
                     >
                       <div className="flex min-w-0 items-center gap-2">
                         <span
                           className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                             ag.status === 'ENABLED'
-                              ? 'bg-[#D4AF37]'
+                              ? 'bg-gold'
                               : 'bg-white/20'
                           }`}
                         />
@@ -518,7 +518,7 @@ export default function GoogleCampaignDetailPage({
                       <span
                         className={`text-xs font-medium ${
                           ag.status === 'ENABLED'
-                            ? 'text-[#D4AF37]'
+                            ? 'text-gold'
                             : 'text-slate-500'
                         }`}
                       >
@@ -562,9 +562,9 @@ export default function GoogleCampaignDetailPage({
                 )}
               </h2>
 
-              <div className="mt-5 overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
+              <div className="mt-5 overflow-hidden rounded-[20px] border border-line bg-surface">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_90px_130px_72px_72px_80px_60px] gap-x-3 border-b border-slate-800 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+                <div className="grid grid-cols-[1fr_90px_130px_72px_72px_80px_60px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                   <span>Keyword</span>
                   <span>Match</span>
                   <span>Quality score</span>
@@ -578,14 +578,14 @@ export default function GoogleCampaignDetailPage({
                   {topKeywords.map((kw) => (
                     <div
                       key={kw.id}
-                      className="grid grid-cols-[1fr_90px_130px_72px_72px_80px_60px] items-center gap-x-3 px-5 py-3 text-xs transition hover:bg-slate-800/40"
+                      className="grid grid-cols-[1fr_90px_130px_72px_72px_80px_60px] items-center gap-x-3 px-5 py-3 text-xs transition hover:bg-surface-2"
                     >
                       {/* Keyword text */}
                       <div className="flex min-w-0 items-center gap-2">
                         <span
                           className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                             kw.status === 'ENABLED'
-                              ? 'bg-[#D4AF37]'
+                              ? 'bg-gold'
                               : 'bg-white/20'
                           }`}
                         />
@@ -652,7 +652,7 @@ export default function GoogleCampaignDetailPage({
                 {ads.map((ad) => {
                   const strengthCls =
                     AD_STRENGTH_COLOR[ad.adStrength] ??
-                    'text-slate-500 bg-slate-800/40 border-slate-800'
+                    'text-slate-500 bg-surface-2 border-line'
                   const firstThreeHeadlines = ad.headlines.slice(0, 3)
                   const firstTwoDescs       = ad.descriptions.slice(0, 2)
                   const finalUrl            = ad.finalUrls[0] ?? ''
@@ -660,7 +660,7 @@ export default function GoogleCampaignDetailPage({
                   return (
                     <div
                       key={ad.id}
-                      className="rounded-[20px] border border-slate-800 bg-slate-900 p-5"
+                      className="rounded-[20px] border border-line bg-surface p-5"
                     >
                       {/* Top bar: ad strength + status dot */}
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -672,7 +672,7 @@ export default function GoogleCampaignDetailPage({
                         <span
                           className={`h-2 w-2 shrink-0 rounded-full ${
                             ad.status === 'ENABLED'
-                              ? 'bg-[#D4AF37]'
+                              ? 'bg-gold'
                               : 'bg-white/20'
                           }`}
                           title={ad.status}
@@ -688,9 +688,9 @@ export default function GoogleCampaignDetailPage({
                           {firstThreeHeadlines.map((h, i) => (
                             <div
                               key={i}
-                              className="flex items-start gap-2 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2"
+                              className="flex items-start gap-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2"
                             >
-                              <span className="mt-0.5 shrink-0 rounded-full bg-slate-800/50 px-1.5 py-0.5 text-[9px] font-medium text-slate-500">
+                              <span className="mt-0.5 shrink-0 rounded-full bg-surface-2 px-1.5 py-0.5 text-[9px] font-medium text-slate-500">
                                 H{i + 1}
                               </span>
                               <span className="text-sm font-medium text-slate-100">
@@ -720,9 +720,9 @@ export default function GoogleCampaignDetailPage({
                           {firstTwoDescs.map((d, i) => (
                             <div
                               key={i}
-                              className="flex items-start gap-2 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2"
+                              className="flex items-start gap-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2"
                             >
-                              <span className="mt-0.5 shrink-0 rounded-full bg-slate-800/50 px-1.5 py-0.5 text-[9px] font-medium text-slate-500">
+                              <span className="mt-0.5 shrink-0 rounded-full bg-surface-2 px-1.5 py-0.5 text-[9px] font-medium text-slate-500">
                                 D{i + 1}
                               </span>
                               <span className="text-sm leading-snug text-slate-300">
@@ -757,7 +757,7 @@ export default function GoogleCampaignDetailPage({
 
                       {/* Ad metrics */}
                       {ad.metrics && (
-                        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-slate-800 pt-4 text-sm text-slate-500">
+                        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-line pt-4 text-sm text-slate-500">
                           <span>
                             Impr.{' '}
                             <span className="text-slate-300">
@@ -799,7 +799,7 @@ export default function GoogleCampaignDetailPage({
 
           {/* ── No ad data states ──────────────────────────────────────────── */}
           {adGroups.length === 0 && keywords.length === 0 && ads.length === 0 && (
-            <div className="mt-14 rounded-[24px] border border-slate-800 bg-slate-800/40 px-6 py-12 text-center">
+            <div className="mt-14 rounded-[24px] border border-line bg-surface-2 px-6 py-12 text-center">
               <Search className="mx-auto mb-3 h-7 w-7 text-[#4285F4]/30" />
               <div className="text-sm font-semibold text-white">
                 No sub-data available

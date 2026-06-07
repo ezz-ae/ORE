@@ -12,8 +12,8 @@ import {
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 const STATUS_CONFIG = {
-  available:   { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'Available'   },
-  at_capacity: { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'At capacity' },
+  available:   { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', label: 'Available'   },
+  at_capacity: { dot: 'bg-gold', text: 'text-[#F8E7AE]', badge: 'border-gold/20 bg-gold/10', label: 'At capacity' },
   overloaded:  { dot: 'bg-red-400',   text: 'text-red-300',   badge: 'border-red-400/20 bg-red-400/10',     label: 'Overloaded'  },
 }
 
@@ -61,18 +61,18 @@ export default function SalesTeamPage() {
 
   function statusPillClass(value: StatusFilter) {
     if (value !== statusFilter) {
-      return 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
+      return 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
     }
     if (value === 'overloaded')  return 'border-red-400/35 bg-red-400/10 text-red-300'
-    if (value === 'at_capacity') return 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-    if (value === 'available')   return 'border-emerald-400/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-    return 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+    if (value === 'at_capacity') return 'border-gold/35 bg-gold/10 text-gold'
+    if (value === 'available')   return 'border-emerald-400/30 bg-gold/10 text-gold'
+    return 'border-gold/40 bg-gold/10 text-gold'
   }
 
   function sortPillClass(value: SortKey) {
     return value === sortKey
-      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-      : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
+      ? 'border-gold/40 bg-gold/10 text-gold'
+      : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
   }
 
   return (
@@ -87,7 +87,7 @@ export default function SalesTeamPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Users className="h-3.5 w-3.5" /> Sales Team
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -115,11 +115,11 @@ export default function SalesTeamPage() {
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Agents',    value: crmAgentRoster.length, color: 'text-white'       },
-          { label: 'Available', value: available.length,       color: 'text-[#D4AF37]' },
+          { label: 'Available', value: available.length,       color: 'text-gold' },
           { label: 'Hot leads', value: totalHot,               color: 'text-red-300'     },
-          { label: 'Overdue',   value: totalOverdue,           color: totalOverdue > 3 ? 'text-red-300' : 'text-[#D4AF37]' },
+          { label: 'Overdue',   value: totalOverdue,           color: totalOverdue > 3 ? 'text-red-300' : 'text-gold' },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">
             <div className={`text-[28px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -166,11 +166,11 @@ export default function SalesTeamPage() {
 
         <div className="mt-4 space-y-3">
           {filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-slate-800 bg-slate-900 py-14 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-[22px] border border-line bg-surface py-14 text-center">
               <p className="text-sm text-slate-500">No agents match this filter</p>
               <button
                 onClick={() => setStatusFilter('All')}
-                className="rounded-full border border-slate-800 bg-slate-800/50 px-4 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-300"
+                className="rounded-full border border-line bg-surface-2 px-4 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-300"
               >
                 Clear
               </button>
@@ -185,12 +185,12 @@ export default function SalesTeamPage() {
               )
 
               return (
-                <div key={agent.id} className="rounded-[22px] border border-slate-800 bg-slate-900 p-6">
+                <div key={agent.id} className="rounded-[22px] border border-line bg-surface p-6">
 
                   {/* Top row */}
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-800 bg-slate-800/50 text-base font-semibold text-slate-300">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface-2 text-base font-semibold text-slate-300">
                         {agent.initials}
                       </div>
                       <div>
@@ -210,8 +210,8 @@ export default function SalesTeamPage() {
                       {[
                         { label: 'Leads',   value: agent.totalLeads,      color: 'text-white'       },
                         { label: 'Hot',     value: agent.hotLeads,         color: agent.hotLeads > 0 ? 'text-red-400' : 'text-white' },
-                        { label: 'Overdue', value: agent.overdueFollowUps, color: agent.overdueFollowUps > 0 ? 'text-[#D4AF37]' : 'text-white' },
-                        { label: 'Wins',    value: agent.recentWins,       color: 'text-[#D4AF37]' },
+                        { label: 'Overdue', value: agent.overdueFollowUps, color: agent.overdueFollowUps > 0 ? 'text-gold' : 'text-white' },
+                        { label: 'Wins',    value: agent.recentWins,       color: 'text-gold' },
                       ].map((m) => (
                         <div key={m.label}>
                           <div className={`text-xl font-semibold ${m.color}`}>{m.value}</div>
@@ -227,18 +227,18 @@ export default function SalesTeamPage() {
                       <span className="text-slate-500">Utilization</span>
                       <span className={
                         agent.utilization >= 85 ? 'text-red-300'
-                        : agent.utilization >= 70 ? 'text-[#D4AF37]'
-                        : 'text-[#D4AF37]'
+                        : agent.utilization >= 70 ? 'text-gold'
+                        : 'text-gold'
                       }>
                         {agent.utilization}%
                       </span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
                       <div
                         className={`h-full rounded-full ${
                           agent.utilization >= 85 ? 'bg-red-400'
-                          : agent.utilization >= 70 ? 'bg-[#D4AF37]'
-                          : 'bg-[#D4AF37]'
+                          : agent.utilization >= 70 ? 'bg-gold'
+                          : 'bg-gold'
                         }`}
                         style={{ width: `${agent.utilization}%` }}
                       />
@@ -252,15 +252,15 @@ export default function SalesTeamPage() {
                         <Link
                           key={l.id}
                           href={`/freehold-intelligence/crm/leads/${l.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-sm text-slate-400 transition hover:border-[#D4AF37]/25 hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1 text-sm text-slate-400 transition hover:border-gold/25 hover:text-white"
                         >
-                          <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-[#D4AF37]'}`} />
+                          <span className={`h-1.5 w-1.5 rounded-full ${l.urgency === 'critical' ? 'bg-red-400' : 'bg-gold'}`} />
                           {l.name.split(' ')[0]}
                           <span className="text-slate-600">· {l.intentScore}</span>
                         </Link>
                       ))}
                       {overdue.length > 0 && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-sm text-[#F8E7AE]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-sm text-[#F8E7AE]">
                           {overdue.length} overdue follow-up{overdue.length !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -276,10 +276,10 @@ export default function SalesTeamPage() {
       {/* Leaderboard */}
       <section className="mt-12">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Win ranking</div>
-        <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+        <div className="mt-4 overflow-hidden rounded-[22px] border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">#</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
                 <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Specialty</th>
@@ -288,22 +288,22 @@ export default function SalesTeamPage() {
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Load</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-line">
               {[...crmAgentRoster]
                 .sort((a, b) => b.recentWins - a.recentWins)
                 .map((agent, i) => {
                   const st = STATUS_CONFIG[agent.status]
                   return (
-                    <tr key={agent.id} className={`transition hover:bg-slate-800/30 ${i === 0 ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
+                    <tr key={agent.id} className={`transition hover:bg-surface-2 ${i === 0 ? 'bg-gold/[0.03]' : ''}`}>
                       <td className="px-6 py-4">
                         {i === 0
-                          ? <Trophy className="h-4 w-4 text-[#D4AF37]" />
+                          ? <Trophy className="h-4 w-4 text-gold" />
                           : <span className="text-sm text-slate-500">{i + 1}</span>
                         }
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-800/50 text-sm font-semibold text-slate-300">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface-2 text-sm font-semibold text-slate-300">
                             {agent.initials}
                           </div>
                           <div>
@@ -313,7 +313,7 @@ export default function SalesTeamPage() {
                         </div>
                       </td>
                       <td className="hidden px-4 py-4 text-xs text-slate-500 sm:table-cell">{agent.specialty}</td>
-                      <td className="px-4 py-4 text-center text-sm font-semibold text-[#D4AF37]">{agent.recentWins}</td>
+                      <td className="px-4 py-4 text-center text-sm font-semibold text-gold">{agent.recentWins}</td>
                       <td className="px-4 py-4 text-center">
                         <span className={`text-sm font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-600'}`}>
                           {agent.hotLeads}
@@ -340,14 +340,14 @@ export default function SalesTeamPage() {
             </div>
             <Link
               href="/freehold-intelligence/crm/inbox"
-              className="inline-flex items-center gap-1 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+              className="inline-flex items-center gap-1 text-xs text-gold/60 transition hover:text-gold"
             >
               Full inbox <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
           <div className="space-y-2">
             {unassigned.map((lead) => (
-              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+              <div key={lead.id} className="flex items-start justify-between gap-4 rounded-[18px] border border-line bg-surface p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-white">{lead.name}</span>
@@ -356,7 +356,7 @@ export default function SalesTeamPage() {
                   <p className="mt-1 line-clamp-1 text-xs text-slate-400">{lead.aiNote}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className={`text-sm font-semibold ${lead.intentScore >= 80 ? 'text-[#D4AF37]' : 'text-slate-300'}`}>
+                  <div className={`text-sm font-semibold ${lead.intentScore >= 80 ? 'text-gold' : 'text-slate-300'}`}>
                     {lead.intentScore}
                   </div>
                   <div className="text-xs text-slate-500">intent</div>

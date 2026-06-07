@@ -26,7 +26,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
+      return 'bg-gold/10 text-gold border-gold/20'
     case 'off_plan':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'under_construction':
@@ -36,7 +36,7 @@ function statusBadge(status: PropertyStatus) {
     case 'coming_soon':
       return 'bg-violet-400/10 text-slate-400 border-violet-400/20'
     default:
-      return 'bg-slate-800/50 text-slate-400 border-slate-800'
+      return 'bg-surface-2 text-slate-400 border-line'
   }
 }
 
@@ -54,7 +54,7 @@ function statusLabel(status: PropertyStatus): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
+      return 'bg-gold/10 text-gold border-gold/20'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
@@ -74,14 +74,14 @@ function landingLabel(status: LandingStatus): string {
 }
 
 function readinessBar(value: number) {
-  if (value >= 80) return 'bg-[#D4AF37]'
-  if (value >= 50) return 'bg-[#D4AF37]'
+  if (value >= 80) return 'bg-gold'
+  if (value >= 50) return 'bg-gold'
   return 'bg-red-400'
 }
 
 function DetailRow({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-slate-800 last:border-0">
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-line last:border-0">
       <span className="text-xs text-slate-400 shrink-0">{label}</span>
       <span className="text-sm text-slate-300 text-right">
         {value !== null && value !== undefined ? String(value) : '—'}
@@ -101,7 +101,7 @@ export default function PropertyDetailPage() {
         <p className="mt-3 text-[16px] text-slate-400">Property not found.</p>
         <Link
           href="/freehold-intelligence/inventory"
-          className="mt-6 inline-flex items-center gap-1.5 text-sm text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm text-gold/70 transition hover:text-gold"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Inventory
         </Link>
@@ -144,7 +144,7 @@ export default function PropertyDetailPage() {
         <div className="mt-5">
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             <Sparkles className="h-4 w-4" /> Generate Landing Page
           </Link>
@@ -158,7 +158,7 @@ export default function PropertyDetailPage() {
         <div className="space-y-5">
 
           {/* Property details */}
-          <div className="rounded-[20px] border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               Property Details
             </p>
@@ -186,7 +186,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Price & ROI */}
-          <div className="rounded-[20px] border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               Pricing & Returns
             </p>
@@ -197,7 +197,7 @@ export default function PropertyDetailPage() {
             {prop.roi !== null && (
               <div>
                 <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">Expected ROI</div>
-                <div className="mt-1 text-[28px] font-semibold text-[#D4AF37] tabular-nums leading-none">
+                <div className="mt-1 text-[28px] font-semibold text-gold tabular-nums leading-none">
                   {prop.roi.toFixed(1)}%
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function PropertyDetailPage() {
         <div className="space-y-5">
 
           {/* Performance metrics */}
-          <div className="rounded-[20px] border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               Performance (30 days)
             </p>
@@ -222,7 +222,7 @@ export default function PropertyDetailPage() {
               ].map(({ label, value }) => (
                 <div
                   key={label}
-                  className="rounded-[14px] border border-slate-800 bg-slate-800/50 p-3"
+                  className="rounded-[14px] border border-line bg-surface-2 p-3"
                 >
                   <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">{label}</div>
                   <div className="mt-1.5 text-[22px] font-semibold tabular-nums text-white">{value}</div>
@@ -232,7 +232,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Readiness scores */}
-          <div className="rounded-[20px] border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               Readiness Scores
             </p>
@@ -242,7 +242,7 @@ export default function PropertyDetailPage() {
                   <span className="text-slate-400">Data Quality</span>
                   <span className="tabular-nums font-semibold text-slate-300">{prop.dataQuality} / 100</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800/50">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
                     className={`h-full rounded-full transition-all ${readinessBar(prop.dataQuality)}`}
                     style={{ width: `${prop.dataQuality}%` }}
@@ -254,7 +254,7 @@ export default function PropertyDetailPage() {
                   <span className="text-slate-400">Ad Readiness</span>
                   <span className="tabular-nums font-semibold text-slate-300">{prop.adReadiness} / 100</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800/50">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2">
                   <div
                     className={`h-full rounded-full transition-all ${readinessBar(prop.adReadiness)}`}
                     style={{ width: `${prop.adReadiness}%` }}
@@ -265,7 +265,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Last updated */}
-          <div className="rounded-[16px] border border-slate-800 bg-slate-800/50 px-4 py-3">
+          <div className="rounded-[16px] border border-line bg-surface-2 px-4 py-3">
             <span className="text-sm text-slate-500">Last updated: </span>
             <span className="text-sm text-slate-400">{prop.lastUpdated}</span>
           </div>
@@ -283,7 +283,7 @@ export default function PropertyDetailPage() {
             {prop.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-xs text-slate-400"
+                className="rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400"
               >
                 {tag.replace(/_/g, ' ')}
               </span>
@@ -294,7 +294,7 @@ export default function PropertyDetailPage() {
 
       {/* Landing status */}
       <section className="mt-8">
-        <div className="rounded-[20px] border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-[20px] border border-line bg-surface-2 p-5">
           <div className="flex items-center gap-2 mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
             <Globe className="h-3.5 w-3.5" /> Landing Page
           </div>
@@ -308,7 +308,7 @@ export default function PropertyDetailPage() {
                 href={prop.landingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+                className="inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold"
               >
                 {prop.landingUrl} <ArrowUpRight className="h-3 w-3" />
               </a>
@@ -332,7 +332,7 @@ export default function PropertyDetailPage() {
             <div className="mt-4">
               <Link
                 href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-                className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] px-4 py-2 text-xs text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.12]"
+                className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2 text-xs text-gold transition hover:bg-gold/[0.12]"
               >
                 <Sparkles className="h-3.5 w-3.5" /> Generate landing page now
               </Link>

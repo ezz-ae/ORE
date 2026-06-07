@@ -14,14 +14,14 @@ import { CopyButton, SuggestedMessageActions, QuickActions } from './_components
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     label: 'Critical' }
-  if (u === 'high')     return { ring: 'ring-[#D4AF37]/35',  bg: 'bg-[#D4AF37]/10',  text: 'text-[#F8E7AE]',  dot: 'bg-[#D4AF37]',  label: 'High' }
+  if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-[#F8E7AE]',  dot: 'bg-gold',  label: 'High' }
   if (u === 'medium')   return { ring: 'ring-sky-400/30',    bg: 'bg-sky-400/10',    text: 'text-sky-200',    dot: 'bg-sky-400',    label: 'Medium' }
-  return                       { ring: 'ring-slate-700',     bg: 'bg-slate-800/50',  text: 'text-slate-400',  dot: 'bg-slate-500',  label: 'Low' }
+  return                       { ring: 'ring-line-strong',     bg: 'bg-surface-2',  text: 'text-slate-400',  dot: 'bg-slate-500',  label: 'Low' }
 }
 
 function scoreBar(n: number) {
-  if (n >= 85) return 'bg-[#D4AF37]'
-  if (n >= 65) return 'bg-[#D4AF37]'
+  if (n >= 85) return 'bg-gold'
+  if (n >= 65) return 'bg-gold'
   return 'bg-red-400'
 }
 
@@ -48,13 +48,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     : null
 
   function activityIcon(type: string) {
-    if (type === 'call')         return { Icon: PhoneCall,      color: 'text-[#D4AF37]',   bg: 'bg-[#D4AF37]/10' }
-    if (type === 'whatsapp')     return { Icon: MessageSquare,  color: 'text-[#D4AF37]',   bg: 'bg-[#D4AF37]/10' }
+    if (type === 'call')         return { Icon: PhoneCall,      color: 'text-gold',   bg: 'bg-gold/10' }
+    if (type === 'whatsapp')     return { Icon: MessageSquare,  color: 'text-gold',   bg: 'bg-gold/10' }
     if (type === 'note')         return { Icon: FileText,       color: 'text-slate-400',   bg: 'bg-sky-400/10' }
     if (type === 'stage_change') return { Icon: ArrowLeftRight, color: 'text-slate-400',   bg: 'bg-violet-400/10' }
     if (type === 'assignment')   return { Icon: User,           color: 'text-slate-400',   bg: 'bg-rose-400/10' }
     if (type === 'follow_up')    return { Icon: Bell,           color: 'text-orange-300',  bg: 'bg-orange-400/10' }
-    return { Icon: Zap, color: 'text-slate-400', bg: 'bg-slate-800/50' }
+    return { Icon: Zap, color: 'text-slate-400', bg: 'bg-surface-2' }
   }
 
   return (
@@ -70,7 +70,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             {tone.label} urgency
           </span>
-          <span className="rounded-full border border-slate-800 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-400">
+          <span className="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400">
             {lead.stage}
           </span>
           <span className="text-sm text-slate-500">{lead.source}</span>
@@ -90,16 +90,16 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">
-            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-[#D4AF37]/25">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
+            <a href={`tel:${lead.phone}`} className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-gold/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold/10 text-gold">
                 <Phone className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Phone</p>
-                <p className="mt-0.5 text-sm font-medium text-white group-hover:text-[#D4AF37] transition-colors">{lead.phone}</p>
+                <p className="mt-0.5 text-sm font-medium text-white group-hover:text-gold transition-colors">{lead.phone}</p>
               </div>
             </a>
-            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-4 transition hover:border-sky-400/25">
+            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-sky-400/25">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10 text-slate-400">
                 <Mail className="h-4 w-4" />
               </div>
@@ -108,7 +108,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <p className="mt-0.5 text-sm font-medium text-white group-hover:text-slate-400 transition-colors truncate">{lead.email}</p>
               </div>
             </a>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div className="rounded-xl border border-line bg-surface p-4">
               <div className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-[0.14em]">
                 <Target className="h-3 w-3" /> Intent score
               </div>
@@ -116,7 +116,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <span className="text-[32px] font-semibold leading-none tabular-nums text-white">{lead.intentScore}</span>
                 <span className="text-sm text-slate-500 mb-0.5">/100</span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                 <div className={`h-full rounded-full ${scoreBar(lead.intentScore)}`} style={{ width: `${lead.intentScore}%` }} />
               </div>
             </div>
@@ -136,30 +136,30 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           )}
 
           {/* AI Summary */}
-          <div className="rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-6">
-            <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
+          <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-6">
+            <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-gold/80">
               <Brain className="h-3.5 w-3.5" /> AI intelligence summary
             </div>
             <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.aiSummary}</p>
           </div>
 
           {/* Next best action */}
-          <div className="rounded-xl border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-6">
-            <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#D4AF37]/80">
+          <div className="rounded-xl border border-emerald-400/15 bg-gold/[0.04] p-6">
+            <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-gold/80">
               <Zap className="h-3.5 w-3.5" /> Next best action
             </div>
             <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.nextBestAction}</p>
           </div>
 
           {/* Suggested WhatsApp */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+          <div className="rounded-xl border border-line bg-surface p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Bell className="h-3.5 w-3.5" /> Suggested message
               </div>
               <CopyButton text={lead.suggestedMessage} />
             </div>
-            <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-4">
+            <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-gold/[0.04] p-4">
               <p className="text-[14px] leading-[1.7] text-slate-300 italic">"{lead.suggestedMessage}"</p>
             </div>
             <SuggestedMessageActions message={lead.suggestedMessage} phone={lead.phone} leadId={lead.id} />
@@ -200,7 +200,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <aside className="space-y-4">
 
           {/* Lead metadata */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-xl border border-line bg-surface p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Lead details</p>
             <div className="space-y-3">
               {[
@@ -218,7 +218,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Attribution card */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-xl border border-line bg-surface p-5">
             <div className="mb-4 flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               <BarChart3 className="h-3 w-3" /> Attribution
             </div>
@@ -232,7 +232,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${
                       sourceCampaign.platform === 'meta'
                         ? 'border-blue-400/25 bg-blue-400/10 text-blue-300'
-                        : 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
+                        : 'border-gold/25 bg-gold/10 text-gold'
                     }`}>
                       {sourceCampaign.platform === 'meta' ? 'Meta' : 'Google'}
                     </span>
@@ -249,7 +249,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">Property</div>
                     <Link
                       href={`/freehold-intelligence/lead-machine/listings/${sourceListing.id}`}
-                      className="group flex items-center justify-between gap-2 text-xs text-[#D4AF37]/65 transition hover:text-[#D4AF37]"
+                      className="group flex items-center justify-between gap-2 text-xs text-gold/65 transition hover:text-gold"
                     >
                       <span className="leading-snug">{sourceListing.projectName}</span>
                       <ArrowUpRight className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition" />
@@ -271,7 +271,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
                 <Link
                   href="/freehold-intelligence/lead-machine/campaigns/attribution"
-                  className="flex items-center gap-1 text-xs text-[#D4AF37]/45 transition hover:text-[#D4AF37]"
+                  className="flex items-center gap-1 text-xs text-gold/45 transition hover:text-gold"
                 >
                   View full attribution <ArrowUpRight className="h-2.5 w-2.5" />
                 </Link>
@@ -293,18 +293,18 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Quick actions */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-xl border border-line bg-surface p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Actions</p>
             <QuickActions leadId={lead.id} leadName={lead.name} currentStage={lead.stage} />
           </div>
 
           {/* Activity */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-xl border border-line bg-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Clock className="h-3 w-3" /> Activity
               </div>
-              <Link href="/freehold-intelligence/crm/activity" className="text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]">
+              <Link href="/freehold-intelligence/crm/activity" className="text-xs text-gold/50 transition hover:text-gold">
                 All activity
               </Link>
             </div>
@@ -328,14 +328,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             ) : (
               <div className="space-y-3">
                 <div className="flex gap-3 text-sm">
-                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]" />
+                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
                   <div>
                     <p className="text-slate-300">Lead created via {lead.source}</p>
                     <p className="mt-0.5 text-sm text-slate-500">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
                   </div>
                 </div>
                 <div className="flex gap-3 text-sm">
-                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-600" />
+                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-surface-3" />
                   <div>
                     <p className="text-slate-400">Assigned to {lead.assignedAgent}</p>
                     <p className="mt-0.5 text-sm text-slate-500">Auto-assigned</p>

@@ -13,7 +13,7 @@ type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
 const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: React.ElementType }> = {
   live:           { label: 'Live',           dot: 'bg-emerald-400', badge: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/[0.08]', icon: CheckCircle2 },
   draft:          { label: 'Draft',          dot: 'bg-amber-400',   badge: 'text-amber-400 border-amber-400/25 bg-amber-400/[0.08]',       icon: Pencil       },
-  pending_review: { label: 'Pending Review', dot: 'bg-[#D4AF37]',   badge: 'text-[#D4AF37] border-[#D4AF37]/25 bg-[#D4AF37]/[0.08]',     icon: Clock       },
+  pending_review: { label: 'Pending Review', dot: 'bg-gold',   badge: 'text-gold border-gold/25 bg-gold/[0.08]',     icon: Clock       },
   missing:        { label: 'Missing',        dot: 'bg-red-400',     badge: 'text-red-400 border-red-400/25 bg-red-400/[0.08]',             icon: AlertTriangle },
 }
 
@@ -67,7 +67,7 @@ export default function LandingsPage() {
           className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
             bulkDone
               ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-              : 'bg-[#D4AF37] text-[#0D1117] hover:bg-[#F0CB67] disabled:opacity-60'
+              : 'bg-gold text-ink hover:bg-[#F0CB67] disabled:opacity-60'
           }`}
         >
           {bulkCreating ? (
@@ -84,11 +84,11 @@ export default function LandingsPage() {
       <div className="mb-5 grid grid-cols-4 gap-3">
         {[
           { label: 'Live',    value: live,    color: 'text-emerald-400' },
-          { label: 'Pending', value: pending, color: 'text-[#D4AF37]'  },
+          { label: 'Pending', value: pending, color: 'text-gold'  },
           { label: 'Draft',   value: draft,   color: 'text-amber-400'  },
           { label: 'Missing', value: missing, color: 'text-red-400'    },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
           </div>
@@ -123,14 +123,14 @@ export default function LandingsPage() {
             placeholder="Search properties…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/30"
+            className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
+        <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
           {FILTER_PILLS.map(({ id, label }) => (
             <button key={id} onClick={() => setFilter(id)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
-                filter === id ? 'bg-slate-800/50 text-white' : 'text-slate-600 hover:text-slate-400'
+                filter === id ? 'bg-surface-2 text-white' : 'text-slate-600 hover:text-slate-400'
               }`}>
               {label}
             </button>
@@ -139,7 +139,7 @@ export default function LandingsPage() {
       </div>
 
       {/* Property list */}
-      <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-white/[0.04] overflow-hidden">
+      <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
         {props.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-slate-600">No properties match this filter.</div>
         )}
@@ -164,15 +164,15 @@ export default function LandingsPage() {
                     <span>{fmtPrice(p.startingPriceAED)}</span>
                     {p.linkedCampaigns > 0 && (
                       <><span>·</span>
-                      <span className="text-[#D4AF37]/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? 'campaign' : 'campaigns'}</span></>
+                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? 'campaign' : 'campaigns'}</span></>
                     )}
                   </div>
 
                   {/* Mini progress bar for ad readiness */}
                   <div className="mt-2 flex items-center gap-2">
-                    <div className="h-1 w-20 rounded-full bg-slate-800/50">
+                    <div className="h-1 w-20 rounded-full bg-surface-2">
                       <div
-                        className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-[#D4AF37]' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/50'}`}
+                        className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-gold' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/50'}`}
                         style={{ width: `${p.adReadiness}%` }}
                       />
                     </div>
@@ -187,7 +187,7 @@ export default function LandingsPage() {
                       href={`/lp/${p.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+                      className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
                     >
                       <Globe className="h-3 w-3" />
                     </a>
@@ -196,7 +196,7 @@ export default function LandingsPage() {
                   {/* Edit */}
                   <Link
                     href={`/freehold-intelligence/inventory/${p.id}/generate`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+                    className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
                   >
                     <Pencil className="h-3 w-3" /> Edit
                   </Link>
@@ -205,14 +205,14 @@ export default function LandingsPage() {
                   {p.landingStatus === 'missing' ? (
                     <Link
                       href={`/freehold-intelligence/inventory/${p.id}/generate`}
-                      className="flex items-center gap-1 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-2.5 py-1.5 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
+                      className="flex items-center gap-1 rounded-full border border-gold/25 bg-gold/[0.07] px-2.5 py-1.5 text-xs text-gold/80 transition hover:text-gold"
                     >
                       <Sparkles className="h-3 w-3" /> Create
                     </Link>
                   ) : (
                     <Link
                       href={`/freehold-intelligence/inventory/${p.id}`}
-                      className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+                      className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
                     >
                       <ArrowUpRight className="h-3 w-3" />
                     </Link>
@@ -225,7 +225,7 @@ export default function LandingsPage() {
       </div>
 
       {/* Footer info */}
-      <div className="mt-6 rounded-[14px] border border-slate-800 bg-slate-800/40 px-5 py-4">
+      <div className="mt-6 rounded-[14px] border border-line bg-surface-2 px-5 py-4">
         <div className="flex items-start gap-3 text-xs text-slate-500">
           <Globe className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
           <div>

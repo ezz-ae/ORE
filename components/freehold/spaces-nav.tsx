@@ -42,17 +42,17 @@ export function SpacesNav() {
   }
 
   return (
-    <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] bg-[#06090F] backdrop-blur-xl">
+    <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] bg-chrome backdrop-blur-xl">
 
       {/* Brand */}
       <Link
         href={HOME_HREF}
         className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.07] px-5 transition hover:bg-white/[0.04]"
       >
-        <Sparkles className="h-4 w-4 text-[#D4AF37]" />
+        <Sparkles className="h-4 w-4 text-gold" />
         <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
           Freehold
-          <span className="ml-1 text-[#D4AF37]">Intelligence</span>
+          <span className="ml-1 text-gold">Intelligence</span>
         </span>
       </Link>
 
@@ -65,7 +65,7 @@ export function SpacesNav() {
             className={[
               'flex h-full items-center gap-1.5 border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
               isActive(HOME_HREF, true)
-                ? 'border-[#D4AF37] text-white'
+                ? 'border-gold text-white'
                 : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
             ].join(' ')}
           >
@@ -82,7 +82,7 @@ export function SpacesNav() {
                 className={[
                   'flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                   active
-                    ? 'border-[#D4AF37] text-white'
+                    ? 'border-gold text-white'
                     : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
                 ].join(' ')}
               >

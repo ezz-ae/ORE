@@ -163,17 +163,17 @@ function conversionPct(agent: Agent) {
 }
 
 function heatColor(val: number) {
-  if (val === 0) return 'bg-slate-800 border-slate-700/50'
-  if (val === 1) return 'bg-[#D4AF37]/15 border-[#D4AF37]/20'
-  if (val === 2) return 'bg-[#D4AF37]/30 border-[#D4AF37]/30'
-  if (val === 3) return 'bg-[#D4AF37]/55 border-[#D4AF37]/40'
-  return 'bg-[#D4AF37]/85 border-[#D4AF37]/50'
+  if (val === 0) return 'bg-surface-2 border-line-strong'
+  if (val === 1) return 'bg-gold/15 border-gold/20'
+  if (val === 2) return 'bg-gold/30 border-gold/30'
+  if (val === 3) return 'bg-gold/55 border-gold/40'
+  return 'bg-gold/85 border-gold/50'
 }
 
 const STATUS_STYLES = {
   online:  { dot: 'bg-emerald-400', label: 'text-emerald-400', badge: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
   away:    { dot: 'bg-amber-400',   label: 'text-amber-400',   badge: 'border-amber-500/30 bg-amber-500/10 text-amber-400' },
-  offline: { dot: 'bg-slate-600',   label: 'text-slate-500',   badge: 'border-slate-700 bg-slate-800/50 text-slate-500' },
+  offline: { dot: 'bg-surface-3',   label: 'text-slate-500',   badge: 'border-line-strong bg-surface-2 text-slate-500' },
 }
 
 const ACTIVITY_ICONS = {
@@ -187,18 +187,18 @@ const ACTIVITY_ICONS = {
 const ACTIVITY_COLORS = {
   call:    'text-sky-400 bg-sky-500/10 border-sky-500/20',
   meeting: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
-  note:    'text-slate-400 bg-slate-700/50 border-slate-700',
+  note:    'text-slate-400 bg-surface-3 border-line-strong',
   deal:    'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
   message: 'text-green-400 bg-green-500/10 border-green-500/20',
 }
 
 const RANK_LABELS = ['#1', '#2', '#3']
 const RANK_COLORS = [
-  'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]',
-  'border-slate-600 bg-slate-800/60',
-  'border-slate-700 bg-slate-800/40',
+  'border-gold/40 bg-gold/[0.06]',
+  'border-line-strong bg-surface-2',
+  'border-line-strong bg-surface-2',
 ]
-const RANK_TEXT = ['text-[#D4AF37]', 'text-slate-300', 'text-slate-400']
+const RANK_TEXT = ['text-gold', 'text-slate-300', 'text-slate-400']
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -251,19 +251,19 @@ export default function TeamPerformancePage() {
       value: topAgent.name.split(' ')[0],
       sub: `${topAgent.leadsClosed} deals closed`,
       icon: Star,
-      color: 'text-[#D4AF37]',
-      bg:   'bg-[#D4AF37]/10 border-[#D4AF37]/20',
+      color: 'text-gold',
+      bg:   'bg-gold/10 border-gold/20',
     },
   ]
 
   return (
-    <div className="min-h-screen bg-[#0D1117] pb-20">
+    <div className="min-h-screen bg-ink pb-20">
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 border-b border-slate-800 bg-[#090C12]/90 backdrop-blur-xl px-6 py-4">
+      <div className="sticky top-0 z-30 border-b border-line bg-app/90 backdrop-blur-xl px-6 py-4">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong bg-surface-2">
               <Users className="h-4 w-4 text-slate-300" />
             </div>
             <div>
@@ -285,7 +285,7 @@ export default function TeamPerformancePage() {
         {/* ── Summary stats ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {SUMMARY_STATS.map(stat => (
-            <div key={stat.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div key={stat.label} className="rounded-xl border border-line bg-surface p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className={['flex h-8 w-8 items-center justify-center rounded-lg border', stat.bg].join(' ')}>
                   <stat.icon className={['h-4 w-4', stat.color].join(' ')} />
@@ -303,8 +303,8 @@ export default function TeamPerformancePage() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* Agent table */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center justify-between gap-4 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-line bg-surface">
+              <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-3.5">
                 <span className="text-sm font-semibold text-white">All Agents</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Sort by:</span>
@@ -315,7 +315,7 @@ export default function TeamPerformancePage() {
                       className={[
                         'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
                         sortBy === key
-                          ? 'bg-slate-700 text-white'
+                          ? 'bg-surface-3 text-white'
                           : 'text-slate-500 hover:text-slate-300',
                       ].join(' ')}
                     >
@@ -326,13 +326,13 @@ export default function TeamPerformancePage() {
               </div>
 
               {/* Table header */}
-              <div className="hidden md:grid grid-cols-[1fr_100px_80px_80px_80px_90px_100px_90px] gap-3 border-b border-slate-800 px-5 py-2.5">
+              <div className="hidden md:grid grid-cols-[1fr_100px_80px_80px_80px_90px_100px_90px] gap-3 border-b border-line px-5 py-2.5">
                 {['Name', 'Role', 'Assigned', 'Closed', 'Conv %', 'Calls', 'Last Active', 'Status'].map(h => (
                   <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</span>
                 ))}
               </div>
 
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-line">
                 {sorted.map((agent, idx) => {
                   const conv   = conversionPct(agent)
                   const status = STATUS_STYLES[agent.status]
@@ -340,7 +340,7 @@ export default function TeamPerformancePage() {
                   return (
                     <div
                       key={agent.id}
-                      className="group px-5 py-3.5 hover:bg-slate-800/30 transition-colors"
+                      className="group px-5 py-3.5 hover:bg-surface-2 transition-colors"
                     >
                       {/* Desktop */}
                       <div className="hidden md:grid grid-cols-[1fr_100px_80px_80px_80px_90px_100px_90px] gap-3 items-center">
@@ -348,10 +348,10 @@ export default function TeamPerformancePage() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={[
                             'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                            rank === 0 ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
-                            rank === 1 ? 'bg-slate-700 text-slate-300' :
-                            rank === 2 ? 'bg-slate-700/60 text-slate-400' :
-                                         'bg-slate-800 text-slate-500',
+                            rank === 0 ? 'bg-gold/20 text-gold' :
+                            rank === 1 ? 'bg-surface-3 text-slate-300' :
+                            rank === 2 ? 'bg-surface-3 text-slate-400' :
+                                         'bg-surface-2 text-slate-500',
                           ].join(' ')}>
                             {agent.avatar}
                           </div>
@@ -401,7 +401,7 @@ export default function TeamPerformancePage() {
                           <div className="flex items-center gap-2">
                             <div className={[
                               'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                              rank === 0 ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-slate-800 text-slate-500',
+                              rank === 0 ? 'bg-gold/20 text-gold' : 'bg-surface-2 text-slate-500',
                             ].join(' ')}>
                               {agent.avatar}
                             </div>
@@ -425,7 +425,7 @@ export default function TeamPerformancePage() {
                             { label: 'Conv %', value: `${conv}%`, color: conv >= 30 ? 'text-emerald-400' : 'text-amber-400' },
                             { label: 'Calls', value: agent.calls, color: 'text-slate-300' },
                           ].map(col => (
-                            <div key={col.label} className="rounded-lg bg-slate-800/50 py-2">
+                            <div key={col.label} className="rounded-lg bg-surface-2 py-2">
                               <p className={['text-sm font-semibold tabular-nums', col.color].join(' ')}>{col.value}</p>
                               <p className="text-xs text-slate-600 mt-0.5">{col.label}</p>
                             </div>
@@ -439,9 +439,9 @@ export default function TeamPerformancePage() {
             </div>
 
             {/* Performance rankings */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
-                <Award className="h-4 w-4 text-[#D4AF37]" />
+            <div className="rounded-xl border border-line bg-surface">
+              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
+                <Award className="h-4 w-4 text-gold" />
                 <span className="text-sm font-semibold text-white">Top Performers — This Month</span>
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-3">
@@ -455,9 +455,9 @@ export default function TeamPerformancePage() {
                   >
                     <div className={[
                       'mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full text-base font-bold',
-                      i === 0 ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
-                      i === 1 ? 'bg-slate-700 text-slate-200' :
-                               'bg-slate-700/60 text-slate-400',
+                      i === 0 ? 'bg-gold/20 text-gold' :
+                      i === 1 ? 'bg-surface-3 text-slate-200' :
+                               'bg-surface-3 text-slate-400',
                     ].join(' ')}>
                       {agent.avatar}
                     </div>
@@ -488,12 +488,12 @@ export default function TeamPerformancePage() {
           <div className="space-y-6">
 
             {/* CRM activity feed */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-line bg-surface">
+              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-sm font-semibold text-white">Recent CRM Activity</span>
               </div>
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-line">
                 {CRM_FEED.map(item => {
                   const Icon   = ACTIVITY_ICONS[item.type]
                   const colors = ACTIVITY_COLORS[item.type]
@@ -520,8 +520,8 @@ export default function TeamPerformancePage() {
             </div>
 
             {/* Response time heatmap */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-line bg-surface">
+              <div className="flex items-center gap-3 border-b border-line px-5 py-3.5">
                 <Clock className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-semibold text-white">Activity Heatmap</span>
                 <span className="ml-auto text-xs text-slate-500">This week</span>
@@ -559,12 +559,12 @@ export default function TeamPerformancePage() {
             </div>
 
             {/* Response time by agent */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900">
-              <div className="border-b border-slate-800 px-5 py-3.5">
+            <div className="rounded-xl border border-line bg-surface">
+              <div className="border-b border-line px-5 py-3.5">
                 <span className="text-sm font-semibold text-white">Response Time</span>
                 <p className="mt-0.5 text-xs text-slate-500">Avg minutes to first contact</p>
               </div>
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-line">
                 {[...AGENTS]
                   .sort((a, b) => a.responseTime - b.responseTime)
                   .map(agent => {
@@ -582,7 +582,7 @@ export default function TeamPerformancePage() {
                             {agent.responseTime} min
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-slate-800">
+                        <div className="h-1.5 rounded-full bg-surface-2">
                           <div
                             className={[
                               'h-full rounded-full transition-all',

@@ -140,9 +140,9 @@ export default function AgentCampaignsPage() {
           { label: 'Total spend',       value: `AED ${(totalSpent / 1_000).toFixed(1)}K`,   color: 'text-slate-300'   },
           { label: 'Total leads',       value: `${totalLeads}`,                              color: 'text-sky-400'     },
           { label: 'Avg CPL',           value: `AED ${overallCpl}`,                          color: overallCpl < 180 ? 'text-emerald-400' : 'text-amber-400' },
-          { label: 'Wallet (pending)',  value: `AED ${(walletBalance / 1_000).toFixed(1)}K`, color: 'text-[#D4AF37]',  hideMobile: true },
+          { label: 'Wallet (pending)',  value: `AED ${(walletBalance / 1_000).toFixed(1)}K`, color: 'text-gold',  hideMobile: true },
         ].map((s) => (
-          <div key={s.label} className={`rounded-[16px] border border-slate-800 bg-slate-900 p-4 ${(s as any).hideMobile ? 'hidden sm:block' : ''}`}>
+          <div key={s.label} className={`rounded-[16px] border border-line bg-surface p-4 ${(s as any).hideMobile ? 'hidden sm:block' : ''}`}>
             <div className={`text-base font-semibold tabular-nums ${s.color}`}>{s.value}</div>
             <div className="mt-0.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -150,11 +150,11 @@ export default function AgentCampaignsPage() {
       </section>
 
       {/* Wallet notice */}
-      <div className="mt-4 flex items-start gap-3 rounded-[14px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-4 py-3">
-        <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
+      <div className="mt-4 flex items-start gap-3 rounded-[14px] border border-gold/20 bg-gold/[0.04] px-4 py-3">
+        <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
         <p className="text-sm text-slate-400 leading-relaxed">
           Campaign spend is charged to your wallet. Deductions appear as credits against your commission balance. Your current pending earnings cover up to{' '}
-          <span className="text-[#D4AF37] font-medium">AED {((walletBalance + agentProfile.adSpendOnLeads) / 1_000).toFixed(1)}K</span> in campaigns.
+          <span className="text-gold font-medium">AED {((walletBalance + agentProfile.adSpendOnLeads) / 1_000).toFixed(1)}K</span> in campaigns.
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export default function AgentCampaignsPage() {
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">My campaigns</div>
           <button
             onClick={() => setShowNew((v) => !v)}
-            className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-3 py-1.5 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+            className="flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/20"
           >
             <Plus className="h-3.5 w-3.5" />
             New campaign
@@ -173,14 +173,14 @@ export default function AgentCampaignsPage() {
 
         {/* New campaign form */}
         {showNew && (
-          <div className="mb-4 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5 space-y-3">
+          <div className="mb-4 rounded-[18px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
             <div className="text-sm font-semibold text-white">New campaign</div>
             <input
               type="text"
               placeholder="Campaign name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+              className="w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -188,14 +188,14 @@ export default function AgentCampaignsPage() {
                 placeholder="Property / area"
                 value={newProperty}
                 onChange={(e) => setNewProperty(e.target.value)}
-                className="rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
               />
               <input
                 type="number"
                 placeholder="Budget (AED)"
                 value={newBudget}
                 onChange={(e) => setNewBudget(e.target.value)}
-                className="rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
               />
             </div>
             <div className="flex gap-2">
@@ -207,8 +207,8 @@ export default function AgentCampaignsPage() {
                     onClick={() => setNewPlatform(p)}
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       newPlatform === p
-                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]'
-                        : 'border-slate-700 text-slate-400 hover:text-slate-300'
+                        ? 'border-gold/40 bg-gold/15 text-gold'
+                        : 'border-line-strong text-slate-400 hover:text-slate-300'
                     }`}
                   >
                     {pm.icon} {pm.label}
@@ -219,14 +219,14 @@ export default function AgentCampaignsPage() {
             <div className="flex gap-2 pt-1">
               <button
                 onClick={launchCampaign}
-                className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
               >
                 <Zap className="h-3.5 w-3.5" />
                 Launch — charge wallet
               </button>
               <button
                 onClick={() => setShowNew(false)}
-                className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 transition hover:text-slate-300"
+                className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-300"
               >
                 Cancel
               </button>
@@ -242,7 +242,7 @@ export default function AgentCampaignsPage() {
             const spentPct = Math.min((c.spent / c.budget) * 100, 100)
 
             return (
-              <div key={c.id} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+              <div key={c.id} className="rounded-[18px] border border-line bg-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -261,7 +261,7 @@ export default function AgentCampaignsPage() {
                     {c.status !== 'pending_approval' && (
                       <button
                         onClick={() => toggleStatus(c.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 transition hover:border-slate-600 hover:text-slate-300"
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-line-strong bg-surface-2 text-slate-400 transition hover:border-line-strong hover:text-slate-300"
                       >
                         {c.status === 'running' ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                       </button>
@@ -275,9 +275,9 @@ export default function AgentCampaignsPage() {
                     <span className="text-slate-400">AED {c.spent.toLocaleString()} spent of AED {c.budget.toLocaleString()}</span>
                     <span className="text-slate-500">{Math.round(spentPct)}%</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
                     <div
-                      className={`h-full rounded-full transition-all ${spentPct > 90 ? 'bg-red-400' : spentPct > 70 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`}
+                      className={`h-full rounded-full transition-all ${spentPct > 90 ? 'bg-red-400' : spentPct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
                       style={{ width: `${spentPct}%` }}
                     />
                   </div>
@@ -303,7 +303,7 @@ export default function AgentCampaignsPage() {
                 </div>
 
                 {c.note && (
-                  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2">
+                  <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2">
                     <AlertCircle className="mt-0.5 h-3 w-3 shrink-0 text-slate-500" />
                     <div className="text-xs text-slate-400 leading-relaxed">{c.note}</div>
                   </div>
@@ -324,11 +324,11 @@ export default function AgentCampaignsPage() {
       {/* Spend on company-assigned leads */}
       <section className="mt-8">
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Company lead spend</div>
-        <div className="flex items-center gap-4 rounded-[18px] border border-slate-800 bg-slate-900 p-5">
-          <Megaphone className="h-8 w-8 shrink-0 text-[#D4AF37]/60" />
+        <div className="flex items-center gap-4 rounded-[18px] border border-line bg-surface p-5">
+          <Megaphone className="h-8 w-8 shrink-0 text-gold/60" />
           <div>
             <div className="text-sm text-slate-300">
-              The company has spent <span className="font-semibold text-[#D4AF37]">AED {agentProfile.adSpendOnLeads.toLocaleString()}</span> this month on campaigns that generated leads assigned to you.
+              The company has spent <span className="font-semibold text-gold">AED {agentProfile.adSpendOnLeads.toLocaleString()}</span> this month on campaigns that generated leads assigned to you.
             </div>
             <div className="mt-0.5 text-xs text-slate-500">
               Your cost per lead: AED {agentProfile.cplForLeads} · {Math.round(agentProfile.adSpendOnLeads / agentProfile.cplForLeads)} leads from company campaigns

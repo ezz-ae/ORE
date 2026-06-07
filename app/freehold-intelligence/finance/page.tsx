@@ -13,7 +13,7 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
       Meta
     </span>
   ) : (
-    <span className="inline-flex items-center rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-sm font-medium text-[#D4AF37]">
+    <span className="inline-flex items-center rounded-md border border-gold/20 bg-gold/10 px-2 py-0.5 text-sm font-medium text-gold">
       Google
     </span>
   )
@@ -22,7 +22,7 @@ function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'paid') {
     return (
-      <span className="inline-flex items-center rounded-md border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-sm font-medium text-[#D4AF37]">
+      <span className="inline-flex items-center rounded-md border border-gold/20 bg-gold/10 px-2 py-0.5 text-sm font-medium text-gold">
         Paid
       </span>
     )
@@ -42,7 +42,7 @@ function StatusBadge({ status }: { status: string }) {
     )
   }
   return (
-    <span className="inline-flex items-center rounded-md border border-slate-800 bg-slate-800/50 px-2 py-0.5 text-sm font-medium text-slate-400">
+    <span className="inline-flex items-center rounded-md border border-line bg-surface-2 px-2 py-0.5 text-sm font-medium text-slate-400">
       {status}
     </span>
   )
@@ -56,7 +56,7 @@ function ProgressBar({ label, spent, budget, utilization, color }: {
   color: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+    <div className="rounded-xl border border-line bg-surface-2 p-5">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-slate-300">{label}</span>
         <span className="text-xs text-slate-400">{Math.round(utilization * 100)}% used</span>
@@ -65,7 +65,7 @@ function ProgressBar({ label, spent, budget, utilization, color }: {
         <span className="text-2xl font-semibold tabular-nums text-slate-100">{fmt(spent)}</span>
         <span className="text-sm text-slate-500">/ {fmt(budget)}</span>
       </div>
-      <div className="mt-3 h-2 w-full rounded-full bg-slate-700">
+      <div className="mt-3 h-2 w-full rounded-full bg-surface-3">
         <div
           className={`h-full rounded-full transition-all ${color}`}
           style={{ width: `${utilization * 100}%` }}
@@ -104,27 +104,27 @@ export default function FinancePage() {
           <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Finance & Billing</h1>
           <p className="mt-1 text-sm text-slate-400">Ad spend, budget utilization, and invoices</p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/50 px-3.5 py-2 text-sm text-slate-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+        <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-slate-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold" />
           May 2026
         </div>
       </div>
 
       {/* ── Top KPI row ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-surface-2 p-5">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Spend</div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{fmt(f.totalSpend30d)}</div>
           <div className="mt-1 text-xs text-slate-500">Last 30 days · all platforms</div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-surface-2 p-5">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Leads</div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{f.totalLeads30d}</div>
           <div className="mt-1 text-xs text-slate-500">Last 30 days · all campaigns</div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-surface-2 p-5">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg CPL</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">AED {f.avgCpl30d}</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-gold">AED {f.avgCpl30d}</div>
           <div className="mt-1 text-xs text-slate-500">Cost per lead · 30d average</div>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function FinancePage() {
             spent={f.currentMonthSpendGoogle}
             budget={f.googleBudgetAED}
             utilization={f.budgetUtilizationGoogle}
-            color="bg-[#D4AF37]"
+            color="bg-gold"
           />
         </div>
       </section>
@@ -153,7 +153,7 @@ export default function FinancePage() {
       {/* ── Spend Trend ── */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Spend Trend</div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-surface-2 p-5">
           {(() => {
             const maxValue = 43000
             const chartWidth = 600
@@ -234,11 +234,11 @@ export default function FinancePage() {
 
                 {/* Stat chips */}
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+                  <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
                     <span className="text-slate-400">Avg Monthly Spend: </span>
                     <span className="font-medium text-slate-100 tabular-nums">AED 37,388</span>
                   </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+                  <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
                     <span className="text-slate-400">YTD Spend: </span>
                     <span className="font-medium text-slate-100 tabular-nums">AED 186,940</span>
                   </div>
@@ -252,11 +252,11 @@ export default function FinancePage() {
       {/* ── Monthly Spend History ── */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Monthly Spend History</div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
+        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Month</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Budget</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Spent</th>
@@ -265,24 +265,24 @@ export default function FinancePage() {
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Util.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {historyRows.map((row, i) => {
                   const util = row.spentAED / row.budgetAED
                   const isCurrent = row.month === 'May 2026'
                   return (
-                    <tr key={i} className={`transition hover:bg-slate-800/40 ${isCurrent ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
+                    <tr key={i} className={`transition hover:bg-surface-2 ${isCurrent ? 'bg-gold/[0.03]' : ''}`}>
                       <td className="px-5 py-4 font-medium text-slate-300">
                         {row.month}
                         {isCurrent && (
-                          <span className="ml-2 rounded-full bg-[#D4AF37]/15 px-1.5 py-0.5 text-xs font-medium text-[#D4AF37]">Current</span>
+                          <span className="ml-2 rounded-full bg-gold/15 px-1.5 py-0.5 text-xs font-medium text-gold">Current</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-400">{fmt(row.budgetAED)}</td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-100">{fmt(row.spentAED)}</td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-300">{row.leadsGenerated.toLocaleString('en-US')}</td>
-                      <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">AED {row.avgCpl}</td>
+                      <td className="px-5 py-4 text-right tabular-nums text-gold">AED {row.avgCpl}</td>
                       <td className="px-5 py-4 text-right">
-                        <span className={`text-xs font-medium tabular-nums ${util >= 0.9 ? 'text-red-400' : util >= 0.7 ? 'text-amber-400' : 'text-[#D4AF37]'}`}>
+                        <span className={`text-xs font-medium tabular-nums ${util >= 0.9 ? 'text-red-400' : util >= 0.7 ? 'text-amber-400' : 'text-gold'}`}>
                           {Math.round(util * 100)}%
                         </span>
                       </td>
@@ -302,9 +302,9 @@ export default function FinancePage() {
           <div className="flex gap-1.5">
             {(['All', 'meta', 'google'] as const).map((p) => {
               const isActive = platformFilter === p
-              let activeClass = 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+              let activeClass = 'border border-gold/35 bg-gold/10 text-gold'
               if (isActive && p === 'meta') activeClass = 'border border-blue-400/35 bg-blue-400/10 text-blue-300'
-              if (isActive && p === 'google') activeClass = 'border border-emerald-400/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+              if (isActive && p === 'google') activeClass = 'border border-emerald-400/35 bg-gold/10 text-gold'
               return (
                 <button
                   key={p}
@@ -312,7 +312,7 @@ export default function FinancePage() {
                   className={`rounded-full px-3 py-1 text-sm font-medium transition ${
                     isActive
                       ? activeClass
-                      : 'border border-slate-700 text-slate-400 bg-slate-800/50 hover:text-slate-300'
+                      : 'border border-line-strong text-slate-400 bg-surface-2 hover:text-slate-300'
                   }`}
                 >
                   {p === 'All' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
@@ -321,11 +321,11 @@ export default function FinancePage() {
             })}
           </div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
+        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Campaign</th>
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Platform</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Spend</th>
@@ -333,14 +333,14 @@ export default function FinancePage() {
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">CPL</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {filteredCampaigns.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">No items match this filter.</td>
                   </tr>
                 ) : (
                   filteredCampaigns.map((c, i) => (
-                    <tr key={i} className="transition hover:bg-slate-800/40">
+                    <tr key={i} className="transition hover:bg-surface-2">
                       <td className="px-5 py-4 font-medium text-slate-300 max-w-[260px]">
                         <span className="block truncate">{c.name}</span>
                       </td>
@@ -349,7 +349,7 @@ export default function FinancePage() {
                       </td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-100">{fmt(c.spendAED)}</td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-300">{c.leads}</td>
-                      <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">AED {c.cpl}</td>
+                      <td className="px-5 py-4 text-right tabular-nums text-gold">AED {c.cpl}</td>
                     </tr>
                   ))
                 )}
@@ -370,8 +370,8 @@ export default function FinancePage() {
                 onClick={() => setInvoiceFilter(s)}
                 className={`rounded-full px-3 py-1 text-sm font-medium transition ${
                   invoiceFilter === s
-                    ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border border-slate-700 text-slate-400 bg-slate-800/50 hover:text-slate-300'
+                    ? 'border border-gold/35 bg-gold/10 text-gold'
+                    : 'border border-line-strong text-slate-400 bg-surface-2 hover:text-slate-300'
                 }`}
               >
                 {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -379,11 +379,11 @@ export default function FinancePage() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
+        <div className="rounded-xl border border-line bg-surface-2 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Invoice</th>
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Platform</th>
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Period</th>
@@ -392,14 +392,14 @@ export default function FinancePage() {
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {filteredInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-8 text-center text-sm text-slate-500">No items match this filter.</td>
                   </tr>
                 ) : (
                   filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="transition hover:bg-slate-800/40">
+                    <tr key={inv.id} className="transition hover:bg-surface-2">
                       <td className="px-5 py-4 font-mono text-xs text-slate-400">{inv.id}</td>
                       <td className="px-5 py-4">
                         <PlatformBadge platform={inv.platform} />

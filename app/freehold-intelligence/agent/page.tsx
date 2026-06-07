@@ -93,10 +93,10 @@ const APPS = [
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
   sky:    { icon: 'text-sky-400',      card: 'border-sky-400/15 hover:border-sky-400/30',     badge: 'bg-sky-500'       },
-  gold:   { icon: 'text-[#D4AF37]',   card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/35', badge: 'bg-[#D4AF37]'     },
+  gold:   { icon: 'text-gold',   card: 'border-gold/20 hover:border-gold/35', badge: 'bg-gold'     },
   blue:   { icon: 'text-blue-400',     card: 'border-blue-400/15 hover:border-blue-400/30',   badge: 'bg-blue-500'      },
   violet: { icon: 'text-violet-400',   card: 'border-violet-400/15 hover:border-violet-400/30',badge: 'bg-violet-500'   },
-  gray:   { icon: 'text-slate-400',    card: 'border-slate-700 hover:border-slate-500',        badge: 'bg-slate-500'     },
+  gray:   { icon: 'text-slate-400',    card: 'border-line-strong hover:border-slate-500',        badge: 'bg-slate-500'     },
 }
 
 function timeAgo(iso: string) {
@@ -124,11 +124,11 @@ export default function AgentHomePage() {
         <div className="mt-5 flex flex-wrap gap-3">
           {[
             { Icon: TrendingUp, label: `AED ${(agentProfile.revMTD / 1_000_000).toFixed(1)}M MTD`, color: 'text-emerald-400' },
-            { Icon: Clock,      label: `${agentProfile.avgResponseH}h avg response`,                color: 'text-[#D4AF37]'   },
+            { Icon: Clock,      label: `${agentProfile.avgResponseH}h avg response`,                color: 'text-gold'   },
             { Icon: Users,      label: `${agentProfile.leadToViewingPct}% viewing rate`,           color: 'text-sky-400'     },
-            { Icon: Zap,        label: `${agentProfile.wins} wins this month`,                      color: 'text-[#D4AF37]'   },
+            { Icon: Zap,        label: `${agentProfile.wins} wins this month`,                      color: 'text-gold'   },
           ].map(({ Icon, label, color }) => (
-            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-medium ${color}`}>
+            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium ${color}`}>
               <Icon className="h-3 w-3" />
               {label}
             </div>
@@ -144,16 +144,16 @@ export default function AgentHomePage() {
             {offerLead && (
               <Link
                 href="/freehold-intelligence/agent/leads"
-                className="group flex items-center gap-4 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition hover:border-[#D4AF37]/35"
+                className="group flex items-center gap-4 rounded-[18px] border border-gold/20 bg-gold/[0.04] px-5 py-4 transition hover:border-gold/35"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#D4AF37]/15">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-gold/15">
                   <span className="text-[16px]">🔥</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-white">{offerLead.name} — {offerLead.property}</div>
                   <div className="mt-0.5 text-xs text-slate-400">{offerLead.note}</div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-gold">
                   Offer <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
@@ -206,14 +206,14 @@ export default function AgentHomePage() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition ${a.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-surface p-5 transition ${a.card}`}
               >
                 {app.badge > 0 && (
                   <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white ${a.badge}`}>
                     {app.badge}
                   </span>
                 )}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-800 bg-slate-800/50 ${a.icon}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-line bg-surface-2 ${a.icon}`}>
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4">
@@ -229,20 +229,20 @@ export default function AgentHomePage() {
 
       {/* Lead pool bar */}
       <section className="mt-8">
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+        <div className="rounded-[18px] border border-line bg-surface p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-medium text-slate-500 uppercase tracking-[0.15em]">Lead Pool — {agentLeadPool.tier} Tier</div>
               <div className="mt-0.5 text-sm text-slate-300">{agentLeadPool.used} used of {agentLeadPool.monthlyQuota} this month</div>
             </div>
             <div className="text-right">
-              <div className="text-[22px] font-semibold text-[#D4AF37] tabular-nums">{poolRemaining}</div>
+              <div className="text-[22px] font-semibold text-gold tabular-nums">{poolRemaining}</div>
               <div className="text-xs text-slate-500">remaining</div>
             </div>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-700">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
             <div
-              className="h-full rounded-full bg-[#D4AF37] transition-all"
+              className="h-full rounded-full bg-gold transition-all"
               style={{ width: `${(agentLeadPool.used / agentLeadPool.monthlyQuota) * 100}%` }}
             />
           </div>

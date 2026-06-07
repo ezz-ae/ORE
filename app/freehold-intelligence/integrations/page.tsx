@@ -44,8 +44,8 @@ const STATUS_PILLS: { key: StatusFilter; label: string }[] = [
 
 function statusCfg(status: string) {
   switch (status) {
-    case 'connected':       return { label: 'Connected',     dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
-    case 'partial':         return { label: 'Partial',       dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]'   }
+    case 'connected':       return { label: 'Connected',     dot: 'bg-gold', text: 'text-gold' }
+    case 'partial':         return { label: 'Partial',       dot: 'bg-gold',   text: 'text-[#F8E7AE]'   }
     case 'needs_access':    return { label: 'Needs access',  dot: 'bg-orange-400',  text: 'text-orange-200' }
     case 'blocked':
     case 'disconnected':
@@ -97,7 +97,7 @@ export default function IntegrationsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <Zap className="h-3.5 w-3.5" /> Connections
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-100">
@@ -165,8 +165,8 @@ export default function IntegrationsPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 statusFilter === key
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
               {label}
@@ -180,8 +180,8 @@ export default function IntegrationsPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 categoryFilter === cat
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
               {cat}
@@ -193,11 +193,11 @@ export default function IntegrationsPage() {
       {/* Integration cards grouped by category */}
       <div className="mt-8 grid gap-12">
         {visibleCategories.length === 0 ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-6 py-12 text-center">
+          <div className="rounded-xl border border-line bg-surface-2 px-6 py-12 text-center">
             <p className="text-[14px] text-slate-400">No integrations match these filters.</p>
             <button
               onClick={() => { setStatusFilter('All'); setCategoryFilter('All') }}
-              className="mt-3 rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
+              className="mt-3 rounded-full border border-line px-4 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
               Clear filters
             </button>
@@ -214,9 +214,9 @@ export default function IntegrationsPage() {
                   return (
                     <div
                       key={integration.id}
-                      className="flex items-center gap-5 rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/20"
+                      className="flex items-center gap-5 rounded-xl border border-line bg-surface p-5 transition hover:border-gold/20"
                     >
-                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-slate-800 bg-slate-800/50">
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-surface-2">
                         <Icon className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -228,11 +228,11 @@ export default function IntegrationsPage() {
                         {st.label}
                       </div>
                       {meta?.href ? (
-                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           View <ArrowUpRight className="h-3 w-3" />
                         </Link>
                       ) : integration.status !== 'connected' ? (
-                        <button onClick={() => toast.success('Connecting ' + integration.name + '…')} className="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/40 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
+                        <button onClick={() => toast.success('Connecting ' + integration.name + '…')} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           Connect <ArrowUpRight className="h-3 w-3" />
                         </button>
                       ) : null}
@@ -246,8 +246,8 @@ export default function IntegrationsPage() {
       </div>
 
       {/* AI take footer */}
-      <section className="mt-20 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/80">
+      <section className="mt-20 rounded-[28px] border border-line bg-surface-2 px-7 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-[17px] font-medium leading-[1.65] text-slate-100 sm:text-lg">

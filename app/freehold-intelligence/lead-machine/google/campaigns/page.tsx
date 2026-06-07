@@ -30,7 +30,7 @@ function fmtPct(n: number): string {
 
 const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
   SEARCH:          'bg-[#4285F4]/10 text-[#4285F4] border-[#4285F4]/20',
-  DISPLAY:         'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
+  DISPLAY:         'bg-gold/10 text-gold border-gold/20',
   PERFORMANCE_MAX: 'bg-[#FBBC04]/10 text-[#FBBC04] border-[#FBBC04]/20',
   VIDEO:           'bg-rose-400/10 text-slate-400 border-rose-400/20',
 }
@@ -54,7 +54,7 @@ interface CampaignsResponse {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: string }) {
-  const cls = CAMPAIGN_TYPE_COLOR[type] ?? 'bg-slate-800/50 text-slate-400 border-slate-800'
+  const cls = CAMPAIGN_TYPE_COLOR[type] ?? 'bg-surface-2 text-slate-400 border-line'
   return (
     <span
       className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}
@@ -66,7 +66,7 @@ function TypeBadge({ type }: { type: string }) {
 
 function BiddingBadge({ strategy }: { strategy: string }) {
   return (
-    <span className="rounded-full border border-slate-800 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-400">
+    <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs text-slate-400">
       {strategy.replace(/_/g, ' ')}
     </span>
   )
@@ -178,7 +178,7 @@ export default function GoogleCampaignsPage() {
           <button
             onClick={() => fetchCampaigns(true)}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -239,7 +239,7 @@ export default function GoogleCampaignsPage() {
               {
                 label: 'Active',
                 value: activeCount,
-                color: 'text-[#D4AF37]',
+                color: 'text-gold',
               },
               {
                 label: 'Paused',
@@ -262,7 +262,7 @@ export default function GoogleCampaignsPage() {
             ].map((s) => (
               <div
                 key={s.label}
-                className="rounded-xl border border-slate-800 bg-slate-900 p-4"
+                className="rounded-xl border border-line bg-surface p-4"
               >
                 <div className={`text-[26px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
@@ -284,7 +284,7 @@ export default function GoogleCampaignsPage() {
                     'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                     isActive
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/15 text-[#4285F4]'
-                      : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500',
+                      : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
                   ].join(' ')}
                 >
                   {label}
@@ -304,7 +304,7 @@ export default function GoogleCampaignsPage() {
                 return (
                   <div
                     key={campaign.id}
-                    className="rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#4285F4]/20"
+                    className="rounded-[20px] border border-line bg-surface p-5 transition hover:border-[#4285F4]/20"
                   >
                     {/* Row 1: type badge + name + status dot */}
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -319,7 +319,7 @@ export default function GoogleCampaignsPage() {
 
                       <span
                         className={`h-2 w-2 shrink-0 rounded-full ${
-                          isEnabled ? 'bg-[#D4AF37]' : 'bg-white/20'
+                          isEnabled ? 'bg-gold' : 'bg-white/20'
                         }`}
                         title={isEnabled ? 'Active' : 'Paused'}
                       />
@@ -374,8 +374,8 @@ export default function GoogleCampaignsPage() {
                         className={[
                           'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition disabled:opacity-40',
                           isEnabled
-                            ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20'
-                            : 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20',
+                            ? 'border-gold/20 bg-gold/10 text-gold hover:bg-gold/20'
+                            : 'border-gold/20 bg-gold/10 text-gold hover:bg-gold/20',
                         ].join(' ')}
                       >
                         {isToggling ? (
@@ -396,7 +396,7 @@ export default function GoogleCampaignsPage() {
 
           {/* ── Empty state (no campaigns at all) ─────────────────────────── */}
           {!error && campaigns.length === 0 && (
-            <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
+            <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/40" />
               <div className="text-[18px] font-semibold text-white">
                 No Google Ads campaigns yet
@@ -416,7 +416,7 @@ export default function GoogleCampaignsPage() {
 
           {/* ── Filtered empty state ────────────────────────────────────────── */}
           {!error && campaigns.length > 0 && filtered.length === 0 && (
-            <div className="mt-10 rounded-[20px] border border-slate-800 bg-slate-800/50 px-6 py-10 text-center">
+            <div className="mt-10 rounded-[20px] border border-line bg-surface-2 px-6 py-10 text-center">
               <p className="text-[14px] text-slate-400">
                 No{' '}
                 <span className="text-slate-400">

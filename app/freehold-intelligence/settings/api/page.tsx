@@ -37,14 +37,14 @@ export default function ApiPage() {
         <h1 className="text-xl font-semibold text-white">API Reference</h1>
         <p className="mt-1 text-sm text-slate-400">
           RESTful API for integrating Freehold Intelligence with external tools.
-          Manage keys in <Link href="/freehold-intelligence/settings/security" className="text-[#D4AF37]/80 hover:text-[#D4AF37] underline underline-offset-2">Security →</Link>
+          Manage keys in <Link href="/freehold-intelligence/settings/security" className="text-gold/80 hover:text-gold underline underline-offset-2">Security →</Link>
         </p>
       </div>
 
       {/* Base URL */}
-      <section className="mb-6 rounded-[16px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
+      <section className="mb-6 rounded-[16px] border border-gold/15 bg-gold/[0.04] p-4">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Base URL</div>
-        <code className="font-mono text-sm text-[#D4AF37]">https://api.freeholdproperty.ae</code>
+        <code className="font-mono text-sm text-gold">https://api.freeholdproperty.ae</code>
         <div className="mt-2 text-xs text-slate-500">
           All requests require <code className="text-slate-400">Authorization: Bearer fh_prod_...</code>
         </div>
@@ -57,7 +57,7 @@ export default function ApiPage() {
           { Icon: Zap,  label: 'Zapier plugin',  color: 'text-amber-400'  },
           { Icon: Globe,label: 'OpenAPI spec',   color: 'text-sky-400'    },
         ].map(({ Icon, label, color }) => (
-          <button key={label} onClick={() => toast.info('Opening ' + label)} className="flex items-center gap-2 rounded-[12px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-slate-700 hover:text-slate-100">
+          <button key={label} onClick={() => toast.info('Opening ' + label)} className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
             <Icon className={`h-4 w-4 shrink-0 ${color}`} />
             {label}
             <ArrowRight className="ml-auto h-3.5 w-3.5 text-slate-600" />
@@ -68,7 +68,7 @@ export default function ApiPage() {
       {/* Endpoints */}
       <section className="mb-6">
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Endpoints</div>
-        <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+        <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
           {ENDPOINTS.map((ep) => {
             const mc = METHOD_COLOR[ep.method] ?? METHOD_COLOR.GET
             return (
@@ -87,10 +87,10 @@ export default function ApiPage() {
       {/* Webhooks */}
       <section>
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Webhooks</div>
-        <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+        <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
           {WEBHOOKS.map((wh) => (
             <div key={wh.event} className="flex items-center gap-4 px-5 py-3.5">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-800/50">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-surface-2">
                 <Zap className="h-3.5 w-3.5 text-amber-400/60" />
               </div>
               <code className="font-mono text-sm text-slate-300">{wh.event}</code>
@@ -99,7 +99,7 @@ export default function ApiPage() {
           ))}
         </div>
         <div className="mt-3 text-xs text-slate-500">
-          Configure webhook URLs in <Link href="/freehold-intelligence/integrations" className="text-[#D4AF37]/70 hover:text-[#D4AF37] underline underline-offset-2">Integrations →</Link>
+          Configure webhook URLs in <Link href="/freehold-intelligence/integrations" className="text-gold/70 hover:text-gold underline underline-offset-2">Integrations →</Link>
         </div>
       </section>
 

@@ -12,12 +12,12 @@ const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 type SortKey = 'events' | 'calls' | 'connect' | 'avgDur'
 
 function intensityClass(count: number, max: number) {
-  if (count === 0) return 'bg-slate-800/60'
+  if (count === 0) return 'bg-surface-2'
   const pct = count / max
-  if (pct >= 0.75) return 'bg-[#D4AF37]'
-  if (pct >= 0.5)  return 'bg-[#D4AF37]/70'
-  if (pct >= 0.25) return 'bg-[#D4AF37]/35'
-  return 'bg-[#D4AF37]/15'
+  if (pct >= 0.75) return 'bg-gold'
+  if (pct >= 0.5)  return 'bg-gold/70'
+  if (pct >= 0.25) return 'bg-gold/35'
+  return 'bg-gold/15'
 }
 
 function isoToDayHour(iso: string): { day: number; hour: number } {
@@ -93,7 +93,7 @@ export default function ScreentimePage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Activity className="h-3.5 w-3.5" /> Screentime
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -105,10 +105,10 @@ export default function ScreentimePage() {
         </p>
       </section>
 
-      <div className="mt-6 flex items-start gap-2.5 rounded-[16px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
-        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#D4AF37]/70" />
+      <div className="mt-6 flex items-start gap-2.5 rounded-[16px] border border-gold/15 bg-gold/[0.04] px-4 py-3">
+        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold/70" />
         <p className="text-sm text-slate-400">
-          <span className="text-[#D4AF37]/80 font-medium">V1 — CRM-derived data.</span> Activity timing is pulled from the CRM event log.
+          <span className="text-gold/80 font-medium">V1 — CRM-derived data.</span> Activity timing is pulled from the CRM event log.
           Real-time session tracking and keystroke telemetry require V2 instrumentation.
         </p>
       </div>
@@ -117,10 +117,10 @@ export default function ScreentimePage() {
         {[
           { label: 'Events logged', value: totalEvents,       color: 'text-white'       },
           { label: 'Calls made',    value: totalCalls,        color: 'text-white'       },
-          { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-[#D4AF37]' },
-          { label: 'Peak hour',     value: peakLabel,         color: 'text-[#D4AF37]'   },
+          { label: 'Connect rate',  value: `${connectRate}%`, color: 'text-gold' },
+          { label: 'Peak hour',     value: peakLabel,         color: 'text-gold'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -160,7 +160,7 @@ export default function ScreentimePage() {
             ))}
             <div className="mt-3 flex items-center gap-2 pl-10 text-xs text-slate-500">
               <span>Less</span>
-              {['bg-slate-800/60', 'bg-[#D4AF37]/15', 'bg-[#D4AF37]/35', 'bg-[#D4AF37]/70', 'bg-[#D4AF37]'].map((cls) => (
+              {['bg-surface-2', 'bg-gold/15', 'bg-gold/35', 'bg-gold/70', 'bg-gold'].map((cls) => (
                 <div key={cls} className={`h-4 w-4 rounded-[4px] ${cls}`} />
               ))}
               <span>More</span>
@@ -173,10 +173,10 @@ export default function ScreentimePage() {
       <section className="mt-12">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agent activity</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">CRM events by agent</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
                 {SORT_COLS.map(({ key, label }) => (
                   <th key={key} className={`px-4 py-3 text-center ${key === 'avgDur' ? 'hidden md:table-cell' : key === 'calls' ? 'hidden sm:table-cell' : ''}`}>
@@ -195,14 +195,14 @@ export default function ScreentimePage() {
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Intensity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-line">
               {agentStats.map(({ agent, events, calls, connectRate: cr }) => {
                 const maxEventsAll = Math.max(...BASE_AGENT_STATS.map((s) => s.events), 1)
                 return (
-                  <tr key={agent.id} className="transition hover:bg-slate-800/30">
+                  <tr key={agent.id} className="transition hover:bg-surface-2">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-800/50 text-sm font-semibold text-slate-300">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface-2 text-sm font-semibold text-slate-300">
                           {agent.initials}
                         </div>
                         <div>
@@ -216,7 +216,7 @@ export default function ScreentimePage() {
                     </td>
                     <td className="hidden px-4 py-4 text-center text-slate-300 sm:table-cell">{calls}</td>
                     <td className="hidden px-4 py-4 text-center md:table-cell">
-                      <span className={cr >= 60 ? 'text-[#D4AF37]' : cr > 0 ? 'text-[#D4AF37]' : 'text-slate-600'}>
+                      <span className={cr >= 60 ? 'text-gold' : cr > 0 ? 'text-gold' : 'text-slate-600'}>
                         {cr > 0 ? `${cr}%` : '—'}
                       </span>
                     </td>
@@ -225,9 +225,9 @@ export default function ScreentimePage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <div className="w-24 overflow-hidden rounded-full bg-slate-800">
+                        <div className="w-24 overflow-hidden rounded-full bg-surface-2">
                           <div
-                            className="h-1.5 rounded-full bg-[#D4AF37]/70"
+                            className="h-1.5 rounded-full bg-gold/70"
                             style={{ width: `${maxEventsAll > 0 ? (events / maxEventsAll) * 100 : 0}%` }}
                           />
                         </div>
@@ -245,7 +245,7 @@ export default function ScreentimePage() {
       <section className="mt-12">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Hour distribution</div>
         <h2 className="mt-1.5 text-lg font-semibold text-white">When the team is most active</h2>
-        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+        <div className="mt-5 flex h-24 items-end gap-1 rounded-[18px] border border-line bg-surface p-4">
           {HOURS.map((h) => {
             const count = hourTotals[h]
             const max   = Math.max(...HOURS.map((hh) => hourTotals[hh]))
@@ -254,10 +254,10 @@ export default function ScreentimePage() {
             return (
               <div key={h} className="flex flex-1 flex-col items-center gap-1">
                 <div
-                  className={`w-full rounded-t-[3px] ${isPeak ? 'bg-[#D4AF37]' : 'bg-slate-700'}`}
+                  className={`w-full rounded-t-[3px] ${isPeak ? 'bg-gold' : 'bg-surface-3'}`}
                   style={{ height: `${Math.max(pct, 4)}%` }}
                 />
-                <span className={`text-[8px] ${isPeak ? 'text-[#D4AF37]' : 'text-slate-600'}`}>
+                <span className={`text-[8px] ${isPeak ? 'text-gold' : 'text-slate-600'}`}>
                   {h < 12 ? h : h === 12 ? '12' : h - 12}
                 </span>
               </div>

@@ -115,9 +115,9 @@ export default function ROIPage() {
   const maxROI        = Math.max(...PLATFORM_ROI.map(p => p.roi))
 
   return (
-    <div className="min-h-screen pb-16 bg-[#0D1117]">
+    <div className="min-h-screen pb-16 bg-ink">
       {/* Header */}
-      <div className="border-b border-slate-800 bg-[#090C12]/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
+      <div className="border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-white">ROI Dashboard</h1>
@@ -131,7 +131,7 @@ export default function ROIPage() {
               )
               downloadCsv('roi-report-jun-2026.csv', [header, ...lines].join('\n'))
             }}
-            className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
+            className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20 transition-colors">
             Export Report
           </button>
         </div>
@@ -143,12 +143,12 @@ export default function ROIPage() {
         <div className="grid gap-4 xl:grid-cols-4">
 
           {/* Overall ROI — Hero Card */}
-          <div className="xl:col-span-1 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.04] p-6 flex flex-col items-center justify-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/15 mb-4">
-              <TrendingUp className="h-6 w-6 text-[#D4AF37]" />
+          <div className="xl:col-span-1 rounded-xl border border-gold/25 bg-gold/[0.04] p-6 flex flex-col items-center justify-center text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 bg-gold/15 mb-4">
+              <TrendingUp className="h-6 w-6 text-gold" />
             </div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Overall Marketing ROI</p>
-            <p className="text-6xl font-bold text-[#D4AF37] tabular-nums tracking-tight">{overallROI}%</p>
+            <p className="text-6xl font-bold text-gold tabular-nums tracking-tight">{overallROI}%</p>
             <p className="mt-2 text-sm text-slate-400">
               {fmtAED(totalRevenue)} revenue on {fmtAED(totalSpend)} spend
             </p>
@@ -166,7 +166,7 @@ export default function ROIPage() {
               { label: 'Total Leads',      value: totalLeads.toString(), icon: Target,      color: 'text-sky-400',    sub: 'From paid channels' },
               { label: 'Closed Deals',     value: totalDeals.toString(), icon: CheckCircle2, color: 'text-violet-400', sub: `Avg ${fmtAED(Math.round(totalRevenue / totalDeals))} / deal` },
             ].map(s => (
-              <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+              <div key={s.label} className="rounded-xl border border-line bg-surface p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <s.icon className={['h-4 w-4', s.color].join(' ')} />
                   <p className="text-xs text-slate-500">{s.label}</p>
@@ -179,15 +179,15 @@ export default function ROIPage() {
         </div>
 
         {/* AI ROI Insight */}
-        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] px-5 py-4 flex items-start gap-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-            <Sparkles className="h-4.5 w-4.5 text-[#D4AF37]" />
+        <div className="rounded-xl border border-gold/20 bg-gold/[0.03] px-5 py-4 flex items-start gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+            <Sparkles className="h-4.5 w-4.5 text-gold" />
           </div>
           <div>
             <p className="text-sm font-semibold text-white mb-0.5">AI ROI Insight</p>
             <p className="text-sm text-slate-300 leading-relaxed">
               WhatsApp has your highest ROI at <span className="text-emerald-400 font-semibold">1,200%</span> — significantly outperforming all other channels.
-              Consider increasing its monthly budget by <span className="text-[#D4AF37] font-semibold">AED 2,000/month</span> and reallocating funds
+              Consider increasing its monthly budget by <span className="text-gold font-semibold">AED 2,000/month</span> and reallocating funds
               from Email Marketing (ROI: 480%) to capture more high-intent leads.
               Google Ads CTR dropped 5% MoM — review keyword targeting and pause underperforming ad groups.
             </p>
@@ -195,8 +195,8 @@ export default function ROIPage() {
         </div>
 
         {/* Platform ROI Comparison */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-5 py-4">
             <h2 className="text-sm font-semibold text-white">Platform ROI Comparison</h2>
             <p className="text-xs text-slate-500 mt-0.5">Revenue, spend, CAC and ROI per channel</p>
           </div>
@@ -225,7 +225,7 @@ export default function ROIPage() {
                   </div>
                 </div>
                 {/* ROI bar */}
-                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-surface-2 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
@@ -244,23 +244,23 @@ export default function ROIPage() {
         </div>
 
         {/* Revenue Attribution Table */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-5 py-4">
             <h2 className="text-sm font-semibold text-white">Revenue Attribution</h2>
             <p className="text-xs text-slate-500 mt-0.5">Channel breakdown — leads, deals, revenue, ROI</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2">
                   {['Channel', 'Leads', 'Deals', 'Revenue', 'Ad Spend', 'ROI %', 'Cost per Lead', 'CAC'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {PLATFORM_ROI.sort((a, b) => b.roi - a.roi).map((p) => (
-                  <tr key={p.platform} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={p.platform} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3">
                       <span className={['rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap', p.bgColor, p.color].join(' ')}>
                         {p.platform}
@@ -283,13 +283,13 @@ export default function ROIPage() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-700 bg-slate-800/40">
+                <tr className="border-t border-line-strong bg-surface-2">
                   <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Total / Avg</td>
                   <td className="px-4 py-3 text-sm font-bold text-slate-300 tabular-nums">{totalLeads}</td>
                   <td className="px-4 py-3 text-sm font-bold text-slate-300 tabular-nums">{totalDeals}</td>
                   <td className="px-4 py-3 text-sm font-bold text-white tabular-nums">{fmtAED(totalRevenue)}</td>
                   <td className="px-4 py-3 text-sm font-bold text-slate-300 tabular-nums">{fmtAED(totalSpend)}</td>
-                  <td className="px-4 py-3 text-sm font-bold text-[#D4AF37] tabular-nums">{overallROI}%</td>
+                  <td className="px-4 py-3 text-sm font-bold text-gold tabular-nums">{overallROI}%</td>
                   <td className="px-4 py-3 text-sm text-slate-400 tabular-nums whitespace-nowrap">
                     AED {Math.round(totalSpend / totalLeads).toLocaleString()}
                   </td>
@@ -305,28 +305,28 @@ export default function ROIPage() {
         <div className="grid gap-6 xl:grid-cols-2">
 
           {/* Top Performing Campaigns */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-5 py-4">
+          <div className="rounded-xl border border-line bg-surface">
+            <div className="border-b border-line px-5 py-4">
               <h2 className="text-sm font-semibold text-white">Top 5 Campaigns by ROI</h2>
               <p className="text-xs text-slate-500 mt-0.5">Best performing campaigns — June 2026</p>
             </div>
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-line">
               {TOP_CAMPAIGNS.map((c, idx) => (
                 <div key={c.name} className="px-5 py-4">
                   <div className="flex items-start gap-3">
                     <div className={[
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                      idx === 0 ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
-                      idx === 1 ? 'bg-slate-600 text-slate-200' :
+                      idx === 0 ? 'bg-gold/20 text-gold' :
+                      idx === 1 ? 'bg-surface-3 text-slate-200' :
                       idx === 2 ? 'bg-orange-500/20 text-orange-400' :
-                      'bg-slate-800 text-slate-500',
+                      'bg-surface-2 text-slate-500',
                     ].join(' ')}>
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-100 leading-snug mb-1">{c.name}</p>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={['rounded-full px-2 py-0.5 text-xs font-medium', PLATFORM_BADGE[c.platform] ?? 'bg-slate-700 text-slate-300'].join(' ')}>
+                        <span className={['rounded-full px-2 py-0.5 text-xs font-medium', PLATFORM_BADGE[c.platform] ?? 'bg-surface-3 text-slate-300'].join(' ')}>
                           {c.platform}
                         </span>
                         <span className="text-xs text-slate-500">{c.leads} leads · {c.deals} deals</span>
@@ -339,7 +339,7 @@ export default function ROIPage() {
                     </div>
                   </div>
                   {/* ROI mini bar */}
-                  <div className="mt-2.5 ml-10 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <div className="mt-2.5 ml-10 h-1.5 w-full bg-surface-2 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full"
                       style={{ width: `${(c.roi / TOP_CAMPAIGNS[0].roi) * 100}%` }}
@@ -351,15 +351,15 @@ export default function ROIPage() {
           </div>
 
           {/* CAC Trend Table */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900">
-            <div className="border-b border-slate-800 px-5 py-4">
+          <div className="rounded-xl border border-line bg-surface">
+            <div className="border-b border-line px-5 py-4">
               <h2 className="text-sm font-semibold text-white">Cost per Acquisition Trend</h2>
               <p className="text-xs text-slate-500 mt-0.5">CAC per platform — last 6 months (AED)</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-800/40">
+                  <tr className="border-b border-line bg-surface-2">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Month</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-blue-400/70">Meta</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-amber-400/70">Google</th>
@@ -367,14 +367,14 @@ export default function ROIPage() {
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-violet-400/70">Email</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-line">
                   {CAC_TREND.map((row, idx) => {
                     const isCurrent = idx === CAC_TREND.length - 1
                     return (
-                      <tr key={row.month} className={isCurrent ? 'bg-[#D4AF37]/5' : 'hover:bg-slate-800/30'}>
+                      <tr key={row.month} className={isCurrent ? 'bg-gold/5' : 'hover:bg-surface-2'}>
                         <td className="px-4 py-2.5 text-sm text-slate-300 font-medium">
                           {row.month}
-                          {isCurrent && <span className="ml-2 text-xs text-[#D4AF37]">Current</span>}
+                          {isCurrent && <span className="ml-2 text-xs text-gold">Current</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right text-sm text-blue-400 tabular-nums font-medium">
                           {row.meta.toLocaleString()}
@@ -393,7 +393,7 @@ export default function ROIPage() {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t border-slate-700 bg-slate-800/40">
+                  <tr className="border-t border-line-strong bg-surface-2">
                     <td className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">6M Trend</td>
                     <td className="px-4 py-2.5 text-right text-xs text-emerald-400 font-semibold">↓ 20.8%</td>
                     <td className="px-4 py-2.5 text-right text-xs text-emerald-400 font-semibold">↓ 21.9%</td>
@@ -403,7 +403,7 @@ export default function ROIPage() {
                 </tfoot>
               </table>
             </div>
-            <div className="px-5 py-4 border-t border-slate-800 rounded-b-xl bg-emerald-500/[0.03]">
+            <div className="px-5 py-4 border-t border-line rounded-b-xl bg-emerald-500/[0.03]">
               <div className="flex items-start gap-2">
                 <ArrowDownRight className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
                 <p className="text-xs text-slate-400 leading-relaxed">

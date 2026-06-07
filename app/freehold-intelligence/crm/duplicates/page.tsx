@@ -104,17 +104,17 @@ const CLUSTERS: DuplicateCluster[] = [
 const CONFIDENCE_CONFIG = {
   high:   { label: 'High confidence', border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
   medium: { label: 'Medium confidence', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
-  low:    { label: 'Low confidence', border: 'border-slate-800',      bg: 'bg-slate-900',          text: 'text-slate-400',   dot: 'bg-slate-500' },
+  low:    { label: 'Low confidence', border: 'border-line',      bg: 'bg-surface',          text: 'text-slate-400',   dot: 'bg-slate-500' },
 }
 
 function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPrimary: boolean }) {
   return (
-    <div className={`flex-1 rounded-[14px] border p-4 ${isPrimary ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-slate-800 bg-slate-800/50'}`}>
+    <div className={`flex-1 rounded-[14px] border p-4 ${isPrimary ? 'border-gold/15 bg-gold/[0.03]' : 'border-line bg-surface-2'}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className={`text-xs font-semibold uppercase tracking-wider ${isPrimary ? 'text-[#D4AF37]/70' : 'text-slate-500'}`}>
+        <span className={`text-xs font-semibold uppercase tracking-wider ${isPrimary ? 'text-gold/70' : 'text-slate-500'}`}>
           {isPrimary ? 'Primary' : 'Possible duplicate'}
         </span>
-        <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-400">
+        <span className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-400">
           {lead.stage}
         </span>
       </div>
@@ -177,7 +177,7 @@ export default function CrmDuplicatesPage() {
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <Copy className="h-3.5 w-3.5" /> Duplicates
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
@@ -194,9 +194,9 @@ export default function CrmDuplicatesPage() {
           { label: 'Clusters remaining',  value: visibleClusters.length,  color: 'text-white' },
           { label: 'High confidence',     value: highConf,                color: 'text-red-300' },
           { label: 'At-risk leads',       value: atRisk,                  color: 'text-orange-300' },
-          { label: 'Merged this session', value: mergedCount,             color: 'text-[#D4AF37]' },
+          { label: 'Merged this session', value: mergedCount,             color: 'text-gold' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+          <div key={stat.label} className="rounded-[18px] border border-line bg-surface p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-sm text-slate-400">{stat.label}</div>
           </div>
@@ -231,8 +231,8 @@ export default function CrmDuplicatesPage() {
                 className={[
                   'rounded-full px-3 py-1 text-sm font-medium capitalize transition border',
                   confidenceFilter === f
-                    ? 'border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-slate-800 text-slate-400 hover:text-slate-300',
+                    ? 'border-gold/35 bg-gold/10 text-gold'
+                    : 'border-line text-slate-400 hover:text-slate-300',
                 ].join(' ')}
               >
                 {f}
@@ -242,8 +242,8 @@ export default function CrmDuplicatesPage() {
         </div>
 
         {visibleClusters.length === 0 ? (
-          <div className="rounded-[22px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] py-14 text-center">
-            <CheckCircle2 className="mx-auto h-8 w-8 text-[#D4AF37]" />
+          <div className="rounded-[22px] border border-emerald-400/15 bg-gold/[0.04] py-14 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-gold" />
             <div className="mt-3 text-sm font-semibold text-white">All clear — no duplicate clusters remaining</div>
             <div className="mt-1 text-sm text-slate-400">{mergedCount} merged this session.</div>
           </div>
@@ -262,7 +262,7 @@ export default function CrmDuplicatesPage() {
                       <span className="text-slate-600">·</span>
                       <div className="flex flex-wrap gap-1.5">
                         {cluster.matchReason.map((r) => (
-                          <span key={r} className="rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-400">{r}</span>
+                          <span key={r} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-400">{r}</span>
                         ))}
                       </div>
                     </div>
@@ -281,19 +281,19 @@ export default function CrmDuplicatesPage() {
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => handleMerge(cluster.id, cluster.primary.name)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.08] px-4 py-1.5 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-gold/20 bg-gold/[0.08] px-4 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/15 active:scale-95"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Merge into primary
                     </button>
                     <button
                       onClick={() => handleDismiss(cluster.id)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-300 active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-surface-2 hover:text-slate-300 active:scale-95"
                     >
                       Not a duplicate
                     </button>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${cluster.primary.id}`}
-                      className="ml-auto inline-flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                      className="ml-auto inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
                     >
                       Open primary <ArrowUpRight className="h-3 w-3" />
                     </Link>
@@ -306,7 +306,7 @@ export default function CrmDuplicatesPage() {
       </section>
 
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-slate-900 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-xl">
           {flash}
         </div>
       )}
@@ -321,8 +321,8 @@ export default function CrmDuplicatesPage() {
             { step: '02', title: 'Timeline merges', body: 'All calls, notes, WhatsApp events, and stage changes from both records are combined into one timeline.' },
             { step: '03', title: 'Duplicate archived', body: 'The duplicate record is marked as merged and removed from active queues. Nothing is deleted.' },
           ].map((item) => (
-            <div key={item.step} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
-              <div className="text-sm font-semibold text-[#D4AF37]/60">{item.step}</div>
+            <div key={item.step} className="rounded-[18px] border border-line bg-surface p-5">
+              <div className="text-sm font-semibold text-gold/60">{item.step}</div>
               <div className="mt-2 text-sm font-semibold text-white">{item.title}</div>
               <p className="mt-1.5 text-xs text-slate-400">{item.body}</p>
             </div>

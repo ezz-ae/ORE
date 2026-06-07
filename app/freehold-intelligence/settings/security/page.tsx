@@ -84,7 +84,7 @@ export default function SecurityPage() {
       <h1 className="mb-8 text-xl font-semibold text-white">Security</h1>
 
       {/* 2FA */}
-      <section className="mb-6 rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+      <section className="mb-6 rounded-[18px] border border-line bg-surface p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-emerald-400/20 bg-emerald-400/10">
@@ -97,7 +97,7 @@ export default function SecurityPage() {
           </div>
           <button
             onClick={() => setTwoFaOn((v) => !v)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition ${twoFaOn ? 'bg-emerald-400' : 'bg-slate-700'}`}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${twoFaOn ? 'bg-emerald-400' : 'bg-surface-3'}`}
           >
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${twoFaOn ? 'left-[22px]' : 'left-0.5'}`} />
           </button>
@@ -118,7 +118,7 @@ export default function SecurityPage() {
           </div>
           <button
             onClick={() => setShowNew((v) => !v)}
-            className="flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-3 py-1.5 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+            className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/15"
           >
             <Plus className="h-3.5 w-3.5" /> New key
           </button>
@@ -126,13 +126,13 @@ export default function SecurityPage() {
 
         {/* New key form */}
         {showNew && (
-          <div className="mb-4 rounded-[16px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5 space-y-3">
+          <div className="mb-4 rounded-[16px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
             <input
               type="text"
               placeholder="Key name (e.g. Zapier Integration)"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+              className="w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <div>
               <div className="mb-2 text-xs text-slate-500">Scopes</div>
@@ -143,8 +143,8 @@ export default function SecurityPage() {
                     onClick={() => toggleScope(s)}
                     className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                       newScopes.includes(s)
-                        ? 'border-[#D4AF37]/40 bg-[#D4AF37]/15 text-[#D4AF37]'
-                        : 'border-slate-700 text-slate-400 hover:text-slate-100'
+                        ? 'border-gold/40 bg-gold/15 text-gold'
+                        : 'border-line-strong text-slate-400 hover:text-slate-100'
                     }`}
                   >
                     {s}
@@ -154,11 +154,11 @@ export default function SecurityPage() {
             </div>
             <div className="flex gap-2">
               <button onClick={createKey}
-                className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
+                className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
                 <Key className="h-3.5 w-3.5" /> Generate key
               </button>
               <button onClick={() => setShowNew(false)}
-                className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
+                className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
                 Cancel
               </button>
             </div>
@@ -169,17 +169,17 @@ export default function SecurityPage() {
           {keys.map((k) => (
             <div
               key={k.id}
-              className={`rounded-[14px] border bg-slate-900 px-5 py-4 transition ${k.active ? 'border-slate-800' : 'border-slate-800/50 opacity-50'}`}
+              className={`rounded-[14px] border bg-surface px-5 py-4 transition ${k.active ? 'border-line' : 'border-line opacity-50'}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Key className={`h-3.5 w-3.5 shrink-0 ${k.active ? 'text-[#D4AF37]' : 'text-slate-600'}`} />
+                    <Key className={`h-3.5 w-3.5 shrink-0 ${k.active ? 'text-gold' : 'text-slate-600'}`} />
                     <span className="text-sm font-semibold text-white">{k.name}</span>
                     {!k.active && <span className="text-xs text-red-400/70">Revoked</span>}
                   </div>
                   <div className="mt-1.5 flex items-center gap-2">
-                    <code className="rounded bg-slate-800/60 px-2 py-0.5 text-xs font-mono text-slate-400">
+                    <code className="rounded bg-surface-2 px-2 py-0.5 text-xs font-mono text-slate-400">
                       {revealed === k.id ? `${k.prefix}_••••••••••••` : `${k.prefix}...`}
                     </code>
                     <button
@@ -197,7 +197,7 @@ export default function SecurityPage() {
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (
-                      <span key={s} className="rounded bg-slate-800/60 px-1.5 py-0.5 text-xs text-slate-500">{s}</span>
+                      <span key={s} className="rounded bg-surface-2 px-1.5 py-0.5 text-xs text-slate-500">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -210,12 +210,12 @@ export default function SecurityPage() {
                   )}
                   {k.active ? (
                     <button onClick={() => revokeKey(k.id)}
-                      className="rounded-md border border-slate-700 px-2.5 py-1 text-xs text-red-400/70 transition hover:border-red-400/20 hover:text-red-400">
+                      className="rounded-md border border-line-strong px-2.5 py-1 text-xs text-red-400/70 transition hover:border-red-400/20 hover:text-red-400">
                       Revoke
                     </button>
                   ) : (
                     <button onClick={() => deleteKey(k.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-600 transition hover:border-red-400/20 hover:text-red-400">
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-slate-600 transition hover:border-red-400/20 hover:text-red-400">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -229,8 +229,8 @@ export default function SecurityPage() {
       {/* Audit log */}
       <section>
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Audit log</div>
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="divide-y divide-slate-800">
+        <div className="rounded-[18px] border border-line bg-surface overflow-hidden">
+          <div className="divide-y divide-line">
             {AUDIT_LOG.map((entry, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${entry.ok ? 'bg-emerald-400/60' : 'bg-red-400'}`} />

@@ -419,7 +419,7 @@ function EditableField({
   if (!editing) {
     return (
       <div
-        className={`group relative cursor-text rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm leading-[1.65] text-slate-100 transition hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.03] ${className}`}
+        className={`group relative cursor-text rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm leading-[1.65] text-slate-100 transition hover:border-gold/30 hover:bg-gold/[0.03] ${className}`}
         onClick={() => setEditing(true)}
       >
         {value || <span className="text-slate-600">{placeholder}</span>}
@@ -429,7 +429,7 @@ function EditableField({
           </span>
         )}
         <button
-          className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800/50 text-slate-500 opacity-0 transition group-hover:opacity-100 hover:text-slate-300"
+          className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-lg bg-surface-2 text-slate-500 opacity-0 transition group-hover:opacity-100 hover:text-slate-300"
           onClick={(e) => { e.stopPropagation(); setEditing(true) }}
         >
           <Edit2 className="h-3 w-3" />
@@ -439,15 +439,15 @@ function EditableField({
   }
 
   return (
-    <div className={`rounded-xl border ${over ? 'border-red-400/40 bg-red-400/[0.03]' : 'border-[#D4AF37]/35 bg-[#D4AF37]/[0.04]'} ${className}`}>
+    <div className={`rounded-xl border ${over ? 'border-red-400/40 bg-red-400/[0.03]' : 'border-gold/35 bg-gold/[0.04]'} ${className}`}>
       <textarea
         ref={ref} rows={rows} value={draft}
         onChange={(e) => setDraft(e.target.value)}
         className="w-full resize-none bg-transparent px-4 py-3 text-sm leading-[1.65] text-white focus:outline-none"
       />
-      <div className="flex items-center gap-2 border-t border-slate-800 px-3 py-2">
+      <div className="flex items-center gap-2 border-t border-line px-3 py-2">
         <button onClick={() => { onChange(draft); setEditing(false) }}
-          className="rounded-lg bg-[#D4AF37]/15 px-3 py-1 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/25">
+          className="rounded-lg bg-gold/15 px-3 py-1 text-xs font-medium text-gold transition hover:bg-gold/25">
           Apply
         </button>
         <button onClick={() => { setDraft(value); setEditing(false) }}
@@ -468,7 +468,7 @@ function EditableField({
 
 function AIBadge({ label = 'AI Pick' }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-2 py-0.5 text-xs font-medium text-[#D4AF37]">
+    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
       <Sparkles className="h-2.5 w-2.5" /> {label}
     </span>
   )
@@ -477,8 +477,8 @@ function AIBadge({ label = 'AI Pick' }: { label?: string }) {
 function AIReason({ text }: { text: string }) {
   if (!text) return null
   return (
-    <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
-      <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]/60 mt-0.5 shrink-0" />
+    <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-gold/15 bg-gold/[0.04] px-4 py-3">
+      <Sparkles className="h-3.5 w-3.5 text-gold/60 mt-0.5 shrink-0" />
       <p className="text-xs leading-relaxed text-slate-400">{text}</p>
     </div>
   )
@@ -488,7 +488,7 @@ function SectionLabel({ icon: Icon, label, sub }: { icon: typeof Target; label: 
   return (
     <div className="mb-3">
       <div className="flex items-center gap-2">
-        <Icon className="h-3.5 w-3.5 text-[#D4AF37]/60" />
+        <Icon className="h-3.5 w-3.5 text-gold/60" />
         <span className="text-sm font-semibold text-slate-100">{label}</span>
       </div>
       {sub && <p className="mt-0.5 pl-5 text-xs text-slate-500">{sub}</p>}
@@ -506,7 +506,7 @@ function StepHeader({ step }: { step: number }) {
             <div key={n} className="flex items-center gap-1.5 shrink-0">
               <div className="flex items-center gap-1.5">
                 <div className={['flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition',
-                  done ? 'bg-[#D4AF37] text-[#0D1117]' : active ? 'bg-[#D4AF37]/20 border border-[#D4AF37]/60 text-[#D4AF37]' : 'bg-slate-800/50 text-slate-600'].join(' ')}>
+                  done ? 'bg-gold text-ink' : active ? 'bg-gold/20 border border-gold/60 text-gold' : 'bg-surface-2 text-slate-600'].join(' ')}>
                   {done ? <Check className="h-2.5 w-2.5" /> : n}
                 </div>
                 <span className={['text-xs font-medium whitespace-nowrap',
@@ -515,14 +515,14 @@ function StepHeader({ step }: { step: number }) {
                 </span>
               </div>
               {i < STEP_LABELS.length - 1 && (
-                <div className={`h-px w-6 shrink-0 ${n < step ? 'bg-[#D4AF37]/35' : 'bg-slate-800/50'}`} />
+                <div className={`h-px w-6 shrink-0 ${n < step ? 'bg-gold/35' : 'bg-surface-2'}`} />
               )}
             </div>
           )
         })}
       </div>
-      <div className="mt-2.5 h-0.5 w-full rounded-full bg-slate-800/40">
-        <div className="h-full rounded-full bg-[#D4AF37] transition-all duration-500"
+      <div className="mt-2.5 h-0.5 w-full rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-gold transition-all duration-500"
           style={{ width: `${((step - 1) / (STEP_LABELS.length - 1)) * 100}%` }} />
       </div>
     </div>
@@ -683,8 +683,8 @@ export default function CampaignLaunchPage() {
     const channelLabel = state.channel === 'both' ? 'Meta + Google Ads' : state.channel === 'meta' ? 'Meta Ads' : 'Google Ads'
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center p-8 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10">
-          <Rocket className="h-6 w-6 text-[#D4AF37]" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10">
+          <Rocket className="h-6 w-6 text-gold" />
         </div>
         <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">Campaign Live</h2>
         <p className="mt-1.5 max-w-sm text-sm text-slate-500">
@@ -708,16 +708,16 @@ export default function CampaignLaunchPage() {
             </div>
           )}
           {(state.channel === 'google' || state.channel === 'both') && (
-            <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-5 py-4 text-center">
-              <div className="text-xs font-medium uppercase tracking-wider text-[#D4AF37]/60">Google Ads</div>
+            <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] px-5 py-4 text-center">
+              <div className="text-xs font-medium uppercase tracking-wider text-gold/60">Google Ads</div>
               <div className="mt-1.5 text-sm font-semibold text-slate-100">
                 {state.channel === 'both' ? fmt(googleBudget) : fmt(state.budget)}
               </div>
               <div className="mt-0.5 text-xs text-slate-500">
                 ~{state.channel === 'both' ? Math.round(googleBudget / est.cpl) : est.leads} leads / mo
               </div>
-              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-xs text-[#D4AF37]">
-                <div className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] animate-pulse" /> Live
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5 text-xs text-gold">
+                <div className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> Live
               </div>
             </div>
           )}
@@ -729,20 +729,20 @@ export default function CampaignLaunchPage() {
             { label: 'Est. Leads / Month', value: `~${est.leads}` },
             { label: 'Target CPL',         value: `AED ${est.cpl}` },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-2xl border border-slate-800 bg-slate-800/40 px-4 py-3">
+            <div key={label} className="rounded-2xl border border-line bg-surface-2 px-4 py-3">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
-              <div className="mt-1 text-base font-semibold tabular-nums text-[#D4AF37]">{value}</div>
+              <div className="mt-1 text-base font-semibold tabular-nums text-gold">{value}</div>
             </div>
           ))}
         </div>
         <div className="mt-5 flex gap-3">
           <Link href="/freehold-intelligence/lead-machine/campaigns"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white">
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white">
             View Campaigns
           </Link>
           <button
             onClick={() => { setLaunched(false); setStep(1); setState(buildInitialState()) }}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
+            className="inline-flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15">
             <Plus className="h-3.5 w-3.5" /> New Campaign
           </button>
         </div>
@@ -778,9 +778,9 @@ export default function CampaignLaunchPage() {
                 onClick={() => canLaunch && selectProperty(l.id)}
                 disabled={!canLaunch}
                 className={['w-full rounded-2xl border p-4 text-left transition',
-                  isSelected   ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                  canLaunch    ? 'border-slate-800 bg-slate-800/40 hover:border-white/[0.14] hover:bg-slate-800/40' :
-                                 'border-slate-800 bg-slate-800/40 opacity-40 cursor-not-allowed'].join(' ')}>
+                  isSelected   ? 'border-gold/50 bg-gold/[0.06]' :
+                  canLaunch    ? 'border-line bg-surface-2 hover:border-white/[0.14] hover:bg-surface-2' :
+                                 'border-line bg-surface-2 opacity-40 cursor-not-allowed'].join(' ')}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -798,19 +798,19 @@ export default function CampaignLaunchPage() {
                     )}
                     {canLaunch && (
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                        <span>Readiness <span className={l.adReadinessScore >= 70 ? 'text-[#D4AF37]' : 'text-amber-400'}>{l.adReadinessScore}%</span></span>
-                        <span className="h-3 w-px bg-slate-800/50" />
+                        <span>Readiness <span className={l.adReadinessScore >= 70 ? 'text-gold' : 'text-amber-400'}>{l.adReadinessScore}%</span></span>
+                        <span className="h-3 w-px bg-surface-2" />
                         <span>Score <span className="text-slate-400">{score}</span></span>
                         {l.startingPrice && (
                           <>
-                            <span className="h-3 w-px bg-slate-800/50" />
+                            <span className="h-3 w-px bg-surface-2" />
                             <span>from <span className="text-slate-400">AED {(l.startingPrice / 1_000_000).toFixed(1)}M</span></span>
                           </>
                         )}
                       </div>
                     )}
                   </div>
-                  {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />}
+                  {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />}
                 </div>
               </button>
             )
@@ -828,16 +828,16 @@ export default function CampaignLaunchPage() {
                   <div className="mt-0.5 text-xs text-slate-500">
                     Generate one now from your property data — AI fills every field. It auto-selects in Step 6.
                   </div>
-                  <div className="mt-3 rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-xs text-slate-500">
+                  <div className="mt-3 rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-xs text-slate-500">
                     <span className="text-slate-600">URL preview: </span>
-                    /lp/<span className="text-[#D4AF37]/70">{slugify(listing.projectName)}</span>
+                    /lp/<span className="text-gold/70">{slugify(listing.projectName)}</span>
                   </div>
                   <button
                     onClick={() => handleGenerateLanding(listing)}
                     disabled={isGenerating}
-                    className="mt-3 inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/10 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15 disabled:opacity-60">
                     {isGenerating
-                      ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Generating…</>
+                      ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Generating…</>
                       : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
                   </button>
                 </div>
@@ -847,10 +847,10 @@ export default function CampaignLaunchPage() {
 
           {/* Generation success */}
           {listing && alreadyGenerated && (
-            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-4 py-3">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[#D4AF37]">Landing page generated</div>
+                <div className="text-sm font-medium text-gold">Landing page generated</div>
                 <div className="text-xs text-slate-500">
                   /lp/{slugify(listing.projectName)} · pre-selected in Step 6
                 </div>
@@ -874,12 +874,12 @@ export default function CampaignLaunchPage() {
             return (
               <button key={s.id} onClick={() => selectStrategy(s.id)}
                 className={['w-full rounded-2xl border p-4 text-left transition',
-                  isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                               'border-slate-800 bg-slate-800/40 hover:border-white/[0.14] hover:bg-slate-800/40'].join(' ')}>
+                  isSelected ? 'border-gold/50 bg-gold/[0.06]' :
+                               'border-line bg-surface-2 hover:border-white/[0.14] hover:bg-surface-2'].join(' ')}>
                 <div className="flex items-start gap-3">
                   <div className={['flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition',
-                    isSelected ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10' : 'border-slate-800 bg-slate-800/40'].join(' ')}>
-                    <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-[#D4AF37]' : 'text-slate-500'}`} />
+                    isSelected ? 'border-gold/30 bg-gold/10' : 'border-line bg-surface-2'].join(' ')}>
+                    <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-gold' : 'text-slate-500'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -889,11 +889,11 @@ export default function CampaignLaunchPage() {
                     <p className="mt-1 text-xs leading-relaxed text-slate-500">{s.description}</p>
                     <div className="mt-2 flex items-center gap-3 text-xs">
                       <span className="text-slate-500">Est. CPL: <span className="font-medium text-slate-400">AED {s.cplBase}</span></span>
-                      <span className="h-3 w-px bg-slate-800/50" />
-                      <span className={s.cplBase < financeSummary.avgCpl30d ? 'text-[#D4AF37]/70' : 'text-slate-500'}>{cplVsAcct}</span>
+                      <span className="h-3 w-px bg-surface-2" />
+                      <span className={s.cplBase < financeSummary.avgCpl30d ? 'text-gold/70' : 'text-slate-500'}>{cplVsAcct}</span>
                     </div>
                   </div>
-                  {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />}
+                  {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />}
                 </div>
               </button>
             )
@@ -918,8 +918,8 @@ export default function CampaignLaunchPage() {
                 return (
                   <button key={c.key} onClick={() => patch('channel', c.key)}
                     className={['rounded-2xl border p-3.5 text-center transition',
-                      isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                                   'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                      isSelected ? 'border-gold/50 bg-gold/[0.06]' :
+                                   'border-line bg-surface-2 hover:border-white/[0.12]'].join(' ')}>
                     <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-300'}`}>{c.label}</div>
                     <div className="mt-0.5 text-xs text-slate-500">{c.sub}</div>
                     {isAIPick && <div className="mt-2 flex justify-center"><AIBadge /></div>}
@@ -931,7 +931,7 @@ export default function CampaignLaunchPage() {
 
           {/* Budget split when 'both' */}
           {state.channel === 'both' && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+            <div className="rounded-2xl border border-line bg-surface-2 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-300">Budget allocation</span>
                 <span className="text-xs text-slate-500">
@@ -948,8 +948,8 @@ export default function CampaignLaunchPage() {
                   <button key={preset.label} onClick={() => patch('metaShare', preset.meta)}
                     className={['rounded-lg border px-3 py-1.5 text-xs font-medium transition',
                       state.metaShare === preset.meta
-                        ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                        : 'border-slate-800 text-slate-500 hover:border-white/15 hover:text-slate-400'].join(' ')}>
+                        ? 'border-gold/30 bg-gold/10 text-gold'
+                        : 'border-line text-slate-500 hover:border-white/15 hover:text-slate-400'].join(' ')}>
                     {preset.label}
                     {preset.meta === 60 && <span className="ml-1 text-[10px] opacity-60">AI</span>}
                   </button>
@@ -959,15 +959,15 @@ export default function CampaignLaunchPage() {
                 type="range" min={30} max={80} step={5}
                 value={state.metaShare}
                 onChange={(e) => patch('metaShare', Number(e.target.value))}
-                className="w-full accent-[#D4AF37]"
+                className="w-full accent-gold"
               />
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.04] p-3 text-center">
                   <div className="text-xs text-blue-400/60">Meta Ads</div>
                   <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(metaBudget)}</div>
                 </div>
-                <div className="rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-3 text-center">
-                  <div className="text-xs text-[#D4AF37]/60">Google Ads</div>
+                <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-3 text-center">
+                  <div className="text-xs text-gold/60">Google Ads</div>
                   <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(googleBudget)}</div>
                 </div>
               </div>
@@ -984,14 +984,14 @@ export default function CampaignLaunchPage() {
                 return (
                   <button key={v} onClick={() => patch('budget', v)}
                     className={['rounded-xl border px-4 py-2 text-sm font-medium transition',
-                      state.budget === v ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                          'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
+                      state.budget === v ? 'border-gold/40 bg-gold/10 text-gold' :
+                                          'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                     AED {(v / 1000).toFixed(0)}K
                     {isAIPick && <span className="ml-1.5 text-[10px] opacity-60">AI</span>}
                   </button>
                 )
               })}
-              <div className="flex items-center gap-2 rounded-xl border border-slate-800 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-xl border border-line px-3 py-2">
                 <span className="text-xs text-slate-600">AED</span>
                 <input type="number" value={state.budget}
                   onChange={(e) => patch('budget', Number(e.target.value))}
@@ -1007,8 +1007,8 @@ export default function CampaignLaunchPage() {
               {([14, 30, 60] as Duration[]).map((d) => (
                 <button key={d} onClick={() => patch('duration', d)}
                   className={['rounded-xl border px-4 py-2 text-sm font-medium transition',
-                    state.duration === d ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                          'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
+                    state.duration === d ? 'border-gold/40 bg-gold/10 text-gold' :
+                                          'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                   {d} days{d === 30 && <span className="ml-1.5 text-[10px] opacity-50">AI</span>}
                 </button>
               ))}
@@ -1016,8 +1016,8 @@ export default function CampaignLaunchPage() {
           </div>
 
           {/* Live projection */}
-          <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/60">
+          <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] p-4">
+            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold/60">
               <Sparkles className="h-3 w-3" /> Live Projection
             </div>
             <div className="grid grid-cols-4 gap-3">
@@ -1033,8 +1033,8 @@ export default function CampaignLaunchPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-500">
-              Best campaign in your account: <span className="text-[#D4AF37]">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
+            <div className="mt-3 border-t border-line pt-3 text-xs text-slate-500">
+              Best campaign in your account: <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
               {' · '}{financeSummary.topSpendCampaigns[0].name}
             </div>
           </div>
@@ -1045,8 +1045,8 @@ export default function CampaignLaunchPage() {
       {step === 4 && (
         <div className="space-y-6">
           {state.channel !== 'meta' && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-4 py-3">
-              <Search className="h-3.5 w-3.5 text-[#D4AF37]/60 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5 rounded-xl border border-gold/15 bg-gold/[0.04] px-4 py-3">
+              <Search className="h-3.5 w-3.5 text-gold/60 mt-0.5 shrink-0" />
               <p className="text-xs text-slate-400">Locations geo-target both Meta and Google. Google additionally uses keyword intent — configure keywords in Step 5.</p>
             </div>
           )}
@@ -1059,10 +1059,10 @@ export default function CampaignLaunchPage() {
                 return (
                   <button key={loc.key} onClick={() => toggle('locations', loc.key)}
                     className={['rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
-                      on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                           'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
+                      on ? 'border-gold/40 bg-gold/10 text-gold' :
+                           'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                     {loc.label}
-                    {isAIPick && !on && <span className="ml-1 text-[10px] text-[#D4AF37]/50">·</span>}
+                    {isAIPick && !on && <span className="ml-1 text-[10px] text-gold/50">·</span>}
                   </button>
                 )
               })}
@@ -1077,8 +1077,8 @@ export default function CampaignLaunchPage() {
                   return (
                     <button key={int.key} onClick={() => toggle('interests', int.key)}
                       className={['rounded-full border px-3.5 py-1.5 text-sm font-medium transition',
-                        on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                             'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
+                        on ? 'border-gold/40 bg-gold/10 text-gold' :
+                             'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                       {int.label}
                     </button>
                   )
@@ -1089,11 +1089,11 @@ export default function CampaignLaunchPage() {
           {state.channel !== 'google' && (
             <button onClick={() => patch('useLookalike', !state.useLookalike)}
               className={['flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition',
-                state.useLookalike ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.04]' :
-                                     'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                state.useLookalike ? 'border-gold/40 bg-gold/[0.04]' :
+                                     'border-line bg-surface-2 hover:border-white/[0.12]'].join(' ')}>
               <div className={['flex h-5 w-5 shrink-0 items-center justify-center rounded border transition',
-                state.useLookalike ? 'border-[#D4AF37] bg-[#D4AF37]' : 'border-white/20'].join(' ')}>
-                {state.useLookalike && <Check className="h-3 w-3 text-[#0D1117]" />}
+                state.useLookalike ? 'border-gold bg-gold' : 'border-white/20'].join(' ')}>
+                {state.useLookalike && <Check className="h-3 w-3 text-ink" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-slate-200">CRM Lookalike Audience</div>
@@ -1104,7 +1104,7 @@ export default function CampaignLaunchPage() {
               {state.useLookalike && <AIBadge />}
             </button>
           )}
-          <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+          <div className="rounded-2xl border border-line bg-surface-2 p-4">
             <div className="flex items-baseline justify-between">
               <div className="text-xs text-slate-500">
                 {state.channel === 'google' ? 'Geo-targeted market' : 'Estimated Reach'}
@@ -1116,8 +1116,8 @@ export default function CampaignLaunchPage() {
             <div className="mt-1 text-2xl font-semibold tabular-nums text-slate-100">
               {fmtReach(state.channel === 'google' ? LOCATIONS.filter((l) => state.locations.includes(l.key)).reduce((s, l) => s + l.reach, 0) : reach)}
             </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800/50">
-              <div className="h-full rounded-full bg-[#D4AF37]/60 transition-all duration-500"
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full bg-gold/60 transition-all duration-500"
                 style={{ width: `${Math.min(100, (reach / 600_000) * 100)}%` }} />
             </div>
           </div>
@@ -1129,7 +1129,7 @@ export default function CampaignLaunchPage() {
         <div className="space-y-5">
           {/* Tab switcher when Google is included */}
           {state.channel !== 'meta' && (
-            <div className="flex rounded-xl border border-slate-800 bg-slate-800/40 p-1">
+            <div className="flex rounded-xl border border-line bg-surface-2 p-1">
               {([
                 { key: 'meta'   as CreativeTab, label: 'Meta Ad',      icon: '📘' },
                 { key: 'google' as CreativeTab, label: 'Google Search', icon: '🔍' },
@@ -1138,7 +1138,7 @@ export default function CampaignLaunchPage() {
                 .map((t) => (
                   <button key={t.key} onClick={() => setCreativeTab(t.key)}
                     className={['flex-1 rounded-lg py-2 text-sm font-medium transition',
-                      creativeTab === t.key ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'].join(' ')}>
+                      creativeTab === t.key ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'].join(' ')}>
                     {t.label}
                   </button>
                 ))}
@@ -1155,11 +1155,11 @@ export default function CampaignLaunchPage() {
                     <button key={i} onClick={() => rotateHeadline(i)}
                       className={['w-full rounded-xl border px-4 py-3 text-left text-sm transition',
                         state.headline === h
-                          ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06] font-medium text-white'
-                          : 'border-slate-800 text-slate-400 hover:border-white/[0.14] hover:text-slate-300'].join(' ')}>
+                          ? 'border-gold/40 bg-gold/[0.06] font-medium text-white'
+                          : 'border-line text-slate-400 hover:border-white/[0.14] hover:text-slate-300'].join(' ')}>
                       <span className="mr-2 text-[10px] text-slate-600">{i + 1}</span>
                       {h}
-                      {i === 0 && <span className="ml-2 text-[10px] text-[#D4AF37]/50">AI</span>}
+                      {i === 0 && <span className="ml-2 text-[10px] text-gold/50">AI</span>}
                     </button>
                   ))}
                 </div>
@@ -1172,7 +1172,7 @@ export default function CampaignLaunchPage() {
                 <div className="flex items-center justify-between">
                   <SectionLabel icon={FileText} label="Body copy" />
                   <button onClick={nextBody}
-                    className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-[#D4AF37]">
+                    className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-gold">
                     <RefreshCw className="h-3 w-3" /> Rephrase
                   </button>
                 </div>
@@ -1187,29 +1187,29 @@ export default function CampaignLaunchPage() {
                   {CTAS.map((cta) => (
                     <button key={cta} onClick={() => patch('cta', cta)}
                       className={['rounded-xl border px-3.5 py-1.5 text-sm font-medium transition',
-                        state.cta === cta ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]' :
-                                            'border-slate-800 text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
+                        state.cta === cta ? 'border-gold/40 bg-gold/10 text-gold' :
+                                            'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
                       {cta}
                     </button>
                   ))}
                 </div>
               </div>
               {/* Meta preview */}
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40">
-                <div className="border-b border-slate-800 bg-slate-800/40 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
+              <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
+                <div className="border-b border-line bg-surface-2 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
                   Preview · Meta Feed
                 </div>
                 <div className="p-4">
                   <div className="mb-3 flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/15">
-                      <Building2 className="h-3.5 w-3.5 text-[#D4AF37]" />
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gold/15">
+                      <Building2 className="h-3.5 w-3.5 text-gold" />
                     </div>
                     <div>
                       <div className="text-xs font-semibold text-slate-200">Freehold Property</div>
                       <div className="text-xs text-slate-600">Sponsored</div>
                     </div>
                   </div>
-                  <div className="mb-3 flex h-20 items-center justify-center rounded-xl border border-slate-800 bg-slate-800/40">
+                  <div className="mb-3 flex h-20 items-center justify-center rounded-xl border border-line bg-surface-2">
                     <span className="text-xs text-slate-600">Property image · {listing?.area}</span>
                   </div>
                   <div className="text-sm font-semibold leading-tight text-white">{state.headline}</div>
@@ -1248,13 +1248,13 @@ export default function CampaignLaunchPage() {
               {/* Display URL */}
               <div>
                 <SectionLabel icon={Globe} label="Display URL" />
-                <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm">
                   <span className="text-slate-600 shrink-0">freeholdproperty.ae /</span>
                   <input
                     type="text"
                     value={state.googleDisplayPath}
                     onChange={(e) => patch('googleDisplayPath', e.target.value.replace(/\s/g, '-').toLowerCase())}
-                    className="min-w-0 flex-1 bg-transparent text-[#D4AF37]/80 focus:outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-gold/80 focus:outline-none"
                     placeholder="path"
                   />
                 </div>
@@ -1265,14 +1265,14 @@ export default function CampaignLaunchPage() {
                 <SectionLabel icon={Target} label="Keyword themes" sub="Google uses these to match search intent" />
                 <div className="flex flex-wrap gap-2">
                   {state.googleKeywords.map((kw) => (
-                    <span key={kw} className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1 text-xs text-[#D4AF37]/80">
+                    <span key={kw} className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1 text-xs text-gold/80">
                       {kw}
-                      <button onClick={() => removeKeyword(kw)} className="ml-0.5 rounded-full text-[#D4AF37]/40 transition hover:text-[#D4AF37]">
+                      <button onClick={() => removeKeyword(kw)} className="ml-0.5 rounded-full text-gold/40 transition hover:text-gold">
                         <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))}
-                  <div className="flex items-center gap-1 rounded-full border border-slate-800 px-3 py-1">
+                  <div className="flex items-center gap-1 rounded-full border border-line px-3 py-1">
                     <input
                       type="text"
                       value={newKeyword}
@@ -1281,7 +1281,7 @@ export default function CampaignLaunchPage() {
                       placeholder="Add keyword…"
                       className="w-24 bg-transparent text-xs text-slate-400 placeholder:text-slate-600 focus:outline-none"
                     />
-                    <button onClick={addKeyword} className="text-slate-600 transition hover:text-[#D4AF37]">
+                    <button onClick={addKeyword} className="text-slate-600 transition hover:text-gold">
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -1297,8 +1297,8 @@ export default function CampaignLaunchPage() {
                     return (
                       <button key={b.key} onClick={() => patch('googleBidStrategy', b.key)}
                         className={['rounded-xl border p-3 text-center transition',
-                          isSelected ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]' :
-                                       'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                          isSelected ? 'border-gold/40 bg-gold/[0.06]' :
+                                       'border-line bg-surface-2 hover:border-white/[0.12]'].join(' ')}>
                         <div className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-slate-400'}`}>{b.label}</div>
                         <div className="mt-0.5 text-xs text-slate-600">{b.sub}</div>
                         {b.key === 'maxConversions' && isSelected && <div className="mt-1.5 flex justify-center"><AIBadge /></div>}
@@ -1309,8 +1309,8 @@ export default function CampaignLaunchPage() {
               </div>
 
               {/* Google SERP preview */}
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40">
-                <div className="border-b border-slate-800 bg-slate-800/40 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
+              <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
+                <div className="border-b border-line bg-surface-2 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
                   Preview · Google Search
                 </div>
                 <div className="p-4">
@@ -1346,14 +1346,14 @@ export default function CampaignLaunchPage() {
               return (
                 <button key={land.id} onClick={() => patch('landingId', land.id)}
                   className={['w-full rounded-2xl border p-4 text-left transition',
-                    isSelected ? 'border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]' :
-                                 'border-slate-800 bg-slate-800/40 hover:border-white/[0.12]'].join(' ')}>
+                    isSelected ? 'border-gold/50 bg-gold/[0.06]' :
+                                 'border-line bg-surface-2 hover:border-white/[0.12]'].join(' ')}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-medium text-slate-100">{land.landingUrl}</span>
                         <span className={['inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
-                          isLive ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]' :
+                          isLive ? 'border-gold/20 bg-gold/10 text-gold' :
                                    'border-amber-400/20 bg-amber-400/10 text-amber-400'].join(' ')}>
                           {land.status}
                         </span>
@@ -1365,8 +1365,8 @@ export default function CampaignLaunchPage() {
                         )}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800/50">
-                          <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${land.completion}%` }} />
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
+                          <div className="h-full rounded-full bg-gold" style={{ width: `${land.completion}%` }} />
                         </div>
                         <span className="text-xs text-slate-500">{land.completion}% complete</span>
                       </div>
@@ -1374,7 +1374,7 @@ export default function CampaignLaunchPage() {
                         <div className="mt-1.5 text-xs text-slate-500 line-clamp-1">{land.aiReviewSummary}</div>
                       )}
                     </div>
-                    {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />}
+                    {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />}
                   </div>
                 </button>
               )
@@ -1388,20 +1388,20 @@ export default function CampaignLaunchPage() {
                 <button
                   onClick={() => listing && handleGenerateLanding(listing)}
                   disabled={isGenerating}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15 disabled:opacity-60">
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-gold/25 bg-gold/10 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15 disabled:opacity-60">
                   {isGenerating
-                    ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Generating…</>
+                    ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Generating…</>
                     : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
                 </button>
               </div>
             )}
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+            <div className="rounded-2xl border border-line bg-surface-2 p-4">
               <div className="mb-2 text-xs text-slate-500">Or enter a URL directly</div>
               <input type="text" value={state.landingUrl}
                 onChange={(e) => patch('landingUrl', e.target.value)}
                 placeholder="https://freeholdproperty.ae/…"
-                className="w-full rounded-xl border border-slate-800 bg-slate-800/40 px-3.5 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:border-[#D4AF37]/30 focus:outline-none" />
+                className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:border-gold/30 focus:outline-none" />
             </div>
           </div>
         )
@@ -1415,7 +1415,7 @@ export default function CampaignLaunchPage() {
             <EditableField value={campaignName} onChange={(v) => patch('campaignName', v)} rows={1} />
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/40 divide-y divide-white/[0.04]">
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface-2 divide-y divide-white/[0.04]">
             {([
               { label: 'Property',  value: listing?.projectName ?? '—' },
               { label: 'Strategy',  value: STRATEGIES.find((s) => s.id === state.strategy)?.label ?? '—' },
@@ -1445,8 +1445,8 @@ export default function CampaignLaunchPage() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-4">
-            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/55">
+          <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] p-4">
+            <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold/55">
               <Sparkles className="h-3 w-3" /> Projection
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1462,31 +1462,31 @@ export default function CampaignLaunchPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-500">
-              Account best: <span className="text-[#D4AF37]">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
+            <div className="mt-3 border-t border-line pt-3 text-xs text-slate-500">
+              Account best: <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
               {' · '}30-day avg: <span className="text-slate-400">AED {financeSummary.avgCpl30d}</span>
             </div>
           </div>
 
           <button onClick={handleLaunch} disabled={launching}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/15 py-4 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/22 disabled:opacity-60">
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/15 py-4 text-sm font-semibold text-gold transition hover:bg-gold/22 disabled:opacity-60">
             {launching
-              ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-[#D4AF37]/40 border-t-[#D4AF37]" /> Launching…</>
+              ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Launching…</>
               : <><Rocket className="h-4 w-4" /> Launch Campaign</>}
           </button>
         </div>
       )}
 
       {/* ── Navigation ───────────────────────────────────────────────────────── */}
-      <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-6">
+      <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
         <button onClick={() => setStep((s) => Math.max(1, s - 1) as typeof step)}
           disabled={step === 1}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:border-white/20 hover:text-slate-300 disabled:opacity-25 disabled:cursor-not-allowed">
+          className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:border-white/20 hover:text-slate-300 disabled:opacity-25 disabled:cursor-not-allowed">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
         {step < 7 && (
           <button onClick={() => setStep((s) => (s + 1) as typeof step)}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15">
+            className="inline-flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15">
             Continue <ChevronRight className="h-4 w-4" />
           </button>
         )}

@@ -48,8 +48,8 @@ const BUILD: SubApp[] = [
     id: 'campaigns', label: 'Campaigns', sub: 'Launch · manage · monitor',
     href: '/freehold-intelligence/lead-machine/campaigns', Icon: Rocket,
     metric: 'Meta + Google campaigns',
-    accent: '#D4AF37', card: 'border-[#D4AF37]/15 hover:border-[#D4AF37]/35',
-    icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
+    accent: '#D4AF37', card: 'border-gold/15 hover:border-gold/35',
+    icon: 'text-gold bg-gold/10 border-gold/20',
   },
   {
     id: 'forms', label: 'Lead Forms', sub: 'Instant forms · lead capture',
@@ -107,8 +107,8 @@ const OPTIMIZE: SubApp[] = [
     id: 'requests', label: 'Ad Requests', sub: 'Briefs · approvals · queue',
     href: '/freehold-intelligence/lead-machine/ad-requests', Icon: Inbox,
     metric: 'Campaign brief queue',
-    accent: 'rgba(255,255,255,0.4)', card: 'border-slate-800 hover:border-white/[0.15]',
-    icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
+    accent: 'rgba(255,255,255,0.4)', card: 'border-line hover:border-white/[0.15]',
+    icon: 'text-slate-400 bg-surface-2 border-line',
   },
 ]
 
@@ -119,7 +119,7 @@ function Grid({ apps }: { apps: SubApp[] }) {
         <Link
           key={app.id}
           href={app.href}
-          className={`group relative flex flex-col rounded-xl border bg-[#0D1520] p-5 transition-all duration-200 ${app.card}`}
+          className={`group relative flex flex-col rounded-xl border bg-surface p-5 transition-all duration-200 ${app.card}`}
         >
           <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${app.icon}`}>
             <app.Icon className="h-5 w-5" />
@@ -143,11 +143,11 @@ export default function AdsLauncher() {
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
       {/* Header */}
-      <section className="mb-8 overflow-hidden rounded-2xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.09] via-[#D4AF37]/[0.03] to-transparent">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.09] via-gold/[0.03] to-transparent">
         <div className="p-6 sm:p-7">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-              <Megaphone className="h-5 w-5 text-[#D4AF37]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/25 bg-gold/10">
+              <Megaphone className="h-5 w-5 text-gold" />
             </div>
             <div>
               <div className="text-base font-semibold text-white">Ads</div>

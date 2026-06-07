@@ -16,14 +16,14 @@ function downloadCsv(filename: string, rows: string) {
 
 const PLATFORM_STYLE: Record<string, string> = {
   meta:   'text-blue-400   bg-blue-400/10   border-blue-400/20',
-  google: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
+  google: 'text-gold bg-gold/10 border-gold/20',
 }
 
 const STATUS_STYLE: Record<string, string> = {
   paid:       'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   processing: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
   overdue:    'text-red-400     bg-red-400/10     border-red-400/20',
-  pending:    'text-slate-400   bg-slate-800/50   border-slate-700',
+  pending:    'text-slate-400   bg-surface-2   border-line-strong',
 }
 
 const STATUS_ICON: Record<string, React.ElementType> = {
@@ -72,7 +72,7 @@ export default function InvoicesPage() {
             )
             downloadCsv('invoices.csv', [header, ...lines].join('\n'))
           }}
-          className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
+          className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
           <Download className="h-3.5 w-3.5" /> Export CSV
         </button>
       </div>
@@ -85,7 +85,7 @@ export default function InvoicesPage() {
           { label: 'Processing', value: all.filter((i) => i.status === 'processing').length.toString(), color: 'text-amber-400' },
           { label: 'Pending',  value: fmt(totalPending),                                  color: 'text-amber-400'   },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[17px] font-semibold ${color}`}>{value}</div>
           </div>
@@ -112,7 +112,7 @@ export default function InvoicesPage() {
             className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
               filter === id
                 ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                : 'border-slate-800 text-slate-500 hover:text-slate-300'
+                : 'border-line text-slate-500 hover:text-slate-300'
             }`}>
             {label}
           </button>
@@ -120,7 +120,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Invoice list */}
-      <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+      <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {visible.length === 0
           ? <div className="px-5 py-10 text-center text-sm text-slate-500">No invoices match this filter.</div>
           : visible.map((inv) => {
@@ -129,7 +129,7 @@ export default function InvoicesPage() {
               const isDownloading = downloading === inv.id
               return (
                 <div key={inv.id}>
-                  <button className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-slate-800/40 transition"
+                  <button className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-surface-2 transition"
                     onClick={() => setExpanded(isExpanded ? null : inv.id)}>
                     <StatusIcon className={`h-4 w-4 shrink-0 ${STATUS_STYLE[inv.status].split(' ')[0]}`} />
                     <div className="flex-1 min-w-0">
@@ -159,7 +159,7 @@ export default function InvoicesPage() {
                   </button>
 
                   {isExpanded && (
-                    <div className="border-t border-slate-800 bg-slate-800/40 px-5 py-4">
+                    <div className="border-t border-line bg-surface-2 px-5 py-4">
                       <div className="grid grid-cols-3 gap-4 text-xs">
                         {[
                           { label: 'Invoice date', value: inv.issuedDate },
@@ -172,7 +172,7 @@ export default function InvoicesPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="mt-3 flex items-center gap-2 pt-3 border-t border-slate-800">
+                      <div className="mt-3 flex items-center gap-2 pt-3 border-t border-line">
                         <button onClick={() => download(inv.id)}
                           className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-400/15">
                           <FileText className="h-3.5 w-3.5" /> Download PDF
@@ -186,7 +186,7 @@ export default function InvoicesPage() {
         }
 
         {/* Footer total */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-line">
           <span className="text-xs text-slate-500">{visible.length} invoice{visible.length !== 1 ? 's' : ''}</span>
           <span className="text-xs text-slate-400">
             Paid <span className="text-emerald-400 font-medium tabular-nums">{fmt(totalPaid)}</span>

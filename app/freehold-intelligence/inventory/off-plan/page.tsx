@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   off_plan:           'text-blue-400   bg-blue-400/10   border-blue-400/20',
   under_construction: 'text-amber-400  bg-amber-400/10  border-amber-400/20',
-  coming_soon:        'text-slate-500   bg-slate-800/50  border-white/10',
+  coming_soon:        'text-slate-500   bg-surface-2  border-white/10',
 }
 
 type SortKey = 'leads' | 'price' | 'handover' | 'readiness'
@@ -69,10 +69,10 @@ export default function OffPlanPage() {
         {[
           { label: 'Off Plan',     value: offPlanCount,           color: 'text-blue-400'   },
           { label: 'Under Const.', value: underConstCount,        color: 'text-amber-400'  },
-          { label: '30d Leads',    value: totalLeads,             color: 'text-[#D4AF37]'  },
+          { label: '30d Leads',    value: totalLeads,             color: 'text-gold'  },
           { label: 'Handovers',    value: Object.keys(handovers).length + ' yrs', color: 'text-slate-400' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[18px] font-semibold ${color}`}>{value}</div>
           </div>
@@ -87,7 +87,7 @@ export default function OffPlanPage() {
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition ${
               year === yr
                 ? 'border-amber-400/30 bg-amber-400/10 text-amber-400'
-                : 'border-slate-800 text-slate-400 hover:text-slate-300'
+                : 'border-line text-slate-400 hover:text-slate-300'
             }`}>
             <Calendar className="h-3 w-3" />
             {yr}
@@ -108,14 +108,14 @@ export default function OffPlanPage() {
             placeholder="Search by name or developer…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
+            className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
+        <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
           {(['leads', 'price', 'handover', 'readiness'] as SortKey[]).map((s) => (
             <button key={s} onClick={() => setSort(s)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
-                sort === s ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
+                sort === s ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
               {s}
             </button>
@@ -124,7 +124,7 @@ export default function OffPlanPage() {
       </div>
 
       {/* Property list */}
-      <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+      <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {props.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-slate-500">No off-plan properties match.</div>
         )}
@@ -153,7 +153,7 @@ export default function OffPlanPage() {
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-24 rounded-full bg-slate-800/50">
+                  <div className="h-1 w-24 rounded-full bg-surface-2">
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-white/20'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
@@ -164,7 +164,7 @@ export default function OffPlanPage() {
                 <div className="text-sm font-semibold text-slate-300">{formatPrice(p.startingPriceAED)}</div>
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
+                    className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
                     View <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

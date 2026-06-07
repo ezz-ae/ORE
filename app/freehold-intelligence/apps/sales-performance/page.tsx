@@ -100,7 +100,7 @@ export default function SalesPerformancePage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
             <TrendingUp className="h-3.5 w-3.5" /> Sales Performance
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">
@@ -120,12 +120,12 @@ export default function SalesPerformancePage() {
         {[
           { label: 'Active leads',    value: totalLeads,           color: 'text-white' },
           { label: 'High intent',     value: hotLeads,             color: 'text-red-300' },
-          { label: 'Connect rate',    value: `${connectRate}%`,    color: connectRate >= 50 ? 'text-[#D4AF37]' : 'text-orange-300' },
-          { label: 'Overdue FU',      value: overdueTotal,         color: overdueTotal > 0 ? 'text-orange-300' : 'text-[#D4AF37]' },
-          { label: 'Risk flags',      value: riskLeads,            color: riskLeads > 0 ? 'text-red-300' : 'text-[#D4AF37]' },
-          { label: 'Avg. response',   value: `${avgResponse.toFixed(1)}h`, color: avgResponse <= TEAM_TARGET_RESPONSE ? 'text-[#D4AF37]' : 'text-orange-300' },
+          { label: 'Connect rate',    value: `${connectRate}%`,    color: connectRate >= 50 ? 'text-gold' : 'text-orange-300' },
+          { label: 'Overdue FU',      value: overdueTotal,         color: overdueTotal > 0 ? 'text-orange-300' : 'text-gold' },
+          { label: 'Risk flags',      value: riskLeads,            color: riskLeads > 0 ? 'text-red-300' : 'text-gold' },
+          { label: 'Avg. response',   value: `${avgResponse.toFixed(1)}h`, color: avgResponse <= TEAM_TARGET_RESPONSE ? 'text-gold' : 'text-orange-300' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+          <div key={stat.label} className="rounded-[16px] border border-line bg-surface p-4">
             <div className={`text-[26px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{stat.label}</div>
           </div>
@@ -146,8 +146,8 @@ export default function SalesPerformancePage() {
               onClick={() => setSortKey(key)}
               className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 sortKey === key
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
               }`}
             >
               {label}
@@ -155,10 +155,10 @@ export default function SalesPerformancePage() {
           ))}
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Leads</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Response</th>
@@ -167,21 +167,21 @@ export default function SalesPerformancePage() {
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue MTD</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-line">
               {sortedAgents.map((agent, i) => {
                 const m = AGENT_METRICS[agent.id]
                 const responseOk = m ? m.avgResponseH <= TEAM_TARGET_RESPONSE : true
                 return (
-                  <tr key={agent.id} className={`transition hover:bg-slate-800/30 ${i === 0 ? 'bg-[#D4AF37]/[0.03]' : ''}`}>
+                  <tr key={agent.id} className={`transition hover:bg-surface-2 ${i === 0 ? 'bg-gold/[0.03]' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-sm font-semibold text-[#D4AF37]">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
                           {agent.initials}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5 font-medium text-slate-100">
                             {agent.name}
-                            {i === 0 && <span className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-1.5 py-0.5 text-[8px] font-semibold text-[#D4AF37]">TOP</span>}
+                            {i === 0 && <span className="rounded-full border border-gold/25 bg-gold/10 px-1.5 py-0.5 text-[8px] font-semibold text-gold">TOP</span>}
                           </div>
                           <div className="text-sm text-slate-500">{agent.specialty.split(' · ')[0]}</div>
                         </div>
@@ -189,14 +189,14 @@ export default function SalesPerformancePage() {
                     </td>
                     <td className="px-4 py-4 text-center text-slate-300">{agent.totalLeads}</td>
                     <td className="px-4 py-4 text-center">
-                      <span className={`font-semibold ${responseOk ? 'text-[#D4AF37]' : 'text-orange-300'}`}>
+                      <span className={`font-semibold ${responseOk ? 'text-gold' : 'text-orange-300'}`}>
                         {m ? `${m.avgResponseH}h` : '—'}
                       </span>
                     </td>
                     <td className="hidden px-4 py-4 text-center text-slate-400 sm:table-cell">
                       {m ? `${m.leadToViewing}%` : '—'}
                     </td>
-                    <td className="hidden px-4 py-4 text-center text-[#D4AF37] md:table-cell">
+                    <td className="hidden px-4 py-4 text-center text-gold md:table-cell">
                       {agent.recentWins}
                     </td>
                     <td className="px-6 py-4 text-right font-semibold text-slate-100">
@@ -225,9 +225,9 @@ export default function SalesPerformancePage() {
               className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 riskFilter === key
                   ? key === 'All'
-                    ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                    ? 'border-gold/40 bg-gold/10 text-gold'
                     : 'border-red-400/35 bg-red-400/10 text-red-300'
-                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
               }`}
             >
               {label}
@@ -237,7 +237,7 @@ export default function SalesPerformancePage() {
 
         <div className="mt-5 space-y-2">
           {riskLeadsList.map((lead) => (
-            <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-slate-800 bg-slate-900 px-5 py-4">
+            <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-slate-100">{lead.name}</span>
@@ -251,14 +251,14 @@ export default function SalesPerformancePage() {
               </div>
               <Link
                 href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                className="shrink-0 inline-flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                className="shrink-0 inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
               >
                 Open <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           ))}
           {riskLeadsList.length === 0 && (
-            <div className="flex items-center gap-2 rounded-[16px] border border-emerald-400/15 bg-[#D4AF37]/[0.03] px-5 py-4 text-sm text-[#D4AF37]">
+            <div className="flex items-center gap-2 rounded-[16px] border border-emerald-400/15 bg-gold/[0.03] px-5 py-4 text-sm text-gold">
               <CheckCircle2 className="h-4 w-4" /> No risk flags active.
             </div>
           )}
@@ -272,13 +272,13 @@ export default function SalesPerformancePage() {
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Follow-up queue</div>
             <h2 className="mt-2 text-xl font-semibold text-white">Overdue by agent</h2>
           </div>
-          <Link href="/freehold-intelligence/crm/follow-up" className="inline-flex items-center gap-1 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+          <Link href="/freehold-intelligence/crm/follow-up" className="inline-flex items-center gap-1 text-xs text-gold/60 transition hover:text-gold">
             View all <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
         <div className="mt-5 space-y-2">
           {fuQueue.slice(0, 4).map((fu) => (
-            <div key={fu.leadId} className="flex items-center justify-between gap-4 rounded-[16px] border border-slate-800 bg-slate-900 px-5 py-4">
+            <div key={fu.leadId} className="flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4">
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-100">{fu.leadName}</div>
                 <div className="mt-0.5 text-xs text-slate-500">
@@ -286,7 +286,7 @@ export default function SalesPerformancePage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-sm font-medium ${fu.urgency === 'critical' ? 'text-red-300' : fu.urgency === 'high' ? 'text-orange-300' : 'text-[#D4AF37]'}`}>
+                <span className={`text-sm font-medium ${fu.urgency === 'critical' ? 'text-red-300' : fu.urgency === 'high' ? 'text-orange-300' : 'text-gold'}`}>
                   {fu.urgency}
                 </span>
                 <Clock className="h-3.5 w-3.5 text-slate-600" />

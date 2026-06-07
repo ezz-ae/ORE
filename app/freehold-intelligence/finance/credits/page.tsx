@@ -24,8 +24,8 @@ const INITIAL_AGENTS: Agent[] = [
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   bg-orange-400/10   border-orange-400/25',
-  Silver:   'text-slate-300    bg-slate-800/50    border-slate-600',
-  Gold:     'text-[#D4AF37]    bg-[#D4AF37]/10    border-[#D4AF37]/25',
+  Silver:   'text-slate-300    bg-surface-2    border-line-strong',
+  Gold:     'text-gold    bg-gold/10    border-gold/25',
   Platinum: 'text-violet-300   bg-violet-400/10   border-violet-400/25',
 }
 
@@ -76,10 +76,10 @@ export default function AgentCreditsPage() {
       {/* Credit Economy banner */}
       <Link
         href="/freehold-intelligence/management/credits"
-        className="group mb-6 flex items-center gap-4 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-5 py-4 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10"
+        className="group mb-6 flex items-center gap-4 rounded-xl border border-gold/25 bg-gold/[0.06] px-5 py-4 transition hover:border-gold/40 hover:bg-gold/10"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-          <Coins className="h-5 w-5 text-[#D4AF37]" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+          <Coins className="h-5 w-5 text-gold" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">Ad-credit economy &amp; AI financial analysis now live in the Admin panel</p>
@@ -87,7 +87,7 @@ export default function AgentCreditsPage() {
             Broker ad budgets, blended ROI, and AI-recommended refills — the full Credit Economy dashboard.
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#D4AF37]">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-gold">
           Open <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       </Link>
@@ -103,11 +103,11 @@ export default function AgentCreditsPage() {
       {/* Summary row */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         {[
-          { label: 'Total quota',    value: totalQuota,                       Icon: Zap,   color: 'text-[#D4AF37]'  },
+          { label: 'Total quota',    value: totalQuota,                       Icon: Zap,   color: 'text-gold'  },
           { label: 'Used this month', value: totalUsed,                        Icon: Users, color: 'text-sky-400'    },
           { label: 'Remaining',       value: totalQuota - totalUsed,           Icon: CheckCircle, color: 'text-emerald-400' },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface px-4 py-3.5">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className={`mt-2 text-[20px] font-semibold tabular-nums ${color}`}>{value}</div>
             <div className="mt-0.5 text-xs text-slate-500">{label}</div>
@@ -124,11 +124,11 @@ export default function AgentCreditsPage() {
           const isSaved = saved.includes(agent.id)
 
           return (
-            <div key={agent.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div key={agent.id} className="rounded-xl border border-line bg-surface p-5">
 
               {/* Agent identity */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-sm font-bold text-[#D4AF37]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
                   {agent.initials}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -157,9 +157,9 @@ export default function AgentCreditsPage() {
                     </span>
                   )}
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-slate-700">
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <div
-                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`}
+                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
@@ -177,7 +177,7 @@ export default function AgentCreditsPage() {
                         key={t}
                         onClick={() => setTier(agent.id, t)}
                         className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                          agent.tier === t ? TIER_COLOR[t] : 'border-slate-700 text-slate-500 hover:text-slate-300'
+                          agent.tier === t ? TIER_COLOR[t] : 'border-line-strong text-slate-500 hover:text-slate-300'
                         }`}
                       >
                         {t}
@@ -189,10 +189,10 @@ export default function AgentCreditsPage() {
                 {/* Manual quota adjustment */}
                 <div className="ml-auto flex items-center gap-2">
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider">Bonus credits</div>
-                  <div className="flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-1 py-1">
+                  <div className="flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-1 py-1">
                     <button
                       onClick={() => adjust(agent.id, -1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-surface-2 hover:text-slate-200"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
@@ -201,7 +201,7 @@ export default function AgentCreditsPage() {
                     </span>
                     <button
                       onClick={() => adjust(agent.id, 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-surface-2 hover:text-slate-200"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -209,7 +209,7 @@ export default function AgentCreditsPage() {
                   {adj !== 0 && (
                     <button
                       onClick={() => applyAdjustment(agent.id)}
-                      className="rounded-full bg-[#D4AF37] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                      className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-gold/90"
                     >
                       Apply
                     </button>

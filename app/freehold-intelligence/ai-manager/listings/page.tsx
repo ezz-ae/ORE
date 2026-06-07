@@ -23,14 +23,14 @@ const contentData: Record<string, { status: ListingStatus; seo: number; words: n
 }
 
 function statusBadge(status: ListingStatus) {
-  if (status === 'Published')    return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
+  if (status === 'Published')    return 'text-gold bg-gold/10 border-gold/20'
   if (status === 'Needs Review') return 'text-slate-400 bg-rose-500/10 border-rose-500/20'
-  return 'text-slate-400 bg-slate-800/50 border-slate-700'
+  return 'text-slate-400 bg-surface-2 border-line-strong'
 }
 
 function seoColor(score: number) {
-  if (score >= 85) return 'text-[#D4AF37]'
-  if (score >= 65) return 'text-[#D4AF37]'
+  if (score >= 85) return 'text-gold'
+  if (score >= 65) return 'text-gold'
   return 'text-slate-400'
 }
 
@@ -68,11 +68,11 @@ export default function AiManagerListingsPage() {
             Listings
           </h1>
           <div className="mt-2 flex flex-wrap gap-3">
-            <span className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1 text-xs">
+            <span className="rounded-xl border border-gold/20 bg-gold/10 px-3 py-1 text-xs">
               <span className="text-slate-500">Published </span>
-              <span className="font-semibold text-[#D4AF37]">{counts.Published}</span>
+              <span className="font-semibold text-gold">{counts.Published}</span>
             </span>
-            <span className="rounded-xl border border-slate-800 bg-slate-800/50 px-3 py-1 text-xs">
+            <span className="rounded-xl border border-line bg-surface-2 px-3 py-1 text-xs">
               <span className="text-slate-500">Draft </span>
               <span className="font-semibold text-slate-400">{counts.Draft}</span>
             </span>
@@ -93,15 +93,15 @@ export default function AiManagerListingsPage() {
 
       {/* Bulk AI actions */}
       <div className="mt-6 flex flex-wrap gap-2">
-        <button onClick={() => toast.success('Meta descriptions refreshed across listings')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('Meta descriptions refreshed across listings')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Refresh Meta Descriptions
         </button>
-        <button onClick={() => toast.success('SEO audit started for all listings')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('SEO audit started for all listings')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Check All SEO
         </button>
-        <button onClick={() => toast.success('AI summaries regenerating')} className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button onClick={() => toast.success('AI summaries regenerating')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
           <Sparkles className="h-3.5 w-3.5" />
           Regenerate Summaries
         </button>
@@ -116,7 +116,7 @@ export default function AiManagerListingsPage() {
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
                 ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
-                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
             {f}
@@ -125,10 +125,10 @@ export default function AiManagerListingsPage() {
       </div>
 
       {/* Table */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-800/50">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
         <table className="w-full min-w-[900px]">
           <thead>
-            <tr className="border-b border-slate-800">
+            <tr className="border-b border-line">
               {['Name', 'Area', 'Property Status', 'Content Status', 'SEO Score', 'Words', 'Images', 'Last Updated', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
                   {h}
@@ -136,7 +136,7 @@ export default function AiManagerListingsPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-line">
             {listings.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-sm text-slate-500">
@@ -145,7 +145,7 @@ export default function AiManagerListingsPage() {
               </tr>
             ) : (
               listings.map(({ prop, content }) => (
-                <tr key={prop.id} className="group transition hover:bg-slate-800/30">
+                <tr key={prop.id} className="group transition hover:bg-surface-2">
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2">
                       <Package className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
@@ -154,7 +154,7 @@ export default function AiManagerListingsPage() {
                   </td>
                   <td className="px-4 py-3.5 text-sm text-slate-400">{prop.area}</td>
                   <td className="px-4 py-3.5">
-                    <span className="inline-block rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm font-medium text-slate-400 capitalize">
+                    <span className="inline-block rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm font-medium text-slate-400 capitalize">
                       {prop.status.replace('_', ' ')}
                     </span>
                   </td>

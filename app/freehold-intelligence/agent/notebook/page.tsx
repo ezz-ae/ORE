@@ -190,8 +190,8 @@ export default function AgentNotebookPage() {
     <div className="flex h-[calc(100vh-56px)] overflow-hidden">
 
       {/* Sources sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-[200px] shrink-0 border-r border-slate-800 bg-[#0A0E14] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+      <aside className="hidden lg:flex lg:flex-col w-[200px] shrink-0 border-r border-line bg-app overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sources</span>
           <button onClick={() => setShowAddSrc(true)} className="text-slate-500 hover:text-slate-300 transition">
             <Plus className="h-3.5 w-3.5" />
@@ -199,28 +199,28 @@ export default function AgentNotebookPage() {
         </div>
 
         {showAddSrc && (
-          <div className="border-b border-slate-800 p-3 space-y-2">
+          <div className="border-b border-line p-3 space-y-2">
             <input
               type="text"
               placeholder="URL, keyword or text…"
               value={srcInput}
               onChange={(e) => setSrcInput(e.target.value)}
-              className="w-full rounded-[8px] border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-slate-600"
+              className="w-full rounded-[8px] border border-line-strong bg-surface-2 px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-line-strong"
             />
             <div className="flex gap-1 flex-wrap">
               {(['url', 'text', 'brochure', 'area', 'developer', 'project'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setSrcType(t)}
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium border transition ${srcType === t ? 'border-[#D4AF37]/40 text-[#D4AF37] bg-[#D4AF37]/10' : 'border-slate-700 text-slate-500'}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium border transition ${srcType === t ? 'border-gold/40 text-gold bg-gold/10' : 'border-line-strong text-slate-500'}`}
                 >
                   {t}
                 </button>
               ))}
             </div>
             <div className="flex gap-1">
-              <button onClick={addSource} className="flex-1 rounded-[8px] bg-[#D4AF37]/80 py-1 text-xs font-semibold text-black">Add</button>
-              <button onClick={() => setShowAddSrc(false)} className="rounded-[8px] border border-slate-700 px-2 py-1 text-xs text-slate-500">✕</button>
+              <button onClick={addSource} className="flex-1 rounded-[8px] bg-gold/80 py-1 text-xs font-semibold text-black">Add</button>
+              <button onClick={() => setShowAddSrc(false)} className="rounded-[8px] border border-line-strong px-2 py-1 text-xs text-slate-500">✕</button>
             </div>
           </div>
         )}
@@ -233,7 +233,7 @@ export default function AgentNotebookPage() {
               <div key={type}>
                 <div className="mt-2 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-slate-600">{type}</div>
                 {group.map((src) => (
-                  <div key={src.id} className="flex items-center gap-2 rounded-[8px] px-2 py-1.5 hover:bg-slate-800/50 cursor-pointer group">
+                  <div key={src.id} className="flex items-center gap-2 rounded-[8px] px-2 py-1.5 hover:bg-surface-2 cursor-pointer group">
                     <span className="text-sm">{src.icon}</span>
                     <span className="flex-1 truncate text-xs text-slate-400 group-hover:text-slate-200">{src.label}</span>
                   </div>
@@ -243,7 +243,7 @@ export default function AgentNotebookPage() {
           })}
         </div>
 
-        <div className="border-t border-slate-800 p-2">
+        <div className="border-t border-line p-2">
           <input
             type="file"
             ref={brochureRef}
@@ -251,18 +251,18 @@ export default function AgentNotebookPage() {
             className="hidden"
             onChange={() => toast.success('Brochure uploaded — analyzing')}
           />
-          <button onClick={() => brochureRef.current?.click()} className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
+          <button onClick={() => brochureRef.current?.click()} className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-line-strong px-3 py-2 text-xs text-slate-500 hover:border-line-strong hover:text-slate-400 transition">
             <Upload className="h-3 w-3" /> Upload brochure
           </button>
-          <button onClick={() => toast.success('Add a URL to your research')} className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-500 hover:border-slate-600 hover:text-slate-400 transition">
+          <button onClick={() => toast.success('Add a URL to your research')} className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-line-strong px-3 py-2 text-xs text-slate-500 hover:border-line-strong hover:text-slate-400 transition">
             <Link2 className="h-3 w-3" /> Add URL
           </button>
         </div>
       </aside>
 
       {/* Notes list */}
-      <aside className="hidden sm:flex sm:flex-col w-[220px] shrink-0 border-r border-slate-800 bg-[#0A0E14] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+      <aside className="hidden sm:flex sm:flex-col w-[220px] shrink-0 border-r border-line bg-app overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notes</span>
           <button onClick={() => setShowNewNote(true)} className="text-slate-500 hover:text-slate-300 transition">
             <Plus className="h-3.5 w-3.5" />
@@ -270,17 +270,17 @@ export default function AgentNotebookPage() {
         </div>
 
         {showNewNote && (
-          <div className="border-b border-slate-800 p-3 space-y-2">
+          <div className="border-b border-line p-3 space-y-2">
             <input
               type="text"
               placeholder="Note title…"
               value={newNoteTitle}
               onChange={(e) => setNewNoteTitle(e.target.value)}
-              className="w-full rounded-[8px] border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+              className="w-full rounded-[8px] border border-line-strong bg-surface-2 px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <div className="flex gap-1">
-              <button onClick={createNote} className="flex-1 rounded-[8px] bg-[#D4AF37]/80 py-1 text-xs font-semibold text-black">Create</button>
-              <button onClick={() => setShowNewNote(false)} className="rounded-[8px] border border-slate-700 px-2 py-1 text-xs text-slate-500">✕</button>
+              <button onClick={createNote} className="flex-1 rounded-[8px] bg-gold/80 py-1 text-xs font-semibold text-black">Create</button>
+              <button onClick={() => setShowNewNote(false)} className="rounded-[8px] border border-line-strong px-2 py-1 text-xs text-slate-500">✕</button>
             </div>
           </div>
         )}
@@ -290,7 +290,7 @@ export default function AgentNotebookPage() {
             <button
               key={n.id}
               onClick={() => { setActiveNote(n); setTab('chat'); setStudioOut(''); setStudioTpl(null) }}
-              className={`w-full rounded-[10px] px-3 py-2.5 text-left transition ${currentNote.id === n.id ? 'bg-slate-800/60' : 'hover:bg-slate-800/50'}`}
+              className={`w-full rounded-[10px] px-3 py-2.5 text-left transition ${currentNote.id === n.id ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
             >
               <div className={`text-sm font-medium ${currentNote.id === n.id ? 'text-white' : 'text-slate-400'}`}>{n.title}</div>
               <div className="mt-0.5 text-xs text-slate-500">{n.sources.length} sources · {n.chat.length / 2 | 0} chats</div>
@@ -303,19 +303,19 @@ export default function AgentNotebookPage() {
       <main className="flex flex-1 flex-col min-w-0 overflow-hidden">
 
         {/* Note header */}
-        <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-3">
-          <BookOpen className="h-4 w-4 text-[#D4AF37]/70 shrink-0" />
+        <div className="flex items-center gap-3 border-b border-line px-5 py-3">
+          <BookOpen className="h-4 w-4 text-gold/70 shrink-0" />
           <h2 className="text-sm font-semibold text-white flex-1 truncate">{currentNote.title}</h2>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setTab('chat')}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${tab === 'chat' ? 'bg-slate-800/60 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${tab === 'chat' ? 'bg-surface-2 text-white' : 'text-slate-400 hover:text-slate-300'}`}
             >
               <MessageSquare className="inline-block h-3 w-3 mr-1" />Chat
             </button>
             <button
               onClick={() => setTab('studio')}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${tab === 'studio' ? 'bg-slate-800/60 text-white' : 'text-slate-400 hover:text-slate-300'}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${tab === 'studio' ? 'bg-surface-2 text-white' : 'text-slate-400 hover:text-slate-300'}`}
             >
               <Sparkles className="inline-block h-3 w-3 mr-1" />Studio
             </button>
@@ -337,8 +337,8 @@ export default function AgentNotebookPage() {
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] rounded-[14px] px-4 py-2.5 ${
                     msg.role === 'user'
-                      ? 'bg-[#D4AF37]/15 text-slate-100'
-                      : 'border border-slate-800 bg-slate-800/50 text-slate-300'
+                      ? 'bg-gold/15 text-slate-100'
+                      : 'border border-line bg-surface-2 text-slate-300'
                   }`}>
                     <div className="text-sm leading-relaxed">{msg.text}</div>
                     <div className="mt-1 text-xs text-slate-500">{msg.ts}</div>
@@ -347,16 +347,16 @@ export default function AgentNotebookPage() {
               ))}
               {chatPending && (
                 <div className="flex justify-start">
-                  <div className="rounded-[14px] border border-slate-800 bg-slate-800/50 px-4 py-3">
-                    <span className="flex gap-1">{[0,1,2].map(i => <span key={i} className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]/50 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}</span>
+                  <div className="rounded-[14px] border border-line bg-surface-2 px-4 py-3">
+                    <span className="flex gap-1">{[0,1,2].map(i => <span key={i} className="h-1.5 w-1.5 rounded-full bg-gold/50 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}</span>
                   </div>
                 </div>
               )}
             </div>
 
             {/* Chat input */}
-            <div className="border-t border-slate-800 px-5 py-3">
-              <div className="flex items-center gap-2 rounded-[14px] border border-slate-700 bg-slate-800/50 px-4 py-2.5">
+            <div className="border-t border-line px-5 py-3">
+              <div className="flex items-center gap-2 rounded-[14px] border border-line-strong bg-surface-2 px-4 py-2.5">
                 <input
                   type="text"
                   placeholder="Ask about your sources…"
@@ -365,7 +365,7 @@ export default function AgentNotebookPage() {
                   onKeyDown={(e) => e.key === 'Enter' && sendChat()}
                   className="flex-1 bg-transparent text-sm text-white placeholder-slate-500 outline-none"
                 />
-                <button onClick={sendChat} disabled={chatPending} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#D4AF37]/80 text-black transition hover:bg-[#D4AF37] disabled:opacity-40">
+                <button onClick={sendChat} disabled={chatPending} className="flex h-7 w-7 items-center justify-center rounded-full bg-gold/80 text-black transition hover:bg-gold disabled:opacity-40">
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -385,8 +385,8 @@ export default function AgentNotebookPage() {
                   onClick={() => { setStudioTpl(tpl.id); setStudioOut('') }}
                   className={`flex items-center gap-2.5 rounded-[14px] border px-4 py-3 text-left transition ${
                     studioTpl === tpl.id
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:text-slate-300 hover:border-slate-700'
+                      ? 'border-gold/40 bg-gold/[0.07] text-white'
+                      : 'border-line bg-surface-2 text-slate-400 hover:text-slate-300 hover:border-line-strong'
                   }`}
                 >
                   <span className="text-lg">{tpl.icon}</span>
@@ -399,7 +399,7 @@ export default function AgentNotebookPage() {
               <button
                 onClick={generateStudio}
                 disabled={generating}
-                className="mt-4 flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-[#D4AF37]/90 disabled:opacity-50"
+                className="mt-4 flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50"
               >
                 <Sparkles className="h-4 w-4" />
                 {generating ? 'Generating…' : 'Generate'}
@@ -408,7 +408,7 @@ export default function AgentNotebookPage() {
 
             {studioOut && (
               <div className="mt-5">
-                <div className="rounded-[14px] border border-slate-800 bg-slate-800/50 px-5 py-4">
+                <div className="rounded-[14px] border border-line bg-surface-2 px-5 py-4">
                   <div className="whitespace-pre-wrap text-sm text-slate-300 leading-relaxed">{studioOut}</div>
                 </div>
 
@@ -425,7 +425,7 @@ export default function AgentNotebookPage() {
                           className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                             done
                               ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                              : 'border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300'
+                              : 'border-line-strong text-slate-400 hover:border-line-strong hover:text-slate-300'
                           }`}
                         >
                           <span>{conn.icon}</span>

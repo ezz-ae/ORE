@@ -44,10 +44,10 @@ interface ApiState {
 
 function statusBadge(status: string) {
   switch (status) {
-    case 'ACTIVE':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
-    case 'PAUSED':   return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
+    case 'ACTIVE':   return 'border-gold/25 bg-gold/10 text-gold'
+    case 'PAUSED':   return 'border-gold/25 bg-gold/10 text-gold'
     case 'DELETED':  return 'border-red-400/25 bg-red-400/10 text-red-300'
-    default:         return 'border-white/10 bg-slate-800/40 text-slate-500'
+    default:         return 'border-white/10 bg-surface-2 text-slate-500'
   }
 }
 
@@ -152,7 +152,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               <div className="text-sm font-semibold text-white">Error loading campaign</div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               {error.includes('not configured') && (
-                <Link href="/freehold-intelligence/integrations/meta" className="mt-2 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 hover:text-[#D4AF37]">
+                <Link href="/freehold-intelligence/integrations/meta" className="mt-2 inline-flex items-center gap-1 text-xs text-gold/80 hover:text-gold">
                   Set up Meta integration <ArrowUpRight className="h-3 w-3" />
                 </Link>
               )}
@@ -184,7 +184,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                 <button
                   onClick={() => campaignId && fetchData(campaignId)}
                   disabled={updating}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 text-sm text-slate-300 transition hover:bg-slate-800"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm text-slate-300 transition hover:bg-surface-2"
                 >
                   <RefreshCw className={`h-3 w-3 ${updating ? 'animate-spin' : ''}`} /> Refresh
                 </button>
@@ -193,7 +193,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('PAUSED')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gold/20 bg-gold/10 px-3 text-sm font-medium text-gold transition hover:bg-gold/20"
                   >
                     <Pause className="h-3 w-3" /> Pause
                   </button>
@@ -203,7 +203,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   <button
                     onClick={() => updateStatus('ACTIVE')}
                     disabled={updating}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-full border border-gold/20 bg-gold/10 px-3 text-sm font-medium text-gold transition hover:bg-gold/20"
                   >
                     <Play className="h-3 w-3" /> Activate
                   </button>
@@ -239,7 +239,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                   { label: 'Leads',       value: leads,                        icon: Users },
                   { label: 'CPL',         value: cpl,                          icon: DollarSign },
                 ].map((m) => (
-                  <div key={m.label} className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+                  <div key={m.label} className="rounded-[16px] border border-line bg-surface p-4">
                     <div className="text-xs text-slate-500">{m.label}</div>
                     <div className="mt-2 text-xl font-semibold text-white leading-tight">{m.value}</div>
                   </div>
@@ -254,7 +254,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               )}
             </section>
           ) : (
-            <div className="mt-8 rounded-[18px] border border-slate-800 bg-slate-900 p-5 text-center text-sm text-slate-400">
+            <div className="mt-8 rounded-[18px] border border-line bg-surface p-5 text-center text-sm text-slate-400">
               No insights yet — data appears after the campaign has delivered impressions.
             </div>
           )}
@@ -266,7 +266,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
               <h2 className="mt-2 text-xl font-semibold text-white">{data.adSets.length} ad set{data.adSets.length !== 1 ? 's' : ''}</h2>
               <div className="mt-5 space-y-3">
                 {data.adSets.map((adSet) => (
-                  <div key={adSet.id} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+                  <div key={adSet.id} className="rounded-[18px] border border-line bg-surface p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-semibold text-white">{adSet.name}</div>
@@ -280,14 +280,14 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ campa
                     </div>
 
                     {adSet.ads.length > 0 && (
-                      <div className="mt-4 border-t border-slate-800 pt-4 space-y-2">
+                      <div className="mt-4 border-t border-line pt-4 space-y-2">
                         {adSet.ads.map((ad) => (
                           <div key={ad.id} className="flex items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-600'}`} />
+                              <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${ad.status === 'ACTIVE' ? 'text-gold' : 'text-slate-600'}`} />
                               <span className="text-slate-300">{ad.name}</span>
                             </div>
-                            <span className={`text-xs font-medium ${ad.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-500'}`}>{ad.status}</span>
+                            <span className={`text-xs font-medium ${ad.status === 'ACTIVE' ? 'text-gold' : 'text-slate-500'}`}>{ad.status}</span>
                           </div>
                         ))}
                       </div>

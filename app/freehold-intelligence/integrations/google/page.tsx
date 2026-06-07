@@ -151,7 +151,7 @@ export default function GoogleAdsPage() {
       {/* Credentials form */}
       <div className="mb-6 space-y-3">
         {FIELDS.map(({ key, label, placeholder, mono, secret, hint }) => (
-          <div key={key} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+          <div key={key} className="rounded-[14px] border border-line bg-surface p-4">
             <div className="mb-1 flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-slate-300">{label}</span>
               {creds[key] && (
@@ -168,7 +168,7 @@ export default function GoogleAdsPage() {
                 placeholder={placeholder}
                 value={creds[key]}
                 onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
-                className={`w-full rounded-[9px] border border-slate-800 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-blue-400/50 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
+                className={`w-full rounded-[9px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-blue-400/50 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
               />
               {secret && (
                 <button onClick={() => toggleShow(key)}
@@ -222,7 +222,7 @@ export default function GoogleAdsPage() {
               { label: 'Impressions',   value: `${(totalImpressions / 1000).toFixed(1)}K`, Icon: BarChart2,         color: 'text-violet-400'  },
               { label: 'Conversions',   value: totalConversions.toString(),                 Icon: TrendingUp,        color: 'text-emerald-400' },
             ].map(({ label, value, Icon, color }) => (
-              <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+              <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
                 <div className="mt-2 text-[18px] font-semibold text-white">{value}</div>
                 <div className="mt-0.5 text-xs text-slate-500">{label}</div>
@@ -231,7 +231,7 @@ export default function GoogleAdsPage() {
           </div>
 
           {/* Campaigns table */}
-          <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
             {MOCK_CAMPAIGNS.map((c) => {
               const budgetPct = pct(c.spend, c.budget)
               const ctr       = c.impressions > 0 ? ((c.clicks / c.impressions) * 100).toFixed(2) : '0.00'
@@ -241,7 +241,7 @@ export default function GoogleAdsPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-surface-3'}`} />
                         <span className="text-sm font-medium text-slate-100 truncate">{c.name}</span>
                       </div>
                       <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
@@ -256,7 +256,7 @@ export default function GoogleAdsPage() {
                     </div>
                   </div>
                   {c.status === 'ENABLED' && (
-                    <div className="mt-2.5 h-1 w-full rounded-full bg-slate-700">
+                    <div className="mt-2.5 h-1 w-full rounded-full bg-surface-3">
                       <div
                         className={`h-1 rounded-full transition-all ${budgetPct >= 90 ? 'bg-red-400' : budgetPct >= 75 ? 'bg-amber-400' : 'bg-blue-400'}`}
                         style={{ width: `${budgetPct}%` }}

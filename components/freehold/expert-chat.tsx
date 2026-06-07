@@ -40,9 +40,9 @@ const ACTION_ICON: Record<ExpertAction['kind'], React.ElementType> = {
   prompt: ArrowRight, review: Eye, launch: Rocket, edit: Pencil, approve: ThumbsUp, navigate: ArrowRight,
 }
 function actionClass(style?: string) {
-  if (style === 'primary') return 'bg-[#D4AF37] text-[#06080A] hover:bg-[#E8C657] border-transparent'
+  if (style === 'primary') return 'bg-gold text-[#06080A] hover:bg-[#E8C657] border-transparent'
   if (style === 'danger') return 'border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/20'
-  return 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-[#D4AF37]/40 hover:text-white'
+  return 'border-line-strong bg-surface-2 text-slate-300 hover:border-gold/40 hover:text-white'
 }
 
 export function ExpertChat() {
@@ -163,10 +163,10 @@ export function ExpertChat() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open Freehold Expert"
-        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-slate-800 bg-[#0A0E14] py-4 transition hover:bg-slate-800/50 md:flex"
+        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-line bg-app py-4 transition hover:bg-surface-2 md:flex"
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
-          <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-gold/15 ring-1 ring-gold/30">
+          <Sparkles className="h-3.5 w-3.5 text-gold" />
         </span>
         <span className="mt-1 text-xs font-semibold tracking-wider text-slate-500 [writing-mode:vertical-rl]">
           EXPERT
@@ -187,7 +187,7 @@ export function ExpertChat() {
 
       <aside
         style={{ width }}
-        className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-slate-800 bg-[#0A0E14] md:static md:z-auto md:w-auto"
+        className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-line bg-app md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}
         <div
@@ -196,14 +196,14 @@ export function ExpertChat() {
           onPointerUp={onDragEnd}
           className="absolute left-0 top-0 z-10 hidden h-full w-1.5 -translate-x-1/2 cursor-col-resize md:block"
         >
-          <div className="mx-auto h-full w-px bg-slate-800 transition group-hover:bg-[#D4AF37]/40" />
+          <div className="mx-auto h-full w-px bg-surface-2 transition group-hover:bg-gold/40" />
         </div>
 
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
-              <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-gold/15 ring-1 ring-gold/30">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
             </span>
             <div>
               <div className="text-sm font-semibold text-slate-100">Freehold Expert</div>
@@ -212,11 +212,11 @@ export function ExpertChat() {
           </div>
           <div className="flex items-center gap-0.5">
             {messages.length > 0 && (
-              <button onClick={reset} title="New chat" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200">
+              <button onClick={reset} title="New chat" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
                 <Plus className="h-4 w-4" />
               </button>
             )}
-            <button onClick={() => setOpen(false)} title="Collapse (⌘J)" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200">
+            <button onClick={() => setOpen(false)} title="Collapse (⌘J)" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
               <PanelRightClose className="hidden h-4 w-4 md:block" />
               <X className="h-4 w-4 md:hidden" />
             </button>
@@ -227,7 +227,7 @@ export function ExpertChat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-3.5 py-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col">
-              <div className="mb-4 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05] p-4">
+              <div className="mb-4 rounded-xl border border-gold/15 bg-gold/[0.05] p-4">
                 <p className="text-sm leading-relaxed text-slate-300">
                   I'm your full-system partner. Ask me to plan, design a landing page, pick colours,
                   draft a campaign, review or launch — I'll build it right here in the conversation,
@@ -237,7 +237,7 @@ export function ExpertChat() {
               <div className="grid gap-2">
                 {STARTERS.map((q) => (
                   <button key={q} onClick={() => send(q)}
-                    className="rounded-xl border border-slate-800 bg-slate-800/40 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.06] hover:text-white">
+                    className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white">
                     {q}
                   </button>
                 ))}
@@ -247,7 +247,7 @@ export function ExpertChat() {
             <div className="grid gap-4">
               {messages.map((m, i) =>
                 m.role === 'user' ? (
-                  <div key={i} className="ml-auto max-w-[90%] rounded-xl rounded-br-md border border-slate-700 bg-slate-800/60 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
+                  <div key={i} className="ml-auto max-w-[90%] rounded-xl rounded-br-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
                     {m.content}
                   </div>
                 ) : (
@@ -259,8 +259,8 @@ export function ExpertChat() {
                 ),
               )}
               {pending && (
-                <div className="mr-auto flex items-center gap-2 rounded-xl rounded-bl-md border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-3 text-sm text-slate-300">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#D4AF37]" />
+                <div className="mr-auto flex items-center gap-2 rounded-xl rounded-bl-md border border-gold/20 bg-gold/[0.06] px-4 py-3 text-sm text-slate-300">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gold" />
                   Reading the system & building…
                 </div>
               )}
@@ -269,8 +269,8 @@ export function ExpertChat() {
         </div>
 
         {/* Composer */}
-        <div className="shrink-0 border-t border-slate-800 p-3">
-          <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-2 transition-colors focus-within:border-[#D4AF37]/40 focus-within:bg-slate-800">
+        <div className="shrink-0 border-t border-line p-3">
+          <div className="rounded-xl border border-line-strong bg-surface-2 p-2 transition-colors focus-within:border-gold/40 focus-within:bg-surface-2">
             <div className="flex items-end gap-2 px-2 py-1">
               <textarea
                 ref={taRef} value={value} onChange={(e) => setValue(e.target.value)}
@@ -279,7 +279,7 @@ export function ExpertChat() {
                 className="flex-1 resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
               <button onClick={() => send()} disabled={!value.trim() || pending} aria-label="Send"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
               </button>
             </div>
@@ -304,25 +304,25 @@ function BlockView({
   switch (block.type) {
     case 'text':
       return (
-        <div className="rounded-xl rounded-bl-md border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
+        <div className="rounded-xl rounded-bl-md border border-gold/15 bg-gold/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
           <div className="whitespace-pre-wrap">{block.content}</div>
         </div>
       )
 
     case 'plan':
       return (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
-          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]">
+        <div className="rounded-xl border border-line bg-surface-2 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold">
             <ListChecks className="h-3.5 w-3.5" /> {block.title ?? 'Plan'}
           </div>
           <ol className="grid gap-3">
             {block.steps.map((s, i) => (
               <li key={i} className="flex gap-3">
-                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4AF37]/15 text-xs font-bold text-[#D4AF37]">{i + 1}</span>
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gold/15 text-xs font-bold text-gold">{i + 1}</span>
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-slate-200">{s.step}</div>
                   {s.detail && <div className="mt-0.5 text-xs leading-relaxed text-slate-400">{s.detail}</div>}
-                  {s.owner && <div className="mt-1 inline-block rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">{s.owner}</div>}
+                  {s.owner && <div className="mt-1 inline-block rounded-full bg-surface-3 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-slate-400">{s.owner}</div>}
                 </div>
               </li>
             ))}
@@ -355,14 +355,14 @@ function BlockView({
 
     case 'color':
       return (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+        <div className="rounded-xl border border-line bg-surface-2 p-4">
           {block.label && <div className="mb-3 text-sm font-medium text-slate-300">{block.label}</div>}
           <div className="flex flex-wrap gap-3">
             {block.colors.map((c) => (
               <button key={c} onClick={() => onAction(`Use the accent colour ${c} — apply it and show the result.`)}
                 title={c}
                 className="group flex flex-col items-center gap-1.5">
-                <span className="h-10 w-10 rounded-full ring-2 ring-slate-700 transition group-hover:ring-[#D4AF37]/60" style={{ backgroundColor: c }} />
+                <span className="h-10 w-10 rounded-full ring-2 ring-line-strong transition group-hover:ring-gold/60" style={{ backgroundColor: c }} />
                 <span className="text-xs font-medium text-slate-500 group-hover:text-slate-300">{c}</span>
               </button>
             ))}
@@ -378,7 +378,7 @@ function BlockView({
         block.cta ? `\nCTA: ${block.cta}` : '',
       ].filter(Boolean).join('\n')
       return (
-        <div className="overflow-hidden rounded-xl border border-slate-700 bg-[#0D1117]">
+        <div className="overflow-hidden rounded-xl border border-line-strong bg-ink">
           {/* Hero preview */}
           <div className="relative px-5 py-6" style={{ background: `linear-gradient(135deg, ${accent}1A, transparent 70%)` }}>
             <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>Landing preview</div>
@@ -391,27 +391,27 @@ function BlockView({
             )}
           </div>
           {/* Sections */}
-          <div className="grid gap-px bg-slate-800">
+          <div className="grid gap-px bg-surface-2">
             {block.sections.map((s, i) => (
-              <div key={i} className="bg-[#0D1117] px-5 py-3">
+              <div key={i} className="bg-ink px-5 py-3">
                 <div className="text-sm font-semibold text-slate-200">{s.heading}</div>
                 <div className="mt-1 text-sm leading-relaxed text-slate-400">{s.body}</div>
               </div>
             ))}
           </div>
           {/* Toolbar */}
-          <div className="flex items-center gap-2 border-t border-slate-800 px-3 py-2.5">
+          <div className="flex items-center gap-2 border-t border-line px-3 py-2.5">
             <button onClick={() => onAction('Edit this landing — rewrite the hero headline 3 ways and tighten the sections.')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
               <Pencil className="h-3.5 w-3.5" /> Edit
             </button>
             <button onClick={() => onAction('Launch this landing — give me the publish + tracking + ad-request plan.')}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#D4AF37] px-3 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90">
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90">
               <Rocket className="h-3.5 w-3.5" /> Launch
             </button>
             <button onClick={() => onCopy(full, `landing-${idx}`)}
               className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:text-slate-200">
-              {copied === `landing-${idx}` ? <Check className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied === `landing-${idx}` ? <Check className="h-3.5 w-3.5 text-gold" /> : <Copy className="h-3.5 w-3.5" />}
               {copied === `landing-${idx}` ? 'Copied' : 'Copy'}
             </button>
           </div>
@@ -421,21 +421,21 @@ function BlockView({
 
     case 'media':
       return (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/30 p-4">
+        <div className="rounded-xl border border-line bg-surface-2 p-4">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <ImageIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> Media brief
-            {block.aspect && <span className="ml-1 rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-400">{block.aspect}</span>}
+            <ImageIcon className="h-3.5 w-3.5 text-gold" /> Media brief
+            {block.aspect && <span className="ml-1 rounded bg-surface-3 px-1.5 py-0.5 text-xs text-slate-400">{block.aspect}</span>}
           </div>
           <div className="text-sm font-medium text-slate-200">{block.label}</div>
-          <div className="mt-2 rounded-lg border border-slate-700 bg-[#0A0E14] px-3 py-2.5 text-sm leading-relaxed text-slate-400">{block.prompt}</div>
+          <div className="mt-2 rounded-lg border border-line-strong bg-app px-3 py-2.5 text-sm leading-relaxed text-slate-400">{block.prompt}</div>
           <div className="mt-3 flex gap-2">
             <button onClick={() => onCopy(block.prompt, `media-${idx}`)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
-              {copied === `media-${idx}` ? <Check className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Copy className="h-3.5 w-3.5" />}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              {copied === `media-${idx}` ? <Check className="h-3.5 w-3.5 text-gold" /> : <Copy className="h-3.5 w-3.5" />}
               {copied === `media-${idx}` ? 'Copied prompt' : 'Copy prompt'}
             </button>
             <button onClick={() => onAction(`Refine this media brief: "${block.label}". Give 3 stronger variations of the prompt.`)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
               <Sparkles className="h-3.5 w-3.5" /> Refine
             </button>
           </div>
@@ -445,8 +445,8 @@ function BlockView({
     case 'path':
       return (
         <Link href={block.href}
-          className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-800/30 px-4 py-3 transition-colors hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.06]">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#D4AF37]/15 text-[#D4AF37]">
+          className="group flex items-center gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3 transition-colors hover:border-gold/30 hover:bg-gold/[0.06]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gold/15 text-gold">
             <ArrowRight className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">

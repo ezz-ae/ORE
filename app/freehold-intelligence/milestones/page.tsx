@@ -12,7 +12,7 @@ export default async function MilestonesPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Flag className="h-3.5 w-3.5" /> Milestones
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">

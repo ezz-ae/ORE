@@ -12,10 +12,10 @@ interface AdsData {
 }
 
 const STRENGTH_CONFIG: Record<GoogleAdStrength, { label: string; color: string }> = {
-  PENDING:   { label: 'Pending',   color: 'text-slate-500 bg-slate-800/40 border-slate-800'          },
+  PENDING:   { label: 'Pending',   color: 'text-slate-500 bg-surface-2 border-line'          },
   POOR:      { label: 'Poor',      color: 'text-red-300 bg-red-400/10 border-red-400/20'               },
   AVERAGE:   { label: 'Average',   color: 'text-[#FBBC04] bg-[#FBBC04]/10 border-[#FBBC04]/20'         },
-  GOOD:      { label: 'Good',      color: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'   },
+  GOOD:      { label: 'Good',      color: 'text-gold bg-gold/10 border-gold/20'   },
   EXCELLENT: { label: 'Excellent', color: 'text-[#4285F4] bg-[#4285F4]/10 border-[#4285F4]/20'         },
 }
 
@@ -28,7 +28,7 @@ function fmtMicros(m: number) {
 function strengthBar(strength: GoogleAdStrength) {
   const map: Record<GoogleAdStrength, number> = { PENDING: 0, POOR: 20, AVERAGE: 50, GOOD: 75, EXCELLENT: 100 }
   const color: Record<GoogleAdStrength, string> = {
-    PENDING: 'bg-white/20', POOR: 'bg-red-400', AVERAGE: 'bg-[#FBBC04]', GOOD: 'bg-[#D4AF37]', EXCELLENT: 'bg-[#4285F4]',
+    PENDING: 'bg-white/20', POOR: 'bg-red-400', AVERAGE: 'bg-[#FBBC04]', GOOD: 'bg-gold', EXCELLENT: 'bg-[#4285F4]',
   }
   return { width: map[strength], color: color[strength] }
 }
@@ -86,7 +86,7 @@ export default function GoogleAdsLibraryPage() {
           <button
             onClick={() => fetchAds(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -145,7 +145,7 @@ export default function GoogleAdsLibraryPage() {
                     'rounded-[14px] border p-3 text-left transition',
                     filter === s
                       ? 'border-[#4285F4]/30 bg-[#4285F4]/[0.06]'
-                      : 'border-slate-800 bg-slate-900 hover:border-white/20',
+                      : 'border-line bg-surface hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="text-[20px] font-semibold text-white">{count}</div>
@@ -164,14 +164,14 @@ export default function GoogleAdsLibraryPage() {
               const bar  = strengthBar(ad.adStrength)
               const cost = fmtMicros(ad.metrics?.costMicros ?? 0)
               return (
-                <div key={ad.id} className="rounded-[22px] border border-slate-800 bg-slate-900 p-5">
+                <div key={ad.id} className="rounded-[22px] border border-line bg-surface p-5">
                   {/* Top bar */}
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${cfg.color}`}>
                         {cfg.label}
                       </span>
-                      <span className={`h-1.5 w-1.5 rounded-full ${ad.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-white/20'}`} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${ad.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'}`} />
                       <span className="text-sm text-slate-500">{ad.status}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -192,7 +192,7 @@ export default function GoogleAdsLibraryPage() {
                       <span className="text-slate-500">Ad strength</span>
                       <span className={cfg.color.split(' ')[0]}>{cfg.label}</span>
                     </div>
-                    <div className="h-1 rounded-full bg-slate-800/50">
+                    <div className="h-1 rounded-full bg-surface-2">
                       <div className={`h-full rounded-full transition-all ${bar.color}`} style={{ width: `${bar.width}%` }} />
                     </div>
                   </div>
@@ -209,7 +209,7 @@ export default function GoogleAdsLibraryPage() {
                             <span className="shrink-0 text-xs text-slate-600 w-4 text-right">{i + 1}</span>
                             <span className="text-xs text-slate-200">{h.text}</span>
                             {h.pinnedField && (
-                              <span className="rounded bg-slate-800/50 px-1 py-0.5 text-[9px] text-slate-500">pinned</span>
+                              <span className="rounded bg-surface-2 px-1 py-0.5 text-[9px] text-slate-500">pinned</span>
                             )}
                           </div>
                         ))}
@@ -234,12 +234,12 @@ export default function GoogleAdsLibraryPage() {
 
                   {/* Final URL */}
                   {ad.finalUrls[0] && (
-                    <div className="mt-4 border-t border-slate-800 pt-3">
+                    <div className="mt-4 border-t border-line pt-3">
                       <span className="text-xs font-mono text-slate-600 truncate block">{ad.finalUrls[0]}</span>
                     </div>
                   )}
 
-                  <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs font-mono text-slate-600">{ad.id}</div>
+                  <div className="mt-3 border-t border-line pt-2.5 text-xs font-mono text-slate-600">{ad.id}</div>
                 </div>
               )
             })}
@@ -249,7 +249,7 @@ export default function GoogleAdsLibraryPage() {
 
       {/* Empty state */}
       {!loading && !isConfigError && ads.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-14 text-center">
+        <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Monitor className="mx-auto h-8 w-8 text-[#4285F4]/40 mb-4" />
           <div className="text-[18px] font-semibold text-white">No ads yet</div>
           <p className="mt-2 text-[14px] text-slate-500">Create a campaign and add Responsive Search Ads, or generate copy with AI first.</p>

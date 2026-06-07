@@ -25,10 +25,10 @@ type StatusFilter = 'All' | 'ACTIVE' | 'PAUSED' | 'DELETED'
 
 function statusConfig(status: string) {
   switch (status) {
-    case 'ACTIVE':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]',   label: 'Active'  }
-    case 'PAUSED':  return { dot: 'bg-white/35',   text: 'text-slate-400',  badge: 'border-white/[0.10] bg-slate-800/40 text-slate-400',        label: 'Paused'  }
+    case 'ACTIVE':  return { dot: 'bg-gold',  text: 'text-gold', badge: 'border-gold/25 bg-gold/10 text-gold',   label: 'Active'  }
+    case 'PAUSED':  return { dot: 'bg-white/35',   text: 'text-slate-400',  badge: 'border-white/[0.10] bg-surface-2 text-slate-400',        label: 'Paused'  }
     case 'DELETED': return { dot: 'bg-red-400/70', text: 'text-red-300',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',             label: 'Deleted' }
-    default:        return { dot: 'bg-white/30',    text: 'text-slate-500',   badge: 'border-white/10 bg-slate-800/40 text-slate-500',            label: status    }
+    default:        return { dot: 'bg-white/30',    text: 'text-slate-500',   badge: 'border-white/10 bg-surface-2 text-slate-500',            label: status    }
   }
 }
 
@@ -63,12 +63,12 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
   }, [campaigns, statusFilter])
 
   const activePillClass = (key: StatusFilter) => {
-    if (statusFilter !== key) return 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300'
+    if (statusFilter !== key) return 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
     switch (key) {
-      case 'ACTIVE':  return 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-      case 'PAUSED':  return 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+      case 'ACTIVE':  return 'border-emerald-400/40 bg-gold/10 text-gold'
+      case 'PAUSED':  return 'border-gold/40 bg-gold/10 text-gold'
       case 'DELETED': return 'border-red-400/40 bg-red-400/10 text-red-300'
-      default:        return 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+      default:        return 'border-gold/40 bg-gold/10 text-gold'
     }
   }
 
@@ -106,7 +106,7 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
             <Link
               key={campaign.id}
               href={`/freehold-intelligence/lead-machine/campaigns/${campaign.id}`}
-              className="group flex items-start justify-between gap-4 rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
+              className="group flex items-start justify-between gap-4 rounded-[20px] border border-line bg-surface p-5 transition hover:border-gold/25"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -123,21 +123,21 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
                     <span className="text-slate-500">Impressions: <span className="text-slate-300">{parseInt(campaign.insights.impressions ?? '0').toLocaleString()}</span></span>
                     <span className="text-slate-500">Clicks: <span className="text-slate-300">{parseInt(campaign.insights.clicks ?? '0').toLocaleString()}</span></span>
                     <span className="text-slate-500">Spend: <span className="text-slate-300">{fmtSpend(campaign.insights.spend)}</span></span>
-                    <span className="text-slate-500">Leads: <span className="font-semibold text-[#D4AF37]">{leads}</span></span>
+                    <span className="text-slate-500">Leads: <span className="font-semibold text-gold">{leads}</span></span>
                     <span className="text-slate-500">CPL: <span className="text-slate-300">{cpl}</span></span>
                   </div>
                 )}
               </div>
-              <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
+              <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />
             </Link>
           )
         })}
       </div>
 
       {filtered.length === 0 && (
-        <div className="mt-8 rounded-[22px] border border-slate-800 bg-slate-800/40 px-6 py-12 text-center text-sm text-slate-500">
+        <div className="mt-8 rounded-[22px] border border-line bg-surface-2 px-6 py-12 text-center text-sm text-slate-500">
           No campaigns match this filter.{' '}
-          <button type="button" onClick={() => setStatusFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">
+          <button type="button" onClick={() => setStatusFilter('All')} className="ml-1 text-gold/60 hover:text-gold">
             Show all
           </button>
         </div>

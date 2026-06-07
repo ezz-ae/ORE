@@ -187,7 +187,7 @@ export default function GoogleCampaignNewPage() {
           )}
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
           >
             All campaigns
           </Link>
@@ -225,13 +225,13 @@ export default function GoogleCampaignNewPage() {
           const active = step === n
           return (
             <div key={label} className="flex items-center gap-2">
-              {i > 0 && <div className={`h-px w-6 ${done ? 'bg-[#4285F4]/50' : 'bg-slate-800/50'}`} />}
+              {i > 0 && <div className={`h-px w-6 ${done ? 'bg-[#4285F4]/50' : 'bg-surface-2'}`} />}
               <div className="flex items-center gap-1.5">
                 <div className={[
                   'flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold',
                   done   ? 'bg-[#4285F4] text-white'   :
                   active ? 'bg-[#4285F4]/20 text-[#4285F4] border border-[#4285F4]/40' :
-                           'bg-slate-800/40 text-slate-500',
+                           'bg-surface-2 text-slate-500',
                 ].join(' ')}>
                   {done ? <Check className="h-3.5 w-3.5" /> : n}
                 </div>
@@ -255,7 +255,7 @@ export default function GoogleCampaignNewPage() {
               <select
                 value={form.listingId}
                 onChange={(e) => onListingChange(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -280,7 +280,7 @@ export default function GoogleCampaignNewPage() {
               value={form.campaignName}
               onChange={(e) => patch({ campaignName: e.target.value })}
               placeholder="e.g. Palm Jumeirah Investor — Search"
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
 
@@ -302,7 +302,7 @@ export default function GoogleCampaignNewPage() {
                     'rounded-[14px] border p-4 text-left transition',
                     form.type === t.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                      : 'border-slate-800 bg-slate-900 hover:border-white/20',
+                      : 'border-line bg-surface hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export default function GoogleCampaignNewPage() {
               value={form.finalUrl}
               onChange={(e) => patch({ finalUrl: e.target.value })}
               placeholder="https://your-landing-page.com/property"
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
         </section>
@@ -342,7 +342,7 @@ export default function GoogleCampaignNewPage() {
               min={50}
               value={form.dailyBudgetAED}
               onChange={(e) => patch({ dailyBudgetAED: Number(e.target.value) })}
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-sm text-slate-500">Minimum AED 50/day. Monthly cap = daily × 30.4</p>
             <div className="mt-3 flex gap-2">
@@ -353,7 +353,7 @@ export default function GoogleCampaignNewPage() {
                   className={`rounded-[10px] border px-3 py-1.5 text-xs transition ${
                     form.dailyBudgetAED === v
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/10 text-white'
-                      : 'border-slate-800 bg-slate-900 text-slate-500 hover:text-slate-300'
+                      : 'border-line bg-surface text-slate-500 hover:text-slate-300'
                   }`}
                 >
                   AED {v}
@@ -375,7 +375,7 @@ export default function GoogleCampaignNewPage() {
                     'w-full rounded-[14px] border p-4 text-left transition',
                     form.biddingStrategy === s.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                      : 'border-slate-800 bg-slate-900 hover:border-white/20',
+                      : 'border-line bg-surface hover:border-white/20',
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between">
@@ -402,7 +402,7 @@ export default function GoogleCampaignNewPage() {
                 min={10}
                 value={form.targetCpaAED}
                 onChange={(e) => patch({ targetCpaAED: Number(e.target.value) })}
-                className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               />
               <p className="mt-1 text-sm text-slate-500">Target cost per lead acquisition in AED</p>
             </div>
@@ -416,7 +416,7 @@ export default function GoogleCampaignNewPage() {
               type="date"
               value={form.startDate}
               onChange={(e) => patch({ startDate: e.target.value })}
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-sm text-slate-500">Leave blank to start from today</p>
           </div>
@@ -447,7 +447,7 @@ export default function GoogleCampaignNewPage() {
                       'rounded-[14px] border p-4 text-left transition',
                       selected
                         ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.07]'
-                        : 'border-slate-800 bg-slate-900 hover:border-white/20',
+                        : 'border-line bg-surface hover:border-white/20',
                     ].join(' ')}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -458,7 +458,7 @@ export default function GoogleCampaignNewPage() {
                         <div className="mt-0.5 text-xs text-slate-500">{theme.keywords.length} keywords</div>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-medium ${
-                        theme.intent === 'high' ? 'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20' : 'bg-sky-400/10 text-slate-400 border-sky-400/20'
+                        theme.intent === 'high' ? 'bg-gold/10 text-[#F8E7AE] border-gold/20' : 'bg-sky-400/10 text-slate-400 border-sky-400/20'
                       }`}>
                         {theme.intent}
                       </span>
@@ -482,7 +482,7 @@ export default function GoogleCampaignNewPage() {
               onChange={(e) => patch({ customKeywords: e.target.value })}
               rows={6}
               placeholder={'[buy villa dubai]\n"off plan property"\nbuy apartment dubai hills'}
-              className="w-full resize-none rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-mono text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
+              className="w-full resize-none rounded-[14px] border border-line bg-surface px-4 py-3 text-xs font-mono text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
             <p className="mt-1 text-sm text-slate-500">
               [exact] · &quot;phrase&quot; · broad match. Google match type syntax.
@@ -494,7 +494,7 @@ export default function GoogleCampaignNewPage() {
       {/* ── Step 4: Ad Copy ───────────────────────────────────────────────── */}
       {step === 4 && (
         <section className="mt-10 space-y-6">
-          <div className="rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3.5 text-xs text-slate-400">
+          <div className="rounded-[16px] border border-line bg-surface px-4 py-3.5 text-xs text-slate-400">
             Google RSA: up to 15 headlines (30 chars each) and 4 descriptions (90 chars each). Google rotates them automatically.
             <Link
               href="/freehold-intelligence/lead-machine/google/ads/generate"
@@ -520,8 +520,8 @@ export default function GoogleCampaignNewPage() {
                       onChange={(e) => updateHeadline(i, e.target.value)}
                       placeholder={`Headline ${i + 1}${i < 3 ? ' (recommended)' : ''}`}
                       maxLength={35}
-                      className={`w-full rounded-[12px] border bg-slate-900 px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
-                        over ? 'border-red-400/40 focus:border-red-400/60' : 'border-slate-800 focus:border-[#4285F4]/40'
+                      className={`w-full rounded-[12px] border bg-surface px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
+                        over ? 'border-red-400/40 focus:border-red-400/60' : 'border-line focus:border-[#4285F4]/40'
                       }`}
                     />
                     <span className={`absolute right-3 top-2.5 text-xs tabular-nums ${
@@ -551,8 +551,8 @@ export default function GoogleCampaignNewPage() {
                       placeholder={`Description ${i + 1}`}
                       rows={2}
                       maxLength={95}
-                      className={`w-full resize-none rounded-[12px] border bg-slate-900 px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
-                        over ? 'border-red-400/40' : 'border-slate-800 focus:border-[#4285F4]/40'
+                      className={`w-full resize-none rounded-[12px] border bg-surface px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
+                        over ? 'border-red-400/40' : 'border-line focus:border-[#4285F4]/40'
                       }`}
                     />
                     <span className={`absolute right-3 top-2.5 text-xs tabular-nums ${
@@ -582,7 +582,7 @@ export default function GoogleCampaignNewPage() {
             { label: 'Descriptions',     value: `${form.descriptions.filter(Boolean).length} descriptions` },
             { label: 'Landing URL',      value: form.finalUrl || '(none set)' },
           ].map((row) => (
-            <div key={row.label} className="flex items-start gap-4 rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3">
+            <div key={row.label} className="flex items-start gap-4 rounded-[14px] border border-line bg-surface px-4 py-3">
               <span className="w-28 shrink-0 text-sm text-slate-500">{row.label}</span>
               <span className="text-sm text-white font-medium truncate">{row.value}</span>
             </div>
@@ -606,7 +606,7 @@ export default function GoogleCampaignNewPage() {
         <button
           onClick={() => setStep((s) => Math.max(1, s - 1) as WizardStep)}
           disabled={step === 1}
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-400 transition hover:text-white disabled:opacity-30"
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition hover:text-white disabled:opacity-30"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back
         </button>

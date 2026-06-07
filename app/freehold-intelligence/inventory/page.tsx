@@ -25,7 +25,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
+      return 'bg-gold/10 text-gold border-gold/20'
     case 'off_plan':
       return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
     case 'under_construction':
@@ -35,7 +35,7 @@ function statusBadge(status: PropertyStatus) {
     case 'coming_soon':
       return 'bg-violet-400/10 text-slate-400 border-violet-400/20'
     default:
-      return 'bg-slate-800/50 text-slate-400 border-slate-800'
+      return 'bg-surface-2 text-slate-400 border-line'
   }
 }
 
@@ -53,7 +53,7 @@ function statusLabel(status: PropertyStatus): string {
 function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':
-      return 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20'
+      return 'bg-gold/10 text-gold border-gold/20'
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
@@ -73,8 +73,8 @@ function landingLabel(status: LandingStatus): string {
 }
 
 function readinessBar(value: number) {
-  if (value >= 80) return 'bg-[#D4AF37]'
-  if (value >= 50) return 'bg-[#D4AF37]'
+  if (value >= 80) return 'bg-gold'
+  if (value >= 50) return 'bg-gold'
   return 'bg-red-400'
 }
 
@@ -90,15 +90,15 @@ const FILTERS: { value: FilterStatus; label: string }[] = [
 
 const VERDICT_META: Record<AdVerdict, { label: string; cls: string; Icon: typeof Rocket }> = {
   scale:     { label: 'Scale',     cls: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300', Icon: TrendingUp },
-  launch:    { label: 'Launch',    cls: 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] text-[#F8E7AE]',       Icon: Rocket },
+  launch:    { label: 'Launch',    cls: 'border-gold/25 bg-gold/[0.07] text-[#F8E7AE]',       Icon: Rocket },
   fix_first: { label: 'Fix first', cls: 'border-amber-400/25 bg-amber-400/[0.06] text-amber-300',        Icon: Wrench },
-  hold:      { label: 'Hold',      cls: 'border-white/[0.1] bg-slate-800/50 text-slate-400',             Icon: AlertTriangle },
+  hold:      { label: 'Hold',      cls: 'border-white/[0.1] bg-surface-2 text-slate-400',             Icon: AlertTriangle },
 }
 
 function CandidateCard({ c }: { c: AdCandidate }) {
   const m = VERDICT_META[c.verdict]
   return (
-    <div className="flex flex-col rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+    <div className="flex flex-col rounded-[16px] border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="truncate text-[14px] font-semibold text-slate-100">{c.name}</div>
@@ -111,7 +111,7 @@ function CandidateCard({ c }: { c: AdCandidate }) {
 
       <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">
         <span className="font-semibold tabular-nums text-slate-300">{c.score}<span className="text-slate-500">/100</span></span>
-        {c.roi !== null && <span className="text-[#D4AF37]/80">{c.roi.toFixed(1)}% ROI</span>}
+        {c.roi !== null && <span className="text-gold/80">{c.roi.toFixed(1)}% ROI</span>}
         <span>{c.leads30d} leads</span>
       </div>
 
@@ -123,7 +123,7 @@ function CandidateCard({ c }: { c: AdCandidate }) {
         ))}
       </ul>
 
-      <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs text-[#D4AF37]/75">{c.nextAction}</div>
+      <div className="mt-3 border-t border-line pt-2.5 text-xs text-gold/75">{c.nextAction}</div>
     </div>
   )
 }
@@ -152,7 +152,7 @@ export default function InventoryPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <LayoutGrid className="h-3.5 w-3.5" /> Freehold Intelligence
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -163,13 +163,13 @@ export default function InventoryPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           {[
             { label: 'Total properties', value: stats.total },
-            { label: 'Live landings', value: stats.live, accent: 'text-[#D4AF37]' },
+            { label: 'Live landings', value: stats.live, accent: 'text-gold' },
             { label: 'Missing landing', value: stats.missingLanding, accent: 'text-slate-400' },
-            { label: 'Ad-ready', value: stats.adReady, accent: 'text-[#D4AF37]' },
+            { label: 'Ad-ready', value: stats.adReady, accent: 'text-gold' },
           ].map(({ label, value, accent }) => (
             <div
               key={label}
-              className="rounded-[14px] border border-slate-800 bg-slate-800/50 px-4 py-3"
+              className="rounded-[14px] border border-line bg-surface-2 px-4 py-3"
             >
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{label}</div>
               <div className={`mt-1 text-[24px] font-semibold tabular-nums leading-none ${accent ?? 'text-white'}`}>
@@ -183,7 +183,7 @@ export default function InventoryPage() {
       {/* ── Ad-readiness analysis ─────────────────────────────────────────── */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <Sparkles className="h-3.5 w-3.5" /> Which to advertise
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-500">
@@ -216,7 +216,7 @@ export default function InventoryPage() {
                         <div className="truncate text-xs font-medium text-slate-300">{c.name}</div>
                         <div className="truncate text-xs text-slate-500">{c.nextAction}</div>
                       </div>
-                      <Link href={`/freehold-intelligence/inventory/${c.id}`} className="shrink-0 text-xs text-[#D4AF37]/70 hover:text-[#D4AF37]">Open</Link>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}`} className="shrink-0 text-xs text-gold/70 hover:text-gold">Open</Link>
                     </li>
                   ))}
                 </ul>
@@ -234,7 +234,7 @@ export default function InventoryPage() {
                         <div className="truncate text-xs font-medium text-slate-300">{c.name}</div>
                         <div className="truncate text-xs text-slate-500">{c.roi?.toFixed(1)}% ROI · build landing to capture demand</div>
                       </div>
-                      <Link href={`/freehold-intelligence/inventory/${c.id}/generate`} className="shrink-0 text-xs text-[#D4AF37]/70 hover:text-[#D4AF37]">Build LP</Link>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}/generate`} className="shrink-0 text-xs text-gold/70 hover:text-gold">Build LP</Link>
                     </li>
                   ))}
                 </ul>
@@ -244,8 +244,8 @@ export default function InventoryPage() {
         )}
 
         {/* Web Designer AI */}
-        <div className="mt-5 rounded-xl border border-[#D4AF37]/12 bg-gradient-to-br from-[#D4AF37]/[0.04] to-transparent p-5">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/80">
+        <div className="mt-5 rounded-xl border border-gold/12 bg-gradient-to-br from-gold/[0.04] to-transparent p-5">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gold/80">
             <Sparkles className="h-3.5 w-3.5" /> Web Designer
           </div>
           <AiPrompt
@@ -278,8 +278,8 @@ export default function InventoryPage() {
               className={[
                 'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                 filter === f.value
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.1] text-[#F8E7AE]'
-                  : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-500',
+                  ? 'border-gold/40 bg-gold/[0.1] text-[#F8E7AE]'
+                  : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
               ].join(' ')}
             >
               {f.label}
@@ -295,16 +295,16 @@ export default function InventoryPage() {
             placeholder="Search name, area, developer…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[12px] border border-slate-800 bg-slate-800/50 py-2 pl-8 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-[#D4AF37]/50 focus:outline-none"
+            className="w-full rounded-[12px] border border-line bg-surface-2 py-2 pl-8 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-gold/50 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="mt-5 overflow-x-auto rounded-[20px] border border-slate-800 bg-slate-800/50">
+      <div className="mt-5 overflow-x-auto rounded-[20px] border border-line bg-surface-2">
         <table className="w-full min-w-[1060px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-800">
+            <tr className="border-b border-line">
               {[
                 'Name',
                 'Area / Developer',
@@ -327,7 +327,7 @@ export default function InventoryPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={11} className="py-16 text-center text-sm text-slate-500">
@@ -352,7 +352,7 @@ export default function InventoryPage() {
 
 function PropertyRow({ prop }: { prop: InventoryProperty }) {
   return (
-    <tr className="group transition hover:bg-slate-800/40">
+    <tr className="group transition hover:bg-surface-2">
       {/* Name */}
       <td className="max-w-[200px] pl-5 pr-4 py-3.5">
         <div className="truncate font-medium text-slate-100">{prop.name}</div>
@@ -385,7 +385,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* ROI */}
       <td className="px-4 py-3.5 tabular-nums">
         {prop.roi !== null ? (
-          <span className="text-[#D4AF37]">{prop.roi.toFixed(1)}%</span>
+          <span className="text-gold">{prop.roi.toFixed(1)}%</span>
         ) : (
           <span className="text-slate-500">—</span>
         )}
@@ -401,7 +401,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Data quality */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800/50">
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
             <div
               className={`h-full rounded-full ${readinessBar(prop.dataQuality)}`}
               style={{ width: `${prop.dataQuality}%` }}
@@ -414,7 +414,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Ad readiness */}
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-800/50">
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
             <div
               className={`h-full rounded-full ${readinessBar(prop.adReadiness)}`}
               style={{ width: `${prop.adReadiness}%` }}
@@ -438,13 +438,13 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
         <div className="flex items-center gap-2">
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}`}
-            className="inline-flex items-center gap-1 rounded-full border border-slate-800 bg-slate-800/50 px-3 py-1 text-sm text-slate-400 transition hover:border-white/20 hover:text-white"
+            className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-3 py-1 text-sm text-slate-400 transition hover:border-white/20 hover:text-white"
           >
             View <ArrowUpRight className="h-3 w-3" />
           </Link>
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3 py-1 text-sm text-[#D4AF37]/80 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]"
+            className="inline-flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-sm text-gold/80 transition hover:border-gold/40 hover:text-gold"
           >
             <Sparkles className="h-3 w-3" /> LP
           </Link>

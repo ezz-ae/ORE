@@ -13,14 +13,14 @@ import {
 
 function urgencyDot(u: string) {
   if (u === 'critical') return 'bg-red-400'
-  if (u === 'high')     return 'bg-[#D4AF37]'
+  if (u === 'high')     return 'bg-gold'
   if (u === 'medium')   return 'bg-sky-400'
   return 'bg-slate-500'
 }
 
 function urgencyBorder(u: string) {
   if (u === 'critical') return 'border-l-red-400/60'
-  if (u === 'high')     return 'border-l-[#D4AF37]/50'
+  if (u === 'high')     return 'border-l-gold/50'
   if (u === 'medium')   return 'border-l-sky-400/40'
   return 'border-l-slate-700'
 }
@@ -64,7 +64,7 @@ function LeadCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[18px] border border-l-4 bg-slate-900 transition hover:border-t-slate-700 ${urgencyBorder(lead.urgency)} border-slate-800`}
+      className={`relative overflow-hidden rounded-[18px] border border-l-4 bg-surface transition hover:border-t-slate-700 ${urgencyBorder(lead.urgency)} border-line`}
     >
       <div className="p-4">
         {/* Header */}
@@ -73,12 +73,12 @@ function LeadCard({
             <span className={`h-2 w-2 shrink-0 rounded-full ${urgencyDot(lead.urgency)}`} />
             <button
               onClick={() => onSelect(lead)}
-              className="truncate text-sm font-semibold text-white hover:text-[#D4AF37] transition-colors text-left"
+              className="truncate text-sm font-semibold text-white hover:text-gold transition-colors text-left"
             >
               {lead.name}
             </button>
           </div>
-          <div className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${cfg.colorText} ${cfg.border} bg-slate-800/50`}>
+          <div className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${cfg.colorText} ${cfg.border} bg-surface-2`}>
             {lead.intentScore}
           </div>
         </div>
@@ -103,8 +103,8 @@ function LeadCard({
 
         {/* Offer amount */}
         {lead.offerAmount && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D4AF37]" />
+          <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-gold">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gold" />
             Offer: AED {lead.offerAmount.toLocaleString()}
           </div>
         )}
@@ -126,7 +126,7 @@ function LeadCard({
           <a
             href={`tel:${lead.phone}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]"
+            className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-gold/30 hover:text-gold"
           >
             <Phone className="h-3 w-3" /> Call
           </a>
@@ -135,13 +135,13 @@ function LeadCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-emerald-400/30 hover:text-emerald-400"
+            className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-emerald-400/30 hover:text-emerald-400"
           >
             <MessageSquare className="h-3 w-3" /> WhatsApp
           </a>
           <button
             onClick={() => onSelect(lead)}
-            className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-sky-400/30 hover:text-sky-400"
+            className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-2.5 py-1 text-xs font-medium text-slate-400 transition hover:border-sky-400/30 hover:text-sky-400"
           >
             <FileText className="h-3 w-3" /> Note
           </button>
@@ -149,7 +149,7 @@ function LeadCard({
           {next && nextCfg && lead.pipelineStage !== 'closed' && (
             <button
               onClick={(e) => { e.stopPropagation(); onAdvance(lead.id, next) }}
-              className={`ml-auto flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition hover:opacity-100 ${nextCfg.colorText} ${nextCfg.border} bg-slate-800/50`}
+              className={`ml-auto flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition hover:opacity-100 ${nextCfg.colorText} ${nextCfg.border} bg-surface-2`}
             >
               → {nextCfg.label}
             </button>
@@ -190,9 +190,9 @@ function DetailPanel({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-[28px] border border-slate-800 bg-[#0D1117] sm:m-4 sm:max-h-[85vh] sm:w-[420px] sm:rounded-[28px]">
+      <div className="relative z-10 w-full max-h-[90vh] overflow-y-auto rounded-t-[28px] border border-line bg-ink sm:m-4 sm:max-h-[85vh] sm:w-[420px] sm:rounded-[28px]">
         {/* Panel header */}
-        <div className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-[#0D1117]/95 px-5 py-4 backdrop-blur">
+        <div className="sticky top-0 flex items-center justify-between border-b border-line bg-ink/95 px-5 py-4 backdrop-blur">
           <div>
             <div className="flex items-center gap-2">
               <span className={`h-2 w-2 rounded-full ${urgencyDot(lead.urgency)}`} />
@@ -200,7 +200,7 @@ function DetailPanel({
             </div>
             <div className={`mt-0.5 text-xs font-medium ${cfg.colorText}`}>{cfg.label}</div>
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-white">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full border border-line-strong bg-surface-2 text-slate-400 hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -208,16 +208,16 @@ function DetailPanel({
         <div className="p-5 space-y-4">
           {/* Contact */}
           <div className="grid grid-cols-2 gap-2">
-            <a href={`tel:${lead.phone}`} className="flex items-center gap-2 rounded-[14px] border border-slate-800 bg-slate-800/50 px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-[#D4AF37]">
+            <a href={`tel:${lead.phone}`} className="flex items-center gap-2 rounded-[14px] border border-line bg-surface-2 px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:border-gold/30 hover:text-gold">
               <Phone className="h-3.5 w-3.5" /> {lead.phone}
             </a>
-            <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[14px] border border-slate-800 bg-slate-800/50 px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:border-emerald-400/30 hover:text-emerald-400">
+            <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[14px] border border-line bg-surface-2 px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:border-emerald-400/30 hover:text-emerald-400">
               <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
             </a>
           </div>
 
           {/* Details */}
-          <div className="rounded-[16px] border border-slate-800 bg-slate-800/50 p-4 space-y-2.5">
+          <div className="rounded-[16px] border border-line bg-surface-2 p-4 space-y-2.5">
             {[
               { label: 'Property', value: lead.property },
               { label: 'Budget',   value: lead.budget   },
@@ -235,7 +235,7 @@ function DetailPanel({
 
           {/* Current note */}
           {lead.note && (
-            <div className="rounded-[16px] border border-slate-800 bg-slate-800/50 p-4">
+            <div className="rounded-[16px] border border-line bg-surface-2 p-4">
               <div className="text-xs uppercase tracking-[0.15em] text-slate-500 mb-2">Latest note</div>
               <p className="text-sm text-slate-300 leading-[1.55]">{lead.note}</p>
             </div>
@@ -252,7 +252,7 @@ function DetailPanel({
             </div>
           )}
           {lead.offerAmount && (
-            <div className="flex items-center gap-3 rounded-[14px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-4 py-3">
+            <div className="flex items-center gap-3 rounded-[14px] border border-gold/20 bg-gold/[0.06] px-4 py-3">
               <span className="text-base">🔥</span>
               <div>
                 <div className="text-sm font-medium text-[#F8E7AE]">Active offer</div>
@@ -269,12 +269,12 @@ function DetailPanel({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Quick note about this lead…"
               rows={3}
-              className="w-full resize-none rounded-[14px] border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-[#D4AF37]/30 transition"
+              className="w-full resize-none rounded-[14px] border border-line-strong bg-surface-2 px-4 py-3 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-gold/30 transition"
             />
             <div className="mt-2 flex items-center gap-2">
               <button
                 onClick={saveNote}
-                className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-xs font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+                className="rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/15"
               >
                 Save note → HubSpot
               </button>
@@ -286,7 +286,7 @@ function DetailPanel({
           {next && nextCfg && lead.pipelineStage !== 'closed' && (
             <button
               onClick={() => { onAdvance(lead.id, next); onClose() }}
-              className={`w-full flex items-center justify-center gap-2 rounded-[14px] border px-4 py-3 text-sm font-semibold transition hover:opacity-90 ${nextCfg.colorText} ${nextCfg.border} bg-slate-800/50`}
+              className={`w-full flex items-center justify-center gap-2 rounded-[14px] border px-4 py-3 text-sm font-semibold transition hover:opacity-90 ${nextCfg.colorText} ${nextCfg.border} bg-surface-2`}
             >
               <ArrowRight className="h-4 w-4" />
               Move to {nextCfg.label}
@@ -330,11 +330,11 @@ export default function AgentLeadsPage() {
           <p className="mt-1 text-sm text-slate-400">
             {leads.filter(l => l.pipelineStage !== 'closed').length} active ·{' '}
             {criticals > 0 && <span className="text-red-400">{criticals} critical · </span>}
-            {offerCount > 0 && <span className="text-[#D4AF37]">{offerCount} in offer · </span>}
+            {offerCount > 0 && <span className="text-gold">{offerCount} in offer · </span>}
             {leads.filter(l => l.pipelineStage === 'closed').length} closed
           </p>
         </section>
-        <div className="flex h-9 items-center gap-2 rounded-[12px] border border-slate-700 bg-slate-800/50 px-3">
+        <div className="flex h-9 items-center gap-2 rounded-[12px] border border-line-strong bg-surface-2 px-3">
           <Search className="h-3.5 w-3.5 text-slate-500" />
           <input
             value={search}
@@ -348,7 +348,7 @@ export default function AgentLeadsPage() {
       {/* ─── Mobile: stage pills + filtered list ─── */}
       <div className="mt-6 lg:hidden">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {[{ id: 'all' as const, label: 'All', colorText: 'text-slate-300', colorBg: 'bg-slate-300', border: 'border-slate-600' }, ...PIPELINE_STAGES].map((s) => {
+          {[{ id: 'all' as const, label: 'All', colorText: 'text-slate-300', colorBg: 'bg-slate-300', border: 'border-line-strong' }, ...PIPELINE_STAGES].map((s) => {
             const count = s.id === 'all' ? leads.length : leads.filter(l => l.pipelineStage === s.id).length
             const active = activeStage === s.id
             return (
@@ -358,8 +358,8 @@ export default function AgentLeadsPage() {
                 className={[
                   'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition whitespace-nowrap',
                   active
-                    ? `${s.colorText} ${s.border} bg-slate-800/60`
-                    : 'border-slate-700 text-slate-500 hover:text-slate-400',
+                    ? `${s.colorText} ${s.border} bg-surface-2`
+                    : 'border-line-strong text-slate-500 hover:text-slate-400',
                 ].join(' ')}
               >
                 {s.label}
@@ -387,14 +387,14 @@ export default function AgentLeadsPage() {
             return (
               <div key={stage.id} className="w-[240px] shrink-0">
                 {/* Column header */}
-                <div className={`mb-3 flex items-center justify-between rounded-[12px] border px-3 py-2 ${stage.border} bg-slate-800/50`}>
+                <div className={`mb-3 flex items-center justify-between rounded-[12px] border px-3 py-2 ${stage.border} bg-surface-2`}>
                   <span className={`text-xs font-semibold ${stage.colorText}`}>{stage.label}</span>
                   <span className={`rounded-full px-1.5 text-xs font-bold ${stage.colorText}`}>{stageLeads.length}</span>
                 </div>
                 {/* Lead cards */}
                 <div className="space-y-2.5">
                   {stageLeads.length === 0 && (
-                    <div className="flex items-center justify-center rounded-[14px] border border-dashed border-slate-800 py-6 text-xs text-slate-600">
+                    <div className="flex items-center justify-center rounded-[14px] border border-dashed border-line py-6 text-xs text-slate-600">
                       Empty
                     </div>
                   )}

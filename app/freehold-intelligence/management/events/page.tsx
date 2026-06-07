@@ -371,13 +371,13 @@ export default function EventsLogPage() {
   const importantCount = EVENTS.filter(e => e.important).length
 
   return (
-    <div className="min-h-screen bg-[#0D1117] pb-20">
+    <div className="min-h-screen bg-ink pb-20">
 
       {/* ── Header ───────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 border-b border-slate-800 bg-[#090C12]/90 backdrop-blur-xl px-6 py-4">
+      <div className="sticky top-0 z-30 border-b border-line bg-app/90 backdrop-blur-xl px-6 py-4">
         <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong bg-surface-2">
               <Activity className="h-4 w-4 text-slate-300" />
             </div>
             <div>
@@ -401,7 +401,7 @@ export default function EventsLogPage() {
               value={search}
               onChange={e => { setSearch(e.target.value); setVisible(VISIBLE_COUNT_STEP) }}
               placeholder="Search events…"
-              className="w-full rounded-lg border border-slate-700 bg-slate-800/60 pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-slate-600 transition-colors"
+              className="w-full rounded-lg border border-line-strong bg-surface-2 pl-9 pr-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-line-strong transition-colors"
             />
           </div>
         </div>
@@ -422,13 +422,13 @@ export default function EventsLogPage() {
                   'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap',
                   active
                     ? tab === 'Smart'
-                      ? 'bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30'
+                      ? 'bg-gold/15 text-gold border border-gold/30'
                       : `${catStyle!.bg} ${catStyle!.text} border ${catStyle!.border}`
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent',
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-2 border border-transparent',
                 ].join(' ')}
               >
                 {tab === 'Smart' ? (
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                 ) : (
                   (() => {
                     const Icon = CATEGORY_ICONS[tab as Category]
@@ -437,7 +437,7 @@ export default function EventsLogPage() {
                 )}
                 {tab}
                 {tab === 'Smart' && (
-                  <span className="rounded-full bg-[#D4AF37]/20 px-1.5 py-0.5 text-xs font-semibold text-[#D4AF37]">
+                  <span className="rounded-full bg-gold/20 px-1.5 py-0.5 text-xs font-semibold text-gold">
                     {importantCount}
                   </span>
                 )}
@@ -447,10 +447,10 @@ export default function EventsLogPage() {
         </div>
 
         {/* ── Events table ─────────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
+        <div className="rounded-xl border border-line bg-surface">
 
           {/* Table header */}
-          <div className="hidden md:grid grid-cols-[90px_110px_160px_1fr_auto_80px] gap-4 border-b border-slate-800 px-5 py-3">
+          <div className="hidden md:grid grid-cols-[90px_110px_160px_1fr_auto_80px] gap-4 border-b border-line px-5 py-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Time</span>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Category</span>
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Source</span>
@@ -464,7 +464,7 @@ export default function EventsLogPage() {
               <p className="text-sm text-slate-500">No events match your search.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-800">
+            <div className="divide-y divide-line">
               {shown.map(event => {
                 const catStyle  = CATEGORY_STYLES[event.category]
                 const sevConfig = SEVERITY_CONFIG[event.severity]
@@ -472,7 +472,7 @@ export default function EventsLogPage() {
                 return (
                   <div
                     key={event.id}
-                    className="group px-5 py-3.5 hover:bg-slate-800/30 transition-colors"
+                    className="group px-5 py-3.5 hover:bg-surface-2 transition-colors"
                   >
                     {/* Desktop layout */}
                     <div className="hidden md:grid grid-cols-[90px_110px_160px_1fr_auto_80px] gap-4 items-start">
@@ -502,7 +502,7 @@ export default function EventsLogPage() {
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
                         {event.tags.map(tag => (
-                          <span key={tag} className="rounded-full bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs text-slate-500">
+                          <span key={tag} className="rounded-full bg-surface-2 border border-line-strong px-2 py-0.5 text-xs text-slate-500">
                             {tag}
                           </span>
                         ))}
@@ -542,7 +542,7 @@ export default function EventsLogPage() {
                       <p className="text-sm text-slate-200">{event.description}</p>
                       <div className="flex flex-wrap gap-1">
                         {event.tags.map(tag => (
-                          <span key={tag} className="rounded-full bg-slate-800 border border-slate-700 px-2 py-0.5 text-xs text-slate-500">
+                          <span key={tag} className="rounded-full bg-surface-2 border border-line-strong px-2 py-0.5 text-xs text-slate-500">
                             {tag}
                           </span>
                         ))}
@@ -560,7 +560,7 @@ export default function EventsLogPage() {
           <div className="flex justify-center pb-2">
             <button
               onClick={() => setVisible(v => v + VISIBLE_COUNT_STEP)}
-              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"
+              className="flex items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:border-line-strong hover:bg-surface-2 hover:text-white"
             >
               <ChevronDown className="h-4 w-4" />
               Load more ({filtered.length - visible} remaining)

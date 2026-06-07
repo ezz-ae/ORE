@@ -135,7 +135,7 @@ type FilterKey = 'All' | 'Complete' | 'Incomplete' | 'Draft'
 const STATUS_STYLE: Record<DeveloperRow['profileStatus'], string> = {
   Complete:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   Incomplete: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
-  Draft:      'text-slate-400   bg-slate-800/50   border-slate-700',
+  Draft:      'text-slate-400   bg-surface-2   border-line-strong',
 }
 
 export default function DeveloperProfilesPage() {
@@ -180,9 +180,9 @@ export default function DeveloperProfilesPage() {
         {[
           { label: 'Complete',  value: `${complete}/${DEVELOPERS.length}`, Icon: CheckCircle2, color: 'text-emerald-400' },
           { label: 'Avg SEO',   value: avgSeo,                             Icon: TrendingUp,   color: 'text-sky-400'     },
-          { label: '30d Leads', value: totalLeads,                         Icon: Globe,        color: 'text-[#D4AF37]'   },
+          { label: '30d Leads', value: totalLeads,                         Icon: Globe,        color: 'text-gold'   },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div key={label} className="rounded-xl border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className="mt-2 text-xl font-semibold text-white">{value}</div>
             <div className="mt-0.5 text-xs text-slate-500">{label}</div>
@@ -214,14 +214,14 @@ export default function DeveloperProfilesPage() {
             placeholder="Search developers…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
+            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
+        <div className="flex gap-1 rounded-lg border border-line bg-surface p-1">
           {(['All', 'Complete', 'Incomplete', 'Draft'] as FilterKey[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                filter === f ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
+                filter === f ? 'bg-surface-3 text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {f}
             </button>
@@ -232,7 +232,7 @@ export default function DeveloperProfilesPage() {
       {/* Developer cards */}
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 px-5 py-10 text-center text-sm text-slate-500">
+          <div className="rounded-xl border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">
             No developers match.
           </div>
         )}
@@ -244,7 +244,7 @@ export default function DeveloperProfilesPage() {
           const total      = d.checklist.length
 
           return (
-            <div key={d.name} className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div key={d.name} className="rounded-xl border border-line bg-surface overflow-hidden">
               <button className="w-full flex items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isExpanded ? null : d.name)}>
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${d.color}`}>
@@ -270,7 +270,7 @@ export default function DeveloperProfilesPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="flex items-center gap-1">
                     {d.checklist.map((_, i) => (
-                      <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneCount ? 'bg-sky-400' : 'bg-slate-700'}`} />
+                      <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneCount ? 'bg-sky-400' : 'bg-surface-3'}`} />
                     ))}
                   </div>
                   <span className="text-xs text-slate-500">{doneCount}/{total}</span>
@@ -278,14 +278,14 @@ export default function DeveloperProfilesPage() {
               </button>
 
               {isExpanded && (
-                <div className="border-t border-slate-800 px-5 py-4">
+                <div className="border-t border-line px-5 py-4">
                   <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Profile checklist</div>
                   <div className="space-y-2 mb-4">
                     {d.checklist.map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
                         {item.done
                           ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />
-                          : <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-slate-600" />
+                          : <div className="h-3.5 w-3.5 shrink-0 rounded-full border border-line-strong" />
                         }
                         <span className={`text-xs ${item.done ? 'text-slate-400' : 'text-slate-500'}`}>{item.item}</span>
                       </div>
@@ -303,7 +303,7 @@ export default function DeveloperProfilesPage() {
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
                     </button>
-                    <button onClick={() => toast.info('Opening developer profile preview')} className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
+                    <button onClick={() => toast.info('Opening developer profile preview')} className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
                       <Globe className="h-3 w-3" /> Preview
                     </button>
                   </div>

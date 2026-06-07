@@ -10,9 +10,9 @@ import {
 
 function dot(value: string) {
   const v = value.toLowerCase()
-  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-[#D4AF37]'
+  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-gold'
   if (v.includes('block') || v.includes('missing')) return 'bg-red-400'
-  if (v.includes('review') || v.includes('draft') || v.includes('access') || v.includes('pending')) return 'bg-[#D4AF37]'
+  if (v.includes('review') || v.includes('draft') || v.includes('access') || v.includes('pending')) return 'bg-gold'
   return 'bg-white/30'
 }
 
@@ -33,7 +33,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/25">
+    <article className="group overflow-hidden rounded-[28px] border border-line bg-surface transition hover:border-gold/25">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.02]"
@@ -42,7 +42,7 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-6 sm:p-8">
           <div className="min-w-0">
-            <div className="text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="text-sm font-medium uppercase tracking-wider text-gold/85">
               {listing.area} · {listing.developer}
             </div>
             <h3 className="mt-2 text-2xl font-semibold leading-tight text-white sm:text-[28px]">
@@ -83,13 +83,13 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         </div>
 
         {listing.missingRequirements.length > 0 && (
-          <div className="mt-5 border-t border-slate-800 pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Holding it back</div>
             <ul className="mt-2 grid gap-1 text-[14px] text-slate-300">
               {listing.missingRequirements.map((req) => (
                 <li
                   key={req}
-                  className="flex items-start gap-2 before:mt-2 before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-[#D4AF37]/70"
+                  className="flex items-start gap-2 before:mt-2 before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-gold/70"
                 >
                   {req}
                 </li>
@@ -101,13 +101,13 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0D1117] transition hover:gap-2.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:gap-2.5"
           >
             Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-            className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
+            className="rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
           >
             View details
           </Link>
@@ -160,7 +160,7 @@ export default function ListingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <LayoutList className="h-3.5 w-3.5" /> Active Listings
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
@@ -200,7 +200,7 @@ export default function ListingsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by project, area, or developer…"
-            className="w-full rounded-xl border border-slate-800 bg-slate-800/40 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/40 focus:outline-none"
+            className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
           />
           {query && (
             <button
@@ -221,8 +221,8 @@ export default function ListingsPage() {
               onClick={() => setReadinessFilter(option)}
               className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                 readinessFilter === option
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300'
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
               }`}
             >
               {option}
@@ -235,7 +235,7 @@ export default function ListingsPage() {
             <p className="text-sm text-slate-500">No listings match these filters</p>
             <button
               onClick={clearFilters}
-              className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
+              className="rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
             >
               Clear filters
             </button>

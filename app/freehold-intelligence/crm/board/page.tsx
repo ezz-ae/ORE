@@ -26,10 +26,10 @@ const STAGES: StageConfig[] = [
 // ─── Temperature config ────────────────────────────────────────────────────────
 
 const TEMP_BADGE: Record<string, string> = {
-  priority: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25',
+  priority: 'bg-gold/10 text-gold border-gold/25',
   hot:      'bg-red-400/10 text-red-400 border-red-400/20',
   warm:     'bg-amber-400/10 text-amber-400 border-amber-400/20',
-  cold:     'bg-slate-800/50 text-slate-500 border-slate-700',
+  cold:     'bg-surface-2 text-slate-500 border-line-strong',
 }
 const TEMP_LABEL: Record<string, string> = {
   priority: '★ Priority',
@@ -111,7 +111,7 @@ export default function CrmBoardPage() {
               onDragLeave={() => setDragOver(null)}
               className={[
                 'flex w-[238px] flex-shrink-0 flex-col rounded-[16px] border transition-all',
-                isOver ? 'border-slate-600 bg-slate-800/50' : 'border-slate-800 bg-slate-800/30',
+                isOver ? 'border-line-strong bg-surface-2' : 'border-line bg-surface-2',
               ].join(' ')}
             >
               {/* Column header */}
@@ -120,7 +120,7 @@ export default function CrmBoardPage() {
                   <span className={`h-2 w-2 rounded-full ${col.dot}`} />
                   <span className={`text-sm font-semibold ${col.color}`}>{col.label}</span>
                 </div>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-xs font-medium text-slate-400">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-xs font-medium text-slate-400">
                   {leads.length}
                 </span>
               </div>
@@ -141,13 +141,13 @@ export default function CrmBoardPage() {
                       onDragStart={() => onDragStart(lead.id, col.id)}
                       onDragEnd={reset}
                       className={[
-                        'cursor-grab select-none rounded-[12px] border border-slate-800 bg-slate-900 p-3 transition active:cursor-grabbing',
-                        isDragging ? 'scale-95 opacity-40' : 'hover:border-slate-700',
+                        'cursor-grab select-none rounded-[12px] border border-line bg-surface p-3 transition active:cursor-grabbing',
+                        isDragging ? 'scale-95 opacity-40' : 'hover:border-line-strong',
                       ].join(' ')}
                     >
                       {/* Avatar + name */}
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-slate-800 text-[10px] font-bold text-slate-400">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-surface-2 text-[10px] font-bold text-slate-400">
                           {initials(lead.name)}
                         </div>
                         <Link
@@ -167,7 +167,7 @@ export default function CrmBoardPage() {
                       </div>
 
                       {/* Budget */}
-                      <div className="mt-2 text-xs font-medium text-[#D4AF37]/65">{lead.budgetAED}</div>
+                      <div className="mt-2 text-xs font-medium text-gold/65">{lead.budgetAED}</div>
 
                       {/* Project */}
                       <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-500">
@@ -175,7 +175,7 @@ export default function CrmBoardPage() {
                       </div>
 
                       {/* Footer: agent + intent score */}
-                      <div className="mt-2.5 flex items-center justify-between border-t border-slate-800 pt-2">
+                      <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2">
                         <span className="truncate text-[10px] text-slate-500">{lead.assignedAgent}</span>
                         <span className="ml-1 shrink-0 text-[10px] font-medium tabular-nums text-slate-400">
                           {lead.intentScore}
@@ -191,7 +191,7 @@ export default function CrmBoardPage() {
       </div>
 
       {/* Drag hint */}
-      <div className="flex items-center justify-center gap-1.5 border-t border-slate-800 py-2.5 text-xs text-slate-600">
+      <div className="flex items-center justify-center gap-1.5 border-t border-line py-2.5 text-xs text-slate-600">
         <MoveHorizontal className="h-3.5 w-3.5" />
         Drag cards to move leads through the pipeline
       </div>

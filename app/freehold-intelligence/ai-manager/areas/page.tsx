@@ -42,7 +42,7 @@ function seoBar(score: number) {
   const color = score >= 80 ? 'bg-sky-400' : score >= 60 ? 'bg-amber-400' : 'bg-red-400'
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1 w-14 rounded-full bg-slate-700">
+      <div className="h-1 w-14 rounded-full bg-surface-3">
         <div className={`h-1 rounded-full ${color}`} style={{ width: `${score}%` }} />
       </div>
       <span className={`text-xs tabular-nums ${score >= 80 ? 'text-sky-400' : score >= 60 ? 'text-amber-400' : 'text-red-400/80'}`}>{score}</span>
@@ -55,7 +55,7 @@ function wordProgress(words: number) {
   const pct    = Math.min(Math.round((words / target) * 100), 100)
   return (
     <div className="flex items-center gap-2">
-      <div className="h-1 w-14 rounded-full bg-slate-700">
+      <div className="h-1 w-14 rounded-full bg-surface-3">
         <div className="h-1 rounded-full bg-sky-400/60" style={{ width: `${pct}%` }} />
       </div>
       <span className="text-xs text-slate-500 tabular-nums">{(words / 1000).toFixed(1)}k</span>
@@ -104,9 +104,9 @@ export default function AreaGuidesPage() {
         {[
           { label: 'Published', value: published, sub: `${AREAS.length} total`, Icon: Globe,      color: 'text-emerald-400' },
           { label: 'Avg SEO',   value: avgSeo,    sub: '/ 100 score',           Icon: TrendingUp,  color: 'text-sky-400'     },
-          { label: '30d Leads', value: totalLeads, sub: 'from area pages',      Icon: FileText,    color: 'text-[#D4AF37]'   },
+          { label: '30d Leads', value: totalLeads, sub: 'from area pages',      Icon: FileText,    color: 'text-gold'   },
         ].map(({ label, value, sub, Icon, color }) => (
-          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div key={label} className="rounded-xl border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className="mt-2 text-xl font-semibold text-white">{value}</div>
             <div className="mt-0.5 text-xs text-slate-500">{label} · {sub}</div>
@@ -123,14 +123,14 @@ export default function AreaGuidesPage() {
             placeholder="Search areas…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
+            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30"
           />
         </div>
-        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
+        <div className="flex gap-1 rounded-lg border border-line bg-surface p-1">
           {(['All', 'Published', 'Draft', 'Missing'] as FilterKey[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                filter === f ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
+                filter === f ? 'bg-surface-3 text-white' : 'text-slate-500 hover:text-slate-300'
               }`}>
               {f}
             </button>
@@ -139,7 +139,7 @@ export default function AreaGuidesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+      <div className="rounded-xl border border-line bg-surface divide-y divide-line overflow-hidden">
         {/* Header */}
         <div className="grid grid-cols-[1fr,auto,auto,auto,auto] gap-4 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <div>Area</div>

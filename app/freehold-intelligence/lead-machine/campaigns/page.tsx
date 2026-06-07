@@ -62,7 +62,7 @@ export default async function CampaignsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <Megaphone className="h-3.5 w-3.5" /> Meta Campaigns
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -76,13 +76,13 @@ export default async function CampaignsPage() {
         <div className="mt-4 flex items-center gap-2 sm:mt-8">
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/launch"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-2.5 text-sm font-semibold text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+            className="inline-flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/15"
           >
             <Zap className="h-3.5 w-3.5" /> Launch Campaign
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-slate-200"
           >
             <Plus className="h-3.5 w-3.5" /> Manual
           </Link>
@@ -99,7 +99,7 @@ export default async function CampaignsPage() {
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/meta"
-                className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
               >
                 Set up Meta integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -122,12 +122,12 @@ export default async function CampaignsPage() {
       {!isConfigError && (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Active',      value: active,                        color: 'text-[#D4AF37]' },
-            { label: 'Paused',      value: paused,                        color: 'text-[#D4AF37]' },
+            { label: 'Active',      value: active,                        color: 'text-gold' },
+            { label: 'Paused',      value: paused,                        color: 'text-gold' },
             { label: 'Total spend', value: fmtSpend(String(totalSpend)),  color: 'text-white' },
-            { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
+            { label: 'Total leads', value: totalLeads,                    color: totalLeads > 0 ? 'text-gold' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <div key={s.label} className="rounded-xl border border-line bg-surface p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
               <div className="mt-1.5 text-sm text-slate-400">{s.label}</div>
             </div>
@@ -140,13 +140,13 @@ export default async function CampaignsPage() {
 
       {/* Empty state — connected but no campaigns */}
       {!isConfigError && !data.error && campaigns.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
-          <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
+        <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
+          <Zap className="mx-auto h-8 w-8 text-gold/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No campaigns yet</div>
           <p className="mt-2 text-[14px] text-slate-400">Create the first campaign to start generating leads from Meta and Instagram.</p>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             <Plus className="h-4 w-4" /> Launch first campaign
           </Link>

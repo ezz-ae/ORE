@@ -76,14 +76,14 @@ const TYPE_COLORS: Record<ContractType, string> = {
   data:     'text-violet-400 bg-violet-400/10 border-violet-400/20',
   agency:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
   legal:    'text-sky-400    bg-sky-400/10    border-sky-400/20',
-  service:  'text-slate-400   bg-slate-800/50  border-white/10',
+  service:  'text-slate-400   bg-surface-2  border-white/10',
 }
 
 const STATUS_COLORS: Record<ContractStatus, string> = {
   active:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   expiring: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
   expired:  'text-red-400     bg-red-400/10     border-red-400/20',
-  draft:    'text-slate-500    bg-slate-800/40   border-white/10',
+  draft:    'text-slate-500    bg-surface-2   border-white/10',
 }
 
 export default function ContractsPage() {
@@ -126,7 +126,7 @@ export default function ContractsPage() {
           { label: 'Expiring',    value: expiring.length,     color: expiring.length > 0 ? 'text-amber-400' : 'text-slate-200' },
           { label: 'Auto-renew',  value: autoRenewCount,      color: 'text-sky-400'     },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
+          <div key={label} className="rounded-[14px] border border-line bg-surface p-3.5">
             <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
             <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
           </div>
@@ -153,12 +153,12 @@ export default function ContractsPage() {
           const isRenewing = renewing === c.id
           const isRenewed  = renewed.includes(c.id)
           return (
-            <div key={c.id} className={`rounded-[16px] border bg-slate-900 overflow-hidden transition ${
-              c.status === 'expiring' ? 'border-amber-400/20' : 'border-slate-800'
+            <div key={c.id} className={`rounded-[16px] border bg-surface overflow-hidden transition ${
+              c.status === 'expiring' ? 'border-amber-400/20' : 'border-line'
             }`}>
               <button className="w-full flex items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isExpanded ? null : c.id)}>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-slate-800/40">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-surface-2">
                   <FileCheck className="h-4 w-4 text-slate-500" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ export default function ContractsPage() {
               </button>
 
               {isExpanded && (
-                <div className="border-t border-slate-800 px-5 py-4 space-y-3">
+                <div className="border-t border-line px-5 py-4 space-y-3">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <div className="text-[10px] text-slate-600 uppercase tracking-wider">Term</div>
@@ -209,9 +209,9 @@ export default function ContractsPage() {
                     </div>
                   </div>
                   {c.notes && (
-                    <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-800 pt-3">{c.notes}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed border-t border-line pt-3">{c.notes}</p>
                   )}
-                  <div className="flex items-center gap-2 border-t border-slate-800 pt-3">
+                  <div className="flex items-center gap-2 border-t border-line pt-3">
                     {c.status === 'expiring' && !isRenewed && (
                       <button onClick={() => startRenewal(c.id)} disabled={isRenewing}
                         className="flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-4 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-400/30 disabled:opacity-50">

@@ -5,8 +5,8 @@ import { getServerApp } from '@/src/features/freehold-intelligence/server-sessio
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 function statusTone(s: string) {
-  if (s === 'live')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20', label: 'Live' }
-  if (s === 'in_progress') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', bg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20', label: 'In progress' }
+  if (s === 'live')        return { dot: 'bg-gold', text: 'text-gold', bg: 'bg-gold/10 border-gold/20', label: 'Live' }
+  if (s === 'in_progress') return { dot: 'bg-gold', text: 'text-[#F8E7AE]', bg: 'bg-gold/10 border-gold/20', label: 'In progress' }
   if (s === 'blocked')     return { dot: 'bg-red-400',   text: 'text-red-300',   bg: 'bg-red-400/10 border-red-400/20',       label: 'Blocked' }
   return                          { dot: 'bg-sky-400',   text: 'text-sky-200',   bg: 'bg-sky-400/10 border-sky-400/20',       label: 'Planned' }
 }
@@ -52,7 +52,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         {metrics.map((m) => {
           const Icon = m.icon
           return (
-            <div key={m.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+            <div key={m.label} className="rounded-[18px] border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <Icon className="h-3 w-3" /> {m.label}
               </div>
@@ -65,14 +65,14 @@ export default async function GenericServerAppPage({ params }: { params: Promise
       </section>
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-6">
+        <div className="rounded-[18px] border border-line bg-surface p-6">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <Clock className="h-3 w-3" /> Latest activity
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-300">{app.latestActivity}</p>
         </div>
-        <div className="rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] p-6">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80">
+        <div className="rounded-[18px] border border-gold/15 bg-gold/[0.04] p-6">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80">
             <CheckCircle2 className="h-3 w-3" /> Next action
           </div>
           <p className="mt-3 text-sm leading-relaxed text-slate-100">{app.nextAction}</p>
@@ -90,7 +90,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
         />
       </section>
 
-      <section className="mt-8 rounded-[20px] border border-slate-800 bg-slate-900 p-6">
+      <section className="mt-8 rounded-[20px] border border-line bg-surface p-6">
         <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <Blocks className="h-3 w-3" /> Navigate
         </div>
@@ -103,7 +103,7 @@ export default async function GenericServerAppPage({ params }: { params: Promise
             <Link
               key={item.href}
               href={item.href}
-              className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-4 py-2 text-sm text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition hover:border-gold/30 hover:text-white"
             >
               {item.label} <ArrowUpRight className="h-3 w-3" />
             </Link>

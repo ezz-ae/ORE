@@ -31,9 +31,9 @@ type Platform = 'All' | 'Meta' | 'Google'
 
 function UtilBar({ pct }: { pct: number }) {
   return (
-    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
       <div
-        className="h-full rounded-full bg-[#D4AF37]"
+        className="h-full rounded-full bg-gold"
         style={{ width: `${(pct * 100).toFixed(1)}%` }}
       />
     </div>
@@ -72,7 +72,7 @@ export default function AdsLivePage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gold/85">
             <Radio className="h-3.5 w-3.5" /> Ads Live
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
@@ -84,8 +84,8 @@ export default function AdsLivePage() {
         <div className="mt-7 flex items-center gap-3 sm:mt-10">
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#D4AF37]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
             </span>
             Live · {now} GST
           </span>
@@ -93,14 +93,14 @@ export default function AdsLivePage() {
       </div>
 
       {/* Platform toggle */}
-      <div className="mt-8 flex gap-1 rounded-xl border border-slate-800 bg-slate-800/50 p-1 w-fit">
+      <div className="mt-8 flex gap-1 rounded-xl border border-line bg-surface-2 p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setPlatform(t)}
             className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
               platform === t
-                ? 'bg-[#D4AF37] text-[#0D1117]'
+                ? 'bg-gold text-ink'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -117,7 +117,7 @@ export default function AdsLivePage() {
           { label: 'Avg CPL',         value: 'AED 75.4',   sub: 'Blended average' },
           { label: 'Active Campaigns', value: '6',          sub: 'Meta + Google' },
         ].map((m) => (
-          <div key={m.label} className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5">
+          <div key={m.label} className="rounded-2xl border border-line bg-surface-2 p-5">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{m.label}</div>
             <div className="mt-2 text-[28px] font-semibold leading-none text-white">{m.value}</div>
             <div className="mt-1.5 text-sm text-slate-500">{m.sub}</div>
@@ -129,7 +129,7 @@ export default function AdsLivePage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
 
         {/* Meta column */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#1877F2' }} />
             <span className="text-sm font-semibold" style={{ color: '#1877F2' }}>Meta Ads</span>
@@ -166,7 +166,7 @@ export default function AdsLivePage() {
         </div>
 
         {/* Google column */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#4285F4' }} />
             <span className="text-sm font-semibold" style={{ color: '#4285F4' }}>Google Ads</span>
@@ -209,17 +209,17 @@ export default function AdsLivePage() {
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
             Live Campaigns
           </div>
-          <span className="flex items-center gap-1.5 text-sm text-[#D4AF37]/70">
+          <span className="flex items-center gap-1.5 text-sm text-gold/70">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
             </span>
             Live data
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/50">
-          <div className="divide-y divide-slate-800">
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
+          <div className="divide-y divide-line">
             {campaigns.map((c) => {
               const isMeta   = c.platform === 'meta'
               const platClr  = isMeta ? '#1877F2' : '#4285F4'
@@ -232,14 +232,14 @@ export default function AdsLivePage() {
                 <Link
                   key={c.name}
                   href="/freehold-intelligence/lead-machine/campaigns/attribution"
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4 transition hover:bg-slate-800/50"
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4 transition hover:bg-surface-2"
                 >
                   {/* Live / paused indicator */}
                   <span className="relative flex h-1.5 w-1.5 shrink-0">
                     {c.status === 'Running' && (
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#D4AF37] opacity-50" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-50" />
                     )}
-                    <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${c.status === 'Running' ? 'bg-[#D4AF37]' : 'bg-slate-600'}`} />
+                    <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${c.status === 'Running' ? 'bg-gold' : 'bg-surface-3'}`} />
                   </span>
 
                   {/* Name + property */}
@@ -261,7 +261,7 @@ export default function AdsLivePage() {
                   {/* Stats */}
                   <div className="flex gap-5 text-xs text-slate-400">
                     <span>AED {c.spendAED.toLocaleString()}</span>
-                    <span className="font-semibold text-[#D4AF37]">{c.leads} leads</span>
+                    <span className="font-semibold text-gold">{c.leads} leads</span>
                     <span className={`flex items-center gap-0.5 font-medium ${below ? 'text-emerald-400' : 'text-red-400'}`}>
                       <CplIcon className="h-3 w-3" />
                       AED {c.cpl}
@@ -278,7 +278,7 @@ export default function AdsLivePage() {
         <div className="mt-3 flex items-center justify-end">
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/attribution"
-            className="flex items-center gap-1 text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+            className="flex items-center gap-1 text-xs text-gold/50 transition hover:text-gold"
           >
             Full attribution report <ArrowUpRight className="h-3 w-3" />
           </Link>
@@ -288,7 +288,7 @@ export default function AdsLivePage() {
       {/* CPL trend chart */}
       <section className="mt-10">
         <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">CPL trend · last 4 weeks</div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-6 mb-4 text-xs">
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#4285F4' }} />Google</span>
@@ -332,21 +332,21 @@ export default function AdsLivePage() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           href="/freehold-intelligence/ads-live/meta"
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#1877F2]/30 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#1877F2]/30 hover:text-white"
         >
           Meta Ads <ArrowUpRight className="h-3.5 w-3.5 text-[#1877F2]" />
         </Link>
         <Link
           href="/freehold-intelligence/ads-live/google"
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
         >
           Google Ads <ArrowUpRight className="h-3.5 w-3.5 text-[#4285F4]" />
         </Link>
         <Link
           href="/freehold-intelligence/ads-live/preview"
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
         >
-          Ad Preview <ArrowUpRight className="h-3.5 w-3.5 text-[#D4AF37]" />
+          Ad Preview <ArrowUpRight className="h-3.5 w-3.5 text-gold" />
         </Link>
       </div>
 

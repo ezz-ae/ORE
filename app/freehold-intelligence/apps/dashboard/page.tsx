@@ -42,15 +42,15 @@ const dashboardApps = [
 function StatusBadge({ status }: { status: string }) {
   if (status === 'live') {
     return (
-      <span className="flex items-center gap-1.5 text-sm text-[#D4AF37]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
+      <span className="flex items-center gap-1.5 text-sm text-gold">
+        <span className="h-1.5 w-1.5 rounded-full bg-gold" />
         Live
       </span>
     )
   }
   return (
     <span className="flex items-center gap-1.5 text-sm text-slate-500">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
+      <span className="h-1.5 w-1.5 rounded-full bg-surface-3" />
       In progress
     </span>
   )
@@ -61,7 +61,7 @@ export default function ControlRoomDashboardAppPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <section>
-        <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="text-xs font-semibold uppercase tracking-wider text-gold/85">
           Dashboard App
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
@@ -82,13 +82,13 @@ export default function ControlRoomDashboardAppPage() {
             <Link
               key={app.href}
               href={app.href}
-              className="group relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-7 transition hover:border-[#D4AF37]/25 hover:bg-slate-800/50"
+              className="group relative overflow-hidden rounded-2xl border border-line bg-surface p-7 transition hover:border-gold/25 hover:bg-surface-2"
             >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#D4AF37]/[0.07] to-transparent opacity-0 transition group-hover:opacity-100" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-gold/[0.07] to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="relative flex flex-col gap-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10">
-                    <Icon className="h-[18px] w-[18px] text-[#D4AF37]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/20 bg-gold/10">
+                    <Icon className="h-[18px] w-[18px] text-gold" />
                   </div>
                   <StatusBadge status={app.status} />
                 </div>
@@ -96,7 +96,7 @@ export default function ControlRoomDashboardAppPage() {
                   <h2 className="text-base font-semibold tracking-tight text-white">{app.label}</h2>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">{app.description}</p>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-[#D4AF37]/45 transition group-hover:text-[#D4AF37]">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-gold/45 transition group-hover:text-gold">
                   Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
                 </div>
               </div>

@@ -47,9 +47,9 @@ const WEEK = [
 ]
 
 const ANGLE_STATUS = {
-  approved:        { label: 'Approved',         classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
-  pending_approval:{ label: 'Pending approval', classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
-  draft:           { label: 'Draft',            classes: 'bg-slate-800/60 text-slate-400 border-slate-700' },
+  approved:        { label: 'Approved',         classes: 'bg-gold/10 text-gold border-gold/20' },
+  pending_approval:{ label: 'Pending approval', classes: 'bg-gold/10 text-gold border-gold/20' },
+  draft:           { label: 'Draft',            classes: 'bg-surface-2 text-slate-400 border-line-strong' },
 }
 
 const PLATFORM_CLASSES: Record<string, string> = {
@@ -60,8 +60,8 @@ const PLATFORM_CLASSES: Record<string, string> = {
 }
 
 const SCHEDULE_STATUS = {
-  scheduled: 'text-[#D4AF37]',
-  pending:   'text-[#D4AF37]',
+  scheduled: 'text-gold',
+  pending:   'text-gold',
   draft:     'text-slate-500',
   blocked:   'text-red-300',
 }
@@ -118,7 +118,7 @@ export default function SocialMediaManagerPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
             <Megaphone className="h-3.5 w-3.5" /> Social Media Manager
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">
@@ -136,14 +136,14 @@ export default function SocialMediaManagerPage() {
 
       {/* Pending approvals */}
       {pendingApprovals.length > 0 && (
-        <div className="mt-8 rounded-[20px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5 sm:p-6">
+        <div className="mt-8 rounded-[20px] border border-gold/20 bg-gold/[0.04] p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-white">{pendingApprovals.length} item{pendingApprovals.length !== 1 ? 's' : ''} waiting for approval</div>
               <div className="mt-3 space-y-2">
                 {pendingApprovals.map((ap) => (
-                  <div key={ap.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-slate-800 bg-slate-800/50 px-4 py-3">
+                  <div key={ap.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-line bg-surface-2 px-4 py-3">
                     <div className="min-w-0">
                       <div className="text-sm font-medium text-slate-100">{ap.title}</div>
                       <div className="mt-0.5 text-sm text-slate-500">{ap.listing} · submitted by {ap.submittedBy} · {fmt(ap.submittedAt)}</div>
@@ -151,13 +151,13 @@ export default function SocialMediaManagerPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleApproval(ap.id, ap.title, 'approved')}
-                        className="rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-3 py-1 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
+                        className="rounded-full border border-gold/25 bg-gold/10 px-3 py-1 text-sm font-medium text-gold transition hover:bg-gold/20"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleApproval(ap.id, ap.title, 'changes_requested')}
-                        className="rounded-full border border-slate-700 bg-slate-800/60 px-3 py-1 text-sm font-medium text-slate-400 transition hover:bg-slate-800"
+                        className="rounded-full border border-line-strong bg-surface-2 px-3 py-1 text-sm font-medium text-slate-400 transition hover:bg-surface-2"
                       >
                         Request changes
                       </button>
@@ -170,7 +170,7 @@ export default function SocialMediaManagerPage() {
         </div>
       )}
       {pendingApprovals.length === 0 && INITIAL_APPROVALS.length > 0 && (
-        <div className="mt-8 flex items-center gap-2 rounded-[18px] border border-emerald-400/15 bg-[#D4AF37]/[0.03] px-5 py-4 text-sm text-[#D4AF37]">
+        <div className="mt-8 flex items-center gap-2 rounded-[18px] border border-emerald-400/15 bg-gold/[0.03] px-5 py-4 text-sm text-gold">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> All approval items resolved.
         </div>
       )}
@@ -191,8 +191,8 @@ export default function SocialMediaManagerPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 platformFilter === p
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {p}
@@ -211,8 +211,8 @@ export default function SocialMediaManagerPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 angleStatusFilter === key
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {label}
@@ -222,11 +222,11 @@ export default function SocialMediaManagerPage() {
 
         <div className="mt-5 space-y-8">
           {filteredGroups.length === 0 ? (
-            <div className="rounded-[18px] border border-slate-800 px-6 py-10 text-center text-sm text-slate-500">
+            <div className="rounded-[18px] border border-line px-6 py-10 text-center text-sm text-slate-500">
               No angles match these filters.{' '}
               <button
                 onClick={() => { setPlatformFilter('All'); setAngleStatusFilter('all') }}
-                className="text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                className="text-gold/60 transition hover:text-gold"
               >
                 Clear
               </button>
@@ -236,10 +236,10 @@ export default function SocialMediaManagerPage() {
               <div key={group.listing}>
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/70">{group.area}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-gold/70">{group.area}</div>
                     <h3 className="mt-0.5 text-base font-semibold text-white">{group.listing}</h3>
                   </div>
-                  <Link href={group.listingHref} className="inline-flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+                  <Link href={group.listingHref} className="inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold">
                     Open workspace <ArrowUpRight className="h-3 w-3" />
                   </Link>
                 </div>
@@ -252,10 +252,10 @@ export default function SocialMediaManagerPage() {
                     }
                     const st = ANGLE_STATUS[effectiveStatus]
                     return (
-                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-[#D4AF37]/[0.03]' : 'border-slate-800 bg-slate-900'}`}>
+                      <div key={angle.id} className={`rounded-[18px] border p-5 ${effectiveStatus === 'approved' ? 'border-emerald-400/15 bg-gold/[0.03]' : 'border-line bg-surface'}`}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="text-sm font-semibold text-white">{angle.title}</div>
-                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${PLATFORM_CLASSES[angle.platform] ?? 'border-slate-700 text-slate-400'}`}>
+                          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${PLATFORM_CLASSES[angle.platform] ?? 'border-line-strong text-slate-400'}`}>
                             {angle.platform}
                           </span>
                         </div>
@@ -263,7 +263,7 @@ export default function SocialMediaManagerPage() {
                         <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{angle.hook}</p>
                         <div className="mt-3 flex items-center justify-between">
                           <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.classes}`}>{st.label}</span>
-                          {effectiveStatus === 'approved' && <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />}
+                          {effectiveStatus === 'approved' && <CheckCircle2 className="h-3.5 w-3.5 text-gold" />}
                         </div>
                       </div>
                     )
@@ -283,7 +283,7 @@ export default function SocialMediaManagerPage() {
           {WEEK.map((day) => (
             <div
               key={day.day}
-              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-slate-800 bg-slate-900' : 'border-slate-800/40 bg-transparent'}`}
+              className={`min-h-[90px] rounded-[14px] border p-3 ${day.post ? 'border-line bg-surface' : 'border-line bg-transparent'}`}
             >
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{day.day}</div>
               {day.post && (
@@ -307,8 +307,8 @@ export default function SocialMediaManagerPage() {
       </section>
 
       {/* AI Take */}
-      <section className="mt-10 rounded-[24px] border border-slate-800 bg-slate-800/50 p-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80">
+      <section className="mt-10 rounded-[24px] border border-line bg-surface-2 p-6">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="mt-3 text-base leading-[1.65] text-slate-100">
@@ -340,7 +340,7 @@ export default function SocialMediaManagerPage() {
 
       {/* Flash toast */}
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-[#D4AF37]/25 bg-slate-900 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-lg">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {flash}
           <button onClick={() => setFlash(null)} className="text-slate-500 transition hover:text-slate-300">

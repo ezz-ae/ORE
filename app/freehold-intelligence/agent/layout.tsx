@@ -23,13 +23,13 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     <div className="min-h-full">
 
       {/* Lightweight secondary breadcrumb bar — identity/sign-out are in SpacesNav */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#06090F]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-chrome/95 backdrop-blur-xl">
         <div className="mx-auto flex h-12 max-w-5xl items-center gap-2 px-4 sm:px-6">
 
           {isHome ? (
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-                <UserCircle className="h-3.5 w-3.5 text-[#D4AF37]" />
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+                <UserCircle className="h-3.5 w-3.5 text-gold" />
               </div>
               <span className="text-sm font-semibold text-slate-200">My Workspace</span>
             </div>

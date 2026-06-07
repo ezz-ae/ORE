@@ -10,14 +10,14 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
 
   if (!ready) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#090D16]">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-700 border-t-[#D4AF37]" />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-app">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-line-strong border-t-gold" />
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#090D16] text-slate-100 antialiased">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased">
       <style>{`
         body > div > header,
         body > div > footer { display: none !important; }

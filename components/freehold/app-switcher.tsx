@@ -26,7 +26,7 @@ type AppEntry = {
 }
 
 const operate: AppEntry[] = [
-  { href: '/freehold-intelligence/lead-machine', label: 'Lead Machine', blurb: 'Listings, landings, ads, approvals.', icon: Zap,        tint: 'from-[#D4AF37]/30 to-transparent' },
+  { href: '/freehold-intelligence/lead-machine', label: 'Lead Machine', blurb: 'Listings, landings, ads, approvals.', icon: Zap,        tint: 'from-gold/30 to-transparent' },
   { href: '/freehold-intelligence/crm',          label: 'CRM',          blurb: 'Refined leads, intent, signals.',  icon: Users,      tint: 'from-emerald-500/25 to-transparent' },
   { href: '/freehold-intelligence/notebook',     label: 'Notebook',     blurb: 'AI briefs, drafts, exports.',      icon: BookOpen,   tint: 'from-sky-500/25 to-transparent' },
   { href: '/freehold-intelligence/review-requests', label: 'Reviews',   blurb: 'Approvals and review queue.',      icon: CheckSquare,tint: 'from-orange-500/25 to-transparent' },
@@ -46,11 +46,11 @@ function Tile({ entry, onClose }: { entry: AppEntry; onClose: () => void }) {
     <Link
       href={entry.href}
       onClick={onClose}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800 bg-[#0A0D10] p-5 transition hover:border-[#D4AF37]/30 hover:bg-[#0E1216]"
+      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-line bg-[#0A0D10] p-5 transition hover:border-gold/30 hover:bg-[#0E1216]"
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${entry.tint} opacity-60 transition group-hover:opacity-90`} />
       <div className="relative">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-slate-800/40 backdrop-blur">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-surface-2 backdrop-blur">
           <Icon className="h-5 w-5 text-white" />
         </div>
       </div>
@@ -74,11 +74,11 @@ export function AppSwitcher({ onClose }: { onClose: () => void }) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[110] overflow-y-auto bg-slate-900/85 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-[110] overflow-y-auto bg-surface backdrop-blur-2xl">
       <div className="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-20">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-[#D4AF37]/90">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-gold/90">
               <Sparkles className="h-3.5 w-3.5" /> Freehold Intelligence
             </div>
             <h2 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">Where do you want to go?</h2>
@@ -89,7 +89,7 @@ export function AppSwitcher({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             aria-label="Close"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-slate-800/40 text-slate-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-surface-2 text-slate-300 transition hover:border-white/25 hover:bg-white/10 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>

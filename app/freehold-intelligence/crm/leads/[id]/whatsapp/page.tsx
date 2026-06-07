@@ -181,10 +181,10 @@ function AiPanel({
   useEffect(() => { generate() }, [])
 
   return (
-    <div className="flex w-72 shrink-0 flex-col border-l border-slate-800 bg-[#0A0E14]">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+    <div className="flex w-72 shrink-0 flex-col border-l border-line bg-app">
+      <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Sparkles className="h-4 w-4 text-[#D4AF37]" /> AI Replies
+          <Sparkles className="h-4 w-4 text-gold" /> AI Replies
         </div>
         <button onClick={onClose} className="rounded p-1 text-slate-500 hover:text-white">
           <X className="h-4 w-4" />
@@ -199,7 +199,7 @@ function AiPanel({
         {error && <p className="text-xs text-red-400/80">{error}</p>}
         {suggestions.map((s, i) => (
           <button key={i} onClick={() => onSelect(s)}
-            className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white active:scale-[0.98]">
+            className="w-full rounded-[14px] border border-line bg-surface px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-gold/30 hover:text-white active:scale-[0.98]">
             {s}
           </button>
         ))}
@@ -207,7 +207,7 @@ function AiPanel({
           <p className="py-4 text-center text-xs text-slate-600">No suggestions generated.</p>
         )}
         <button onClick={generate} disabled={loading}
-          className="mt-1 w-full rounded-full border border-slate-800 py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
+          className="mt-1 w-full rounded-full border border-line py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
           {loading ? 'Generating…' : '↻ Regenerate'}
         </button>
       </div>
@@ -367,10 +367,10 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     <div className="flex h-[calc(100vh-100px)] overflow-hidden bg-[#111B21]">
 
       {/* ── Left sidebar: lead + inventory ───────────────────────────────── */}
-      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-800 bg-[#202C33] lg:flex">
+      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-line bg-[#202C33] lg:flex">
 
         {/* Sidebar header */}
-        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5">
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
             className="rounded-full p-1 text-slate-500 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
@@ -392,7 +392,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
         <div className="flex-1 overflow-y-auto">
           {/* Lead info */}
-          <div className="border-b border-slate-800 px-4 py-4 space-y-2.5">
+          <div className="border-b border-line px-4 py-4 space-y-2.5">
             <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">Lead Details</div>
             {[
               { label: 'Stage',    value: lead.pipelineStage },
@@ -409,8 +409,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
 
           {/* AI next action */}
-          <div className="border-b border-slate-800 px-4 py-3.5">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#D4AF37]/60">
+          <div className="border-b border-line px-4 py-3.5">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-gold/60">
               <Brain className="h-3 w-3" /> AI Next Action
             </div>
             <p className="text-xs leading-relaxed text-slate-400">{lead.nextBestAction}</p>
@@ -425,7 +425,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   onClick={() => setInput(
                     `I'd like to share a property that matches your requirements:\n\n*${p.name}* — ${p.area}\nFrom ${p.startingPriceAED ? `AED ${(p.startingPriceAED / 1e6).toFixed(1)}M` : 'price on request'} · ${p.bedrooms} BR${p.roi ? ` · ${p.roi}% ROI` : ''}\n${p.paymentPlan ?? ''}\n\nWould you like to know more?`,
                   )}
-                  className="group w-full rounded-[12px] border border-slate-800 bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
+                  className="group w-full rounded-[12px] border border-line bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="truncate text-xs font-medium text-slate-100 group-hover:text-white">{p.name}</div>
@@ -449,9 +449,9 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
 
           {/* Notebook */}
-          <div className="border-t border-slate-800 px-4 py-3">
+          <div className="border-t border-line px-4 py-3">
             <Link href={`/freehold-intelligence/notebook?lead=${lead.id}`}
-              className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-[#D4AF37]">
+              className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-gold">
               <BookOpen className="h-3.5 w-3.5" /> View in Notebook
             </Link>
           </div>
@@ -462,7 +462,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Chat header — WhatsApp Web style */}
-        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-slate-800 bg-[#202C33] px-4">
+        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-line bg-[#202C33] px-4">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
             className="flex-shrink-0 rounded-full p-1 text-slate-500 transition hover:text-white lg:hidden">
             <ArrowLeft className="h-4 w-4" />
@@ -485,14 +485,14 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
           <div className="flex items-center gap-1">
             <a href={`tel:${lead.phone}`}
-              className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
+              className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
               <Phone className="h-4 w-4" />
             </a>
             <button onClick={() => setShowAI((v) => !v)}
-              className={`rounded-full p-2 transition hover:bg-slate-800/50 ${showAI ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-white'}`}>
+              className={`rounded-full p-2 transition hover:bg-surface-2 ${showAI ? 'text-gold' : 'text-slate-500 hover:text-white'}`}>
               <Sparkles className="h-4 w-4" />
             </button>
-            <button onClick={() => toast.info('Conversation options')} className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
+            <button onClick={() => toast.info('Conversation options')} className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
               <MoreVertical className="h-4 w-4" />
             </button>
           </div>
@@ -588,7 +588,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             {/* AI suggestion strip */}
             {input === '' && (
               <button onClick={() => setShowAI(true)}
-                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-[#D4AF37]/20 py-1.5 text-xs text-[#D4AF37]/50 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]">
+                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-gold/20 py-1.5 text-xs text-gold/50 transition hover:border-gold/40 hover:text-gold">
                 <Sparkles className="h-3 w-3" /> Ask AI to suggest a reply
               </button>
             )}

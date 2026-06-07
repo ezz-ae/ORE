@@ -12,15 +12,15 @@ import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { ListingWorkspace } from './_components/ListingWorkspace'
 
 function scoreTone(n: number) {
-  if (n >= 80) return { bar: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' }
-  if (n >= 50) return { bar: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]' }
+  if (n >= 80) return { bar: 'bg-gold', text: 'text-gold' }
+  if (n >= 50) return { bar: 'bg-gold', text: 'text-[#F8E7AE]' }
   return { bar: 'bg-red-400', text: 'text-red-300' }
 }
 
 function blockerTone(s: string) {
-  if (s === 'Clear') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Clear' }
+  if (s === 'Clear') return { dot: 'bg-gold', text: 'text-gold', label: 'Clear' }
   if (s === 'Needs Access') return { dot: 'bg-red-400', text: 'text-red-300', label: 'Needs access' }
-  if (s === 'Needs Data') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Needs data' }
+  if (s === 'Needs Data') return { dot: 'bg-gold', text: 'text-[#F8E7AE]', label: 'Needs data' }
   return { dot: 'bg-red-400', text: 'text-red-300', label: 'Blocked' }
 }
 
@@ -28,10 +28,10 @@ function statusChip(s: string) {
   const green = ['Ready', 'Approved', 'Landing Active', 'Campaign Running', 'Ready for Ads']
   const gold = ['Needs Review', 'Pending Review', 'Paused']
   const red = ['Blocked', 'Missing Data', 'Needs Landing', 'Missing', 'Needs Assets']
-  if (green.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]'
-  if (gold.some(g => s.includes(g) || s === g)) return 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#F8E7AE]'
+  if (green.some(g => s.includes(g) || s === g)) return 'border-gold/25 bg-gold/10 text-gold'
+  if (gold.some(g => s.includes(g) || s === g)) return 'border-gold/25 bg-gold/10 text-[#F8E7AE]'
   if (red.some(r => s.includes(r) || s === r)) return 'border-red-400/25 bg-red-400/10 text-red-300'
-  return 'border-slate-700 bg-slate-800/50 text-slate-400'
+  return 'border-line-strong bg-surface-2 text-slate-400'
 }
 
 export async function generateStaticParams() {
@@ -97,10 +97,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         {scoreItems.map((item) => {
           const t = scoreTone(item.score)
           return (
-            <div key={item.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+            <div key={item.label} className="rounded-[18px] border border-line bg-surface p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
               <p className={`mt-1.5 text-[28px] font-semibold leading-none tabular-nums ${t.text}`}>{item.score}</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                 <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${item.score}%` }} />
               </div>
             </div>
@@ -109,8 +109,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* Component checks */}
-      <section className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-        <div className="border-b border-slate-800 px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <section className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
+        <div className="border-b border-line px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
           Component readiness
         </div>
         <div className="divide-y divide-white/[0.04]">
@@ -119,7 +119,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             return (
               <div key={label} className="flex items-center justify-between gap-4 px-6 py-3.5">
                 <span className="text-sm text-slate-300">{label}</span>
-                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${isReady ? 'text-[#D4AF37]' : 'text-[#F8E7AE]'}`}>
+                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${isReady ? 'text-gold' : 'text-[#F8E7AE]'}`}>
                   {isReady
                     ? <CheckCircle2 className="h-3.5 w-3.5" />
                     : <Clock className="h-3.5 w-3.5" />}
@@ -151,15 +151,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       {/* Landing status */}
       {landing && (
         <section className="mt-5">
-          <div className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+          <div className="overflow-hidden rounded-[22px] border border-line bg-surface">
+            <div className="flex items-center justify-between border-b border-line px-6 py-4">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-slate-400" />
                 <span className="text-sm font-semibold text-white">Landing page</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
-                  <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${landing.completion}%` }} />
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
+                  <div className="h-full rounded-full bg-gold" style={{ width: `${landing.completion}%` }} />
                 </div>
                 <span className="text-xs tabular-nums text-slate-400">{landing.completion}%</span>
                 <span className={`inline-flex rounded-full border px-2 py-0.5 text-sm ${statusChip(landing.status)}`}>{landing.status}</span>
@@ -171,7 +171,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 <ul className="mt-3 space-y-1.5">
                   {landing.recommendedEdits.map((edit) => (
                     <li key={edit} className="flex items-start gap-2 text-xs text-[#F8E7AE]/70">
-                      <Sparkles className="mt-[3px] h-3 w-3 shrink-0 text-[#D4AF37]/60" />
+                      <Sparkles className="mt-[3px] h-3 w-3 shrink-0 text-gold/60" />
                       {edit}
                     </li>
                   ))}
@@ -184,10 +184,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
       {/* Ad Request */}
       {adRequest && (
-        <section className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
+        <section className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-6 py-4">
             <div className="flex items-center gap-2">
-              <Megaphone className="h-4 w-4 text-[#D4AF37]" />
+              <Megaphone className="h-4 w-4 text-gold" />
               <span className="text-sm font-semibold text-white">Ad request</span>
             </div>
             <span className={`inline-flex rounded-full border px-2 py-0.5 text-sm ${statusChip(adRequest.status)}`}>{adRequest.status}</span>
@@ -230,21 +230,21 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       <section className="mt-10 flex flex-wrap gap-3">
         <Link
           href={`/freehold-intelligence/review-requests?project=${listing.projectId}`}
-          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90"
+          className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-white/90"
         >
           <Play className="h-3.5 w-3.5" />
           Open workspace
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/ad-requests"
-          className="inline-flex items-center gap-2 rounded-[12px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-5 py-2.5 text-sm font-medium text-[#F8E7AE] transition hover:border-[#D4AF37]/35"
+          className="inline-flex items-center gap-2 rounded-[12px] border border-gold/20 bg-gold/[0.06] px-5 py-2.5 text-sm font-medium text-[#F8E7AE] transition hover:border-gold/35"
         >
           <Megaphone className="h-3.5 w-3.5" />
           Create ad request
         </Link>
         <Link
           href={`/freehold-intelligence/notebook?listing=${listing.id}`}
-          className="inline-flex items-center gap-2 rounded-[12px] border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:border-white/20 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-[12px] border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:border-white/20 hover:text-white"
         >
           <BookOpen className="h-3.5 w-3.5" />
           Open in Notebook

@@ -30,19 +30,19 @@ const websitePages: PageRow[] = [
 function typeBadge(type: PageRow['type']) {
   if (type === 'Landing') return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
   if (type === 'Blog')    return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
-  if (type === 'Legal')   return 'text-slate-400 bg-slate-800/50 border-slate-700'
+  if (type === 'Legal')   return 'text-slate-400 bg-surface-2 border-line-strong'
   return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
 }
 
 function statusBadge(status: PageRow['status']) {
-  if (status === 'Published') return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
+  if (status === 'Published') return 'text-gold bg-gold/10 border-gold/20'
   if (status === 'Review')    return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-  return 'text-slate-400 bg-slate-800/50 border-slate-700'
+  return 'text-slate-400 bg-surface-2 border-line-strong'
 }
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-[#D4AF37]'
-  if (score >= 60) return 'text-[#D4AF37]'
+  if (score >= 80) return 'text-gold'
+  if (score >= 60) return 'text-gold'
   return 'text-slate-400'
 }
 
@@ -83,7 +83,7 @@ export default function WebsitePagesPage() {
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
                 ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
-                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
             {f}
@@ -93,29 +93,29 @@ export default function WebsitePagesPage() {
 
       {/* Stats */}
       <div className="mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Total </span>
           <span className="font-semibold text-slate-100">{websitePages.length}</span>
         </div>
-        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Published </span>
-          <span className="font-semibold text-[#D4AF37]">{websitePages.filter((p) => p.status === 'Published').length}</span>
+          <span className="font-semibold text-gold">{websitePages.filter((p) => p.status === 'Published').length}</span>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Needs Review </span>
           <span className="font-semibold text-amber-400">{websitePages.filter((p) => p.status === 'Review').length}</span>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Draft </span>
           <span className="font-semibold text-slate-400">{websitePages.filter((p) => p.status === 'Draft').length}</span>
         </div>
       </div>
 
       {/* Table */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-800/50">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
         <table className="w-full min-w-[900px]">
           <thead>
-            <tr className="border-b border-slate-800">
+            <tr className="border-b border-line">
               {['Page Title', 'URL', 'Type', 'Status', 'Words', 'SEO Score', 'Last AI Review', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
                   {h}
@@ -123,9 +123,9 @@ export default function WebsitePagesPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-line">
             {filtered.map((page) => (
-              <tr key={page.url} className="group transition hover:bg-slate-800/30">
+              <tr key={page.url} className="group transition hover:bg-surface-2">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     {page.status === 'Review'

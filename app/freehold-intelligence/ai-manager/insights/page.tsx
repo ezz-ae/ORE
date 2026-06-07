@@ -107,7 +107,7 @@ const insights: Insight[] = [
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
-  Opportunity: { label: 'Opportunity', className: 'bg-[#D4AF37]/10 border border-emerald-500/25 text-[#D4AF37]' },
+  Opportunity: { label: 'Opportunity', className: 'bg-gold/10 border border-emerald-500/25 text-gold' },
   Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-slate-400' },
 }
 
@@ -121,15 +121,15 @@ const contentRows = [
 ]
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-[#D4AF37]'
-  if (score >= 60) return 'text-[#D4AF37]'
+  if (score >= 80) return 'text-gold'
+  if (score >= 60) return 'text-gold'
   return 'text-red-400'
 }
 
 function statusBadge(status: string) {
-  if (status === 'Good')       return 'bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37]'
+  if (status === 'Good')       return 'bg-gold/10 border border-gold/20 text-gold'
   if (status === 'Needs work') return 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-  return 'bg-slate-800/50 border border-slate-700 text-slate-400'
+  return 'bg-surface-2 border border-line-strong text-slate-400'
 }
 
 // ─── recommended actions ───────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ export default function InsightsPage() {
       </div>
 
       {generated && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3 text-sm text-[#D4AF37]">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-gold">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Report generated — insights refreshed from latest data.
         </div>
@@ -225,7 +225,7 @@ export default function InsightsPage() {
           {kpiCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+              className="rounded-2xl border border-line bg-surface-2 p-5"
             >
               <div className="text-xs font-medium uppercase tracking-widest text-slate-500">
                 {card.label}
@@ -253,7 +253,7 @@ export default function InsightsPage() {
             return (
               <div
                 key={insight.title}
-                className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+                className="rounded-2xl border border-line bg-surface-2 p-5"
               >
                 <div className="flex items-start gap-4">
                   {/* rose sparkles icon */}
@@ -290,10 +290,10 @@ export default function InsightsPage() {
           <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Content Performance by Section</h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/50">
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 {['Section', 'Items', 'Published', 'Avg SEO', 'Status'].map((h) => (
                   <th
                     key={h}
@@ -309,8 +309,8 @@ export default function InsightsPage() {
                 <tr
                   key={row.section}
                   className={[
-                    'transition hover:bg-slate-800/30',
-                    i !== contentRows.length - 1 ? 'border-b border-slate-800' : '',
+                    'transition hover:bg-surface-2',
+                    i !== contentRows.length - 1 ? 'border-b border-line' : '',
                   ].join(' ')}
                 >
                   <td className="px-5 py-4 font-medium text-slate-300">{row.section}</td>
@@ -342,7 +342,7 @@ export default function InsightsPage() {
           {actions.map((action) => (
             <div
               key={action.n}
-              className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+              className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-2 p-5"
             >
               {/* number badge */}
               <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-slate-400">

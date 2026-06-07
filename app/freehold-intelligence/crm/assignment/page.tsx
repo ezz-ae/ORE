@@ -11,15 +11,15 @@ type UrgencyFilter = 'all' | 'critical' | 'high' | 'medium'
 
 function urgencyBadgeClass(u: string) {
   if (u === 'critical') return 'bg-red-400/10 border-red-400/25 text-red-400'
-  if (u === 'high')     return 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#D4AF37]'
+  if (u === 'high')     return 'bg-gold/10 border-gold/25 text-gold'
   if (u === 'medium')   return 'bg-sky-500/10 border-sky-400/25 text-slate-300'
-  return 'bg-slate-800/50 border-slate-700 text-slate-400'
+  return 'bg-surface-2 border-line-strong text-slate-400'
 }
 
 function agentStatusClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'bg-[#D4AF37]/10 border-[#D4AF37]/25 text-[#D4AF37]'
+  if (status === 'available')   return 'bg-gold/10 border-gold/25 text-gold'
   if (status === 'at_capacity') return 'bg-amber-400/10 border-amber-400/25 text-amber-400'
-  return 'bg-slate-800/50 border-slate-700 text-slate-400'
+  return 'bg-surface-2 border-line-strong text-slate-400'
 }
 
 function agentStatusLabel(status: CRMAgentCapacity['status']) {
@@ -29,15 +29,15 @@ function agentStatusLabel(status: CRMAgentCapacity['status']) {
 }
 
 function agentBarClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'bg-[#D4AF37]'
+  if (status === 'available')   return 'bg-gold'
   if (status === 'at_capacity') return 'bg-amber-400'
-  return 'bg-slate-700'
+  return 'bg-surface-3'
 }
 
 function agentAvatarClass(status: CRMAgentCapacity['status']) {
-  if (status === 'available')   return 'from-emerald-500/20 to-emerald-400/5 text-[#D4AF37]'
+  if (status === 'available')   return 'from-emerald-500/20 to-emerald-400/5 text-gold'
   if (status === 'at_capacity') return 'from-amber-500/20 to-amber-400/5 text-amber-300'
-  return 'from-slate-700/40 to-slate-800/20 text-slate-400'
+  return 'from-surface-3 to-surface-2 text-slate-400'
 }
 
 const URGENCY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
@@ -51,7 +51,7 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub?: string
 }) {
   return (
-    <div className="rounded-[18px] border border-slate-800 bg-slate-900 px-5 py-4">
+    <div className="rounded-[18px] border border-line bg-surface px-5 py-4">
       <div className="flex items-center gap-2 text-slate-500">
         <Icon className="h-3.5 w-3.5" />
         <span className="text-xs font-semibold uppercase tracking-wider">{label}</span>
@@ -76,15 +76,15 @@ function AgentButton({
       className={[
         'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all',
         agent.status === 'available'
-          ? 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] text-[#D4AF37] hover:border-emerald-400/40 hover:bg-[#D4AF37]/10'
+          ? 'border-gold/20 bg-gold/[0.06] text-gold hover:border-emerald-400/40 hover:bg-gold/10'
           : agent.status === 'at_capacity'
           ? 'border-amber-400/20 bg-amber-400/[0.04] text-amber-400/80 hover:border-amber-400/35'
-          : 'cursor-not-allowed border-slate-800 bg-slate-800/50 text-slate-500',
+          : 'cursor-not-allowed border-line bg-surface-2 text-slate-500',
       ].join(' ')}
     >
       <span className={[
         'h-1.5 w-1.5 rounded-full',
-        agent.status === 'available' ? 'bg-[#D4AF37]' : agent.status === 'at_capacity' ? 'bg-amber-400' : 'bg-slate-600',
+        agent.status === 'available' ? 'bg-gold' : agent.status === 'at_capacity' ? 'bg-amber-400' : 'bg-surface-3',
       ].join(' ')} />
       {agent.name}
     </button>
@@ -108,18 +108,18 @@ function LeadCard({
 
   if (justAssigned) {
     return (
-      <div className="flex items-center gap-3 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition-all">
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+      <div className="flex items-center gap-3 rounded-[18px] border border-gold/20 bg-gold/[0.04] px-5 py-4 transition-all">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
         <div>
           <span className="text-sm font-medium text-white">{lead.name}</span>
-          <span className="ml-2 text-sm text-[#D4AF37]">Assigned to {assignedName}</span>
+          <span className="ml-2 text-sm text-gold">Assigned to {assignedName}</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition-all hover:border-slate-700">
+    <div className="rounded-[20px] border border-line bg-surface p-5 transition-all hover:border-line-strong">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -127,7 +127,7 @@ function LeadCard({
             <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-[0.1em] ${urgencyBadgeClass(lead.urgency)}`}>
               {lead.urgency}
             </span>
-            <span className="rounded-full bg-slate-800/50 px-2 py-0.5 text-xs text-slate-400">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-slate-400">
               Intent {lead.intentScore}
             </span>
           </div>
@@ -151,7 +151,7 @@ function LeadCard({
 
 function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
   return (
-    <div className="rounded-[18px] border border-slate-800 bg-[#0D1117] p-4">
+    <div className="rounded-[18px] border border-line bg-ink p-4">
       <div className="flex items-center gap-3">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-semibold ${agentAvatarClass(agent.status)}`}>
           {agent.initials}
@@ -172,7 +172,7 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
           <span>Load</span>
           <span className="font-medium text-slate-300">{agent.utilization}%</span>
         </div>
-        <div className="h-1 overflow-hidden rounded-full bg-slate-800">
+        <div className="h-1 overflow-hidden rounded-full bg-surface-2">
           <div
             className={`h-full transition-all ${agentBarClass(agent.status)}`}
             style={{ width: `${Math.min(agent.utilization, 100)}%` }}
@@ -180,7 +180,7 @@ function AgentRosterCard({ agent }: { agent: CRMAgentCapacity }) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3 text-xs">
+      <div className="mt-3 flex items-center justify-between border-t border-line pt-3 text-xs">
         <div className="text-center">
           <div className="text-sm font-semibold text-white">{agent.totalLeads}</div>
           <div className="text-slate-500">Leads</div>
@@ -277,7 +277,7 @@ export default function AssignmentPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+      <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
         <UserCog className="h-3.5 w-3.5" />
         <span>CRM · Assignment</span>
       </div>
@@ -286,7 +286,7 @@ export default function AssignmentPage() {
       </h1>
       <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-400">
         {totalLeadsAll} total leads across team &mdash;{' '}
-        <span className={totalUnassigned > 0 ? 'text-[#D4AF37]' : 'text-slate-400'}>
+        <span className={totalUnassigned > 0 ? 'text-gold' : 'text-slate-400'}>
           {totalUnassigned} unassigned
         </span>{' '}
         waiting for an agent.
@@ -318,11 +318,11 @@ export default function AssignmentPage() {
                     ? key === 'critical'
                       ? 'border-red-400/40 bg-red-400/10 text-red-400'
                       : key === 'high'
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                      ? 'border-gold/40 bg-gold/10 text-gold'
                       : key === 'medium'
                       ? 'border-sky-400/40 bg-sky-400/10 text-slate-300'
-                      : 'border-slate-600 bg-slate-800/60 text-white'
-                    : 'border-slate-800 bg-transparent text-slate-400 hover:border-slate-700 hover:text-slate-300',
+                      : 'border-line-strong bg-surface-2 text-white'
+                    : 'border-line bg-transparent text-slate-400 hover:border-line-strong hover:text-slate-300',
                 ].join(' ')}
               >
                 {label}
@@ -342,8 +342,8 @@ export default function AssignmentPage() {
 
           {/* Queue cards */}
           {filteredQueue.length === 0 && (
-            <div className="rounded-[20px] border border-slate-800 bg-slate-900 px-6 py-10 text-center">
-              <CheckCircle2 className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
+            <div className="rounded-[20px] border border-line bg-surface px-6 py-10 text-center">
+              <CheckCircle2 className="mx-auto h-8 w-8 text-gold/40" />
               <p className="mt-3 text-sm text-slate-400">
                 {activeUrgency === 'all' ? 'All leads have been assigned.' : `No ${activeUrgency} leads in queue.`}
               </p>
@@ -373,12 +373,12 @@ export default function AssignmentPage() {
                 {recentlyCompleted.map((lead) => (
                   <div
                     key={lead.id}
-                    className="flex items-center gap-3 rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3"
+                    className="flex items-center gap-3 rounded-[14px] border border-line bg-surface px-4 py-3"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#D4AF37]/60" />
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-gold/60" />
                     <span className="text-sm text-slate-300">{lead.name}</span>
                     <span className="text-sm text-slate-500">→</span>
-                    <span className="text-sm text-[#D4AF37]/70">{assignments[lead.id]}</span>
+                    <span className="text-sm text-gold/70">{assignments[lead.id]}</span>
                     <span className={`ml-auto rounded-full border px-2 py-0.5 text-xs font-medium ${urgencyBadgeClass(lead.urgency)}`}>
                       {lead.urgency}
                     </span>
@@ -394,19 +394,19 @@ export default function AssignmentPage() {
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Already assigned
               </div>
-              <div className="overflow-hidden rounded-[18px] border border-slate-800 bg-slate-900">
+              <div className="overflow-hidden rounded-[18px] border border-line bg-surface">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800">
+                    <tr className="border-b border-line">
                       <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Lead</th>
                       <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Source</th>
                       <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
                       <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-line">
                     {alreadyAssignedLeads.map((lead) => (
-                      <tr key={lead.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={lead.id} className="hover:bg-surface-2 transition-colors">
                         <td className="px-5 py-3">
                           <div className="font-medium text-slate-100">{lead.name}</div>
                           <div className="text-xs text-slate-500">Intent {lead.intentScore}</div>
@@ -429,7 +429,7 @@ export default function AssignmentPage() {
 
         {/* ── Sidebar: Agent roster ── */}
         <div className="space-y-4">
-          <div className="rounded-[22px] border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-[22px] border border-line bg-surface p-5">
             <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Agent roster
             </div>
@@ -441,11 +441,11 @@ export default function AssignmentPage() {
           </div>
 
           {/* Quick legend */}
-          <div className="rounded-[18px] border border-slate-800 bg-slate-900/60 px-4 py-4">
+          <div className="rounded-[18px] border border-line bg-surface px-4 py-4">
             <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Status legend</div>
             <div className="space-y-2">
               {[
-                { label: 'Available', dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]' },
+                { label: 'Available', dot: 'bg-gold', text: 'text-gold' },
                 { label: 'Busy', dot: 'bg-amber-400', text: 'text-amber-400' },
                 { label: 'Overloaded', dot: 'bg-red-400', text: 'text-red-400' },
               ].map(({ label, dot, text }) => (
