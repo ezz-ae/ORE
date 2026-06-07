@@ -6,6 +6,7 @@ import { ArrowUpRight, Radio, TrendingDown, TrendingUp } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 // 4-week CPL trend: Meta vs Google
 const CPL_TREND = [
@@ -70,18 +71,12 @@ export default function AdsLivePage() {
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <section>
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gold/85">
-            <Radio className="h-3.5 w-3.5" /> Ads Live
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Ads dashboard<br />
-            <span className="text-slate-500">all platforms.</span>
-          </h1>
-        </section>
-
-        <div className="mt-7 flex items-center gap-3 sm:mt-10">
+      <PageHeader
+        eyebrow="Ads Live"
+        Icon={Radio}
+        title="Live ad performance"
+        subtitle="Real-time spend, leads and CPL across Meta and Google"
+        actions={
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
@@ -89,11 +84,11 @@ export default function AdsLivePage() {
             </span>
             Live · {now} GST
           </span>
-        </div>
-      </div>
+        }
+      />
 
       {/* Platform toggle */}
-      <div className="mt-8 flex gap-1 rounded-xl border border-line bg-surface-2 p-1 w-fit">
+      <div className="mt-6 flex gap-1 rounded-xl border border-line bg-surface-2 p-1 w-fit">
         {tabs.map((t) => (
           <button
             key={t}
@@ -110,19 +105,11 @@ export default function AdsLivePage() {
       </div>
 
       {/* Top metrics */}
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Total Spend 30d', value: 'AED 31,290', sub: 'Both platforms' },
-          { label: 'Total Leads',     value: '415',         sub: '30-day window' },
-          { label: 'Avg CPL',         value: 'AED 75.4',   sub: 'Blended average' },
-          { label: 'Active Campaigns', value: '6',          sub: 'Meta + Google' },
-        ].map((m) => (
-          <div key={m.label} className="rounded-2xl border border-line bg-surface-2 p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{m.label}</div>
-            <div className="mt-2 text-[28px] font-semibold leading-none text-white">{m.value}</div>
-            <div className="mt-1.5 text-sm text-slate-500">{m.sub}</div>
-          </div>
-        ))}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total Spend 30d" value="AED 31,290" hint="Both platforms" />
+        <StatCard label="Total Leads" value={415} hint="30-day window" delta={{ value: '+12%', direction: 'up' }} />
+        <StatCard label="Avg CPL" value="AED 75.4" hint="Blended average" delta={{ value: '−18.5%', direction: 'up' }} />
+        <StatCard label="Active Campaigns" value={6} hint="Meta + Google" />
       </div>
 
       {/* Platform split */}
@@ -204,19 +191,19 @@ export default function AdsLivePage() {
       </div>
 
       {/* Live campaigns */}
-      <section className="mt-10">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            Live Campaigns
-          </div>
-          <span className="flex items-center gap-1.5 text-sm text-gold/70">
+      <Section
+        className="mt-10"
+        title="Live Campaigns"
+        action={
+          <span className="flex items-center gap-1.5 text-xs text-gold/70">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
             </span>
             Live data
           </span>
-        </div>
+        }
+      >
 
         <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
           <div className="divide-y divide-line">
@@ -283,11 +270,10 @@ export default function AdsLivePage() {
             Full attribution report <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
-      </section>
+      </Section>
 
       {/* CPL trend chart */}
-      <section className="mt-10">
-        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">CPL trend · last 4 weeks</div>
+      <Section className="mt-10" title="CPL trend · last 4 weeks">
         <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-6 mb-4 text-xs">
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>
@@ -326,7 +312,7 @@ export default function AdsLivePage() {
           </div>
           <p className="mt-2 text-sm text-slate-500">Both platforms trending down — Meta dropped 18.5% over 4 weeks</p>
         </div>
-      </section>
+      </Section>
 
       {/* Quick links */}
       <div className="mt-8 flex flex-wrap gap-3">
@@ -351,10 +337,7 @@ export default function AdsLivePage() {
       </div>
 
       {/* Marketing Expert AI */}
-      <section className="mt-10">
-        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">
-          Marketing Expert
-        </div>
+      <Section className="mt-10" title="Marketing Expert">
         <AiPrompt
           skill="marketing_expert"
           placeholder="Ask about campaign strategy, budgets, RSA copy, or optimisation…"
@@ -387,7 +370,7 @@ export default function AdsLivePage() {
             cplTrend: CPL_TREND,
           }}
         />
-      </section>
+      </Section>
 
     </div>
   )

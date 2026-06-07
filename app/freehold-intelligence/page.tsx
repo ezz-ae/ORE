@@ -15,6 +15,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
 import { visibleApps } from '@/lib/freehold/apps'
+import { Section, Panel, PanelHeader } from '@/components/freehold/ui'
 
 const stats          = getInventoryStats()
 const totalVisitors  = inventoryProperties.reduce((s, p) => s + p.views30d, 0)
@@ -249,14 +250,11 @@ export default function IntelligenceLauncher() {
       </section>
 
       {/* ── Urgent actions ──────────────────────────────────────────────────── */}
-      <section className="mb-8">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-            Urgent
-          </div>
-          <span className="text-sm text-slate-500">{serverSummary.urgentTasks.length} open</span>
-        </div>
+      <Section
+        className="mb-8"
+        title={<><AlertTriangle className="inline h-3.5 w-3.5 text-red-400 mr-1.5 -mt-0.5" />Urgent</>}
+        action={<span className="text-xs text-slate-500">{serverSummary.urgentTasks.length} open</span>}
+      >
         <div className="grid gap-3 sm:grid-cols-3">
           {serverSummary.urgentTasks.map((task) => (
             <div key={task.id} className={`rounded-xl border p-4 ${urgentCardCls(task.priority)}`}>
@@ -282,11 +280,10 @@ export default function IntelligenceLauncher() {
             </div>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── App grid ──────────────────────────────────────────────────────────── */}
-      <section>
-        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Apps</div>
+      <Section title="Apps">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {apps.map((app) => {
             const metric = DYNAMIC_META[app.id]?.metric ?? app.metric
@@ -319,20 +316,18 @@ export default function IntelligenceLauncher() {
             )
           })}
         </div>
-      </section>
+      </Section>
 
       {/* ── Executive overview ─────────────────────────────────────────────── */}
-      <section className="mt-8 grid gap-4 lg:grid-cols-2">
+      <div className="mt-8 grid gap-4 lg:grid-cols-2">
 
         {/* Priority queue */}
-        <div className="rounded-xl border border-white/[0.07] bg-surface overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3.5">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-              <AlertCircle className="h-4 w-4 text-amber-400" />
-              Priorities
-            </div>
-            <span className="text-sm text-slate-500">{priorities.length} open</span>
-          </div>
+        <Panel>
+          <PanelHeader
+            title="Priorities"
+            icon={<AlertCircle className="h-4 w-4 text-amber-400" />}
+            action={<span className="text-xs text-slate-500">{priorities.length} open</span>}
+          />
           <div className="divide-y divide-white/[0.06]">
             {priorities.slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
@@ -360,14 +355,11 @@ export default function IntelligenceLauncher() {
               </div>
             )}
           </div>
-        </div>
+        </Panel>
 
         {/* Live activity */}
-        <div className="rounded-xl border border-white/[0.07] bg-surface overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3.5 text-sm font-medium text-slate-300">
-            <Activity className="h-4 w-4" />
-            Live activity
-          </div>
+        <Panel>
+          <PanelHeader title="Live activity" icon={<Activity className="h-4 w-4" />} />
           <div className="divide-y divide-white/[0.06]">
             {ACTIVITY.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">
@@ -385,9 +377,9 @@ export default function IntelligenceLauncher() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
 
-      </section>
+      </div>
     </div>
   )
 }
