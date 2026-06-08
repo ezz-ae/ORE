@@ -1,103 +1,30 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Users, Wallet, Megaphone, BookOpen, Sparkles,
   Settings, ChevronRight, TrendingUp, Clock, Zap, Coins,
 } from 'lucide-react'
 import { agentProfile, agentPipelineLeads, agentWallet, agentLeadPool } from '@/src/features/freehold-intelligence/agent'
-import { useSession } from '@/lib/freehold/use-session'
 import { brokerMetrics } from '@/src/features/freehold-intelligence/credits'
 
-const myCredits = brokerMetrics.find((b) => b.id === 'bc_ahmed')
-
-const criticalLeads   = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
-const activeLeads     = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
+// Mock baseline values (kept as fallback)
+const myCredits       = brokerMetrics.find((b) => b.id === 'bc_ahmed')
+const mockCritical    = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
+const mockActive      = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
 const walletPending   = agentWallet.filter((w) => w.status !== 'paid' && w.amount > 0).reduce((s, w) => s + w.amount, 0)
 const poolRemaining   = agentLeadPool.monthlyQuota - agentLeadPool.used
 const offerLead       = agentPipelineLeads.find((l) => l.pipelineStage === 'offer')
 const viewingLead     = agentPipelineLeads.find((l) => l.hasViewingScheduled)
 
-const APPS = [
-  {
-    id:      'leads',
-    label:   'My Leads',
-    Icon:    Users,
-    href:    '/freehold-intelligence/crm',
-    metric:  `${criticalLeads > 0 ? `${criticalLeads} critical · ` : ''}${activeLeads} active`,
-    badge:   criticalLeads,
-    accent:  criticalLeads > 0 ? 'red' : 'sky',
-    sub:     'Pipeline · CRM',
-  },
-  {
-    id:      'campaigns',
-    label:   'Campaigns',
-    Icon:    Megaphone,
-    href:    '/freehold-intelligence/lead-machine/campaigns',
-    metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
-    badge:   0,
-    accent:  'blue',
-    sub:     'Ads & Spend',
-  },
-  {
-    id:      'account',
-    label:   'Account',
-    Icon:    Wallet,
-    href:    '/freehold-intelligence/agent/account',
-    metric:  `AED ${(walletPending / 1000).toFixed(0)}K pending · ${agentProfile.tier}`,
-    badge:   0,
-    accent:  'gold',
-    sub:     'Wallet & Profile',
-  },
-  {
-    id:      'credits',
-    label:   'Credits',
-    Icon:    Coins,
-    href:    '/freehold-intelligence/agent/credits',
-    metric:  `${(myCredits?.remaining ?? 0).toLocaleString()} credits left`,
-    badge:   0,
-    accent:  'gold',
-    sub:     'Ad Budget',
-  },
-  {
-    id:      'inventory',
-    label:   'Inventory',
-    Icon:    BookOpen,
-    href:    '/freehold-intelligence/inventory',
-    metric:  'Properties · Off-plan · Projects',
-    badge:   0,
-    accent:  'violet',
-    sub:     'Browse properties',
-  },
-  {
-    id:      'notebook',
-    label:   'Notebook',
-    Icon:    Sparkles,
-    href:    '/freehold-intelligence/notebook',
-    metric:  'Research · Pitch decks · AI',
-    badge:   0,
-    accent:  'gold',
-    sub:     'AI research workspace',
-  },
-  {
-    id:      'settings',
-    label:   'Settings',
-    Icon:    Settings,
-    href:    '/freehold-intelligence/agent/account',
-    metric:  `Lead pool: ${poolRemaining} of ${agentLeadPool.monthlyQuota} left`,
-    badge:   0,
-    accent:  'gray',
-    sub:     'Preferences',
-  },
-]
-
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
   sky:    { icon: 'text-sky-400',      card: 'border-sky-400/15 hover:border-sky-400/30',     badge: 'bg-sky-500'       },
-  gold:   { icon: 'text-gold',   card: 'border-gold/20 hover:border-gold/35', badge: 'bg-gold'     },
+  gold:   { icon: 'text-[#D4AF37]',   card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/35', badge: 'bg-[#D4AF37]'     },
   blue:   { icon: 'text-blue-400',     card: 'border-blue-400/15 hover:border-blue-400/30',   badge: 'bg-blue-500'      },
   violet: { icon: 'text-violet-400',   card: 'border-violet-400/15 hover:border-violet-400/30',badge: 'bg-violet-500'   },
-  gray:   { icon: 'text-slate-400',    card: 'border-line-strong hover:border-slate-500',        badge: 'bg-slate-500'     },
+  gray:   { icon: 'text-slate-400',    card: 'border-slate-700 hover:border-slate-500',        badge: 'bg-slate-500'     },
 }
 
 function timeAgo(iso: string) {
@@ -109,8 +36,105 @@ function timeAgo(iso: string) {
 }
 
 export default function AgentHomePage() {
-  const { user } = useSession()
   const now = new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
+
+  // Live metrics — override mock values when available
+  const [liveCritical, setLiveCritical] = useState<number | null>(null)
+  const [liveActive,   setLiveActive]   = useState<number | null>(null)
+  const [liveBalance,  setLiveBalance]  = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/freehold/crm/leads')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.leads) {
+          setLiveCritical(d.leads.filter((l: any) => l.urgency === 'critical').length)
+          setLiveActive(d.leads.filter((l: any) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length)
+        }
+      })
+      .catch(() => {})
+    fetch('/api/freehold/credits/balance')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.balance?.balance != null) setLiveBalance(d.balance.balance) })
+      .catch(() => {})
+  }, [])
+
+  const displayCritical = liveCritical ?? mockCritical
+  const displayActive   = liveActive   ?? mockActive
+  const displayBalance  = liveBalance  ?? (myCredits?.remaining ?? 0)
+
+  const APPS = useMemo(() => [
+    {
+      id:      'leads',
+      label:   'My Leads',
+      Icon:    Users,
+      href:    '/freehold-intelligence/agent/leads',
+      metric:  `${displayCritical > 0 ? `${displayCritical} critical · ` : ''}${displayActive} active`,
+      badge:   displayCritical,
+      accent:  displayCritical > 0 ? 'red' : 'sky',
+      sub:     'Pipeline',
+    },
+    {
+      id:      'account',
+      label:   'Account',
+      Icon:    Wallet,
+      href:    '/freehold-intelligence/agent/account',
+      metric:  `AED ${(walletPending / 1000).toFixed(0)}K pending · ${agentProfile.tier}`,
+      badge:   0,
+      accent:  'gold',
+      sub:     'Wallet & Profile',
+    },
+    {
+      id:      'campaigns',
+      label:   'Campaigns',
+      Icon:    Megaphone,
+      href:    '/freehold-intelligence/agent/campaigns',
+      metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
+      badge:   0,
+      accent:  'blue',
+      sub:     'Ads & Spend',
+    },
+    {
+      id:      'credits',
+      label:   'Credits',
+      Icon:    Coins,
+      href:    '/freehold-intelligence/agent/credits',
+      metric:  `${displayBalance.toLocaleString()} credits left`,
+      badge:   0,
+      accent:  'gold',
+      sub:     'Ad Budget',
+    },
+    {
+      id:      'notebook',
+      label:   'Inventory',
+      Icon:    BookOpen,
+      href:    '/freehold-intelligence/agent/notebook',
+      metric:  '3 project notes · 6 sources',
+      badge:   0,
+      accent:  'violet',
+      sub:     'NotebookLM',
+    },
+    {
+      id:      'ai',
+      label:   'My AI',
+      Icon:    Sparkles,
+      href:    '/freehold-intelligence/agent/ai',
+      metric:  '7 connections active',
+      badge:   0,
+      accent:  'gold',
+      sub:     'Agent Builder',
+    },
+    {
+      id:      'settings',
+      label:   'Settings',
+      Icon:    Settings,
+      href:    '/freehold-intelligence/agent',
+      metric:  `Lead pool: ${poolRemaining} of ${agentLeadPool.monthlyQuota} left`,
+      badge:   0,
+      accent:  'gray',
+      sub:     'Preferences',
+    },
+  ], [displayCritical, displayActive, displayBalance])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
@@ -119,18 +143,18 @@ export default function AgentHomePage() {
       <section>
         <div className="text-sm text-slate-500">{now}</div>
         <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-100">
-          {user?.name ? `Good morning, ${user.name.split(' ')[0]}.` : 'Good morning.'}
+          Good morning, {agentProfile.name.split(' ')[0]}.
         </h1>
 
         {/* Quick stats */}
         <div className="mt-5 flex flex-wrap gap-3">
           {[
             { Icon: TrendingUp, label: `AED ${(agentProfile.revMTD / 1_000_000).toFixed(1)}M MTD`, color: 'text-emerald-400' },
-            { Icon: Clock,      label: `${agentProfile.avgResponseH}h avg response`,                color: 'text-gold'   },
+            { Icon: Clock,      label: `${agentProfile.avgResponseH}h avg response`,                color: 'text-[#D4AF37]'   },
             { Icon: Users,      label: `${agentProfile.leadToViewingPct}% viewing rate`,           color: 'text-sky-400'     },
-            { Icon: Zap,        label: `${agentProfile.wins} wins this month`,                      color: 'text-gold'   },
+            { Icon: Zap,        label: `${agentProfile.wins} wins this month`,                      color: 'text-[#D4AF37]'   },
           ].map(({ Icon, label, color }) => (
-            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium ${color}`}>
+            <div key={label} className={`flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-medium ${color}`}>
               <Icon className="h-3 w-3" />
               {label}
             </div>
@@ -139,30 +163,30 @@ export default function AgentHomePage() {
       </section>
 
       {/* Today's Priority */}
-      {(offerLead || viewingLead || criticalLeads > 0) && (
+      {(offerLead || viewingLead || displayCritical > 0) && (
         <section className="mt-8">
           <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Today's focus</div>
           <div className="space-y-2">
             {offerLead && (
               <Link
-                href="/freehold-intelligence/crm"
-                className="group flex items-center gap-4 rounded-[18px] border border-gold/20 bg-gold/[0.04] px-5 py-4 transition hover:border-gold/35"
+                href="/freehold-intelligence/agent/leads"
+                className="group flex items-center gap-4 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] px-5 py-4 transition hover:border-[#D4AF37]/35"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-gold/15">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#D4AF37]/15">
                   <span className="text-[16px]">🔥</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-white">{offerLead.name} — {offerLead.property}</div>
                   <div className="mt-0.5 text-xs text-slate-400">{offerLead.note}</div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-gold">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-[#D4AF37]">
                   Offer <ChevronRight className="h-3.5 w-3.5" />
                 </div>
               </Link>
             )}
             {viewingLead && (
               <Link
-                href="/freehold-intelligence/crm"
+                href="/freehold-intelligence/agent/leads"
                 className="group flex items-center gap-4 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] px-5 py-4 transition hover:border-orange-400/35"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-orange-400/10">
@@ -177,16 +201,16 @@ export default function AgentHomePage() {
                 </div>
               </Link>
             )}
-            {criticalLeads > 0 && (
+            {displayCritical > 0 && (
               <Link
-                href="/freehold-intelligence/crm"
+                href="/freehold-intelligence/agent/leads"
                 className="group flex items-center gap-4 rounded-[18px] border border-red-400/15 bg-red-400/[0.03] px-5 py-4 transition hover:border-red-400/25"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-red-400/10">
                   <span className="text-[16px]">⚡</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-white">{criticalLeads} critical lead{criticalLeads !== 1 ? 's' : ''} need immediate action</div>
+                  <div className="text-sm font-semibold text-white">{displayCritical} critical lead{displayCritical !== 1 ? 's' : ''} need immediate action</div>
                   <div className="mt-0.5 text-xs text-slate-400">Response delay detected — act before competitor contact</div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium text-red-400">
@@ -208,14 +232,14 @@ export default function AgentHomePage() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-xl border bg-surface p-5 transition ${a.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition ${a.card}`}
               >
                 {app.badge > 0 && (
                   <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white ${a.badge}`}>
                     {app.badge}
                   </span>
                 )}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-line bg-surface-2 ${a.icon}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-800 bg-slate-800/50 ${a.icon}`}>
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4">
@@ -231,20 +255,20 @@ export default function AgentHomePage() {
 
       {/* Lead pool bar */}
       <section className="mt-8">
-        <div className="rounded-[18px] border border-line bg-surface p-4">
+        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-medium text-slate-500 uppercase tracking-[0.15em]">Lead Pool — {agentLeadPool.tier} Tier</div>
               <div className="mt-0.5 text-sm text-slate-300">{agentLeadPool.used} used of {agentLeadPool.monthlyQuota} this month</div>
             </div>
             <div className="text-right">
-              <div className="text-[22px] font-semibold text-gold tabular-nums">{poolRemaining}</div>
+              <div className="text-[22px] font-semibold text-[#D4AF37] tabular-nums">{poolRemaining}</div>
               <div className="text-xs text-slate-500">remaining</div>
             </div>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-700">
             <div
-              className="h-full rounded-full bg-gold transition-all"
+              className="h-full rounded-full bg-[#D4AF37] transition-all"
               style={{ width: `${(agentLeadPool.used / agentLeadPool.monthlyQuota) * 100}%` }}
             />
           </div>

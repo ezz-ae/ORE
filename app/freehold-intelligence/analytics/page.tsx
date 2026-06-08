@@ -1,9 +1,14 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { BarChart2 } from 'lucide-react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
-import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
+
+type DbStats = {
+  total_leads: number
+  leads_30d: number
+  closed_leads: number
+  new_leads: number
+} | null
 
 const FLAG: Record<string, string> = {
   AE: '🇦🇪',
@@ -22,12 +27,12 @@ function formatDuration(seconds: number): string {
 
 function SourceBadge({ type }: { type: string }) {
   const styles: Record<string, string> = {
-    organic:  'border-gold/25 bg-gold/10 text-gold',
-    paid:     'border-gold/15 bg-gold/[0.07] text-[#F8E7AE]',
-    social:   'border-line-strong bg-surface-2 text-slate-300',
-    direct:   'border-line bg-surface-2 text-slate-400',
-    referral: 'border-line-strong bg-surface-2 text-slate-300',
-    email:    'border-line-strong bg-surface-2 text-slate-300',
+    organic:  'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]',
+    paid:     'border-[#D4AF37]/15 bg-[#D4AF37]/[0.07] text-[#F8E7AE]',
+    social:   'border-slate-700 bg-slate-800/50 text-slate-300',
+    direct:   'border-slate-800 bg-slate-800/50 text-slate-400',
+    referral: 'border-slate-700 bg-slate-800/50 text-slate-300',
+    email:    'border-slate-700 bg-slate-800/50 text-slate-300',
   }
   const label = type.charAt(0).toUpperCase() + type.slice(1)
   return (
@@ -103,7 +108,7 @@ function SparklineChart({ daily }: { daily: { pageViews: number; uniqueVisitors:
 
 // ── Traffic Sources Bar Chart ────────────────────────────────────────────────
 const SOURCE_BAR_COLOR: Record<string, string> = {
-  organic:  'bg-gold',
+  organic:  'bg-[#D4AF37]',
   paid:     'bg-blue-500',
   social:   'bg-violet-500',
   direct:   'bg-white/40',
@@ -126,7 +131,7 @@ function SourcesBarChart({ sources }: { sources: { name: string; type: string; s
                   {src.sessions.toLocaleString('en-US')}
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-surface-3 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-slate-700 overflow-hidden">
                 <div
                   className={`h-full rounded-full ${SOURCE_BAR_COLOR[src.type] ?? 'bg-white/40'}`}
                   style={{ width: `${pct}%` }}
@@ -163,8 +168,8 @@ function FilterPills<T extends string>({
             onClick={() => onChange(value)}
             className={`rounded-full px-3 py-1 text-sm font-medium transition ${
               isActive
-                ? 'border border-gold/35 bg-gold/10 text-gold'
-                : 'border border-line-strong text-slate-400 bg-surface-2 hover:text-slate-200'
+                ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]'
+                : 'border border-slate-700 text-slate-400 bg-slate-800/50 hover:text-slate-200'
             }`}
           >
             {label}
@@ -192,29 +197,24 @@ const DEVICE_FILTER_OPTIONS: { label: string; value: DeviceFilterValue }[] = [
   { label: 'Tablet',  value: 'tablet'  },
 ]
 
-interface LiveLeadAnalytics {
-  total: number
-  last30d: number
-  last7d: number
-  closed: number
-  new: number
-  closingRate: number
-}
-
 export default function AnalyticsPage() {
   const a = siteAnalytics
 
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue>('All')
   const [deviceFilter, setDeviceFilter] = useState<DeviceFilterValue>('All')
 
-  // Live lead analytics from Neon (overlays on mock site analytics)
-  const [liveLeads, setLiveLeads] = useState<LiveLeadAnalytics | null>(null)
+  // Live DB stats — fetched on mount; enriches the mock analytics display
+  const [dbStats, setDbStats] = useState<DbStats>(null)
+
   useEffect(() => {
     fetch('/api/freehold/analytics/leads')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.leads) setLiveLeads(d.leads) })
+      .then(d => { if (d?.leads) setDbStats({ total_leads: d.leads.total, leads_30d: d.leads.last30d, closed_leads: d.leads.closed, new_leads: d.leads.new }) })
       .catch(() => {})
   }, [])
+
+  // Use DB conversion count when available; fall back to mock
+  const totalConversions = dbStats?.closed_leads ?? a.totalConversions
 
   // Filtered traffic sources (shared by bar chart and table)
   const filteredSources = useMemo(
@@ -245,57 +245,92 @@ export default function AnalyticsPage() {
     <div className="p-6 lg:p-8 space-y-8">
 
       {/* ── Page header ── */}
-      <PageHeader
-        eyebrow="Analytics"
-        Icon={BarChart2}
-        title="Site Analytics"
-        subtitle="Traffic, conversions, and audience insights"
-        actions={
-          <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
-            Last 30 days
-          </div>
-        }
-      />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Site Analytics</h1>
+          <p className="mt-1 text-sm text-slate-400">Traffic, conversions, and audience insights</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
+          Last 30 days
+        </div>
+      </div>
 
       {/* ── Top KPI row ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Page Views" value={a.totalPageViews.toLocaleString('en-US')} hint="Total impressions" delta={{ value: '+12%', direction: 'up' }} />
-        <StatCard label="Unique Visitors" value={a.totalUniqueSessions.toLocaleString('en-US')} hint="Sessions · 30d" />
-        <StatCard label="Leads (DB)" value={(liveLeads?.total ?? a.totalConversions).toLocaleString('en-US')} hint={liveLeads ? `${liveLeads.closingRate}% closing rate · live` : `${(a.conversionRate * 100).toFixed(1)}% conv. rate`} delta={{ value: liveLeads ? `${liveLeads.last30d} / 30d` : `${(a.conversionRate * 100).toFixed(1)}%`, direction: 'up' }} />
-        <StatCard label="Avg Session" value={formatDuration(a.avgSessionDuration)} hint="Avg duration" />
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Page Views</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {a.totalPageViews.toLocaleString('en-US')}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">Total impressions</div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Unique Visitors</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {a.totalUniqueSessions.toLocaleString('en-US')}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">Sessions · 30d</div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Conversions</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">
+            {totalConversions.toLocaleString('en-US')}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">
+            {(a.conversionRate * 100).toFixed(1)}% conv. rate
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg Session</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {formatDuration(a.avgSessionDuration)}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">Avg duration</div>
+        </div>
       </div>
 
       {/* ── Daily Traffic Chart ── */}
-      <Section title="Daily Traffic · 30 Days">
-        <div className="rounded-xl border border-line bg-surface p-5">
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Daily Traffic · 30 Days</div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
           <SparklineChart daily={a.daily} />
         </div>
-      </Section>
+      </section>
 
       {/* ── Sources Bar Chart ── */}
-      <Section
-        title="Sessions by Source"
-        action={<FilterPills options={SOURCE_FILTER_OPTIONS} active={sourceFilter} onChange={setSourceFilter} />}
-      >
-        <div className="rounded-xl border border-line bg-surface p-5">
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Sessions by Source</div>
+          <FilterPills
+            options={SOURCE_FILTER_OPTIONS}
+            active={sourceFilter}
+            onChange={setSourceFilter}
+          />
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
           {filteredSources.length > 0 ? (
             <SourcesBarChart sources={filteredSources} />
           ) : (
             <p className="py-6 text-center text-sm text-slate-500">No sources match the selected filter.</p>
           )}
         </div>
-      </Section>
+      </section>
 
       {/* ── Traffic Sources ── */}
-      <Section
-        title="Traffic Sources"
-        action={<FilterPills options={SOURCE_FILTER_OPTIONS} active={sourceFilter} onChange={setSourceFilter} />}
-      >
-        <div className="rounded-xl border border-line bg-surface overflow-hidden">
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Traffic Sources</div>
+          <FilterPills
+            options={SOURCE_FILTER_OPTIONS}
+            active={sourceFilter}
+            onChange={setSourceFilter}
+          />
+        </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line">
+                <tr className="border-b border-slate-800">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Source</th>
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Type</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Sessions</th>
@@ -303,10 +338,10 @@ export default function AnalyticsPage() {
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Conv. Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-slate-800">
                 {filteredSources.length > 0 ? (
                   filteredSources.map((src) => (
-                    <tr key={src.name} className="transition hover:bg-surface-2">
+                    <tr key={src.name} className="transition hover:bg-slate-800/40">
                       <td className="px-5 py-4 font-medium text-slate-300">{src.name}</td>
                       <td className="px-5 py-4">
                         <SourceBadge type={src.type} />
@@ -316,7 +351,7 @@ export default function AnalyticsPage() {
                       </td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-300">{src.conversions}</td>
                       <td className="px-5 py-4 text-right">
-                        <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-gold' : src.convRate >= 0.03 ? 'text-gold' : 'text-slate-400'}`}>
+                        <span className={`text-xs font-medium tabular-nums ${src.convRate >= 0.05 ? 'text-[#D4AF37]' : src.convRate >= 0.03 ? 'text-[#D4AF37]' : 'text-slate-400'}`}>
                           {(src.convRate * 100).toFixed(1)}%
                         </span>
                       </td>
@@ -333,24 +368,25 @@ export default function AnalyticsPage() {
             </table>
           </div>
         </div>
-      </Section>
+      </section>
 
       {/* ── Top Pages ── */}
-      <Section title="Top Pages">
-        <div className="rounded-xl border border-line bg-surface overflow-hidden">
+      <section>
+        <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Top Pages</div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line">
+                <tr className="border-b border-slate-800">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Page</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Views</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Avg Time</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Bounce</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-slate-800">
                 {a.topPages.map((page) => (
-                  <tr key={page.path} className="transition hover:bg-surface-2">
+                  <tr key={page.path} className="transition hover:bg-slate-800/40">
                     <td className="px-5 py-4">
                       <div className="font-medium text-slate-300">{page.title}</div>
                       <div className="mt-0.5 font-mono text-sm text-slate-500">{page.path}</div>
@@ -362,7 +398,7 @@ export default function AnalyticsPage() {
                       {formatDuration(page.avgTimeOnPage)}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <span className={`text-xs font-medium tabular-nums ${page.bounceRate >= 0.6 ? 'text-amber-400' : page.bounceRate <= 0.35 ? 'text-gold' : 'text-slate-400'}`}>
+                      <span className={`text-xs font-medium tabular-nums ${page.bounceRate >= 0.6 ? 'text-amber-400' : page.bounceRate <= 0.35 ? 'text-[#D4AF37]' : 'text-slate-400'}`}>
                         {Math.round(page.bounceRate * 100)}%
                       </span>
                     </td>
@@ -372,19 +408,24 @@ export default function AnalyticsPage() {
             </table>
           </div>
         </div>
-      </Section>
+      </section>
 
       {/* ── Device Breakdown ── */}
-      <Section
-        title="Device Breakdown"
-        action={<FilterPills options={DEVICE_FILTER_OPTIONS} active={deviceFilter} onChange={setDeviceFilter} />}
-      >
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs font-medium uppercase tracking-widest text-slate-400">Device Breakdown</div>
+          <FilterPills
+            options={DEVICE_FILTER_OPTIONS}
+            active={deviceFilter}
+            onChange={setDeviceFilter}
+          />
+        </div>
         {filteredDevices.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {filteredDevices.map(({ label, data, color, bar }) => {
               const pct = Math.round((data.sessions / totalDeviceSessions) * 100)
               return (
-                <div key={label} className="rounded-xl border border-line bg-surface-2 p-5">
+                <div key={label} className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</span>
                     <span className={`text-xs font-semibold ${color}`}>{pct}%</span>
@@ -393,7 +434,7 @@ export default function AnalyticsPage() {
                     {data.sessions.toLocaleString('en-US')}
                     <span className="ml-1 text-sm font-normal text-slate-500">sessions</span>
                   </div>
-                  <div className="mt-3 h-1.5 w-full rounded-full bg-surface-3">
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-slate-700">
                     <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
@@ -411,29 +452,30 @@ export default function AnalyticsPage() {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-line bg-surface-2 p-8 text-center text-sm text-slate-500">
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-8 text-center text-sm text-slate-500">
             No device data matches the selected filter.
           </div>
         )}
-      </Section>
+      </section>
 
       {/* ── Countries + Conversion Funnel ── */}
       <div className="grid gap-6 lg:grid-cols-2">
 
         {/* Countries */}
-        <Section title="Countries">
-          <div className="rounded-xl border border-line bg-surface overflow-hidden">
+        <section>
+          <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Countries</div>
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line">
+                <tr className="border-b border-slate-800">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Country</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Sessions</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">Convs</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-slate-800">
                 {a.countries.map((c) => (
-                  <tr key={c.code} className="transition hover:bg-surface-2">
+                  <tr key={c.code} className="transition hover:bg-slate-800/40">
                     <td className="px-5 py-4 text-slate-300">
                       <span className="mr-2 text-base">{FLAG[c.code] ?? ''}</span>
                       {c.country}
@@ -441,17 +483,18 @@ export default function AnalyticsPage() {
                     <td className="px-5 py-4 text-right tabular-nums text-slate-300">
                       {c.sessions.toLocaleString('en-US')}
                     </td>
-                    <td className="px-5 py-4 text-right tabular-nums text-gold">{c.conversions}</td>
+                    <td className="px-5 py-4 text-right tabular-nums text-[#D4AF37]">{c.conversions}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </Section>
+        </section>
 
         {/* Conversion Funnel */}
-        <Section title="Conversion Funnel">
-          <div className="rounded-xl border border-line bg-surface p-5 space-y-4">
+        <section>
+          <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">Conversion Funnel</div>
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 space-y-4">
             {a.funnel.map((step, i) => {
               const widthPct = Math.round((step.users / funnelMax) * 100)
               const isLast = i === a.funnel.length - 1
@@ -470,9 +513,9 @@ export default function AnalyticsPage() {
                       )}
                     </div>
                   </div>
-                  <div className="h-6 w-full rounded-lg bg-surface-2 overflow-hidden">
+                  <div className="h-6 w-full rounded-lg bg-slate-800/50 overflow-hidden">
                     <div
-                      className={`h-full rounded-lg transition-all ${isLast ? 'bg-gold/70' : 'bg-white/[0.12]'}`}
+                      className={`h-full rounded-lg transition-all ${isLast ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`}
                       style={{ width: `${widthPct}%` }}
                     />
                   </div>
@@ -480,7 +523,7 @@ export default function AnalyticsPage() {
               )
             })}
           </div>
-        </Section>
+        </section>
 
       </div>
 

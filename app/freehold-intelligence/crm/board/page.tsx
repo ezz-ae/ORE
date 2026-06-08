@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef, type DragEvent } from 'react'
+import { useState, useRef, useEffect, type DragEvent } from 'react'
 import Link from 'next/link'
 import { MoveHorizontal } from 'lucide-react'
 import {
-  crmLeads,
   type CRMLeadIntelligence,
   type PipelineStage,
 } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 
 // ─── Stage config ──────────────────────────────────────────────────────────────
 
@@ -48,17 +48,24 @@ function initials(name: string) {
 
 type StageMap = Record<PipelineStage, CRMLeadIntelligence[]>
 
-function buildMap(): StageMap {
+function buildMapFromLeads(leads: CRMLeadIntelligence[]): StageMap {
   const m = {} as StageMap
   STAGES.forEach(s => { m[s.id] = [] })
-  crmLeads.forEach(l => { m[l.pipelineStage] = [...(m[l.pipelineStage] ?? []), l] })
+  leads.forEach(l => { m[l.pipelineStage] = [...(m[l.pipelineStage] ?? []), l] })
   return m
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CrmBoardPage() {
-  const [stageMap, setStageMap] = useState<StageMap>(buildMap)
+  const { leads } = useLiveLeads()
+
+  const [stageMap, setStageMap] = useState<StageMap>(() => buildMapFromLeads(leads))
+
+  // Sync stageMap when live leads arrive (replace mock with db data)
+  useEffect(() => {
+    setStageMap(buildMapFromLeads(leads))
+  }, [leads])
   const [draggingId, setDraggingId]   = useState<string | null>(null)
   const [dragOverStage, setDragOver]  = useState<PipelineStage | null>(null)
   const fromStage = useRef<PipelineStage | null>(null)

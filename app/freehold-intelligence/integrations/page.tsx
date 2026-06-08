@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -18,6 +18,16 @@ import {
 } from 'lucide-react'
 import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
 import { PageHeader } from '@/components/freehold/ui'
+
+// Map live API status to the page's expected shape
+function liveToIntegration(l: { id: string; name: string; state: string; note: string }) {
+  return {
+    id: l.id,
+    name: l.name,
+    status: l.state === 'connected' ? 'connected' : l.state === 'partial' ? 'partial' : 'not_connected',
+    description: l.note,
+  }
+}
 
 type IntMeta = { category: string; icon: LucideIcon; copy: string }
 
@@ -55,9 +65,10 @@ function statusCfg(status: string) {
   }
 }
 
-const integrations = getAllIntegrations()
-const blockers     = getLaunchBlockers()
-const critical     = blockers.filter((b: any) => b.severity === 'critical')
+// Mock fallback data (module-level, kept as initial state)
+const mockIntegrations = getAllIntegrations()
+const mockBlockers     = getLaunchBlockers()
+const mockCritical     = mockBlockers.filter((b: any) => b.severity === 'critical')
 
 export default function IntegrationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
@@ -65,12 +76,28 @@ export default function IntegrationsPage() {
   const [connecting, setConnecting] = useState<string | null>(null)
   const [connected,  setConnected]  = useState<string[]>([])
 
+  // Live data — fetched on mount; falls back to mock when unavailable
+  const [integrations, setIntegrations] = useState<any[]>(mockIntegrations)
+  // Blockers come from mock; API doesn't yet expose them
+  const critical = mockCritical
+
+  useEffect(() => {
+    fetch('/api/freehold/integrations/status')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.statuses?.length > 0) {
+          setIntegrations(d.statuses.map(liveToIntegration))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const connectedCount = integrations.filter((i: any) => i.status === 'connected').length
 
   const availableCategories = useMemo(() => {
     const cats = new Set(integrations.map((i: any) => META[i.id]?.category || 'Other'))
     return ['All', ...CATEGORY_ORDER.filter((c) => cats.has(c))]
-  }, [])
+  }, [integrations])
 
   const filteredGrouped = useMemo(() => {
     let items = integrations as any[]
@@ -90,7 +117,7 @@ export default function IntegrationsPage() {
       ;(acc[cat] = acc[cat] || []).push(i)
       return acc
     }, {})
-  }, [statusFilter, categoryFilter])
+  }, [integrations, statusFilter, categoryFilter])
 
   const visibleCategories = CATEGORY_ORDER.filter((cat) => filteredGrouped[cat]?.length > 0)
   const totalVisible = visibleCategories.reduce((s, cat) => s + (filteredGrouped[cat]?.length || 0), 0)
