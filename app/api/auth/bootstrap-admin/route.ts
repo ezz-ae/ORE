@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const record = await upsertUserProfile({
       id: existing?.id || randomUUID(),
-      name: name || existing?.name || "CRM Admin",
+      name: name || existing?.name || "Admin",
       email,
       role: "admin",
       org_title: existing?.org_title || existing?.role || "Admin",

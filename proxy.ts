@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
       res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
       return res
     }
-    url.hostname = "orerealestate.ae"
+    url.hostname = "freeholdproperty.ae"
     url.protocol = "https:"
     if (!pathname.startsWith("/crm")) {
       url.pathname = `/crm${pathname}`

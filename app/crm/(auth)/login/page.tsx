@@ -12,7 +12,7 @@ export default function DashboardLoginPage() {
   const router = useRouter()
   const [form, setForm] = useState({ email: "", password: "" })
   const [setupForm, setSetupForm] = useState({
-    name: "CRM Admin",
+    name: "Admin",
     email: "",
     password: "",
     setupKey: "",
