@@ -1,46 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, Bot, TrendingDown, AlertTriangle, TrendingUp, MessageCircle, Gauge, Home, BarChart3, CheckCircle2 } from 'lucide-react'
-import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
+import { getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 
 // ─── derived values ────────────────────────────────────────────────────────────
 const stats = getInventoryStats()
-
-const kpiCards = [
-  {
-    label: 'Total Ad Spend (30d)',
-    value: `AED ${financeSummary.totalSpend30d.toLocaleString()}`,
-    sub: 'Combined Meta + Google',
-  },
-  {
-    label: 'Avg Cost Per Lead',
-    value: `AED ${financeSummary.avgCpl30d}`,
-    sub: 'Down 17% vs last month',
-  },
-  {
-    label: 'Total Leads (30d)',
-    value: financeSummary.totalLeads30d.toLocaleString(),
-    sub: 'Across all campaigns',
-  },
-  {
-    label: 'Site Visitors (30d)',
-    value: siteAnalytics.totalUniqueSessions.toLocaleString(),
-    sub: 'Unique sessions',
-  },
-  {
-    label: 'Ad-Ready Properties',
-    value: `${stats.adReady} / ${stats.total}`,
-    sub: 'Readiness score ≥ 70%',
-  },
-  {
-    label: 'Live Landing Pages',
-    value: String(stats.live),
-    sub: `${stats.missingLanding} missing`,
-  },
-]
 
 // ─── insight types ─────────────────────────────────────────────────────────────
 type Priority = 'Critical' | 'High' | 'Opportunity' | 'Info'
@@ -158,6 +125,54 @@ const actions = [
 export default function InsightsPage() {
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated]   = useState(false)
+  const [liveLeads30d, setLiveLeads30d]   = useState<number | null>(null)
+  const [liveSpend30d, setLiveSpend30d]   = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/analytics/leads')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.last30d != null) setLiveLeads30d(d.last30d) })
+      .catch(() => {})
+    fetch('/api/freehold/finance/summary')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.last30dSpendAED != null) setLiveSpend30d(d.last30dSpendAED) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const kpiCards = [
+    {
+      label: 'Total Ad Spend (30d)',
+      value: `AED ${(liveSpend30d ?? financeSummary.totalSpend30d).toLocaleString()}`,
+      sub: 'Combined Meta + Google',
+    },
+    {
+      label: 'Avg Cost Per Lead',
+      value: `AED ${financeSummary.avgCpl30d}`,
+      sub: 'Down 17% vs last month',
+    },
+    {
+      label: 'Total Leads (30d)',
+      value: (liveLeads30d ?? financeSummary.totalLeads30d).toLocaleString(),
+      sub: 'Across all campaigns',
+    },
+    {
+      label: 'Site Visitors (30d)',
+      value: siteAnalytics.totalUniqueSessions.toLocaleString(),
+      sub: 'Unique sessions',
+    },
+    {
+      label: 'Ad-Ready Properties',
+      value: `${stats.adReady} / ${stats.total}`,
+      sub: 'Readiness score ≥ 70%',
+    },
+    {
+      label: 'Live Landing Pages',
+      value: String(stats.live),
+      sub: `${stats.missingLanding} missing`,
+    },
+  ]
 
   function handleGenerate() {
     if (generating) return
