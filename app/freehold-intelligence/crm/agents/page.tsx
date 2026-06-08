@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
-import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
+import { crmAgentRoster, type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 const STATUS_CONFIG = {
@@ -33,8 +33,18 @@ export default function CrmAgentsPage() {
   const [sortBy, setSortBy] = useState<SortKey>('utilization')
   const [contacted, setContacted] = useState<Set<string>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
+  const [liveAgents, setLiveAgents] = useState<CRMAgentCapacity[] | null>(null)
 
-  const agents = crmAgentRoster
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/agents')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.agents?.length > 0) setLiveAgents(d.agents) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const agents = liveAgents ?? crmAgentRoster
   const totalLeads   = agents.reduce((s, a) => s + a.totalLeads, 0)
   const totalOverdue = agents.reduce((s, a) => s + a.overdueFollowUps, 0)
   const overloaded   = agents.filter((a) => a.status === 'overloaded')

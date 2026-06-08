@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { UserCog, CheckCircle2, Users, AlertCircle, Clock, TrendingUp } from 'lucide-react'
-import { crmLeads, crmAgentRoster, crmInboxLeads } from '@/src/features/freehold-intelligence/server-session'
+import { crmAgentRoster, crmInboxLeads } from '@/src/features/freehold-intelligence/server-session'
 import type { CRMInboxLead, CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -204,20 +205,55 @@ export default function AssignmentPage() {
   const [activeUrgency, setActiveUrgency] = useState<UrgencyFilter>('all')
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [justAssigned, setJustAssigned] = useState<Set<string>>(new Set())
+  const [liveAgents, setLiveAgents] = useState<CRMAgentCapacity[] | null>(null)
+  const { leads } = useLiveLeads()
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/agents')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.agents?.length > 0) setLiveAgents(d.agents) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const agentRoster: CRMAgentCapacity[] = liveAgents ?? crmAgentRoster
+
+  // Derive inbox leads from live leads: new stage = unassigned, contacted = assigned
+  const inboxLeads: CRMInboxLead[] = useMemo(() => {
+    if (leads.length === 0) return crmInboxLeads
+    return leads
+      .filter(l => l.pipelineStage === 'new' || l.pipelineStage === 'contacted')
+      .map(l => ({
+        id: l.id,
+        name: l.name,
+        phone: l.phone,
+        email: l.email ?? '',
+        source: l.source,
+        intentScore: l.intentScore,
+        urgency: l.urgency,
+        arrivedAt: l.lastContactAt,
+        assignedAgent: l.assignedAgent,
+        status: (l.pipelineStage === 'new' && !l.assignedAgent
+          ? 'unassigned'
+          : l.pipelineStage === 'contacted' ? 'contacted' : 'assigned') as CRMInboxLead['status'],
+        aiNote: l.nextBestAction,
+      }))
+  }, [leads])
 
   // Leads that started unassigned in the inbox
   const unassignedLeads = useMemo(
     () =>
-      crmInboxLeads
+      inboxLeads
         .filter((l) => l.status === 'unassigned')
         .sort((a, b) => URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency]),
-    [],
+    [inboxLeads],
   )
 
   // Leads already in inbox that have an agent (assigned/contacted)
   const alreadyAssignedLeads = useMemo(
-    () => crmInboxLeads.filter((l) => l.status !== 'unassigned'),
-    [],
+    () => inboxLeads.filter((l) => l.status !== 'unassigned'),
+    [inboxLeads],
   )
 
   // Queue = unassigned leads that haven't been freshly assigned in this session
@@ -241,16 +277,16 @@ export default function AssignmentPage() {
   // Sorted agent roster: available first, then at_capacity, then overloaded
   const sortedAgents = useMemo(
     () =>
-      [...crmAgentRoster].sort((a, b) => {
+      [...agentRoster].sort((a, b) => {
         const order = { available: 0, at_capacity: 1, overloaded: 2 }
         return order[a.status] - order[b.status]
       }),
-    [],
+    [agentRoster],
   )
 
-  const availableAgentCount = crmAgentRoster.filter((a) => a.status === 'available').length
+  const availableAgentCount = agentRoster.filter((a) => a.status === 'available').length
   const totalUnassigned = unassignedLeads.length
-  const totalLeadsAll = crmLeads.length + crmInboxLeads.length
+  const totalLeadsAll = leads.length
 
   function handleAssign(leadId: string, agentName: string) {
     setAssignments((prev) => ({ ...prev, [leadId]: agentName }))
@@ -296,7 +332,7 @@ export default function AssignmentPage() {
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard icon={TrendingUp}    label="Total leads"      value={totalLeadsAll}       sub="CRM + inbox" />
         <StatCard icon={AlertCircle}   label="Unassigned"       value={totalUnassigned}     sub={totalUnassigned > 0 ? 'Action needed' : 'Queue clear'} />
-        <StatCard icon={Users}         label="Available agents" value={availableAgentCount} sub={`of ${crmAgentRoster.length} total`} />
+        <StatCard icon={Users}         label="Available agents" value={availableAgentCount} sub={`of ${agentRoster.length} total`} />
         <StatCard icon={Clock}         label="Avg response"     value="4.2h"                sub="Team average" />
       </div>
 

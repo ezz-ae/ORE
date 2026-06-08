@@ -13,7 +13,7 @@ import {
   ChevronDown, AlertCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -219,7 +219,8 @@ function AiPanel({
 
 export default function WhatsAppPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const lead = crmLeads.find((l) => l.id === id)
+  const { leads } = useLiveLeads()
+  const lead = leads.find((l) => l.id === id)
   if (!lead) return null
 
   const phone = lead.phone.replace(/\D/g, '')
