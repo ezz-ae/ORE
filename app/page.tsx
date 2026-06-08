@@ -2,44 +2,143 @@ import { HeroWithMotion } from "@/components/hero-with-motion"
 import { FeaturedProperties } from "@/components/featured-properties"
 import { MarketSnapshot } from "@/components/market-snapshot"
 import { BlogSection } from "@/components/blog-section"
-import { Button } from "@/components/ui/button"
 import { IntelligenceBlock } from "@/components/IntelligenceBlock"
 import { getIntelligenceBlockData } from "@/lib/intelligence-block"
+import Image from "next/image"
 import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
 }
 
+// ─── Icon helpers ──────────────────────────────────────────────────────────────
+
+const ArrowRightIcon = ({ className }: { className?: string }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+  </svg>
+)
 const SparklesIcon = ({ className }: { className?: string }) => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
   </svg>
 )
+const ShieldCheckIcon = ({ className }: { className?: string }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+  </svg>
+)
+const BrainIcon = ({ className }: { className?: string }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+  </svg>
+)
 const TrendingUpIcon = ({ className }: { className?: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+  </svg>
 )
-const BuildingIcon = ({ className }: { className?: string }) => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+const MessageCircleIcon = ({ className }: { className?: string }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+  </svg>
 )
-const ArrowRightIcon = ({ className }: { className?: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+const PhoneIcon = ({ className }: { className?: string }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.23h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.81a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/>
+  </svg>
+)
+const CheckIcon = ({ className }: { className?: string }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M20 6 9 17l-5-5"/>
+  </svg>
 )
 
 const heroPrompts = [
-  "Create a Freehold shortlist under AED 2M",
-  "Show Freehold beachfront picks in Dubai Marina",
-  "Build a Freehold brief for Downtown off-plan opportunities",
+  "Freehold shortlist under AED 2M",
+  "Beachfront picks in Dubai Marina",
+  "Downtown off-plan opportunities",
 ]
 
 const mobileQuickLinks = [
-  { label: "Damac Lagoons", href: "/projects/damac-lagoons" },
-  { label: "Dubai Marina", href: "/projects?area=marina" },
-  { label: "Downtown Off-Plan", href: "/projects?area=downtown" },
-  { label: "Palm Jumeirah", href: "/projects?area=palm-jumeirah" },
+  { label: "Damac Lagoons",   href: "/projects/damac-lagoons" },
+  { label: "Dubai Marina",    href: "/projects?area=marina" },
+  { label: "Downtown",        href: "/projects?area=downtown" },
+  { label: "Palm Jumeirah",   href: "/projects?area=palm-jumeirah" },
+]
+
+const developers = [
+  "Emaar",
+  "DAMAC",
+  "Meraas",
+  "Sobha",
+  "Aldar",
+  "Azizi",
+  "Nakheel",
+  "Select Group",
+]
+
+const advantages = [
+  {
+    icon: SparklesIcon,
+    title: "AI-powered advisory",
+    body: "Ask anything — shortlist projects, compare ROI, build an investment brief. Our AI knows Dubai's market like a seasoned broker.",
+    span: "md:col-span-8",
+    href: "/chat",
+    cta: "Try the AI",
+  },
+  {
+    icon: TrendingUpIcon,
+    title: "Market confidence",
+    body: "Live data on yields, transaction volumes, and price trends across every Dubai area.",
+    span: "md:col-span-4",
+    href: "/projects",
+    cta: null,
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "RERA licensed",
+    body: "Fully regulated, DLD registered, with complete transparency from inquiry to title deed.",
+    span: "md:col-span-4",
+    href: "/about",
+    cta: null,
+  },
+  {
+    icon: BrainIcon,
+    title: "End-to-end execution",
+    body: "Valuation, media, buyer profiling, negotiation, and handover — one team, clean process.",
+    span: "md:col-span-8",
+    href: "/contact",
+    cta: "Speak with an advisor",
+  },
+]
+
+const teamMembers = [
+  {
+    name: "Mohammed Al Rashidi",
+    role: "CEO & Founder",
+    bio: "19 years in Dubai real estate. Former head of project sales at Emaar.",
+    image: "/images/team/ceo.jpg",
+  },
+  {
+    name: "Sarah Chen",
+    role: "Head of Technology",
+    bio: "Built the Freehold Intelligence platform from the ground up. Ex-Google.",
+    image: "/images/team/cto.jpg",
+  },
+  {
+    name: "Ahmed Khalil",
+    role: "Head of Sales",
+    bio: "Leads a team of 40+ advisors across residential, commercial, and project sales.",
+    image: "/images/team/sales-head.jpg",
+  },
+]
+
+const advisorySteps = [
+  ["01", "Discovery call", "Understand your budget, goals, residency needs, and ideal timeline."],
+  ["02", "Curated shortlist", "AI-generated + advisor-reviewed matches tailored to your profile."],
+  ["03", "Deal & handover", "Negotiation, paperwork, payment coordination, and title deed support."],
 ]
 
 export default async function Home() {
@@ -47,31 +146,33 @@ export default async function Home() {
 
   return (
     <div className="overflow-x-clip">
-      {/* Mobile chat-first entry — hidden on desktop */}
+
+      {/* ── Mobile entry ──────────────────────────────────────────────── */}
       <div className="block lg:hidden bg-[#0A1F17] px-5 pt-12 pb-8 text-white">
         <div className="mb-6">
           <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">Freehold</span>
-          <h1 className="mt-2 text-[32px] font-bold leading-[1.1] text-white">
-            Find your next<br/>Dubai property.
+          <h1 className="mt-2 text-[30px] font-bold leading-[1.08] text-white font-serif">
+            Invest smarter in<br/>Dubai real estate.
           </h1>
-          <p className="mt-3 text-[14px] text-white/50">Ask anything — get a curated shortlist.</p>
+          <p className="mt-3 text-[13px] text-white/45 leading-relaxed">
+            AI-powered shortlists, curated projects, expert advisory.
+          </p>
         </div>
 
-        {/* Chat-style suggestion chips */}
         <div className="space-y-2">
           {[
             "Damac Lagoons — tell me more",
             "2BR under AED 1.5M in Marina",
             "Best ROI projects right now",
-            "I need Golden Visa eligibility",
+            "Golden Visa eligibility guide",
           ].map((q) => (
             <Link
               key={q}
               href={`/chat?q=${encodeURIComponent(q)}`}
-              className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[14px] text-white/70 transition hover:bg-white/[0.07] active:bg-white/10"
+              className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5 text-[13px] text-white/65 transition hover:bg-white/[0.07]"
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C69B3E]/20">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C69B3E]/20 text-[#D4AC50]">
+                <SparklesIcon className="h-3 w-3" />
               </span>
               {q}
             </Link>
@@ -86,15 +187,15 @@ export default async function Home() {
         </Link>
       </div>
 
-      {/* Mobile: Browse Properties quick links — hidden on desktop */}
+      {/* Mobile quick links */}
       <div className="block lg:hidden bg-[#0A1F17] px-5 pb-8 border-t border-white/[0.04]">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/30">Browse Properties</p>
+        <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.22em] text-white/25">Browse</p>
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5">
           {mobileQuickLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-[13px] text-white/60 transition hover:bg-white/[0.07] active:bg-white/10"
+              className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 text-[12px] text-white/55 transition hover:bg-white/[0.07]"
             >
               {link.label}
             </Link>
@@ -102,142 +203,229 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Desktop hero — hidden on mobile */}
+      {/* ── Desktop hero ─────────────────────────────────────────────── */}
       <div className="hidden lg:block">
         <HeroWithMotion heroPrompts={heroPrompts} />
       </div>
 
+      {/* ── Developer trust strip ────────────────────────────────────── */}
+      <div className="relative border-y border-white/[0.04] bg-[#0A1F17] py-6">
+        <div className="container">
+          <div className="flex flex-col items-center gap-4 sm:flex-row">
+            <p className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.25em] text-white/25">
+              Authorized dealer for
+            </p>
+            <div className="flex w-full items-center gap-0 overflow-x-auto">
+              {developers.map((dev, i) => (
+                <span key={dev} className="flex shrink-0 items-center">
+                  <span className="whitespace-nowrap px-4 text-[13px] font-semibold text-white/40 transition-colors hover:text-white/70">
+                    {dev}
+                  </span>
+                  {i < developers.length - 1 && (
+                    <span className="text-white/[0.12]">·</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Intelligence block ───────────────────────────────────────── */}
       <div className="hidden md:block">
         <IntelligenceBlock data={intelligenceData} />
       </div>
 
-      <div className="relative overflow-hidden bg-[#152E24] py-20 text-white md:py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(198,155,62,0.06),transparent)]" />
+      {/* ── Featured properties ──────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-[#152E24]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_50%_0%,rgba(198,155,62,0.06),transparent)]" />
         <FeaturedProperties />
       </div>
 
-      <div className="relative bg-[#F2EFE8] py-20 md:py-24">
-        <MarketSnapshot />
-      </div>
+      {/* ── Market snapshot ──────────────────────────────────────────── */}
+      <MarketSnapshot />
 
-      {/* Freehold Advantage bento grid — hidden on mobile */}
+      {/* ── Freehold Advantage bento grid ───────────────────────────── */}
       <div className="hidden md:block">
-        <section className="relative overflow-hidden bg-[#152E24] py-20 text-white md:py-28">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_30%_50%,rgba(198,155,62,0.05),transparent)]" />
+        <section className="relative overflow-hidden bg-[#0A1F17] py-24 text-white md:py-32">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_20%_60%,rgba(198,155,62,0.06),transparent)]" />
           <div className="container relative z-10">
-            <div className="mx-auto mb-14 max-w-3xl text-center md:mb-20">
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">Freehold Advantage</p>
-              <h2 className="font-serif text-3xl font-bold text-white md:text-5xl lg:text-6xl">
-                Brokerage service with <span className="freehold-text-gradient">market intelligence.</span>
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">
+                The Freehold Advantage
+              </p>
+              <h2 className="font-serif text-4xl font-bold text-white md:text-5xl lg:text-6xl">
+                A brokerage with{" "}
+                <span className="freehold-text-gradient">market intelligence.</span>
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-12 md:gap-6">
-              <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] p-8 transition-all hover:bg-white/[0.06] md:col-span-8 md:p-10">
-                <div className="relative z-10 flex h-full flex-col justify-between">
-                  <div>
-                    <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-[#C69B3E]/15 text-[#D4AC50] md:h-16 md:w-16">
-                      <SparklesIcon />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+              {advantages.map((item) => {
+                const Icon = item.icon
+                return (
+                  <div
+                    key={item.title}
+                    className={`group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.035] p-8 transition-all hover:border-white/[0.1] hover:bg-white/[0.055] md:p-10 ${item.span}`}
+                  >
+                    <div className="relative z-10 flex h-full flex-col justify-between">
+                      <div>
+                        <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#C69B3E]/12 text-[#D4AC50]">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <h3 className="font-serif mb-3 text-2xl font-bold text-white">{item.title}</h3>
+                        <p className="max-w-lg text-sm leading-relaxed text-white/40">{item.body}</p>
+                      </div>
+                      {item.cta && (
+                        <div className="mt-8">
+                          <Link
+                            href={item.href}
+                            className="inline-flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#D4AC50] transition-all group-hover:gap-4"
+                          >
+                            {item.cta} <ArrowRightIcon />
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="font-serif mb-4 text-2xl font-bold text-white md:text-4xl">Project sales, leasing, and investment advisory</h3>
-                    <p className="max-w-xl text-sm leading-relaxed text-white/45 md:text-base">
-                      Freehold supports residential and commercial sales, leasing, project marketing, investments, consultancy, and valuation coordination.
-                    </p>
+                    {/* Subtle corner glow */}
+                    <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#C69B3E]/[0.04] blur-2xl transition-opacity group-hover:opacity-150" />
                   </div>
-                  <div className="mt-8 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#D4AC50] transition-all group-hover:gap-5">
-                    Explore services <ArrowRightIcon />
-                  </div>
-                </div>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] p-8 transition-all hover:bg-white/[0.06] md:col-span-4 md:p-8">
-                <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#C69B3E]/10 text-[#D4AC50]">
-                  <TrendingUpIcon />
-                </div>
-                <h3 className="font-serif mb-3 text-xl font-bold text-white">Market Confidence</h3>
-                <p className="text-sm leading-relaxed text-white/40">
-                  Compare areas, payment plans, and buyer goals before making a property decision.
-                </p>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] p-8 transition-all hover:bg-white/[0.06] md:col-span-4 md:p-8">
-                <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#C69B3E]/10 text-[#D4AC50]">
-                  <BuildingIcon />
-                </div>
-                <h3 className="font-serif mb-3 text-xl font-bold text-white">Residential and Commercial</h3>
-                <p className="text-sm leading-relaxed text-white/40">
-                  Apartments, villas, land, shops, offices, rentals, ready properties, and under-construction projects.
-                </p>
-              </div>
-
-              <div className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.04] p-8 transition-all hover:bg-white/[0.06] md:col-span-8 md:p-10">
-                <div className="flex h-full flex-col justify-between gap-10 md:flex-row md:items-center">
-                  <div className="max-w-md">
-                    <h3 className="font-serif mb-4 text-2xl font-bold text-white md:text-3xl">Local advisory, clean execution</h3>
-                    <p className="text-sm leading-relaxed text-white/45 md:text-base">
-                      From first inquiry to viewing, negotiation, paperwork, and handover, Freehold keeps the process clear and practical.
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.04] text-2xl font-bold tracking-[0.15em] text-white/80 backdrop-blur-sm md:h-32 md:w-32 md:text-3xl">
-                      FH
-                    </div>
-                  </div>
-                </div>
-              </div>
+                )
+              })}
             </div>
           </div>
         </section>
       </div>
 
-      <section className="relative overflow-hidden bg-[#F2EFE8] py-20 md:py-28">
+      {/* ── Meet the team ────────────────────────────────────────────── */}
+      <section className="relative bg-[#F2EFE8] py-20 md:py-28">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.012]"
+          style={{ backgroundImage: "radial-gradient(circle, #152E24 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+        <div className="container relative z-10">
+          <div className="mb-14 text-center">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">The Team</p>
+            <h2 className="font-serif text-3xl font-bold text-[#152E24] md:text-4xl lg:text-5xl">
+              Local expertise, clean execution.
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[#152E24]/45">
+              Decades of combined experience in Dubai real estate — transactions, project sales, and investment advisory.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            {teamMembers.map((member) => (
+              <div key={member.name} className="group overflow-hidden rounded-2xl border border-[#152E24]/[0.07] bg-white/70 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#E8E3DC]">
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#152E24]/40 to-transparent" />
+                </div>
+                <div className="p-6">
+                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">
+                    {member.role}
+                  </p>
+                  <h3 className="font-serif text-lg font-bold text-[#152E24]">{member.name}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-[#152E24]/45">{member.bio}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Private Advisory + form ──────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-[#152E24] py-20 text-white md:py-28">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_5%_50%,rgba(198,155,62,0.06),transparent)]" />
         <div className="container relative z-10">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
-            <div className="relative z-10">
-              <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C69B3E]">Private Advisory</p>
-              <h2 className="font-serif text-3xl font-bold leading-[1.05] text-[#152E24] md:text-5xl lg:text-6xl">
-                Sell, buy, rent, or invest with <span className="text-[#C69B3E] italic">clear advice.</span>
+            {/* Left: content */}
+            <div>
+              <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#D4AC50]">Private Advisory</p>
+              <h2 className="font-serif text-3xl font-bold leading-[1.06] text-white md:text-5xl">
+                Buy, sell, rent, or invest<br className="hidden lg:block" />
+                <span className="italic text-[#D4AC50]"> with clear advice.</span>
               </h2>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-[#152E24]/45 md:text-lg">
-                Speak with Freehold for project sales, secondary market advice, rentals, commercial property, or owner valuation support.
+              <p className="mt-5 max-w-md text-base leading-relaxed text-white/40">
+                Speak with Freehold for project sales, secondary market, rentals, commercial, or owner valuation support.
               </p>
 
-              <div className="mt-10 space-y-7 md:mt-12">
-                {[
-                  ["01", "Project and investment strategy", "Align your budget, area preference, and timeline with current UAE opportunities."],
-                  ["02", "Owner sales and leasing support", "Build a valuation, media, buyer profile, and launch plan before going to market."],
-                ].map(([number, title, body]) => (
-                  <div className="flex items-start gap-5" key={title}>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#152E24]/10 bg-white/60 shadow-sm">
-                      <span className="font-serif text-lg font-bold text-[#152E24]">{number}</span>
+              <div className="mt-10 space-y-7">
+                {advisorySteps.map(([num, title, body]) => (
+                  <div key={num} className="flex items-start gap-5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04]">
+                      <span className="font-serif text-base font-bold text-[#D4AC50]">{num}</span>
                     </div>
                     <div>
-                      <h4 className="mb-1.5 text-base font-bold text-[#152E24]">{title}</h4>
-                      <p className="text-sm text-[#152E24]/35">{body}</p>
+                      <h4 className="mb-1 text-[15px] font-bold text-white">{title}</h4>
+                      <p className="text-sm text-white/35">{body}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* Right: request form */}
             <div className="relative">
-              <div className="absolute -inset-8 -z-10 rounded-3xl bg-gradient-to-tr from-[#C69B3E]/10 via-transparent to-[#152E24]/[0.04] opacity-50 blur-2xl" />
-              <div className="relative z-10 rounded-2xl border border-[#152E24]/[0.06] bg-white/80 p-8 shadow-[0_24px_64px_-16px_rgba(21,46,36,0.06)] backdrop-blur md:p-10">
-                <h3 className="mb-1.5 text-xl font-bold text-[#152E24] md:text-2xl">Request Callback</h3>
-                <p className="mb-8 text-[11px] font-medium uppercase tracking-[0.15em] text-[#152E24]/30">Business Bay office</p>
-                <form className="space-y-5">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#152E24]/35">Full Name</label>
-                    <input type="text" name="name" required placeholder="John Doe" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#F2EFE8] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
+              <div className="absolute -inset-8 -z-10 rounded-3xl bg-gradient-to-tr from-[#C69B3E]/[0.08] to-transparent blur-3xl" />
+              <div className="relative z-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.05] p-8 backdrop-blur-xl md:p-10">
+                {/* Decorative corner */}
+                <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-[#C69B3E]/[0.04]" />
+                <h3 className="mb-1 text-xl font-bold text-white md:text-2xl">Request a Callback</h3>
+                <p className="mb-8 text-[11px] font-medium uppercase tracking-[0.15em] text-white/25">
+                  Business Bay office · Dubai, UAE
+                </p>
+                <form className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      placeholder="John Doe"
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white placeholder:text-white/20 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#152E24]/35">WhatsApp or Phone</label>
-                    <input type="tel" name="phone" required placeholder="+971 50 417 3622" className="w-full rounded-xl border border-[#152E24]/[0.06] bg-[#F2EFE8] px-5 py-4 text-sm transition-all focus:border-[#C69B3E]/30 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20" />
+                  <div>
+                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                      WhatsApp or Phone
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      placeholder="+971 50 000 0000"
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white placeholder:text-white/20 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
+                    />
                   </div>
-                  <Button type="submit" className="mt-4 h-13 w-full rounded-xl border-0 freehold-gradient text-[11px] font-semibold uppercase tracking-[0.12em] md:mt-6 md:h-14">
+                  <div>
+                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                      I'm interested in
+                    </label>
+                    <select
+                      name="interest"
+                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white/70 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
+                    >
+                      <option value="" className="bg-[#152E24]">Select interest…</option>
+                      <option value="buy" className="bg-[#152E24]">Buying a property</option>
+                      <option value="sell" className="bg-[#152E24]">Selling my property</option>
+                      <option value="rent" className="bg-[#152E24]">Renting</option>
+                      <option value="invest" className="bg-[#152E24]">Investment advisory</option>
+                      <option value="golden-visa" className="bg-[#152E24]">Golden Visa eligibility</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    className="freehold-gradient mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition hover:brightness-105"
+                  >
                     Request Consultation
-                    <ArrowRightIcon className="ml-2" />
-                  </Button>
+                    <ArrowRightIcon />
+                  </button>
                 </form>
               </div>
             </div>
@@ -245,26 +433,86 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── Blog / insights ──────────────────────────────────────────── */}
       <div className="border-t border-[#152E24]/[0.04] bg-[#F2EFE8] py-20 md:py-24">
         <BlogSection />
       </div>
 
-      <section className="relative overflow-hidden bg-[#152E24] pb-24 pt-20 text-white md:pb-32 md:pt-28">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_80%_20%,rgba(198,155,62,0.08),transparent)]" />
-        <div className="container relative z-10 text-center">
-          <h2 className="mx-auto mb-6 max-w-3xl font-serif text-3xl font-bold text-white md:text-5xl lg:text-6xl">
-            Work with <span className="freehold-text-gradient">Freehold Property UAE.</span>
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/40 md:text-lg">
-            Schedule a consultation for buying, selling, renting, project sales, or investment advisory.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3 md:mt-14">
-            <Button size="lg" className="h-13 w-full rounded-xl bg-white px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition-all hover:bg-white/90 sm:h-14 sm:w-auto sm:px-10" asChild>
-              <Link href="/contact">Schedule Consultation</Link>
-            </Button>
+      {/* ── Final CTA ────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-[#0A1F17] py-24 text-white md:py-32">
+        {/* Background layers */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_50%,rgba(198,155,62,0.07),transparent)]" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C69B3E]/30 to-transparent" />
+        </div>
+
+        <div className="container relative z-10">
+          <div className="mx-auto max-w-3xl text-center">
+            {/* Badge */}
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#C69B3E]/25 bg-[#C69B3E]/[0.08] px-4 py-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D4AC50]" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D4AC50]">
+                Freehold Property UAE
+              </span>
+            </div>
+
+            <h2 className="font-serif text-4xl font-bold leading-[1.06] text-white md:text-5xl lg:text-6xl">
+              Work with Dubai's{" "}
+              <span className="freehold-text-gradient">most intelligent</span>{" "}
+              brokerage.
+            </h2>
+
+            <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white/40">
+              Buying, selling, renting, or investing — our advisors and AI platform are ready for your next move.
+            </p>
+
+            {/* What's included */}
+            <div className="mx-auto mt-8 grid max-w-sm grid-cols-2 gap-x-8 gap-y-2.5 text-left">
+              {[
+                "Free initial consultation",
+                "AI-powered shortlist",
+                "DLD & RERA guidance",
+                "Golden Visa advice",
+                "Post-purchase support",
+                "Off-plan expertise",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-[12px] text-white/45">
+                  <CheckIcon className="h-3.5 w-3.5 text-[#D4AC50]" />
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            {/* CTA buttons */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/contact"
+                className="freehold-gradient inline-flex h-13 items-center gap-2 rounded-xl px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition hover:brightness-105 sm:h-14"
+              >
+                Schedule Consultation
+                <ArrowRightIcon />
+              </Link>
+              <Link
+                href="/chat"
+                className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-white/30 hover:text-white sm:h-14"
+              >
+                <MessageCircleIcon className="h-4 w-4" />
+                Chat with AI
+              </Link>
+              <a
+                href="https://wa.me/971500000000"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-emerald-400/30 hover:text-emerald-400 sm:h-14"
+              >
+                <PhoneIcon className="h-4 w-4" />
+                WhatsApp Us
+              </a>
+            </div>
           </div>
         </div>
       </section>
+
     </div>
   )
 }
