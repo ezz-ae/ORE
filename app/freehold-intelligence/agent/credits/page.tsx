@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -42,9 +42,38 @@ const PERF = [
   { Icon: Coins,      label: 'Revenue',      value: `AED ${(me.revenue / 1000).toFixed(0)}K`, color: 'text-emerald-400' },
 ]
 
+interface LiveBalance {
+  allocated: number
+  balance: number
+  total_spent: number
+  cycle_end: string
+}
+
 export default function AgentCreditsPage() {
   const [ads, setAds] = useState<BrokerAd[]>(INITIAL_ADS)
   const status = STATUS_CREDIT[me.status]
+
+  // ── Live credit balance from Neon (falls back to mock `me` when empty) ──
+  const [live, setLive] = useState<LiveBalance | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/credits/balance')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.balance) setLive(d.balance as LiveBalance)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  // Display values: prefer live DB data, fall back to mock metrics.
+  const allocated = live?.allocated ?? me.allocated
+  const spent     = live?.total_spent ?? me.spent
+  const remaining = live ? live.balance : me.remaining
+  const spentPct  = allocated > 0 ? (spent / allocated) * 100 : me.spentPct
+  const liveCycleEndLabel = live?.cycle_end
+    ? new Date(live.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })
+    : cycleEndLabel
 
   function toggleAd(id: string) {
     setAds((prev) =>
@@ -66,11 +95,11 @@ export default function AgentCreditsPage() {
               Credit balance
             </div>
             <div className="mt-2 flex items-end gap-2">
-              <span className="text-[44px] font-semibold leading-none tracking-tight text-gold tabular-nums">{me.remaining.toLocaleString()}</span>
-              <span className="pb-1 text-base text-slate-500">of {me.allocated.toLocaleString()} credits</span>
+              <span className="text-[44px] font-semibold leading-none tracking-tight text-gold tabular-nums">{remaining.toLocaleString()}</span>
+              <span className="pb-1 text-base text-slate-500">of {allocated.toLocaleString()} credits</span>
             </div>
             <div className="mt-1.5 text-sm text-slate-400">
-              ≈ <span className="font-medium text-slate-200">AED {(me.remaining * CREDIT_VALUE_AED).toLocaleString()}</span> of funded ad spend remaining
+              ≈ <span className="font-medium text-slate-200">AED {(remaining * CREDIT_VALUE_AED).toLocaleString()}</span> of funded ad spend remaining
             </div>
           </div>
           <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${status.cls}`}>{status.label}</span>
@@ -79,16 +108,16 @@ export default function AgentCreditsPage() {
         {/* usage bar */}
         <div className="mt-5">
           <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-slate-400">{me.spent.toLocaleString()} credits used</span>
-            <span className="text-slate-500">{Math.round(me.spentPct)}%</span>
+            <span className="text-slate-400">{spent.toLocaleString()} credits used</span>
+            <span className="text-slate-500">{Math.round(spentPct)}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div
-              className={`h-full rounded-full transition-all ${me.spentPct > 90 ? 'bg-red-400' : me.spentPct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
-              style={{ width: `${Math.min(me.spentPct, 100)}%` }}
+              className={`h-full rounded-full transition-all ${spentPct > 90 ? 'bg-red-400' : spentPct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
+              style={{ width: `${Math.min(spentPct, 100)}%` }}
             />
           </div>
-          <div className="mt-1.5 text-xs text-slate-500">Cycle resets {cycleEndLabel}</div>
+          <div className="mt-1.5 text-xs text-slate-500">Cycle resets {liveCycleEndLabel}</div>
         </div>
       </section>
 
