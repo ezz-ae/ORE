@@ -7,11 +7,11 @@ import {
   RefreshCw, ChevronRight,
 } from 'lucide-react'
 import {
-  crmLeads,
   integrationSyncStatuses,
   type PipelineStage,
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,6 +79,7 @@ function syncLabel(s: typeof integrationSyncStatuses[0]) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
+  const { leads } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
@@ -89,26 +90,26 @@ export default function FreeholdCrmPage() {
     l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost'
 
   // ── Metrics ──
-  const newCount         = crmLeads.filter(l => l.pipelineStage === 'new').length
-  const followUpsCount   = crmLeads.filter(l => isActive(l) && (l.urgency === 'critical' || l.urgency === 'high')).length
-  const hotCount         = crmLeads.filter(l => isActive(l) && (l.temperature === 'hot' || l.temperature === 'priority')).length
-  const qualifiedCount   = crmLeads.filter(l => l.pipelineStage === 'qualified').length
-  const closedCount      = crmLeads.filter(l => l.pipelineStage === 'closed').length
+  const newCount         = leads.filter(l => l.pipelineStage === 'new').length
+  const followUpsCount   = leads.filter(l => isActive(l) && (l.urgency === 'critical' || l.urgency === 'high')).length
+  const hotCount         = leads.filter(l => isActive(l) && (l.temperature === 'hot' || l.temperature === 'priority')).length
+  const qualifiedCount   = leads.filter(l => l.pipelineStage === 'qualified').length
+  const closedCount      = leads.filter(l => l.pipelineStage === 'closed').length
 
   // ── Stage counts ──
   const stageCounts = useMemo(
-    () => Object.fromEntries(STAGES.map(s => [s, crmLeads.filter(l => l.pipelineStage === s).length])) as Record<PipelineStage, number>,
-    [],
+    () => Object.fromEntries(STAGES.map(s => [s, leads.filter(l => l.pipelineStage === s).length])) as Record<PipelineStage, number>,
+    [leads],
   )
 
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return crmLeads
+    return leads
       .filter(l => stageFilter === 'all' || l.pipelineStage === stageFilter)
       .filter(l => !q || [l.name, l.projectInterest, l.assignedAgent, l.source].some(f => f.toLowerCase().includes(q)))
       .sort((a, b) => b.intentScore - a.intentScore)
-  }, [query, stageFilter])
+  }, [leads, query, stageFilter])
 
   // ── Tile definitions ──
   const TILES = [
@@ -135,7 +136,7 @@ export default function FreeholdCrmPage() {
             <div>
               <h1 className="text-[17px] font-semibold text-white">CRM Command Centre</h1>
               <p className="mt-0.5 text-xs text-slate-500">
-                {crmLeads.length} leads · {STAGES.length} pipeline stages
+                {leads.length} leads · {STAGES.length} pipeline stages
               </p>
             </div>
             <Link
@@ -369,7 +370,7 @@ export default function FreeholdCrmPage() {
             <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Top by Intent</div>
               <div className="space-y-2">
-                {[...crmLeads]
+                {[...leads]
                   .sort((a, b) => b.intentScore - a.intentScore)
                   .slice(0, 6)
                   .map(l => (
@@ -403,7 +404,7 @@ export default function FreeholdCrmPage() {
               ]}
               context={{
                 pipeline: {
-                  totalLeads: crmLeads.length,
+                  totalLeads: leads.length,
                   newLeads: newCount,
                   urgentFollowUps: followUpsCount,
                   hotLeads: hotCount,
@@ -411,7 +412,7 @@ export default function FreeholdCrmPage() {
                   closedMTD: closedCount,
                   pipelineValueAED: PIPELINE_VALUE,
                 },
-                topByIntent: [...crmLeads]
+                topByIntent: [...leads]
                   .sort((a, b) => b.intentScore - a.intentScore)
                   .slice(0, 6)
                   .map(l => ({ name: l.name, stage: l.pipelineStage, temperature: l.temperature, intentScore: l.intentScore, project: l.projectInterest, budget: l.budgetAED })),

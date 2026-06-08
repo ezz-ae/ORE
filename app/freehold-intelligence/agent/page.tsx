@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Users, Wallet, Megaphone, BookOpen, Sparkles,
@@ -8,87 +9,14 @@ import {
 import { agentProfile, agentPipelineLeads, agentWallet, agentLeadPool } from '@/src/features/freehold-intelligence/agent'
 import { brokerMetrics } from '@/src/features/freehold-intelligence/credits'
 
-const myCredits = brokerMetrics.find((b) => b.id === 'bc_ahmed')
-
-const criticalLeads   = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
-const activeLeads     = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
+// Mock baseline values (kept as fallback)
+const myCredits       = brokerMetrics.find((b) => b.id === 'bc_ahmed')
+const mockCritical    = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
+const mockActive      = agentPipelineLeads.filter((l) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length
 const walletPending   = agentWallet.filter((w) => w.status !== 'paid' && w.amount > 0).reduce((s, w) => s + w.amount, 0)
 const poolRemaining   = agentLeadPool.monthlyQuota - agentLeadPool.used
 const offerLead       = agentPipelineLeads.find((l) => l.pipelineStage === 'offer')
 const viewingLead     = agentPipelineLeads.find((l) => l.hasViewingScheduled)
-
-const APPS = [
-  {
-    id:      'leads',
-    label:   'My Leads',
-    Icon:    Users,
-    href:    '/freehold-intelligence/agent/leads',
-    metric:  `${criticalLeads > 0 ? `${criticalLeads} critical · ` : ''}${activeLeads} active`,
-    badge:   criticalLeads,
-    accent:  criticalLeads > 0 ? 'red' : 'sky',
-    sub:     'Pipeline',
-  },
-  {
-    id:      'account',
-    label:   'Account',
-    Icon:    Wallet,
-    href:    '/freehold-intelligence/agent/account',
-    metric:  `AED ${(walletPending / 1000).toFixed(0)}K pending · ${agentProfile.tier}`,
-    badge:   0,
-    accent:  'gold',
-    sub:     'Wallet & Profile',
-  },
-  {
-    id:      'campaigns',
-    label:   'Campaigns',
-    Icon:    Megaphone,
-    href:    '/freehold-intelligence/agent/campaigns',
-    metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
-    badge:   0,
-    accent:  'blue',
-    sub:     'Ads & Spend',
-  },
-  {
-    id:      'credits',
-    label:   'Credits',
-    Icon:    Coins,
-    href:    '/freehold-intelligence/agent/credits',
-    metric:  `${(myCredits?.remaining ?? 0).toLocaleString()} credits left`,
-    badge:   0,
-    accent:  'gold',
-    sub:     'Ad Budget',
-  },
-  {
-    id:      'notebook',
-    label:   'Inventory',
-    Icon:    BookOpen,
-    href:    '/freehold-intelligence/agent/notebook',
-    metric:  '3 project notes · 6 sources',
-    badge:   0,
-    accent:  'violet',
-    sub:     'NotebookLM',
-  },
-  {
-    id:      'ai',
-    label:   'My AI',
-    Icon:    Sparkles,
-    href:    '/freehold-intelligence/agent/ai',
-    metric:  '7 connections active',
-    badge:   0,
-    accent:  'gold',
-    sub:     'Agent Builder',
-  },
-  {
-    id:      'settings',
-    label:   'Settings',
-    Icon:    Settings,
-    href:    '/freehold-intelligence/agent',
-    metric:  `Lead pool: ${poolRemaining} of ${agentLeadPool.monthlyQuota} left`,
-    badge:   0,
-    accent:  'gray',
-    sub:     'Preferences',
-  },
-]
 
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
@@ -109,6 +37,104 @@ function timeAgo(iso: string) {
 
 export default function AgentHomePage() {
   const now = new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
+
+  // Live metrics — override mock values when available
+  const [liveCritical, setLiveCritical] = useState<number | null>(null)
+  const [liveActive,   setLiveActive]   = useState<number | null>(null)
+  const [liveBalance,  setLiveBalance]  = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/freehold/crm/leads')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.leads) {
+          setLiveCritical(d.leads.filter((l: any) => l.urgency === 'critical').length)
+          setLiveActive(d.leads.filter((l: any) => l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost').length)
+        }
+      })
+      .catch(() => {})
+    fetch('/api/freehold/credits/balance')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.balance?.balance != null) setLiveBalance(d.balance.balance) })
+      .catch(() => {})
+  }, [])
+
+  const displayCritical = liveCritical ?? mockCritical
+  const displayActive   = liveActive   ?? mockActive
+  const displayBalance  = liveBalance  ?? (myCredits?.remaining ?? 0)
+
+  const APPS = useMemo(() => [
+    {
+      id:      'leads',
+      label:   'My Leads',
+      Icon:    Users,
+      href:    '/freehold-intelligence/agent/leads',
+      metric:  `${displayCritical > 0 ? `${displayCritical} critical · ` : ''}${displayActive} active`,
+      badge:   displayCritical,
+      accent:  displayCritical > 0 ? 'red' : 'sky',
+      sub:     'Pipeline',
+    },
+    {
+      id:      'account',
+      label:   'Account',
+      Icon:    Wallet,
+      href:    '/freehold-intelligence/agent/account',
+      metric:  `AED ${(walletPending / 1000).toFixed(0)}K pending · ${agentProfile.tier}`,
+      badge:   0,
+      accent:  'gold',
+      sub:     'Wallet & Profile',
+    },
+    {
+      id:      'campaigns',
+      label:   'Campaigns',
+      Icon:    Megaphone,
+      href:    '/freehold-intelligence/agent/campaigns',
+      metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
+      badge:   0,
+      accent:  'blue',
+      sub:     'Ads & Spend',
+    },
+    {
+      id:      'credits',
+      label:   'Credits',
+      Icon:    Coins,
+      href:    '/freehold-intelligence/agent/credits',
+      metric:  `${displayBalance.toLocaleString()} credits left`,
+      badge:   0,
+      accent:  'gold',
+      sub:     'Ad Budget',
+    },
+    {
+      id:      'notebook',
+      label:   'Inventory',
+      Icon:    BookOpen,
+      href:    '/freehold-intelligence/agent/notebook',
+      metric:  '3 project notes · 6 sources',
+      badge:   0,
+      accent:  'violet',
+      sub:     'NotebookLM',
+    },
+    {
+      id:      'ai',
+      label:   'My AI',
+      Icon:    Sparkles,
+      href:    '/freehold-intelligence/agent/ai',
+      metric:  '7 connections active',
+      badge:   0,
+      accent:  'gold',
+      sub:     'Agent Builder',
+    },
+    {
+      id:      'settings',
+      label:   'Settings',
+      Icon:    Settings,
+      href:    '/freehold-intelligence/agent',
+      metric:  `Lead pool: ${poolRemaining} of ${agentLeadPool.monthlyQuota} left`,
+      badge:   0,
+      accent:  'gray',
+      sub:     'Preferences',
+    },
+  ], [displayCritical, displayActive, displayBalance])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
@@ -137,7 +163,7 @@ export default function AgentHomePage() {
       </section>
 
       {/* Today's Priority */}
-      {(offerLead || viewingLead || criticalLeads > 0) && (
+      {(offerLead || viewingLead || displayCritical > 0) && (
         <section className="mt-8">
           <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Today's focus</div>
           <div className="space-y-2">
@@ -175,7 +201,7 @@ export default function AgentHomePage() {
                 </div>
               </Link>
             )}
-            {criticalLeads > 0 && (
+            {displayCritical > 0 && (
               <Link
                 href="/freehold-intelligence/agent/leads"
                 className="group flex items-center gap-4 rounded-[18px] border border-red-400/15 bg-red-400/[0.03] px-5 py-4 transition hover:border-red-400/25"
@@ -184,7 +210,7 @@ export default function AgentHomePage() {
                   <span className="text-[16px]">⚡</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-white">{criticalLeads} critical lead{criticalLeads !== 1 ? 's' : ''} need immediate action</div>
+                  <div className="text-sm font-semibold text-white">{displayCritical} critical lead{displayCritical !== 1 ? 's' : ''} need immediate action</div>
                   <div className="mt-0.5 text-xs text-slate-400">Response delay detected — act before competitor contact</div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-medium text-red-400">

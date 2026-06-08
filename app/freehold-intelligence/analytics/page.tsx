@@ -1,7 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
+
+type DbStats = {
+  total_leads: number
+  leads_30d: number
+  closed_leads: number
+  new_leads: number
+} | null
 
 const FLAG: Record<string, string> = {
   AE: '🇦🇪',
@@ -196,6 +203,19 @@ export default function AnalyticsPage() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue>('All')
   const [deviceFilter, setDeviceFilter] = useState<DeviceFilterValue>('All')
 
+  // Live DB stats — fetched on mount; enriches the mock analytics display
+  const [dbStats, setDbStats] = useState<DbStats>(null)
+
+  useEffect(() => {
+    fetch('/api/freehold/analytics/stats')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.stats) setDbStats(d.stats) })
+      .catch(() => {})
+  }, [])
+
+  // Use DB conversion count when available; fall back to mock
+  const totalConversions = dbStats?.closed_leads ?? a.totalConversions
+
   // Filtered traffic sources (shared by bar chart and table)
   const filteredSources = useMemo(
     () =>
@@ -254,7 +274,7 @@ export default function AnalyticsPage() {
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
           <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Conversions</div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">
-            {a.totalConversions.toLocaleString('en-US')}
+            {totalConversions.toLocaleString('en-US')}
           </div>
           <div className="mt-1 text-xs text-slate-500">
             {(a.conversionRate * 100).toFixed(1)}% conv. rate
