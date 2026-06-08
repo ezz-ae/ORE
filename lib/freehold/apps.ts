@@ -62,6 +62,7 @@ export const APPS: AppDef[] = [
     metric: 'Campaigns · creatives · attribution', badge: 0, accent: '#60A5FA',
     card: 'border-blue-400/15 hover:border-blue-400/30',
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+    brokerHide: true,
   },
   {
     id: 'inventory', label: 'Inventory', sub: 'Properties · Projects · Off-plan',
@@ -84,6 +85,7 @@ export const APPS: AppDef[] = [
     metric: 'Content · data quality', badge: 0, accent: '#38BDF8',
     card: 'border-sky-400/15 hover:border-sky-400/30',
     icon: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
+    brokerHide: true,
   },
   {
     id: 'analytics', label: 'Analytics', sub: 'Traffic · Conversions · Pages',
@@ -91,6 +93,7 @@ export const APPS: AppDef[] = [
     metric: 'visitors · 30d', badge: 0, accent: '#A78BFA',
     card: 'border-violet-400/15 hover:border-violet-400/30',
     icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
+    brokerHide: true,
   },
   {
     id: 'notebook', label: 'Notebook', sub: 'Research · Offers · Exports',
@@ -105,6 +108,7 @@ export const APPS: AppDef[] = [
     metric: '8 connected · 2 pending', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
+    brokerHide: true,
   },
   {
     id: 'settings', label: 'Settings', sub: 'Team · Roles · Billing',
@@ -112,6 +116,7 @@ export const APPS: AppDef[] = [
     metric: '3 users active', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
+    brokerHide: true,
   },
   {
     id: 'management', label: 'Management', sub: 'Company-wide reporting · Team · ROI',

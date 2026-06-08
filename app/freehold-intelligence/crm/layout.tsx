@@ -8,6 +8,7 @@ import {
   Inbox, Activity, BarChart3, Copy, ArrowRightLeft, UserCircle2, List,
 } from 'lucide-react'
 import { crmLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
+import { useSession } from '@/lib/freehold/use-session'
 
 // ── Nav sections ──────────────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ const BADGES: Record<string, number | undefined> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useSession()
   const pathname = usePathname()
 
   function isActive(href: string, exact?: boolean) {
@@ -60,8 +62,13 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
     return pathname === href || pathname.startsWith(href + '/')
   }
 
+  // Brokers only see their own daily work — hide pipeline/team sections
+  const navSections = user?.role === 'broker'
+    ? NAV_SECTIONS.filter(s => s.label === 'Daily work')
+    : NAV_SECTIONS
+
   // Flat tab list for mobile scroll nav
-  const allTabs = NAV_SECTIONS.flatMap(s => s.items)
+  const allTabs = navSections.flatMap(s => s.items)
 
   return (
     <div className="flex flex-col min-h-full">
@@ -108,7 +115,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar — auto-collapse: icon-only at rest, full width on hover */}
         <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-5">
-            {NAV_SECTIONS.map((section) => (
+            {navSections.map((section) => (
               <div key={section.label}>
                 {/* Section label — fades in on hover */}
                 <div className="mb-1.5 h-4 px-2.5">

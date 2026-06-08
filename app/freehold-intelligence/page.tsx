@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   AlertCircle, CheckCircle2, Activity,
   ArrowUpRight, X, Globe, ChevronRight, Send, Clock, AlertTriangle,
@@ -66,6 +67,7 @@ export default function IntelligenceLauncher() {
   const [dateStr, setDateStr]         = useState('')
   const { user }   = useSession()
   const role       = user?.role
+  const router     = useRouter()
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
@@ -76,6 +78,12 @@ export default function IntelligenceLauncher() {
     if (!user?.name) return
     setGreeting(getGreeting(user.name))
   }, [user?.name])
+
+  useEffect(() => {
+    if (user?.role === 'broker') {
+      router.replace('/freehold-intelligence/agent')
+    }
+  }, [user?.role])
 
   const apps = visibleApps(role)
 

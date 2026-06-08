@@ -7,6 +7,7 @@ import {
   Settings2, Users, Shield, CreditCard,
   ShieldCheck, Bell, Code,
 } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
 
 const NAV_SECTIONS = [
   {
@@ -34,7 +35,14 @@ const NAV_SECTIONS = [
 ]
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  const { ready } = useSessionGuard(['admin', 'director', 'ceo'])
   const pathname = usePathname()
+
+  if (!ready) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href

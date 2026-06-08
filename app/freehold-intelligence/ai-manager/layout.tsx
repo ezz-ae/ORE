@@ -6,6 +6,7 @@ import {
   ArrowLeft, Bot,
   LayoutDashboard, Building2, MapPin, HardHat, Globe, Hash, Lightbulb,
 } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
 
 const tabs = [
   { label: 'Overview',   href: '/freehold-intelligence/ai-manager',             exact: true, Icon: LayoutDashboard },
@@ -18,7 +19,14 @@ const tabs = [
 ]
 
 export default function AiManagerLayout({ children }: { children: React.ReactNode }) {
+  const { ready } = useSessionGuard(['admin', 'director', 'ceo', 'marketing'])
   const pathname = usePathname()
+
+  if (!ready) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href

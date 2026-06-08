@@ -2,8 +2,17 @@
 
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
 
 export default function AnalyticsLayout({ children }: { children: React.ReactNode }) {
+  const { ready } = useSessionGuard(['admin', 'sales_manager', 'director', 'ceo', 'marketing'])
+
+  if (!ready) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
+
   return (
     <div className="flex flex-col min-h-full">
 

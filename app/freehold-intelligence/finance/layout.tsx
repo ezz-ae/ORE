@@ -6,6 +6,8 @@ import {
   ArrowLeft, DollarSign,
   LayoutDashboard, Receipt, CreditCard, FileCheck2, BarChart3, Wallet,
 } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const tabs = [
   { label: 'Overview',       href: '/freehold-intelligence/finance',                exact: true, Icon: LayoutDashboard },
@@ -17,7 +19,14 @@ const tabs = [
 ]
 
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
+  const { ready } = useSessionGuard(MANAGEMENT_ROLES)
   const pathname = usePathname()
+
+  if (!ready) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href

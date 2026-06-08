@@ -129,13 +129,15 @@ export function SpacesNav() {
                 </span>
               )}
             </div>
-            <Link
-              href="/freehold-intelligence/settings"
-              onClick={() => setMenuOpen(false)}
-              className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
-            >
-              Settings
-            </Link>
+            {role !== 'broker' && (
+              <Link
+                href="/freehold-intelligence/settings"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                Settings
+              </Link>
+            )}
             <button
               onClick={signOut}
               className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
