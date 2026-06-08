@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Search, Calendar, TrendingUp, Building2 } from 'lucide-react'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
@@ -30,10 +30,20 @@ export default function OffPlanPage() {
   const [query, setQuery] = useState('')
   const [sort,  setSort]  = useState<SortKey>('leads')
   const [year,  setYear]  = useState('All')
+  const [allProperties, setAllProperties] = useState<InventoryProperty[]>(inventoryProperties)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/inventory')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.properties?.length > 0) setAllProperties(d.properties) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const OFFPLAN_STATUSES = ['off_plan', 'under_construction', 'coming_soon']
 
-  const base = inventoryProperties.filter((p) => OFFPLAN_STATUSES.includes(p.status))
+  const base = allProperties.filter((p) => OFFPLAN_STATUSES.includes(p.status))
 
   const handoverYears = ['All', ...Array.from(new Set(base.map((p) => p.handoverYear).filter(Boolean))).sort().map(String)]
 

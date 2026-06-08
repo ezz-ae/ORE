@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { AlertTriangle, CheckCircle2, ArrowUpRight } from 'lucide-react'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 
 function QualityBand({ value }: { value: number }) {
   const color = value >= 80 ? 'bg-gold' : value >= 50 ? 'bg-amber-400' : 'bg-red-400'
@@ -18,15 +19,17 @@ function QualityBand({ value }: { value: number }) {
 }
 
 const ISSUE_TYPES = [
-  { key: 'noImages',        label: 'No images',               check: (p: (typeof inventoryProperties)[0]) => !p.hasImages },
-  { key: 'lowImageCount',   label: 'Fewer than 5 images',     check: (p: (typeof inventoryProperties)[0]) => p.hasImages && p.imageCount < 5 },
-  { key: 'noLanding',       label: 'No landing page',         check: (p: (typeof inventoryProperties)[0]) => p.landingStatus === 'missing' },
-  { key: 'lowQuality',      label: 'Data quality < 60',       check: (p: (typeof inventoryProperties)[0]) => p.dataQuality < 60 },
-  { key: 'noCampaigns',     label: 'No linked campaigns',     check: (p: (typeof inventoryProperties)[0]) => p.linkedCampaigns === 0 },
+  { key: 'noImages',        label: 'No images',               check: (p: InventoryProperty) => !p.hasImages },
+  { key: 'lowImageCount',   label: 'Fewer than 5 images',     check: (p: InventoryProperty) => p.hasImages && p.imageCount < 5 },
+  { key: 'noLanding',       label: 'No landing page',         check: (p: InventoryProperty) => p.landingStatus === 'missing' },
+  { key: 'lowQuality',      label: 'Data quality < 60',       check: (p: InventoryProperty) => p.dataQuality < 60 },
+  { key: 'noCampaigns',     label: 'No linked campaigns',     check: (p: InventoryProperty) => p.linkedCampaigns === 0 },
 ]
 
-export default function DataQualityPage() {
-  const sorted = [...inventoryProperties].sort((a, b) => a.dataQuality - b.dataQuality)
+export default async function DataQualityPage() {
+  const dbProperties = await getInventoryPropertiesFromDB()
+  const allProperties = dbProperties.length > 0 ? dbProperties : inventoryProperties
+  const sorted = [...allProperties].sort((a, b) => a.dataQuality - b.dataQuality)
 
   const poorCount  = sorted.filter((p) => p.dataQuality < 50).length
   const needsCount = sorted.filter((p) => p.dataQuality >= 50 && p.dataQuality < 80).length

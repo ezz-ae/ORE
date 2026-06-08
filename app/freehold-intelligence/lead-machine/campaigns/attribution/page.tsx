@@ -7,8 +7,8 @@ import {
   TrendingDown, TrendingUp, Zap,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 
 type PlatformFilter = 'All' | 'Meta' | 'Google'
 
@@ -46,6 +46,7 @@ function landingStatusStyle(s: string) {
 
 export default function CampaignAttributionPage() {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('All')
+  const { leads: liveLeads } = useLiveLeads()
 
   const avg = financeSummary.avgCpl30d
   const allCpl = financeSummary.topSpendCampaigns.map((c) => c.cpl)
@@ -63,10 +64,10 @@ export default function CampaignAttributionPage() {
       .map((c) => {
         const listing = c.projectId ? leadMachineListings.find((l) => l.projectId === c.projectId) ?? null : null
         const landing = c.landingId ? leadMachineLandings.find((l) => l.id === c.landingId) ?? null : null
-        const leads   = crmLeads.filter((l) => l.campaignId === c.campaignId)
+        const leads   = liveLeads.filter((l) => l.campaignId === c.campaignId)
         return { ...c, listing, landing, crmLeads: leads }
       })
-  }, [platformFilter])
+  }, [platformFilter, liveLeads])
 
   const totalSpend  = financeSummary.totalSpend30d
   const totalLeads  = financeSummary.totalLeads30d
