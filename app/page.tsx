@@ -4,7 +4,8 @@ import { MarketSnapshot } from "@/components/market-snapshot"
 import { BlogSection } from "@/components/blog-section"
 import { IntelligenceBlock } from "@/components/IntelligenceBlock"
 import { getIntelligenceBlockData } from "@/lib/intelligence-block"
-import Image from "next/image"
+import { HomeCallbackForm } from "@/components/home-callback-form"
+import { COMPANY_WHATSAPP_URL } from "@/lib/site"
 import Link from "next/link"
 import type { Metadata } from "next"
 
@@ -111,27 +112,6 @@ const advantages = [
     span: "md:col-span-8",
     href: "/contact",
     cta: "Speak with an advisor",
-  },
-]
-
-const teamMembers = [
-  {
-    name: "Mohammed Al Rashidi",
-    role: "CEO & Founder",
-    bio: "19 years in Dubai real estate. Former head of project sales at Emaar.",
-    image: "/images/team/ceo.jpg",
-  },
-  {
-    name: "Sarah Chen",
-    role: "Head of Technology",
-    bio: "Built the Freehold Intelligence platform from the ground up. Ex-Google.",
-    image: "/images/team/cto.jpg",
-  },
-  {
-    name: "Ahmed Khalil",
-    role: "Head of Sales",
-    bio: "Leads a team of 40+ advisors across residential, commercial, and project sales.",
-    image: "/images/team/sales-head.jpg",
   },
 ]
 
@@ -297,40 +277,31 @@ export default async function Home() {
         </section>
       </div>
 
-      {/* ── Meet the team ────────────────────────────────────────────── */}
+      {/* ── Why Freehold trust band ──────────────────────────────────── */}
       <section className="relative bg-[#F2EFE8] py-20 md:py-28">
         <div className="pointer-events-none absolute inset-0 opacity-[0.012]"
           style={{ backgroundImage: "radial-gradient(circle, #152E24 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
         <div className="container relative z-10">
           <div className="mb-14 text-center">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">The Team</p>
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#C69B3E]">Why Freehold</p>
             <h2 className="font-serif text-3xl font-bold text-[#152E24] md:text-4xl lg:text-5xl">
               Local expertise, clean execution.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[#152E24]/45">
-              Decades of combined experience in Dubai real estate — transactions, project sales, and investment advisory.
+              Decades of combined experience in Dubai real estate — transactions, project sales, and investment advisory, backed by an AI platform that never sleeps.
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-3">
-            {teamMembers.map((member) => (
-              <div key={member.name} className="group overflow-hidden rounded-2xl border border-[#152E24]/[0.07] bg-white/70 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-                <div className="relative aspect-[4/3] overflow-hidden bg-[#E8E3DC]">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#152E24]/40 to-transparent" />
-                </div>
-                <div className="p-6">
-                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C69B3E]">
-                    {member.role}
-                  </p>
-                  <h3 className="font-serif text-lg font-bold text-[#152E24]">{member.name}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-[#152E24]/45">{member.bio}</p>
-                </div>
+            {[
+              { stat: "RERA", label: "Licensed & DLD registered", body: "Fully regulated brokerage with complete transparency from first inquiry to title deed." },
+              { stat: "AI-led", label: "Market intelligence", body: "Live data on yields, transactions, and price trends across every freehold area in Dubai." },
+              { stat: "End-to-end", label: "One accountable team", body: "Valuation, media, buyer profiling, negotiation, and handover handled in a single clean process." },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-[#152E24]/[0.07] bg-white/70 p-8 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                <p className="font-serif text-3xl font-bold text-[#C69B3E]">{item.stat}</p>
+                <h3 className="mt-3 font-serif text-lg font-bold text-[#152E24]">{item.label}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-[#152E24]/50">{item.body}</p>
               </div>
             ))}
           </div>
@@ -378,55 +349,7 @@ export default async function Home() {
                 <p className="mb-8 text-[11px] font-medium uppercase tracking-[0.15em] text-white/25">
                   Business Bay office · Dubai, UAE
                 </p>
-                <form className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      placeholder="John Doe"
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white placeholder:text-white/20 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
-                      WhatsApp or Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      required
-                      placeholder="+971 50 000 0000"
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white placeholder:text-white/20 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">
-                      I'm interested in
-                    </label>
-                    <select
-                      name="interest"
-                      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.06] px-4 py-3.5 text-sm text-white/70 transition focus:border-[#C69B3E]/40 focus:outline-none focus:ring-2 focus:ring-[#C69B3E]/20"
-                    >
-                      <option value="" className="bg-[#152E24]">Select interest…</option>
-                      <option value="buy" className="bg-[#152E24]">Buying a property</option>
-                      <option value="sell" className="bg-[#152E24]">Selling my property</option>
-                      <option value="rent" className="bg-[#152E24]">Renting</option>
-                      <option value="invest" className="bg-[#152E24]">Investment advisory</option>
-                      <option value="golden-visa" className="bg-[#152E24]">Golden Visa eligibility</option>
-                    </select>
-                  </div>
-                  <button
-                    type="submit"
-                    className="freehold-gradient mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.12em] text-[#152E24] shadow-lg transition hover:brightness-105"
-                  >
-                    Request Consultation
-                    <ArrowRightIcon />
-                  </button>
-                </form>
+                <HomeCallbackForm />
               </div>
             </div>
           </div>
@@ -500,7 +423,7 @@ export default async function Home() {
                 Chat with AI
               </Link>
               <a
-                href="https://wa.me/971500000000"
+                href={COMPANY_WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex h-13 items-center gap-2 rounded-xl border border-white/15 px-8 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-emerald-400/30 hover:text-emerald-400 sm:h-14"

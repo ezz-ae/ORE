@@ -50,16 +50,40 @@ function NotFound() {
   )
 }
 
-function LeadForm({ propertyName }: { propertyName: string }) {
+function LeadForm({ propertyName, slug }: { propertyName: string; slug: string }) {
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name || !form.phone) return
+    setError('')
     setSubmitting(true)
-    setTimeout(() => { setSubmitted(true); setSubmitting(false) }, 1200)
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          interest: `Brochure & pricing — ${propertyName}`,
+          source: `lp:${slug}`,
+          landingSlug: slug,
+          projectSlug: slug,
+          message: `Requested brochure & pricing for ${propertyName} via landing page.`,
+        }),
+      })
+      const payload = await res.json()
+      if (!res.ok) throw new Error(payload?.error || 'Unable to send your request.')
+      setSubmitted(true)
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to send your request.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -110,6 +134,7 @@ function LeadForm({ propertyName }: { propertyName: string }) {
           className="w-full rounded-[12px] border border-white/[0.10] bg-white/[0.04] px-4 py-3 text-[14px] text-white placeholder-white/20 outline-none transition focus:border-[#D4AF37]/40 focus:bg-white/[0.06]"
         />
       </div>
+      {error ? <p className="text-[13px] text-red-400">{error}</p> : null}
       <button
         type="submit"
         disabled={submitting}
@@ -284,7 +309,7 @@ export default function LandingPage() {
                 Our specialists will send you the brochure, floor plans, and pricing within 24 hours.
               </p>
             </div>
-            <LeadForm propertyName={prop.name} />
+            <LeadForm propertyName={prop.name} slug={prop.slug} />
           </div>
         </div>
       </div>

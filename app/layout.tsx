@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { WhatsAppFloat } from "@/components/whatsapp-float"
 import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
 import "./globals.css"
 
@@ -166,6 +167,7 @@ export default function RootLayout({
               {children}
             </main>
             <SiteFooter />
+            <WhatsAppFloat />
           </div>
         </ThemeProvider>
         <Analytics />

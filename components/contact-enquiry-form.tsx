@@ -116,7 +116,7 @@ export function ContactEnquiryForm() {
           <Input
             id="contact-phone"
             type="tel"
-            placeholder="+97150000000"
+            placeholder="+971 50 417 3622"
             className="h-14 rounded-2xl border-0 bg-muted/30 focus-visible:ring-primary/50"
             value={form.phone}
             onChange={(event) => handleChange("phone", event.target.value)}

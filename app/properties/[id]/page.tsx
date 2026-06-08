@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { getProperties, getPropertyBySlug } from "@/lib/ore"
+import { COMPANY_PHONE_E164, COMPANY_WHATSAPP_URL } from "@/lib/site"
 import { notFound } from "next/navigation"
 
 export const runtime = "nodejs"
@@ -396,13 +397,13 @@ export default async function PropertyPage({
                     </p>
                     <div className="space-y-3">
                       <Button className="w-full ore-gradient text-[#152E24] font-semibold" size="lg" asChild>
-                        <a href="tel:+97150000000">
+                        <a href={`tel:${COMPANY_PHONE_E164}`}>
                           <Phone className="mr-2 h-4 w-4" />
                           Call Now
                         </a>
                       </Button>
                       <Button className="w-full border-[#152E24]/10 bg-white text-[#152E24] hover:border-[#C69B3E]/25 hover:bg-[#C69B3E]/[0.08] hover:text-[#152E24]" variant="outline" size="lg" asChild>
-                        <a href="https://wa.me/97150000000" target="_blank" rel="noopener noreferrer">
+                        <a href={COMPANY_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
                           <MessageSquare className="mr-2 h-4 w-4" />
                           WhatsApp
                         </a>

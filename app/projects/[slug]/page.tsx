@@ -36,6 +36,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/ore"
+import { COMPANY_PHONE_E164 } from "@/lib/site"
 import { Toaster } from "@/components/ui/toaster"
 import type { Project } from "@/lib/types/project"
 import { ProjectLeadForm } from "@/components/project-lead-form"
@@ -294,7 +295,7 @@ export default async function ProjectPage({
   const testimonials = toArray(project.testimonials)
   const faqs = toArray(project.faqs)
   const developer = project.developer || { name: "Freehold", logo: "" }
-  const phoneNumber = "+97150000000"
+  const phoneNumber = COMPANY_PHONE_E164
   const heroImage = project.heroImage || "/logo.png"
   const heroImageClass = project.heroImage ? "object-cover" : "object-contain bg-card"
 

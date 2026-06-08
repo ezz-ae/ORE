@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { COMPANY_WHATSAPP_URL } from "@/lib/site"
 import { Phone, User, Mail, MessageCircle } from "lucide-react"
 
 const formSchema = z.object({
@@ -165,7 +166,7 @@ export function ProjectLeadForm({ projectName, projectSlug }: ProjectLeadFormPro
       <div className="border-t border-border p-6 text-center">
         <p className="text-sm text-muted-foreground">Or speak to a consultant directly</p>
         <Button variant="outline" className="mt-4 w-full" asChild>
-          <a href="https://wa.me/97150000000" target="_blank" rel="noopener noreferrer">
+          <a href={COMPANY_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
             <MessageCircle className="mr-2 h-4 w-4" />
             WhatsApp Us
           </a>
