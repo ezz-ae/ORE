@@ -3,10 +3,8 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Search, Target, X, Users, AlertTriangle } from 'lucide-react'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',    label: 'Critical' }
@@ -35,19 +33,25 @@ function stageStyle(stage: string) {
   return map[stage] ?? 'text-slate-400 border-line-strong bg-surface-2'
 }
 
-const ALL_STAGES = ['All', ...Array.from(new Set(crmLeads.map(l => l.stage)))]
-const ALL_AGENTS = ['All', ...Array.from(new Set(crmLeads.map(l => l.assignedAgent)))]
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function CrmLeadsPage() {
+  const { leads } = useLiveLeads()
   const [query,       setQuery]       = useState('')
   const [activeStage, setActiveStage] = useState('All')
   const [activeAgent, setActiveAgent] = useState('All')
 
+  const ALL_STAGES = useMemo(
+    () => ['All', ...Array.from(new Set(leads.map((l) => l.stage)))],
+    [leads],
+  )
+
+  const ALL_AGENTS = useMemo(
+    () => ['All', ...Array.from(new Set(leads.map((l) => l.assignedAgent)))],
+    [leads],
+  )
+
   const sorted = useMemo(
-    () => [...crmLeads].sort((a, b) => b.intentScore - a.intentScore),
-    [],
+    () => [...leads].sort((a, b) => b.intentScore - a.intentScore),
+    [leads],
   )
 
   const filtered = useMemo(() => {
@@ -65,9 +69,9 @@ export default function CrmLeadsPage() {
     })
   }, [sorted, query, activeStage, activeAgent])
 
-  const hot       = crmLeads.filter(l => l.urgency === 'critical' || l.urgency === 'high').length
-  const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
-  const withRisk  = crmLeads.filter(l => l.duplicateRisk || l.wrongNumberRisk).length
+  const hot       = leads.filter(l => l.urgency === 'critical' || l.urgency === 'high').length
+  const avgIntent = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + l.intentScore, 0) / leads.length) : 0
+  const withRisk  = leads.filter(l => l.duplicateRisk || l.wrongNumberRisk).length
 
   const hasFilters = query.trim() || activeStage !== 'All' || activeAgent !== 'All'
 
@@ -79,13 +83,13 @@ export default function CrmLeadsPage() {
       <PageHeader
         eyebrow="CRM"
         Icon={Users}
-        title={`${crmLeads.length} leads`}
+        title={`${leads.length} leads`}
         subtitle={`${hot} need immediate action · sorted by intent score`}
       />
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total" value={crmLeads.length} hint="in pipeline" Icon={Users} />
+        <StatCard label="Total" value={leads.length} hint="in pipeline" Icon={Users} />
         <StatCard
           label="Urgent"
           value={hot}
@@ -167,7 +171,7 @@ export default function CrmLeadsPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          {filtered.length} of {crmLeads.length} leads
+          {filtered.length} of {leads.length} leads
           {hasFilters && <span className="ml-1.5 text-gold/60">· filtered</span>}
         </p>
       </div>

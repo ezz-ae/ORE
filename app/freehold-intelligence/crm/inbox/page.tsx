@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
-import { crmInboxLeads, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { PageHeader, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
+import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
+import type { CRMInboxLead } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type FilterTab = 'All' | 'Unassigned' | 'Assigned' | 'Contacted'
 
@@ -26,6 +28,7 @@ function timeAgo(iso: string) {
 const FILTERS: FilterTab[] = ['All', 'Unassigned', 'Assigned', 'Contacted']
 
 export default function CrmInboxPage() {
+  const { leads } = useLiveLeads()
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All')
   const [assignments,  setAssignments]  = useState<Record<string, string>>({})
   const [contacted,    setContacted]    = useState<Set<string>>(new Set())
@@ -33,10 +36,31 @@ export default function CrmInboxPage() {
 
   const available = crmAgentRoster.filter((a) => a.status === 'available')
 
+  // Map live leads (filtered to new pipeline stage) to CRMInboxLead shape
+  const inboxLeads = useMemo<CRMInboxLead[]>(
+    () =>
+      leads
+        .filter((l) => l.pipelineStage === 'new')
+        .map((l) => ({
+          id: l.id,
+          name: l.name,
+          phone: l.phone,
+          email: l.email,
+          source: l.source,
+          intentScore: l.intentScore,
+          urgency: l.urgency,
+          arrivedAt: l.lastContactAt,
+          assignedAgent: l.assignedAgent !== 'Unassigned' ? l.assignedAgent : undefined,
+          status: (l.assignedAgent && l.assignedAgent !== 'Unassigned' ? 'assigned' : 'unassigned') as CRMInboxLead['status'],
+          aiNote: l.aiSummary,
+        })),
+    [leads],
+  )
+
   // Derive effective status per lead — session overrides take precedence
   const leadsWithStatus = useMemo(
     () =>
-      crmInboxLeads.map((lead) => ({
+      inboxLeads.map((lead) => ({
         ...lead,
         effectiveStatus: contacted.has(lead.id)
           ? 'contacted'
@@ -45,7 +69,7 @@ export default function CrmInboxPage() {
             : lead.status,
         effectiveAgent: assignments[lead.id] ?? lead.assignedAgent ?? null,
       })),
-    [assignments, contacted],
+    [inboxLeads, assignments, contacted],
   )
 
   // Live stat counts
@@ -94,7 +118,7 @@ export default function CrmInboxPage() {
             eyebrow="CRM"
             Icon={Inbox}
             title="Incoming leads"
-            subtitle={`${crmInboxLeads.length} leads in the last 48 hours${unassignedCount > 0 ? ` · ${unassignedCount} still unassigned` : ''}`}
+            subtitle={`${inboxLeads.length} leads in the last 48 hours${unassignedCount > 0 ? ` · ${unassignedCount} still unassigned` : ''}`}
             className="mb-6"
           />
 

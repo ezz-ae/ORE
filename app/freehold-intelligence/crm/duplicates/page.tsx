@@ -3,8 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Copy, AlertCircle, CheckCircle2, ArrowUpRight, Phone, Mail, User, GitMerge } from 'lucide-react'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
-
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 
 type DuplicateCluster = {
   id: string
@@ -13,8 +12,6 @@ type DuplicateCluster = {
   primary: { id: string; name: string; phone: string; email: string; source: string; stage: string; intentScore: number; assignedAgent: string; arrivedAt: string }
   duplicate: { id: string; name: string; phone: string; email: string; source: string; stage: string; intentScore: number; assignedAgent: string; arrivedAt: string }
 }
-
-const leads = crmLeads
 
 // Clusters built from real `duplicateRisk: true` leads + inline patterns
 const CLUSTERS: DuplicateCluster[] = [
@@ -141,11 +138,12 @@ function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPr
 type ConfidenceFilter = 'All' | 'high' | 'medium' | 'low'
 
 export default function CrmDuplicatesPage() {
+  const { leads } = useLiveLeads()
   const [resolved, setResolved] = useState<Record<string, 'merged' | 'dismissed'>>({})
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('All')
   const [flash, setFlash] = useState<string | null>(null)
 
-  const atRisk = leads.filter((l) => l.duplicateRisk).length
+  const atRisk = useMemo(() => leads.filter((l) => l.duplicateRisk).length, [leads])
 
   const visibleClusters = useMemo(() => {
     return CLUSTERS.filter((c) => {

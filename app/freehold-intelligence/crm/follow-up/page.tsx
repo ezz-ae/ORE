@@ -3,8 +3,9 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
-import { crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
-import { PageHeader, StatCard, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
+import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
 
@@ -19,8 +20,6 @@ function overdueLabel(hours: number) {
   if (hours < 24) return `${hours}h overdue`
   return `${Math.floor(hours / 24)}d overdue`
 }
-
-const allAgents = ['All', ...Array.from(new Set(crmFollowUpQueue.map((l) => l.assignedAgent)))]
 
 const urgencyPills: Urgency[] = ['All', 'Critical', 'High', 'Medium', 'Low']
 
@@ -41,6 +40,7 @@ const urgencyActiveStyle: Record<Urgency, string> = {
 }
 
 export default function FollowUpQueuePage() {
+  const { leads } = useLiveLeads()
   const [activeUrgency, setActiveUrgency] = useState<Urgency>('All')
   const [activeAgent, setActiveAgent] = useState<string>('All')
   const [done, setDone] = useState<Set<string>>(new Set())
@@ -53,9 +53,42 @@ export default function FollowUpQueuePage() {
     return () => clearTimeout(t)
   }, [flash])
 
+  // Map live leads in contacted/qualified stages to the follow-up queue shape
+  const followUpQueue = useMemo<CRMFollowUpItem[]>(() => {
+    const NOW_MS = new Date('2026-06-08T12:00:00+04:00').getTime()
+    return leads
+      .filter((l) => l.pipelineStage === 'contacted' || l.pipelineStage === 'qualified')
+      .map((l) => {
+        const lastMs   = new Date(l.lastContactAt).getTime()
+        const dueMs    = lastMs + 72 * 60 * 60 * 1000 // 72h follow-up window
+        const overdue  = Math.max(0, Math.round((NOW_MS - dueMs) / (60 * 60 * 1000)))
+        return {
+          leadId:        l.id,
+          leadName:      l.name,
+          phone:         l.phone,
+          assignedAgent: l.assignedAgent,
+          urgency:       l.urgency,
+          intentScore:   l.intentScore,
+          stage:         l.stage,
+          source:        l.source,
+          lastContactAt: l.lastContactAt,
+          dueAt:         new Date(dueMs).toISOString(),
+          overdueHours:  overdue,
+          nextBestAction: l.nextBestAction,
+          duplicateRisk: l.duplicateRisk,
+          wrongNumberRisk: l.wrongNumberRisk,
+        } satisfies CRMFollowUpItem
+      })
+  }, [leads])
+
+  const allAgents = useMemo(
+    () => ['All', ...Array.from(new Set(followUpQueue.map((l) => l.assignedAgent)))],
+    [followUpQueue],
+  )
+
   const sortedQueue = useMemo(
-    () => [...crmFollowUpQueue].sort((a, b) => b.overdueHours - a.overdueHours),
-    [],
+    () => [...followUpQueue].sort((a, b) => b.overdueHours - a.overdueHours),
+    [followUpQueue],
   )
 
   const visible = useMemo(() => {

@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
-import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Section, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 // Static lead-source data (30-day window)
@@ -54,45 +55,49 @@ const DATE_RANGES: DateRange[] = ['7d', '30d', '90d', 'MTD']
 type IntentFilter = 'All' | 'High' | 'Medium' | 'Low'
 const INTENT_FILTERS: IntentFilter[] = ['All', 'High', 'Medium', 'Low']
 
-const ALL_AGENTS = ['All', ...Array.from(new Set(crmLeads.map((l) => l.assignedAgent)))]
-
 export default function CrmReportsPage() {
+  const { leads } = useLiveLeads()
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [intentFilter, setIntentFilter] = useState<IntentFilter>('All')
   const [agentFilter, setAgentFilter] = useState('All')
 
+  const ALL_AGENTS = useMemo(
+    () => ['All', ...Array.from(new Set(leads.map((l) => l.assignedAgent)))],
+    [leads],
+  )
+
   // Compute live source breakdown from real lead data
-  const sourceMap = useMemo(() => crmLeads.reduce<Record<string, number>>((acc, l) => {
+  const sourceMap = useMemo(() => leads.reduce<Record<string, number>>((acc, l) => {
     acc[l.source] = (acc[l.source] || 0) + 1
     return acc
-  }, {}), [])
+  }, {}), [leads])
 
   const sources = useMemo(() => Object.entries(sourceMap)
     .map(([source, count]) => ({ source, count }))
     .sort((a, b) => b.count - a.count), [sourceMap])
 
-  const maxSource = Math.max(...sources.map((s) => s.count))
+  const maxSource = Math.max(...sources.map((s) => s.count), 1)
 
   // Live stats from real data
-  const totalLeads   = crmLeads.length
-  const critical     = crmLeads.filter((l) => l.urgency === 'critical').length
+  const totalLeads   = leads.length
+  const critical     = leads.filter((l) => l.urgency === 'critical').length
   const callsLogged  = crmActivityLog.filter((e) => e.type === 'call').length
   const connected    = crmActivityLog.filter((e) => e.outcome === 'connected').length
   const connectRate  = callsLogged > 0 ? Math.round((connected / callsLogged) * 100) : 0
 
   // Intent score distribution — filtered
-  const avgIntent = Math.round(crmLeads.reduce((s, l) => s + l.intentScore, 0) / crmLeads.length)
-  const highIntent = crmLeads.filter((l) => l.intentScore >= 80).length
+  const avgIntent = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + l.intentScore, 0) / leads.length) : 0
+  const highIntent = leads.filter((l) => l.intentScore >= 80).length
 
   const filteredLeads = useMemo(() => {
-    return crmLeads.filter((l) => {
+    return leads.filter((l) => {
       if (agentFilter !== 'All' && l.assignedAgent !== agentFilter) return false
       if (intentFilter === 'High' && l.intentScore < 80) return false
       if (intentFilter === 'Medium' && (l.intentScore < 60 || l.intentScore >= 80)) return false
       if (intentFilter === 'Low' && l.intentScore >= 60) return false
       return true
     })
-  }, [agentFilter, intentFilter])
+  }, [leads, agentFilter, intentFilter])
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
