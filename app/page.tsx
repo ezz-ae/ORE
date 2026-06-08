@@ -78,6 +78,20 @@ const developers = [
   "Azizi",
   "Nakheel",
   "Select Group",
+  "Ellington",
+  "Danube",
+  "Binghatti",
+  "Omniyat",
+  "Arada",
+  "Samana",
+  "Dubai Properties",
+  "MAG",
+  "Deyaar",
+  "Bloom",
+  "Reportage",
+  "Object 1",
+  "Tiger",
+  "Majid Al Futtaim",
 ]
 
 const advantages = [

@@ -566,7 +566,14 @@ const normalizeListingProject = (row: ProjectListingRow) => {
   }
 
   const investment = enriched.investmentHighlights || ({} as Project["investmentHighlights"])
-  const safeYield = pickNumber(row.rental_yield, payloadRecord.rentalYield) ?? 0
+  const safeYield =
+    pickNumber(
+      row.rental_yield,
+      payloadRecord.rentalYield,
+      payloadRecord.roi,
+      investment.rentalYield,
+      investment.expectedROI,
+    ) ?? 0
   const safeRoi = pickNumber(payloadRecord.roi, investment.expectedROI, safeYield) ?? safeYield
   enriched.investmentHighlights = {
     expectedROI: safeRoi,
@@ -663,8 +670,8 @@ export async function getProjectsForGrid(limit = 50, filters?: PropertyListingFi
   const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : ""
   values.push(safeLimit, offset)
 
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      ${whereClause}
      ORDER BY ${getProjectOrderBy(filters?.sort)}
@@ -709,8 +716,8 @@ export async function getAdjacentProjectSlugs(slug: string) {
 
 export async function getProjectBySlug(slug: string) {
   const cleanSlug = slug.trim().toLowerCase()
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      WHERE lower(slug) = $1
         OR lower(payload->>'slug') = $1
@@ -1020,8 +1027,8 @@ export async function getDeveloperBySlug(slug: string) {
 
 export async function searchProjects(queryText: string, limit = 5) {
   const q = `%${queryText}%`
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      WHERE name ILIKE $1 OR area ILIKE $1 OR developer_name ILIKE $1 OR slug ILIKE $1 OR payload->>'slug' ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
@@ -1032,16 +1039,17 @@ export async function searchProjects(queryText: string, limit = 5) {
 }
 
 export async function getTopROIProjects(limit = 5) {
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload FROM freehold_site_projects ORDER BY rental_yield DESC LIMIT $1`,
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
+     FROM freehold_site_projects ORDER BY rental_yield DESC NULLS LAST LIMIT $1`,
     [limit],
   )
   return rows.map((row) => normalizeProjectPayload(row))
 }
 
 export async function getGoldenVisaProjects(limit = 5) {
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      WHERE golden_visa_eligible = true
      ORDER BY ${SORT_SCORE_ORDER}
@@ -1052,8 +1060,8 @@ export async function getGoldenVisaProjects(limit = 5) {
 }
 
 export async function getProjectsByArea(area: string, limit = 5) {
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      WHERE area ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
@@ -1064,8 +1072,8 @@ export async function getProjectsByArea(area: string, limit = 5) {
 }
 
 export async function getProjectsByDeveloper(developerName: string, limit = 6) {
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
      FROM freehold_site_projects
      WHERE developer_name ILIKE $1
      ORDER BY ${SORT_SCORE_ORDER}
@@ -1089,8 +1097,9 @@ export async function getPropertiesByDeveloper(developerName: string, limit = 6)
 
 export async function getProjectsBySlugs(slugs: string[]) {
   if (slugs.length === 0) return []
-  const rows = await query<ProjectRow>(
-    `SELECT id, slug, payload FROM freehold_site_projects WHERE slug = ANY($1::text[]) OR payload->>'slug' = ANY($1::text[])`,
+  const rows = await query<ProjectListingRow>(
+    `SELECT id, slug, payload, name, area, status, developer_name, hero_image, price_from_aed, price_to_aed, rental_yield, golden_visa_eligible
+     FROM freehold_site_projects WHERE slug = ANY($1::text[]) OR payload->>'slug' = ANY($1::text[])`,
     [slugs],
   )
   return rows.map((row) => normalizeProjectPayload(row))

@@ -19,7 +19,13 @@ export async function getIntelligenceBlockData() {
   const [trending, bestAreas, pulse, belowMarket] = await Promise.all([
     sql`
       SELECT name, slug, area, developer_name,
-             price_from_aed, rental_yield, market_score,
+             price_from_aed,
+             COALESCE(
+               rental_yield,
+               NULLIF(payload->'investmentHighlights'->>'expectedROI', '')::float,
+               NULLIF(payload->>'roi', '')::float
+             ) AS rental_yield,
+             market_score,
              golden_visa_eligible, hero_image,
              payload->>'pfUrl'       AS pf_url,
              payload->>'sortScore'   AS sort_score,
@@ -45,7 +51,11 @@ export async function getIntelligenceBlockData() {
         COUNT(*)                                               AS total_projects,
         COUNT(DISTINCT area)                                   AS area_count,
         ROUND(AVG(price_from_aed) / 1000000, 2)              AS avg_price_m,
-        ROUND(CAST(AVG(rental_yield) AS numeric), 1)          AS avg_yield,
+        ROUND(CAST(AVG(COALESCE(
+          rental_yield,
+          NULLIF(payload->'investmentHighlights'->>'expectedROI', '')::float,
+          NULLIF(payload->>'roi', '')::float
+        )) AS numeric), 1)                                     AS avg_yield,
         SUM(CASE WHEN golden_visa_eligible THEN 1 ELSE 0 END) AS gv_count,
         COUNT(CASE WHEN status = 'selling' THEN 1 END)        AS selling,
         COUNT(CASE WHEN
@@ -55,7 +65,12 @@ export async function getIntelligenceBlockData() {
       FROM freehold_site_projects
     `,
     sql`
-      SELECT name, slug, area, price_from_aed, rental_yield,
+      SELECT name, slug, area, price_from_aed,
+             COALESCE(
+               rental_yield,
+               NULLIF(payload->'investmentHighlights'->>'expectedROI', '')::float,
+               NULLIF(payload->>'roi', '')::float
+             ) AS rental_yield,
              hero_image,
              (payload->'priceIntelligence'->>'vsCohortPct')::float AS vs_cohort,
              (payload->'priceIntelligence'->>'pricePerSqft')::float AS psf
