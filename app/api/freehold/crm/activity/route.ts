@@ -44,7 +44,7 @@ export async function GET() {
     const rows = await query<DbActivity>(sql, params)
     return NextResponse.json({ activity: rows, source: 'db' })
   } catch {
-    return NextResponse.json({ activity: [], source: 'mock' })
+    return NextResponse.json({ activity: [], source: 'empty' })
   }
 }
 
