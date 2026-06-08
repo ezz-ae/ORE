@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   Megaphone, Plus, TrendingUp, TrendingDown, Pause, Play,
-  Wallet, AlertCircle, ChevronRight, Zap,
+  Wallet, AlertCircle, ChevronRight,
 } from 'lucide-react'
 import { agentProfile, agentWallet } from '@/src/features/freehold-intelligence/agent'
 
@@ -87,11 +88,6 @@ const walletBalance = agentWallet.filter((w) => w.amount > 0 && w.status !== 'pa
 
 export default function AgentCampaignsPage() {
   const [campaigns, setCampaigns] = useState<AgentCampaign[]>(INITIAL_CAMPAIGNS)
-  const [showNew, setShowNew] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newBudget, setNewBudget] = useState('')
-  const [newPlatform, setNewPlatform] = useState<AgentCampaign['platform']>('meta')
-  const [newProperty, setNewProperty] = useState('')
 
   function toggleStatus(id: string) {
     setCampaigns((prev) =>
@@ -101,32 +97,6 @@ export default function AgentCampaignsPage() {
           : c,
       ),
     )
-  }
-
-  function launchCampaign() {
-    if (!newName.trim() || !newBudget || !newProperty.trim()) return
-    const budget = parseInt(newBudget, 10)
-    if (isNaN(budget) || budget < 100) return
-    setCampaigns((prev) => [
-      ...prev,
-      {
-        id: `ac${Date.now()}`,
-        name: newName.trim(),
-        platform: newPlatform,
-        status: 'pending_approval',
-        budget,
-        spent: 0,
-        leads: 0,
-        cpl: 0,
-        targetCpl: 180,
-        startDate: new Date().toISOString().slice(0, 10),
-        property: newProperty.trim(),
-      },
-    ])
-    setNewName('')
-    setNewBudget('')
-    setNewProperty('')
-    setShowNew(false)
   }
 
   const overallCpl = totalLeads > 0 ? Math.round(totalSpent / totalLeads) : 0
@@ -162,77 +132,14 @@ export default function AgentCampaignsPage() {
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">My campaigns</div>
-          <button
-            onClick={() => setShowNew((v) => !v)}
+          <Link
+            href="/freehold-intelligence/agent/campaigns/new"
             className="flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/20"
           >
             <Plus className="h-3.5 w-3.5" />
             New campaign
-          </button>
+          </Link>
         </div>
-
-        {/* New campaign form */}
-        {showNew && (
-          <div className="mb-4 rounded-[18px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
-            <div className="text-sm font-semibold text-white">New campaign</div>
-            <input
-              type="text"
-              placeholder="Campaign name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="Property / area"
-                value={newProperty}
-                onChange={(e) => setNewProperty(e.target.value)}
-                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
-              />
-              <input
-                type="number"
-                placeholder="Budget (AED)"
-                value={newBudget}
-                onChange={(e) => setNewBudget(e.target.value)}
-                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
-              />
-            </div>
-            <div className="flex gap-2">
-              {(['meta', 'google', 'property_finder', 'bayut'] as const).map((p) => {
-                const pm = PLATFORM_META[p]
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setNewPlatform(p)}
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      newPlatform === p
-                        ? 'border-gold/40 bg-gold/15 text-gold'
-                        : 'border-line-strong text-slate-400 hover:text-slate-300'
-                    }`}
-                  >
-                    {pm.icon} {pm.label}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={launchCampaign}
-                className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Launch — charge wallet
-              </button>
-              <button
-                onClick={() => setShowNew(false)}
-                className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-300"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="space-y-3">
           {campaigns.map((c) => {
