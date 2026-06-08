@@ -128,7 +128,7 @@ export default function AgentCreditsPage() {
                   </span>
                 ) : (
                   <Link
-                    href="/freehold-intelligence/lead-machine/campaigns/new"
+                    href="/freehold-intelligence/agent/campaigns"
                     className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -162,7 +162,7 @@ export default function AgentCreditsPage() {
         <div className="mb-3 flex items-center justify-between">
           <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Active ads</div>
           <Link
-            href="/freehold-intelligence/lead-machine/campaigns/optimize"
+            href="/freehold-intelligence/agent/campaigns"
             className="flex items-center gap-1 text-xs font-medium text-gold transition hover:text-gold/80"
           >
             Optimize <ChevronRight className="h-3.5 w-3.5" />
@@ -202,7 +202,7 @@ export default function AgentCreditsPage() {
                     <div className="mt-0.5 text-sm font-semibold text-white tabular-nums">{ad.leads}</div>
                   </div>
                   <Link
-                    href="/freehold-intelligence/lead-machine/campaigns/optimize"
+                    href="/freehold-intelligence/agent/campaigns"
                     className="ml-auto flex items-center gap-1 text-xs font-medium text-slate-400 transition hover:text-slate-200"
                   >
                     Optimize <ArrowRight className="h-3 w-3" />
