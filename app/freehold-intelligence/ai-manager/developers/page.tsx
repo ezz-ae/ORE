@@ -328,7 +328,7 @@ export default function DeveloperProfilesPage() {
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
                     </button>
-                    <a href={`https://freeholdproperty.ae/developers/${dev.name.toLowerCase().replace(/\s+/g, '-')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
+                    <a href={`https://freeholdproperty.ae/developers/${d.name.toLowerCase().replace(/\s+/g, '-')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
                       <Globe className="h-3 w-3" /> Preview
                     </a>
                   </div>

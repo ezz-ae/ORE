@@ -89,7 +89,7 @@ export default function WebsitePagesPage() {
               success: 'All pages reviewed',
               error: 'Review failed',
             })
-            setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.slug)) }, 2500)
+            setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.url)) }, 2500)
           }}
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
@@ -178,18 +178,18 @@ export default function WebsitePagesPage() {
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
                 <td className="px-4 py-3.5">
-                  {reviewed.includes(page.slug) ? (
+                  {reviewed.includes(page.url) ? (
                     <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
                       <Check className="h-3 w-3" /> Reviewed
                     </span>
                   ) : (
                     <button
-                      disabled={reviewing === page.slug}
-                      onClick={() => startReview(page.slug)}
+                      disabled={reviewing === page.url}
+                      onClick={() => startReview(page.url)}
                       className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
                     >
                       <Sparkles className="h-3 w-3" />
-                      {reviewing === page.slug ? 'Reviewing…' : 'AI Review'}
+                      {reviewing === page.url ? 'Reviewing…' : 'AI Review'}
                     </button>
                   )}
                 </td>
