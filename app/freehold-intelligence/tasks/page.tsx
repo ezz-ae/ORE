@@ -117,7 +117,7 @@ const INITIAL_TASKS: Task[] = [
     priority: 'high',
     status: 'blocked',
     title: 'Wire production auth middleware before widening access',
-    description: 'The private shell is visually isolated but route protection is still placeholder. Production auth middleware must be wired before the server is shared beyond the owner account.',
+    description: 'Route protection is enforced via useSessionGuard on all sensitive layouts. Final JWT/session expiry wiring needed before the system is shared beyond the owner account.',
     owner: 'Admin',
     assignee: 'Admin',
     app: 'Security',

@@ -235,9 +235,9 @@ export default function AgentCreditsPage() {
                   <div className="text-sm font-semibold text-white">Connect WhatsApp</div>
                   <div className="mt-0.5 text-xs text-slate-400">Let the AI scan your conversations and qualify leads automatically.</div>
                 </div>
-                <button onClick={() => toast.success('Auto-qualify connected')} className="shrink-0 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
+                <Link href="/freehold-intelligence/agent/leads" className="shrink-0 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
                   Connect
-                </button>
+                </Link>
               </div>
             )}
           </div>
