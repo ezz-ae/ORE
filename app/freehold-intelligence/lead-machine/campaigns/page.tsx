@@ -1,38 +1,41 @@
 import Link from 'next/link'
-import { Megaphone, Plus, AlertCircle, CheckCircle2, Pause, ArrowUpRight, Zap } from 'lucide-react'
+import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap } from 'lucide-react'
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
+import { listCampaigns, getCampaignInsights, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { demoCampaigns } from '@/lib/meta/demo-data'
+import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
 
-interface Campaign {
-  id: string
-  name: string
-  status: string
-  objective: string
-  daily_budget?: string
-  created_time: string
-  insights?: {
-    impressions: string
-    clicks: string
-    spend: string
-    actions?: { action_type: string; value: string }[]
-    cpc?: string
-    cpm?: string
-  } | null
-}
+type CampaignWithInsights = MetaCampaign & { insights?: MetaInsights | null }
 
 interface CampaignsResponse {
-  campaigns?: Campaign[]
+  campaigns: CampaignWithInsights[]
   error?: string
   type?: string
+  demo?: boolean
 }
 
 async function getCampaigns(): Promise<CampaignsResponse> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/meta/campaigns`, { next: { revalidate: 60 } })
-    return res.json()
-  } catch {
-    return { error: 'Failed to reach Meta API', type: 'network' }
+    const campaigns = await listCampaigns()
+    const withInsights = await Promise.all(
+      campaigns.map(async (c) => {
+        if (c.status === 'ACTIVE') {
+          try {
+            const insights = await getCampaignInsights(c.id)
+            return { ...c, insights }
+          } catch {
+            return { ...c, insights: null }
+          }
+        }
+        return { ...c, insights: null }
+      }),
+    )
+    return { campaigns: withInsights }
+  } catch (err) {
+    if (err instanceof MetaConfigError) return { campaigns: demoCampaigns, demo: true }
+    if (err instanceof MetaApiError)    return { campaigns: [], error: err.message, type: err.type }
+    return { campaigns: [], error: 'Unexpected error loading campaigns', type: 'unknown' }
   }
 }
 
@@ -42,14 +45,14 @@ function fmtSpend(spend: string | undefined) {
   return `AED ${n.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-function getLeads(campaign: Campaign) {
-  return campaign.insights?.actions?.find((a) => a.action_type === 'lead')?.value ?? '0'
+function getLeads(campaign: CampaignWithInsights) {
+  return campaign.insights?.actions?.find((a: { action_type: string; value: string }) => a.action_type === 'lead')?.value ?? '0'
 }
 
 export default async function CampaignsPage() {
   const data = await getCampaigns()
-  const isConfigError = data.type === 'config'
-  const campaigns     = data.campaigns ?? []
+  const isConfigError = data.demo === true
+  const campaigns     = data.campaigns
   const active        = campaigns.filter((c) => c.status === 'ACTIVE').length
   const paused        = campaigns.filter((c) => c.status === 'PAUSED').length
   const totalSpend    = campaigns

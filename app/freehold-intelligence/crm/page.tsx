@@ -16,6 +16,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, StatCard, EmptyState, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useSession } from '@/lib/freehold/use-session'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ const AGENT_STATS = computeAgentStats()
 export default function FreeholdCrmPage() {
   const router = useRouter()
   const { user } = useSession()
-  const isManager = user?.role === 'owner' || user?.role === 'admin'
+  const isManager = !!user && MANAGEMENT_ROLES.includes(user.role)
 
   const [query, setQuery]             = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')

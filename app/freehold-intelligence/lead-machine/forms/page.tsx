@@ -1,28 +1,23 @@
 import Link from 'next/link'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
-
-interface LeadForm {
-  id: string
-  name: string
-  status: string
-  leads_count: number
-  created_time: string
-  follow_up_action_url?: string
-}
+import { listLeadForms, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { demoForms } from '@/lib/meta/demo-data'
+import type { MetaLeadForm } from '@/lib/meta/types'
 
 interface FormsResponse {
-  forms?: LeadForm[]
+  forms: MetaLeadForm[]
   error?: string
-  type?: string
+  demo?: boolean
 }
 
 async function getForms(): Promise<FormsResponse> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/meta/forms`, { next: { revalidate: 60 } })
-    return res.json()
-  } catch {
-    return { error: 'Failed to reach Meta API', type: 'network' }
+    const forms = await listLeadForms()
+    return { forms }
+  } catch (err) {
+    if (err instanceof MetaConfigError) return { forms: demoForms, demo: true }
+    if (err instanceof MetaApiError)    return { forms: [], error: err.message }
+    return { forms: [], error: 'Unexpected error loading forms' }
   }
 }
 
@@ -34,8 +29,8 @@ function statusConfig(s: string) {
 
 export default async function FormsPage() {
   const data          = await getForms()
-  const isConfigError = data.type === 'config'
-  const forms         = data.forms ?? []
+  const isConfigError = data.demo === true
+  const forms         = data.forms
   const active        = forms.filter((f) => f.status === 'ACTIVE').length
   const totalLeads    = forms.reduce((s, f) => s + (f.leads_count ?? 0), 0)
 

@@ -5,7 +5,8 @@ import {
   Sparkles, ChevronRight, CheckCircle, AlertCircle,
   Zap, BookOpen, Users, Globe, Settings,
 } from 'lucide-react'
-import { agentConnections, agentProfile, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
+import { agentConnections, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
+import { useSession } from '@/lib/freehold/use-session'
 
 
 const CATEGORY_META: Record<AgentConnection['category'], { label: string; color: string }> = {
@@ -31,6 +32,7 @@ const ROUTES: { id: Route; label: string; Icon: React.ElementType; desc: string;
 
 
 export default function AgentAIPage() {
+  const { user } = useSession()
   const [connections, setConnections] = useState<AgentConnection[]>(agentConnections)
   const [activeRoute, setActiveRoute] = useState<Route>('apps')
   const [settingUp, setSettingUp]     = useState<string | null>(null)
@@ -81,7 +83,7 @@ export default function AgentAIPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">My AI</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {agentProfile.name}'s personal agent — {connected} of {connections.length} connections live
+            {user?.name ? `${user.name}'s personal agent` : 'Your personal agent'} — {connected} of {connections.length} connections live
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2">

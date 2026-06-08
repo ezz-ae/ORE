@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, UserCog, Shield, Users, ArrowUpRight, CheckCircle2, Bell } from 'lucide-react'
 import { currentServerUser, getRoleScope, crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
+import { useSession } from '@/lib/freehold/use-session'
 
 const ACCOUNT_LEVELS: Record<string, { label: string; description: string }> = {
   owner:    { label: 'Owner',    description: 'Full access — all modules, all data, all configuration.' },
@@ -14,7 +15,10 @@ const ACCOUNT_LEVELS: Record<string, { label: string; description: string }> = {
 }
 
 export default function DashboardProfilePage() {
-  const scope = getRoleScope(currentServerUser.role)
+  const { user } = useSession()
+  const displayName = user?.name ?? currentServerUser.name
+  const displayRole = user?.role ?? currentServerUser.role
+  const scope = getRoleScope(displayRole as Parameters<typeof getRoleScope>[0])
   const accountLevel = ACCOUNT_LEVELS[currentServerUser.accountLevel]
 
   const [notifications, setNotifications] = useState({
@@ -64,14 +68,14 @@ export default function DashboardProfilePage() {
           <div className="rounded-[22px] border border-line bg-surface p-6">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/25 to-gold/5 text-[20px] font-semibold text-gold">
-                {currentServerUser.name.slice(0, 2).toUpperCase()}
+                {displayName.slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <h2 className="text-[22px] font-semibold text-white">{currentServerUser.name}</h2>
+                <h2 className="text-[22px] font-semibold text-white">{displayName}</h2>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                   <span>{accountLevel?.label}</span>
                   <span className="text-slate-600">·</span>
-                  <span>{currentServerUser.role.replace('_', ' ')}</span>
+                  <span>{displayRole.replace('_', ' ')}</span>
                 </div>
               </div>
             </div>
@@ -83,7 +87,7 @@ export default function DashboardProfilePage() {
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               <Shield className="h-3 w-3" /> Role scope
             </div>
-            <p className="mt-1 text-xs text-slate-500">Surfaces and data visible to a {currentServerUser.role.replace('_', ' ')}.</p>
+            <p className="mt-1 text-xs text-slate-500">Surfaces and data visible to a {displayRole.replace('_', ' ')}.</p>
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {scope.map((item) => (
                 <div key={item} className="flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2">

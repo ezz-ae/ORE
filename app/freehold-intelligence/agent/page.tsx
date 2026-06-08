@@ -6,6 +6,7 @@ import {
   Settings, ChevronRight, TrendingUp, Clock, Zap, Coins,
 } from 'lucide-react'
 import { agentProfile, agentPipelineLeads, agentWallet, agentLeadPool } from '@/src/features/freehold-intelligence/agent'
+import { useSession } from '@/lib/freehold/use-session'
 import { brokerMetrics } from '@/src/features/freehold-intelligence/credits'
 
 const myCredits = brokerMetrics.find((b) => b.id === 'bc_ahmed')
@@ -108,6 +109,7 @@ function timeAgo(iso: string) {
 }
 
 export default function AgentHomePage() {
+  const { user } = useSession()
   const now = new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
 
   return (
@@ -117,7 +119,7 @@ export default function AgentHomePage() {
       <section>
         <div className="text-sm text-slate-500">{now}</div>
         <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-100">
-          Good morning, {agentProfile.name.split(' ')[0]}.
+          {user?.name ? `Good morning, ${user.name.split(' ')[0]}.` : 'Good morning.'}
         </h1>
 
         {/* Quick stats */}

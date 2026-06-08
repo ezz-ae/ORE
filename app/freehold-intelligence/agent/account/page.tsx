@@ -8,6 +8,7 @@ import {
   agentProfile, agentWallet, agentAchievements, agentLeadPool, agentExpertise,
   type WalletEntry, type Achievement, type ExpertiseEntry,
 } from '@/src/features/freehold-intelligence/agent'
+import { useSession } from '@/lib/freehold/use-session'
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   border-orange-400/30   bg-orange-400/10',
@@ -119,6 +120,9 @@ function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
 }
 
 export default function AgentAccountPage() {
+  const { user } = useSession()
+  const displayName     = user?.name     ?? agentProfile.name
+  const displayInitials = user?.initials ?? agentProfile.initials
   const tierClass = TIER_COLOR[agentProfile.tier] ?? TIER_COLOR.Gold
   const joinedSince = new Date(agentProfile.joinedAt).toLocaleDateString('en-AE', { month: 'long', year: 'numeric' })
 
@@ -128,10 +132,10 @@ export default function AgentAccountPage() {
       {/* Profile header */}
       <section className="flex items-center gap-5 rounded-[24px] border border-line bg-surface p-6">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold/20 text-[22px] font-bold text-gold">
-          {agentProfile.initials}
+          {displayInitials}
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold text-white">{agentProfile.name}</h1>
+          <h1 className="text-xl font-semibold text-white">{displayName}</h1>
           <div className="mt-0.5 text-sm text-slate-400">{agentProfile.title}</div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${tierClass}`}>

@@ -10,7 +10,6 @@ import {
 import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
 import {
   serverSummary,
-  currentServerUser,
   type ServerActionCard,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
@@ -70,10 +69,12 @@ export default function IntelligenceLauncher() {
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
-    const displayName = user?.name ?? currentServerUser.name
-    setGreeting(getGreeting(displayName))
     setDateStr(new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!user?.name) return
+    setGreeting(getGreeting(user.name))
   }, [user?.name])
 
   const apps = visibleApps(role)
