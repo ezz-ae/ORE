@@ -48,7 +48,7 @@ async function getBrokerCampaignIds(brokerId: string): Promise<Set<string>> {
       'SELECT campaign_id FROM meta_campaign_brokers WHERE broker_id = $1',
       [brokerId],
     )
-    return new Set(result.rows.map(r => r.campaign_id))
+    return new Set(result.map(r => r.campaign_id))
   } catch {
     return new Set()
   }
