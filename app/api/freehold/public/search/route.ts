@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
         [pattern],
       ),
       query<{ slug: string; name: string; project_count: number | null }>(
-        `SELECT slug, name, project_count
+        `SELECT slug, name, (payload->>'projectCount')::int AS project_count
          FROM freehold_site_developer_profiles
          WHERE lower(name) LIKE $1
-         ORDER BY COALESCE(project_count, 0) DESC NULLS LAST
+         ORDER BY (payload->>'projectCount')::int DESC NULLS LAST
          LIMIT 5`,
         [pattern],
       ),

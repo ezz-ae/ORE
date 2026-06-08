@@ -70,10 +70,11 @@ export async function GET() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const user = await verifySession(token)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const isBroker = user?.role === 'broker'
-    const brokerId = user?.brokerId ?? user?.email
+    const isBroker = user.role === 'broker'
+    const brokerId = user.brokerId ?? user.email
 
     const params: unknown[] = []
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
