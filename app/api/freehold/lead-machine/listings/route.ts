@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { query } from "@/lib/db"
-import { getLeadMachineMatrix } from "@/src/features/freehold-intelligence/lead-machine"
+
+export const dynamic = 'force-dynamic'
 
 function score(value: boolean, points: number) {
   return value ? points : 0
@@ -23,7 +26,7 @@ function mapListing(row: any) {
     projectName: row.name,
     area: row.area || 'Unknown area',
     developer: row.developer_name || 'Unknown developer',
-    imageUrl: row.hero_image || '/images/property-city-loft.jpg',
+    imageUrl: row.hero_image || null,
     startingPrice: row.price_from_aed,
     paymentPlan: row.payment_plan,
     priceStatus: hasPrice ? 'Ready' : 'Missing',
@@ -54,6 +57,11 @@ function mapListing(row: any) {
 }
 
 export async function GET() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(SESSION_COOKIE)?.value
+  const user = await verifySession(token)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const rows = await query<any>(`
     SELECT p.id, p.slug, p.name, p.area, p.developer_name, p.hero_image,
            p.price_from_aed, COALESCE(p.payload->>'payment_plan', p.payload->>'paymentPlan') AS payment_plan, p.handover_date, l.slug AS landing_slug,
@@ -64,22 +72,20 @@ export async function GET() {
     LIMIT 100
   `)
   const listings = rows.map(mapListing)
-  const matrix = listings.length
-    ? listings.map((listing: any) => ({
-        project: listing.projectName,
-        area: listing.area,
-        developer: listing.developer,
-        landingStatus: listing.landingStatus,
-        dataQuality: listing.dataQualityScore,
-        mediaQuality: listing.mediaStatus,
-        paymentPlanReady: listing.paymentPlanStatus === 'Ready',
-        intelligenceBlocks: listing.intelligenceBlocksAvailable,
-        adReadiness: listing.adReadinessScore,
-        opportunityScore: listing.opportunityScore,
-        blocker: listing.missingRequirements[0] || 'None',
-        nextAction: listing.nextAction,
-      }))
-    : getLeadMachineMatrix()
+  const matrix = listings.map((listing: any) => ({
+    project: listing.projectName,
+    area: listing.area,
+    developer: listing.developer,
+    landingStatus: listing.landingStatus,
+    dataQuality: listing.dataQualityScore,
+    mediaQuality: listing.mediaStatus,
+    paymentPlanReady: listing.paymentPlanStatus === 'Ready',
+    intelligenceBlocks: listing.intelligenceBlocksAvailable,
+    adReadiness: listing.adReadinessScore,
+    opportunityScore: listing.opportunityScore,
+    blocker: listing.missingRequirements[0] || 'None',
+    nextAction: listing.nextAction,
+  }))
   return NextResponse.json({
     requestId: crypto.randomUUID(),
     layer: 'lead-machine',

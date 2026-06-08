@@ -365,6 +365,7 @@ const SMOKE_TESTS: SmokeTest[] = [
     { path: "/api/freehold/analytics/leads", method: "GET" as const, body: undefined },
     { path: "/api/freehold/credits/balance", method: "GET" as const, body: undefined },
     { path: "/api/freehold/integrations/hubspot", method: "GET" as const, body: undefined },
+    { path: "/api/freehold/lead-machine/listings",    method: "GET"  as const, body: undefined },
     { path: "/api/freehold/lead-machine/comments",   method: "POST" as const, body: { projectId: "x", body: "y" } },
     { path: "/api/freehold/lead-machine/ad-requests", method: "POST" as const, body: { projectId: "x" } },
     { path: "/api/freehold/notebook/save-output",    method: "POST" as const, body: { content: "x" } },
