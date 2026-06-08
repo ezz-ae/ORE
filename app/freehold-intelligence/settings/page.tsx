@@ -77,7 +77,7 @@ const NOTIFICATION_SETTINGS = [
 const BRAND_SETTINGS = [
   { label: 'Company Name',   value: 'Freehold Property Dubai' },
   { label: 'Primary Domain', value: 'freeholdproperty.ae' },
-  { label: 'WhatsApp Number', value: '+971 50 XXX XXXX' },
+  { label: 'WhatsApp Number', value: '' },
   { label: 'CRM Timezone',   value: 'Asia/Dubai (UTC+4)' },
 ]
 

@@ -52,9 +52,6 @@ export default function DashboardProfilePage() {
           <div className="text-sm font-medium uppercase tracking-wider text-gold/85 flex items-center gap-2">
             <UserCog className="h-3.5 w-3.5" /> Profile & Access
           </div>
-          <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">
-            In progress — team management coming in V1.1
-          </span>
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           Account & permissions<br /><span className="text-slate-500">role-gated access.</span>
@@ -197,14 +194,19 @@ export default function DashboardProfilePage() {
             </Link>
           </div>
 
-          <div className="rounded-[20px] border border-gold/15 bg-gold/[0.04] p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold/80">Coming in V1.1</div>
-            <div className="mt-3 space-y-2 text-xs text-slate-400">
-              <div>· Invite team members</div>
-              <div>· Role assignment interface</div>
-              <div>· Module-level permission overrides</div>
-              <div>· Session and activity audit</div>
-            </div>
+          <div className="rounded-[20px] border border-line bg-surface p-5 space-y-2">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Team management</div>
+            {[
+              { label: 'Invite members',    href: '/freehold-intelligence/settings/team' },
+              { label: 'Manage roles',      href: '/freehold-intelligence/settings/roles' },
+              { label: 'Billing & plan',    href: '/freehold-intelligence/settings/billing' },
+              { label: 'Security',          href: '/freehold-intelligence/settings/security' },
+            ].map(({ label, href }) => (
+              <Link key={href} href={href} className="flex items-center justify-between rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-xs text-slate-300 transition hover:border-gold/25 hover:text-white">
+                {label}
+                <ArrowUpRight className="h-3 w-3 text-slate-600" />
+              </Link>
+            ))}
           </div>
         </aside>
       </div>

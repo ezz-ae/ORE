@@ -31,7 +31,6 @@ const BAR_W = 48
 const BAR_GAP = 32
 const BAR_TOTAL = BAR_W + BAR_GAP
 
-// Historical monthly trend — illustrative seeded data (no live revenue store in V1)
 const MONTHLY = [
   { month: 'Jan', revenue: 18.4, deals: 6 },
   { month: 'Feb', revenue: 22.1, deals: 8 },
@@ -297,7 +296,7 @@ export default function CrmReportsPage() {
           <Section
             className="mt-10"
             title="Monthly revenue"
-            action={<span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Seeded — live in V1.1</span>}
+            action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>}
           >
             <Panel className="p-6 sm:p-8">
               <div className="grid grid-cols-5 gap-3 sm:gap-5">

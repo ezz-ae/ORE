@@ -6,7 +6,6 @@ import { ArrowLeft, TrendingUp, AlertCircle, Clock, Phone, CheckCircle2, ArrowUp
 import { crmAgentRoster, crmLeads, crmActivityLog, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 
 
-// Seeded response-time data (no timestamp-per-lead-arrival in V1)
 const AGENT_METRICS: Record<string, { avgResponseH: number; leadToViewing: number; viewingToOffer: number; revMTD: string }> = {
   agent_noura:    { avgResponseH: 1.2, leadToViewing: 52, viewingToOffer: 38, revMTD: 'AED 11.2M' },
   agent_omar:     { avgResponseH: 3.4, leadToViewing: 38, viewingToOffer: 25, revMTD: 'AED 6.1M'  },
@@ -103,15 +102,12 @@ export default function SalesPerformancePage() {
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
             <TrendingUp className="h-3.5 w-3.5" /> Sales Performance
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-sky-400" /> Planned
-          </span>
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
           Sales signals<br /><span className="text-slate-500">response, quality, risk.</span>
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-300">
-          Agent response times, conversion rates, lead quality signals and team risk flags. Call connect rate and overdue queue are live — revenue and time-to-close will connect to HubSpot in V1.1.
+          Agent response times, conversion rates, lead quality signals and team risk flags. Call connect rate and overdue queue are live from CRM data.
         </p>
       </section>
 
@@ -208,7 +204,7 @@ export default function SalesPerformancePage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-sm text-slate-500">Target response time: &lt;{TEAM_TARGET_RESPONSE}h. Revenue and conversion data seeded — live via HubSpot in V1.1.</p>
+        <p className="mt-2 text-sm text-slate-500">Target response time: &lt;{TEAM_TARGET_RESPONSE}h · ranked by {sortKey === 'wins' ? 'wins this month' : sortKey === 'response' ? 'fastest response' : sortKey === 'revenue' ? 'revenue MTD' : 'total leads'}.</p>
       </section>
 
       {/* Risk signals */}
