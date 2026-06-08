@@ -19,11 +19,9 @@ type DBProjectRow = {
   rental_yield: string | null
   golden_visa_eligible: boolean
   market_score: string | null
-  handover_date: string | null
   hero_image: string | null
   payload: Record<string, unknown> | null
   leads_30d: string | number
-  has_landing: boolean
 }
 
 // ── Row mappers ───────────────────────────────────────────────────────────────
@@ -77,6 +75,27 @@ const UNIT_ORDER: Record<string, number> = {
   Loft: 6, Townhouse: 7, Villa: 8, Penthouse: 9, Office: 10, Retail: 11,
 }
 
+function extractHandoverYear(payload: Record<string, unknown> | null): number | null {
+  if (!payload) return null
+  const candidates = [
+    payload.handoverDate,
+    payload.handover,
+    payload.completionDate,
+    payload.completion,
+    (payload.investmentHighlights as Record<string, unknown> | undefined)?.handover,
+  ]
+  for (const c of candidates) {
+    if (!c) continue
+    const str = String(c)
+    // Match a 4-digit year (2024–2099)
+    const yearMatch = str.match(/20[2-9]\d/)
+    if (yearMatch) return Number(yearMatch[0])
+    const parsed = new Date(str)
+    if (!Number.isNaN(parsed.getTime())) return parsed.getFullYear()
+  }
+  return null
+}
+
 function bedroomsLabel(unitTypes: string[]): string {
   const sorted = [...unitTypes].sort(
     (a, b) => (UNIT_ORDER[a] ?? 99) - (UNIT_ORDER[b] ?? 99),
@@ -86,12 +105,14 @@ function bedroomsLabel(unitTypes: string[]): string {
   return `${sorted[0]}–${sorted[sorted.length - 1]}`
 }
 
-function mapRowToInventory(row: DBProjectRow): InventoryProperty {
+function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>): InventoryProperty {
   const score = Number(row.market_score) || 45
   const hasImages = !!row.hero_image
   const unitTypes = extractUnitTypes(row.payload)
   const paymentPlan = extractPaymentPlan(row.payload)
   const leads30d = Number(row.leads_30d) || 0
+  const hasLanding = landingSlugs.has(row.slug)
+  const handoverYear = extractHandoverYear(row.payload)
 
   // Composite scores
   const dataQuality = Math.min(
@@ -107,7 +128,7 @@ function mapRowToInventory(row: DBProjectRow): InventoryProperty {
   const adReadiness = Math.min(
     100,
     Math.round(
-      dataQuality * 0.7 + (row.has_landing ? 20 : 0) + (hasImages ? 10 : 0),
+      dataQuality * 0.7 + (hasLanding ? 20 : 0) + (hasImages ? 10 : 0),
     ),
   )
 
@@ -129,15 +150,15 @@ function mapRowToInventory(row: DBProjectRow): InventoryProperty {
     status: mapStatus(row.status),
     startingPriceAED: row.price_from_aed ? Number(row.price_from_aed) : null,
     maxPriceAED: row.price_to_aed ? Number(row.price_to_aed) : null,
-    handoverYear: row.handover_date ? new Date(row.handover_date).getFullYear() : null,
+    handoverYear,
     paymentPlan,
     bedrooms: bedroomsLabel(unitTypes),
     totalUnits: null,
     availableUnits: null,
     sizeRange: '550–1,800 sqft',
     roi: row.rental_yield ? Number(row.rental_yield) : null,
-    landingStatus: mapLandingStatus(adReadiness, row.has_landing ?? false),
-    landingUrl: row.has_landing ? `/lp/${row.slug}` : null,
+    landingStatus: mapLandingStatus(adReadiness, hasLanding),
+    landingUrl: hasLanding ? `/lp/${row.slug}` : null,
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,
@@ -152,6 +173,9 @@ function mapRowToInventory(row: DBProjectRow): InventoryProperty {
 
 // ── Shared SQL fragments ──────────────────────────────────────────────────────
 
+// Only columns proven to exist on freehold_site_projects (mirrors lib/ore.ts).
+// Handover year and landing status are derived from payload / a separate
+// guarded lookup so a missing optional column or table never breaks the query.
 const SELECT_FIELDS = `
   p.id::text,
   p.slug,
@@ -164,11 +188,9 @@ const SELECT_FIELDS = `
   p.rental_yield,
   p.golden_visa_eligible,
   p.market_score,
-  p.handover_date,
   p.hero_image,
   p.payload,
-  COALESCE(lc.leads_30d, 0) AS leads_30d,
-  (lp.project_id IS NOT NULL) AS has_landing
+  COALESCE(lc.leads_30d, 0) AS leads_30d
 `
 
 const LEADS_JOIN = `
@@ -178,8 +200,26 @@ const LEADS_JOIN = `
     WHERE created_at > NOW() - INTERVAL '30 days'
     GROUP BY project_slug
   ) lc ON lc.project_slug = p.slug
-  LEFT JOIN freehold_site_project_landing_pages lp ON lp.project_id = p.id
 `
+
+/**
+ * Returns the set of project slugs that have a landing page.
+ * Isolated and guarded: the landing-pages table is created lazily and may not
+ * exist on every database, so any failure here yields an empty set rather than
+ * breaking the inventory query.
+ */
+async function getLandingSlugs(): Promise<Set<string>> {
+  try {
+    const rows = await query<{ project_slug: string | null }>(
+      `SELECT DISTINCT project_slug
+       FROM freehold_site_project_landing_pages
+       WHERE project_slug IS NOT NULL`,
+    )
+    return new Set(rows.map((r) => r.project_slug).filter((s): s is string => Boolean(s)))
+  } catch {
+    return new Set()
+  }
+}
 
 // ── Public query functions ────────────────────────────────────────────────────
 
@@ -189,14 +229,17 @@ const LEADS_JOIN = `
  */
 export async function getInventoryPropertiesFromDB(): Promise<InventoryProperty[]> {
   try {
-    const rows = await query<DBProjectRow>(
-      `SELECT ${SELECT_FIELDS}
-       FROM freehold_site_projects p
-       ${LEADS_JOIN}
-       ORDER BY COALESCE(p.market_score, 0) DESC NULLS LAST
-       LIMIT 500`,
-    )
-    return rows.map(mapRowToInventory)
+    const [rows, landingSlugs] = await Promise.all([
+      query<DBProjectRow>(
+        `SELECT ${SELECT_FIELDS}
+         FROM freehold_site_projects p
+         ${LEADS_JOIN}
+         ORDER BY COALESCE(p.market_score, 0) DESC NULLS LAST
+         LIMIT 500`,
+      ),
+      getLandingSlugs(),
+    ])
+    return rows.map((row) => mapRowToInventory(row, landingSlugs))
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertiesFromDB failed', err)
     return []
@@ -211,15 +254,18 @@ export async function getInventoryPropertyBySlug(
   slug: string,
 ): Promise<InventoryProperty | null> {
   try {
-    const rows = await query<DBProjectRow>(
-      `SELECT ${SELECT_FIELDS}
-       FROM freehold_site_projects p
-       ${LEADS_JOIN}
-       WHERE p.slug = $1
-       LIMIT 1`,
-      [slug],
-    )
-    return rows[0] ? mapRowToInventory(rows[0]) : null
+    const [rows, landingSlugs] = await Promise.all([
+      query<DBProjectRow>(
+        `SELECT ${SELECT_FIELDS}
+         FROM freehold_site_projects p
+         ${LEADS_JOIN}
+         WHERE p.slug = $1
+         LIMIT 1`,
+        [slug],
+      ),
+      getLandingSlugs(),
+    ])
+    return rows[0] ? mapRowToInventory(rows[0], landingSlugs) : null
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertyBySlug failed', err)
     return null
