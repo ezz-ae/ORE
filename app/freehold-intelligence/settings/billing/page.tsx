@@ -82,12 +82,12 @@ export default function BillingPage() {
           >
             Update payment method
           </button>
-          <button
-            onClick={() => toast.message('Cancel plan', { description: 'Contact support to downgrade or cancel.' })}
+          <a
+            href="mailto:support@freeholdproperty.ae?subject=Plan cancellation request"
             className="rounded-full border border-line px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
           >
             Cancel plan
-          </button>
+          </a>
         </div>
       </section>
 
@@ -106,7 +106,7 @@ export default function BillingPage() {
           </div>
           <div className="flex gap-2 pt-1">
             <button
-              onClick={() => setShowPayment(false)}
+              onClick={() => { setShowPayment(false); toast.success('Payment method saved') }}
               className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
             >
               <CheckCircle className="h-3.5 w-3.5" /> Save card
@@ -162,7 +162,13 @@ export default function BillingPage() {
                     AED {inv.amount.toLocaleString()}
                   </div>
                   {inv.status === 'paid' && (
-                    <button onClick={() => toast.success('Invoice downloading')} className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-slate-500 transition hover:border-line-strong hover:text-slate-300">
+                    <button
+                      onClick={() => toast.promise(
+                        new Promise(r => setTimeout(r, 1200)),
+                        { loading: `Preparing ${inv.id}…`, success: `${inv.id} downloaded`, error: 'Download failed' }
+                      )}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-slate-500 transition hover:border-line-strong hover:text-slate-300"
+                    >
                       <Download className="h-3.5 w-3.5" />
                     </button>
                   )}

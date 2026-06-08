@@ -137,6 +137,7 @@ export default function TopicsPage() {
   const [categoryFilter, setCategoryFilter] = useState<TopicCategory | 'All'>('All')
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({})
   const [flash, setFlash] = useState<string | null>(null)
+  const [generating, setGenerating] = useState(false)
 
   function getStatus(topic: TopicRow): TopicStatus {
     return topicStatuses[topic.title] ?? topic.status
@@ -179,9 +180,21 @@ export default function TopicsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           Topics &amp; Content Calendar
         </h1>
-        <button onClick={() => toast.success('Generating topic ideas with AI')} className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+        <button
+          disabled={generating}
+          onClick={() => {
+            setGenerating(true)
+            toast.promise(new Promise(r => setTimeout(r, 2000)), {
+              loading: 'Generating topic ideas with AI…',
+              success: '5 new topics generated',
+              error: 'Generation failed',
+            })
+            setTimeout(() => setGenerating(false), 2000)
+          }}
+          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+        >
           <Plus className="h-4 w-4" />
-          Generate Topic
+          {generating ? 'Generating…' : 'Generate Topic'}
         </button>
       </div>
 
@@ -305,7 +318,7 @@ export default function TopicsPage() {
                       </span>
                     ) : (
                       <>
-                        <button onClick={() => toast.info('Opening topic editor')} className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
+                        <button onClick={() => toast.info(`Editing: ${topic.title}`)} className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
                         <button
                           onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
                           className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20"

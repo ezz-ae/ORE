@@ -248,15 +248,55 @@ export default function AgentNotebookPage() {
             type="file"
             ref={brochureRef}
             multiple
+            accept=".pdf,.doc,.docx"
             className="hidden"
-            onChange={() => toast.success('Brochure uploaded — analyzing')}
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? [])
+              files.forEach((f) => {
+                const newSrc: Source = { id: `brochure-${Date.now()}-${f.name}`, label: f.name, type: 'brochure', icon: '📄' }
+                setSources((prev) => [...prev, newSrc])
+                setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, sources: [...n.sources, newSrc.id] } : n))
+              })
+              if (files.length > 0) toast.success(`${files.length} file${files.length > 1 ? 's' : ''} added`)
+            }}
           />
           <button onClick={() => brochureRef.current?.click()} className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-line-strong px-3 py-2 text-xs text-slate-500 hover:border-line-strong hover:text-slate-400 transition">
             <Upload className="h-3 w-3" /> Upload brochure
           </button>
-          <button onClick={() => toast.success('Add a URL to your research')} className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-line-strong px-3 py-2 text-xs text-slate-500 hover:border-line-strong hover:text-slate-400 transition">
-            <Link2 className="h-3 w-3" /> Add URL
-          </button>
+          {showAddSrc ? (
+            <form
+              className="mt-1 flex gap-1"
+              onSubmit={(e) => {
+                e.preventDefault()
+                const url = srcInput.trim()
+                if (!url) return
+                const newSrc: Source = { id: `url-${Date.now()}`, label: url, type: 'url', icon: '🔗' }
+                setSources((prev) => [...prev, newSrc])
+                setNotes((prev) => prev.map((n) => n.id === currentNote.id ? { ...n, sources: [...n.sources, newSrc.id] } : n))
+                setSrcInput('')
+                setShowAddSrc(false)
+                toast.success('URL added')
+              }}
+            >
+              <input
+                autoFocus
+                value={srcInput}
+                onChange={(e) => setSrcInput(e.target.value)}
+                placeholder="Paste URL…"
+                className="flex-1 min-w-0 rounded-[8px] border border-line-strong bg-surface-2 px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
+              />
+              <button type="submit" className="shrink-0 rounded-[8px] bg-gold/80 px-2 py-1.5 text-xs font-semibold text-black">
+                <Check className="h-3 w-3" />
+              </button>
+              <button type="button" onClick={() => setShowAddSrc(false)} className="shrink-0 rounded-[8px] border border-line-strong px-2 py-1.5 text-xs text-slate-500">
+                <X className="h-3 w-3" />
+              </button>
+            </form>
+          ) : (
+            <button onClick={() => setShowAddSrc(true)} className="mt-1 flex w-full items-center gap-2 rounded-[8px] border border-dashed border-line-strong px-3 py-2 text-xs text-slate-500 hover:border-line-strong hover:text-slate-400 transition">
+              <Link2 className="h-3 w-3" /> Add URL
+            </button>
+          )}
         </div>
       </aside>
 

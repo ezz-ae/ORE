@@ -233,6 +233,10 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   const [sending, setSending] = useState(false)
   const [showAI, setShowAI] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const [showOptions, setShowOptions] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const fileAttachRef = useRef<HTMLInputElement>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -492,9 +496,21 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               className={`rounded-full p-2 transition hover:bg-surface-2 ${showAI ? 'text-gold' : 'text-slate-500 hover:text-white'}`}>
               <Sparkles className="h-4 w-4" />
             </button>
-            <button onClick={() => toast.info('Conversation options')} className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
-              <MoreVertical className="h-4 w-4" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowOptions((v) => !v)} className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
+                  {['Archive chat', 'Mute notifications', 'Clear messages', 'Block contact'].map((opt) => (
+                    <button key={opt} onClick={() => { setShowOptions(false); toast.success(opt) }}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white">
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -593,13 +609,30 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               </button>
             )}
 
+            {showEmoji && (
+              <div className="mb-2 flex flex-wrap gap-1 rounded-xl bg-[#2A3942] p-3">
+                {['😊','👋','🙏','✅','🔑','🏠','💰','📋','📞','⭐','🎉','💎'].map((em) => (
+                  <button key={em} onClick={() => { setInput((v) => v + em); setShowEmoji(false); inputRef.current?.focus() }}
+                    className="text-xl leading-none transition hover:scale-125">
+                    {em}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-end gap-2">
               {/* Emoji */}
-              <button onClick={() => toast.info('Emoji picker')} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <button onClick={() => setShowEmoji((v) => !v)} className={`shrink-0 rounded-full p-2 transition hover:text-slate-300 ${showEmoji ? 'text-gold' : 'text-slate-500'}`}>
                 <SmilePlus className="h-5 w-5" />
               </button>
               {/* Attachment */}
-              <button onClick={() => toast.info('Attach a file')} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <input ref={fileAttachRef} type="file" multiple className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? [])
+                  if (files.length) toast.success(`${files.length} file${files.length > 1 ? 's' : ''} ready to send`)
+                }}
+              />
+              <button onClick={() => fileAttachRef.current?.click()} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <Paperclip className="h-5 w-5" />
               </button>
 
@@ -627,7 +660,12 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   }
                 </button>
               ) : (
-                <button onClick={() => toast.info('Hold to record a voice note')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400">
+                <button
+                  onMouseDown={() => setRecording(true)}
+                  onMouseUp={() => { setRecording(false); toast.success('Voice note recorded — tap Send to deliver') }}
+                  onMouseLeave={() => setRecording(false)}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition ${recording ? 'bg-red-500 animate-pulse' : 'bg-[#00A884] hover:bg-emerald-400'}`}
+                >
                   <Mic className="h-5 w-5" />
                 </button>
               )}

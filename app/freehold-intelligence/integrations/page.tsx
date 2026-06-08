@@ -62,6 +62,8 @@ const critical     = blockers.filter((b: any) => b.severity === 'critical')
 export default function IntegrationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
+  const [connecting, setConnecting] = useState<string | null>(null)
+  const [connected,  setConnected]  = useState<string[]>([])
 
   const connectedCount = integrations.filter((i: any) => i.status === 'connected').length
 
@@ -224,9 +226,24 @@ export default function IntegrationsPage() {
                         <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           View <ArrowUpRight className="h-3 w-3" />
                         </Link>
+                      ) : connected.includes(integration.id) ? (
+                        <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-400 sm:inline-flex">
+                          Connected
+                        </span>
                       ) : integration.status !== 'connected' ? (
-                        <button onClick={() => toast.success('Connecting ' + integration.name + '…')} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
-                          Connect <ArrowUpRight className="h-3 w-3" />
+                        <button
+                          disabled={connecting === integration.id}
+                          onClick={() => {
+                            setConnecting(integration.id)
+                            setTimeout(() => {
+                              setConnecting(null)
+                              setConnected((prev) => [...prev, integration.id])
+                              toast.success(integration.name + ' connected')
+                            }, 1800)
+                          }}
+                          className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60 sm:inline-flex"
+                        >
+                          {connecting === integration.id ? 'Connecting…' : (<>Connect <ArrowUpRight className="h-3 w-3" /></>)}
                         </button>
                       ) : null}
                     </div>

@@ -92,6 +92,8 @@ function SourceCheckbox({ checked, onChange }: { checked: boolean; onChange: () 
 export default function NotebookPage() {
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
+  const [showAddSource, setShowAddSource] = useState(false)
+  const [addSourceInput, setAddSourceInput] = useState('')
   const [checkedSources, setCheckedSources] = useState<Record<string, boolean>>({
     all_conversations: true,
     live_projects: false,
@@ -184,8 +186,8 @@ export default function NotebookPage() {
         {/* header */}
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
           <span className="text-sm font-semibold text-white">Sources</span>
-          <button onClick={() => toast.success('Add a source — paste a URL or upload a document')} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
-            <Plus className="h-3 w-3" /> Add source
+          <button onClick={() => setShowAddSource((v) => !v)} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
+            <Plus className="h-3 w-3" /> {showAddSource ? 'Cancel' : 'Add source'}
           </button>
         </div>
 
@@ -204,6 +206,30 @@ export default function NotebookPage() {
             </button>
           )}
         </div>
+
+        {/* Add source inline form */}
+        {showAddSource && (
+          <form
+            className="border-b border-line px-3 py-2.5 flex gap-1.5"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const url = addSourceInput.trim()
+              if (!url) return
+              toast.success('Source added')
+              setAddSourceInput('')
+              setShowAddSource(false)
+            }}
+          >
+            <input
+              autoFocus
+              value={addSourceInput}
+              onChange={(e) => setAddSourceInput(e.target.value)}
+              placeholder="Paste a URL…"
+              className="flex-1 min-w-0 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
+            />
+            <button type="submit" className="shrink-0 rounded-lg bg-gold/80 px-2.5 py-1.5 text-xs font-semibold text-black">Add</button>
+          </form>
+        )}
 
         {/* select all / deselect all */}
         <div className="flex items-center gap-2 border-b border-line px-4 py-2">

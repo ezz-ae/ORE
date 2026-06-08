@@ -76,6 +76,8 @@ function fmtAED(n: number) {
 
 export default function DealsPage() {
   const [activeFilter, setActiveFilter] = useState<Stage | 'All'>('All')
+  const [showNewDeal, setShowNewDeal] = useState(false)
+  const [followedUp, setFollowedUp] = useState<string[]>([])
 
   const atRisk = DEALS.filter(d => d.lastActivity >= 7)
   const filtered = activeFilter === 'All' ? DEALS : DEALS.filter(d => d.stage === activeFilter)
@@ -97,15 +99,40 @@ export default function DealsPage() {
               </div>
             )}
             <button
-              onClick={() => toast.success('New deal — opening deal form')}
+              onClick={() => setShowNewDeal((v) => !v)}
               className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20 transition-colors">
-              + New Deal
+              {showNewDeal ? 'Cancel' : '+ New Deal'}
             </button>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
+
+        {/* New Deal form */}
+        {showNewDeal && (
+          <div className="rounded-xl border border-gold/20 bg-gold/[0.03] p-5 space-y-4">
+            <div className="text-sm font-semibold text-white">New Deal</div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <input placeholder="Client name" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Property" className="col-span-2 md:col-span-1 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Agent" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Deal value (AED)" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Expected close date" type="date" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40" />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowNewDeal(false); toast.success('Deal created') }}
+                className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-medium text-gold hover:bg-gold/20 transition-colors"
+              >
+                Create deal
+              </button>
+              <button onClick={() => setShowNewDeal(false)} className="rounded-lg border border-line px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           {STATS.map((stat) => (
@@ -205,11 +232,17 @@ export default function DealsPage() {
                     <p className="text-sm font-semibold text-white tabular-nums">{fmtAED(deal.value)}</p>
                     <p className="text-xs text-amber-400 font-medium">{deal.lastActivity}d no activity</p>
                   </div>
-                  <button
-                    onClick={() => toast.success('Follow-up reminder scheduled')}
-                    className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
-                    Follow Up
-                  </button>
+                  {followedUp.includes(deal.id) ? (
+                    <span className="shrink-0 flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Scheduled
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => { setFollowedUp(f => [...f, deal.id]); toast.success(`Follow-up scheduled for ${deal.client}`) }}
+                      className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
+                      Follow Up
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

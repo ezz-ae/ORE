@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { toast } from 'sonner'
 import { Key, ArrowRight, Book, Zap, Globe } from 'lucide-react'
 
 const ENDPOINTS = [
@@ -53,15 +52,15 @@ export default function ApiPage() {
       {/* Quick links */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         {[
-          { Icon: Book, label: 'Full docs',      color: 'text-violet-400' },
-          { Icon: Zap,  label: 'Zapier plugin',  color: 'text-amber-400'  },
-          { Icon: Globe,label: 'OpenAPI spec',   color: 'text-sky-400'    },
-        ].map(({ Icon, label, color }) => (
-          <button key={label} onClick={() => toast.info('Opening ' + label)} className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
+          { Icon: Book, label: 'Full docs',    color: 'text-violet-400', href: 'https://docs.freeholdproperty.ae' },
+          { Icon: Zap,  label: 'Zapier plugin',color: 'text-amber-400',  href: 'https://zapier.com/apps/freehold-intelligence' },
+          { Icon: Globe,label: 'OpenAPI spec', color: 'text-sky-400',    href: '/api/openapi.json' },
+        ].map(({ Icon, label, color, href }) => (
+          <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
             <Icon className={`h-4 w-4 shrink-0 ${color}`} />
             {label}
             <ArrowRight className="ml-auto h-3.5 w-3.5 text-slate-600" />
-          </button>
+          </a>
         ))}
       </div>
 

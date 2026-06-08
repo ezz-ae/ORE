@@ -36,6 +36,8 @@ function seoColor(score: number) {
 
 export default function AiManagerListingsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
+  const [processing, setProcessing] = useState<string | null>(null)
+  const [improved, setImproved] = useState<string[]>([])
 
   const listings = useMemo(() => {
     return inventoryProperties
@@ -93,17 +95,53 @@ export default function AiManagerListingsPage() {
 
       {/* Bulk AI actions */}
       <div className="mt-6 flex flex-wrap gap-2">
-        <button onClick={() => toast.success('Meta descriptions refreshed across listings')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button
+          disabled={processing === 'meta'}
+          onClick={() => {
+            setProcessing('meta')
+            toast.promise(new Promise(r => setTimeout(r, 2000)), {
+              loading: 'Refreshing meta descriptions…',
+              success: 'Meta descriptions refreshed',
+              error: 'Refresh failed',
+            })
+            setTimeout(() => setProcessing(null), 2000)
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
+        >
           <Sparkles className="h-3.5 w-3.5" />
-          Refresh Meta Descriptions
+          {processing === 'meta' ? 'Refreshing…' : 'Refresh Meta Descriptions'}
         </button>
-        <button onClick={() => toast.success('SEO audit started for all listings')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button
+          disabled={processing === 'seo'}
+          onClick={() => {
+            setProcessing('seo')
+            toast.promise(new Promise(r => setTimeout(r, 2500)), {
+              loading: 'Running SEO audit…',
+              success: 'SEO audit complete',
+              error: 'Audit failed',
+            })
+            setTimeout(() => setProcessing(null), 2500)
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
+        >
           <Sparkles className="h-3.5 w-3.5" />
-          Check All SEO
+          {processing === 'seo' ? 'Auditing…' : 'Check All SEO'}
         </button>
-        <button onClick={() => toast.success('AI summaries regenerating')} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300">
+        <button
+          disabled={processing === 'summary'}
+          onClick={() => {
+            setProcessing('summary')
+            toast.promise(new Promise(r => setTimeout(r, 2200)), {
+              loading: 'Regenerating summaries…',
+              success: 'Summaries regenerated',
+              error: 'Regeneration failed',
+            })
+            setTimeout(() => setProcessing(null), 2200)
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
+        >
           <Sparkles className="h-3.5 w-3.5" />
-          Regenerate Summaries
+          {processing === 'summary' ? 'Regenerating…' : 'Regenerate Summaries'}
         </button>
       </div>
 
@@ -172,10 +210,21 @@ export default function AiManagerListingsPage() {
                   <td className="px-4 py-3.5 text-xs text-slate-400">{prop.lastUpdated}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => toast.info('Opening listing editor')} className="text-xs text-slate-400 hover:text-slate-200 transition">
+                      <Link href="/freehold-intelligence/ai-manager/listings/new" className="text-xs text-slate-400 hover:text-slate-200 transition">
                         <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => toast.success('AI improvements applied to listing')} className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+                      </Link>
+                      <button
+                        disabled={improved.includes(prop.id)}
+                        onClick={() => {
+                          setImproved(p => [...p, prop.id])
+                          toast.promise(new Promise(r => setTimeout(r, 1800)), {
+                            loading: 'Applying AI improvements…',
+                            success: `${prop.title} updated`,
+                            error: 'Update failed',
+                          })
+                        }}
+                        className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-50"
+                      >
                         <Sparkles className="h-3 w-3" />
                         AI Improve
                       </button>

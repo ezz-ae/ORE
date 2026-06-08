@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   FileBarChart2, Sparkles, Download, Eye, AlertTriangle,
@@ -49,6 +50,7 @@ const AI_INSIGHTS = [
     title: 'Opportunity: Scale WhatsApp',
     body: 'WhatsApp is generating 1,200% ROI with only AED 130K spend. Increasing budget by AED 25K/month could generate an additional AED 300K in monthly revenue based on current conversion rates.',
     action: 'View WhatsApp Analytics',
+    href: '/freehold-intelligence/analytics',
   },
   {
     type: 'warning',
@@ -59,6 +61,7 @@ const AI_INSIGHTS = [
     title: 'Warning: 4 Stalled Deals',
     body: 'Four deals worth a combined AED 11.9M have had no activity in 7+ days. Based on historical data, deals inactive for 14+ days have a 68% lower close rate. Immediate agent intervention recommended.',
     action: 'Review At-Risk Deals',
+    href: '/freehold-intelligence/management/deals',
   },
   {
     type: 'success',
@@ -69,6 +72,7 @@ const AI_INSIGHTS = [
     title: 'Success: Best Q2 Revenue',
     body: "June 2026 is on track to be your best month since the company's founding. Revenue MTD AED 320K with 10 business days remaining. Full-month projection: AED 390K — 30% above Q2 average.",
     action: 'View Finance Dashboard',
+    href: '/freehold-intelligence/finance',
   },
 ]
 
@@ -224,14 +228,14 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed mb-4">{insight.body}</p>
-                <button
-                  onClick={() => toast.info(insight.action)}
+                <Link
+                  href={insight.href}
                   className={[
                   'text-xs font-semibold flex items-center gap-1 transition-opacity hover:opacity-80',
                   insight.color,
                 ].join(' ')}>
                   {insight.action} <ArrowUpRight className="h-3 w-3" />
-                </button>
+                </Link>
               </div>
             )
           })}
@@ -267,13 +271,16 @@ export default function ReportsPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => toast.info('Opening report')}
+                        onClick={() => toast.info(`Viewing ${report.name}`)}
                         className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-line-strong hover:text-white transition-colors">
                         <Eye className="h-3.5 w-3.5" />
                         View
                       </button>
                       <button
-                        onClick={() => toast.success('Report PDF downloading')}
+                        onClick={() => toast.promise(
+                          new Promise(r => setTimeout(r, 1300)),
+                          { loading: 'Generating PDF…', success: `${report.name} downloaded`, error: 'Download failed' }
+                        )}
                         className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         PDF
@@ -388,7 +395,10 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">Your report has been generated successfully</p>
                   </div>
                   <button
-                    onClick={() => toast.success('Export downloading')}
+                    onClick={() => toast.promise(
+                      new Promise(r => setTimeout(r, 1000)),
+                      { loading: `Exporting as ${format}…`, success: `Report exported as ${format}`, error: 'Export failed' }
+                    )}
                     className="ml-auto flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
                     Download
@@ -433,14 +443,17 @@ export default function ReportsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toast.info('Opening report')}
+                          onClick={() => toast.info(`Viewing ${report.type}`)}
                           className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors">
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
                         <span className="text-slate-700">·</span>
                         <button
-                          onClick={() => toast.success('Report PDF downloading')}
+                          onClick={() => toast.promise(
+                            new Promise(r => setTimeout(r, 1100)),
+                            { loading: 'Preparing PDF…', success: `${report.id} downloaded`, error: 'Download failed' }
+                          )}
                           className="flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
                           PDF

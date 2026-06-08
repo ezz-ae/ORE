@@ -36,6 +36,8 @@ const PENDING_COMMISSIONS = [
 export default function PaymentsPage() {
   const [tab, setTab] = useState<'schedule' | 'history' | 'commissions'>('schedule')
   const [addingCard, setAddingCard] = useState(false)
+  const [defaultCard, setDefaultCard] = useState('pm1')
+  const [paidNow, setPaidNow] = useState<string[]>([])
 
   const totalScheduled = SCHEDULED.filter((s) => s.status === 'upcoming').reduce((sum, s) => sum + s.amount, 0)
   const totalHistory   = TRANSFERS.reduce((sum, t) => sum + t.amount, 0)
@@ -79,9 +81,9 @@ export default function PaymentsPage() {
                 </div>
                 <div className="text-xs text-slate-500">Expires {pm.expiry}</div>
               </div>
-              {pm.isDefault
+              {defaultCard === pm.id
                 ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Default</span>
-                : <button onClick={() => toast.success('Default payment method updated')} className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
+                : <button onClick={() => { setDefaultCard(pm.id); toast.success('Default payment method updated') }} className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
               }
             </div>
           ))}
@@ -105,7 +107,7 @@ export default function PaymentsPage() {
               <input placeholder="CVV" className="w-20 rounded-[9px] border border-line bg-surface-2 px-3 py-2 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50" />
             </div>
             <div className="flex gap-2 pt-1">
-              <button onClick={() => toast.success('Card saved')} className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
+              <button onClick={() => { setAddingCard(false); toast.success('Card saved') }} className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
               <button onClick={() => setAddingCard(false)} className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">Cancel</button>
             </div>
           </div>
@@ -169,7 +171,13 @@ export default function PaymentsPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-sm font-semibold text-emerald-400">{fmt(t.amount)}</span>
-                <button onClick={() => toast.success('Receipt downloading')} className="text-slate-600 hover:text-slate-400 transition">
+                <button
+                  onClick={() => toast.promise(
+                    new Promise(r => setTimeout(r, 1100)),
+                    { loading: `Preparing receipt…`, success: `Receipt downloaded`, error: 'Download failed' }
+                  )}
+                  className="text-slate-600 hover:text-slate-400 transition"
+                >
                   <ArrowDownToLine className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -198,9 +206,17 @@ export default function PaymentsPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-sm font-semibold text-gold">{fmt(c.amount)}</span>
                   {c.status === 'approved'
-                    ? <button onClick={() => toast.success('Payment initiated')} className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1">
-                        <RefreshCw className="h-3 w-3" /> Pay now
-                      </button>
+                    ? paidNow.includes(c.agent)
+                      ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Paid</span>
+                      : <button
+                          onClick={() => {
+                            setPaidNow(p => [...p, c.agent])
+                            toast.success(`Payment initiated for ${c.agent}`)
+                          }}
+                          className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1"
+                        >
+                          <RefreshCw className="h-3 w-3" /> Pay now
+                        </button>
                     : <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">Pending</span>
                   }
                 </div>

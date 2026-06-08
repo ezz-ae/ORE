@@ -51,10 +51,22 @@ const FILTERS: FilterKey[] = ['All', 'Landing', 'Blog', 'Static', 'Legal', 'Publ
 
 export default function WebsitePagesPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
+  const [reviewing, setReviewing] = useState<string | null>(null)
+  const [reviewed, setReviewed] = useState<string[]>([])
   const filtered = websitePages.filter((p) => {
     if (activeFilter === 'All') return true
     return p.type === activeFilter || p.status === activeFilter
   })
+
+  function startReview(slug: string) {
+    setReviewing(slug)
+    toast.promise(new Promise(r => setTimeout(r, 2000)), {
+      loading: 'AI reviewing page…',
+      success: 'Review complete',
+      error: 'Review failed',
+    })
+    setTimeout(() => { setReviewing(null); setReviewed(r => [...r, slug]) }, 2000)
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -68,9 +80,21 @@ export default function WebsitePagesPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           Website Pages
         </h1>
-        <button onClick={() => toast.success('AI review started for all pages')} className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+        <button
+          disabled={reviewing !== null}
+          onClick={() => {
+            setReviewing('all')
+            toast.promise(new Promise(r => setTimeout(r, 2500)), {
+              loading: `Reviewing ${filtered.length} pages…`,
+              success: 'All pages reviewed',
+              error: 'Review failed',
+            })
+            setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.slug)) }, 2500)
+          }}
+          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+        >
           <Sparkles className="h-4 w-4" />
-          AI Review All
+          {reviewing === 'all' ? 'Reviewing…' : 'AI Review All'}
         </button>
       </div>
 
@@ -154,10 +178,20 @@ export default function WebsitePagesPage() {
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
                 <td className="px-4 py-3.5">
-                  <button onClick={() => toast.success('AI review started for this page')} className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
-                    <Sparkles className="h-3 w-3" />
-                    AI Review
-                  </button>
+                  {reviewed.includes(page.slug) ? (
+                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                      <Check className="h-3 w-3" /> Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      disabled={reviewing === page.slug}
+                      onClick={() => startReview(page.slug)}
+                      className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      {reviewing === page.slug ? 'Reviewing…' : 'AI Review'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

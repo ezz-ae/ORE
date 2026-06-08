@@ -144,6 +144,8 @@ export default function DeveloperProfilesPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [writing,  setWriting]  = useState<string | null>(null)
   const [written,  setWritten]  = useState<string[]>([])
+  const [showNew,  setShowNew]  = useState(false)
+  const [newName,  setNewName]  = useState('')
 
   const filtered = DEVELOPERS
     .filter((d) => filter === 'All' || d.profileStatus === filter)
@@ -170,8 +172,8 @@ export default function DeveloperProfilesPage() {
           <h1 className="text-xl font-semibold text-white">Developer Profiles</h1>
           <p className="mt-1 text-xs text-slate-500">SEO pages for each developer — drives organic ranking</p>
         </div>
-        <button onClick={() => toast.success('Developer profile created — fill in details')} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
-          <Plus className="h-3.5 w-3.5" /> Add developer
+        <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+          <Plus className="h-3.5 w-3.5" /> {showNew ? 'Cancel' : 'Add developer'}
         </button>
       </div>
 
@@ -189,6 +191,29 @@ export default function DeveloperProfilesPage() {
           </div>
         ))}
       </div>
+
+      {/* New developer form */}
+      {showNew && (
+        <div className="mb-5 rounded-xl border border-sky-400/20 bg-sky-400/[0.03] p-4 space-y-3">
+          <div className="text-sm font-semibold text-white">New developer profile</div>
+          <input
+            autoFocus
+            placeholder="Developer name (e.g. Emaar Properties)"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowNew(false); setNewName(''); toast.success('Developer profile created') }}
+              className="rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15"
+            >
+              Create profile
+            </button>
+            <button onClick={() => setShowNew(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Missing profiles alert */}
       {DEVELOPERS.some((d) => d.profileStatus !== 'Complete') && (
@@ -303,9 +328,9 @@ export default function DeveloperProfilesPage() {
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
                     </button>
-                    <button onClick={() => toast.info('Opening developer profile preview')} className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
+                    <a href={`https://freeholdproperty.ae/developers/${dev.name.toLowerCase().replace(/\s+/g, '-')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
                       <Globe className="h-3 w-3" /> Preview
-                    </button>
+                    </a>
                   </div>
                 </div>
               )}

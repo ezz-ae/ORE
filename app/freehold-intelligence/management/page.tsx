@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
 import {
   Sparkles, Activity, Users, Megaphone, DollarSign,
   Briefcase, Building2, TrendingUp, FileBarChart2, Bot,
   MessageSquare, Mail, CheckCircle2, AlertCircle,
-  ArrowUpRight, Send, WifiOff, Bell,
+  ArrowUpRight, Send, WifiOff,
   Target, Zap, Coins,
 } from 'lucide-react'
 import { StatCard, type StatDelta } from '@/components/freehold/ui'
@@ -115,17 +114,9 @@ export default function ManagementDashboard() {
             <h1 className="text-lg font-semibold text-white">{greeting}</h1>
             <p className="mt-0.5 text-sm text-slate-500">{dateStr}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-400">All systems live</span>
-            </div>
-            <button
-              onClick={() => toast.info('You have 5 new notifications')}
-              className="relative flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-slate-400 hover:text-slate-200 transition-colors">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">5</span>
-            </button>
+          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-medium text-emerald-400">All systems live</span>
           </div>
         </div>
       </div>
