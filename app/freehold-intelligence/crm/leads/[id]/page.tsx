@@ -6,9 +6,45 @@ import {
   PhoneCall, FileText, ArrowLeftRight, Bell, MessageSquare,
   BarChart3, Globe, ArrowUpRight,
 } from 'lucide-react'
-import { crmLeads, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { crmLeads, crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
+import { query } from '@/lib/db'
+
+// Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page
+async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
+  try {
+    const rows = await query<{
+      id: string; name: string | null; phone: string | null; email: string | null;
+      source: string | null; project_slug: string | null; assigned_broker_id: string | null;
+      status: string | null; priority: string | null; budget_aed: number | null;
+      interest: string | null; message: string | null; created_at: string;
+    }>(
+      `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
+              status, priority, budget_aed, interest, message, created_at::text
+       FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+      [id]
+    )
+    if (!rows.length) return null
+    const r = rows[0]
+    const stage = (r.status ?? 'new') as CRMLeadIntelligence['pipelineStage']
+    const temperature = (r.priority === 'hot' ? 'hot' : r.priority === 'priority' ? 'priority' : r.priority === 'cold' ? 'cold' : 'warm') as CRMLeadIntelligence['temperature']
+    return {
+      id: r.id, hubspotLeadId: '', name: r.name ?? 'Unknown',
+      phone: r.phone ?? '', email: r.email ?? '', source: r.source ?? 'direct',
+      landingId: '', campaignId: '', stage: stage.charAt(0).toUpperCase() + stage.slice(1),
+      pipelineStage: stage, temperature,
+      budgetAED: r.budget_aed ? `AED ${r.budget_aed.toLocaleString()}` : 'Unknown',
+      projectInterest: r.interest ?? r.project_slug ?? 'General enquiry',
+      intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : 55,
+      urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
+      duplicateRisk: false, wrongNumberRisk: false, assignedAgent: r.assigned_broker_id ?? '',
+      lastContactAt: r.created_at, nextBestAction: 'Follow up', suggestedMessage: '',
+      aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
+      viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
+    } as unknown as CRMLeadIntelligence
+  } catch { return null }
+}
 import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
 
 function urgencyTone(u: string) {
@@ -24,13 +60,13 @@ function scoreBar(n: number) {
   return 'bg-red-400'
 }
 
-export async function generateStaticParams() {
-  return crmLeads.map((l) => ({ id: l.id }))
-}
+export const dynamic = 'force-dynamic'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const lead = crmLeads.find((l) => l.id === id)
+  // Try DB first, fall back to mock
+  const liveLead = await getLiveLead(id)
+  const lead = liveLead ?? crmLeads.find((l) => l.id === id)
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
