@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, type ReactNode } from 'react'
 import {
   Star, Lock, TrendingUp, Zap, Users, MapPin, Wallet,
   CheckCircle, Clock, AlertCircle,
@@ -9,6 +10,24 @@ import {
   type WalletEntry, type Achievement, type ExpertiseEntry,
 } from '@/src/features/freehold-intelligence/agent'
 import { useSession } from '@/lib/freehold/use-session'
+
+interface LiveBalance {
+  broker_id: string
+  tier: string
+  allocated: number
+  balance: number
+  total_spent: number
+  cycle_start: string
+  cycle_end: string
+}
+
+interface LiveLedgerEntry {
+  id: string
+  type: 'allocation' | 'spend' | 'refund' | 'adjustment'
+  amount: number
+  note: string | null
+  created_at: string
+}
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   border-orange-400/30   bg-orange-400/10',
@@ -24,21 +43,11 @@ const LEVEL_COLOR: Record<string, { text: string; bg: string }> = {
   Untested: { text: 'text-slate-500',   bg: 'bg-surface-2'    },
 }
 
-const STATUS_META: Record<WalletEntry['status'], { icon: React.ReactNode; text: string; color: string }> = {
+const STATUS_META: Record<WalletEntry['status'], { icon: ReactNode; text: string; color: string }> = {
   paid:       { icon: <CheckCircle className="h-3.5 w-3.5" />, text: 'Paid',       color: 'text-emerald-400' },
   processing: { icon: <Clock       className="h-3.5 w-3.5" />, text: 'Processing', color: 'text-amber-400'   },
   pending:    { icon: <AlertCircle className="h-3.5 w-3.5" />, text: 'Pending',    color: 'text-sky-400'     },
 }
-
-const pendingBalance = agentWallet
-  .filter((w) => w.status !== 'paid' && w.amount > 0)
-  .reduce((s, w) => s + w.amount, 0)
-
-const totalEarned = agentWallet
-  .filter((w) => w.type !== 'campaign_debit' && w.amount > 0)
-  .reduce((s, w) => s + w.amount, 0)
-
-const poolPct = (agentLeadPool.used / agentLeadPool.monthlyQuota) * 100
 
 function fmtAED(n: number) {
   const abs = Math.abs(n)
@@ -121,6 +130,46 @@ function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
 
 export default function AgentAccountPage() {
   const { user } = useSession()
+  const [liveBalance, setLiveBalance] = useState<LiveBalance | null>(null)
+  const [liveLedger, setLiveLedger] = useState<LiveLedgerEntry[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/credits/balance')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.balance) setLiveBalance(d.balance) })
+      .catch(() => {})
+    fetch('/api/freehold/credits/ledger')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && Array.isArray(d?.ledger)) setLiveLedger(d.ledger) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  // Map live ledger entries → WalletEntry shape; fall back to mock
+  const walletEntries: WalletEntry[] = liveLedger && liveLedger.length > 0
+    ? liveLedger.map(e => ({
+        id: e.id,
+        description: e.note ?? (e.type === 'spend' ? 'Campaign spend' : e.type === 'allocation' ? 'Credits allocated' : 'Credit adjustment'),
+        amount: e.type === 'spend' ? -(e.amount * 10) : e.amount * 10,
+        type: (e.type === 'spend' ? 'campaign_debit' : 'bonus') as WalletEntry['type'],
+        status: 'paid' as const,
+        date: e.created_at,
+      }))
+    : agentWallet
+
+  const pendingBalance = walletEntries
+    .filter(w => w.status !== 'paid' && w.amount > 0)
+    .reduce((s, w) => s + w.amount, 0)
+
+  const totalEarned = walletEntries
+    .filter(w => w.type !== 'campaign_debit' && w.amount > 0)
+    .reduce((s, w) => s + w.amount, 0)
+
+  const adSpend = liveBalance ? liveBalance.total_spent * 10 : agentProfile.adSpendOnLeads
+
+  const poolPct = (agentLeadPool.used / agentLeadPool.monthlyQuota) * 100
+
   const displayName     = user?.name     ?? agentProfile.name
   const displayInitials = user?.initials ?? agentProfile.initials
   const tierClass = TIER_COLOR[agentProfile.tier] ?? TIER_COLOR.Gold
@@ -184,11 +233,17 @@ export default function AgentAccountPage() {
           </div>
           <div className="ml-auto text-right">
             <div className="text-xs text-slate-500">Ad spend (personal)</div>
-            <div className="mt-0.5 text-lg font-semibold text-red-400 tabular-nums">-AED {agentProfile.adSpendOnLeads.toLocaleString()}</div>
+            <div className="mt-0.5 text-lg font-semibold text-red-400 tabular-nums">-AED {adSpend.toLocaleString()}</div>
           </div>
         </div>
+        {liveBalance && (
+          <div className="mb-3 rounded-[14px] border border-gold/20 bg-gold/[0.04] px-4 py-3 text-xs text-slate-400">
+            <span className="font-medium text-gold">{liveBalance.balance} credits</span> remaining · {liveBalance.total_spent} spent this cycle
+            {liveBalance.cycle_end && ` · resets ${new Date(liveBalance.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}`}
+          </div>
+        )}
         <div className="space-y-2">
-          {agentWallet.map((entry) => <WalletRow key={entry.id} entry={entry} />)}
+          {walletEntries.map((entry) => <WalletRow key={entry.id} entry={entry} />)}
         </div>
       </section>
 
