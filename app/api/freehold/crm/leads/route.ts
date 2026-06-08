@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,11 +88,9 @@ export async function GET() {
     sql += ` ORDER BY created_at DESC LIMIT 200`
 
     const rows = await query<DbLead>(sql, params)
-    if (rows.length === 0) {
-      return NextResponse.json({ leads: crmLeads, source: 'mock' })
-    }
     return NextResponse.json({ leads: rows.map(dbLeadToCRM), source: 'db' })
-  } catch {
-    return NextResponse.json({ leads: crmLeads, source: 'mock' })
+  } catch (err) {
+    console.error('[crm/leads] query failed', err)
+    return NextResponse.json({ leads: [], source: 'error' }, { status: 500 })
   }
 }
