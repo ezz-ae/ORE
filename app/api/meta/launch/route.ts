@@ -5,6 +5,7 @@ import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
+import { deductCreditsForCampaign } from '@/lib/freehold/credits-db'
 
 async function ensureBrokerTable() {
   await query(
@@ -68,6 +69,12 @@ export async function POST(req: NextRequest) {
       } catch {
         // Non-fatal — campaign was created in Meta; attribution log failed
       }
+    }
+
+    // Deduct credits for the campaign launch (1 credit per AED 10 of daily budget)
+    if (brokerId) {
+      const creditsToSpend = Math.round((body.dailyBudgetAED ?? 100) / 10)
+      await deductCreditsForCampaign(brokerId, result.campaignId, body.campaignName, creditsToSpend)
     }
 
     return NextResponse.json({ ...result, brokerId }, { status: 201 })
