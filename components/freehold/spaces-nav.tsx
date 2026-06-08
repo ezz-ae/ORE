@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, ChevronDown, LogOut, Home } from 'lucide-react'
+import { Sparkles, ChevronDown, LogOut, Home, Bell } from 'lucide-react'
 import { spineApps } from '@/lib/freehold/apps'
 import { BRAND } from '@/lib/freehold/brand'
 import { useSession } from '@/lib/freehold/use-session'
@@ -60,19 +60,21 @@ export function SpacesNav() {
       {/* App spine — role-aware, single source of truth */}
       <nav className="flex h-full flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         <div className="flex h-full min-w-max">
-          {/* Home */}
-          <Link
-            href={HOME_HREF}
-            className={[
-              'flex h-full items-center gap-1.5 border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
-              isActive(HOME_HREF, true)
-                ? 'border-gold text-white'
-                : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
-            ].join(' ')}
-          >
-            <Home className="h-3.5 w-3.5" />
-            Home
-          </Link>
+          {/* Home — hidden for brokers (they use My Workspace tab) */}
+          {role !== 'broker' && (
+            <Link
+              href={HOME_HREF}
+              className={[
+                'flex h-full items-center gap-1.5 border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
+                isActive(HOME_HREF, true)
+                  ? 'border-gold text-white'
+                  : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
+              ].join(' ')}
+            >
+              <Home className="h-3.5 w-3.5" />
+              Home
+            </Link>
+          )}
 
           {apps.map((app) => {
             const active = isActive(app.href)
@@ -93,6 +95,18 @@ export function SpacesNav() {
           })}
         </div>
       </nav>
+
+      {/* Notifications */}
+      <div className="flex h-full shrink-0 items-center px-2">
+        <button
+          onClick={() => {}}
+          className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200"
+          aria-label="Notifications"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">2</span>
+        </button>
+      </div>
 
       {/* User menu — identity, role, sign-out */}
       <div ref={menuRef} className="relative flex h-full shrink-0 items-center border-l border-white/[0.07] px-3">
