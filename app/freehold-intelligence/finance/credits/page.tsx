@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight } from 'lucide-react'
+import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 type Agent = {
@@ -16,13 +16,6 @@ type Agent = {
   resetAt: string
 }
 
-const INITIAL_AGENTS: Agent[] = [
-  { id: 'a1', name: 'Noura Al Hassan',   initials: 'NA', tier: 'Gold',   quota: 25, used: 18, pending: 0, resetAt: '2026-07-01' },
-  { id: 'a2', name: 'James Cooper',      initials: 'JC', tier: 'Silver', quota: 18, used: 12, pending: 2, resetAt: '2026-07-01' },
-  { id: 'a3', name: 'Priya Sharma',      initials: 'PS', tier: 'Bronze', quota: 12, used: 5,  pending: 1, resetAt: '2026-07-01' },
-  { id: 'a4', name: 'Omar Khalil',       initials: 'OK', tier: 'Silver', quota: 18, used: 15, pending: 0, resetAt: '2026-07-01' },
-]
-
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   bg-orange-400/10   border-orange-400/25',
   Silver:   'text-slate-300    bg-surface-2    border-line-strong',
@@ -34,10 +27,39 @@ const TIER_QUOTA: Record<string, number> = {
   Bronze: 12, Silver: 18, Gold: 25, Platinum: 40,
 }
 
+const NEXT_RESET = (() => {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().slice(0, 10)
+})()
+
 export default function AgentCreditsPage() {
-  const [agents, setAgents]           = useState<Agent[]>(INITIAL_AGENTS)
+  const [agents, setAgents]           = useState<Agent[]>([])
+  const [loading, setLoading]         = useState(true)
   const [saved, setSaved]             = useState<string[]>([])
   const [adjustments, setAdjustments] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) {
+          const brokers = data.members
+            .filter((m: any) => m.dbRole === 'broker')
+            .map((m: any): Agent => ({
+              id:      m.id,
+              name:    m.name,
+              initials: m.initials,
+              tier:    'Bronze',
+              quota:   TIER_QUOTA.Bronze,
+              used:    0,
+              pending: 0,
+              resetAt: NEXT_RESET,
+            }))
+          setAgents(brokers)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   function adjust(id: string, delta: number) {
     setAdjustments((prev) => {
@@ -110,8 +132,14 @@ export default function AgentCreditsPage() {
       </div>
 
       {/* Agents */}
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span className="text-sm">Loading agents…</span>
+        </div>
+      )}
       <div className="space-y-3">
-        {agents.map((agent) => {
+        {!loading && agents.map((agent) => {
           const tc     = TIER_COLOR[agent.tier]
           const pct    = agent.quota > 0 ? (agent.used / agent.quota) * 100 : 0
           const adj    = adjustments[agent.id] ?? 0
@@ -215,7 +243,6 @@ export default function AgentCreditsPage() {
           )
         })}
       </div>
-
     </div>
   )
 }

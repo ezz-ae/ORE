@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield, Loader2 } from 'lucide-react'
 
 type Permission =
   | 'view_campaigns'
@@ -77,12 +77,6 @@ const DEFAULT_BRONZE: Record<Permission, boolean> = {
   view_leads: true, export_leads: false, manage_requirements: false, view_competitor: false,
 }
 
-const INITIAL_AGENTS: AgentPerms[] = [
-  { id: 'a1', name: 'Noura Al Hassan', initials: 'NA', tier: 'Gold',   perms: { ...DEFAULT_GOLD   } },
-  { id: 'a2', name: 'James Cooper',    initials: 'JC', tier: 'Silver', perms: { ...DEFAULT_SILVER } },
-  { id: 'a3', name: 'Priya Sharma',    initials: 'PS', tier: 'Bronze', perms: { ...DEFAULT_BRONZE } },
-  { id: 'a4', name: 'Omar Khalil',     initials: 'OK', tier: 'Silver', perms: { ...DEFAULT_SILVER } },
-]
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400 border-orange-400/25 bg-orange-400/10',
@@ -92,9 +86,31 @@ const TIER_COLOR: Record<string, string> = {
 }
 
 export default function PermissionsPage() {
-  const [agents, setAgents]     = useState<AgentPerms[]>(INITIAL_AGENTS)
-  const [expanded, setExpanded] = useState<string>(INITIAL_AGENTS[0].id)
+  const [agents, setAgents]     = useState<AgentPerms[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [expanded, setExpanded] = useState<string>('')
   const [saved, setSaved]       = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) {
+          const brokers = data.members
+            .filter((m: any) => m.dbRole === 'broker')
+            .map((m: any): AgentPerms => ({
+              id:       m.id,
+              name:     m.name,
+              initials: m.initials,
+              tier:     'Bronze',
+              perms:    { ...DEFAULT_BRONZE },
+            }))
+          setAgents(brokers)
+          if (brokers.length > 0) setExpanded(brokers[0].id)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   function toggle(agentId: string, perm: Permission) {
     setAgents((prev) =>
@@ -120,9 +136,16 @@ export default function PermissionsPage() {
         </p>
       </div>
 
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span className="text-sm">Loading agents…</span>
+        </div>
+      )}
+
       {/* Agent list */}
       <div className="space-y-3">
-        {agents.map((agent) => {
+        {!loading && agents.map((agent) => {
           const tc = TIER_COLOR[agent.tier] ?? TIER_COLOR.Bronze
           const isOpen = expanded === agent.id
           const permCount = Object.values(agent.perms).filter(Boolean).length
