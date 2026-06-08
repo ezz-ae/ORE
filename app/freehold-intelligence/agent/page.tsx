@@ -23,11 +23,21 @@ const APPS = [
     id:      'leads',
     label:   'My Leads',
     Icon:    Users,
-    href:    '/freehold-intelligence/agent/leads',
+    href:    '/freehold-intelligence/crm',
     metric:  `${criticalLeads > 0 ? `${criticalLeads} critical · ` : ''}${activeLeads} active`,
     badge:   criticalLeads,
     accent:  criticalLeads > 0 ? 'red' : 'sky',
-    sub:     'Pipeline',
+    sub:     'Pipeline · CRM',
+  },
+  {
+    id:      'campaigns',
+    label:   'Campaigns',
+    Icon:    Megaphone,
+    href:    '/freehold-intelligence/lead-machine/campaigns',
+    metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
+    badge:   0,
+    accent:  'blue',
+    sub:     'Ads & Spend',
   },
   {
     id:      'account',
@@ -40,16 +50,6 @@ const APPS = [
     sub:     'Wallet & Profile',
   },
   {
-    id:      'campaigns',
-    label:   'Campaigns',
-    Icon:    Megaphone,
-    href:    '/freehold-intelligence/agent/campaigns',
-    metric:  `AED ${agentProfile.adSpendOnLeads.toLocaleString()} this month`,
-    badge:   0,
-    accent:  'blue',
-    sub:     'Ads & Spend',
-  },
-  {
     id:      'credits',
     label:   'Credits',
     Icon:    Coins,
@@ -60,30 +60,30 @@ const APPS = [
     sub:     'Ad Budget',
   },
   {
-    id:      'notebook',
+    id:      'inventory',
     label:   'Inventory',
     Icon:    BookOpen,
-    href:    '/freehold-intelligence/agent/notebook',
-    metric:  '3 project notes · 6 sources',
+    href:    '/freehold-intelligence/inventory',
+    metric:  'Properties · Off-plan · Projects',
     badge:   0,
     accent:  'violet',
-    sub:     'NotebookLM',
+    sub:     'Browse properties',
   },
   {
-    id:      'ai',
-    label:   'My AI',
+    id:      'notebook',
+    label:   'Notebook',
     Icon:    Sparkles,
-    href:    '/freehold-intelligence/agent/ai',
-    metric:  '7 connections active',
+    href:    '/freehold-intelligence/notebook',
+    metric:  'Research · Pitch decks · AI',
     badge:   0,
     accent:  'gold',
-    sub:     'Agent Builder',
+    sub:     'AI research workspace',
   },
   {
     id:      'settings',
     label:   'Settings',
     Icon:    Settings,
-    href:    '/freehold-intelligence/agent',
+    href:    '/freehold-intelligence/agent/account',
     metric:  `Lead pool: ${poolRemaining} of ${agentLeadPool.monthlyQuota} left`,
     badge:   0,
     accent:  'gray',
@@ -145,7 +145,7 @@ export default function AgentHomePage() {
           <div className="space-y-2">
             {offerLead && (
               <Link
-                href="/freehold-intelligence/agent/leads"
+                href="/freehold-intelligence/crm"
                 className="group flex items-center gap-4 rounded-[18px] border border-gold/20 bg-gold/[0.04] px-5 py-4 transition hover:border-gold/35"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-gold/15">
@@ -162,7 +162,7 @@ export default function AgentHomePage() {
             )}
             {viewingLead && (
               <Link
-                href="/freehold-intelligence/agent/leads"
+                href="/freehold-intelligence/crm"
                 className="group flex items-center gap-4 rounded-[18px] border border-orange-400/20 bg-orange-400/[0.04] px-5 py-4 transition hover:border-orange-400/35"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-orange-400/10">
@@ -179,7 +179,7 @@ export default function AgentHomePage() {
             )}
             {criticalLeads > 0 && (
               <Link
-                href="/freehold-intelligence/agent/leads"
+                href="/freehold-intelligence/crm"
                 className="group flex items-center gap-4 rounded-[18px] border border-red-400/15 bg-red-400/[0.03] px-5 py-4 transition hover:border-red-400/25"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-red-400/10">

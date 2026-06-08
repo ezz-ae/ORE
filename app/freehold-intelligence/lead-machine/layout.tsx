@@ -12,7 +12,8 @@ import {
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 
-const NAV_SECTIONS = [
+// Full nav shown to managers
+const MANAGER_NAV_SECTIONS = [
   {
     label: 'Pipeline',
     items: [
@@ -49,9 +50,21 @@ const NAV_SECTIONS = [
   },
 ]
 
+// Brokers only see their own campaigns
+const BROKER_NAV_SECTIONS = [
+  {
+    label: 'My Campaigns',
+    items: [
+      { label: 'Campaigns',   href: '/freehold-intelligence/lead-machine/campaigns', exact: true, Icon: Megaphone },
+    ],
+  },
+]
+
+const ALLOWED_ROLES = ['admin', 'sales_manager', 'director', 'ceo', 'marketing', 'broker'] as const
+
 export default function LeadMachineLayout({ children }: { children: React.ReactNode }) {
-  const { ready } = useSessionGuard(['admin', 'sales_manager', 'director', 'ceo', 'marketing'])
-  const pathname = usePathname()
+  const { ready, user } = useSessionGuard([...ALLOWED_ROLES])
+  const pathname        = usePathname()
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -59,12 +72,18 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
     </div>
   )
 
+  const isBroker    = user?.role === 'broker'
+  const navSections = isBroker ? BROKER_NAV_SECTIONS : MANAGER_NAV_SECTIONS
+  const allTabs     = navSections.flatMap(s => s.items)
+
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href
     return pathname === href || pathname.startsWith(href + '/')
   }
 
-  const allTabs = NAV_SECTIONS.flatMap(s => s.items)
+  // Brokers return home to their workspace; managers go to the ads hub
+  const backHref  = isBroker ? '/freehold-intelligence/agent' : '/freehold-intelligence/ads'
+  const backLabel = isBroker ? 'My Workspace' : 'All ad tools'
 
   return (
     <div className="flex flex-col min-h-full">
@@ -72,28 +91,28 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
       {/* App header */}
       <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-chrome/97 px-5 backdrop-blur-xl sm:px-6">
         <Link
-          href="/freehold-intelligence/ads"
+          href={backHref}
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">All ad tools</span>
+          <span className="hidden sm:block">{backLabel}</span>
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <Megaphone className="h-3.5 w-3.5 text-gold" />
           </div>
-          <span className="text-sm font-semibold text-white">Ads</span>
+          <span className="text-sm font-semibold text-white">{isBroker ? 'My Campaigns' : 'Ads'}</span>
         </div>
       </header>
 
       {/* Body */}
       <div className="flex flex-1">
 
-        {/* Desktop sidebar — auto-collapse */}
+        {/* Desktop sidebar */}
         <aside className="group/nav hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-[52px] hover:w-56 shrink-0 transition-[width] duration-200 overflow-hidden border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-5 overflow-y-auto">
-            {NAV_SECTIONS.map((section) => (
+            {navSections.map((section) => (
               <div key={section.label}>
                 <div className="mb-1.5 h-4 px-2.5">
                   <span className="block whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150">

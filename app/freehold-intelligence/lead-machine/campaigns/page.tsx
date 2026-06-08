@@ -1,12 +1,15 @@
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap } from 'lucide-react'
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 import { listCampaigns, getCampaignInsights, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { demoCampaigns } from '@/lib/meta/demo-data'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { query } from '@/lib/db'
 import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
 
-type CampaignWithInsights = MetaCampaign & { insights?: MetaInsights | null }
+type CampaignWithInsights = MetaCampaign & { insights?: MetaInsights | null; brokerName?: string }
 
 interface CampaignsResponse {
   campaigns: CampaignWithInsights[]
@@ -39,6 +42,18 @@ async function getCampaigns(): Promise<CampaignsResponse> {
   }
 }
 
+async function getBrokerCampaignIds(brokerId: string): Promise<Set<string>> {
+  try {
+    const result = await query<{ campaign_id: string }>(
+      'SELECT campaign_id FROM meta_campaign_brokers WHERE broker_id = $1',
+      [brokerId],
+    )
+    return new Set(result.rows.map(r => r.campaign_id))
+  } catch {
+    return new Set()
+  }
+}
+
 function fmtSpend(spend: string | undefined) {
   if (!spend) return '—'
   const n = parseFloat(spend)
@@ -50,31 +65,45 @@ function getLeads(campaign: CampaignWithInsights) {
 }
 
 export default async function CampaignsPage() {
+  // Read session to apply role-based filtering
+  const cookieStore = await cookies()
+  const token       = cookieStore.get(SESSION_COOKIE)?.value
+  const sessionUser = await verifySession(token)
+  const isBroker    = sessionUser?.role === 'broker'
+  const brokerId    = sessionUser?.brokerId ?? sessionUser?.email
+
   const data = await getCampaigns()
   const isConfigError = data.demo === true
-  const campaigns     = data.campaigns
-  const active        = campaigns.filter((c) => c.status === 'ACTIVE').length
-  const paused        = campaigns.filter((c) => c.status === 'PAUSED').length
-  const totalSpend    = campaigns
-    .reduce((s, c) => s + parseFloat(c.insights?.spend ?? '0'), 0)
-  const totalLeads    = campaigns
-    .reduce((s, c) => s + parseInt(getLeads(c)), 0)
+
+  // Brokers only see campaigns they created; managers see everything
+  let campaigns = data.campaigns
+  if (isBroker && brokerId) {
+    const brokerIds = await getBrokerCampaignIds(brokerId)
+    campaigns = campaigns.filter(c => brokerIds.has(c.id))
+  }
+
+  const active     = campaigns.filter((c) => c.status === 'ACTIVE').length
+  const paused     = campaigns.filter((c) => c.status === 'PAUSED').length
+  const totalSpend = campaigns.reduce((s, c) => s + parseFloat(c.insights?.spend ?? '0'), 0)
+  const totalLeads = campaigns.reduce((s, c) => s + parseInt(getLeads(c)), 0)
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={isBroker ? 'My Campaigns' : 'Lead Machine'}
         Icon={Megaphone}
         title="Meta Campaigns"
-        subtitle={isConfigError ? 'Meta Ads not connected.' : `${campaigns.length} campaigns tracked.`}
+        subtitle={isConfigError ? 'Meta Ads not connected.' : `${campaigns.length} campaign${campaigns.length !== 1 ? 's' : ''} tracked.`}
         actions={
           <>
-            <Link href="/freehold-intelligence/lead-machine/campaigns/launch" className={buttonClass('primary', 'md')}>
-              <Zap className="h-3.5 w-3.5" /> Launch Campaign
-            </Link>
-            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass('secondary', 'md')}>
-              <Plus className="h-3.5 w-3.5" /> Manual
+            {!isBroker && (
+              <Link href="/freehold-intelligence/lead-machine/campaigns/launch" className={buttonClass('primary', 'md')}>
+                <Zap className="h-3.5 w-3.5" /> Launch Campaign
+              </Link>
+            )}
+            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass(isBroker ? 'primary' : 'secondary', 'md')}>
+              <Plus className="h-3.5 w-3.5" /> {isBroker ? 'New Campaign' : 'Manual'}
             </Link>
           </>
         }
@@ -88,12 +117,14 @@ export default async function CampaignsPage() {
             <div>
               <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
-              <Link
-                href="/freehold-intelligence/integrations/meta"
-                className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
-              >
-                Set up Meta integration <ArrowUpRight className="h-3 w-3" />
-              </Link>
+              {!isBroker && (
+                <Link
+                  href="/freehold-intelligence/integrations/meta"
+                  className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
+                >
+                  Set up Meta integration <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -118,15 +149,20 @@ export default async function CampaignsPage() {
         </div>
       )}
 
-      {/* Campaign list */}
       {campaigns.length > 0 && <CampaignList campaigns={campaigns} />}
 
-      {/* Empty state — connected but no campaigns */}
+      {/* Empty state */}
       {!isConfigError && !data.error && campaigns.length === 0 && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Zap className="mx-auto h-8 w-8 text-gold/40" />
-          <div className="mt-4 text-[18px] font-semibold text-white">No campaigns yet</div>
-          <p className="mt-2 text-[14px] text-slate-400">Create the first campaign to start generating leads from Meta and Instagram.</p>
+          <div className="mt-4 text-[18px] font-semibold text-white">
+            {isBroker ? 'No campaigns yet' : 'No campaigns yet'}
+          </div>
+          <p className="mt-2 text-[14px] text-slate-400">
+            {isBroker
+              ? 'Launch your first Meta campaign to start generating leads.'
+              : 'Create the first campaign to start generating leads from Meta and Instagram.'}
+          </p>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/new"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
@@ -135,7 +171,6 @@ export default async function CampaignsPage() {
           </Link>
         </div>
       )}
-
 
     </div>
   )
