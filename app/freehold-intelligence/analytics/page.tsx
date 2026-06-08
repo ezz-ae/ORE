@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { BarChart2 } from 'lucide-react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
@@ -192,11 +192,29 @@ const DEVICE_FILTER_OPTIONS: { label: string; value: DeviceFilterValue }[] = [
   { label: 'Tablet',  value: 'tablet'  },
 ]
 
+interface LiveLeadAnalytics {
+  total: number
+  last30d: number
+  last7d: number
+  closed: number
+  new: number
+  closingRate: number
+}
+
 export default function AnalyticsPage() {
   const a = siteAnalytics
 
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue>('All')
   const [deviceFilter, setDeviceFilter] = useState<DeviceFilterValue>('All')
+
+  // Live lead analytics from Neon (overlays on mock site analytics)
+  const [liveLeads, setLiveLeads] = useState<LiveLeadAnalytics | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/analytics/leads')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.leads) setLiveLeads(d.leads) })
+      .catch(() => {})
+  }, [])
 
   // Filtered traffic sources (shared by bar chart and table)
   const filteredSources = useMemo(
@@ -243,7 +261,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Page Views" value={a.totalPageViews.toLocaleString('en-US')} hint="Total impressions" delta={{ value: '+12%', direction: 'up' }} />
         <StatCard label="Unique Visitors" value={a.totalUniqueSessions.toLocaleString('en-US')} hint="Sessions · 30d" />
-        <StatCard label="Conversions" value={a.totalConversions.toLocaleString('en-US')} hint={`${(a.conversionRate * 100).toFixed(1)}% conv. rate`} delta={{ value: `${(a.conversionRate * 100).toFixed(1)}%`, direction: 'up' }} />
+        <StatCard label="Leads (DB)" value={(liveLeads?.total ?? a.totalConversions).toLocaleString('en-US')} hint={liveLeads ? `${liveLeads.closingRate}% closing rate · live` : `${(a.conversionRate * 100).toFixed(1)}% conv. rate`} delta={{ value: liveLeads ? `${liveLeads.last30d} / 30d` : `${(a.conversionRate * 100).toFixed(1)}%`, direction: 'up' }} />
         <StatCard label="Avg Session" value={formatDuration(a.avgSessionDuration)} hint="Avg duration" />
       </div>
 
