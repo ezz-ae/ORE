@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next'
-import { getProjectsForGrid, getAreas, getProperties } from '@/lib/ore'
+import { getProjectsForGrid, getAreas, getProperties } from '@/lib/data'
 import { getSiteUrl } from '@/lib/site'
 import { filterAuthorizedAreas } from '@/lib/utils/authorized'
 

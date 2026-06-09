@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getProjectBySlug } from "@/lib/ore"
+import { getProjectBySlug } from "@/lib/data"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

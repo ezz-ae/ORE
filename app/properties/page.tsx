@@ -5,7 +5,7 @@ import { PropertiesToolbar } from "@/components/properties-toolbar"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { getDashboardProjectFilters, getPropertyListing } from "@/lib/ore"
+import { getDashboardProjectFilters, getPropertyListing } from "@/lib/data"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {

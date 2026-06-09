@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import type { DashboardProjectRow } from "@/lib/ore"
+import type { DashboardProjectRow } from "@/lib/data"
 
 interface DashboardProjectsExportProps {
   projects: DashboardProjectRow[]

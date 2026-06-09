@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DashboardAIWidget } from "@/components/dashboard-ai-widget"
-import { getDashboardOverviewData } from "@/lib/ore"
+import { getDashboardOverviewData } from "@/lib/data"
 import Link from "next/link"
 import {
   CalendarCheck,

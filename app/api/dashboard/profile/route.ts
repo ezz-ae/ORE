@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
-import { upsertUserProfile } from "@/lib/ore"
+import { upsertUserProfile } from "@/lib/data"
 import {
   canManageCrmUsers,
   getSessionUser,

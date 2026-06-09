@@ -20,7 +20,7 @@ import {
   getTopROIProjects,
   projectToProperty,
   searchProjects,
-} from "@/lib/ore"
+} from "@/lib/data"
 import { query } from "@/lib/db"
 import {
   getLeadershipLeadRecipients,

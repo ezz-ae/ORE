@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/auth"
 import { logAiProjectUpdate, ProjectUpdateType, updateProjectStatus } from "@/lib/ai-project-updates"
-import { resolveAccessRole } from "@/lib/ore"
+import { resolveAccessRole } from "@/lib/data"
 
 export async function POST(req: Request) {
   try {

@@ -8,7 +8,7 @@ import {
   getDevelopers,
   getProjectsByDeveloper,
   getDeveloperStats,
-} from "@/lib/ore"
+} from "@/lib/data"
 import { shouldShow } from "@/lib/utils/safeDisplay"
 import { filterAuthorizedDevelopers, isAuthorizedDeveloper } from "@/lib/utils/authorized"
 

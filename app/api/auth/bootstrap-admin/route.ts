@@ -7,7 +7,7 @@ import {
   hashPassword,
   logActivity,
 } from "@/lib/auth"
-import { upsertUserProfile } from "@/lib/ore"
+import { upsertUserProfile } from "@/lib/data"
 
 export const runtime = "nodejs"
 

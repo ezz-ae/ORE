@@ -1,7 +1,7 @@
 import { DeveloperCard } from "@/components/developer-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getDevelopers } from "@/lib/ore"
+import { getDevelopers } from "@/lib/data"
 import { filterAuthorizedDevelopers } from "@/lib/utils/authorized"
 import Link from "next/link"
 import { Metadata } from "next"

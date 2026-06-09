@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import type { UserAccessRecord } from "@/lib/ore"
+import type { UserAccessRecord } from "@/lib/data"
 
 interface TeamAccountsPanelProps {
   users: UserAccessRecord[]

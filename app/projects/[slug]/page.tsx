@@ -35,7 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/ore"
+import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/data"
 import { COMPANY_PHONE_E164 } from "@/lib/site"
 import { Toaster } from "@/components/ui/toaster"
 import type { Project } from "@/lib/types/project"
