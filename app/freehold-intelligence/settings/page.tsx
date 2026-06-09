@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
-  Check, AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
-  Palette, Sliders, Save,
+  AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
+  Sliders,
 } from 'lucide-react'
 import { PageHeader, buttonClass } from '@/components/freehold/ui'
 
@@ -77,7 +77,6 @@ const NOTIFICATION_SETTINGS = [
 const BRAND_SETTINGS = [
   { label: 'Company Name',   value: 'Freehold Property Dubai' },
   { label: 'Primary Domain', value: 'freeholdproperty.ae' },
-  { label: 'WhatsApp Number', value: '' },
   { label: 'CRM Timezone',   value: 'Asia/Dubai (UTC+4)' },
 ]
 
@@ -129,16 +128,9 @@ export default function SettingsPage() {
   const [crmFields,   setCrmFields]   = useState<CrmField[]>(INITIAL_CRM_FIELDS)
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
-  const [saved,       setSaved]       = useState(false)
-  const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
-
-  function handleSave() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
-  }
 
   function toggleAiAction(id: string) {
     setAiActions((prev) => prev.map((a) => a.id === id ? { ...a, enabled: !a.enabled } : a))
@@ -173,15 +165,6 @@ export default function SettingsPage() {
           Icon={SettingsIcon}
           title="Settings"
           subtitle="Configure AI permissions, data mapping, and platform thresholds"
-          actions={
-            <button
-              onClick={handleSave}
-              className={saved ? buttonClass('primary', 'md') : buttonClass('secondary', 'md')}
-            >
-              {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-              {saved ? 'Saved' : 'Save Changes'}
-            </button>
-          }
           className="mb-8"
         />
 
