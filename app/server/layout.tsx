@@ -1,4 +1,4 @@
-export const metadata = { title: 'Freehold Admin — Secure Access' }
+export const metadata = { title: 'Freehold Property — Team Sign In' }
 
 export default function ServerLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -20,6 +20,11 @@ function mapListing(row: any) {
   const landingReadinessScore = landingIsReady ? Math.min(100, dataQualityScore + 10) : row.landing_slug ? Math.min(80, dataQualityScore) : Math.min(70, dataQualityScore)
   const adReadinessScore = row.landing_slug ? Math.min(85, landingReadinessScore - (hasPaymentPlan ? 0 : 20)) : Math.min(40, dataQualityScore)
   const opportunityScore = Math.min(100, Math.round((dataQualityScore + landingReadinessScore + adReadinessScore) / 3))
+  const missingRequirements = [
+    ...(!row.landing_slug ? ['Landing page'] : []),
+    ...(!hasPaymentPlan ? ['Payment plan'] : []),
+    ...(!hasMedia ? ['Project media'] : []),
+  ]
   return {
     id: `lm_${row.id}`,
     projectId: row.id,
@@ -29,30 +34,24 @@ function mapListing(row: any) {
     imageUrl: row.hero_image || null,
     startingPrice: row.price_from_aed,
     paymentPlan: row.payment_plan,
-    priceStatus: hasPrice ? 'Ready' : 'Missing',
-    paymentPlanStatus: hasPaymentPlan ? 'Ready' : 'Missing',
-    mediaStatus: hasMedia ? 'Ready' : 'Missing',
+    priceStatus: hasPrice ? 'Ready' : 'Pending',
+    paymentPlanStatus: hasPaymentPlan ? 'Ready' : 'Pending',
+    mediaStatus: hasMedia ? 'Ready' : 'Pending',
     hasMedia,
-    hasIntelligenceBlocks: true,
-    intelligenceBlocksAvailable: 6,
     dataQualityScore,
     landingReadinessScore,
     adReadinessScore,
     opportunityScore,
-    landingStatus: landingIsReady ? 'Landing Active' : row.landing_slug ? 'Landing Draft' : 'Needs Landing',
-    adStatus: adReadinessScore >= 70 ? 'Ready for Ads' : hasPaymentPlan ? 'Needs Review' : 'Missing Data',
-    blockerStatus: adReadinessScore >= 70 ? 'Clear' : hasPaymentPlan ? 'Needs Access' : 'Needs Data',
+    landingStatus: landingIsReady ? 'Landing Active' : row.landing_slug ? 'Landing Draft' : 'Setup Required',
+    adStatus: adReadinessScore >= 70 ? 'Ready for Ads' : hasPaymentPlan ? 'In Review' : 'Data Incomplete',
+    blockerStatus: adReadinessScore >= 70 ? 'Clear' : hasPaymentPlan ? 'Access Required' : 'Data Incomplete',
     currentCampaignStatus: landingIsReady ? 'Approved' : 'Landing Draft',
-    leadFormStatus: row.landing_slug ? 'Ready' : 'Missing',
-    whatsappFlowStatus: row.landing_slug ? 'Ready' : 'Needs Review',
-    missingRequirements: [
-      ...(!row.landing_slug ? ['Landing page'] : []),
-      ...(!hasPaymentPlan ? ['Payment plan'] : []),
-      ...(!hasMedia ? ['Project media'] : []),
-    ],
+    leadFormStatus: row.landing_slug ? 'Ready' : 'Pending',
+    whatsappFlowStatus: row.landing_slug ? 'Ready' : 'In Review',
+    missingRequirements,
     linkedMilestoneId: row.landing_slug ? 'M5' : 'M3',
     owner: row.landing_slug ? 'Marketing' : 'Data Manager',
-    nextAction: row.landing_slug ? 'Review ad readiness and approval requirements.' : 'Request landing page generation.',
+    nextAction: row.landing_slug ? 'Review ad readiness and approval requirements.' : 'Request landing page setup.',
   }
 }
 
@@ -78,21 +77,16 @@ export async function GET() {
     developer: listing.developer,
     landingStatus: listing.landingStatus,
     dataQuality: listing.dataQualityScore,
-    mediaQuality: listing.mediaStatus,
+    mediaReady: listing.mediaStatus === 'Ready',
     paymentPlanReady: listing.paymentPlanStatus === 'Ready',
-    intelligenceBlocks: listing.intelligenceBlocksAvailable,
     adReadiness: listing.adReadinessScore,
     opportunityScore: listing.opportunityScore,
     blocker: listing.missingRequirements[0] || 'None',
     nextAction: listing.nextAction,
   }))
   return NextResponse.json({
-    requestId: crypto.randomUUID(),
-    layer: 'lead-machine',
-    status: 'success',
     data: { listings, matrix },
-    evidence: [`Mapped ${listings.length} live listings from freehold_site_projects`],
-    nextActions: ['Select a listing', 'Review requirements', 'Create landing/ad request'],
+    count: listings.length,
     generatedAt: new Date().toISOString(),
   })
 }
