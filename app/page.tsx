@@ -10,7 +10,23 @@ import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+  title: "Dubai Real Estate | Freehold Property UAE",
+  description:
+    "Buy, sell, and invest in Dubai real estate with Freehold Property — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.",
   alternates: { canonical: "/" },
+  openGraph: {
+    title: "Dubai Real Estate | Freehold Property UAE",
+    description:
+      "Buy, sell, and invest in Dubai real estate with Freehold Property — off-plan projects, ready properties, Golden Visa investment, and expert advisory since 2006.",
+    url: "/",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dubai Real Estate | Freehold Property UAE",
+    description: "Buy, sell, and invest in Dubai real estate with Freehold Property.",
+    images: ["/og-image.png"],
+  },
 }
 
 // ─── Icon helpers ──────────────────────────────────────────────────────────────

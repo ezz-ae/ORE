@@ -43,6 +43,12 @@ export const metadata = {
   title: "Investment Tools | Freehold Properties UAE",
   description: "ROI calculator, payment simulator, comparator, AI discovery, market tracker — Dubai property intelligence in one place.",
   alternates: { canonical: "/tools" },
+  openGraph: {
+    title: "Investment Tools | Freehold Properties UAE",
+    description: "ROI calculator, payment simulator, and AI property discovery for Dubai investors.",
+    url: "/tools",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE Investment Tools" }],
+  },
 }
 
 export default function ToolsPage() {

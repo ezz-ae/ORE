@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     default: "Freehold Property UAE",
     template: "%s | Freehold Property UAE",
   },
-  applicationName: "Freehold Intelligence Command Center",
+  applicationName: "Freehold Property UAE",
   description:
     "Freehold Property UAE real estate advisory for sales, leasing, project marketing, investments, consultancy, valuations, and market intelligence.",
   generator: "Freehold Property UAE",
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
         url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Freehold Intelligence Command Center",
+        alt: "Freehold Property UAE — Dubai Real Estate Advisory",
       },
     ],
   },
