@@ -124,8 +124,8 @@ export interface ProjectLandmark {
 }
 
 export interface ProjectDeveloper extends DeveloperSummary {
-  description: string
-  trackRecord: string
+  description: string | null
+  trackRecord: string | null
 }
 
 export interface ProjectUnitConfig {
@@ -247,8 +247,8 @@ export interface DeveloperProfile {
   logo: string
   bannerImage: string
   galleryImages: string[]
-  description: string
-  trackRecord: string
+  description: string | null
+  trackRecord: string | null
   awards: string[]
   website?: string
   foundedYear?: number

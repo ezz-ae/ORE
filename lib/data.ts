@@ -535,8 +535,8 @@ const normalizeListingProject = (row: ProjectListingRow) => {
       "ore",
     ),
     logo: pickString(enriched.developer?.logo, payloadDeveloperRecord?.logo, "/logo.png"),
-    description: pickString(enriched.developer?.description, "Developer profile"),
-    trackRecord: pickString(enriched.developer?.trackRecord, "Strong delivery track record in Dubai."),
+    description: enriched.developer?.description || null,
+    trackRecord: enriched.developer?.trackRecord || null,
   }
 
   const hasUnits = Array.isArray(enriched.units) && enriched.units.length > 0
@@ -631,8 +631,8 @@ const mapDeveloperRow = (row: DeveloperRow): DeveloperProfile => {
     logo: payload.logo || row.logo || "/logo.png",
     bannerImage: payload.bannerImage || row.banner_image || "/logo.png",
     galleryImages: payload.galleryImages || [payload.bannerImage || row.banner_image || "/logo.png"],
-    description: payload.description || "Developer profile overview.",
-    trackRecord: payload.trackRecord || "Strong delivery track record in Dubai.",
+    description: payload.description || null,
+    trackRecord: payload.trackRecord || null,
     awards: payload.awards || [],
     website: payload.website || undefined,
     foundedYear: payload.foundedYear ? Number(payload.foundedYear) : undefined,

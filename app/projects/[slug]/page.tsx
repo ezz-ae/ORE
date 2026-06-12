@@ -997,7 +997,9 @@ export default async function ProjectPage({
                   <TabsContent value="developer" className="mt-8 space-y-6">
                     <div>
                       <h2 className="font-serif text-2xl font-bold">About {developer.name}</h2>
-                      <p className="mt-3 text-sm text-muted-foreground">{developer.description}</p>
+                      {developer.description && (
+                        <p className="mt-3 text-sm text-muted-foreground">{developer.description}</p>
+                      )}
                     </div>
                     <div className="rounded-lg border border-border bg-card p-6">
                       <div className="flex flex-wrap items-start gap-4">
@@ -1019,10 +1021,12 @@ export default async function ProjectPage({
                             {getAvatarInitial(developer.name)}
                           </div>
                         )}
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Track record</div>
-                          <div className="mt-2 text-sm font-semibold">{developer.trackRecord}</div>
-                        </div>
+                        {developer.trackRecord && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground">Track record</div>
+                            <div className="mt-2 text-sm font-semibold">{developer.trackRecord}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TabsContent>

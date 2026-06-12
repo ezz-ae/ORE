@@ -48,7 +48,7 @@ export async function generateMetadata({
   }
   return {
     title: developer.name,
-    description: developer.description,
+    description: developer.description ?? undefined,
     alternates: {
       canonical: `/developers/${cleanSlug}`,
     },
@@ -109,9 +109,11 @@ export default async function DeveloperDetailPage({
             <h1 className="font-serif text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
               {developer.name}
             </h1>
-            <p className="mt-4 max-w-3xl text-lg text-white/65">
-              {developer.description || "Developer profile overview and flagship project activity in Dubai."}
-            </p>
+            {developer.description && (
+              <p className="mt-4 max-w-3xl text-lg text-white/65">
+                {developer.description}
+              </p>
+            )}
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/70">
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
                 {developer.tier ? `${developer.tier} developer` : "Dubai developer"}
@@ -147,16 +149,19 @@ export default async function DeveloperDetailPage({
               <div className="space-y-8">
                 <div className="rounded-[28px] border border-[#152E24]/10 bg-[#FAF8F5] p-6">
                   <h2 className="font-serif text-3xl font-bold text-[#152E24]">About {developer.name}</h2>
-                  <p className="mt-4 text-sm leading-relaxed text-[#152E24]/60">
-                    {developer.description ||
-                      "A trusted UAE developer delivering premium residential communities across Dubai and beyond."}
-                  </p>
+                  {developer.description && (
+                    <p className="mt-4 text-sm leading-relaxed text-[#152E24]/60">
+                      {developer.description}
+                    </p>
+                  )}
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
                     <div>
                       <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Track record</div>
-                      <div className="mt-2 text-sm text-[#152E24]">
-                        {developer.trackRecord || "Strong delivery pipeline with investor-grade projects."}
-                      </div>
+                      {developer.trackRecord && (
+                        <div className="mt-2 text-sm text-[#152E24]">
+                          {developer.trackRecord}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-[#152E24]/40">Top focus areas</div>
