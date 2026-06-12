@@ -128,6 +128,7 @@ export default function SettingsPage() {
   const [crmFields,   setCrmFields]   = useState<CrmField[]>(INITIAL_CRM_FIELDS)
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
+  const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length

@@ -1669,8 +1669,10 @@ const buildLeadFilter = (alias: string, role: "admin" | "broker", brokerId?: str
 export type AccessRole = "admin" | "broker"
 
 export const resolveAccessRole = (role?: string | null): AccessRole => {
-  const normalized = String(role || "").toLowerCase()
-  return normalized === "broker" ? "broker" : "admin"
+  const normalized = String(role || "").trim().toLowerCase()
+  // Least privilege: an unknown or missing role gets broker scope, never admin.
+  if (!normalized || normalized === "broker") return "broker"
+  return "admin"
 }
 
 export async function getRecentLeads(limit = 5, role: "admin" | "broker" = "admin", brokerId?: string) {
