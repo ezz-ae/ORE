@@ -344,7 +344,7 @@ export async function getLeadershipLeadRecipients() {
   const rows = await query<LeadershipRecipient>(
     `SELECT name, email, phone, org_title AS "orgTitle"
      FROM freehold_site_users
-     WHERE regexp_replace(lower(COALESCE(org_title, role, '')), '\s+', '_', 'g') IN ('ceo', 'general_manager')`,
+     WHERE lower(COALESCE(role, '')) IN ('ceo', 'admin', 'director', 'sales_manager')`,
   )
 
   const recipients = rows.filter(
