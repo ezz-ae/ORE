@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { WhatsAppFloat } from "@/components/whatsapp-float"
 import { BRAND_OG_IMAGE, getMetadataBase, getSiteUrl } from "@/lib/site"
 import "./globals.css"
 
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
     default: "Freehold Property UAE",
     template: "%s | Freehold Property UAE",
   },
-  applicationName: "Freehold Intelligence Command Center",
+  applicationName: "Freehold Property UAE",
   description:
     "Freehold Property UAE real estate advisory for sales, leasing, project marketing, investments, consultancy, valuations, and market intelligence.",
   generator: "Freehold Property UAE",
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
         url: BRAND_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "Freehold Intelligence Command Center",
+        alt: "Freehold Property UAE — Dubai Real Estate Advisory",
       },
     ],
   },
@@ -166,6 +167,7 @@ export default function RootLayout({
               {children}
             </main>
             <SiteFooter />
+            <WhatsAppFloat />
           </div>
         </ThemeProvider>
         <Analytics />

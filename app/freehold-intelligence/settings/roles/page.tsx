@@ -54,7 +54,7 @@ const PERM_MATRIX: PermGroup[] = [
 ]
 
 const ROLES: { id: Role; Icon: React.ElementType; color: string; desc: string }[] = [
-  { id: 'Owner',  Icon: Crown,  color: 'text-[#D4AF37]',  desc: 'Full access, billing, API' },
+  { id: 'Owner',  Icon: Crown,  color: 'text-gold',  desc: 'Full access, billing, API' },
   { id: 'Admin',  Icon: Shield, color: 'text-violet-400', desc: 'Team, campaigns, CRM' },
   { id: 'Agent',  Icon: User,   color: 'text-sky-400',    desc: 'Own pipeline & ads' },
   { id: 'Viewer', Icon: User,   color: 'text-slate-400',  desc: 'Read-only access' },
@@ -80,7 +80,7 @@ export default function RolesPage() {
       {/* Role cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {ROLES.map(({ id, Icon, color, desc }) => (
-          <div key={id} className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+          <div key={id} className="rounded-[16px] border border-line bg-surface p-4">
             <Icon className={`h-5 w-5 ${color}`} />
             <div className={`mt-2 text-sm font-semibold ${color}`}>{id}</div>
             <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{desc}</div>
@@ -93,7 +93,7 @@ export default function RolesPage() {
         {PERM_MATRIX.map((group) => {
           const isOpen = expanded.includes(group.label)
           return (
-            <div key={group.label} className="rounded-[16px] border border-slate-800 bg-slate-900 overflow-hidden">
+            <div key={group.label} className="rounded-[16px] border border-line bg-surface overflow-hidden">
               <button
                 onClick={() => toggle(group.label)}
                 className="flex w-full items-center justify-between px-5 py-3.5"
@@ -102,9 +102,9 @@ export default function RolesPage() {
                 {isOpen ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
               </button>
               {isOpen && (
-                <div className="border-t border-slate-800">
+                <div className="border-t border-line">
                   {/* Header row */}
-                  <div className="grid grid-cols-5 gap-0 border-b border-slate-800 px-5 py-2">
+                  <div className="grid grid-cols-5 gap-0 border-b border-line px-5 py-2">
                     <div className="text-xs text-slate-600 col-span-2">Permission</div>
                     {ROLES.map(({ id, Icon, color }) => (
                       <div key={id} className={`flex items-center justify-center gap-1 text-xs font-medium ${color}`}>
@@ -115,7 +115,7 @@ export default function RolesPage() {
                   </div>
                   {/* Permission rows */}
                   {group.items.map((item) => (
-                    <div key={item.id} className="grid grid-cols-5 items-center gap-0 border-b border-slate-800/50 px-5 py-3 last:border-0">
+                    <div key={item.id} className="grid grid-cols-5 items-center gap-0 border-b border-line px-5 py-3 last:border-0">
                       <div className="col-span-2 text-sm text-slate-400">{item.label}</div>
                       {ROLES.map(({ id }) => (
                         <div key={id} className="flex items-center justify-center">

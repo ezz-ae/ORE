@@ -5,7 +5,6 @@ import React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, GitBranch, CheckCircle2, AlertCircle, ArrowUpRight, Zap, Clock } from 'lucide-react'
 import { crmInboxLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type RuleStatus = 'active' | 'pending' | 'planned'
 
@@ -45,8 +44,8 @@ const FOLLOWUP_RULES: Rule[] = [
 ]
 
 const RULE_STATUS_CONFIG: Record<RuleStatus, { label: string; icon: React.ElementType; classes: string }> = {
-  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]' },
-  pending: { label: 'Pending',  icon: Clock,        classes: 'text-[#D4AF37] border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]' },
+  active:  { label: 'Active',   icon: CheckCircle2, classes: 'text-gold border-gold/20 bg-gold/[0.07]' },
+  pending: { label: 'Pending',  icon: Clock,        classes: 'text-gold border-gold/20 bg-gold/[0.07]' },
   planned: { label: 'Planned',  icon: AlertCircle,  classes: 'text-slate-400 border-sky-400/20 bg-sky-400/[0.07]'     },
 }
 
@@ -60,7 +59,7 @@ function RuleRow({ rule }: { rule: Rule }) {
   const conf = RULE_STATUS_CONFIG[rule.status]
   const Icon = conf.icon
   return (
-    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-slate-800 bg-slate-900' : rule.status === 'pending' ? 'border-[#D4AF37]/15 bg-[#D4AF37]/[0.03]' : 'border-slate-800/40 bg-slate-900/40'}`}>
+    <div className={`flex items-start gap-4 rounded-[16px] border p-5 ${rule.status === 'active' ? 'border-line bg-surface' : rule.status === 'pending' ? 'border-gold/15 bg-gold/[0.03]' : 'border-line bg-surface'}`}>
       <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${conf.classes.split(' ')[0]}`} />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-slate-100">{rule.trigger}</div>
@@ -105,7 +104,7 @@ export default function LeadWorkflowPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
             <GitBranch className="h-3.5 w-3.5" /> Lead Workflow
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/10 px-2.5 py-0.5 text-xs font-medium text-slate-400">
@@ -123,12 +122,12 @@ export default function LeadWorkflowPage() {
       {/* Live status stats */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Active rules',      value: activeRules,  color: 'text-[#D4AF37]' },
-          { label: 'Pending rules',     value: pendingRules, color: 'text-[#D4AF37]' },
+          { label: 'Active rules',      value: activeRules,  color: 'text-gold' },
+          { label: 'Pending rules',     value: pendingRules, color: 'text-gold' },
           { label: 'Unassigned leads',  value: unassigned,   color: unassigned > 0 ? 'text-red-300' : 'text-white' },
           { label: 'Overdue follow-ups', value: overdue,     color: overdue > 0 ? 'text-orange-300' : 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+          <div key={stat.label} className="rounded-[18px] border border-line bg-surface p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-sm text-slate-500">{stat.label}</div>
           </div>
@@ -144,11 +143,11 @@ export default function LeadWorkflowPage() {
           <button key={key} onClick={() => setStatusFilter(key)}
             className={['rounded-full border px-3 py-1 text-sm font-medium transition',
               statusFilter === key
-                ? key === 'active'  ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : key === 'pending' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                ? key === 'active'  ? 'border-emerald-400/40 bg-gold/10 text-gold'
+                  : key === 'pending' ? 'border-gold/40 bg-gold/10 text-gold'
                   : key === 'planned' ? 'border-sky-400/40 bg-sky-400/10 text-slate-400'
-                  : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                  : 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
             ].join(' ')}>{label}</button>
         ))}
         <span className="self-center text-slate-700">|</span>
@@ -159,8 +158,8 @@ export default function LeadWorkflowPage() {
           <button key={key} onClick={() => setStepFilter(key)}
             className={['rounded-full border px-3 py-1 text-sm font-medium transition',
               stepFilter === key
-                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                ? 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
             ].join(' ')}>{label}</button>
         ))}
       </div>
@@ -170,13 +169,13 @@ export default function LeadWorkflowPage() {
 
       {/* Pending blockers */}
       {pendingRules > 0 && (
-        <div className="mt-6 flex items-start gap-3 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
+        <div className="mt-6 flex items-start gap-3 rounded-[18px] border border-gold/20 bg-gold/[0.04] p-5">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
           <div>
             <div className="text-sm font-semibold text-white">{pendingRules} workflow rules are waiting on integrations</div>
             <p className="mt-1 text-sm text-slate-400">
               Meta Ads lead capture and WhatsApp automated follow-up require those integrations to be live first. Connect them under{' '}
-              <Link href="/freehold-intelligence/integrations" className="text-[#D4AF37]/80 underline hover:text-[#D4AF37]">Integrations</Link>.
+              <Link href="/freehold-intelligence/integrations" className="text-gold/80 underline hover:text-gold">Integrations</Link>.
             </p>
           </div>
         </div>
@@ -189,7 +188,7 @@ export default function LeadWorkflowPage() {
           <h2 className="mt-2 text-xl font-semibold text-white">Intake rules</h2>
           <p className="mt-1 text-sm text-slate-400">What happens the moment a lead arrives from any channel.</p>
           {filteredIntake.length === 0 ? (
-            <div className="mt-5 rounded-[16px] border border-slate-800/40 bg-slate-900/40 px-5 py-8 text-center text-xs text-slate-500">
+            <div className="mt-5 rounded-[16px] border border-line bg-surface px-5 py-8 text-center text-xs text-slate-500">
               No intake rules match these filters.
             </div>
           ) : (
@@ -207,7 +206,7 @@ export default function LeadWorkflowPage() {
           <h2 className="mt-2 text-xl font-semibold text-white">Routing logic</h2>
           <p className="mt-1 text-sm text-slate-400">How leads are matched to agents based on intent, source, and availability.</p>
           {filteredRouting.length === 0 ? (
-            <div className="mt-5 rounded-[16px] border border-slate-800/40 bg-slate-900/40 px-5 py-8 text-center text-xs text-slate-500">
+            <div className="mt-5 rounded-[16px] border border-line bg-surface px-5 py-8 text-center text-xs text-slate-500">
               No routing rules match these filters.
             </div>
           ) : (
@@ -225,7 +224,7 @@ export default function LeadWorkflowPage() {
           <h2 className="mt-2 text-xl font-semibold text-white">Follow-up automation</h2>
           <p className="mt-1 text-sm text-slate-400">Time-based escalation and automated outreach rules.</p>
           {filteredFollowup.length === 0 ? (
-            <div className="mt-5 rounded-[16px] border border-slate-800/40 bg-slate-900/40 px-5 py-8 text-center text-xs text-slate-500">
+            <div className="mt-5 rounded-[16px] border border-line bg-surface px-5 py-8 text-center text-xs text-slate-500">
               No follow-up rules match these filters.
             </div>
           ) : (
@@ -246,27 +245,17 @@ export default function LeadWorkflowPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center justify-between rounded-[16px] border border-slate-800 bg-slate-900 px-5 py-4 transition hover:border-[#D4AF37]/25"
+            className="group flex items-center justify-between rounded-[16px] border border-line bg-surface px-5 py-4 transition hover:border-gold/25"
           >
             <div>
               <div className="text-sm font-semibold text-slate-100 transition group-hover:text-white">{item.label}</div>
               <div className="mt-0.5 text-xs text-slate-500">{item.note}</div>
             </div>
-            <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
+            <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />
           </Link>
         ))}
       </section>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about intake rules, routing, follow-up automation…"
-          suggestions={[
-            'How does a Palm landing lead get assigned to an agent?',
-            'What triggers the 48h follow-up automation?',
-            'Which integrations are needed to complete the workflow?',
-          ]}
-        />
-      </section>
 
     </div>
   )

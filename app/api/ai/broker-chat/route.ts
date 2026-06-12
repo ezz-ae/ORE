@@ -13,13 +13,14 @@ import {
 } from "@/lib/gemini"
 import {
   getDashboardProjectBySlug,
+  getLlmContextByArea,
   getRecentLeads,
   getTopROIProjects,
   resolveAccessRole,
   searchCrmLeads,
   searchProjects,
   upsertDashboardProject,
-} from "@/lib/ore"
+} from "@/lib/data"
 import { getSessionUser, logActivity } from "@/lib/auth"
 import { appendConversationMessage, upsertConversationMessage } from "@/lib/ai-conversations"
 import type { AiMessageRecord } from "@/lib/ai-conversations"
@@ -571,6 +572,17 @@ export async function POST(req: NextRequest) {
             return `- ${project.name} | ${getProjectArea(project)} | ROI ${roi != null ? `${roi}%` : "n/a"}`
           })
           .join("\n")}`
+      }
+
+      // Ground the reply in live area intelligence when the message points at
+      // a real project or area, mirroring the public chat's context injection.
+      const matchedProjects = await searchProjects(message, 1).catch(() => [])
+      const matchedArea = matchedProjects[0] ? getProjectArea(matchedProjects[0]) : ""
+      if (matchedArea) {
+        const areaContext = await getLlmContextByArea(matchedArea, 6).catch(() => "")
+        if (areaContext) {
+          context += `\n\nAREA INTELLIGENCE (Data: Freehold Intelligence — ${matchedArea}):\n${areaContext}`
+        }
       }
 
       if (!hasGeminiKey) {

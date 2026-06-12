@@ -1,46 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, Bot, TrendingDown, AlertTriangle, TrendingUp, MessageCircle, Gauge, Home, BarChart3, CheckCircle2 } from 'lucide-react'
-import { inventoryProperties, getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
+import { getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 
 // ─── derived values ────────────────────────────────────────────────────────────
 const stats = getInventoryStats()
-
-const kpiCards = [
-  {
-    label: 'Total Ad Spend (30d)',
-    value: `AED ${financeSummary.totalSpend30d.toLocaleString()}`,
-    sub: 'Combined Meta + Google',
-  },
-  {
-    label: 'Avg Cost Per Lead',
-    value: `AED ${financeSummary.avgCpl30d}`,
-    sub: 'Down 17% vs last month',
-  },
-  {
-    label: 'Total Leads (30d)',
-    value: financeSummary.totalLeads30d.toLocaleString(),
-    sub: 'Across all campaigns',
-  },
-  {
-    label: 'Site Visitors (30d)',
-    value: siteAnalytics.totalUniqueSessions.toLocaleString(),
-    sub: 'Unique sessions',
-  },
-  {
-    label: 'Ad-Ready Properties',
-    value: `${stats.adReady} / ${stats.total}`,
-    sub: 'Readiness score ≥ 70%',
-  },
-  {
-    label: 'Live Landing Pages',
-    value: String(stats.live),
-    sub: `${stats.missingLanding} missing`,
-  },
-]
 
 // ─── insight types ─────────────────────────────────────────────────────────────
 type Priority = 'Critical' | 'High' | 'Opportunity' | 'Info'
@@ -107,7 +74,7 @@ const insights: Insight[] = [
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
-  Opportunity: { label: 'Opportunity', className: 'bg-[#D4AF37]/10 border border-emerald-500/25 text-[#D4AF37]' },
+  Opportunity: { label: 'Opportunity', className: 'bg-gold/10 border border-emerald-500/25 text-gold' },
   Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-slate-400' },
 }
 
@@ -121,15 +88,15 @@ const contentRows = [
 ]
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-[#D4AF37]'
-  if (score >= 60) return 'text-[#D4AF37]'
+  if (score >= 80) return 'text-gold'
+  if (score >= 60) return 'text-gold'
   return 'text-red-400'
 }
 
 function statusBadge(status: string) {
-  if (status === 'Good')       return 'bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37]'
+  if (status === 'Good')       return 'bg-gold/10 border border-gold/20 text-gold'
   if (status === 'Needs work') return 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
-  return 'bg-slate-800/50 border border-slate-700 text-slate-400'
+  return 'bg-surface-2 border border-line-strong text-slate-400'
 }
 
 // ─── recommended actions ───────────────────────────────────────────────────────
@@ -158,6 +125,54 @@ const actions = [
 export default function InsightsPage() {
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated]   = useState(false)
+  const [liveLeads30d, setLiveLeads30d]   = useState<number | null>(null)
+  const [liveSpend30d, setLiveSpend30d]   = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/analytics/leads')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.last30d != null) setLiveLeads30d(d.last30d) })
+      .catch(() => {})
+    fetch('/api/freehold/finance/summary')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.last30dSpendAED != null) setLiveSpend30d(d.last30dSpendAED) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const kpiCards = [
+    {
+      label: 'Total Ad Spend (30d)',
+      value: `AED ${(liveSpend30d ?? financeSummary.totalSpend30d).toLocaleString()}`,
+      sub: 'Combined Meta + Google',
+    },
+    {
+      label: 'Avg Cost Per Lead',
+      value: `AED ${financeSummary.avgCpl30d}`,
+      sub: 'Down 17% vs last month',
+    },
+    {
+      label: 'Total Leads (30d)',
+      value: (liveLeads30d ?? financeSummary.totalLeads30d).toLocaleString(),
+      sub: 'Across all campaigns',
+    },
+    {
+      label: 'Site Visitors (30d)',
+      value: siteAnalytics.totalUniqueSessions.toLocaleString(),
+      sub: 'Unique sessions',
+    },
+    {
+      label: 'Ad-Ready Properties',
+      value: `${stats.adReady} / ${stats.total}`,
+      sub: 'Readiness score ≥ 70%',
+    },
+    {
+      label: 'Live Landing Pages',
+      value: String(stats.live),
+      sub: `${stats.missingLanding} missing`,
+    },
+  ]
 
   function handleGenerate() {
     if (generating) return
@@ -208,7 +223,7 @@ export default function InsightsPage() {
       </div>
 
       {generated && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3 text-sm text-[#D4AF37]">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-gold">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Report generated — insights refreshed from latest data.
         </div>
@@ -225,7 +240,7 @@ export default function InsightsPage() {
           {kpiCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+              className="rounded-2xl border border-line bg-surface-2 p-5"
             >
               <div className="text-xs font-medium uppercase tracking-widest text-slate-500">
                 {card.label}
@@ -253,7 +268,7 @@ export default function InsightsPage() {
             return (
               <div
                 key={insight.title}
-                className="rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+                className="rounded-2xl border border-line bg-surface-2 p-5"
               >
                 <div className="flex items-start gap-4">
                   {/* rose sparkles icon */}
@@ -290,10 +305,10 @@ export default function InsightsPage() {
           <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Content Performance by Section</h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-800/50">
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 {['Section', 'Items', 'Published', 'Avg SEO', 'Status'].map((h) => (
                   <th
                     key={h}
@@ -309,8 +324,8 @@ export default function InsightsPage() {
                 <tr
                   key={row.section}
                   className={[
-                    'transition hover:bg-slate-800/30',
-                    i !== contentRows.length - 1 ? 'border-b border-slate-800' : '',
+                    'transition hover:bg-surface-2',
+                    i !== contentRows.length - 1 ? 'border-b border-line' : '',
                   ].join(' ')}
                 >
                   <td className="px-5 py-4 font-medium text-slate-300">{row.section}</td>
@@ -342,7 +357,7 @@ export default function InsightsPage() {
           {actions.map((action) => (
             <div
               key={action.n}
-              className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-800/50 p-5"
+              className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-2 p-5"
             >
               {/* number badge */}
               <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-sm font-bold text-slate-400">

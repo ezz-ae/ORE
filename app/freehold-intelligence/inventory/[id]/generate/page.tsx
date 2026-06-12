@@ -87,35 +87,35 @@ const AI_VARIANTS: Record<string, (p: InventoryProperty) => Partial<LandingConfi
 
 function PhonePreview({ prop, config }: { prop: InventoryProperty; config: LandingConfig }) {
   return (
-    <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-slate-900 shadow-2xl overflow-hidden">
+    <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-surface shadow-2xl overflow-hidden">
       {/* notch */}
       <div className="flex justify-center py-2">
         <div className="h-1.5 w-12 rounded-full bg-white/10" />
       </div>
       <div className="h-[520px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* topbar */}
-        <div className="flex items-center justify-between bg-slate-900/90 px-3 py-2 border-b border-slate-800">
-          <span className="text-[7px] font-bold tracking-wide text-[#D4AF37]">FREEHOLD</span>
-          <span className="flex items-center gap-0.5 rounded-full border border-[#D4AF37]/20 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">
+        <div className="flex items-center justify-between bg-surface px-3 py-2 border-b border-line">
+          <span className="text-[7px] font-bold tracking-wide text-gold">FREEHOLD</span>
+          <span className="flex items-center gap-0.5 rounded-full border border-gold/20 px-1.5 py-0.5 text-[6px] text-gold">
             <Phone className="h-2 w-2" /> Call
           </span>
         </div>
         {/* hero */}
         <div className="px-4 pt-6 pb-4" style={{ background: 'radial-gradient(ellipse 100% 50% at 50% 0%, rgba(212,175,55,0.15) 0%, transparent 60%)' }}>
           <div className="flex gap-1 mb-2 flex-wrap">
-            <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-1.5 py-0.5 text-[6px] text-[#D4AF37]">{prop.area}</span>
-            <span className="rounded-full border border-white/[0.10] bg-slate-800/40 px-1.5 py-0.5 text-[6px] text-slate-400">{prop.developer}</span>
+            <span className="rounded-full border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[6px] text-gold">{prop.area}</span>
+            <span className="rounded-full border border-white/[0.10] bg-surface-2 px-1.5 py-0.5 text-[6px] text-slate-400">{prop.developer}</span>
           </div>
           <div className="text-xs font-bold text-white leading-tight">{config.headline}</div>
           <div className="mt-0.5 text-[7px] text-slate-500">{config.subheadline}</div>
-          <button className="mt-3 w-full rounded-[6px] bg-[#D4AF37] py-1.5 text-[7px] font-bold text-[#0D1117]">
+          <button className="mt-3 w-full rounded-[6px] bg-gold py-1.5 text-[7px] font-bold text-ink">
             {config.ctaText} →
           </button>
         </div>
         {/* facts */}
-        <div className="grid grid-cols-4 border-y border-slate-800 bg-[#0D1321]">
+        <div className="grid grid-cols-4 border-y border-line bg-[#0D1321]">
           {[prop.bedrooms + 'BR', prop.sizeRange?.split('–')[0] || '—', prop.roi ? prop.roi.toFixed(1)+'%' : '—', String(prop.handoverYear || '—')].map((v, i) => (
-            <div key={i} className="border-r border-slate-800 last:border-r-0 py-2 text-center">
+            <div key={i} className="border-r border-line last:border-r-0 py-2 text-center">
               <div className="text-[9px] font-semibold text-slate-300">{v}</div>
             </div>
           ))}
@@ -123,23 +123,23 @@ function PhonePreview({ prop, config }: { prop: InventoryProperty; config: Landi
         {/* highlights */}
         <div className="px-4 py-4 space-y-1.5">
           {config.highlights.slice(0, 3).map((h, i) => (
-            <div key={i} className="flex items-start gap-1.5 rounded-[8px] border border-slate-800 bg-slate-800/40 px-2 py-1.5">
-              <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/10 flex items-center justify-center">
-                <Check className="h-1.5 w-1.5 text-[#D4AF37]" />
+            <div key={i} className="flex items-start gap-1.5 rounded-[8px] border border-line bg-surface-2 px-2 py-1.5">
+              <div className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center">
+                <Check className="h-1.5 w-1.5 text-gold" />
               </div>
               <span className="text-[7px] text-slate-400 leading-tight">{h}</span>
             </div>
           ))}
         </div>
         {/* form */}
-        <div className="mx-4 mb-4 rounded-[12px] border border-[#D4AF37]/15 bg-slate-900 p-3">
+        <div className="mx-4 mb-4 rounded-[12px] border border-gold/15 bg-surface p-3">
           <div className="text-[8px] font-bold text-white mb-2">Request Exclusive Pricing</div>
           {['Full Name', 'Phone / WhatsApp', config.leadFields.email ? 'Email' : null].filter(Boolean).map((f) => (
-            <div key={f} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-slate-800/40 px-1.5 flex items-center">
+            <div key={f} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-surface-2 px-1.5 flex items-center">
               <span className="text-[6px] text-slate-600">{f}…</span>
             </div>
           ))}
-          <div className="mt-2 rounded-[6px] bg-[#D4AF37] py-1.5 text-center text-[7px] font-bold text-[#0D1117]">
+          <div className="mt-2 rounded-[6px] bg-gold py-1.5 text-center text-[7px] font-bold text-ink">
             {config.ctaText}
           </div>
         </div>
@@ -154,7 +154,7 @@ function SectionPanel({
   title, open, onToggle, children,
 }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
-    <div className="rounded-[16px] border border-slate-800 bg-slate-800/40 overflow-hidden">
+    <div className="rounded-[16px] border border-line bg-surface-2 overflow-hidden">
       <button
         className="flex w-full items-center justify-between px-5 py-4 text-left"
         onClick={onToggle}
@@ -162,7 +162,7 @@ function SectionPanel({
         <span className="text-sm font-medium text-white">{title}</span>
         {open ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
       </button>
-      {open && <div className="border-t border-slate-800 px-5 pb-5 pt-4">{children}</div>}
+      {open && <div className="border-t border-line px-5 pb-5 pt-4">{children}</div>}
     </div>
   )
 }
@@ -255,7 +255,7 @@ export default function GenerateLandingPage() {
               href={lpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
+              className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
             >
               <Eye className="h-3.5 w-3.5" /> Preview
             </a>
@@ -265,7 +265,7 @@ export default function GenerateLandingPage() {
               className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
                 published
                   ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                  : 'bg-[#D4AF37] text-[#0D1117] hover:bg-[#F0CB67]'
+                  : 'bg-gold text-ink hover:bg-[#F0CB67]'
               }`}
             >
               {publishing ? (
@@ -305,11 +305,11 @@ export default function GenerateLandingPage() {
         <div className="flex-1 min-w-0 space-y-3">
 
           {/* AI Redesign strip */}
-          <div className="rounded-[16px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-4">
+          <div className="rounded-[16px] border border-gold/20 bg-gold/[0.04] p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-                <span className="text-sm font-medium text-[#D4AF37]">AI Full Redesign</span>
+                <Sparkles className="h-4 w-4 text-gold" />
+                <span className="text-sm font-medium text-gold">AI Full Redesign</span>
               </div>
               <button
                 onClick={() => setShowAiBox(!showAiBox)}
@@ -326,7 +326,7 @@ export default function GenerateLandingPage() {
                     key={v}
                     onClick={() => aiRedesign(v)}
                     disabled={redesigning}
-                    className={`rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-3 py-1.5 text-xs capitalize text-[#D4AF37]/80 transition hover:bg-[#D4AF37]/15 disabled:opacity-50`}
+                    className={`rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1.5 text-xs capitalize text-gold/80 transition hover:bg-gold/15 disabled:opacity-50`}
                   >
                     {redesigning ? '…' : v.replace('_', ' ')}
                   </button>
@@ -339,12 +339,12 @@ export default function GenerateLandingPage() {
                   onChange={(e) => setAiPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCustomAi()}
                   placeholder="e.g. Make it more luxury focused, target GCC buyers…"
-                  className="flex-1 rounded-[10px] border border-white/[0.10] bg-slate-800/40 px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-[#D4AF37]/30"
+                  className="flex-1 rounded-[10px] border border-white/[0.10] bg-surface-2 px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-gold/30"
                 />
                 <button
                   onClick={handleCustomAi}
                   disabled={redesigning || !aiPrompt.trim()}
-                  className="rounded-[10px] bg-[#D4AF37] px-4 py-2 text-xs font-medium text-[#0D1117] transition hover:bg-[#F0CB67] disabled:opacity-50"
+                  className="rounded-[10px] bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-50"
                 >
                   {redesigning ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                 </button>
@@ -352,7 +352,7 @@ export default function GenerateLandingPage() {
             )}
 
             {redesigning && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-[#D4AF37]/60">
+              <div className="mt-3 flex items-center gap-2 text-xs text-gold/60">
                 <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                 Redesigning all sections…
               </div>
@@ -367,7 +367,7 @@ export default function GenerateLandingPage() {
                 <input
                   value={config.headline}
                   onChange={(e) => setConfig((p) => ({ ...p, headline: e.target.value }))}
-                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30"
                 />
               </div>
               <div>
@@ -375,7 +375,7 @@ export default function GenerateLandingPage() {
                 <input
                   value={config.subheadline}
                   onChange={(e) => setConfig((p) => ({ ...p, subheadline: e.target.value }))}
-                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30"
                 />
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function GenerateLandingPage() {
                       next[i] = e.target.value
                       setConfig((p) => ({ ...p, highlights: next }))
                     }}
-                    className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-sm text-white outline-none focus:border-[#D4AF37]/30"
+                    className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-sm text-white outline-none focus:border-gold/30"
                   />
                 </div>
               ))}
@@ -411,11 +411,11 @@ export default function GenerateLandingPage() {
               <button
                 onClick={() => setConfig((p) => ({ ...p, showPaymentPlan: !p.showPaymentPlan }))}
                 className={`relative h-6 w-11 rounded-full border transition ${
-                  config.showPaymentPlan ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-white/[0.1] bg-slate-800/40'
+                  config.showPaymentPlan ? 'border-gold/40 bg-gold/20' : 'border-white/[0.1] bg-surface-2'
                 }`}
               >
                 <span className={`absolute top-0.5 h-5 w-5 rounded-full border transition-all ${
-                  config.showPaymentPlan ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-white/20 bg-white/30'
+                  config.showPaymentPlan ? 'left-5 border-gold/60 bg-gold' : 'left-0.5 border-white/20 bg-white/30'
                 }`} />
               </button>
             </div>
@@ -429,7 +429,7 @@ export default function GenerateLandingPage() {
                 <input
                   value={config.ctaText}
                   onChange={(e) => setConfig((p) => ({ ...p, ctaText: e.target.value }))}
-                  className="w-full rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5 text-sm text-white outline-none focus:border-[#D4AF37]/30"
+                  className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30"
                 />
               </div>
               <div>
@@ -438,13 +438,13 @@ export default function GenerateLandingPage() {
                   {(Object.entries(config.leadFields) as [keyof typeof config.leadFields, boolean][]).map(([key, val]) => (
                     <label key={key}
                       className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition select-none ${
-                        val ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-[#D4AF37]/90' : 'border-slate-800 text-slate-500'
+                        val ? 'border-gold/30 bg-gold/[0.07] text-gold/90' : 'border-line text-slate-500'
                       }`}
                     >
                       <input type="checkbox" className="sr-only" checked={val}
                         onChange={() => setConfig((p) => ({ ...p, leadFields: { ...p.leadFields, [key]: !val } }))}
                       />
-                      {val && <Check className="h-3 w-3 text-[#D4AF37]" />}
+                      {val && <Check className="h-3 w-3 text-gold" />}
                       {key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')}
                     </label>
                   ))}
@@ -454,7 +454,7 @@ export default function GenerateLandingPage() {
           </SectionPanel>
 
           {/* Quick property info */}
-          <div className="rounded-[16px] border border-slate-800 bg-slate-800/40 px-5 py-4">
+          <div className="rounded-[16px] border border-line bg-surface-2 px-5 py-4">
             <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-600">Property Data</div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {[
@@ -484,7 +484,7 @@ export default function GenerateLandingPage() {
               href={lpUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
             >
               <Eye className="h-3.5 w-3.5" /> Open full page
             </a>

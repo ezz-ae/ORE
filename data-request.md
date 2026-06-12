@@ -1,4 +1,4 @@
-ORE Data Agent Request
+Freehold Data Agent Request
 
 Goal
 Fix media uniqueness at the data level and document data structures for PDFs, users, and leads. Data work should happen in the backend (Neon) so the frontend only reads.

@@ -22,15 +22,15 @@ const STATUS_PILLS: { key: StatusFilter; label: string }[] = [
 ]
 
 function statusConfig(s: RouteStatus) {
-  if (s === 'live')    return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Live'    }
-  if (s === 'pending') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Pending' }
+  if (s === 'live')    return { dot: 'bg-gold', text: 'text-gold', label: 'Live'    }
+  if (s === 'pending') return { dot: 'bg-gold', text: 'text-[#F8E7AE]', label: 'Pending' }
   if (s === 'planned') return { dot: 'bg-sky-400',   text: 'text-sky-200',   label: 'Planned' }
   return                      { dot: 'bg-red-400',   text: 'text-red-300',   label: 'Down'    }
 }
 
 function StatusIcon({ s }: { s: RouteStatus }) {
-  if (s === 'live')    return <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
-  if (s === 'pending') return <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />
+  if (s === 'live')    return <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
+  if (s === 'pending') return <Clock className="h-3.5 w-3.5 text-gold" />
   if (s === 'planned') return <Clock className="h-3.5 w-3.5 text-slate-400" />
   return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
 }
@@ -74,11 +74,11 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
             className={[
               'rounded-full border px-3 py-1 text-sm font-medium transition',
               statusFilter === key
-                ? key === 'live'    ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : key === 'pending' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
+                ? key === 'live'    ? 'border-emerald-400/40 bg-gold/10 text-gold'
+                  : key === 'pending' ? 'border-gold/40 bg-gold/10 text-gold'
                   : key === 'planned' ? 'border-sky-400/40 bg-sky-400/10 text-slate-400'
-                  : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                  : 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
             ].join(' ')}
           >
             {label}
@@ -94,8 +94,8 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
         <section className="mt-10">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Route audit — pages</div>
           <h2 className="mt-1.5 text-lg font-semibold text-white">{pages.length} page route{pages.length !== 1 ? 's' : ''}</h2>
-          <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-            <div className="divide-y divide-slate-800">
+          <div className="mt-4 overflow-hidden rounded-[22px] border border-line bg-surface">
+            <div className="divide-y divide-line">
               {pages.map((route) => <RouteRow key={route.path} route={route} />)}
             </div>
           </div>
@@ -107,8 +107,8 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
         <section className="mt-8">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Route audit — API</div>
           <h2 className="mt-1.5 text-lg font-semibold text-white">{apis.length} API route{apis.length !== 1 ? 's' : ''}</h2>
-          <div className="mt-4 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-            <div className="divide-y divide-slate-800">
+          <div className="mt-4 overflow-hidden rounded-[22px] border border-line bg-surface">
+            <div className="divide-y divide-line">
               {apis.map((route) => <RouteRow key={route.path} route={route} />)}
             </div>
           </div>
@@ -123,8 +123,8 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
             {gates.map((gate) => {
               const st = statusConfig(gate.status)
               return (
-                <div key={gate.path} className="flex items-start gap-3 rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-4">
-                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#D4AF37]" />
+                <div key={gate.path} className="flex items-start gap-3 rounded-[18px] border border-gold/15 bg-gold/[0.03] p-4">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold text-white">{gate.path}</div>
                     <p className="mt-0.5 text-xs text-slate-400">{gate.note}</p>
@@ -138,9 +138,9 @@ export function RouteSections({ routes }: { routes: RouteEntry[] }) {
       )}
 
       {filtered.length === 0 && (
-        <div className="mt-10 rounded-[22px] border border-slate-800 bg-slate-800/50 px-6 py-14 text-center text-sm text-slate-500">
+        <div className="mt-10 rounded-[22px] border border-line bg-surface-2 px-6 py-14 text-center text-sm text-slate-500">
           No routes match this filter.{' '}
-          <button onClick={() => setStatusFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">
+          <button onClick={() => setStatusFilter('All')} className="ml-1 text-gold/60 hover:text-gold">
             Show all
           </button>
         </div>

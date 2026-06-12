@@ -30,12 +30,12 @@ function fmtSize(n: number): string {
 // ─── Badge colour maps ────────────────────────────────────────────────────────
 
 const TYPE_BADGE: Record<GoogleAudienceType, string> = {
-  CUSTOMER_MATCH:   'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20',
+  CUSTOMER_MATCH:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
   IN_MARKET:        'bg-sky-400/10 text-slate-400 border-sky-400/20',
   AFFINITY:         'bg-violet-400/10 text-slate-400 border-violet-400/20',
-  REMARKETING:      'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
+  REMARKETING:      'bg-gold/10 text-gold border-gold/20',
   SIMILAR_AUDIENCE: 'bg-rose-400/10 text-slate-400 border-rose-400/20',
-  COMBINED:         'bg-slate-800/40 text-slate-500 border-slate-800',
+  COMBINED:         'bg-surface-2 text-slate-500 border-line',
 }
 
 const TYPE_LABEL: Record<GoogleAudienceType, string> = {
@@ -91,11 +91,11 @@ interface AudiencesApiResponse {
 // ─── Audience card ────────────────────────────────────────────────────────────
 
 function AudienceCard({ audience }: { audience: GoogleAudience }) {
-  const typeCls  = TYPE_BADGE[audience.type] ?? 'bg-slate-800/40 text-slate-500 border-slate-800'
+  const typeCls  = TYPE_BADGE[audience.type] ?? 'bg-surface-2 text-slate-500 border-line'
   const typeLabel = TYPE_LABEL[audience.type] ?? audience.type
 
   return (
-    <div className="flex flex-col gap-3 rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#4285F4]/20">
+    <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-5 transition hover:border-[#4285F4]/20">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -113,7 +113,7 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
         <span
           className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
             audience.status === 'OPEN'
-              ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
+              ? 'border-gold/20 bg-gold/10 text-gold'
               : 'border-red-400/20 bg-red-400/10 text-red-300'
           }`}
         >
@@ -137,7 +137,7 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
               {(audience.matchRate * 100).toFixed(0)}%
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-800/50">
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full rounded-full bg-orange-400 transition-all"
               style={{ width: `${Math.min(audience.matchRate * 100, 100)}%` }}
@@ -228,7 +228,7 @@ export default function GoogleAudiencesPage() {
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -276,11 +276,11 @@ export default function GoogleAudiencesPage() {
           <div className="mt-8 grid grid-cols-3 gap-3">
             {[
               { label: 'Total audiences',    value: audiences.length,            color: 'text-white'           },
-              { label: 'Customer Match lists', value: customerMatchCount,         color: 'text-[#D4AF37]'       },
+              { label: 'Customer Match lists', value: customerMatchCount,         color: 'text-gold'       },
               { label: 'Total reach',          value: totalReach > 0 ? fmtReach(totalReach) : '—',
                                                                                   color: 'text-white'           },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-line bg-surface px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
@@ -304,7 +304,7 @@ export default function GoogleAudiencesPage() {
                     'rounded-full border px-3.5 py-1.5 text-xs font-medium transition',
                     isActive
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/15 text-[#4285F4]'
-                      : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                      : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
                   {label}
@@ -324,7 +324,7 @@ export default function GoogleAudiencesPage() {
           ) : (
             audiences.length > 0 ? (
               /* filtered but no results for this type */
-              <div className="mt-8 rounded-[24px] border border-slate-800 bg-slate-900 px-6 py-12 text-center">
+              <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-12 text-center">
                 <Users className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
                 <div className="text-sm font-semibold text-white">
                   No {FILTER_TABS.find((t) => t.value === filter)?.label.toLowerCase()} audiences
@@ -338,15 +338,15 @@ export default function GoogleAudiencesPage() {
 
           {/* ── Customer match empty state ── */}
           {customerLists.length === 0 && (
-            <div className="mt-8 rounded-[24px] border border-dashed border-[#D4AF37]/20 bg-[#D4AF37]/[0.03] px-6 py-10 text-center">
-              <Upload className="mx-auto mb-3 h-7 w-7 text-[#D4AF37]/40" />
+            <div className="mt-8 rounded-[24px] border border-dashed border-gold/20 bg-gold/[0.03] px-6 py-10 text-center">
+              <Upload className="mx-auto mb-3 h-7 w-7 text-gold/40" />
               <div className="text-sm font-semibold text-white">No customer match lists yet</div>
               <p className="mt-2 text-sm text-slate-500">
                 Upload your CRM database to re-engage existing leads and find similar audiences on Google.
               </p>
               <button
                 disabled
-                className="mt-5 inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-5 py-2.5 text-sm font-medium text-[#F8E7AE]/60"
+                className="mt-5 inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-5 py-2.5 text-sm font-medium text-[#F8E7AE]/60"
               >
                 <Upload className="h-4 w-4" /> Upload CRM data
               </button>
@@ -368,7 +368,7 @@ export default function GoogleAudiencesPage() {
               {STATIC_IN_MARKET.map((item) => (
                 <div
                   key={item.name}
-                  className="flex items-start justify-between gap-4 rounded-[16px] border border-slate-800 bg-slate-900 p-5"
+                  className="flex items-start justify-between gap-4 rounded-[16px] border border-line bg-surface p-5"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -381,7 +381,7 @@ export default function GoogleAudiencesPage() {
                       {item.description}
                     </p>
                   </div>
-                  <span className="mt-1 shrink-0 rounded-full border border-slate-800 bg-slate-800/40 px-2.5 py-1 text-sm font-medium text-slate-500">
+                  <span className="mt-1 shrink-0 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-sm font-medium text-slate-500">
                     Add
                   </span>
                 </div>
@@ -390,7 +390,7 @@ export default function GoogleAudiencesPage() {
           </section>
 
           {/* ── Customer Match info note ── */}
-          <div className="mt-8 flex items-start gap-3 rounded-[14px] border border-slate-800 bg-slate-800/40 px-5 py-4">
+          <div className="mt-8 flex items-start gap-3 rounded-[14px] border border-line bg-surface-2 px-5 py-4">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <p className="text-xs leading-relaxed text-slate-500">
               <span className="font-medium text-slate-400">Customer Match</span> requires a minimum of 1,000 matched users to be active in campaigns. Uploaded lists may take up to 48 hours to process.

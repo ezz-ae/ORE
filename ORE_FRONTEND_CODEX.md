@@ -1,4 +1,4 @@
-# ORE — FRONTEND CODEX FIX PACKAGE
+# Freehold — FRONTEND CODEX FIX PACKAGE
 # Generated: 2026-03-22
 # Database: Neon PostgreSQL (freehold_site_projects, freehold_site_developer_profiles, freehold_site_area_profiles, freehold_site_blog_posts, freehold_site_project_landing_pages)
 

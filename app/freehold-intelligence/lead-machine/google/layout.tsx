@@ -24,7 +24,7 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
     <AdsContextProvider>
     <div className="flex flex-col min-h-full">
       {/* Google Ads sub-nav */}
-      <div className="border-b border-slate-800 bg-[#04060A]">
+      <div className="border-b border-line bg-[#04060A]">
         <div className="overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
             {tabs.map((tab) => {

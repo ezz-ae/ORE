@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
-  Check, AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
-  Palette, Sliders, Save,
+  AlertCircle, ChevronRight, Bell, Globe, Lock, Users,
+  Sliders,
 } from 'lucide-react'
+import { PageHeader, buttonClass } from '@/components/freehold/ui'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,7 +77,6 @@ const NOTIFICATION_SETTINGS = [
 const BRAND_SETTINGS = [
   { label: 'Company Name',   value: 'Freehold Property Dubai' },
   { label: 'Primary Domain', value: 'freeholdproperty.ae' },
-  { label: 'WhatsApp Number', value: '+971 50 XXX XXXX' },
   { label: 'CRM Timezone',   value: 'Asia/Dubai (UTC+4)' },
 ]
 
@@ -88,13 +89,13 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
       aria-pressed={on}
       className={[
         'relative h-6 w-11 rounded-full border transition-all duration-200',
-        on ? 'border-[#D4AF37]/40 bg-[#D4AF37]/20' : 'border-slate-700 bg-slate-800/50',
+        on ? 'border-gold/40 bg-gold/20' : 'border-line-strong bg-surface-2',
       ].join(' ')}
     >
       <span
         className={[
           'absolute top-0.5 h-5 w-5 rounded-full border transition-all duration-200',
-          on ? 'left-5 border-[#D4AF37]/60 bg-[#D4AF37]' : 'left-0.5 border-slate-600 bg-slate-400',
+          on ? 'left-5 border-gold/60 bg-gold' : 'left-0.5 border-line-strong bg-slate-400',
         ].join(' ')}
       />
     </button>
@@ -127,15 +128,10 @@ export default function SettingsPage() {
   const [crmFields,   setCrmFields]   = useState<CrmField[]>(INITIAL_CRM_FIELDS)
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
-  const [saved,       setSaved]       = useState(false)
+  const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
-
-  function handleSave() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
-  }
 
   function toggleAiAction(id: string) {
     setAiActions((prev) => prev.map((a) => a.id === id ? { ...a, enabled: !a.enabled } : a))
@@ -165,31 +161,16 @@ export default function SettingsPage() {
     <div className="p-6 lg:p-8">
       <div className="mx-auto max-w-4xl">
 
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
-              <SettingsIcon className="h-3.5 w-3.5 text-[#D4AF37]" /> System Settings
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight text-white">Settings</h1>
-            <p className="mt-1 text-sm text-slate-400">Configure AI permissions, data mapping, and platform thresholds</p>
-          </div>
-          <button
-            onClick={handleSave}
-            className={[
-              'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition',
-              saved
-                ? 'border border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border border-slate-800 bg-slate-800/50 text-slate-300 hover:border-[#D4AF37]/30 hover:text-white',
-            ].join(' ')}
-          >
-            {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saved ? 'Saved' : 'Save Changes'}
-          </button>
-        </div>
+        <PageHeader
+          eyebrow="System Settings"
+          Icon={SettingsIcon}
+          title="Settings"
+          subtitle="Configure AI permissions, data mapping, and platform thresholds"
+          className="mb-8"
+        />
 
         {/* ── Tab bar ── */}
-        <div className="mb-8 flex flex-wrap gap-1 rounded-2xl border border-slate-800 bg-slate-900 p-1">
+        <div className="mb-8 flex flex-wrap gap-1 rounded-2xl border border-line bg-surface p-1">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -197,7 +178,7 @@ export default function SettingsPage() {
               className={[
                 'flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition',
                 activeTab === id
-                  ? 'bg-slate-700/50 text-white'
+                  ? 'bg-surface-3 text-white'
                   : 'text-slate-400 hover:text-slate-100',
               ].join(' ')}
             >
@@ -212,22 +193,22 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Sparkles}
-              accent="text-[#D4AF37]/80"
+              accent="text-gold/80"
               title="AI Action Permissions"
               sub="Control which actions the AI can take autonomously on your behalf"
             />
-            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {aiActions.map((a) => (
                 <div key={a.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-slate-100">{a.label}</p>
                     <p className="mt-0.5 text-xs text-slate-500">{a.description}</p>
-                    <span className="mt-1 inline-block rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-500">
+                    <span className="mt-1 inline-block rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-500">
                       {a.role} approval
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${a.enabled ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-medium ${a.enabled ? 'text-gold' : 'text-slate-500'}`}>
                       {a.enabled ? 'Enabled' : 'Off'}
                     </span>
                     <Toggle on={a.enabled} onChange={() => toggleAiAction(a.id)} />
@@ -246,7 +227,7 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Database}
-              accent="text-[#D4AF37]/80"
+              accent="text-gold/80"
               title="CRM Field Mapping"
               sub="Map external data sources to internal CRM intelligence fields"
             />
@@ -258,7 +239,7 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
-            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {crmFields.map((f, idx) => (
                 <div key={f.source} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
@@ -267,7 +248,7 @@ export default function SettingsPage() {
                     <p className="truncate text-sm font-medium text-slate-100">{f.target}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${f.mapped ? 'text-[#D4AF37]' : 'text-amber-400'}`}>
+                    <span className={`text-xs font-medium ${f.mapped ? 'text-gold' : 'text-amber-400'}`}>
                       {f.mapped ? 'Mapped' : 'Unmapped'}
                     </span>
                     <Toggle on={f.mapped} onChange={() => toggleCrmField(idx)} />
@@ -283,13 +264,13 @@ export default function SettingsPage() {
           <section>
             <SectionHead
               icon={Sliders}
-              accent="text-[#D4AF37]/80"
+              accent="text-gold/80"
               title="Lead Machine Thresholds"
               sub="Minimum bars for landing generation, ad requests, and campaign launch"
             />
             <div className="grid gap-4 sm:grid-cols-2">
               {thresholds.map((t) => (
-                <div key={t.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div key={t.id} className="rounded-2xl border border-line bg-surface p-5">
                   <p className="text-sm font-medium text-slate-100">{t.label}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{t.description}</p>
                   <div className="mt-4 flex items-center gap-3">
@@ -300,9 +281,9 @@ export default function SettingsPage() {
                       step={t.step}
                       value={t.value}
                       onChange={(e) => updateThreshold(t.id, Number(e.target.value))}
-                      className="flex-1 accent-[#D4AF37]"
+                      className="flex-1 accent-gold"
                     />
-                    <div className="shrink-0 rounded-xl border border-slate-700 bg-slate-800/50 px-2.5 py-1 text-sm font-semibold tabular-nums text-white min-w-[56px] text-center">
+                    <div className="shrink-0 rounded-xl border border-line-strong bg-surface-2 px-2.5 py-1 text-sm font-semibold tabular-nums text-white min-w-[56px] text-center">
                       {t.value}
                       <span className="ml-0.5 text-xs font-normal text-slate-500">{t.unit}</span>
                     </div>
@@ -326,14 +307,14 @@ export default function SettingsPage() {
               title="Notification Triggers"
               sub="Choose which platform events generate alerts in your dashboard"
             />
-            <div className="divide-y divide-slate-800 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {notifs.map((n) => (
                 <div key={n.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-slate-100">{n.label}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs font-medium ${n.enabled ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-medium ${n.enabled ? 'text-gold' : 'text-slate-500'}`}>
                       {n.enabled ? 'On' : 'Off'}
                     </span>
                     <Toggle on={n.enabled} onChange={() => toggleNotif(n.id)} />
@@ -358,27 +339,31 @@ export default function SettingsPage() {
             />
             <div className="space-y-4">
               {BRAND_SETTINGS.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div key={s.label} className="rounded-2xl border border-line bg-surface p-5">
                   <label className="block text-xs font-medium text-slate-500 mb-2">{s.label}</label>
                   <input
                     type="text"
                     defaultValue={s.value}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-[#D4AF37]/35 focus:outline-none"
+                    className="w-full rounded-xl border border-line-strong bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/35 focus:outline-none"
                   />
                 </div>
               ))}
 
               {/* Theme */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="rounded-2xl border border-line bg-surface p-5">
                 <label className="block text-xs font-medium text-slate-500 mb-3">Dashboard Theme</label>
                 <div className="flex gap-3">
                   {[
-                    { label: 'Dark (current)', bg: 'bg-slate-900', ring: 'ring-[#D4AF37] ring-2' },
-                    { label: 'Darker',         bg: 'bg-black',     ring: 'ring-slate-700' },
-                    { label: 'Navy',           bg: 'bg-[#0a0f1e]', ring: 'ring-slate-700' },
+                    { label: 'Dark (current)', bg: 'bg-surface' },
+                    { label: 'Darker',         bg: 'bg-black'     },
+                    { label: 'Navy',           bg: 'bg-[#0a0f1e]' },
                   ].map((t) => (
-                    <button key={t.label} className="flex flex-col items-center gap-1.5">
-                      <div className={`h-8 w-8 rounded-lg border border-slate-700 ${t.bg} ${t.ring}`} />
+                    <button
+                      key={t.label}
+                      onClick={() => { setTheme(t.label); toast.success(t.label + ' theme applied') }}
+                      className="flex flex-col items-center gap-1.5"
+                    >
+                      <div className={`h-8 w-8 rounded-lg border border-line-strong ${t.bg} ${theme === t.label ? 'ring-gold ring-2' : 'ring-line-strong'}`} />
                       <span className="text-xs text-slate-500">{t.label}</span>
                     </button>
                   ))}
@@ -386,7 +371,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Access */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="rounded-2xl border border-line bg-surface p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Lock className="h-3.5 w-3.5 text-slate-500" />
                   <label className="text-xs font-medium text-slate-500">Access Control</label>
@@ -397,12 +382,12 @@ export default function SettingsPage() {
                     { role: 'Admin',           perms: 'All except billing',    email: 'admin@freeholdproperty.ae' },
                     { role: 'Sales Agent',     perms: 'CRM + Lead Machine',    email: '3 members' },
                   ].map((u) => (
-                    <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-3">
+                    <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
                       <div>
                         <p className="text-sm font-medium text-slate-100">{u.role}</p>
                         <p className="text-xs text-slate-500">{u.email}</p>
                       </div>
-                      <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-400">
+                      <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400">
                         {u.perms}
                       </span>
                     </div>

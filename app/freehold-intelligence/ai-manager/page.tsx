@@ -2,8 +2,6 @@
 
 import Link from 'next/link'
 import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 const CONTENT_TYPES = [
   { label: 'Listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,      summary: '28 listings',          alert: '5 need updates',       alertColor: 'text-slate-400' },
   { label: 'Areas',      href: '/freehold-intelligence/ai-manager/areas',      icon: MapPin,   summary: '12 area guides',        alert: '3 missing content',    alertColor: 'text-amber-400' },
@@ -44,11 +42,11 @@ export default function AiManagerPage() {
             <Link
               key={ct.label}
               href={ct.href}
-              className="group flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-800/50 p-5 transition hover:border-[#D4AF37]/20 hover:bg-slate-800/80"
+              className="group flex flex-col gap-4 rounded-2xl border border-line bg-surface-2 p-5 transition hover:border-gold/20 hover:bg-surface-2"
             >
               <div className="flex items-start justify-between">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10">
-                  <Icon className="h-4 w-4 text-[#D4AF37]" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10">
+                  <Icon className="h-4 w-4 text-gold" />
                 </div>
                 <ArrowUpRight className="h-4 w-4 text-slate-500 transition group-hover:text-slate-300" />
               </div>
@@ -66,7 +64,7 @@ export default function AiManagerPage() {
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
 
         {/* AI Activity feed */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-2 mb-5">
             <Activity className="h-4 w-4 text-slate-400" />
             <h2 className="text-sm font-semibold text-slate-100">AI Activity</h2>
@@ -74,7 +72,7 @@ export default function AiManagerPage() {
           <ul className="space-y-4">
             {ACTIVITY.map((item, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4AF37]/50" />
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold/50" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm leading-snug text-slate-400">{item.text}</p>
                   <p className="mt-0.5 text-xs text-slate-500">{item.time}</p>
@@ -85,22 +83,11 @@ export default function AiManagerPage() {
         </div>
 
         {/* Web Manager AI */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-6">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="mb-4 text-sm font-semibold text-slate-100">Web Manager</div>
           <p className="mb-4 text-sm text-slate-400">
             Ask about content gaps, publishing priorities, SEO fixes, or landing page health.
           </p>
-          <AiPrompt
-            skill="web_manager"
-            placeholder="What content needs publishing or fixing?"
-            suggestions={[
-              'What pages or listings are missing content?',
-              'Which landing pages should be published first?',
-              'Prioritise SEO fixes by traffic impact.',
-              'Any live ads pointing at missing or draft pages?',
-            ]}
-            context={SITE_CONTEXT}
-          />
         </div>
 
       </div>

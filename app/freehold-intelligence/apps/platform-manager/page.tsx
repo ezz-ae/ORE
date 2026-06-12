@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowLeft, Globe, Database, ArrowUpRight } from 'lucide-react'
 import { getDashboardSnapshot } from '@/src/features/freehold-intelligence/data-access'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { RouteSections } from './_components/RouteSections'
 
 type RouteStatus = 'live' | 'pending' | 'planned' | 'down'
@@ -51,8 +50,8 @@ const INFRA = [
 ]
 
 function statusConfig(s: RouteStatus) {
-  if (s === 'live')    return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Live'    }
-  if (s === 'pending') return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Pending' }
+  if (s === 'live')    return { dot: 'bg-gold', text: 'text-gold', label: 'Live'    }
+  if (s === 'pending') return { dot: 'bg-gold', text: 'text-[#F8E7AE]', label: 'Pending' }
   if (s === 'planned') return { dot: 'bg-sky-400',   text: 'text-sky-200',   label: 'Planned' }
   return                      { dot: 'bg-red-400',   text: 'text-red-300',   label: 'Down'    }
 }
@@ -76,7 +75,7 @@ export default async function PlatformManagerPage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Globe className="h-3.5 w-3.5" /> Platform Manager
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -94,9 +93,9 @@ export default async function PlatformManagerPage() {
           { label: 'Projects',    value: Number(snapshot.total_projects).toLocaleString(), color: 'text-white'       },
           { label: 'Areas',       value: snapshot.total_areas,                             color: 'text-white'       },
           { label: 'Developers',  value: snapshot.total_developers,                        color: 'text-white'       },
-          { label: 'Audit events (24h)', value: snapshot.audit_events_24h,                color: 'text-[#D4AF37]'   },
+          { label: 'Audit events (24h)', value: snapshot.audit_events_24h,                color: 'text-gold'   },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">
             <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -111,7 +110,7 @@ export default async function PlatformManagerPage() {
           {INFRA.map((item) => {
             const st = statusConfig(item.status)
             return (
-              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+              <div key={item.label} className="flex items-center justify-between gap-4 rounded-[18px] border border-line bg-surface p-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Database className="h-4 w-4 shrink-0 text-slate-500" />
                   <div className="min-w-0">
@@ -134,23 +133,12 @@ export default async function PlatformManagerPage() {
         <RouteSections routes={ROUTES} />
         <Link
           href="/freehold-intelligence/security"
-          className="mt-6 inline-flex items-center gap-1 text-xs text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+          className="mt-6 inline-flex items-center gap-1 text-xs text-gold/60 transition hover:text-gold"
         >
           Full security report <ArrowUpRight className="h-3 w-3" />
         </Link>
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about routes, deployment, infrastructure…"
-          suggestions={[
-            'Which pages need auth middleware before wider exposure?',
-            'What is the current deployment health status?',
-            'Show all pending route items.',
-            'How many API routes are live vs planned?',
-          ]}
-        />
-      </section>
 
     </div>
   )

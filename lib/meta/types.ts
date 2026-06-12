@@ -120,6 +120,8 @@ export interface LaunchCampaignPayload {
   targeting: CampaignTargeting
   creative: CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
+  /** Set automatically by the server when a broker creates a campaign */
+  brokerId?: string
 }
 
 export interface LaunchCampaignResult {

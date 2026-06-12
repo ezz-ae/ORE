@@ -1,17 +1,17 @@
 {
-  "name": "ORE Real Estate",
-  "short_name": "ORE",
-  "description": "Dubai property intelligence, curated projects, and premium real estate advisory from ORE.",
+  "name": "Freehold Property UAE",
+  "short_name": "Freehold",
+  "description": "Dubai real estate advisory — projects, investment intelligence, and market data from Freehold Property.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#152E24",
-  "theme_color": "#152E24",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
   "icons": [
     {
       "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/apple-icon.png",

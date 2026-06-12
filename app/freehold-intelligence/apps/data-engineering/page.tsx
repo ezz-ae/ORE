@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Database, CheckCircle2, AlertCircle, Image, FileText, ArrowUpRight } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type FieldStatus = true | false | 'partial'
 
@@ -88,8 +87,8 @@ const avgComplete  = Math.round(LISTINGS.reduce((s, l) => s + l.completeness, 0)
 const urgentTotal  = LISTINGS.flatMap((l) => l.urgent).length
 
 function FieldDot({ status }: { status: FieldStatus }) {
-  if (status === true)      return <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
-  if (status === 'partial') return <div className="h-3.5 w-3.5 rounded-full border border-[#D4AF37]/60 bg-[#D4AF37]/20" />
+  if (status === true)      return <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
+  if (status === 'partial') return <div className="h-3.5 w-3.5 rounded-full border border-gold/60 bg-gold/20" />
   return <div className="h-3.5 w-3.5 rounded-full border border-red-400/40 bg-red-400/10" />
 }
 
@@ -112,11 +111,11 @@ export default function DataEngineeringPage() {
 
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
             <Database className="h-3.5 w-3.5" /> Data Engineering
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/10 px-2.5 py-0.5 text-xs font-medium text-[#D4AF37]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" /> In progress
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-0.5 text-xs font-medium text-gold">
+            <span className="h-1.5 w-1.5 rounded-full bg-gold" /> In progress
           </span>
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -130,12 +129,12 @@ export default function DataEngineeringPage() {
       {/* Stats */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Avg. completeness', value: `${avgComplete}%`, color: 'text-[#D4AF37]' },
+          { label: 'Avg. completeness', value: `${avgComplete}%`, color: 'text-gold' },
           { label: 'Fields filled',    value: `${filledFields}/${totalFields}`, color: 'text-white' },
-          { label: 'Urgent gaps',      value: urgentTotal,       color: urgentTotal > 0 ? 'text-red-300' : 'text-[#D4AF37]' },
+          { label: 'Urgent gaps',      value: urgentTotal,       color: urgentTotal > 0 ? 'text-red-300' : 'text-gold' },
           { label: 'Listings tracked', value: LISTINGS.length,   color: 'text-white' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+          <div key={stat.label} className="rounded-[18px] border border-line bg-surface p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
             <div className="mt-1.5 text-sm text-slate-500">{stat.label}</div>
           </div>
@@ -161,10 +160,10 @@ export default function DataEngineeringPage() {
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 completenessFilter === key
                   ? key === 'critical' ? 'border-red-400/40 bg-red-400/10 text-red-300'
-                    : key === 'moderate' ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : key === 'strong' ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/50 text-slate-500 hover:text-slate-300',
+                    : key === 'moderate' ? 'border-gold/40 bg-gold/10 text-gold'
+                    : key === 'strong' ? 'border-emerald-400/40 bg-gold/10 text-gold'
+                    : 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {label}
@@ -178,33 +177,33 @@ export default function DataEngineeringPage() {
         </p>
 
         {filteredListings.length === 0 ? (
-          <div className="rounded-[22px] border border-slate-800 bg-slate-900 px-6 py-10 text-center text-sm text-slate-500">
+          <div className="rounded-[22px] border border-line bg-surface px-6 py-10 text-center text-sm text-slate-500">
             No listings match this filter.{' '}
-            <button onClick={() => setCompletenessFilter('All')} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Show all</button>
+            <button onClick={() => setCompletenessFilter('All')} className="ml-1 text-gold/60 hover:text-gold">Show all</button>
           </div>
         ) : (
           <div className="mt-5 space-y-5">
             {filteredListings.map((listing) => (
-              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-slate-800 bg-slate-900'}`}>
+              <div key={listing.id} className={`rounded-[22px] border p-5 sm:p-6 ${listing.completeness < 60 ? 'border-red-400/15 bg-red-400/[0.03]' : 'border-line bg-surface'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/70">{listing.area} · {listing.developer}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wider text-gold/70">{listing.area} · {listing.developer}</div>
                     <h3 className="mt-1 text-base font-semibold text-white">{listing.name}</h3>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`text-sm font-semibold ${listing.completeness >= 80 ? 'text-[#D4AF37]' : listing.completeness >= 60 ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+                    <span className={`text-sm font-semibold ${listing.completeness >= 80 ? 'text-gold' : listing.completeness >= 60 ? 'text-gold' : 'text-red-300'}`}>
                       {listing.completeness}%
                     </span>
-                    <Link href={listing.href} className="inline-flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]">
+                    <Link href={listing.href} className="inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold">
                       Open <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-2">
                   <div
-                    className={`h-full rounded-full ${listing.completeness >= 80 ? 'bg-[#D4AF37]' : listing.completeness >= 60 ? 'bg-[#D4AF37]' : 'bg-red-400'}`}
+                    className={`h-full rounded-full ${listing.completeness >= 80 ? 'bg-gold' : listing.completeness >= 60 ? 'bg-gold' : 'bg-red-400'}`}
                     style={{ width: `${listing.completeness}%` }}
                   />
                 </div>
@@ -239,33 +238,33 @@ export default function DataEngineeringPage() {
       <section className="mt-14">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Area profiles</div>
         <h2 className="mt-2 text-xl font-semibold text-white">Coverage by area</h2>
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
+        <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800">
+              <tr className="border-b border-line">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Area</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Fields</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Coverage</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-line">
               {AREA_PROFILES.map((area) => {
                 const pct = Math.round((area.fieldsComplete / area.totalFields) * 100)
                 return (
-                  <tr key={area.area} className="hover:bg-slate-800/30">
+                  <tr key={area.area} className="hover:bg-surface-2">
                     <td className="px-6 py-4 font-medium text-slate-100">{area.area}</td>
                     <td className="px-4 py-4 text-center text-slate-400">{area.fieldsComplete}/{area.totalFields}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
-                          <div className={`h-full rounded-full ${pct >= 75 ? 'bg-[#D4AF37]' : pct >= 55 ? 'bg-[#D4AF37]' : 'bg-red-400'}`} style={{ width: `${pct}%` }} />
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
+                          <div className={`h-full rounded-full ${pct >= 75 ? 'bg-gold' : pct >= 55 ? 'bg-gold' : 'bg-red-400'}`} style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-xs text-slate-400">{pct}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-sm font-medium ${area.status === 'strong' ? 'text-[#D4AF37]' : area.status === 'moderate' ? 'text-[#D4AF37]' : 'text-red-300'}`}>
+                      <span className={`text-sm font-medium ${area.status === 'strong' ? 'text-gold' : area.status === 'moderate' ? 'text-gold' : 'text-red-300'}`}>
                         {area.status === 'strong' ? 'Strong' : area.status === 'moderate' ? 'Moderate' : 'Needs work'}
                       </span>
                     </td>
@@ -279,7 +278,7 @@ export default function DataEngineeringPage() {
 
       {/* Media quality note */}
       <section className="mt-10 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-[18px] border border-line bg-surface p-5">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <Image className="h-3 w-3" /> Media quality
           </div>
@@ -287,7 +286,7 @@ export default function DataEngineeringPage() {
             Palm and Hills have production-grade hero images. Business Bay has a placeholder — needs a real render or developer-supplied photo before landing can go live.
           </p>
         </div>
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-[18px] border border-line bg-surface p-5">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <FileText className="h-3 w-3" /> Brochures
           </div>
@@ -297,16 +296,6 @@ export default function DataEngineeringPage() {
         </div>
       </section>
 
-      <section className="mt-10">
-        <AiPrompt
-          placeholder="Ask about data gaps, media quality, field completeness…"
-          suggestions={[
-            'Which listing has the most critical missing fields?',
-            'What data does Business Bay still need before launch?',
-            'Which areas have the strongest data coverage?',
-          ]}
-        />
-      </section>
 
     </div>
   )

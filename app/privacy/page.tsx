@@ -4,12 +4,10 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description:
-    "Freehold Real Estate protects investor data with Freehold Intelligence. Review how we collect, use, and safeguard your information.",
-  alternates: {
-    canonical: "/privacy",
-  },
+  title: "Privacy Policy | Freehold Property UAE",
+  description: "How Freehold Property UAE collects, uses, and protects your personal information in line with UAE data protection standards.",
+  alternates: { canonical: "/privacy" },
+  robots: { index: false },
 }
 
 const privacyItems = [

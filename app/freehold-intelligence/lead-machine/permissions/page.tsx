@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield, Loader2 } from 'lucide-react'
 
 type Permission =
   | 'view_campaigns'
@@ -77,24 +77,40 @@ const DEFAULT_BRONZE: Record<Permission, boolean> = {
   view_leads: true, export_leads: false, manage_requirements: false, view_competitor: false,
 }
 
-const INITIAL_AGENTS: AgentPerms[] = [
-  { id: 'a1', name: 'Noura Al Hassan', initials: 'NA', tier: 'Gold',   perms: { ...DEFAULT_GOLD   } },
-  { id: 'a2', name: 'James Cooper',    initials: 'JC', tier: 'Silver', perms: { ...DEFAULT_SILVER } },
-  { id: 'a3', name: 'Priya Sharma',    initials: 'PS', tier: 'Bronze', perms: { ...DEFAULT_BRONZE } },
-  { id: 'a4', name: 'Omar Khalil',     initials: 'OK', tier: 'Silver', perms: { ...DEFAULT_SILVER } },
-]
 
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400 border-orange-400/25 bg-orange-400/10',
-  Silver:   'text-slate-300   border-white/15      bg-slate-800/50',
-  Gold:     'text-[#D4AF37]  border-[#D4AF37]/25  bg-[#D4AF37]/10',
+  Silver:   'text-slate-300   border-white/15      bg-surface-2',
+  Gold:     'text-gold  border-gold/25  bg-gold/10',
   Platinum: 'text-violet-300 border-violet-400/25 bg-violet-400/10',
 }
 
 export default function PermissionsPage() {
-  const [agents, setAgents]     = useState<AgentPerms[]>(INITIAL_AGENTS)
-  const [expanded, setExpanded] = useState<string>(INITIAL_AGENTS[0].id)
+  const [agents, setAgents]     = useState<AgentPerms[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [expanded, setExpanded] = useState<string>('')
   const [saved, setSaved]       = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) {
+          const brokers = data.members
+            .filter((m: any) => m.dbRole === 'broker')
+            .map((m: any): AgentPerms => ({
+              id:       m.id,
+              name:     m.name,
+              initials: m.initials,
+              tier:     'Bronze',
+              perms:    { ...DEFAULT_BRONZE },
+            }))
+          setAgents(brokers)
+          if (brokers.length > 0) setExpanded(brokers[0].id)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   function toggle(agentId: string, perm: Permission) {
     setAgents((prev) =>
@@ -120,9 +136,16 @@ export default function PermissionsPage() {
         </p>
       </div>
 
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span className="text-sm">Loading agents…</span>
+        </div>
+      )}
+
       {/* Agent list */}
       <div className="space-y-3">
-        {agents.map((agent) => {
+        {!loading && agents.map((agent) => {
           const tc = TIER_COLOR[agent.tier] ?? TIER_COLOR.Bronze
           const isOpen = expanded === agent.id
           const permCount = Object.values(agent.perms).filter(Boolean).length
@@ -131,14 +154,14 @@ export default function PermissionsPage() {
           return (
             <div
               key={agent.id}
-              className={`rounded-[20px] border bg-slate-900 transition ${isOpen ? 'border-white/15' : 'border-slate-800'}`}
+              className={`rounded-[20px] border bg-surface transition ${isOpen ? 'border-white/15' : 'border-line'}`}
             >
               {/* Agent row */}
               <button
                 className="flex w-full items-center gap-4 px-5 py-4 text-left"
                 onClick={() => setExpanded(isOpen ? '' : agent.id)}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-sm font-bold text-[#D4AF37]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
                   {agent.initials}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -158,7 +181,7 @@ export default function PermissionsPage() {
 
               {/* Permission groups */}
               {isOpen && (
-                <div className="border-t border-slate-800 px-5 pb-5 pt-4">
+                <div className="border-t border-line px-5 pb-5 pt-4">
                   <div className="space-y-5">
                     {PERM_GROUPS.map((group) => (
                       <div key={group.label}>
@@ -171,7 +194,7 @@ export default function PermissionsPage() {
                             return (
                               <label
                                 key={item.id}
-                                className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-slate-800 bg-slate-800/40 px-4 py-3 transition hover:border-white/10"
+                                className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-line bg-surface-2 px-4 py-3 transition hover:border-white/10"
                               >
                                 <input
                                   type="checkbox"
@@ -180,10 +203,10 @@ export default function PermissionsPage() {
                                   className="sr-only"
                                 />
                                 <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
-                                  on ? 'border-[#D4AF37]/60 bg-[#D4AF37]/20' : 'border-white/[0.10] bg-transparent'
+                                  on ? 'border-gold/60 bg-gold/20' : 'border-white/[0.10] bg-transparent'
                                 }`}>
                                   {on ? (
-                                    <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" />
+                                    <CheckCircle className="h-3.5 w-3.5 text-gold" />
                                   ) : (
                                     <Lock className="h-3 w-3 text-slate-600" />
                                   )}
@@ -205,14 +228,14 @@ export default function PermissionsPage() {
                   <div className="mt-5 flex items-center gap-2">
                     <button
                       onClick={() => saveAgent(agent.id)}
-                      className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                      className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90"
                     >
                       <Shield className="h-3.5 w-3.5" />
                       Save permissions
                     </button>
                     <button
                       onClick={() => setExpanded('')}
-                      className="rounded-full border border-slate-800 px-4 py-2 text-xs text-slate-500 transition hover:text-slate-400"
+                      className="rounded-full border border-line px-4 py-2 text-xs text-slate-500 transition hover:text-slate-400"
                     >
                       Close
                     </button>

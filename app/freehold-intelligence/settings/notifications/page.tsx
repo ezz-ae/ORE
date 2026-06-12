@@ -29,7 +29,7 @@ const INITIAL_RULES: NotifRule[] = [
 const CHANNEL_META: Record<Channel, { Icon: React.ElementType; label: string; color: string }> = {
   email:    { Icon: Mail,          label: 'Email',    color: 'text-sky-400'     },
   whatsapp: { Icon: MessageSquare, label: 'WhatsApp', color: 'text-emerald-400' },
-  in_app:   { Icon: Bell,          label: 'In-app',   color: 'text-[#D4AF37]'   },
+  in_app:   { Icon: Bell,          label: 'In-app',   color: 'text-gold'   },
 }
 
 const CATEGORIES = [...new Set(INITIAL_RULES.map((r) => r.category))]
@@ -55,15 +55,12 @@ export default function NotificationsPage() {
         </p>
       </div>
 
-      {/* Channel status */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      {/* Channel legend */}
+      <div className="mb-6 flex flex-wrap gap-3">
         {(Object.entries(CHANNEL_META) as [Channel, typeof CHANNEL_META[Channel]][]).map(([key, cm]) => (
-          <div key={key} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3.5 flex items-center gap-3">
-            <cm.Icon className={`h-4 w-4 ${cm.color}`} />
-            <div>
-              <div className={`text-sm font-semibold ${cm.color}`}>{cm.label}</div>
-              <div className="text-xs text-slate-500">Connected</div>
-            </div>
+          <div key={key} className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5">
+            <cm.Icon className={`h-3.5 w-3.5 ${cm.color}`} />
+            <span className={`text-xs font-medium ${cm.color}`}>{cm.label}</span>
           </div>
         ))}
       </div>
@@ -72,7 +69,7 @@ export default function NotificationsPage() {
       {CATEGORIES.map((category) => (
         <div key={category} className="mb-6">
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{category}</div>
-          <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+          <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-5 gap-0 px-5 py-2.5 text-xs text-slate-600">
               <div className="col-span-2">Event</div>
@@ -96,7 +93,7 @@ export default function NotificationsPage() {
                   <div key={ch} className="flex items-center justify-center">
                     <button
                       onClick={() => toggle(rule.id, ch)}
-                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-[#D4AF37]/80' : 'bg-slate-800/60'}`}
+                      className={`relative h-5 w-9 rounded-full transition ${rule.channels[ch] ? 'bg-gold/80' : 'bg-surface-2'}`}
                     >
                       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${rule.channels[ch] ? 'left-[18px]' : 'left-0.5'}`} />
                     </button>

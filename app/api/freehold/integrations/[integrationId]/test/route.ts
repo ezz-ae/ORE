@@ -1,13 +1,22 @@
 // app/api/freehold/integrations/[integrationId]/test/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge';
 import { getIntegrationDetails } from '@/lib/freehold/mcp/mock-integrations';
 import { McpResponseEnvelope } from '@/types/freehold-mcp';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ integrationId: string }> }
 ) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const user = await verifySession(token);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { integrationId } = await params;
   const details = getIntegrationDetails(integrationId);
 
@@ -23,7 +32,6 @@ export async function POST(
     );
   }
 
-  // Mock test response
   const unmetRequirements = details.requirements.filter(req => !req.isMet);
   const canTest = unmetRequirements.length === 0;
 

@@ -2,14 +2,18 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/project-card"
-import { getProjectsForGrid } from "@/lib/ore"
+import { getProjectsForGrid } from "@/lib/data"
 import { AIMarketPanel } from "@/components/ai-market-panel"
 
 export const metadata: Metadata = {
-  title: "Project Search",
-  description: "Browse curated Dubai investment projects with detailed specs, ROI insight, and developer intelligence.",
-  alternates: {
-    canonical: "/search",
+  title: "Search Dubai Projects | Freehold Property UAE",
+  description: "Search off-plan and ready projects across Dubai. Filter by area, developer, price, and investment type.",
+  alternates: { canonical: "/search" },
+  openGraph: {
+    title: "Search Dubai Projects | Freehold Property UAE",
+    description: "Search off-plan and ready projects across Dubai. Filter by area, developer, price, and investment type.",
+    url: "/search",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE" }],
   },
 }
 

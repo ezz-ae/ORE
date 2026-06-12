@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { FileText, Sparkles, Globe, Check, AlertCircle } from 'lucide-react'
 
 interface PageRow {
@@ -29,19 +30,19 @@ const websitePages: PageRow[] = [
 function typeBadge(type: PageRow['type']) {
   if (type === 'Landing') return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
   if (type === 'Blog')    return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
-  if (type === 'Legal')   return 'text-slate-400 bg-slate-800/50 border-slate-700'
+  if (type === 'Legal')   return 'text-slate-400 bg-surface-2 border-line-strong'
   return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
 }
 
 function statusBadge(status: PageRow['status']) {
-  if (status === 'Published') return 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20'
+  if (status === 'Published') return 'text-gold bg-gold/10 border-gold/20'
   if (status === 'Review')    return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-  return 'text-slate-400 bg-slate-800/50 border-slate-700'
+  return 'text-slate-400 bg-surface-2 border-line-strong'
 }
 
 function seoColor(score: number) {
-  if (score >= 80) return 'text-[#D4AF37]'
-  if (score >= 60) return 'text-[#D4AF37]'
+  if (score >= 80) return 'text-gold'
+  if (score >= 60) return 'text-gold'
   return 'text-slate-400'
 }
 
@@ -50,10 +51,22 @@ const FILTERS: FilterKey[] = ['All', 'Landing', 'Blog', 'Static', 'Legal', 'Publ
 
 export default function WebsitePagesPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
+  const [reviewing, setReviewing] = useState<string | null>(null)
+  const [reviewed, setReviewed] = useState<string[]>([])
   const filtered = websitePages.filter((p) => {
     if (activeFilter === 'All') return true
     return p.type === activeFilter || p.status === activeFilter
   })
+
+  function startReview(slug: string) {
+    setReviewing(slug)
+    toast.promise(new Promise(r => setTimeout(r, 2000)), {
+      loading: 'AI reviewing page…',
+      success: 'Review complete',
+      error: 'Review failed',
+    })
+    setTimeout(() => { setReviewing(null); setReviewed(r => [...r, slug]) }, 2000)
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -67,9 +80,21 @@ export default function WebsitePagesPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           Website Pages
         </h1>
-        <button className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
+        <button
+          disabled={reviewing !== null}
+          onClick={() => {
+            setReviewing('all')
+            toast.promise(new Promise(r => setTimeout(r, 2500)), {
+              loading: `Reviewing ${filtered.length} pages…`,
+              success: 'All pages reviewed',
+              error: 'Review failed',
+            })
+            setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.url)) }, 2500)
+          }}
+          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+        >
           <Sparkles className="h-4 w-4" />
-          AI Review All
+          {reviewing === 'all' ? 'Reviewing…' : 'AI Review All'}
         </button>
       </div>
 
@@ -82,7 +107,7 @@ export default function WebsitePagesPage() {
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
                 ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
-                : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
             {f}
@@ -92,29 +117,29 @@ export default function WebsitePagesPage() {
 
       {/* Stats */}
       <div className="mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Total </span>
           <span className="font-semibold text-slate-100">{websitePages.length}</span>
         </div>
-        <div className="rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Published </span>
-          <span className="font-semibold text-[#D4AF37]">{websitePages.filter((p) => p.status === 'Published').length}</span>
+          <span className="font-semibold text-gold">{websitePages.filter((p) => p.status === 'Published').length}</span>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Needs Review </span>
           <span className="font-semibold text-amber-400">{websitePages.filter((p) => p.status === 'Review').length}</span>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Draft </span>
           <span className="font-semibold text-slate-400">{websitePages.filter((p) => p.status === 'Draft').length}</span>
         </div>
       </div>
 
       {/* Table */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-800/50">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
         <table className="w-full min-w-[900px]">
           <thead>
-            <tr className="border-b border-slate-800">
+            <tr className="border-b border-line">
               {['Page Title', 'URL', 'Type', 'Status', 'Words', 'SEO Score', 'Last AI Review', 'Actions'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
                   {h}
@@ -122,9 +147,9 @@ export default function WebsitePagesPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-line">
             {filtered.map((page) => (
-              <tr key={page.url} className="group transition hover:bg-slate-800/30">
+              <tr key={page.url} className="group transition hover:bg-surface-2">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
                     {page.status === 'Review'
@@ -153,10 +178,20 @@ export default function WebsitePagesPage() {
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
                 <td className="px-4 py-3.5">
-                  <button className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20">
-                    <Sparkles className="h-3 w-3" />
-                    AI Review
-                  </button>
+                  {reviewed.includes(page.url) ? (
+                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                      <Check className="h-3 w-3" /> Reviewed
+                    </span>
+                  ) : (
+                    <button
+                      disabled={reviewing === page.url}
+                      onClick={() => startReview(page.url)}
+                      className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      {reviewing === page.url ? 'Reviewing…' : 'AI Review'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

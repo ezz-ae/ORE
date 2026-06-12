@@ -1,6 +1,31 @@
-import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION } from '@/lib/google/vertex-auth'
+import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
 
 const MODEL = 'gemini-2.5-flash'
+
+/**
+ * Grounded offline answer for the Marketing / Ads Expert when Vertex AI is
+ * unreachable. Keeps the ads expert panel responsive instead of 500-ing.
+ */
+function adsExpertFallback(message: string): string {
+  const m = message.toLowerCase()
+  if (m.includes('rsa') || m.includes('headline') || m.includes('ad copy')) {
+    return [
+      "I'm in offline mode, but here's a ready-to-use RSA draft for a Dubai off-plan campaign:",
+      'Headline 1: Own in Dubai From AED 1.2M',
+      'Headline 2: 0% Commission Off-Plan',
+      'Headline 3: Flexible 60/40 Payment Plan',
+      'Description 1: Handpicked off-plan homes in prime Dubai communities. Book a viewing today.',
+      'Description 2: Golden Visa eligible. Trusted developers. Speak to a Freehold advisor now.',
+      '',
+      '(Offline mode — connect the AI service for tailored, data-grounded copy.)',
+    ].join('\n')
+  }
+  return (
+    "I'm running in offline mode and can't reach the live model right now. " +
+    'Your campaigns, keywords, audiences and reports around you are fully populated with demo data — ' +
+    'open any of them to review performance, or ask again once the AI service is connected.'
+  )
+}
 
 // Deployed ADK reasoning engine (Freehold Marketing Expert) — primary path.
 // Falls back to the direct Gemini call below if the engine is unreachable.
@@ -110,6 +135,11 @@ export async function queryAdsAgent(
   const sid     = sessionId ?? 'anon'
   const history = _history.get(sid) ?? []
 
+  // Graceful degradation when no Vertex credentials are configured.
+  if (!vertexConfigured()) {
+    return adsExpertFallback(message)
+  }
+
   // ── Primary: deployed ADK reasoning engine ──
   try {
     const text = await queryReasoningEngine(
@@ -124,43 +154,48 @@ export async function queryAdsAgent(
   }
 
   // ── Fallback: direct Gemini call with local history ──
-  const authHeaders = await getVertexAuthHeaders()
+  try {
+    const authHeaders = await getVertexAuthHeaders()
 
-  // Inject account context only on the first turn of a session
-  const inputText =
-    context && history.length === 0
-      ? `Account context:\n${JSON.stringify(context, null, 2)}\n\nUser question: ${message}`
-      : message
+    // Inject account context only on the first turn of a session
+    const inputText =
+      context && history.length === 0
+        ? `Account context:\n${JSON.stringify(context, null, 2)}\n\nUser question: ${message}`
+        : message
 
-  const contents = [
-    ...history.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
-    { role: 'user', parts: [{ text: inputText }] },
-  ]
+    const contents = [
+      ...history.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
+      { role: 'user', parts: [{ text: inputText }] },
+    ]
 
-  const res = await fetch(GEMINI_URL(), {
-    method:  'POST',
-    headers: { ...authHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
-    }),
-  })
+    const res = await fetch(GEMINI_URL(), {
+      method:  'POST',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => `HTTP ${res.status}`)
-    throw new Error(`Marketing Expert error (${res.status}): ${err}`)
+    if (!res.ok) {
+      const err = await res.text().catch(() => `HTTP ${res.status}`)
+      throw new Error(`Marketing Expert error (${res.status}): ${err}`)
+    }
+
+    const data = await res.json() as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+    }
+    const text =
+      data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ??
+      '(no response from agent)'
+
+    // Keep last 20 turns to stay within context limits
+    _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
+
+    return text
+  } catch (geminiErr) {
+    console.warn('[vertex-agent] direct Gemini fallback failed, returning offline answer:', geminiErr)
+    return adsExpertFallback(message)
   }
-
-  const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-  }
-  const text =
-    data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ??
-    '(no response from agent)'
-
-  // Keep last 20 turns to stay within context limits
-  _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
-
-  return text
 }

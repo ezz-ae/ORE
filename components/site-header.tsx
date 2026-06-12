@@ -35,7 +35,7 @@ const MessageCircleIcon = () => (
 
 const mainLinks = [
   { href: "/", label: "Home", description: "Platform overview and market highlights." },
-  { href: "/properties", label: "Properties", description: "Browse 3,655 live listings." },
+  { href: "/properties", label: "Properties", description: "Browse live project-backed listings." },
   { href: "/projects", label: "Projects", description: "Master developments and launches." },
   { href: "/areas", label: "Areas", description: "Compare districts and demand." },
   { href: "/developers", label: "Developers", description: "Track records and delivery stats." },
@@ -65,7 +65,7 @@ export function SiteHeader() {
   const megaMenuMedium = "w-[min(640px,92vw)] min-w-[340px] p-2"
   const megaMenuCompact = "w-[min(520px,92vw)] min-w-[320px] p-2"
 
-  const commandPaths = ["/dashboard", "/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/settings"]
+  const commandPaths = ["/ads-studio", "/notebook", "/cloud", "/agent-network", "/reports", "/settings"]
   const isMarketCommandPath = pathname === "/market" || /^\/market\/p-/.test(pathname || "")
   if (pathname?.startsWith("/crm") || pathname === "/chat" || isMarketCommandPath || commandPaths.some((path) => pathname === path || pathname?.startsWith(`${path}/`))) {
     return null

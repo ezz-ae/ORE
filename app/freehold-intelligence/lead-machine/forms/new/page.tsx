@@ -157,21 +157,21 @@ export default function NewFormPage() {
   if (created) {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#D4AF37]/15 mb-6">
-          <Check className="h-8 w-8 text-[#D4AF37]" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 mb-6">
+          <Check className="h-8 w-8 text-gold" />
         </div>
         <h2 className="text-[28px] font-semibold text-white">Form created.</h2>
         <p className="mt-3 text-sm text-slate-400">Your lead gen form is live on Meta and ready to attach to campaigns.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/forms/${created.id}`}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             View form
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/forms"
-            className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
           >
             All forms
           </Link>
@@ -192,7 +192,7 @@ export default function NewFormPage() {
       </Link>
 
       <div className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <FileText className="h-3.5 w-3.5" /> New lead form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white">
@@ -205,7 +205,7 @@ export default function NewFormPage() {
         {([1, 2, 3, 4] as WizardStep[]).map((s) => (
           <div
             key={s}
-            className={`h-1 flex-1 rounded-full transition-all ${s <= step ? 'bg-[#D4AF37]' : 'bg-slate-800/50'}`}
+            className={`h-1 flex-1 rounded-full transition-all ${s <= step ? 'bg-gold' : 'bg-surface-2'}`}
           />
         ))}
       </div>
@@ -218,7 +218,7 @@ export default function NewFormPage() {
             <select
               value={form.listingId}
               onChange={(e) => onListingChange(e.target.value)}
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
             >
               <option value="">Select listing…</option>
               {leadMachineListings.map((l) => (
@@ -233,7 +233,7 @@ export default function NewFormPage() {
               value={form.formName}
               onChange={(e) => setForm((p) => ({ ...p, formName: e.target.value }))}
               placeholder="e.g. Palm Jumeirah — Lead Form"
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
@@ -243,7 +243,7 @@ export default function NewFormPage() {
               value={form.landingUrl}
               onChange={(e) => setForm((p) => ({ ...p, landingUrl: e.target.value }))}
               placeholder="https://… (used for thank-you redirect)"
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
@@ -252,7 +252,7 @@ export default function NewFormPage() {
             <input
               value={form.privacyPolicyUrl}
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
         </div>
@@ -272,18 +272,18 @@ export default function NewFormPage() {
                     key={q.type}
                     onClick={() => toggleStandard(q.type)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-slate-800 bg-slate-900 hover:border-white/15'
+                      selected ? 'border-gold/25 bg-gold/[0.05]' : 'border-line bg-surface hover:border-white/15'
                     } ${required ? 'cursor-not-allowed opacity-80' : ''}`}
                   >
                     {selected
-                      ? <CheckSquare className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+                      ? <CheckSquare className="h-4 w-4 shrink-0 text-gold" />
                       : <Square className="h-4 w-4 shrink-0 text-slate-600" />
                     }
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-white">{q.label}</span>
                         {required && (
-                          <span className="rounded-full bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-medium text-[#D4AF37]">Required</span>
+                          <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">Required</span>
                         )}
                       </div>
                       <div className="text-sm text-slate-500">{q.description}</div>
@@ -304,11 +304,11 @@ export default function NewFormPage() {
                     key={preset.key}
                     onClick={() => toggleCustom(preset.key)}
                     className={`flex w-full items-center gap-3 rounded-[14px] border p-4 text-left transition ${
-                      selected ? 'border-[#D4AF37]/25 bg-[#D4AF37]/[0.05]' : 'border-slate-800 bg-slate-900 hover:border-white/15'
+                      selected ? 'border-gold/25 bg-gold/[0.05]' : 'border-line bg-surface hover:border-white/15'
                     }`}
                   >
                     {selected
-                      ? <CheckSquare className="h-4 w-4 shrink-0 text-[#D4AF37]" />
+                      ? <CheckSquare className="h-4 w-4 shrink-0 text-gold" />
                       : <Square className="h-4 w-4 shrink-0 text-slate-600" />
                     }
                     <div className="min-w-0 flex-1">
@@ -323,7 +323,7 @@ export default function NewFormPage() {
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-4 py-3 text-xs text-slate-500">
+          <div className="rounded-[14px] border border-line bg-surface-2 px-4 py-3 text-xs text-slate-500">
             {buildQuestions().length} questions total — shorter forms convert better. 3–4 questions is optimal for real estate leads.
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function NewFormPage() {
               value={form.thankYouTitle}
               onChange={(e) => setForm((p) => ({ ...p, thankYouTitle: e.target.value }))}
               placeholder="Thank you — we'll be in touch."
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
@@ -351,13 +351,13 @@ export default function NewFormPage() {
               onChange={(e) => setForm((p) => ({ ...p, thankYouBody: e.target.value }))}
               rows={3}
               placeholder="A senior advisor will contact you within 24 hours…"
-              className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-[#D4AF37]/40 transition resize-none"
+              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition resize-none"
             />
           </div>
 
           {/* Preview */}
-          <div className="rounded-[18px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-[#D4AF37]/70 mb-3">Preview</div>
+          <div className="rounded-[18px] border border-gold/15 bg-gold/[0.03] p-5">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold/70 mb-3">Preview</div>
             <div className="text-[17px] font-semibold text-white">{form.thankYouTitle || 'Thank you headline'}</div>
             <p className="mt-2 text-sm text-slate-400">{form.thankYouBody || 'Thank you message body…'}</p>
           </div>
@@ -392,7 +392,7 @@ export default function NewFormPage() {
               ],
             },
           ].map((section) => (
-            <div key={section.title} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+            <div key={section.title} className="rounded-[18px] border border-line bg-surface p-5">
               <div className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{section.title}</div>
               <div className="space-y-2">
                 {section.rows.map(([label, value]) => (
@@ -420,7 +420,7 @@ export default function NewFormPage() {
           ? (
             <button
               onClick={() => setStep((s) => (s - 1) as WizardStep)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back
             </button>
@@ -432,7 +432,7 @@ export default function NewFormPage() {
           <button
             onClick={() => setStep((s) => (s + 1) as WizardStep)}
             disabled={step === 1 && (!form.formName || !form.landingUrl)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next <ArrowRight className="h-3.5 w-3.5" />
           </button>
@@ -440,7 +440,7 @@ export default function NewFormPage() {
           <button
             onClick={handleCreate}
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-6 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
           >
             {submitting ? 'Creating…' : 'Create form'}
             {!submitting && <Check className="h-4 w-4" />}

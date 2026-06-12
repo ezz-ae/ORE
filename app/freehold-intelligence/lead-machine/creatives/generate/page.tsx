@@ -43,7 +43,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={copy}
       className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-400"
     >
-      {copied ? <Check className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
+      {copied ? <Check className="h-3 w-3 text-gold" /> : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
   )
@@ -106,7 +106,7 @@ export default function GenerateCreativePage() {
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <Wand2 className="h-3.5 w-3.5" /> AI Copy Generator
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -129,7 +129,7 @@ export default function GenerateCreativePage() {
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 pr-10 text-sm text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -160,8 +160,8 @@ export default function GenerateCreativePage() {
                   className={[
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-white/20 hover:text-slate-300',
+                      ? 'border-gold/40 bg-gold/[0.07] text-white'
+                      : 'border-line bg-surface text-slate-400 hover:border-white/20 hover:text-slate-300',
                   ].join(' ')}
                 >
                   <div className="text-xs font-semibold">{a.label}</div>
@@ -184,8 +184,8 @@ export default function GenerateCreativePage() {
                   className={[
                     'flex-1 rounded-[12px] border py-2.5 text-xs font-medium transition',
                     tone === t.value
-                      ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-white'
-                      : 'border-slate-800 bg-slate-900 text-slate-500 hover:text-slate-300',
+                      ? 'border-gold/40 bg-gold/[0.07] text-white'
+                      : 'border-line bg-surface text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
                   {t.label}
@@ -203,7 +203,7 @@ export default function GenerateCreativePage() {
               <select
                 value={cta}
                 onChange={(e) => setCta(e.target.value as MetaCta)}
-                className="w-full appearance-none rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 pr-10 text-sm text-white focus:border-[#D4AF37]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
               >
                 {CTAS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -217,7 +217,7 @@ export default function GenerateCreativePage() {
           <button
             onClick={generate}
             disabled={loading || !listing}
-            className="w-full rounded-full bg-[#D4AF37] px-5 py-3 text-[14px] font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] disabled:opacity-50"
+            className="w-full rounded-full bg-gold px-5 py-3 text-[14px] font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -240,7 +240,7 @@ export default function GenerateCreativePage() {
         {/* Variants */}
         <div>
           {variants.length === 0 && !loading && (
-            <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-800 text-center">
+            <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-dashed border-line text-center">
               <Wand2 className="mx-auto h-8 w-8 text-slate-600 mb-3" />
               <div className="text-[14px] text-slate-500">Configure options and generate</div>
               <p className="mt-1 text-xs text-slate-600">
@@ -251,7 +251,7 @@ export default function GenerateCreativePage() {
 
           {loading && (
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-3">
-              <Sparkles className="h-6 w-6 animate-pulse text-[#D4AF37]/60" />
+              <Sparkles className="h-6 w-6 animate-pulse text-gold/60" />
               <div className="text-sm text-slate-500">Building copy variants…</div>
             </div>
           )}
@@ -266,19 +266,19 @@ export default function GenerateCreativePage() {
                 </div>
                 <Link
                   href={campaignNewUrl}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]"
                 >
                   Use in campaign
                 </Link>
               </div>
 
               {variants.map((v, i) => (
-                <div key={v.id} className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
+                <div key={v.id} className="rounded-[20px] border border-line bg-surface p-5">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                       Variant {i + 1}
                     </span>
-                    <span className="rounded-full border border-slate-800 px-2.5 py-0.5 text-xs text-slate-500">
+                    <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-slate-500">
                       {v.cta.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -311,7 +311,7 @@ export default function GenerateCreativePage() {
                     )}
                   </div>
 
-                  <div className="mt-4 border-t border-slate-800 pt-3 flex justify-between items-center">
+                  <div className="mt-4 border-t border-line pt-3 flex justify-between items-center">
                     <code className="text-xs font-mono text-slate-600">{v.id}</code>
                     <button
                       onClick={() => {

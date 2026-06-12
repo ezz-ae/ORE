@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight } from 'lucide-react'
+import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 type Agent = {
   id: string
@@ -15,17 +16,10 @@ type Agent = {
   resetAt: string
 }
 
-const INITIAL_AGENTS: Agent[] = [
-  { id: 'a1', name: 'Noura Al Hassan',   initials: 'NA', tier: 'Gold',   quota: 25, used: 18, pending: 0, resetAt: '2026-07-01' },
-  { id: 'a2', name: 'James Cooper',      initials: 'JC', tier: 'Silver', quota: 18, used: 12, pending: 2, resetAt: '2026-07-01' },
-  { id: 'a3', name: 'Priya Sharma',      initials: 'PS', tier: 'Bronze', quota: 12, used: 5,  pending: 1, resetAt: '2026-07-01' },
-  { id: 'a4', name: 'Omar Khalil',       initials: 'OK', tier: 'Silver', quota: 18, used: 15, pending: 0, resetAt: '2026-07-01' },
-]
-
 const TIER_COLOR: Record<string, string> = {
   Bronze:   'text-orange-400   bg-orange-400/10   border-orange-400/25',
-  Silver:   'text-slate-300    bg-slate-800/50    border-slate-600',
-  Gold:     'text-[#D4AF37]    bg-[#D4AF37]/10    border-[#D4AF37]/25',
+  Silver:   'text-slate-300    bg-surface-2    border-line-strong',
+  Gold:     'text-gold    bg-gold/10    border-gold/25',
   Platinum: 'text-violet-300   bg-violet-400/10   border-violet-400/25',
 }
 
@@ -33,10 +27,39 @@ const TIER_QUOTA: Record<string, number> = {
   Bronze: 12, Silver: 18, Gold: 25, Platinum: 40,
 }
 
+const NEXT_RESET = (() => {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().slice(0, 10)
+})()
+
 export default function AgentCreditsPage() {
-  const [agents, setAgents]           = useState<Agent[]>(INITIAL_AGENTS)
+  const [agents, setAgents]           = useState<Agent[]>([])
+  const [loading, setLoading]         = useState(true)
   const [saved, setSaved]             = useState<string[]>([])
   const [adjustments, setAdjustments] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) {
+          const brokers = data.members
+            .filter((m: any) => m.dbRole === 'broker')
+            .map((m: any): Agent => ({
+              id:      m.id,
+              name:    m.name,
+              initials: m.initials,
+              tier:    'Bronze',
+              quota:   TIER_QUOTA.Bronze,
+              used:    0,
+              pending: 0,
+              resetAt: NEXT_RESET,
+            }))
+          setAgents(brokers)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   function adjust(id: string, delta: number) {
     setAdjustments((prev) => {
@@ -76,10 +99,10 @@ export default function AgentCreditsPage() {
       {/* Credit Economy banner */}
       <Link
         href="/freehold-intelligence/management/credits"
-        className="group mb-6 flex items-center gap-4 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06] px-5 py-4 transition hover:border-[#D4AF37]/40 hover:bg-[#D4AF37]/10"
+        className="group mb-6 flex items-center gap-4 rounded-xl border border-gold/25 bg-gold/[0.06] px-5 py-4 transition hover:border-gold/40 hover:bg-gold/10"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#D4AF37]/25 bg-[#D4AF37]/10">
-          <Coins className="h-5 w-5 text-[#D4AF37]" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
+          <Coins className="h-5 w-5 text-gold" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">Ad-credit economy &amp; AI financial analysis now live in the Admin panel</p>
@@ -87,48 +110,47 @@ export default function AgentCreditsPage() {
             Broker ad budgets, blended ROI, and AI-recommended refills — the full Credit Economy dashboard.
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[#D4AF37]">
+        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-gold">
           Open <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       </Link>
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-[20px] font-semibold text-white">Agent Lead Credits</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Control how many leads each agent receives per month. Credits reset on the 1st of each month.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={Coins}
+        title="Agent Lead Credits"
+        subtitle="Control how many leads each agent receives per month. Credits reset on the 1st of each month."
+        className="mb-8"
+      />
 
       {/* Summary row */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { label: 'Total quota',    value: totalQuota,                       Icon: Zap,   color: 'text-[#D4AF37]'  },
-          { label: 'Used this month', value: totalUsed,                        Icon: Users, color: 'text-sky-400'    },
-          { label: 'Remaining',       value: totalQuota - totalUsed,           Icon: CheckCircle, color: 'text-emerald-400' },
-        ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3.5">
-            <Icon className={`h-4 w-4 ${color}`} />
-            <div className={`mt-2 text-[20px] font-semibold tabular-nums ${color}`}>{value}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{label}</div>
-          </div>
-        ))}
+        <StatCard label="Total quota"    value={totalQuota}              Icon={Zap}         hint="credits allocated" />
+        <StatCard label="Used this month" value={totalUsed}              Icon={Users}       hint="credits consumed"  />
+        <StatCard label="Remaining"       value={totalQuota - totalUsed} Icon={CheckCircle} hint="available now"     />
       </div>
 
       {/* Agents */}
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span className="text-sm">Loading agents…</span>
+        </div>
+      )}
       <div className="space-y-3">
-        {agents.map((agent) => {
+        {!loading && agents.map((agent) => {
           const tc     = TIER_COLOR[agent.tier]
           const pct    = agent.quota > 0 ? (agent.used / agent.quota) * 100 : 0
           const adj    = adjustments[agent.id] ?? 0
           const isSaved = saved.includes(agent.id)
 
           return (
-            <div key={agent.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div key={agent.id} className="rounded-xl border border-line bg-surface p-5">
 
               {/* Agent identity */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15 text-sm font-bold text-[#D4AF37]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
                   {agent.initials}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -157,9 +179,9 @@ export default function AgentCreditsPage() {
                     </span>
                   )}
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-slate-700">
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <div
-                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-[#D4AF37]'}`}
+                    className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-gold'}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
@@ -177,7 +199,7 @@ export default function AgentCreditsPage() {
                         key={t}
                         onClick={() => setTier(agent.id, t)}
                         className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                          agent.tier === t ? TIER_COLOR[t] : 'border-slate-700 text-slate-500 hover:text-slate-300'
+                          agent.tier === t ? TIER_COLOR[t] : 'border-line-strong text-slate-500 hover:text-slate-300'
                         }`}
                       >
                         {t}
@@ -189,10 +211,10 @@ export default function AgentCreditsPage() {
                 {/* Manual quota adjustment */}
                 <div className="ml-auto flex items-center gap-2">
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider">Bonus credits</div>
-                  <div className="flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/50 px-1 py-1">
+                  <div className="flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-1 py-1">
                     <button
                       onClick={() => adjust(agent.id, -1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-surface-2 hover:text-slate-200"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
@@ -201,7 +223,7 @@ export default function AgentCreditsPage() {
                     </span>
                     <button
                       onClick={() => adjust(agent.id, 1)}
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-800/50 hover:text-slate-200"
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-surface-2 hover:text-slate-200"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -209,7 +231,7 @@ export default function AgentCreditsPage() {
                   {adj !== 0 && (
                     <button
                       onClick={() => applyAdjustment(agent.id)}
-                      className="rounded-full bg-[#D4AF37] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90"
+                      className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-gold/90"
                     >
                       Apply
                     </button>
@@ -221,7 +243,6 @@ export default function AgentCreditsPage() {
           )
         })}
       </div>
-
     </div>
   )
 }

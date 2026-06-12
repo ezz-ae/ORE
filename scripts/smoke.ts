@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * scripts/smoke.ts
- * ORE Intelligence OS — Staging Smoke Runner
+ * Freehold Intelligence — Staging Smoke Runner
  *
  * Usage:
  *   pnpm smoke                          # runs against STAGING_URL
@@ -9,8 +9,8 @@
  *   pnpm smoke --prod                   # runs against PRODUCTION_URL
  *
  * Env vars:
- *   STAGING_URL          e.g. https://staging.orerealestate.ae
- *   PRODUCTION_URL       e.g. https://orerealestate.ae
+ *   STAGING_URL          e.g. https://staging.freeholdproperty.ae
+ *   PRODUCTION_URL       e.g. https://freeholdproperty.ae
  *   VERCEL_BYPASS_TOKEN  Vercel protection bypass secret (staging only)
  *   SMOKE_TIMEOUT_MS     Per-request timeout (default: 8000)
  *
@@ -33,7 +33,7 @@ const { values: args } = parseArgs({
 const BASE_URL =
   args.url ??
   (args.prod
-    ? process.env.PRODUCTION_URL ?? "https://orerealestate.ae"
+    ? process.env.PRODUCTION_URL ?? "https://freeholdproperty.ae"
     : process.env.STAGING_URL   ?? "http://localhost:3000")
 
 const BYPASS_TOKEN = args.prod ? undefined : process.env.VERCEL_BYPASS_TOKEN
@@ -275,12 +275,114 @@ const SMOKE_TESTS: SmokeTest[] = [
           throw new Error("Unit-level query must include unit_distribution_signal in table_spec.signals")
       }),
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  FREEHOLD INTELLIGENCE — public contract, AI routes, private gates
+  //  (mirrors the Hex full-system audit acceptance checklist)
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Public read APIs return non-empty Neon data ──────────────────
+  {
+    name: "GET /api/freehold/public/projects — non-empty Neon projects",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/public/projects?limit=5", undefined, (res, json: any) => {
+      if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`)
+      if (!Array.isArray(json.projects) || json.projects.length === 0)
+        throw new Error("Expected non-empty projects array from Neon")
+      if (json.source !== "neon") throw new Error(`Expected source=neon, got ${json.source}`)
+    }),
+  },
+  {
+    name: "GET /api/freehold/public/areas — non-empty Neon areas",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/public/areas", undefined, (res, json: any) => {
+      if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`)
+      if (!Array.isArray(json.areas) || json.areas.length === 0)
+        throw new Error("Expected non-empty areas array from Neon")
+    }),
+  },
+  {
+    name: "GET /api/freehold/public/developers — non-empty Neon developers",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/public/developers", undefined, (res, json: any) => {
+      if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`)
+      if (!Array.isArray(json.developers) || json.developers.length === 0)
+        throw new Error("Expected non-empty developers array from Neon")
+    }),
+  },
+  {
+    name: "GET /api/freehold/public/search?q=dubai — cross-entity results",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/public/search?q=dubai", undefined, (res, json: any) => {
+      if (res.status !== 200) throw new Error(`Expected 200, got ${res.status}`)
+      if (!Array.isArray(json.results)) throw new Error("Expected results array")
+    }),
+  },
+  {
+    name: "GET /api/freehold/search?q=dubai — alias resolves (not 404)",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/search?q=dubai", undefined, (res, json: any) => {
+      if (res.status === 404) throw new Error("Alias /api/freehold/search must not 404")
+      if (!Array.isArray(json.results)) throw new Error("Expected results array from alias")
+    }),
+  },
+
+  // ── No placeholder / secret leakage in public responses ──────────
+  {
+    name: "GET /api/freehold/public/projects — no placeholder/secret markers",
+    critical: false,
+    run: () => hit("GET", "/api/freehold/public/projects?limit=50", undefined, (_, json: any) => {
+      const raw = JSON.stringify(json).toLowerCase()
+      const BAD = ["gold century", "roomdood", "picsum", "lorem ipsum",
+                   "971xxxxxxxxx", "neon_", "database_url", "node_modules"]
+      for (const m of BAD)
+        if (raw.includes(m)) throw new Error(`Forbidden marker in public response: ${m}`)
+    }),
+  },
+
+  // ── AI compatibility routes accept POST (not 404) ────────────────
+  {
+    name: "POST /api/freehold/chat — alias resolves (not 404)",
+    critical: false,
+    run: () => hit("POST", "/api/freehold/chat", { message: "What can you help with?" }, (res) => {
+      if (res.status === 404) throw new Error("/api/freehold/chat must not 404")
+    }),
+  },
+  {
+    name: "POST /api/freehold/ai/chat — alias resolves (not 404)",
+    critical: false,
+    run: () => hit("POST", "/api/freehold/ai/chat", { message: "What can you help with?" }, (res) => {
+      if (res.status === 404) throw new Error("/api/freehold/ai/chat must not 404")
+    }),
+  },
+
+  // ── Private routes remain 401 unauthenticated ────────────────────
+  ...[
+    { path: "/api/freehold/crm/leads",      method: "GET"  as const, body: undefined },
+    { path: "/api/freehold/crm/summary",    method: "GET"  as const, body: undefined },
+    { path: "/api/freehold/crm/activity",   method: "GET"  as const, body: undefined },
+    { path: "/api/freehold/inventory",      method: "GET"  as const, body: undefined },
+    { path: "/api/freehold/analytics/leads", method: "GET" as const, body: undefined },
+    { path: "/api/freehold/credits/balance", method: "GET" as const, body: undefined },
+    { path: "/api/freehold/integrations/hubspot", method: "GET" as const, body: undefined },
+    { path: "/api/freehold/lead-machine/listings",    method: "GET"  as const, body: undefined },
+    { path: "/api/freehold/lead-machine/comments",   method: "POST" as const, body: { projectId: "x", body: "y" } },
+    { path: "/api/freehold/lead-machine/ad-requests", method: "POST" as const, body: { projectId: "x" } },
+    { path: "/api/freehold/notebook/save-output",    method: "POST" as const, body: { content: "x" } },
+  ].map((r) => ({
+    name: `${r.method} ${r.path} — 401 unauthenticated`,
+    critical: false,
+    run: () => hit(r.method, r.path, r.body, (res) => {
+      if (res.status !== 401)
+        throw new Error(`Private route must return 401 unauthenticated, got ${res.status}`)
+    }),
+  })),
 ]
 
 // ── Runner ────────────────────────────────────────────────────────
 async function main() {
   console.log(`\n${"═".repeat(60)}`)
-  console.log(`  ORE SMOKE RUNNER`)
+  console.log(`  FREEHOLD SMOKE RUNNER`)
   console.log(`  Target: ${BASE_URL}`)
   console.log(`  Bypass: ${BYPASS_TOKEN ? "✓ set" : "✗ not set (may fail on protected staging)"}`)
   console.log(`  Tests:  ${SMOKE_TESTS.length}`)

@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { crmActivityLog, type CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
+import { PageHeader, StatCard, Panel, EmptyState } from '@/components/freehold/ui'
 
 // ─── Supplemental static events to enrich the timeline ────────────────────────
 
@@ -151,9 +152,9 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
   call: {
     Icon: PhoneCall,
     label: 'Call',
-    iconColor: 'text-[#D4AF37]',
-    iconBg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20',
-    badgeColor: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
+    iconColor: 'text-gold',
+    iconBg: 'bg-gold/10 border-gold/20',
+    badgeColor: 'border-gold/20 bg-gold/10 text-gold',
   },
   whatsapp: {
     Icon: MessageCircle,
@@ -166,15 +167,15 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
     Icon: FileText,
     label: 'Note',
     iconColor: 'text-slate-400',
-    iconBg: 'bg-slate-800/50 border-slate-700',
-    badgeColor: 'border-slate-700 bg-slate-800/50 text-slate-400',
+    iconBg: 'bg-surface-2 border-line-strong',
+    badgeColor: 'border-line-strong bg-surface-2 text-slate-400',
   },
   stage_change: {
     Icon: ArrowLeftRight,
     label: 'Stage Change',
-    iconColor: 'text-[#D4AF37]',
-    iconBg: 'bg-[#D4AF37]/10 border-[#D4AF37]/20',
-    badgeColor: 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
+    iconColor: 'text-gold',
+    iconBg: 'bg-gold/10 border-gold/20',
+    badgeColor: 'border-gold/20 bg-gold/10 text-gold',
   },
   assignment: {
     Icon: UserCog,
@@ -237,9 +238,9 @@ function formatTimestamp(iso: string): string {
 function OutcomeChip({ outcome }: { outcome?: string }) {
   if (!outcome) return null
   const map: Record<string, string> = {
-    connected:         'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
-    no_answer:         'border-slate-700 bg-slate-800/50 text-slate-400',
-    progressed:        'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]',
+    connected:         'border-gold/20 bg-gold/10 text-gold',
+    no_answer:         'border-line-strong bg-surface-2 text-slate-400',
+    progressed:        'border-gold/20 bg-gold/10 text-gold',
     callback_requested:'border-sky-400/20 bg-sky-400/10 text-slate-400',
     not_interested:    'border-rose-400/20 bg-rose-400/10 text-slate-400',
   }
@@ -250,20 +251,11 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
     callback_requested: 'Callback requested',
     not_interested:     'Not interested',
   }
-  const cls = map[outcome] ?? 'border-slate-700 bg-slate-800/50 text-slate-400'
+  const cls = map[outcome] ?? 'border-line-strong bg-surface-2 text-slate-400'
   return (
     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}>
       {label[outcome] ?? outcome}
     </span>
-  )
-}
-
-function StatCard({ value, label, valueColor }: { value: number | string; label: string; valueColor?: string }) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-      <div className={`text-[30px] font-semibold leading-none ${valueColor ?? 'text-white'}`}>{value}</div>
-      <div className="mt-1.5 text-sm text-slate-400">{label}</div>
-    </div>
   )
 }
 
@@ -281,8 +273,8 @@ function FilterPill({
       onClick={onClick}
       className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all ${
         active
-          ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-          : 'border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+          ? 'border-gold/40 bg-gold/10 text-gold'
+          : 'border-line-strong bg-surface-2 text-slate-400 hover:border-slate-500 hover:text-slate-200'
       }`}
     >
       {label}
@@ -310,12 +302,12 @@ function EventCard({
           <Icon className={`h-4.5 w-4.5 ${cfg.iconColor}`} strokeWidth={1.8} />
         </div>
         {!isLast && (
-          <div className="mt-1 w-px flex-1 bg-slate-800" style={{ minHeight: '24px' }} />
+          <div className="mt-1 w-px flex-1 bg-surface-2" style={{ minHeight: '24px' }} />
         )}
       </div>
 
       {/* Card */}
-      <div className="mb-4 min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-900 px-5 py-4">
+      <div className="mb-4 min-w-0 flex-1 rounded-xl border border-line bg-surface px-5 py-4">
         {/* Top row */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${cfg.badgeColor}`}>
@@ -323,12 +315,12 @@ function EventCard({
           </span>
           <Link
             href={`/freehold-intelligence/crm/leads/${event.leadId}`}
-            className="text-[14px] font-semibold text-white transition-colors hover:text-[#D4AF37]"
+            className="text-[14px] font-semibold text-white transition-colors hover:text-gold"
           >
             {event.leadName}
           </Link>
           {typeof event.durationMin === 'number' && event.durationMin > 0 && (
-            <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2 py-0.5 text-xs text-slate-500">
+            <span className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-500">
               {event.durationMin} min
             </span>
           )}
@@ -371,7 +363,7 @@ function BreakdownList({
               <span className="text-xs text-slate-400">{item.label}</span>
               <span className="text-xs font-semibold text-slate-300">{item.count}</span>
             </div>
-            <div className="h-[3px] rounded-full bg-slate-800">
+            <div className="h-[3px] rounded-full bg-surface-2">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -464,28 +456,21 @@ export default function CrmActivityPage() {
   }, [sortedAll])
 
   return (
-    <div className="min-h-screen bg-slate-900 px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
+    <div className="min-h-screen bg-surface px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="mx-auto max-w-6xl">
 
-        {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
-          <Activity className="h-3.5 w-3.5" />
-          Activity Log
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-          Everything that<br />
-          <span className="text-slate-500">happened.</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-400">
-          {sortedAll.length} events logged — every call, message, note and stage change in chronological order.
-        </p>
+        <PageHeader
+          eyebrow="CRM"
+          Icon={Activity}
+          title="Activity Log"
+          subtitle={`${sortedAll.length} events — every call, message, note and stage change in order.`}
+        />
 
-        {/* ── Stats strip ───────────────────────────────────────────────────── */}
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard value={stats.total}         label="Total events"    valueColor="text-white" />
-          <StatCard value={stats.callsToday}    label="Calls today"     valueColor="text-[#D4AF37]" />
-          <StatCard value={stats.messagesToday} label="Messages today"  valueColor="text-slate-400" />
-          <StatCard value={stats.stageChanges}  label="Stage changes"   valueColor="text-[#D4AF37]" />
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard value={stats.total}         label="Total events" />
+          <StatCard value={stats.callsToday}    label="Calls today"    delta={{ value: 'today', direction: 'up' }} />
+          <StatCard value={stats.messagesToday} label="Messages today" hint="via WhatsApp" />
+          <StatCard value={stats.stageChanges}  label="Stage changes"  delta={{ value: 'all time', direction: 'flat' }} />
         </div>
 
         {/* ── Filter bar ────────────────────────────────────────────────────── */}
@@ -506,9 +491,11 @@ export default function CrmActivityPage() {
           {/* ── Timeline ──────────────────────────────────────────────────── */}
           <div>
             {grouped.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-900 px-8 py-12 text-center text-slate-500">
-                No events match this filter.
-              </div>
+              <EmptyState
+                Icon={Activity}
+                title="No events match this filter"
+                description="Try selecting a different filter type above."
+              />
             ) : (
               grouped.map(([dateKey, events]) => (
                 <div key={dateKey} className="mb-8">
@@ -517,8 +504,8 @@ export default function CrmActivityPage() {
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                       {dateLabel(dateKey)}
                     </span>
-                    <span className="flex-1 border-t border-slate-800" />
-                    <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-sm text-slate-500">
+                    <span className="flex-1 border-t border-line" />
+                    <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm text-slate-500">
                       {events.length}
                     </span>
                   </div>
@@ -542,21 +529,13 @@ export default function CrmActivityPage() {
           {/* ── Sidebar ───────────────────────────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="sticky top-8 space-y-6">
-              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-                <BreakdownList
-                  title="By agent"
-                  items={byAgent}
-                />
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
-                <BreakdownList
-                  title="By type"
-                  items={byType}
-                />
-              </div>
-
-              {/* Quick legend */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+              <Panel className="p-6">
+                <BreakdownList title="By agent" items={byAgent} />
+              </Panel>
+              <Panel className="p-6">
+                <BreakdownList title="By type" items={byType} />
+              </Panel>
+              <Panel className="p-6">
                 <div className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Legend</div>
                 <div className="space-y-2.5">
                   {(Object.entries(TYPE_CONFIG) as [CRMActivityEvent['type'], EventConfig][]).map(([, cfg]) => {
@@ -571,7 +550,7 @@ export default function CrmActivityPage() {
                     )
                   })}
                 </div>
-              </div>
+              </Panel>
             </div>
           </aside>
 

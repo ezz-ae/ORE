@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { DEFAULT_GEMINI_MODELS, getGeminiModel, getGeminiModelByName, listGeminiModels } from "@/lib/gemini"
-import { getLeadById, getProjectBySlug } from "@/lib/ore"
+import { getLeadById, getProjectBySlug } from "@/lib/data"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 
 export const runtime = "nodejs"

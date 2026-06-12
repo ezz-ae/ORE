@@ -21,14 +21,33 @@ export function SmallLeadForm({
 }: SmallLeadFormProps) {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError("")
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    setLoading(false)
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 2500)
+    const data = new FormData(e.currentTarget)
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") || ""),
+          phone: String(data.get("phone") || ""),
+          email: String(data.get("email") || ""),
+          message: String(data.get("message") || ""),
+          source: source || "inline",
+        }),
+      })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload?.error || "Unable to send inquiry.")
+      setSubmitted(true)
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to send inquiry.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (submitted) {
@@ -74,6 +93,7 @@ export function SmallLeadForm({
           <Textarea id="compact-message" name="message" rows={3} placeholder="Budget, area, timeframe..." />
         </div>
         <input type="hidden" name="source" value={source || "inline"} />
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <Button type="submit" className="w-full freehold-gradient" size="lg" disabled={loading}>
           {loading ? "Sending..." : "Send Inquiry"}
         </Button>

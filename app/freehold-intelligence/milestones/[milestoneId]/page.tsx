@@ -12,8 +12,8 @@ export async function generateStaticParams() {
 function healthTone(health?: string | null) {
   switch (health) {
     case 'complete':
-    case 'on_track': return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', bar: 'bg-[#D4AF37]' }
-    case 'at_risk':  return { dot: 'bg-[#D4AF37]',  text: 'text-[#F8E7AE]',  bar: 'bg-[#D4AF37]'  }
+    case 'on_track': return { dot: 'bg-gold', text: 'text-gold', bar: 'bg-gold' }
+    case 'at_risk':  return { dot: 'bg-gold',  text: 'text-[#F8E7AE]',  bar: 'bg-gold'  }
     case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
     default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500'  }
   }
@@ -36,7 +36,7 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <Flag className="h-3.5 w-3.5" /> {milestone.code}
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
@@ -48,18 +48,18 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
       </section>
 
       <section className="mt-12 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-2xl border border-line bg-surface p-5">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Owner</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.owner}</div>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-2xl border border-line bg-surface p-5">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Deadline</div>
           <div className="mt-2 text-lg font-semibold tracking-tight text-white">{milestone.deadline}</div>
           {milestone.days_to_deadline != null && (
             <div className="mt-1 text-xs text-slate-400">{milestone.days_to_deadline}d remaining</div>
           )}
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-2xl border border-line bg-surface p-5">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Health</div>
           <div className={`mt-2 flex items-center gap-1.5 text-lg font-semibold capitalize ${tone.text}`}>
             <span className={`h-2 w-2 rounded-full ${tone.dot}`} />
@@ -68,19 +68,19 @@ export default async function MilestoneDetailPage({ params }: { params: Promise<
         </div>
       </section>
 
-      <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+      <section className="mt-8 rounded-2xl border border-line bg-surface p-6">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>Progress</span>
           <span className="tabular-nums font-semibold text-white">{pct}%</span>
         </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800/60">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div className={`h-full transition-all ${tone.bar}`} style={{ width: `${pct}%` }} />
         </div>
       </section>
 
       {milestone.success_event && (
-        <section className="mt-12 rounded-3xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.04] px-7 py-7 sm:px-10 sm:py-9">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">Success event</div>
+        <section className="mt-12 rounded-3xl border border-gold/15 bg-gold/[0.04] px-7 py-7 sm:px-10 sm:py-9">
+          <div className="text-xs font-semibold uppercase tracking-wider text-gold/85">Success event</div>
           <p className="mt-3 text-base font-medium leading-[1.65] text-slate-100 sm:text-lg">{milestone.success_event}</p>
         </section>
       )}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 // Static pipeline value data per stage
@@ -34,16 +34,17 @@ const STAGE_DELTA: Record<string, string> = {
 }
 
 export default function CrmPipelinePage() {
+  const { leads } = useLiveLeads()
   const [activeStage, setActiveStage] = useState<string | null>(null)
 
   // Compute real stage counts from live lead data
-  const stageCounts = useMemo(() => crmLeads.reduce<Record<string, typeof crmLeads>>(
+  const stageCounts = useMemo(() => leads.reduce<Record<string, typeof leads>>(
     (acc, lead) => {
       ;(acc[lead.stage] = acc[lead.stage] || []).push(lead)
       return acc
     },
     {},
-  ), [])
+  ), [leads])
 
   const stages = useMemo(() => STAGE_ORDER.map((name) => ({
     name,

@@ -39,7 +39,7 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">Daily performance</div>
         <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -47,7 +47,7 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
             <span className="h-0.5 w-4 rounded" style={{ background: GOOGLE_BLUE }} /> Spend
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-[#D4AF37]" /> Clicks
+            <span className="h-0.5 w-4 rounded bg-gold" /> Clicks
           </span>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function GoogleAdsPage() {
           <button
             onClick={() => fetchAll(true)}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -232,11 +232,11 @@ export default function GoogleAdsPage() {
               { label: 'Spend',       value: fmtMicros(totalSpend),               color: 'text-white'      },
               { label: 'Impressions', value: totalImpr.toLocaleString(),           color: 'text-slate-300'  },
               { label: 'Clicks',      value: totalClicks.toLocaleString(),         color: 'text-white'      },
-              { label: 'Conversions', value: Math.round(totalConv).toLocaleString(), color: 'text-[#D4AF37]' },
+              { label: 'Conversions', value: Math.round(totalConv).toLocaleString(), color: 'text-gold' },
               { label: 'Avg CTR',     value: fmtPct(avgCtr),                      color: 'text-slate-300'  },
               { label: 'Avg CPC',     value: fmtMicros(avgCpc),                   color: 'text-slate-300'  },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+              <div key={k.label} className="rounded-xl border border-line bg-surface-2 p-4">
                 <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{k.label}</div>
                 <div className={`mt-2 text-xl font-semibold leading-none ${k.color}`}>{k.value}</div>
               </div>
@@ -255,9 +255,9 @@ export default function GoogleAdsPage() {
             <section className="mt-10">
               <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">Campaigns</div>
               <div className="overflow-x-auto">
-                <div className="min-w-[700px] overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+                <div className="min-w-[700px] overflow-hidden rounded-xl border border-line bg-surface-2">
                   {/* Header */}
-                  <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 border-b border-slate-800 px-5 py-3">
+                  <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 border-b border-line px-5 py-3">
                     {[
                       { label: 'Campaign', col: null },
                       { label: 'Type',     col: null },
@@ -285,14 +285,14 @@ export default function GoogleAdsPage() {
                     ))}
                   </div>
                   {/* Rows */}
-                  <div className="divide-y divide-slate-800">
+                  <div className="divide-y divide-line">
                     {sorted.map((c) => (
                       <div key={c.id} className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 items-center px-5 py-4">
                         <Link
                           href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
                           className="flex items-center gap-2 min-w-0 hover:text-white transition"
                         >
-                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-slate-600'}`} />
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-gold' : 'bg-surface-3'}`} />
                           <span className="truncate text-sm font-medium text-slate-300">{c.name}</span>
                         </Link>
                         <span
@@ -303,15 +303,15 @@ export default function GoogleAdsPage() {
                         </span>
                         <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
                           c.status === 'ENABLED'
-                            ? 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
-                            : 'border-slate-700 bg-slate-800/50 text-slate-500'
+                            ? 'border-gold/20 bg-gold/10 text-gold'
+                            : 'border-line-strong bg-surface-2 text-slate-500'
                         }`}>
                           {c.status === 'ENABLED' ? 'Active' : 'Paused'}
                         </span>
                         <span className="text-xs text-slate-300">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.impressions ?? 0).toLocaleString()}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.clicks ?? 0).toLocaleString()}</span>
-                        <span className="text-sm font-semibold text-[#D4AF37]">{Math.round(c.metrics?.conversions ?? 0)}</span>
+                        <span className="text-sm font-semibold text-gold">{Math.round(c.metrics?.conversions ?? 0)}</span>
                         <button
                           onClick={() => toggleStatus(c)}
                           disabled={toggling === c.id}
@@ -319,7 +319,7 @@ export default function GoogleAdsPage() {
                             'rounded-lg border px-2 py-1 text-xs font-medium transition disabled:opacity-40',
                             c.status === 'ENABLED'
                               ? 'border-red-400/20 bg-red-400/[0.07] text-red-300 hover:bg-red-400/[0.14]'
-                              : 'border-[#D4AF37]/20 bg-[#D4AF37]/[0.07] text-[#D4AF37] hover:bg-[#D4AF37]/[0.14]',
+                              : 'border-gold/20 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]',
                           ].join(' ')}
                         >
                           {toggling === c.id ? '…' : c.status === 'ENABLED' ? 'Pause' : 'Resume'}
@@ -342,13 +342,13 @@ export default function GoogleAdsPage() {
                 </Link>
               </div>
               <div className="overflow-x-auto">
-                <div className="min-w-[540px] overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
-                  <div className="grid grid-cols-[2fr_90px_70px_70px_90px] gap-4 border-b border-slate-800 px-5 py-3">
+                <div className="min-w-[540px] overflow-hidden rounded-xl border border-line bg-surface-2">
+                  <div className="grid grid-cols-[2fr_90px_70px_70px_90px] gap-4 border-b border-line px-5 py-3">
                     {['Search Term', 'Impressions', 'Clicks', 'CTR', 'Avg CPC'].map((h) => (
                       <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{h}</div>
                     ))}
                   </div>
-                  <div className="divide-y divide-slate-800">
+                  <div className="divide-y divide-line">
                     {searchTerms.map((s) => {
                       const ctr = s.impressions > 0 ? s.clicks / s.impressions : 0
                       const cpc = s.clicks > 0 ? s.costMicros / s.clicks : 0
@@ -370,7 +370,7 @@ export default function GoogleAdsPage() {
 
           {/* Empty state */}
           {campaigns.length === 0 && !error && (
-            <div className="mt-16 rounded-2xl border border-slate-800 bg-slate-800/50 px-7 py-14 text-center">
+            <div className="mt-16 rounded-2xl border border-line bg-surface-2 px-7 py-14 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: `${GOOGLE_BLUE}14` }}>
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
                   <path d="M21.805 10.023H12v3.955h5.63c-.513 2.466-2.694 4.022-5.63 4.022-3.414 0-6.182-2.768-6.182-6.182s2.768-6.182 6.182-6.182c1.533 0 2.926.564 3.99 1.488l2.964-2.964C17.113 2.548 14.659 1.5 12 1.5 6.201 1.5 1.5 6.201 1.5 12S6.201 22.5 12 22.5c5.523 0 10.5-4 10.5-10.5 0-.657-.066-1.298-.195-1.977z" fill={GOOGLE_BLUE} />
@@ -393,7 +393,7 @@ export default function GoogleAdsPage() {
             <div className="mt-10">
               <Link
                 href="/freehold-intelligence/lead-machine/google"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-800/50 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
+                className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
               >
                 Full Google Ads manager <ArrowUpRight className="h-3.5 w-3.5" style={{ color: GOOGLE_BLUE }} />
               </Link>

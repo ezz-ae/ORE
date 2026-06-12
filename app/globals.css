@@ -57,6 +57,13 @@ html {
 }
 
 
+/* Brand accent — kept non-inline so `bg-gold`, `text-gold`, `border-gold/30`,
+ * etc. resolve to var(--color-gold). A white-label instance overrides this one
+ * variable (e.g. on the workspace root) to re-skin the whole product. */
+@theme {
+  --color-gold: #D4AF37;
+}
+
 @theme inline {
   --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
@@ -81,6 +88,25 @@ html {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  /* ───────────────────────────────────────────────────────────────────────
+   * Freehold Intelligence — product theme tokens (single source of truth).
+   *
+   * Every workspace surface reads from these so the whole product stays
+   * cohesive, and so it can be re-skinned per customer by changing one line
+   * (e.g. --color-gold for a different brokerage's brand colour).
+   * ─────────────────────────────────────────────────────────────────────── */
+  --color-app:          #090D16;              /* app canvas / page background  */
+  --color-chrome:       #06090F;              /* nav, headers, sidebars        */
+  --color-surface:      #0D1520;              /* cards & panels                */
+  --color-ink:          #0D1117;              /* deepest surface / on-gold text*/
+  --color-surface-2:    rgba(255,255,255,0.06);  /* raised glass / inputs      */
+  --color-surface-3:    rgba(255,255,255,0.10);  /* hover / tracks / chips     */
+  --color-line:         rgba(255,255,255,0.08);  /* hairline dividers & borders*/
+  --color-line-strong:  rgba(255,255,255,0.14);  /* control & emphasis borders */
+  /* --color-gold lives in the non-inline @theme block below so it can be
+   * overridden at runtime per customer (white-label). */
+
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
   --color-chart-3: hsl(var(--chart-3));
@@ -137,6 +163,28 @@ html {
     text-wrap: pretty;
   }
 
+}
+
+/* ── Freehold Intelligence workspace polish (scoped to .fi-root) ───────────── */
+/* Brand-accent text selection. */
+.fi-root ::selection {
+  background: color-mix(in srgb, var(--color-gold) 28%, transparent);
+  color: #fff;
+}
+/* Consistent keyboard focus ring on interactive controls that don't define one.
+ * Scoped to buttons/links/roles so it never fights input focus treatments. */
+.fi-root :where(button, a, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+/* Input / textarea / select focus: gold ring so the active field is unmistakably
+ * visible. Individual outline-none overrides still suppress the browser default
+ * rectangle, but this shadow-based ring kicks in on top. */
+.fi-root :where(input, textarea, select):focus {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 40%, transparent),
+              inset 0 0 0 1px color-mix(in srgb, var(--color-gold) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 65%, transparent) !important;
 }
 
 @layer base {

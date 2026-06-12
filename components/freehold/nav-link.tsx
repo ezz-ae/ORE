@@ -26,14 +26,14 @@ export function NavLink({
       href={href}
       className={`flex items-center gap-3 border px-3 py-2.5 text-sm transition ${
         isActive
-          ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.08] text-white'
-          : 'border-transparent text-slate-400 hover:border-[#D4AF37]/25 hover:bg-slate-800/40 hover:text-white'
+          ? 'border-gold/40 bg-gold/[0.08] text-white'
+          : 'border-transparent text-slate-400 hover:border-gold/25 hover:bg-surface-2 hover:text-white'
       }`}
     >
-      <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#D4AF37]' : 'text-[#D4AF37]/60'}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-gold' : 'text-gold/60'}`} />
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className={`shrink-0 text-xs font-semibold tabular-nums ${isActive ? 'text-[#D4AF37]' : 'text-[#D4AF37]/70'}`}>
+        <span className={`shrink-0 text-xs font-semibold tabular-nums ${isActive ? 'text-gold' : 'text-gold/70'}`}>
           {badge}
         </span>
       )}
@@ -58,13 +58,13 @@ export function SmallNavLink({
       href={href}
       className={`flex items-center justify-between border px-3 py-2 text-xs transition ${
         isActive
-          ? 'border-[#D4AF37]/30 bg-[#D4AF37]/[0.07] text-white'
-          : 'border-white/5 bg-slate-800/40 text-slate-400 hover:border-[#D4AF37]/20 hover:text-white'
+          ? 'border-gold/30 bg-gold/[0.07] text-white'
+          : 'border-white/5 bg-surface-2 text-slate-400 hover:border-gold/20 hover:text-white'
       }`}
     >
       <span className="truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="ml-2 shrink-0 tabular-nums text-[#D4AF37]">{badge}</span>
+        <span className="ml-2 shrink-0 tabular-nums text-gold">{badge}</span>
       )}
     </Link>
   )

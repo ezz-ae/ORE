@@ -1,4 +1,4 @@
-import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION } from '@/lib/google/vertex-auth'
+import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
 
 const MODEL = 'gemini-2.5-flash'
 
@@ -22,6 +22,69 @@ Use short bullet points for lists. Keep answers under 200 words unless details a
 type Turn = { role: 'user' | 'model'; text: string }
 const _history = new Map<string, Turn[]>()
 
+/**
+ * Build a useful, context-aware answer when Vertex AI is unreachable (no
+ * service-account credentials configured, or the upstream call failed). This
+ * keeps every AI surface in the platform responsive — the global Expert panel,
+ * the home briefing, notebook, agent and management chats all degrade to a
+ * grounded summary instead of returning a 500.
+ */
+export function buildFallbackAnswer(message: string, context?: Record<string, unknown>): string {
+  const lines: string[] = []
+
+  const pickArray = (obj: unknown, key: string): unknown[] => {
+    if (obj && typeof obj === 'object' && Array.isArray((obj as Record<string, unknown>)[key])) {
+      return (obj as Record<string, unknown>)[key] as unknown[]
+    }
+    return []
+  }
+  const titleOf = (item: unknown): string | null => {
+    if (item && typeof item === 'object') {
+      const o = item as Record<string, unknown>
+      return (o.title as string) || (o.name as string) || (o.label as string) || null
+    }
+    return null
+  }
+
+  // Home / management briefing shape
+  const urgent   = pickArray(context, 'urgentTasks')
+  const blocked  = pickArray(context, 'blockedItems')
+  const pending  = pickArray(context, 'pendingApprovals')
+  const actions  = pickArray(context, 'recommendedActions')
+
+  if (urgent.length || blocked.length || pending.length) {
+    lines.push(
+      `Here's where things stand: ${urgent.length} urgent item${urgent.length === 1 ? '' : 's'}, ` +
+      `${blocked.length} blocked, ${pending.length} pending approval${pending.length === 1 ? '' : 's'}.`,
+    )
+    const top = urgent.map(titleOf).filter(Boolean).slice(0, 3)
+    if (top.length) lines.push('Top priorities:\n' + top.map((t) => `• ${t}`).join('\n'))
+    const next = actions.map(titleOf).filter(Boolean).slice(0, 2)
+    if (next.length) lines.push('Recommended next:\n' + next.map((t) => `• ${t}`).join('\n'))
+  }
+
+  // Expert full-system shape
+  const sys = (context?.system ?? null) as Record<string, unknown> | null
+  if (sys) {
+    const blockers = pickArray(sys.launchBlockers, 'blockers')
+    if (blockers.length) {
+      lines.push(`${blockers.length} launch blocker${blockers.length === 1 ? '' : 's'} are open across campaigns.`)
+    }
+  }
+
+  if (lines.length === 0) {
+    lines.push(
+      "I'm running in offline mode right now, so I can't reach the live model — " +
+      'but the dashboards, pipelines and reports around you are fully populated. ' +
+      'Pick a card to drill in, or ask me again once the AI service is connected.',
+    )
+  } else {
+    lines.push('(Offline mode — connect the AI service for full reasoning and drafting.)')
+  }
+
+  return lines.join('\n\n')
+}
+
 export interface ServerQueryOptions {
   sessionId?: string
   context?: Record<string, unknown>
@@ -35,6 +98,22 @@ export interface ServerQueryOptions {
 }
 
 export async function queryServerAgent(
+  message: string,
+  opts: ServerQueryOptions = {},
+): Promise<string> {
+  // Graceful degradation: never hard-fail an AI surface because credentials
+  // aren't wired up. Fall back to a grounded, context-aware summary instead.
+  if (!vertexConfigured()) {
+    return buildFallbackAnswer(message, opts.context)
+  }
+  try {
+    return await callVertex(message, opts)
+  } catch {
+    return buildFallbackAnswer(message, opts.context)
+  }
+}
+
+async function callVertex(
   message: string,
   { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature }: ServerQueryOptions = {},
 ): Promise<string> {

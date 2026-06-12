@@ -80,11 +80,11 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   function exportCsv() {
     if (!leads.length) return
-    const allFields = [...new Set(leads.flatMap((l) => l.field_data.map((f) => f.name)))]
+    const allFields = [...new Set(leads.flatMap((l) => (l.field_data ?? []).map((f) => f.name)))]
     const header    = ['id', 'created_time', ...allFields].join(',')
     const rows      = leads.map((l) => {
       const cells = [l.id, l.created_time, ...allFields.map((f) => {
-        const val = l.field_data.find((fd) => fd.name === f)?.values?.[0] ?? ''
+        const val = (l.field_data ?? []).find((fd) => fd.name === f)?.values?.[0] ?? ''
         return `"${val.replace(/"/g, '""')}"`
       })]
       return cells.join(',')
@@ -126,7 +126,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
   if (!form) return null
 
-  const statusColor = form.status === 'ACTIVE' ? 'text-[#D4AF37]' : 'text-slate-500'
+  const statusColor = form.status === 'ACTIVE' ? 'text-gold' : 'text-slate-500'
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -137,7 +137,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <FileText className="h-3.5 w-3.5" /> Lead Form
         </div>
         <h1 className="mt-3 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
@@ -153,12 +153,12 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       {/* Stats */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total leads',   value: form.leads_count ?? 0,        color: 'text-[#D4AF37]' },
+          { label: 'Total leads',   value: form.leads_count ?? 0,        color: 'text-gold' },
           { label: 'Questions',     value: form.questions?.length ?? '—', color: 'text-white'     },
           { label: 'Status',        value: form.status,                   color: statusColor      },
           { label: 'Synced leads',  value: leads.length,                  color: 'text-white'     },
         ].map((s) => (
-          <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
+          <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
           </div>
@@ -178,7 +178,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
               <button
                 onClick={refreshLeads}
                 disabled={loadingLeads}
-                className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loadingLeads ? 'animate-spin' : ''}`} />
                 Refresh
@@ -186,7 +186,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
               {leads.length > 0 && (
                 <button
                   onClick={exportCsv}
-                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white"
                 >
                   <Download className="h-3.5 w-3.5" /> Export CSV
                 </button>
@@ -195,14 +195,14 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           </div>
 
           {leads.length === 0 ? (
-            <div className="rounded-[22px] border border-slate-800 bg-slate-900 px-6 py-12 text-center">
+            <div className="rounded-[22px] border border-line bg-surface px-6 py-12 text-center">
               <Users className="mx-auto h-8 w-8 text-slate-700 mb-3" />
               <div className="text-sm text-slate-400">No leads synced yet</div>
               <p className="mt-1 text-xs text-slate-500">Attach this form to a campaign to start capturing leads.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[22px] border border-slate-800 bg-slate-900">
-              <div className="divide-y divide-slate-800">
+            <div className="overflow-hidden rounded-[22px] border border-line bg-surface">
+              <div className="divide-y divide-line">
                 {leads.map((lead) => {
                   const name  = getField(lead, 'name')
                   const phone = getField(lead, 'phone')
@@ -210,14 +210,14 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                   const budget = getField(lead, 'budget')
                   return (
                     <div key={lead.id} className="flex items-start gap-4 px-5 py-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800/50 text-sm font-semibold text-slate-400">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-semibold text-slate-400">
                         {name !== '—' ? name.split(' ').map((p) => p[0]).slice(0, 2).join('') : '?'}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-semibold text-white">{name}</span>
                           {budget !== '—' && (
-                            <span className="rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-2 py-0.5 text-xs text-[#F8E7AE]">{budget}</span>
+                            <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs text-[#F8E7AE]">{budget}</span>
                           )}
                         </div>
                         <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-slate-400">
@@ -248,7 +248,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         <aside className="space-y-4">
           {/* Questions */}
           {form.questions && form.questions.length > 0 && (
-            <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-[20px] border border-line bg-surface p-5">
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Questions</div>
               <div className="space-y-2">
                 {form.questions.map((q, i) => (
@@ -264,13 +264,13 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
           {/* Landing URL */}
           {form.follow_up_action_url && (
-            <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-[20px] border border-line bg-surface p-5">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Landing page</div>
               <a
                 href={form.follow_up_action_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-mono text-[#D4AF37]/70 hover:text-[#D4AF37] transition break-all"
+                className="text-xs font-mono text-gold/70 hover:text-gold transition break-all"
               >
                 {form.follow_up_action_url}
               </a>
@@ -278,7 +278,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           )}
 
           {/* Form ID */}
-          <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
+          <div className="rounded-[20px] border border-line bg-surface p-5">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Form ID</div>
             <code className="text-xs text-slate-400 break-all">{form.id}</code>
             <p className="mt-2 text-xs text-slate-500">Use this ID when attaching the form to a campaign ad set.</p>

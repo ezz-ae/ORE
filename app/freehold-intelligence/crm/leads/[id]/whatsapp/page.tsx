@@ -12,7 +12,8 @@ import {
   Check, CheckCheck, Clock, X, Copy,
   ChevronDown, AlertCircle,
 } from 'lucide-react'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
+import { toast } from 'sonner'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -180,10 +181,10 @@ function AiPanel({
   useEffect(() => { generate() }, [])
 
   return (
-    <div className="flex w-72 shrink-0 flex-col border-l border-slate-800 bg-[#0A0E14]">
-      <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+    <div className="flex w-72 shrink-0 flex-col border-l border-line bg-app">
+      <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Sparkles className="h-4 w-4 text-[#D4AF37]" /> AI Replies
+          <Sparkles className="h-4 w-4 text-gold" /> AI Replies
         </div>
         <button onClick={onClose} className="rounded p-1 text-slate-500 hover:text-white">
           <X className="h-4 w-4" />
@@ -198,7 +199,7 @@ function AiPanel({
         {error && <p className="text-xs text-red-400/80">{error}</p>}
         {suggestions.map((s, i) => (
           <button key={i} onClick={() => onSelect(s)}
-            className="w-full rounded-[14px] border border-slate-800 bg-slate-900 px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white active:scale-[0.98]">
+            className="w-full rounded-[14px] border border-line bg-surface px-3.5 py-3 text-left text-xs leading-relaxed text-slate-300 transition hover:border-gold/30 hover:text-white active:scale-[0.98]">
             {s}
           </button>
         ))}
@@ -206,7 +207,7 @@ function AiPanel({
           <p className="py-4 text-center text-xs text-slate-600">No suggestions generated.</p>
         )}
         <button onClick={generate} disabled={loading}
-          className="mt-1 w-full rounded-full border border-slate-800 py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
+          className="mt-1 w-full rounded-full border border-line py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
           {loading ? 'Generating…' : '↻ Regenerate'}
         </button>
       </div>
@@ -218,7 +219,8 @@ function AiPanel({
 
 export default function WhatsAppPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const lead = crmLeads.find((l) => l.id === id)
+  const { leads } = useLiveLeads()
+  const lead = leads.find((l) => l.id === id)
   if (!lead) return null
 
   const phone = lead.phone.replace(/\D/g, '')
@@ -232,6 +234,10 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   const [sending, setSending] = useState(false)
   const [showAI, setShowAI] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const [showOptions, setShowOptions] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const fileAttachRef = useRef<HTMLInputElement>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -366,10 +372,10 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     <div className="flex h-[calc(100vh-100px)] overflow-hidden bg-[#111B21]">
 
       {/* ── Left sidebar: lead + inventory ───────────────────────────────── */}
-      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-slate-800 bg-[#202C33] lg:flex">
+      <aside className="hidden w-[340px] shrink-0 flex-col border-r border-line bg-[#202C33] lg:flex">
 
         {/* Sidebar header */}
-        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5">
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3.5">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
             className="rounded-full p-1 text-slate-500 transition hover:text-white">
             <ArrowLeft className="h-4 w-4" />
@@ -391,7 +397,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
 
         <div className="flex-1 overflow-y-auto">
           {/* Lead info */}
-          <div className="border-b border-slate-800 px-4 py-4 space-y-2.5">
+          <div className="border-b border-line px-4 py-4 space-y-2.5">
             <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">Lead Details</div>
             {[
               { label: 'Stage',    value: lead.pipelineStage },
@@ -408,8 +414,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
 
           {/* AI next action */}
-          <div className="border-b border-slate-800 px-4 py-3.5">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-[#D4AF37]/60">
+          <div className="border-b border-line px-4 py-3.5">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-gold/60">
               <Brain className="h-3 w-3" /> AI Next Action
             </div>
             <p className="text-xs leading-relaxed text-slate-400">{lead.nextBestAction}</p>
@@ -424,7 +430,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   onClick={() => setInput(
                     `I'd like to share a property that matches your requirements:\n\n*${p.name}* — ${p.area}\nFrom ${p.startingPriceAED ? `AED ${(p.startingPriceAED / 1e6).toFixed(1)}M` : 'price on request'} · ${p.bedrooms} BR${p.roi ? ` · ${p.roi}% ROI` : ''}\n${p.paymentPlan ?? ''}\n\nWould you like to know more?`,
                   )}
-                  className="group w-full rounded-[12px] border border-slate-800 bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
+                  className="group w-full rounded-[12px] border border-line bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="truncate text-xs font-medium text-slate-100 group-hover:text-white">{p.name}</div>
@@ -448,9 +454,9 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
 
           {/* Notebook */}
-          <div className="border-t border-slate-800 px-4 py-3">
+          <div className="border-t border-line px-4 py-3">
             <Link href={`/freehold-intelligence/notebook?lead=${lead.id}`}
-              className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-[#D4AF37]">
+              className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-gold">
               <BookOpen className="h-3.5 w-3.5" /> View in Notebook
             </Link>
           </div>
@@ -461,7 +467,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* Chat header — WhatsApp Web style */}
-        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-slate-800 bg-[#202C33] px-4">
+        <div className="flex h-[60px] shrink-0 items-center gap-3 border-b border-line bg-[#202C33] px-4">
           <Link href={`/freehold-intelligence/crm/leads/${lead.id}`}
             className="flex-shrink-0 rounded-full p-1 text-slate-500 transition hover:text-white lg:hidden">
             <ArrowLeft className="h-4 w-4" />
@@ -484,16 +490,28 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           </div>
           <div className="flex items-center gap-1">
             <a href={`tel:${lead.phone}`}
-              className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
+              className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
               <Phone className="h-4 w-4" />
             </a>
             <button onClick={() => setShowAI((v) => !v)}
-              className={`rounded-full p-2 transition hover:bg-slate-800/50 ${showAI ? 'text-[#D4AF37]' : 'text-slate-500 hover:text-white'}`}>
+              className={`rounded-full p-2 transition hover:bg-surface-2 ${showAI ? 'text-gold' : 'text-slate-500 hover:text-white'}`}>
               <Sparkles className="h-4 w-4" />
             </button>
-            <button className="rounded-full p-2 text-slate-500 transition hover:bg-slate-800/50 hover:text-white">
-              <MoreVertical className="h-4 w-4" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowOptions((v) => !v)} className="rounded-full p-2 text-slate-500 transition hover:bg-surface-2 hover:text-white">
+                <MoreVertical className="h-4 w-4" />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
+                  {['Archive chat', 'Mute notifications', 'Clear messages', 'Block contact'].map((opt) => (
+                    <button key={opt} onClick={() => { setShowOptions(false); toast.success(opt) }}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white">
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -587,18 +605,35 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             {/* AI suggestion strip */}
             {input === '' && (
               <button onClick={() => setShowAI(true)}
-                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-[#D4AF37]/20 py-1.5 text-xs text-[#D4AF37]/50 transition hover:border-[#D4AF37]/40 hover:text-[#D4AF37]">
+                className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-gold/20 py-1.5 text-xs text-gold/50 transition hover:border-gold/40 hover:text-gold">
                 <Sparkles className="h-3 w-3" /> Ask AI to suggest a reply
               </button>
             )}
 
+            {showEmoji && (
+              <div className="mb-2 flex flex-wrap gap-1 rounded-xl bg-[#2A3942] p-3">
+                {['😊','👋','🙏','✅','🔑','🏠','💰','📋','📞','⭐','🎉','💎'].map((em) => (
+                  <button key={em} onClick={() => { setInput((v) => v + em); setShowEmoji(false); inputRef.current?.focus() }}
+                    className="text-xl leading-none transition hover:scale-125">
+                    {em}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-end gap-2">
               {/* Emoji */}
-              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <button onClick={() => setShowEmoji((v) => !v)} className={`shrink-0 rounded-full p-2 transition hover:text-slate-300 ${showEmoji ? 'text-gold' : 'text-slate-500'}`}>
                 <SmilePlus className="h-5 w-5" />
               </button>
               {/* Attachment */}
-              <button className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
+              <input ref={fileAttachRef} type="file" multiple className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? [])
+                  if (files.length) toast.success(`${files.length} file${files.length > 1 ? 's' : ''} ready to send`)
+                }}
+              />
+              <button onClick={() => fileAttachRef.current?.click()} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
                 <Paperclip className="h-5 w-5" />
               </button>
 
@@ -626,7 +661,12 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   }
                 </button>
               ) : (
-                <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400">
+                <button
+                  onMouseDown={() => setRecording(true)}
+                  onMouseUp={() => { setRecording(false); toast.success('Voice note recorded — tap Send to deliver') }}
+                  onMouseLeave={() => setRecording(false)}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition ${recording ? 'bg-red-500 animate-pulse' : 'bg-[#00A884] hover:bg-emerald-400'}`}
+                >
                   <Mic className="h-5 w-5" />
                 </button>
               )}

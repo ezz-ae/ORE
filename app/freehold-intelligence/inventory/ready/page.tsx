@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle } from 'lucide-react'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle, Home } from 'lucide-react'
+import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { PageHeader, StatCard } from '@/components/freehold/ui'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -27,8 +28,18 @@ export default function ReadyPage() {
   const [query,  setQuery]  = useState('')
   const [sort,   setSort]   = useState<SortKey>('leads')
   const [area,   setArea]   = useState('All')
+  const [allProperties, setAllProperties] = useState<InventoryProperty[]>(inventoryProperties)
 
-  const base = inventoryProperties.filter((p) => p.status === 'ready' || p.status === 'active')
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/inventory')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.properties?.length > 0) setAllProperties(d.properties) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const base = allProperties.filter((p) => p.status === 'ready' || p.status === 'active')
 
   const areas = ['All', ...Array.from(new Set(base.map((p) => p.area))).sort()]
 
@@ -51,24 +62,20 @@ export default function ReadyPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7">
-        <h1 className="text-[20px] font-semibold text-white">Ready Properties</h1>
-        <p className="mt-1 text-xs text-slate-500">Available and move-in-ready inventory</p>
-      </div>
+      <PageHeader
+        eyebrow="Inventory"
+        Icon={Home}
+        title="Ready Properties"
+        subtitle="Available and move-in-ready inventory"
+        className="mb-6"
+      />
 
       {/* Tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
-        {[
-          { label: 'Ready',        value: props.length,   color: 'text-amber-400'   },
-          { label: 'Live pages',   value: liveLandings,   color: 'text-emerald-400' },
-          { label: '30d Leads',    value: totalLeads,     color: 'text-[#D4AF37]'   },
-          { label: 'Avg readiness',value: `${avgReadiness}%`, color: 'text-slate-300' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-3.5">
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-1.5 text-[20px] font-semibold ${color}`}>{value}</div>
-          </div>
-        ))}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Ready Units" value={props.length} hint="available now" />
+        <StatCard label="Live Pages" value={liveLandings} hint="can run ads" delta={{ value: 'published', direction: 'up' }} />
+        <StatCard label="30d Leads" value={totalLeads} hint="this month" />
+        <StatCard label="Avg Readiness" value={`${avgReadiness}%`} hint="ad-readiness score" />
       </div>
 
       {/* Missing landing alert */}
@@ -95,19 +102,19 @@ export default function ReadyPage() {
             placeholder="Search by name or developer…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
+            className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
           />
         </div>
         <select value={area} onChange={(e) => setArea(e.target.value)}
-          className="rounded-[10px] border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-400 outline-none focus:border-amber-400/30">
+          className="rounded-[10px] border border-line bg-surface px-3 py-2 text-xs text-slate-400 outline-none focus:border-amber-400/30">
           {areas.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <div className="flex items-center gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
+        <div className="flex items-center gap-1 rounded-[10px] border border-line bg-surface p-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500 ml-1" />
           {(['leads', 'price', 'readiness', 'roi'] as SortKey[]).map((s) => (
             <button key={s} onClick={() => setSort(s)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
-                sort === s ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-400'
+                sort === s ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
               {s}
             </button>
@@ -116,7 +123,7 @@ export default function ReadyPage() {
       </div>
 
       {/* Property list */}
-      <div className="rounded-[16px] border border-slate-800 bg-slate-900 divide-y divide-slate-800 overflow-hidden">
+      <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {props.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-slate-500">No ready properties match.</div>
         )}
@@ -142,7 +149,7 @@ export default function ReadyPage() {
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1 w-24 rounded-full bg-slate-800/50">
+                  <div className="h-1 w-24 rounded-full bg-surface-2">
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/60'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
@@ -154,7 +161,7 @@ export default function ReadyPage() {
                 <div className="text-sm font-semibold text-slate-300">{formatPrice(p.startingPriceAED)}</div>
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
-                    className="flex items-center gap-1 rounded-full border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
+                    className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
                     View <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

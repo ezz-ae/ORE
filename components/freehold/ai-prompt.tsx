@@ -38,9 +38,12 @@ export function AiPrompt({
 
   return (
     <div className="grid gap-3">
-      <div className="rounded-2xl border border-slate-700 bg-slate-800/40 p-2 transition-colors focus-within:border-[#D4AF37]/40 focus-within:bg-slate-800/60">
+      <div
+        className="cursor-text rounded-2xl border border-white/[0.14] bg-surface-2 p-2 transition-all focus-within:border-gold/60 focus-within:bg-white/[0.07] focus-within:ring-1 focus-within:ring-gold/15"
+        onClick={() => taRef.current?.focus()}
+      >
         <div className="flex items-end gap-3 px-3 py-2">
-          <Sparkles className="mt-1.5 h-5 w-5 shrink-0 text-[#D4AF37]" />
+          <Sparkles className="mt-1.5 h-5 w-5 shrink-0 text-gold" />
           <textarea
             ref={taRef}
             value={value}
@@ -48,13 +51,13 @@ export function AiPrompt({
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             rows={1}
             placeholder={placeholder}
-            className="flex-1 resize-none bg-transparent text-base leading-7 text-white outline-none placeholder:text-slate-500"
+            className="flex-1 cursor-text resize-none bg-transparent text-base leading-7 text-white outline-none placeholder:text-slate-500"
           />
           <button
             onClick={() => send()}
             disabled={!value.trim()}
             aria-label="Send to Freehold Expert"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#D4AF37] text-[#0D1117] transition hover:bg-[#E8C657] disabled:opacity-30"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-30"
           >
             <ArrowUp className="h-4 w-4" />
           </button>
@@ -67,7 +70,7 @@ export function AiPrompt({
             <button
               key={q}
               onClick={() => send(q)}
-              className="rounded-full border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-400 transition-colors hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/[0.06] hover:text-white"
+              className="rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white"
             >
               {q}
             </button>

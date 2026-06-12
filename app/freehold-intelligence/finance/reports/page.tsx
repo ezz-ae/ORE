@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { BarChart2, TrendingUp, FileText, Table, Download, Calendar, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
 function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
 
@@ -43,43 +44,36 @@ export default function ReportsPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-semibold text-white">Reports</h1>
-          <p className="mt-1 text-xs text-slate-500">Generate and schedule financial reports</p>
-        </div>
-        {/* Range selector */}
-        <div className="flex gap-1 rounded-[10px] border border-slate-800 bg-slate-900 p-1">
-          {RANGE_OPTIONS.slice(0, 4).map((r) => (
-            <button key={r} onClick={() => setRange(r)}
-              className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
-                range === r ? 'bg-slate-800/50 text-white' : 'text-slate-500 hover:text-slate-300'
-              }`}>
-              {r.replace('Last ', '')}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Finance"
+        Icon={BarChart2}
+        title="Reports"
+        subtitle="Generate and schedule financial reports"
+        actions={
+          <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
+            {RANGE_OPTIONS.slice(0, 4).map((r) => (
+              <button key={r} onClick={() => setRange(r)}
+                className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition ${
+                  range === r ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-300'
+                }`}>
+                {r.replace('Last ', '')}
+              </button>
+            ))}
+          </div>
+        }
+        className="mb-7"
+      />
 
       {/* YTD tiles */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { label: 'YTD Spend',    value: fmt(ytdSpend), sub: 'Jan – Jun 2026',  color: 'text-slate-100'    },
-          { label: 'YTD Leads',    value: ytdLeads.toLocaleString(), sub: 'All platforms', color: 'text-slate-100' },
-          { label: 'Avg CPL',      value: `AED ${avgCpl}`, sub: 'Cost per lead', color: 'text-emerald-400' },
-        ].map(({ label, value, sub, color }) => (
-          <div key={label} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
-            <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
-            <div className={`mt-2 text-[18px] font-semibold ${color}`}>{value}</div>
-            <div className="mt-0.5 text-xs text-slate-500">{sub}</div>
-          </div>
-        ))}
+        <StatCard label="YTD Spend" value={fmt(ytdSpend)} hint="Jan – Jun 2026" Icon={TrendingUp} />
+        <StatCard label="YTD Leads" value={ytdLeads.toLocaleString()} hint="All platforms" Icon={BarChart2} />
+        <StatCard label="Avg CPL" value={`AED ${avgCpl}`} hint="Cost per lead" Icon={FileText} />
       </div>
 
       {/* Spend chart */}
-      <section className="mb-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Spend</div>
-        <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-5">
+      <Section title="Monthly Spend" className="mb-6">
+        <div className="rounded-[16px] border border-line bg-surface p-5">
           <div className="flex items-end gap-2 h-28">
             {history.map((row) => {
               const metaRow   = metaHistory.find((r) => r.month === row.month)
@@ -98,7 +92,7 @@ export default function ReportsPage() {
               )
             })}
           </div>
-          <div className="mt-3 flex items-center gap-4 border-t border-slate-800 pt-3">
+          <div className="mt-3 flex items-center gap-4 border-t border-line pt-3">
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <div className="h-2 w-3 rounded-sm bg-blue-400/40" /> Meta
             </div>
@@ -107,28 +101,27 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* Monthly breakdown table */}
-      <section className="mb-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Breakdown</div>
-        <div className="rounded-[16px] border border-slate-800 bg-slate-900 overflow-hidden">
+      <Section title="Monthly Breakdown" className="mb-6">
+        <div className="rounded-[16px] border border-line bg-surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   {['Month', 'Meta', 'Google', 'Total', 'Leads', 'CPL', 'Budget'].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 last:text-right">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {history.map((row, i) => {
                   const metaRow   = metaHistory.find((r) => r.month === row.month)
                   const googleRow = googleHistory.find((r) => r.month === row.month)
                   const current   = row.month === history[history.length - 1].month
                   return (
-                    <tr key={i} className={`transition hover:bg-slate-800/40 ${current ? 'bg-emerald-400/[0.02]' : ''}`}>
+                    <tr key={i} className={`transition hover:bg-surface-2 ${current ? 'bg-emerald-400/[0.02]' : ''}`}>
                       <td className="px-4 py-3 font-medium text-slate-300">
                         {row.month}
                         {current && <span className="ml-2 rounded-full bg-emerald-400/15 px-1.5 py-0.5 text-[10px] text-emerald-400">Current</span>}
@@ -146,18 +139,17 @@ export default function ReportsPage() {
             </table>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* Report templates */}
-      <section>
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Report Templates</div>
+      <Section title="Report Templates">
         <div className="space-y-2">
           {REPORT_TEMPLATES.map((r) => {
             const Icon    = r.icon
             const isDone  = done.includes(r.id)
             const isRunning = running === r.id
             return (
-              <div key={r.id} className="rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+              <div key={r.id} className="rounded-[14px] border border-line bg-surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] border border-emerald-400/20 bg-emerald-400/10">
@@ -177,7 +169,7 @@ export default function ReportsPage() {
                     className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       isDone
                         ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
-                        : 'border-slate-800 text-slate-400 hover:border-emerald-400/25 hover:text-emerald-400'
+                        : 'border-line text-slate-400 hover:border-emerald-400/25 hover:text-emerald-400'
                     } disabled:opacity-50`}>
                     {isRunning ? <RefreshCw className="h-3 w-3 animate-spin" /> : isDone ? <CheckCircle2 className="h-3 w-3" /> : <Download className="h-3 w-3" />}
                     {isRunning ? 'Building…' : isDone ? 'Ready' : 'Generate'}
@@ -187,7 +179,7 @@ export default function ReportsPage() {
             )
           })}
         </div>
-      </section>
+      </Section>
 
     </div>
   )

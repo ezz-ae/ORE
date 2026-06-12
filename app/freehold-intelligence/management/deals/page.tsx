@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   Briefcase, TrendingUp, CheckCircle2, Clock, AlertCircle,
   ArrowUpRight, Calendar, Users, Building2, ChevronRight,
 } from 'lucide-react'
+import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 
 const STATS = [
   { label: 'Total Active Deals',  value: '12',       delta: '+2 this week', positive: true,  icon: Briefcase },
@@ -51,7 +53,7 @@ const CLOSED_DEALS = [
 ]
 
 const PIPELINE_STAGES: { stage: Stage; color: string; bgColor: string; borderColor: string }[] = [
-  { stage: 'Prospect',        color: 'text-slate-400',   bgColor: 'bg-slate-800',      borderColor: 'border-slate-700' },
+  { stage: 'Prospect',        color: 'text-slate-400',   bgColor: 'bg-surface-2',      borderColor: 'border-line-strong' },
   { stage: 'Qualified',       color: 'text-sky-400',     bgColor: 'bg-sky-500/10',     borderColor: 'border-sky-500/30' },
   { stage: 'Proposal',        color: 'text-violet-400',  bgColor: 'bg-violet-500/10',  borderColor: 'border-violet-500/30' },
   { stage: 'Contract Review', color: 'text-amber-400',   bgColor: 'bg-amber-500/10',   borderColor: 'border-amber-500/30' },
@@ -59,7 +61,7 @@ const PIPELINE_STAGES: { stage: Stage; color: string; bgColor: string; borderCol
 ]
 
 const STAGE_BADGE: Record<Stage, string> = {
-  'Prospect':        'bg-slate-700/70 text-slate-300',
+  'Prospect':        'bg-surface-3 text-slate-300',
   'Qualified':       'bg-sky-500/15 text-sky-400',
   'Proposal':        'bg-violet-500/15 text-violet-400',
   'Contract Review': 'bg-amber-500/15 text-amber-400',
@@ -74,14 +76,16 @@ function fmtAED(n: number) {
 
 export default function DealsPage() {
   const [activeFilter, setActiveFilter] = useState<Stage | 'All'>('All')
+  const [showNewDeal, setShowNewDeal] = useState(false)
+  const [followedUp, setFollowedUp] = useState<string[]>([])
 
   const atRisk = DEALS.filter(d => d.lastActivity >= 7)
   const filtered = activeFilter === 'All' ? DEALS : DEALS.filter(d => d.stage === activeFilter)
 
   return (
-    <div className="min-h-screen pb-16 bg-[#0D1117]">
+    <div className="min-h-screen pb-16 bg-ink">
       {/* Header */}
-      <div className="border-b border-slate-800 bg-[#090C12]/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
+      <div className="border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-semibold text-white">Deals Pipeline</h1>
@@ -94,8 +98,10 @@ export default function DealsPage() {
                 <span className="text-xs font-medium text-amber-400">{atRisk.length} at risk</span>
               </div>
             )}
-            <button className="rounded-lg border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-1.5 text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition-colors">
-              + New Deal
+            <button
+              onClick={() => setShowNewDeal((v) => !v)}
+              className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20 transition-colors">
+              {showNewDeal ? 'Cancel' : '+ New Deal'}
             </button>
           </div>
         </div>
@@ -103,33 +109,45 @@ export default function DealsPage() {
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
 
-        {/* Stats row */}
+        {/* New Deal form */}
+        {showNewDeal && (
+          <div className="rounded-xl border border-gold/20 bg-gold/[0.03] p-5 space-y-4">
+            <div className="text-sm font-semibold text-white">New Deal</div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <input placeholder="Client name" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Property" className="col-span-2 md:col-span-1 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Agent" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Deal value (AED)" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input placeholder="Expected close date" type="date" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40" />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowNewDeal(false); toast.success('Deal created') }}
+                className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-medium text-gold hover:bg-gold/20 transition-colors"
+              >
+                Create deal
+              </button>
+              <button onClick={() => setShowNewDeal(false)} className="rounded-lg border border-line px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           {STATS.map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex items-start justify-between gap-2 mb-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-800">
-                  <stat.icon className="h-4 w-4 text-slate-400" />
-                </div>
-                <span className={[
-                  'text-xs font-semibold',
-                  stat.positive ? 'text-emerald-400' : 'text-red-400',
-                ].join(' ')}>
-                  {stat.delta}
-                </span>
-              </div>
-              <p className="text-2xl font-semibold text-white tabular-nums tracking-tight">{stat.value}</p>
-              <p className="mt-1 text-sm font-medium text-slate-400">{stat.label}</p>
-            </div>
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              Icon={stat.icon}
+              delta={{ value: stat.delta, direction: stat.positive ? 'up' : 'down' }}
+            />
           ))}
         </div>
 
-        {/* Pipeline Kanban Summary */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="border-b border-slate-800 px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">Pipeline Overview</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Deal count and value per stage</p>
-          </div>
+        <Panel>
+          <PanelHeader title="Pipeline Overview" action={<span className="text-xs text-slate-500">Deal count and value per stage</span>} />
           <div className="p-5">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
               {PIPELINE_STAGES.map(({ stage, color, bgColor, borderColor }, idx) => {
@@ -140,7 +158,7 @@ export default function DealsPage() {
                     <div className={[
                       'rounded-xl border p-4 cursor-pointer transition-all duration-200',
                       bgColor, borderColor,
-                      activeFilter === stage ? 'ring-1 ring-offset-1 ring-offset-[#0D1117]' : 'hover:opacity-90',
+                      activeFilter === stage ? 'ring-1 ring-offset-1 ring-offset-ink' : 'hover:opacity-90',
                     ].join(' ')}
                       onClick={() => setActiveFilter(activeFilter === stage ? 'All' : stage)}
                     >
@@ -174,8 +192,8 @@ export default function DealsPage() {
                 className={[
                   'rounded-full px-3 py-1 text-xs font-medium transition-colors',
                   activeFilter === 'All'
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200',
+                    ? 'bg-surface-3 text-white'
+                    : 'bg-surface-2 text-slate-400 hover:text-slate-200',
                 ].join(' ')}
               >
                 Show All ({DEALS.length})
@@ -187,7 +205,7 @@ export default function DealsPage() {
               )}
             </div>
           </div>
-        </div>
+        </Panel>
 
         {/* At Risk Section */}
         {atRisk.length > 0 && (
@@ -214,9 +232,17 @@ export default function DealsPage() {
                     <p className="text-sm font-semibold text-white tabular-nums">{fmtAED(deal.value)}</p>
                     <p className="text-xs text-amber-400 font-medium">{deal.lastActivity}d no activity</p>
                   </div>
-                  <button className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
-                    Follow Up
-                  </button>
+                  {followedUp.includes(deal.id) ? (
+                    <span className="shrink-0 flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Scheduled
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => { setFollowedUp(f => [...f, deal.id]); toast.success(`Follow-up scheduled for ${deal.client}`) }}
+                      className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors whitespace-nowrap">
+                      Follow Up
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -224,8 +250,8 @@ export default function DealsPage() {
         )}
 
         {/* Active Deals Table */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-white">
                 Active Deals
@@ -243,7 +269,7 @@ export default function DealsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2">
                   {['Deal ID', 'Client', 'Property', 'Agent', 'Stage', 'Value', 'Expected Close', 'Days Open'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
                       {h}
@@ -251,7 +277,7 @@ export default function DealsPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {filtered.map((deal) => (
                   <tr
                     key={deal.id}
@@ -259,7 +285,7 @@ export default function DealsPage() {
                       'transition-colors cursor-pointer',
                       deal.lastActivity >= 7
                         ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.06]'
-                        : 'hover:bg-slate-800/30',
+                        : 'hover:bg-surface-2',
                     ].join(' ')}
                   >
                     <td className="px-4 py-3 text-xs font-mono text-slate-400 whitespace-nowrap">{deal.id}</td>
@@ -296,8 +322,8 @@ export default function DealsPage() {
         </div>
 
         {/* Recently Closed */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="rounded-xl border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-white">Recently Closed</h2>
               <p className="text-xs text-slate-500 mt-0.5">Last 5 won deals — June 2026</p>
@@ -310,15 +336,15 @@ export default function DealsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2">
                   {['Deal ID', 'Client', 'Property', 'Agent', 'Value', 'Closed On'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {CLOSED_DEALS.map((deal) => (
-                  <tr key={deal.id} className="hover:bg-slate-800/30 transition-colors">
+                  <tr key={deal.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3 text-xs font-mono text-slate-400">{deal.id}</td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-100">{deal.client}</td>
                     <td className="px-4 py-3 text-sm text-slate-400 max-w-[220px] truncate">{deal.property}</td>
@@ -336,7 +362,7 @@ export default function DealsPage() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-700 bg-slate-800/40">
+                <tr className="border-t border-line-strong bg-surface-2">
                   <td colSpan={4} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     5 Closed Deals Total
                   </td>

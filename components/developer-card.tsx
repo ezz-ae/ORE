@@ -40,14 +40,18 @@ export function DeveloperCard({ developer }: DeveloperCardProps) {
             </div>
           </div>
 
-          <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-[#152E24]/65">
-            {developer.description}
-          </p>
+          {developer.description && (
+            <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-[#152E24]/65">
+              {developer.description}
+            </p>
+          )}
 
-          <div className="mt-5 rounded-[24px] border border-white/60 bg-white/70 p-4 shadow-[0_18px_40px_-30px_rgba(21,46,36,0.18)]">
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#C69B3E]">Track Record</div>
-            <p className="line-clamp-3 text-[13px] font-medium leading-relaxed text-[#152E24]">{developer.trackRecord}</p>
-          </div>
+          {developer.trackRecord && (
+            <div className="mt-5 rounded-[24px] border border-white/60 bg-white/70 p-4 shadow-[0_18px_40px_-30px_rgba(21,46,36,0.18)]">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#C69B3E]">Track Record</div>
+              <p className="line-clamp-3 text-[13px] font-medium leading-relaxed text-[#152E24]">{developer.trackRecord}</p>
+            </div>
+          )}
 
           <div className="mt-5 flex items-center justify-between rounded-[20px] bg-[#152E24] px-4 py-3 text-[11px] font-semibold text-white/75 transition-colors group-hover:bg-[#10241C]">
             <span className="flex items-center gap-2">

@@ -20,9 +20,9 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1 text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+      className="flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
     >
-      {copied ? <CheckCircle className="h-3 w-3 text-[#D4AF37]" /> : <Copy className="h-3 w-3" />}
+      {copied ? <CheckCircle className="h-3 w-3 text-gold" /> : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
   )
@@ -60,7 +60,7 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
       </a>
       <Link
         href={`/freehold-intelligence/notebook?lead=${leadId}`}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-slate-800 bg-slate-800/50 px-4 py-2 text-xs text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-xs text-slate-400 transition hover:border-gold/30 hover:text-white"
       >
         <BookOpen className="h-3.5 w-3.5" />
         Notebook
@@ -89,7 +89,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
   }
 
   const actions: { key: ActionKey; label: string; icon: typeof Zap; accent: string }[] = [
-    { key: 'hot',      label: 'Moved to Hot',        icon: Zap,          accent: 'hover:border-[#D4AF37]/30 hover:text-[#F8E7AE]' },
+    { key: 'hot',      label: 'Moved to Hot',        icon: Zap,          accent: 'hover:border-gold/30 hover:text-[#F8E7AE]' },
     { key: 'reassign', label: 'Queued for reassign',  icon: User,         accent: 'hover:border-sky-400/30 hover:text-sky-200' },
     { key: 'snooze',   label: 'Snoozed 24h',          icon: Bell,         accent: 'hover:border-orange-400/30 hover:text-orange-200' },
   ]
@@ -106,20 +106,20 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
               onClick={() => handleAction(action.key, action.label)}
               disabled={done}
               className={[
-                'flex w-full items-center gap-2.5 rounded-[12px] border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm transition',
+                'flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition',
                 done
-                  ? 'text-[#D4AF37]/60 border-emerald-400/15 cursor-default'
+                  ? 'text-gold/60 border-emerald-400/15 cursor-default'
                   : `text-slate-400 ${action.accent}`,
               ].join(' ')}
             >
-              {done ? <CheckCircle className="h-3.5 w-3.5 text-[#D4AF37]" /> : <Icon className="h-3.5 w-3.5" />}
+              {done ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Icon className="h-3.5 w-3.5" />}
               {done ? action.label : action.label.replace('Moved to', 'Move to').replace('Queued for', 'Reassign').replace('Snoozed', 'Snooze')}
             </button>
           )
         })}
         <Link
           href="/freehold-intelligence/crm/pipeline"
-          className="flex w-full items-center gap-2.5 rounded-[12px] border border-slate-800 bg-slate-800/50 px-4 py-2.5 text-sm text-slate-400 transition hover:border-slate-600 hover:text-white"
+          className="flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm text-slate-400 transition hover:border-line-strong hover:text-white"
         >
           <ArrowUpRight className="h-3.5 w-3.5" />
           View in pipeline
@@ -127,7 +127,7 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
       </div>
 
       {flash && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-slate-900 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-lg">
           {flash}
         </div>
       )}

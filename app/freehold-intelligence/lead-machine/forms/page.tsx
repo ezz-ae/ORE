@@ -1,42 +1,36 @@
 import Link from 'next/link'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
-interface LeadForm {
-  id: string
-  name: string
-  status: string
-  leads_count: number
-  created_time: string
-  follow_up_action_url?: string
-}
+import { listLeadForms, MetaConfigError, MetaApiError } from '@/lib/meta/client'
+import { demoForms } from '@/lib/meta/demo-data'
+import type { MetaLeadForm } from '@/lib/meta/types'
 
 interface FormsResponse {
-  forms?: LeadForm[]
+  forms: MetaLeadForm[]
   error?: string
-  type?: string
+  demo?: boolean
 }
 
 async function getForms(): Promise<FormsResponse> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/meta/forms`, { next: { revalidate: 60 } })
-    return res.json()
-  } catch {
-    return { error: 'Failed to reach Meta API', type: 'network' }
+    const forms = await listLeadForms()
+    return { forms }
+  } catch (err) {
+    if (err instanceof MetaConfigError) return { forms: demoForms, demo: true }
+    if (err instanceof MetaApiError)    return { forms: [], error: err.message }
+    return { forms: [], error: 'Unexpected error loading forms' }
   }
 }
 
 function statusConfig(s: string) {
-  if (s === 'ACTIVE')   return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10', label: 'Active'   }
-  if (s === 'ARCHIVED') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  badge: 'border-[#D4AF37]/20 bg-[#D4AF37]/10',   label: 'Archived' }
+  if (s === 'ACTIVE')   return { dot: 'bg-gold', text: 'text-gold', badge: 'border-gold/20 bg-gold/10', label: 'Active'   }
+  if (s === 'ARCHIVED') return { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  badge: 'border-gold/20 bg-gold/10',   label: 'Archived' }
   return                       { dot: 'bg-red-400',     text: 'text-red-300',    badge: 'border-red-400/20 bg-red-400/10',       label: 'Deleted'  }
 }
 
 export default async function FormsPage() {
   const data          = await getForms()
-  const isConfigError = data.type === 'config'
-  const forms         = data.forms ?? []
+  const isConfigError = data.demo === true
+  const forms         = data.forms
   const active        = forms.filter((f) => f.status === 'ACTIVE').length
   const totalLeads    = forms.reduce((s, f) => s + (f.leads_count ?? 0), 0)
 
@@ -45,7 +39,7 @@ export default async function FormsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
             <FileText className="h-3.5 w-3.5" /> Lead Forms
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -58,7 +52,7 @@ export default async function FormsPage() {
 
         <Link
           href="/freehold-intelligence/lead-machine/forms/new"
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE] sm:mt-10"
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
         >
           <Plus className="h-4 w-4" /> New form
         </Link>
@@ -74,7 +68,7 @@ export default async function FormsPage() {
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/meta"
-                className="mt-3 inline-flex items-center gap-1 text-xs text-[#D4AF37]/80 transition hover:text-[#D4AF37]"
+                className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold"
               >
                 Set up Meta integration <ArrowUpRight className="h-3 w-3" />
               </Link>
@@ -97,11 +91,11 @@ export default async function FormsPage() {
       {!isConfigError && (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[
-            { label: 'Active forms', value: active,      color: 'text-[#D4AF37]' },
+            { label: 'Active forms', value: active,      color: 'text-gold' },
             { label: 'Total forms',  value: forms.length, color: 'text-white'       },
-            { label: 'Total leads',  value: totalLeads,  color: totalLeads > 0 ? 'text-[#D4AF37]' : 'text-white' },
+            { label: 'Total leads',  value: totalLeads,  color: totalLeads > 0 ? 'text-gold' : 'text-white' },
           ].map((s) => (
-            <div key={s.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-4">
+            <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4">
               <div className={`text-[26px] font-semibold leading-none ${s.color}`}>{s.value}</div>
               <div className="mt-1.5 text-sm text-slate-500">{s.label}</div>
             </div>
@@ -120,7 +114,7 @@ export default async function FormsPage() {
                 <Link
                   key={form.id}
                   href={`/freehold-intelligence/lead-machine/forms/${form.id}`}
-                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
+                  className="group flex items-start justify-between gap-4 rounded-[20px] border border-line bg-surface p-5 transition hover:border-gold/25"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -143,7 +137,7 @@ export default async function FormsPage() {
                       </span>
                     </div>
                   </div>
-                  <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-[#D4AF37]" />
+                  <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />
                 </Link>
               )
             })}
@@ -153,13 +147,13 @@ export default async function FormsPage() {
 
       {/* Empty state */}
       {!isConfigError && !data.error && forms.length === 0 && (
-        <div className="mt-16 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-14 text-center">
-          <Zap className="mx-auto h-8 w-8 text-[#D4AF37]/40" />
+        <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
+          <Zap className="mx-auto h-8 w-8 text-gold/40" />
           <div className="mt-4 text-[18px] font-semibold text-white">No lead forms yet</div>
           <p className="mt-2 text-[14px] text-slate-500">Create your first Meta lead gen form to start capturing leads from campaigns.</p>
           <Link
             href="/freehold-intelligence/lead-machine/forms/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-[#F8E7AE]"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             <Plus className="h-4 w-4" /> Create first form
           </Link>
@@ -174,8 +168,8 @@ export default async function FormsPage() {
             { icon: CheckCircle2, title: 'CRM sync',      body: 'Leads flow into your CRM and WhatsApp sequence the moment the form is submitted.' },
             { icon: Users, title: 'Native experience',    body: 'Forms open inside Meta — no redirect, no page load. 3× higher completion rate than external pages.' },
           ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
-              <Icon className="h-5 w-5 text-[#D4AF37]/60 mb-3" />
+            <div key={title} className="rounded-[18px] border border-line bg-surface p-5">
+              <Icon className="h-5 w-5 text-gold/60 mb-3" />
               <div className="text-sm font-semibold text-white">{title}</div>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">{body}</p>
             </div>
@@ -183,16 +177,6 @@ export default async function FormsPage() {
         </section>
       )}
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about forms, lead quality, submission rates…"
-          suggestions={[
-            'Which form has the best lead quality?',
-            'How many leads came from forms this month?',
-            'What questions convert best on UAE real estate forms?',
-          ]}
-        />
-      </section>
 
     </div>
   )

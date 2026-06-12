@@ -7,15 +7,14 @@ import {
   TrendingDown, TrendingUp, Zap,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
-import { crmLeads } from '@/src/features/freehold-intelligence/server-session'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 
 type PlatformFilter = 'All' | 'Meta' | 'Google'
 
 function urgencyDot(u: string) {
   if (u === 'critical') return 'bg-red-400'
-  if (u === 'high')     return 'bg-[#D4AF37]'
+  if (u === 'high')     return 'bg-gold'
   if (u === 'medium')   return 'bg-sky-400'
   return 'bg-white/30'
 }
@@ -23,30 +22,31 @@ function urgencyDot(u: string) {
 function cplInfo(cpl: number, avg: number) {
   const r = cpl / avg
   if (r <= 0.90) return { color: 'text-emerald-400', icon: TrendingDown, label: `AED ${cpl.toFixed(0)} — below target` }
-  if (r <= 1.05) return { color: 'text-[#D4AF37]',   icon: TrendingDown, label: `AED ${cpl.toFixed(0)} — on target`    }
+  if (r <= 1.05) return { color: 'text-gold',   icon: TrendingDown, label: `AED ${cpl.toFixed(0)} — on target`    }
   return              { color: 'text-red-400',         icon: TrendingUp,  label: `AED ${cpl.toFixed(0)} — above target` }
 }
 
 function platformStyle(p: string) {
   return p === 'meta'
     ? { label: 'Meta',   cls: 'border-blue-400/25 bg-blue-400/10 text-blue-300'  }
-    : { label: 'Google', cls: 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-[#D4AF37]' }
+    : { label: 'Google', cls: 'border-gold/25 bg-gold/10 text-gold' }
 }
 
 function statusStyle(s: string) {
   if (s === 'Running') return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400'
-  if (s === 'Paused')  return 'border-white/15 bg-slate-800/40 text-slate-500'
+  if (s === 'Paused')  return 'border-white/15 bg-surface-2 text-slate-500'
   return 'border-red-400/25 bg-red-400/10 text-red-300'
 }
 
 function landingStatusStyle(s: string) {
   if (s === 'Approved' || s === 'Landing Active') return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-400'
-  if (s === 'Pending Review') return 'border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]'
-  return 'border-white/10 bg-slate-800/40 text-slate-500'
+  if (s === 'Pending Review') return 'border-gold/20 bg-gold/10 text-gold'
+  return 'border-white/10 bg-surface-2 text-slate-500'
 }
 
 export default function CampaignAttributionPage() {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('All')
+  const { leads: liveLeads } = useLiveLeads()
 
   const avg = financeSummary.avgCpl30d
   const allCpl = financeSummary.topSpendCampaigns.map((c) => c.cpl)
@@ -64,10 +64,10 @@ export default function CampaignAttributionPage() {
       .map((c) => {
         const listing = c.projectId ? leadMachineListings.find((l) => l.projectId === c.projectId) ?? null : null
         const landing = c.landingId ? leadMachineLandings.find((l) => l.id === c.landingId) ?? null : null
-        const leads   = crmLeads.filter((l) => l.campaignId === c.campaignId)
+        const leads   = liveLeads.filter((l) => l.campaignId === c.campaignId)
         return { ...c, listing, landing, crmLeads: leads }
       })
-  }, [platformFilter])
+  }, [platformFilter, liveLeads])
 
   const totalSpend  = financeSummary.totalSpend30d
   const totalLeads  = financeSummary.totalLeads30d
@@ -78,7 +78,7 @@ export default function CampaignAttributionPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <BarChart3 className="h-3.5 w-3.5" /> Campaign Attribution
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
@@ -100,7 +100,7 @@ export default function CampaignAttributionPage() {
           { label: 'Best CPL',          value: `AED ${bestCpl.toFixed(0)}`,                       sub: 'Lowest this month', highlight: true },
           { label: 'Avg CPL',           value: `AED ${avg.toFixed(0)}`,                           sub: cplDelta < 0 ? `↓ AED ${Math.abs(cplDelta).toFixed(1)} vs last month` : `↑ AED ${cplDelta.toFixed(1)} vs last month` },
         ].map((s) => (
-          <div key={s.label} className={`rounded-[18px] border bg-slate-900 p-4 ${s.highlight ? 'border-emerald-400/20' : 'border-slate-800'}`}>
+          <div key={s.label} className={`rounded-[18px] border bg-surface p-4 ${s.highlight ? 'border-emerald-400/20' : 'border-line'}`}>
             <div className={`text-[22px] font-semibold tabular-nums leading-none ${s.highlight ? 'text-emerald-400' : 'text-white'}`}>{s.value}</div>
             <div className="mt-1.5 text-xs text-slate-500">{s.label}</div>
             <div className="mt-1 text-xs text-slate-600">{s.sub}</div>
@@ -117,8 +117,8 @@ export default function CampaignAttributionPage() {
             className={[
               'rounded-full border px-3 py-1 text-sm font-medium transition',
               platformFilter === p
-                ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                ? 'border-gold/40 bg-gold/10 text-gold'
+                : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
             ].join(' ')}
           >
             {p}
@@ -139,7 +139,7 @@ export default function CampaignAttributionPage() {
           return (
             <article
               key={campaign.name}
-              className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/20"
+              className="overflow-hidden rounded-[28px] border border-line bg-surface transition hover:border-gold/20"
             >
               <div className="p-6 sm:p-7">
 
@@ -174,7 +174,7 @@ export default function CampaignAttributionPage() {
                       <span className="text-slate-600">·</span>
                       <Link
                         href={`/freehold-intelligence/lead-machine/listings/${campaign.listing.id}`}
-                        className="text-[#D4AF37]/65 transition hover:text-[#D4AF37]"
+                        className="text-gold/65 transition hover:text-gold"
                       >
                         {campaign.listing.projectName}
                       </Link>
@@ -198,7 +198,7 @@ export default function CampaignAttributionPage() {
                       No landing page linked
                       <Link
                         href="/freehold-intelligence/lead-machine/landings"
-                        className="text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+                        className="text-gold/50 transition hover:text-gold"
                       >
                         View landings
                       </Link>
@@ -213,7 +213,7 @@ export default function CampaignAttributionPage() {
                     { label: 'Leads',  value: campaign.leads.toString(),                   dim: false },
                     { label: 'CPL',    value: `AED ${campaign.cpl.toFixed(0)}`,            dim: true  },
                   ].map((m) => (
-                    <div key={m.label} className="rounded-[14px] border border-slate-800 bg-slate-800/40 px-3 py-3">
+                    <div key={m.label} className="rounded-[14px] border border-line bg-surface-2 px-3 py-3">
                       <div className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">{m.label}</div>
                       <div className={`mt-1.5 text-[20px] font-semibold tabular-nums leading-none ${m.dim ? info.color : 'text-white'}`}>
                         {m.value}
@@ -228,7 +228,7 @@ export default function CampaignAttributionPage() {
                     <span>CPL vs. AED {avg} target</span>
                     <span className={info.color}>{campaign.cpl < avg ? `AED ${(avg - campaign.cpl).toFixed(0)} below` : `AED ${(campaign.cpl - avg).toFixed(0)} above`}</span>
                   </div>
-                  <div className="relative h-1.5 overflow-hidden rounded-full bg-slate-800/50">
+                  <div className="relative h-1.5 overflow-hidden rounded-full bg-surface-2">
                     {/* Target marker line */}
                     <div
                       className="absolute top-0 h-full w-px bg-white/20"
@@ -238,7 +238,7 @@ export default function CampaignAttributionPage() {
                     <div
                       className={`h-full rounded-full transition-all ${
                         campaign.cpl < avg ? 'bg-emerald-500' :
-                        campaign.cpl < avg * 1.1 ? 'bg-[#D4AF37]' : 'bg-red-500'
+                        campaign.cpl < avg * 1.1 ? 'bg-gold' : 'bg-red-500'
                       }`}
                       style={{ width: `${cplPct}%` }}
                     />
@@ -246,7 +246,7 @@ export default function CampaignAttributionPage() {
                 </div>
 
                 {/* CRM attribution */}
-                <div className="mt-5 border-t border-slate-800 pt-5">
+                <div className="mt-5 border-t border-line pt-5">
                   {campaign.crmLeads.length > 0 ? (
                     <>
                       <div className="mb-3 flex items-center justify-between">
@@ -256,7 +256,7 @@ export default function CampaignAttributionPage() {
                         </div>
                         <Link
                           href="/freehold-intelligence/crm"
-                          className="flex items-center gap-1 text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+                          className="flex items-center gap-1 text-xs text-gold/50 transition hover:text-gold"
                         >
                           All leads <ChevronRight className="h-3 w-3" />
                         </Link>
@@ -266,12 +266,12 @@ export default function CampaignAttributionPage() {
                           <Link
                             key={lead.id}
                             href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                            className="group flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-800/40 px-3 py-1 text-xs text-slate-300 transition hover:border-[#D4AF37]/30 hover:text-white"
+                            className="group flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white"
                           >
                             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${urgencyDot(lead.urgency)}`} />
                             {lead.name}
                             <span className="text-slate-600">·</span>
-                            <span className={`font-medium tabular-nums ${lead.intentScore >= 85 ? 'text-[#D4AF37]' : 'text-slate-500'}`}>
+                            <span className={`font-medium tabular-nums ${lead.intentScore >= 85 ? 'text-gold' : 'text-slate-500'}`}>
                               {lead.intentScore}
                             </span>
                           </Link>
@@ -288,7 +288,7 @@ export default function CampaignAttributionPage() {
                       </div>
                       <Link
                         href="/freehold-intelligence/crm"
-                        className="text-xs text-[#D4AF37]/50 transition hover:text-[#D4AF37]"
+                        className="text-xs text-gold/50 transition hover:text-gold"
                       >
                         Open CRM
                       </Link>
@@ -301,18 +301,6 @@ export default function CampaignAttributionPage() {
         })}
       </div>
 
-      {/* AI Prompt */}
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about campaign performance, attribution gaps, CPL trends…"
-          suggestions={[
-            'Which campaign has the lowest CPL this month?',
-            'Why is Palm Google Search paused?',
-            'How much did we spend vs. leads generated per platform?',
-            'Which campaigns need a landing page assigned?',
-          ]}
-        />
-      </section>
     </div>
   )
 }

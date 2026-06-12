@@ -14,7 +14,7 @@ import {
   getTopROIProjects,
   projectToProperty,
   searchProjects,
-} from "@/lib/ore"
+} from "@/lib/data"
 
 export async function processAiChatMessage(input: {
   message: string

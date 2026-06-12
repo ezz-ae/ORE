@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  UserPlus, MoreHorizontal, Mail, Phone, CheckCircle,
-  Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown,
+  UserPlus, MoreHorizontal, Mail, CheckCircle,
+  Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
 } from 'lucide-react'
 
 type Role = 'Owner' | 'Admin' | 'Agent' | 'Viewer'
@@ -13,20 +13,18 @@ type TeamMember = {
   id: string
   name: string
   email: string
-  phone?: string
   role: Role
   status: Status
   joinedAt: string
-  lastActive?: string
-  tier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
+  lastActive?: string | null
   initials: string
 }
 
 const ROLE_META: Record<Role, { Icon: React.ElementType; color: string; desc: string }> = {
-  Owner:  { Icon: Crown,  color: 'text-[#D4AF37]',   desc: 'Full access + billing' },
-  Admin:  { Icon: Shield, color: 'text-violet-400',   desc: 'Manage team & settings' },
-  Agent:  { Icon: User,   color: 'text-sky-400',      desc: 'Own leads & campaigns' },
-  Viewer: { Icon: User,   color: 'text-slate-400',    desc: 'Read-only access' },
+  Owner:  { Icon: Crown,  color: 'text-gold',        desc: 'Full access + billing' },
+  Admin:  { Icon: Shield, color: 'text-violet-400',  desc: 'Manage team & settings' },
+  Agent:  { Icon: User,   color: 'text-sky-400',     desc: 'Own leads & campaigns' },
+  Viewer: { Icon: User,   color: 'text-slate-400',   desc: 'Read-only access' },
 }
 
 const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; color: string }> = {
@@ -35,45 +33,38 @@ const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; colo
   suspended: { label: 'Suspended', Icon: XCircle,     color: 'text-red-400'     },
 }
 
-const TIER_COLOR: Record<string, string> = {
-  Bronze:   'text-orange-400 bg-orange-400/10 border-orange-400/25',
-  Silver:   'text-slate-300  bg-slate-800/60  border-slate-600',
-  Gold:     'text-[#D4AF37]  bg-[#D4AF37]/10  border-[#D4AF37]/25',
-  Platinum: 'text-violet-300 bg-violet-400/10 border-violet-400/25',
-}
-
-const INITIAL_MEMBERS: TeamMember[] = [
-  { id: 'm1', name: 'Faisal Al Hamdan',  email: 'faisal@freeholdproperty.ae',  role: 'Owner',  status: 'active',    joinedAt: '2023-01-01', lastActive: '2026-06-06', initials: 'FH' },
-  { id: 'm2', name: 'Sara Qureshi',      email: 'sara@freeholdproperty.ae',    role: 'Admin',  status: 'active',    joinedAt: '2023-06-15', lastActive: '2026-06-05', initials: 'SQ' },
-  { id: 'm3', name: 'Noura Al Hassan',   email: 'noura@freeholdproperty.ae',   role: 'Agent',  status: 'active',    joinedAt: '2024-09-01', lastActive: '2026-06-06', tier: 'Gold',   initials: 'NA' },
-  { id: 'm4', name: 'James Cooper',      email: 'james@freeholdproperty.ae',   role: 'Agent',  status: 'active',    joinedAt: '2024-11-01', lastActive: '2026-06-04', tier: 'Silver', initials: 'JC' },
-  { id: 'm5', name: 'Priya Sharma',      email: 'priya@freeholdproperty.ae',   role: 'Agent',  status: 'active',    joinedAt: '2025-02-01', lastActive: '2026-06-03', tier: 'Bronze', initials: 'PS' },
-  { id: 'm6', name: 'Omar Khalil',       email: 'omar@freeholdproperty.ae',    role: 'Agent',  status: 'active',    joinedAt: '2025-01-15', lastActive: '2026-06-05', tier: 'Silver', initials: 'OK' },
-  { id: 'm7', name: 'Lena Weber',        email: 'lena@freeholdproperty.ae',    role: 'Viewer', status: 'invited',   joinedAt: '2026-06-01', initials: 'LW' },
-]
-
 const ROLES: Role[] = ['Owner', 'Admin', 'Agent', 'Viewer']
 
 export default function TeamPage() {
-  const [members, setMembers]       = useState<TeamMember[]>(INITIAL_MEMBERS)
-  const [showInvite, setShowInvite] = useState(false)
+  const [members, setMembers]         = useState<TeamMember[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [showInvite, setShowInvite]   = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole]   = useState<Role>('Agent')
   const [openMenu, setOpenMenu]       = useState<string | null>(null)
 
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) setMembers(data.members)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
   function invite() {
     if (!inviteEmail.trim()) return
-    const initials = inviteEmail.slice(0, 2).toUpperCase()
+    const n = inviteEmail.split('@')[0]
     setMembers((prev) => [
       ...prev,
       {
-        id: `m${Date.now()}`,
-        name: inviteEmail.split('@')[0],
-        email: inviteEmail.trim(),
-        role: inviteRole,
-        status: 'invited',
+        id:       `inv_${Date.now()}`,
+        name:     n,
+        email:    inviteEmail.trim(),
+        role:     inviteRole,
+        status:   'invited',
         joinedAt: new Date().toISOString().slice(0, 10),
-        initials,
+        initials: n.slice(0, 2).toUpperCase(),
       },
     ])
     setInviteEmail('')
@@ -87,9 +78,7 @@ export default function TeamPage() {
 
   function toggleSuspend(id: string) {
     setMembers((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, status: m.status === 'suspended' ? 'active' : 'suspended' } : m,
-      ),
+      prev.map((m) => m.id === id ? { ...m, status: m.status === 'suspended' ? 'active' : 'suspended' } : m),
     )
     setOpenMenu(null)
   }
@@ -99,9 +88,9 @@ export default function TeamPage() {
     setOpenMenu(null)
   }
 
-  const active    = members.filter((m) => m.status === 'active').length
-  const invited   = members.filter((m) => m.status === 'invited').length
-  const agents    = members.filter((m) => m.role === 'Agent').length
+  const active  = members.filter((m) => m.status === 'active').length
+  const invited = members.filter((m) => m.status === 'invited').length
+  const agents  = members.filter((m) => m.role === 'Agent').length
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -111,12 +100,12 @@ export default function TeamPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">Team</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {active} active · {invited > 0 ? `${invited} invited · ` : ''}{agents} agents
+            {loading ? 'Loading…' : `${active} active · ${invited > 0 ? `${invited} invited · ` : ''}${agents} agents`}
           </p>
         </div>
         <button
           onClick={() => setShowInvite((v) => !v)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2 text-sm font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/15"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15"
         >
           <UserPlus className="h-4 w-4" />
           Invite
@@ -125,7 +114,7 @@ export default function TeamPage() {
 
       {/* Invite form */}
       {showInvite && (
-        <div className="mb-6 rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.04] p-5 space-y-3">
+        <div className="mb-6 rounded-[18px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
           <div className="text-sm font-semibold text-white">Invite team member</div>
           <div className="flex gap-3 flex-col sm:flex-row">
             <input
@@ -133,13 +122,13 @@ export default function TeamPage() {
               placeholder="Email address"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="flex-1 rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/40"
+              className="flex-1 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <div className="relative">
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
-                className="appearance-none rounded-[10px] border border-slate-700 bg-slate-800/50 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-[#D4AF37]/40"
+                className="appearance-none rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-gold/40"
               >
                 {ROLES.filter((r) => r !== 'Owner').map((r) => (
                   <option key={r} value={r}>{r}</option>
@@ -150,11 +139,11 @@ export default function TeamPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={invite}
-              className="flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-black transition hover:bg-[#D4AF37]/90">
+              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
               <Mail className="h-3.5 w-3.5" /> Send invite
             </button>
             <button onClick={() => setShowInvite(false)}
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
+              className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
               Cancel
             </button>
           </div>
@@ -166,7 +155,7 @@ export default function TeamPage() {
         {ROLES.map((role) => {
           const rm = ROLE_META[role]
           return (
-            <div key={role} className="rounded-[12px] border border-slate-800 bg-slate-900 px-3 py-2.5">
+            <div key={role} className="rounded-[12px] border border-line bg-surface px-3 py-2.5">
               <rm.Icon className={`h-4 w-4 ${rm.color}`} />
               <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{role}</div>
               <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rm.desc}</div>
@@ -175,99 +164,103 @@ export default function TeamPage() {
         })}
       </div>
 
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span className="text-sm">Loading team…</span>
+        </div>
+      )}
+
       {/* Member list */}
-      <div className="space-y-2">
-        {members.map((member) => {
-          const rm = ROLE_META[member.role]
-          const sm = STATUS_META[member.status]
-          const tc = member.tier ? TIER_COLOR[member.tier] : null
+      {!loading && (
+        <div className="space-y-2">
+          {members.map((member) => {
+            const rm = ROLE_META[member.role]
+            const sm = STATUS_META[member.status]
 
-          return (
-            <div
-              key={member.id}
-              className={`relative rounded-[16px] border bg-slate-900 px-5 py-4 transition ${
-                member.status === 'suspended' ? 'border-red-400/10 opacity-60' : 'border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                  member.role === 'Owner' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' :
-                  member.role === 'Admin' ? 'bg-violet-400/15 text-violet-300' :
-                  'bg-slate-800/60 text-slate-400'
-                }`}>
-                  {member.initials}
-                </div>
+            return (
+              <div
+                key={member.id}
+                className={`relative rounded-[16px] border bg-surface px-5 py-4 transition ${
+                  member.status === 'suspended' ? 'border-red-400/10 opacity-60' : 'border-line'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    member.role === 'Owner' ? 'bg-gold/20 text-gold' :
+                    member.role === 'Admin' ? 'bg-violet-400/15 text-violet-300' :
+                    'bg-surface-2 text-slate-400'
+                  }`}>
+                    {member.initials}
+                  </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-white truncate">{member.name}</span>
-                    {tc && (
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${tc}`}>
-                        {member.tier}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white truncate">{member.name}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {member.email}
                       </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {member.email}
-                    </span>
-                    {member.lastActive && (
-                      <span>Active {new Date(member.lastActive).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <rm.Icon className={`h-3.5 w-3.5 ${rm.color}`} />
-                    <span className={`text-xs font-medium ${rm.color}`}>{member.role}</span>
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs ${sm.color}`}>
-                    <sm.Icon className="h-3 w-3" />
-                    <span className="hidden sm:block">{sm.label}</span>
-                  </div>
-                  {member.role !== 'Owner' && (
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenMenu(openMenu === member.id ? null : member.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-700 text-slate-500 transition hover:border-slate-600 hover:text-slate-300"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                      {openMenu === member.id && (
-                        <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-slate-700 bg-slate-900 py-1 shadow-xl">
-                          {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
-                            const RoleIcon = ROLE_META[r].Icon
-                            return (
-                              <button key={r} onClick={() => changeRole(member.id, r)}
-                                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-white">
-                                <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
-                                Set as {r}
-                              </button>
-                            )
-                          })}
-                          <div className="my-1 border-t border-slate-800" />
-                          <button onClick={() => toggleSuspend(member.id)}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-amber-400/80 transition hover:bg-slate-800/60 hover:text-amber-400">
-                            <XCircle className="h-3.5 w-3.5" />
-                            {member.status === 'suspended' ? 'Reactivate' : 'Suspend'}
-                          </button>
-                          <button onClick={() => removeMember(member.id)}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-red-400/80 transition hover:bg-slate-800/60 hover:text-red-400">
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Remove
-                          </button>
-                        </div>
+                      {member.lastActive && (
+                        <span>Active {new Date(member.lastActive).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
                       )}
                     </div>
-                  )}
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <rm.Icon className={`h-3.5 w-3.5 ${rm.color}`} />
+                      <span className={`text-xs font-medium ${rm.color}`}>{member.role}</span>
+                    </div>
+                    <div className={`flex items-center gap-1 text-xs ${sm.color}`}>
+                      <sm.Icon className="h-3 w-3" />
+                      <span className="hidden sm:block">{sm.label}</span>
+                    </div>
+                    {member.role !== 'Owner' && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenMenu(openMenu === member.id ? null : member.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-slate-500 transition hover:border-line-strong hover:text-slate-300"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                        {openMenu === member.id && (
+                          <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
+                            {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
+                              const RoleIcon = ROLE_META[r].Icon
+                              return (
+                                <button key={r} onClick={() => changeRole(member.id, r)}
+                                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-400 transition hover:bg-surface-2 hover:text-white">
+                                  <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
+                                  Set as {r}
+                                </button>
+                              )
+                            })}
+                            <div className="my-1 border-t border-line" />
+                            <button onClick={() => toggleSuspend(member.id)}
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-amber-400/80 transition hover:bg-surface-2 hover:text-amber-400">
+                              <XCircle className="h-3.5 w-3.5" />
+                              {member.status === 'suspended' ? 'Reactivate' : 'Suspend'}
+                            </button>
+                            <button onClick={() => removeMember(member.id)}
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-red-400/80 transition hover:bg-surface-2 hover:text-red-400">
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Close menu on outside click */}
       {openMenu && (

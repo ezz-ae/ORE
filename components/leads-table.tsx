@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import type { LeadRecord } from "@/lib/ore"
+import type { LeadRecord } from "@/lib/data"
+
+type LeadRow = LeadRecord & { score?: number }
 
 interface LeadsTableProps {
-  leads: LeadRecord[]
+  leads: LeadRow[]
   isAdmin: boolean
   teamMembers?: Array<{
     id: string
@@ -21,6 +23,17 @@ interface LeadsTableProps {
 }
 
 const statusOptions = ["new", "contacted", "qualified", "viewing", "negotiating", "closed", "lost"]
+
+const FOLLOW_UP_DUE_MS = 48 * 60 * 60 * 1000
+
+const isFollowUpDue = (lead: LeadRecord) => {
+  const status = lead.status || "new"
+  if (status === "closed" || status === "lost") return false
+  if (!lead.last_contact_at) return true
+  const lastContact = new Date(lead.last_contact_at)
+  if (Number.isNaN(lastContact.getTime())) return true
+  return Date.now() - lastContact.getTime() > FOLLOW_UP_DUE_MS
+}
 
 export function LeadsTable({ leads, isAdmin, teamMembers = [] }: LeadsTableProps) {
   const router = useRouter()
@@ -176,15 +189,30 @@ export function LeadsTable({ leads, isAdmin, teamMembers = [] }: LeadsTableProps
           <div key={lead.id} className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="font-semibold">{lead.name}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="font-semibold">{lead.name}</div>
+                  {isFollowUpDue(lead) ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight text-amber-500"
+                    >
+                      Follow-up due
+                    </Badge>
+                  ) : null}
+                </div>
                 <div className="text-xs text-muted-foreground">{lead.email || "No email"}</div>
               </div>
-              <Badge
-                variant="outline"
-                className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight", priorityClass(lead.priority))}
-              >
-                {lead.priority || "cold"}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge
+                  variant="outline"
+                  className={cn("rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight", priorityClass(lead.priority))}
+                >
+                  {lead.priority || "cold"}
+                </Badge>
+                {typeof lead.score === "number" ? (
+                  <span className="text-[10px] font-medium text-muted-foreground">Score {lead.score}</span>
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
@@ -202,7 +230,17 @@ export function LeadsTable({ leads, isAdmin, teamMembers = [] }: LeadsTableProps
               </div>
               <div>
                 <div className="text-muted-foreground">Source</div>
-                <div className="font-medium">{lead.source || "Web"}</div>
+                {lead.source ? (
+                  <Badge
+                    variant="outline"
+                    className="mt-0.5 max-w-full rounded-full border-muted-foreground/30 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    title={lead.source}
+                  >
+                    <span className="min-w-0 truncate">{lead.source}</span>
+                  </Badge>
+                ) : (
+                  <div className="font-medium">—</div>
+                )}
               </div>
             </div>
 
@@ -282,7 +320,17 @@ export function LeadsTable({ leads, isAdmin, teamMembers = [] }: LeadsTableProps
               className="grid min-w-[1220px] grid-cols-10 gap-4 border-b border-border/40 px-6 py-5 text-sm transition-colors last:border-b-0 hover:bg-muted/10"
             >
               <div className="col-span-2">
-                <div className="font-serif text-base font-bold text-foreground">{lead.name}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="font-serif text-base font-bold text-foreground">{lead.name}</div>
+                  {isFollowUpDue(lead) ? (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-tight text-amber-500"
+                    >
+                      Follow-up due
+                    </Badge>
+                  ) : null}
+                </div>
                 <div className="mt-0.5 text-[10px] font-medium text-muted-foreground">{lead.email || "No email"}</div>
               </div>
 
@@ -302,14 +350,27 @@ export function LeadsTable({ leads, isAdmin, teamMembers = [] }: LeadsTableProps
                 >
                   {lead.priority || "cold"}
                 </Badge>
+                {typeof lead.score === "number" ? (
+                  <div className="mt-1 text-[10px] font-medium text-muted-foreground">Score {lead.score}</div>
+                ) : null}
               </div>
 
               <div className="col-span-1 truncate text-center text-xs font-medium" title={lead.project_slug || ""}>
                 {lead.project_slug || "—"}
               </div>
 
-              <div className="col-span-1 text-center text-xs text-muted-foreground">
-                {lead.source || "Web"}
+              <div className="col-span-1 flex justify-center">
+                {lead.source ? (
+                  <Badge
+                    variant="outline"
+                    className="h-fit max-w-full rounded-full border-muted-foreground/30 bg-muted/40 px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    title={lead.source}
+                  >
+                    <span className="min-w-0 truncate">{lead.source}</span>
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
               </div>
 
               <div className="col-span-1">

@@ -3,12 +3,10 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Terms of Service",
-  description:
-    "Review the terms that govern your use of Freehold's investor platform, chat, and data services powered by Freehold Intelligence.",
-  alternates: {
-    canonical: "/terms",
-  },
+  title: "Terms of Service | Freehold Property UAE",
+  description: "Terms governing use of the Freehold Property UAE platform, advisory services, and AI-powered tools.",
+  alternates: { canonical: "/terms" },
+  robots: { index: false },
 }
 
 const termsItems = [

@@ -8,24 +8,25 @@ import {
   leadMachineListings,
   type LeadMachineAdRequest,
 } from '@/src/features/freehold-intelligence/lead-machine'
+import { PageHeader, EmptyState } from '@/components/freehold/ui'
 
 type StatusFilter = 'All' | 'Running' | 'Pending Review' | 'Blocked' | 'Paused'
 type PlatformFilter = 'All' | 'Meta' | 'Google'
 
 function statusStyle(status: string) {
   const s = status.toLowerCase()
-  if (s === 'running') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
-  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
-  if (s === 'pending review') return { dot: 'bg-[#D4AF37]', badge: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20' }
-  if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-slate-400 bg-slate-800/40 border-white/10' }
+  if (s === 'running') return { dot: 'bg-gold', badge: 'text-gold bg-gold/10 border-gold/20' }
+  if (s === 'approved' || s === 'ready to launch') return { dot: 'bg-gold', badge: 'text-gold bg-gold/10 border-gold/20' }
+  if (s === 'pending review') return { dot: 'bg-gold', badge: 'text-gold bg-gold/10 border-gold/20' }
+  if (s === 'paused') return { dot: 'bg-white/30', badge: 'text-slate-400 bg-surface-2 border-white/10' }
   if (s === 'blocked' || s === 'needs changes') return { dot: 'bg-red-400', badge: 'text-red-400 bg-red-400/10 border-red-400/20' }
-  return { dot: 'bg-white/20', badge: 'text-slate-500 bg-slate-800/40 border-slate-800' }
+  return { dot: 'bg-white/20', badge: 'text-slate-500 bg-surface-2 border-line' }
 }
 
 function platformStyle(platform: string) {
   if (platform === 'Meta') return 'text-blue-400 bg-blue-400/10 border-blue-400/20'
   if (platform === 'Google') return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
-  return 'text-slate-400 bg-slate-800/40 border-white/10'
+  return 'text-slate-400 bg-surface-2 border-white/10'
 }
 
 function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
@@ -34,11 +35,11 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   const platform = platformStyle(request.platform)
 
   return (
-    <article className="overflow-hidden rounded-[28px] border border-slate-800 bg-slate-900 transition hover:border-[#D4AF37]/25">
+    <article className="overflow-hidden rounded-[28px] border border-line bg-surface transition hover:border-gold/25">
       <div className="px-7 pb-0 pt-7 sm:px-8 sm:pt-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="text-sm font-medium uppercase tracking-wider text-gold/85">
               {listing?.area ?? 'Unknown'} · {listing?.developer ?? '—'}
             </div>
             <h3 className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
@@ -101,7 +102,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href={listing ? `/freehold-intelligence/lead-machine/listings/${listing.id}` : '/freehold-intelligence/lead-machine/listings'}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0D1117] transition hover:gap-2.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:gap-2.5"
           >
             Open listing workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -139,15 +140,12 @@ export default function AdRequestsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
-      <section>
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
-          <Megaphone className="h-3.5 w-3.5" /> Ad Requests
-        </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-          Ad Requests
-        </h1>
-        <p className="mt-7 max-w-2xl text-[18px] leading-[1.6] text-slate-300">
-          {leadMachineAdRequests.length > 0 ? (
+      <PageHeader
+        eyebrow="Lead Machine"
+        Icon={Megaphone}
+        title="Ad Requests"
+        subtitle={
+          leadMachineAdRequests.length > 0 ? (
             <>
               <span className="text-white">{leadMachineAdRequests.length} campaign request{leadMachineAdRequests.length !== 1 ? 's' : ''}</span> across active listings.{' '}
               {running > 0 && <>{running} running. </>}
@@ -156,9 +154,10 @@ export default function AdRequestsPage() {
             </>
           ) : (
             'No ad requests have been created yet. Open a listing workspace to draft a campaign.'
-          )}
-        </p>
-      </section>
+          )
+        }
+        className="mb-10"
+      />
 
       <section className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -183,8 +182,8 @@ export default function AdRequestsPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 statusFilter === s
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {s}
@@ -198,8 +197,8 @@ export default function AdRequestsPage() {
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
                 platformFilter === p
-                  ? 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                  ? 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
               {p}
@@ -214,16 +213,19 @@ export default function AdRequestsPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="mt-8 rounded-[28px] border border-slate-800 bg-slate-800/40 px-7 py-12 text-center sm:px-10">
-            <Megaphone className="mx-auto h-8 w-8 text-slate-600" />
-            <p className="mt-4 text-sm text-slate-500">No requests match these filters.</p>
-            <button
-              onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
-              className="mt-3 rounded-full border border-slate-800 px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            Icon={Megaphone}
+            title="No requests match these filters"
+            action={
+              <button
+                onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
+                className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
+              >
+                Clear filters
+              </button>
+            }
+            className="mt-8"
+          />
         )}
       </section>
     </div>

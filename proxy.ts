@@ -5,6 +5,39 @@ import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
 const marketPublicGuideRoutes = new Set(["areas", "financing", "golden-visa", "regulations", "trends", "why-dubai"])
 
+// Internal command surfaces — pages that must never render for anonymous visitors.
+const internalPagePrefixes = [
+  "/freehold-intelligence",
+  "/ads-studio",
+  "/notebook",
+  "/cloud",
+  "/agent-network",
+  "/reports",
+  "/settings",
+]
+
+// Internal API groups — operational endpoints (ads, messaging, intelligence,
+// CRM, finance) that must only be callable with a valid Freehold session.
+const internalApiPrefixes = [
+  "/api/google/",
+  "/api/meta/",
+  "/api/whatsapp/",
+  "/api/freehold/",
+  "/api/freehold-intelligence/",
+  "/api/ai/generate-ad",
+  "/api/ai/recommend-followup",
+  "/api/ai/summarize-lead",
+  "/api/ai/ask-notebook",
+  "/api/ai/upload-brochure",
+]
+
+// Endpoints under the internal prefixes that intentionally serve the public
+// site (anonymous visitors) and must stay open.
+const publicApiPrefixes = ["/api/freehold/public/"]
+
+// Inbound webhooks authenticate via their own signatures, not session cookies.
+const webhookPaths = new Set(["/api/whatsapp/webhook"])
+
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
@@ -26,7 +59,7 @@ export async function proxy(request: NextRequest) {
       res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
       return res
     }
-    url.hostname = "orerealestate.ae"
+    url.hostname = "freeholdproperty.ae"
     url.protocol = "https:"
     if (!pathname.startsWith("/crm")) {
       url.pathname = `/crm${pathname}`
@@ -34,8 +67,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, { status: 308 })
   }
 
-  // ── Session auth for protected routes ─────────────────────────────────────
-  if (pathname.startsWith('/freehold-intelligence')) {
+  // ── Session auth for internal APIs ─────────────────────────────────────────
+  const isInternalApi =
+    internalApiPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix)) &&
+    !publicApiPrefixes.some((prefix) => pathname.startsWith(prefix)) &&
+    !webhookPaths.has(pathname)
+  if (isInternalApi) {
+    const token = request.cookies.get(SESSION_COOKIE)?.value
+    const user = await verifySession(token)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required." }, { status: 401 })
+    }
+  }
+
+  // ── Session auth for internal pages ────────────────────────────────────────
+  const isInternalPage = internalPagePrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+  if (isInternalPage) {
     const token = request.cookies.get(SESSION_COOKIE)?.value
     const user = await verifySession(token)
 

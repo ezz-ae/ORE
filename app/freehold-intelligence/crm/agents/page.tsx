@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
-import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { crmAgentRoster, type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
+import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 
 const STATUS_CONFIG = {
-  available:    { label: 'Available',    classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20' },
-  at_capacity:  { label: 'At capacity',  classes: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25'       },
+  available:    { label: 'Available',    classes: 'bg-gold/10 text-gold border-gold/20' },
+  at_capacity:  { label: 'At capacity',  classes: 'bg-gold/10 text-gold border-gold/25'       },
   overloaded:   { label: 'Overloaded',   classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
 
@@ -33,8 +33,18 @@ export default function CrmAgentsPage() {
   const [sortBy, setSortBy] = useState<SortKey>('utilization')
   const [contacted, setContacted] = useState<Set<string>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
+  const [liveAgents, setLiveAgents] = useState<CRMAgentCapacity[] | null>(null)
 
-  const agents = crmAgentRoster
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/agents')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d?.agents?.length > 0) setLiveAgents(d.agents) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const agents = liveAgents ?? crmAgentRoster
   const totalLeads   = agents.reduce((s, a) => s + a.totalLeads, 0)
   const totalOverdue = agents.reduce((s, a) => s + a.overdueFollowUps, 0)
   const overloaded   = agents.filter((a) => a.status === 'overloaded')
@@ -61,15 +71,12 @@ export default function CrmAgentsPage() {
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
-            <UserCheck className="h-3.5 w-3.5" /> Agents
-          </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Sales team<br/><span className="text-slate-500">performance.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            {agents.length} active advisors · {totalLeads} live leads · {totalOverdue} overdue follow-up{totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.
-          </p>
+          <PageHeader
+            eyebrow="CRM"
+            Icon={UserCheck}
+            title="Sales team performance"
+            subtitle={`${agents.length} active advisors · ${totalLeads} live leads · ${totalOverdue} overdue follow-up${totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.`}
+          />
 
           {overloaded.length > 0 && (
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4">
@@ -92,8 +99,8 @@ export default function CrmAgentsPage() {
                   className={[
                     'rounded-full px-3.5 py-1.5 text-xs font-medium transition',
                     statusFilter === key
-                      ? 'bg-[#D4AF37] text-[#0D1117]'
-                      : 'border border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200',
+                      ? 'bg-gold text-ink'
+                      : 'border border-line-strong text-slate-400 hover:border-slate-500 hover:text-slate-200',
                   ].join(' ')}
                 >
                   {label}
@@ -118,17 +125,22 @@ export default function CrmAgentsPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="mt-10 py-16 text-center text-[14px] text-slate-500">No agents match this filter.</div>
+            <EmptyState
+              Icon={UserCheck}
+              title="No agents match this filter"
+              description="Try selecting a different status or clearing the filter."
+              className="mt-6"
+            />
           ) : (
             <div className="mt-6 space-y-4">
               {filtered.map((agent) => {
                 const st = STATUS_CONFIG[agent.status]
                 const wasContacted = contacted.has(agent.id)
                 return (
-                  <div key={agent.id} className="rounded-[24px] border border-slate-800 bg-slate-900 p-5 transition hover:border-slate-700 sm:p-7">
+                  <div key={agent.id} className="rounded-[24px] border border-line bg-surface p-5 transition hover:border-line-strong sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 text-sm font-semibold text-[#D4AF37]">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
                           {agent.initials}
                         </div>
                         <div className="min-w-0">
@@ -136,7 +148,7 @@ export default function CrmAgentsPage() {
                             <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
                             <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.classes}`}>{st.label}</span>
                             {wasContacted && (
-                              <span className="flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-2 py-0.5 text-xs text-[#D4AF37]">
+                              <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">
                                 <CheckCircle className="h-3 w-3" /> Contacted
                               </span>
                             )}
@@ -159,43 +171,43 @@ export default function CrmAgentsPage() {
                           <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Overdue</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-[22px] font-semibold text-[#D4AF37]">{agent.recentWins}</div>
+                          <div className="text-[22px] font-semibold text-gold">{agent.recentWins}</div>
                           <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Wins</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Utilization bar */}
-                    <div className="mt-5 border-t border-slate-800 pt-4">
+                    <div className="mt-5 border-t border-line pt-4">
                       <div className="flex items-center justify-between text-sm text-slate-400">
                         <span>Utilization</span>
-                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-[#D4AF37]' : 'text-[#D4AF37]'}>
+                        <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-gold' : 'text-gold'}>
                           {agent.utilization}%
                         </span>
                       </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                         <div
-                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-[#D4AF37]' : 'bg-[#D4AF37]'}`}
+                          className={`h-full rounded-full ${agent.utilization >= 90 ? 'bg-red-400' : agent.utilization >= 75 ? 'bg-gold' : 'bg-gold'}`}
                           style={{ width: `${agent.utilization}%` }}
                         />
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <Link
                           href="/freehold-intelligence/crm/assignment"
-                          className="text-sm text-[#D4AF37]/60 transition hover:text-[#D4AF37]"
+                          className="text-sm text-gold/60 transition hover:text-gold"
                         >
                           View assignments
                         </Link>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleContact(agent.id, agent.name, 'call')}
-                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 text-sm font-medium text-slate-400 transition hover:bg-slate-700 active:scale-95"
+                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
                             <Phone className="h-3 w-3" /> Call
                           </button>
                           <button
                             onClick={() => handleContact(agent.id, agent.name, 'message')}
-                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 text-sm font-medium text-slate-400 transition hover:bg-slate-700 active:scale-95"
+                            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
                             <MessageSquare className="h-3 w-3" /> Message
                           </button>
@@ -208,40 +220,32 @@ export default function CrmAgentsPage() {
             </div>
           )}
 
-          <section className="mt-14">
-            <AiPrompt
-              placeholder="Ask about agent performance, capacity, follow-ups…"
-              suggestions={[
-                'Which agent needs coaching right now?',
-                'Who should I reassign overloaded leads to?',
-                'What is the team average follow-up delay?',
-              ]}
-            />
-          </section>
         </div>
 
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <TrendingUp className="h-3 w-3" /> Team load
+            <Panel>
+              <PanelHeader title="Team load" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">{totalLeads}</div>
+                <div className="mt-1 text-xs text-slate-400">leads across {agents.length} agents</div>
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">{totalLeads}</div>
-              <div className="mt-1 text-xs text-slate-400">leads across {agents.length} agents</div>
-            </div>
+            </Panel>
 
             {topPerformer && (
-              <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Top performer</div>
-                <div className="mt-3 text-[18px] font-semibold text-white">{topPerformer.name}</div>
-                <div className="mt-1 text-xs text-slate-400">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
-              </div>
+              <Panel>
+                <PanelHeader title="Top performer" />
+                <div className="p-5">
+                  <div className="text-[18px] font-semibold text-white">{topPerformer.name}</div>
+                  <div className="mt-1 text-xs text-slate-400">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
+                </div>
+              </Panel>
             )}
 
             {overloaded.length > 0 && (
-              <div className="rounded-xl border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/[0.05] to-transparent p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-[#D4AF37]">Coaching flag</div>
+              <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.05] to-transparent p-5">
+                <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold">Coaching flag</div>
                 <div className="mt-3 text-[14px] font-semibold text-white">{overloaded[0].name} — overloaded</div>
                 <div className="mt-2 text-xs leading-relaxed text-slate-400">
                   {overloaded[0].utilization}% utilization · {overloaded[0].overdueFollowUps} overdue. Redistribute before assigning new leads.
@@ -249,18 +253,20 @@ export default function CrmAgentsPage() {
               </div>
             )}
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Avg. time-to-close</div>
-              <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
-              <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
-            </div>
+            <Panel>
+              <PanelHeader title="Avg. time-to-close" />
+              <div className="p-5">
+                <div className="text-[34px] font-semibold text-white">18d</div>
+                <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
+              </div>
+            </Panel>
           </div>
         </aside>
       </div>
 
       {/* Flash banner */}
       {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#D4AF37]/25 bg-slate-900 px-5 py-2.5 text-sm font-medium text-[#D4AF37] shadow-xl">
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-xl">
           {flash}
         </div>
       )}

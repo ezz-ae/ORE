@@ -3,9 +3,20 @@ import { Target, Eye, ArrowRight, Quote } from "lucide-react"
 import Link from "next/link"
 
 export const metadata = {
-  title: "About Freehold Property UAE | Dubai Real Estate Advisory",
+  title: "About Freehold Property UAE | 19 Years in Dubai Real Estate",
   description: "Freehold Properties LLC — 19 years of Dubai real estate. Sales, leasing, investments, consultancy, and market intelligence for global investors.",
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Freehold Property UAE | 19 Years in Dubai Real Estate",
+    description: "Full-service Dubai brokerage with deep market knowledge and ethical practice — sales, leasing, advisory, and valuation.",
+    url: "/about",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "About Freehold Property UAE" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Freehold Property UAE",
+    images: ["/og-image.png"],
+  },
 }
 
 const chapters = [

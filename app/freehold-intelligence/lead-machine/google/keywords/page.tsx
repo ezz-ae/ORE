@@ -28,9 +28,9 @@ function fmtPct(n: number): string {
 // ─── Badge colour maps ────────────────────────────────────────────────────────
 
 const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
-  BROAD:  'bg-slate-800/40 text-slate-500 border-slate-800',
+  BROAD:  'bg-surface-2 text-slate-500 border-line',
   PHRASE: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
-  EXACT:  'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20',
+  EXACT:  'bg-gold/10 text-gold border-gold/20',
 }
 
 const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
@@ -40,7 +40,7 @@ const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
 }
 
 const INTENT_BADGE: Record<string, string> = {
-  high:   'bg-[#D4AF37]/10 text-[#F8E7AE] border-[#D4AF37]/20',
+  high:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
   medium: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
   brand:  'bg-violet-400/10 text-slate-400 border-violet-400/20',
 }
@@ -49,9 +49,9 @@ const INTENT_BADGE: Record<string, string> = {
 
 function QualityScore({ score }: { score: number }) {
   const color =
-    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-[#D4AF37]'
+    score <= 3 ? 'bg-red-400' : score <= 6 ? 'bg-yellow-400' : 'bg-gold'
   const textColor =
-    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-[#D4AF37]'
+    score <= 3 ? 'text-red-400' : score <= 6 ? 'text-yellow-400' : 'text-gold'
 
   return (
     <div className="flex items-center gap-1.5">
@@ -60,7 +60,7 @@ function QualityScore({ score }: { score: number }) {
           <span
             key={d}
             className={`inline-block h-1.5 w-1.5 rounded-full transition ${
-              d <= score ? color : 'bg-slate-800/50'
+              d <= score ? color : 'bg-surface-2'
             }`}
           />
         ))}
@@ -153,7 +153,7 @@ export default function GoogleKeywordsPage() {
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -203,7 +203,7 @@ export default function GoogleKeywordsPage() {
               { label: 'Total',       value: keywords.length,            color: 'text-white'       },
               { label: 'Broad',       value: broadCount,                 color: 'text-slate-400'    },
               { label: 'Phrase',      value: phraseCount,                color: 'text-slate-400'     },
-              { label: 'Exact',       value: exactCount,                 color: 'text-[#D4AF37]' },
+              { label: 'Exact',       value: exactCount,                 color: 'text-gold' },
               { label: 'Impressions', value: totalImps.toLocaleString(), color: 'text-white'       },
               {
                 label: 'Avg QS',
@@ -212,13 +212,13 @@ export default function GoogleKeywordsPage() {
                   avgQS == null
                     ? 'text-slate-500'
                     : avgQS >= 7
-                      ? 'text-[#D4AF37]'
+                      ? 'text-gold'
                       : avgQS >= 4
                         ? 'text-yellow-400'
                         : 'text-red-400',
               },
             ].map((s) => (
-              <div key={s.label} className="rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3">
+              <div key={s.label} className="rounded-[16px] border border-line bg-surface px-4 py-3">
                 <div className={`text-[22px] font-semibold leading-none tabular-nums ${s.color}`}>
                   {s.value}
                 </div>
@@ -228,7 +228,7 @@ export default function GoogleKeywordsPage() {
           </div>
 
           {/* ── Match type filter tabs ── */}
-          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-slate-800 bg-slate-900 p-1 w-fit">
+          <div className="mt-8 flex items-center gap-1 rounded-[14px] border border-line bg-surface p-1 w-fit">
             {(['ALL', 'BROAD', 'PHRASE', 'EXACT'] as MatchFilter[]).map((f) => {
               const label =
                 f === 'ALL'
@@ -252,9 +252,9 @@ export default function GoogleKeywordsPage() {
 
           {/* ── Keywords table ── */}
           {filtered.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-800 bg-slate-900">
+            <div className="mt-4 overflow-hidden rounded-[20px] border border-line bg-surface">
               {/* Table header */}
-              <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-slate-800 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+              <div className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                 <span>Keyword</span>
                 <span>Match</span>
                 <span>Quality score</span>
@@ -269,13 +269,13 @@ export default function GoogleKeywordsPage() {
                 {filtered.map((kw) => (
                   <div
                     key={kw.id}
-                    className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] items-center gap-x-3 px-5 py-3 text-xs transition hover:bg-slate-800/40"
+                    className="grid grid-cols-[1fr_100px_140px_80px_72px_80px_80px_40px] items-center gap-x-3 px-5 py-3 text-xs transition hover:bg-surface-2"
                   >
                     {/* Keyword text + status dot */}
                     <div className="flex min-w-0 items-center gap-2">
                       <span
                         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                          kw.status === 'ENABLED' ? 'bg-[#D4AF37]' : 'bg-white/20'
+                          kw.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'
                         }`}
                       />
                       <span className="truncate font-medium text-white">{kw.text}</span>
@@ -323,7 +323,7 @@ export default function GoogleKeywordsPage() {
             </div>
           ) : (
             /* ── Empty state ── */
-            <div className="mt-8 rounded-[24px] border border-slate-800 bg-slate-900 px-6 py-14 text-center">
+            <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
               <div className="text-[16px] font-semibold text-white">No keywords found</div>
               <p className="mt-2 text-sm text-slate-500">
@@ -339,7 +339,7 @@ export default function GoogleKeywordsPage() {
             <section className="mt-8">
               <button
                 onClick={() => setNegsOpen((o) => !o)}
-                className="flex w-full items-center justify-between rounded-[16px] border border-slate-800 bg-slate-900 px-5 py-4 text-left transition hover:border-white/[0.10]"
+                className="flex w-full items-center justify-between rounded-[16px] border border-line bg-surface px-5 py-4 text-left transition hover:border-white/[0.10]"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-white">Negative keywords</span>
@@ -355,9 +355,9 @@ export default function GoogleKeywordsPage() {
               </button>
 
               {negsOpen && (
-                <div className="mt-1 overflow-hidden rounded-[16px] border border-slate-800 bg-slate-900">
+                <div className="mt-1 overflow-hidden rounded-[16px] border border-line bg-surface">
                   {/* Column headers */}
-                  <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-slate-800 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
+                  <div className="grid grid-cols-[1fr_80px_120px] gap-x-3 border-b border-line px-5 py-2.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                     <span>Keyword</span>
                     <span>Match</span>
                     <span>Campaign</span>
@@ -398,7 +398,7 @@ export default function GoogleKeywordsPage() {
               {UAE_REAL_ESTATE_KEYWORD_THEMES.map((theme) => (
                 <div
                   key={theme.id}
-                  className="flex flex-col gap-3 rounded-[20px] border border-slate-800 bg-slate-900 p-5"
+                  className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-5"
                 >
                   {/* Theme header */}
                   <div className="flex items-start justify-between gap-3">
@@ -421,7 +421,7 @@ export default function GoogleKeywordsPage() {
                         {theme.description}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-slate-800 bg-slate-800/40 px-2.5 py-1 text-sm font-medium text-slate-400">
+                    <span className="shrink-0 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-sm font-medium text-slate-400">
                       {theme.keywords.length} kws
                     </span>
                   </div>
@@ -450,14 +450,14 @@ export default function GoogleKeywordsPage() {
                     <div className="group relative">
                       <button
                         disabled
-                        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-1.5 text-xs text-slate-500"
+                        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-500"
                       >
                         Add to campaign
                       </button>
                       {/* Tooltip */}
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-400 shadow-xl group-hover:block">
+                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-line bg-surface px-2.5 py-1.5 text-sm text-slate-400 shadow-xl group-hover:block">
                         Select campaign first
-                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-slate-800 bg-slate-900" />
+                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-line bg-surface" />
                       </div>
                     </div>
                   </div>

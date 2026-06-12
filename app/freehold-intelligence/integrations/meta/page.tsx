@@ -299,7 +299,7 @@ export default function MetaIntegrationPage() {
         )}
 
         {/* Token form */}
-        <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-6">
+        <div className="rounded-[20px] border border-line bg-surface p-6">
           <div className="mb-5 text-sm font-semibold text-white">Access token</div>
 
           <div className="relative">
@@ -309,7 +309,7 @@ export default function MetaIntegrationPage() {
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && connect(token)}
               placeholder="EAABwzLixnjYBO..."
-              className="w-full rounded-[12px] border border-slate-800 bg-slate-800/50 py-3 pl-4 pr-12 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/50 transition"
+              className="w-full rounded-[12px] border border-line bg-surface-2 py-3 pl-4 pr-12 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/50 transition"
             />
             <button
               type="button"
@@ -323,14 +323,14 @@ export default function MetaIntegrationPage() {
           <button
             onClick={() => connect(token)}
             disabled={!token.trim()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#D4AF37] py-3 text-[14px] font-semibold text-black transition hover:bg-[#D4AF37]/90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-gold py-3 text-[14px] font-semibold text-black transition hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Connect Meta account
           </button>
         </div>
 
         {/* How to get the token */}
-        <div className="mt-6 rounded-[18px] border border-slate-800 bg-slate-800/50 p-5">
+        <div className="mt-6 rounded-[18px] border border-line bg-surface-2 p-5">
           <div className="mb-3 text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
             How to get your token
           </div>
@@ -343,7 +343,7 @@ export default function MetaIntegrationPage() {
               'Copy the token and paste it above',
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-800/50 text-xs font-semibold text-slate-400">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-slate-400">
                   {i + 1}
                 </span>
                 {step}
@@ -354,18 +354,18 @@ export default function MetaIntegrationPage() {
             href="https://business.facebook.com/settings/system-users"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 text-xs text-[#D4AF37]/70 transition hover:text-[#D4AF37]"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs text-gold/70 transition hover:text-gold"
           >
             Open Meta Business Manager <ExternalLink className="h-3 w-3" />
           </a>
         </div>
 
         {/* Permissions required */}
-        <div className="mt-4 rounded-[14px] border border-slate-800 bg-transparent px-4 py-3.5">
+        <div className="mt-4 rounded-[14px] border border-line bg-transparent px-4 py-3.5">
           <div className="mb-2 text-xs text-slate-500 uppercase tracking-wider">Required scopes</div>
           <div className="flex flex-wrap gap-1.5">
             {['ads_management', 'ads_read', 'leads_retrieval', 'business_management'].map((s) => (
-              <span key={s} className="rounded bg-slate-800/40 px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
+              <span key={s} className="rounded bg-surface-2 px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
             ))}
           </div>
         </div>
@@ -377,7 +377,7 @@ export default function MetaIntegrationPage() {
   if (phase === 'connecting') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
         <div className="text-[14px] text-slate-400">Connecting to Meta Business API…</div>
         <div className="text-xs text-slate-500">Fetching ad accounts, campaigns, and insights</div>
       </div>
@@ -415,20 +415,20 @@ export default function MetaIntegrationPage() {
           <button
             onClick={refresh}
             disabled={syncing}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-800 text-slate-400 transition hover:border-slate-600 hover:text-slate-200 disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-slate-400 transition hover:border-line-strong hover:text-slate-200 disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={copyToken}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-800 text-slate-500 transition hover:border-slate-600 hover:text-slate-300"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-slate-500 transition hover:border-line-strong hover:text-slate-300"
             title="Copy token"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
           <button
             onClick={disconnect}
-            className="flex items-center gap-1.5 rounded-full border border-slate-800 px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-400/20 hover:text-red-400"
+            className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-400/20 hover:text-red-400"
           >
             <LogOut className="h-3.5 w-3.5" /> Disconnect
           </button>
@@ -438,13 +438,13 @@ export default function MetaIntegrationPage() {
       {/* Summary tiles — 30-day totals */}
       <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: 'Total spend (30d)',    value: `AED ${fmt(totalSpend, 0)}`,         Icon: DollarSign,    color: 'text-[#D4AF37]'  },
+          { label: 'Total spend (30d)',    value: `AED ${fmt(totalSpend, 0)}`,         Icon: DollarSign,    color: 'text-gold'  },
           { label: 'Impressions (30d)',    value: totalImpressions > 0 ? fmt(totalImpressions) : '—', Icon: Megaphone, color: 'text-blue-400' },
           { label: 'Clicks (30d)',         value: totalClicks > 0 ? fmt(totalClicks) : '—', Icon: MousePointer, color: 'text-sky-400' },
           { label: 'Leads (30d)',          value: totalLeads > 0 ? String(totalLeads) : '—', Icon: Users, color: 'text-emerald-400' },
           { label: 'Blended CPL',          value: blendedCPL > 0 ? `AED ${fmt(blendedCPL, 0)}` : '—', Icon: Zap, color: blendedCPL > 0 && blendedCPL < 200 ? 'text-emerald-400' : 'text-amber-400' },
         ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-[16px] border border-slate-800 bg-slate-900 px-4 py-3.5">
+          <div key={label} className="rounded-[16px] border border-line bg-surface px-4 py-3.5">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className={`mt-2 text-[17px] font-semibold tabular-nums ${color}`}>{value}</div>
             <div className="mt-0.5 text-[10px] text-slate-500 leading-relaxed">{label}</div>
@@ -463,7 +463,7 @@ export default function MetaIntegrationPage() {
 
       {/* Ad accounts */}
       {accounts.length === 0 ? (
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 px-6 py-12 text-center">
+        <div className="rounded-[18px] border border-line bg-surface px-6 py-12 text-center">
           <div className="text-sm text-slate-400">No ad accounts found for this token.</div>
           <div className="mt-1 text-xs text-slate-500">The token may need business_management scope, or no ad accounts are linked.</div>
         </div>
@@ -478,7 +478,7 @@ export default function MetaIntegrationPage() {
             const avgCPL = accountLeads > 0 ? accountSpend / accountLeads : 0
 
             return (
-              <div key={account.id} className={`rounded-[20px] border bg-slate-900 transition ${isOpen ? 'border-slate-700' : 'border-slate-800'}`}>
+              <div key={account.id} className={`rounded-[20px] border bg-surface transition ${isOpen ? 'border-line-strong' : 'border-line'}`}>
 
                 {/* Account header row */}
                 <button
@@ -515,7 +515,7 @@ export default function MetaIntegrationPage() {
                     )}
                     {avgCPL > 0 && (
                       <div className="text-right">
-                        <div className="text-[14px] font-semibold text-[#D4AF37] tabular-nums">AED {fmt(avgCPL, 0)}</div>
+                        <div className="text-[14px] font-semibold text-gold tabular-nums">AED {fmt(avgCPL, 0)}</div>
                         <div className="text-[10px] text-slate-500">CPL</div>
                       </div>
                     )}
@@ -528,13 +528,13 @@ export default function MetaIntegrationPage() {
 
                 {/* Campaigns table */}
                 {isOpen && (
-                  <div className="border-t border-slate-800">
+                  <div className="border-t border-line">
                     {account.campaigns.length === 0 ? (
                       <div className="px-6 py-6 text-sm text-slate-400">No campaigns found for this account.</div>
                     ) : (
                       <>
                         {/* Table header */}
-                        <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-slate-800 px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                        <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-line px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                           <div>Campaign</div>
                           <div className="text-right">Status</div>
                           <div className="text-right">Spend</div>
@@ -544,7 +544,7 @@ export default function MetaIntegrationPage() {
                           <div className="text-right">Leads</div>
                         </div>
                         {/* Campaign rows */}
-                        <div className="divide-y divide-slate-800">
+                        <div className="divide-y divide-line">
                           {account.campaigns.map((c) => {
                             const ins   = c.insight
                             const cLeads = leads(ins)
@@ -552,7 +552,7 @@ export default function MetaIntegrationPage() {
                             const statusColor = CAMPAIGN_STATUS_COLOR[c.status] ?? 'text-slate-500'
 
                             return (
-                              <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-slate-800/40 transition">
+                              <div key={c.id} className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 px-6 py-3.5 hover:bg-surface-2 transition">
                                 <div className="min-w-0 pr-2">
                                   <div className="truncate text-sm font-medium text-slate-100">{c.name}</div>
                                   <div className="mt-0.5 text-[10px] text-slate-500 uppercase tracking-wide">
@@ -587,7 +587,7 @@ export default function MetaIntegrationPage() {
 
                     {/* Account-level insight bar */}
                     {account.insight && (
-                      <div className="border-t border-slate-800 px-6 py-4">
+                      <div className="border-t border-line px-6 py-4">
                         <div className="flex flex-wrap gap-6 text-xs text-slate-400">
                           <span>30-day account totals:</span>
                           <span className="text-slate-400">Impr. <strong className="text-slate-100">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
@@ -607,7 +607,7 @@ export default function MetaIntegrationPage() {
       )}
 
       {/* Footer: token management */}
-      <div className="mt-8 flex items-center justify-between rounded-[14px] border border-slate-800 bg-slate-800/50 px-5 py-3.5">
+      <div className="mt-8 flex items-center justify-between rounded-[14px] border border-line bg-surface-2 px-5 py-3.5">
         <div className="text-xs text-slate-500">
           Token stored in browser only · Not sent to any server
         </div>

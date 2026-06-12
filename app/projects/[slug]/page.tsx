@@ -35,7 +35,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/ore"
+import { getProjectBySlug, getProjectsForGrid, searchProjects, getAdjacentProjectSlugs } from "@/lib/data"
+import { COMPANY_PHONE_E164 } from "@/lib/site"
 import { Toaster } from "@/components/ui/toaster"
 import type { Project } from "@/lib/types/project"
 import { ProjectLeadForm } from "@/components/project-lead-form"
@@ -294,7 +295,7 @@ export default async function ProjectPage({
   const testimonials = toArray(project.testimonials)
   const faqs = toArray(project.faqs)
   const developer = project.developer || { name: "Freehold", logo: "" }
-  const phoneNumber = "+97150000000"
+  const phoneNumber = COMPANY_PHONE_E164
   const heroImage = project.heroImage || "/logo.png"
   const heroImageClass = project.heroImage ? "object-cover" : "object-contain bg-card"
 
@@ -996,7 +997,9 @@ export default async function ProjectPage({
                   <TabsContent value="developer" className="mt-8 space-y-6">
                     <div>
                       <h2 className="font-serif text-2xl font-bold">About {developer.name}</h2>
-                      <p className="mt-3 text-sm text-muted-foreground">{developer.description}</p>
+                      {developer.description && (
+                        <p className="mt-3 text-sm text-muted-foreground">{developer.description}</p>
+                      )}
                     </div>
                     <div className="rounded-lg border border-border bg-card p-6">
                       <div className="flex flex-wrap items-start gap-4">
@@ -1018,10 +1021,12 @@ export default async function ProjectPage({
                             {getAvatarInitial(developer.name)}
                           </div>
                         )}
-                        <div>
-                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Track record</div>
-                          <div className="mt-2 text-sm font-semibold">{developer.trackRecord}</div>
-                        </div>
+                        {developer.trackRecord && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground">Track record</div>
+                            <div className="mt-2 text-sm font-semibold">{developer.trackRecord}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TabsContent>

@@ -5,8 +5,9 @@ import {
   Sparkles, ChevronRight, CheckCircle, AlertCircle,
   Zap, BookOpen, Users, Globe, Settings,
 } from 'lucide-react'
-import { agentConnections, agentProfile, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { agentConnections, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
+import { useSession } from '@/lib/freehold/use-session'
+
 
 const CATEGORY_META: Record<AgentConnection['category'], { label: string; color: string }> = {
   crm:        { label: 'CRM',        color: 'text-orange-400' },
@@ -24,13 +25,14 @@ const activeLeads   = agentPipelineLeads.filter((l) => l.pipelineStage !== 'clos
 type Route = 'apps' | 'inventory' | 'frontend'
 
 const ROUTES: { id: Route; label: string; Icon: React.ElementType; desc: string; color: string }[] = [
-  { id: 'apps',      label: 'Apps',      Icon: Zap,      desc: 'Your pipeline, wallet, campaigns, and achievements',  color: 'text-[#D4AF37]' },
+  { id: 'apps',      label: 'Apps',      Icon: Zap,      desc: 'Your pipeline, wallet, campaigns, and achievements',  color: 'text-gold' },
   { id: 'inventory', label: 'Inventory', Icon: BookOpen, desc: 'NotebookLM — sources, AI chat, content studio',       color: 'text-violet-400' },
   { id: 'frontend',  label: 'Listings',  Icon: Globe,    desc: 'PropertyFinder, Bayut, Dubizzle, your landing pages', color: 'text-sky-400'    },
 ]
 
 
 export default function AgentAIPage() {
+  const { user } = useSession()
   const [connections, setConnections] = useState<AgentConnection[]>(agentConnections)
   const [activeRoute, setActiveRoute] = useState<Route>('apps')
   const [settingUp, setSettingUp]     = useState<string | null>(null)
@@ -81,12 +83,12 @@ export default function AgentAIPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">My AI</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {agentProfile.name}'s personal agent — {connected} of {connections.length} connections live
+            {user?.name ? `${user.name}'s personal agent` : 'Your personal agent'} — {connected} of {connections.length} connections live
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] px-4 py-2">
-          <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-          <span className="text-sm font-medium text-[#D4AF37]">Agent active</span>
+        <div className="flex items-center gap-2 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2">
+          <Sparkles className="h-4 w-4 text-gold" />
+          <span className="text-sm font-medium text-gold">Agent active</span>
         </div>
       </section>
 
@@ -100,8 +102,8 @@ export default function AgentAIPage() {
               onClick={() => setActiveRoute(id)}
               className={`flex flex-col rounded-[18px] border p-4 text-left transition ${
                 activeRoute === id
-                  ? 'border-slate-600 bg-slate-800/60'
-                  : 'border-slate-800 bg-slate-800/50 hover:bg-slate-800/60'
+                  ? 'border-line-strong bg-surface-2'
+                  : 'border-line bg-surface-2 hover:bg-surface-2'
               }`}
             >
               <Icon className={`h-5 w-5 ${color}`} />
@@ -141,8 +143,8 @@ export default function AgentAIPage() {
                         key={conn.id}
                         className={`flex items-center gap-4 rounded-[14px] border px-4 py-3.5 transition ${
                           conn.status === 'connected'
-                            ? 'border-slate-800 bg-slate-800/50'
-                            : 'border-slate-800/50 bg-transparent opacity-70'
+                            ? 'border-line bg-surface-2'
+                            : 'border-line bg-transparent opacity-70'
                         }`}
                       >
                         <span className="text-[20px]">{conn.icon}</span>
@@ -186,9 +188,9 @@ export default function AgentAIPage() {
           {[
             { Icon: Users,    label: 'Leads + pipeline',    value: '8 leads tracked',         color: 'text-sky-400'    },
             { Icon: BookOpen, label: 'Inventory notes',      value: '3 notes · 8 sources',     color: 'text-violet-400' },
-            { Icon: Settings, label: 'Profile & expertise',  value: 'Palm Expert · Gold tier', color: 'text-[#D4AF37]'  },
+            { Icon: Settings, label: 'Profile & expertise',  value: 'Palm Expert · Gold tier', color: 'text-gold'  },
           ].map(({ Icon, label, value, color }) => (
-            <div key={label} className="flex items-center gap-3 rounded-[14px] border border-slate-800 bg-slate-800/50 px-4 py-3">
+            <div key={label} className="flex items-center gap-3 rounded-[14px] border border-line bg-surface-2 px-4 py-3">
               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
               <div>
                 <div className={`text-sm font-medium ${color}`}>{value}</div>
@@ -199,29 +201,6 @@ export default function AgentAIPage() {
         </div>
       </section>
 
-      {/* Agent AI — real CRM Advisor */}
-      <section className="mt-8">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Ask your agent</div>
-        <AiPrompt
-          skill="crm_advisor"
-          placeholder="How many critical leads? Draft a WhatsApp? Who to call first?"
-          suggestions={[
-            'How many critical leads do I have right now?',
-            'Draft a WhatsApp for my offer lead.',
-            'Which connection needs setup?',
-            'Summarise my Palm Jumeirah performance.',
-          ]}
-          context={{
-            agent: { name: agentProfile.name, tier: agentProfile.tier, title: agentProfile.title },
-            pipeline: { activeLeads, criticalLeads },
-            leads: agentPipelineLeads.slice(0, 8).map(l => ({
-              name: l.name, stage: l.pipelineStage, urgency: l.urgency,
-              property: l.property, note: l.note,
-            })),
-            connections: connections.map(c => ({ name: c.name, status: c.status, category: c.category })),
-          }}
-        />
-      </section>
 
     </div>
   )

@@ -3,8 +3,6 @@
 import { useState, useMemo } from 'react'
 import { CheckSquare, AlertCircle, Clock, MessageSquare, CheckCircle2, ArrowUpRight, Sparkles, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-
 type ReviewType = 'approval' | 'decision' | 'correction' | 'access request' | 'comment'
 type ReviewPriority = 'critical' | 'high' | 'medium' | 'low'
 
@@ -106,21 +104,21 @@ const PRIORITY_ORDER: Record<ReviewPriority, number> = { critical: 0, high: 1, m
 
 function priorityTone(p: ReviewPriority) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
-  if (p === 'high')     return { ring: 'border-[#D4AF37]/25', bg: 'bg-[#D4AF37]/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-[#D4AF37]', label: 'High' }
+  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', label: 'High' }
   if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
-  return                       { ring: 'border-slate-800', bg: 'bg-slate-900', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
+  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
 }
 
 function typeTone(t: ReviewType) {
-  if (t === 'approval')       return 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-emerald-200'
+  if (t === 'approval')       return 'bg-gold/10 border-gold/20 text-emerald-200'
   if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
-  if (t === 'decision')       return 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-[#F8E7AE]'
+  if (t === 'decision')       return 'bg-gold/10 border-gold/20 text-[#F8E7AE]'
   if (t === 'correction')     return 'bg-sky-400/10 border-sky-400/20 text-sky-200'
-  return                              'bg-slate-800/50 border-slate-700 text-slate-400'
+  return                              'bg-surface-2 border-line-strong text-slate-400'
 }
 
 function typeIcon(t: ReviewType) {
-  if (t === 'approval' || t === 'decision') return <CheckCircle2 className="h-3.5 w-3.5 text-[#D4AF37]" />
+  if (t === 'approval' || t === 'decision') return <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
   if (t === 'access request') return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
   if (t === 'correction') return <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
   return <Clock className="h-3.5 w-3.5 text-slate-500" />
@@ -183,7 +181,7 @@ export default function ReviewRequestsPage() {
 
       {/* Header */}
       <section>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <CheckSquare className="h-3.5 w-3.5" /> Reviews
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -194,7 +192,7 @@ export default function ReviewRequestsPage() {
         <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
           Comments, approvals, corrections, and access requests — sorted by what blocks launch first.
           {stats.resolved > 0 && (
-            <span className="ml-2 text-[#D4AF37]/80">{stats.resolved} resolved this session.</span>
+            <span className="ml-2 text-gold/80">{stats.resolved} resolved this session.</span>
           )}
         </p>
       </section>
@@ -205,17 +203,17 @@ export default function ReviewRequestsPage() {
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
           <p className="text-xs text-red-400/60 mt-1">Blockers</p>
         </div>
-        <div className="rounded-[18px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] p-4 text-center">
-          <p className="text-[26px] font-semibold text-[#D4AF37]">{stats.approvals}</p>
-          <p className="text-xs text-[#D4AF37]/60 mt-1">Approvals</p>
+        <div className="rounded-[18px] border border-gold/20 bg-gold/[0.06] p-4 text-center">
+          <p className="text-[26px] font-semibold text-gold">{stats.approvals}</p>
+          <p className="text-xs text-gold/60 mt-1">Approvals</p>
         </div>
-        <div className="rounded-[18px] border border-slate-800 bg-slate-900 p-4 text-center">
+        <div className="rounded-[18px] border border-line bg-surface p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.total}</p>
           <p className="text-xs text-slate-500 mt-1">Open</p>
         </div>
-        <div className="rounded-[18px] border border-emerald-400/15 bg-[#D4AF37]/[0.04] p-4 text-center">
-          <p className="text-[26px] font-semibold text-[#D4AF37]/70">{stats.resolved}</p>
-          <p className="text-xs text-[#D4AF37]/40 mt-1">Resolved</p>
+        <div className="rounded-[18px] border border-emerald-400/15 bg-gold/[0.04] p-4 text-center">
+          <p className="text-[26px] font-semibold text-gold/70">{stats.resolved}</p>
+          <p className="text-xs text-gold/40 mt-1">Resolved</p>
         </div>
       </section>
 
@@ -228,8 +226,8 @@ export default function ReviewRequestsPage() {
             onClick={() => setActiveType(f)}
             className={`rounded-full border px-3 py-0.5 text-sm font-medium capitalize transition ${
               activeType === f
-                ? 'border-[#D4AF37]/30 bg-[#D4AF37]/10 text-[#D4AF37]'
-                : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100 hover:border-slate-700'
+                ? 'border-gold/30 bg-gold/10 text-gold'
+                : 'border-line bg-surface text-slate-400 hover:text-slate-100 hover:border-line-strong'
             }`}
           >
             {f}
@@ -238,7 +236,7 @@ export default function ReviewRequestsPage() {
         {hasFilter && (
           <button
             onClick={() => setActiveType('All')}
-            className="flex items-center gap-1 rounded-full border border-slate-800 bg-slate-900 px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-100"
+            className="flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-100"
           >
             <X className="h-3 w-3" /> Clear
           </button>
@@ -250,7 +248,7 @@ export default function ReviewRequestsPage() {
       {/* Review items */}
       <section className="mt-4 space-y-4">
         {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-slate-800 bg-slate-900 py-14 text-center text-sm text-slate-400">
+          <div className="rounded-[22px] border border-line bg-surface py-14 text-center text-sm text-slate-400">
             {stats.total === 0 ? 'All items resolved ✓' : 'No items match this filter.'}
           </div>
         ) : (
@@ -279,7 +277,7 @@ export default function ReviewRequestsPage() {
                 <h3 className="mt-3 text-base font-semibold text-white">{item.title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{item.body}</p>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
                   <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                     <span>Project: <span className="text-slate-300">{item.project}</span></span>
                     <span>Owner: <span className="text-slate-300">{item.owner}</span></span>
@@ -288,7 +286,7 @@ export default function ReviewRequestsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => resolve(item.id, 'approved')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] px-3.5 py-1.5 text-xs font-medium text-[#D4AF37] transition hover:border-emerald-400/35 hover:bg-[#D4AF37]/10"
+                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-gold/20 bg-gold/[0.06] px-3.5 py-1.5 text-xs font-medium text-gold transition hover:border-emerald-400/35 hover:bg-gold/10"
                     >
                       <ThumbsUp className="h-3.5 w-3.5" />
                       Approve
@@ -306,7 +304,7 @@ export default function ReviewRequestsPage() {
                 {item.projectHref && (
                   <Link
                     href={item.projectHref}
-                    className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-[#D4AF37]"
+                    className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-gold"
                   >
                     Open project workspace <ArrowUpRight className="h-3 w-3" />
                   </Link>
@@ -318,12 +316,12 @@ export default function ReviewRequestsPage() {
       </section>
 
       {/* Add comment */}
-      <section className="mt-8 rounded-[22px] border border-slate-800 bg-slate-900 p-6">
+      <section className="mt-8 rounded-[22px] border border-line bg-surface p-6">
         <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <MessageSquare className="h-3.5 w-3.5" /> Add a review comment
         </div>
         {commentFlash && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-2.5 text-sm text-[#D4AF37]">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm text-gold">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Comment added to the review queue.
           </div>
@@ -333,19 +331,19 @@ export default function ReviewRequestsPage() {
             value={commentName}
             onChange={(e) => setCommentName(e.target.value)}
             placeholder="Your name"
-            className="w-full rounded-[12px] border border-slate-700 bg-slate-800/50 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/30 transition"
+            className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition"
           />
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             placeholder="Add a review comment, decision request, or correction note…"
             rows={3}
-            className="w-full rounded-[12px] border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#D4AF37]/30 transition resize-none"
+            className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition resize-none"
           />
           <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-[#0D1117] transition hover:bg-white/90 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-white/90 disabled:opacity-50"
               disabled={!commentText.trim()}
             >
               Add comment
@@ -355,8 +353,8 @@ export default function ReviewRequestsPage() {
       </section>
 
       {/* AI take */}
-      <section className="mt-8 rounded-[22px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.03] px-6 py-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80 mb-3">
+      <section className="mt-8 rounded-[22px] border border-gold/15 bg-gold/[0.03] px-6 py-7">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80 mb-3">
           <Sparkles className="h-3 w-3" /> AI take
         </div>
         <p className="text-base font-medium leading-[1.65] text-slate-100">
@@ -364,19 +362,6 @@ export default function ReviewRequestsPage() {
         </p>
       </section>
 
-      {/* AI prompt */}
-      <section className="mt-8">
-        <AiPrompt
-          skill="server_ops"
-          placeholder="Ask about approvals, reviews, blockers…"
-          suggestions={[
-            'What needs my approval today?',
-            'What is the fastest path to launch?',
-            'Show all landing reviews pending.',
-            'Which approvals are time-sensitive?',
-          ]}
-        />
-      </section>
 
     </div>
   )

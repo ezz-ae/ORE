@@ -1,7 +1,7 @@
 import { LeadsTable } from "@/components/leads-table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { getLeads, getUserAccessList, resolveAccessRole } from "@/lib/ore"
+import { getLeads, getUserAccessList, resolveAccessRole, scoreLead } from "@/lib/data"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 
 export default async function LeadsPage() {
@@ -20,6 +20,7 @@ export default async function LeadsPage() {
           title: member.org_title || member.role,
         }))
     : []
+  const leadRows = leads.map((lead) => ({ ...lead, score: scoreLead(lead) }))
   const newCount = leads.filter((lead) => (lead.status || "new") === "new").length
   const hotCount = leads.filter((lead) => lead.priority === "hot").length
   const openCount = leads.filter((lead) => !lead.assigned_broker_id).length
@@ -64,7 +65,7 @@ export default async function LeadsPage() {
       </section>
 
       <section>
-        <LeadsTable leads={leads} isAdmin={isAdmin} teamMembers={teamMembers} />
+        <LeadsTable leads={leadRows} isAdmin={isAdmin} teamMembers={teamMembers} />
       </section>
     </div>
   )

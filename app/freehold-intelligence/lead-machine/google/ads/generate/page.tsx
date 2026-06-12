@@ -54,7 +54,7 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
       }
     >
       {copied
-        ? <Check className="h-3 w-3 text-[#D4AF37]" />
+        ? <Check className="h-3 w-3 text-gold" />
         : <Copy className="h-3 w-3" />}
       {copied ? 'Copied' : 'Copy'}
     </button>
@@ -227,7 +227,7 @@ export default function GenerateRsaPage() {
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-slate-800 bg-slate-900 px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {leadMachineListings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName}</option>
@@ -259,7 +259,7 @@ export default function GenerateRsaPage() {
                     'rounded-[12px] border p-3 text-left transition',
                     angle === a.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-white/20 hover:text-slate-300',
+                      : 'border-line bg-surface text-slate-400 hover:border-white/20 hover:text-slate-300',
                   ].join(' ')}
                 >
                   <div className="text-xs font-semibold">{a.label}</div>
@@ -283,7 +283,7 @@ export default function GenerateRsaPage() {
                     'flex-1 rounded-[12px] border py-2.5 text-xs font-medium transition',
                     tone === t.value
                       ? 'border-[#4285F4]/40 bg-[#4285F4]/[0.08] text-white'
-                      : 'border-slate-800 bg-slate-900 text-slate-500 hover:border-white/20 hover:text-slate-300',
+                      : 'border-line bg-surface text-slate-500 hover:border-white/20 hover:text-slate-300',
                   ].join(' ')}
                 >
                   {t.label}
@@ -340,10 +340,10 @@ export default function GenerateRsaPage() {
 
           {/* Empty placeholder */}
           {variants.length === 0 && !loading && (
-            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border border-dashed border-slate-800 px-8 text-center">
+            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border border-dashed border-line px-8 text-center">
               <Wand2 className="mb-4 h-8 w-8 text-slate-600" />
               <div className="text-[14px] text-slate-500">RSA copy will appear here</div>
-              <div className="mt-4 max-w-xs rounded-[14px] border border-slate-800 bg-slate-800/40 px-4 py-4 text-left">
+              <div className="mt-4 max-w-xs rounded-[14px] border border-line bg-surface-2 px-4 py-4 text-left">
                 <div className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">RSA format</div>
                 <div className="space-y-1.5 text-sm text-slate-500">
                   <div>
@@ -384,7 +384,7 @@ export default function GenerateRsaPage() {
                 return (
                   <div
                     key={v.id}
-                    className="rounded-[22px] border border-slate-800 bg-slate-900 p-5"
+                    className="rounded-[22px] border border-line bg-surface p-5"
                   >
                     {/* Variant header */}
                     <div className="mb-4 flex items-start justify-between gap-3">
@@ -398,7 +398,7 @@ export default function GenerateRsaPage() {
                       </div>
                       <CopyButton
                         text={copyAllText}
-                        className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:border-[#4285F4]/30 hover:text-slate-100"
+                        className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:border-[#4285F4]/30 hover:text-slate-100"
                       />
                     </div>
 
@@ -416,7 +416,7 @@ export default function GenerateRsaPage() {
                         {v.headlines.map((headline, hIdx) => (
                           <div
                             key={hIdx}
-                            className="flex items-start justify-between gap-3 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5"
+                            className="flex items-start justify-between gap-3 rounded-[10px] border border-line bg-surface-2 px-3 py-2.5"
                           >
                             <div className="flex items-baseline gap-2 min-w-0">
                               <span className="shrink-0 text-xs text-slate-600 w-4">{hIdx + 1}.</span>
@@ -449,7 +449,7 @@ export default function GenerateRsaPage() {
                         {v.descriptions.map((desc, dIdx) => (
                           <div
                             key={dIdx}
-                            className="flex items-start justify-between gap-3 rounded-[10px] border border-slate-800 bg-slate-800/40 px-3 py-2.5"
+                            className="flex items-start justify-between gap-3 rounded-[10px] border border-line bg-surface-2 px-3 py-2.5"
                           >
                             <div className="flex items-baseline gap-2 min-w-0">
                               <span className="shrink-0 text-xs text-slate-600 w-4">{dIdx + 1}.</span>
@@ -469,7 +469,7 @@ export default function GenerateRsaPage() {
                     </div>
 
                     {/* Copy all for Google Ads button */}
-                    <div className="border-t border-slate-800 pt-4">
+                    <div className="border-t border-line pt-4">
                       <CopyButton
                         text={copyAllText}
                         className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#5A97F5]"
@@ -511,7 +511,7 @@ export default function GenerateRsaPage() {
               RSA Best Practices
             </div>
             <p className="text-xs leading-relaxed text-slate-500">
-              Use 3+ unique themes across headlines, pin <code className="rounded bg-slate-800/50 px-1 py-0.5 text-xs font-mono text-slate-400">HEADLINE_1</code> for brand or listing name,
+              Use 3+ unique themes across headlines, pin <code className="rounded bg-surface-2 px-1 py-0.5 text-xs font-mono text-slate-400">HEADLINE_1</code> for brand or listing name,
               and ensure no redundant phrasing across pinned slots. Google requires at least 3 headlines
               and 2 descriptions. Strong RSAs with 15 headlines and 4 unique descriptions typically
               achieve &ldquo;Good&rdquo; or &ldquo;Excellent&rdquo; Ad Strength, which correlates with lower CPCs

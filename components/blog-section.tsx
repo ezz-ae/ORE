@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { getHomepageBlogPosts } from "@/lib/ore"
+import { getHomepageBlogPosts } from "@/lib/data"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 

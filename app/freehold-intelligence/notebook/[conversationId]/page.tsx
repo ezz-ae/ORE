@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Pin, BookOpen, Sparkles } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 export async function generateStaticParams() {
   return notebookConversations.map((c) => ({ conversationId: c.id }))
@@ -22,7 +21,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
 
       {/* Header */}
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
           <BookOpen className="h-3.5 w-3.5" /> Conversation
         </div>
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[44px]">
@@ -42,15 +41,15 @@ export default async function NotebookConversationPage({ params }: { params: Pro
               key={i}
               className={
                 message.role === 'assistant'
-                  ? 'rounded-[20px] border border-[#D4AF37]/12 bg-[#D4AF37]/[0.04] px-5 py-5'
-                  : 'rounded-[20px] border border-slate-800 bg-slate-900 px-5 py-5'
+                  ? 'rounded-[20px] border border-gold/12 bg-gold/[0.04] px-5 py-5'
+                  : 'rounded-[20px] border border-line bg-surface px-5 py-5'
               }
             >
               <div className="mb-2.5 flex items-center gap-2">
                 {message.role === 'assistant' ? (
-                  <Sparkles className="h-3 w-3 text-[#D4AF37]/70" />
+                  <Sparkles className="h-3 w-3 text-gold/70" />
                 ) : (
-                  <div className="h-3 w-3 rounded-full bg-slate-600" />
+                  <div className="h-3 w-3 rounded-full bg-surface-3" />
                 )}
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   {message.role === 'assistant' ? 'Freehold AI' : 'You'}
@@ -60,18 +59,6 @@ export default async function NotebookConversationPage({ params }: { params: Pro
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Continue the conversation */}
-      <section className="mt-8">
-        <AiPrompt
-          placeholder="Continue this conversation…"
-          suggestions={[
-            'Expand on the last response.',
-            'Create a follow-up WhatsApp for this.',
-            'Export this as a client brief.',
-          ]}
-        />
       </section>
 
       {/* Saved outputs */}
@@ -84,14 +71,14 @@ export default async function NotebookConversationPage({ params }: { params: Pro
             {conversation.savedOutputs.map((output) => (
               <article
                 key={output.id}
-                className="rounded-[22px] border border-slate-800 bg-slate-900 p-6 transition hover:border-[#D4AF37]/25"
+                className="rounded-[22px] border border-line bg-surface p-6 transition hover:border-gold/25"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
                     {output.type.replace(/_/g, ' ')}
                   </span>
                   {output.pinned && (
-                    <span className="flex items-center gap-1 text-sm text-[#D4AF37]/70">
+                    <span className="flex items-center gap-1 text-sm text-gold/70">
                       <Pin className="h-3 w-3" /> Pinned
                     </span>
                   )}
@@ -100,7 +87,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
                 <p className="mt-3 line-clamp-4 text-sm leading-[1.7] text-slate-300">{output.content}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {output.tags.slice(0, 5).map((t) => (
-                    <span key={t} className="rounded-full border border-slate-700 bg-slate-800/50 px-2.5 py-0.5 text-xs text-slate-400">
+                    <span key={t} className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-xs text-slate-400">
                       #{t}
                     </span>
                   ))}

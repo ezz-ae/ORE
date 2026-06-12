@@ -6,6 +6,12 @@ export const metadata = {
   title: "Real Estate Services in Dubai | Freehold Properties UAE",
   description: "Full-service real estate solutions: property acquisition, investment advisory, Golden Visa support, mortgages, portfolio management, and consultancy for Dubai investors.",
   alternates: { canonical: "/services" },
+  openGraph: {
+    title: "Real Estate Services in Dubai | Freehold Properties UAE",
+    description: "Property acquisition, investment advisory, Golden Visa support, mortgages, and portfolio management.",
+    url: "/services",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE Services" }],
+  },
 }
 
 const services = [

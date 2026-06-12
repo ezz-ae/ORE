@@ -4,26 +4,25 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, FolderKanban, ArrowUpRight, AlertCircle } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/server-session'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 
 type AdFilter     = 'All' | 'ready' | 'blocked' | 'needs_assets'
 type ReviewFilter = 'All' | 'approved' | 'pending_approval' | 'open'
 
 function landingTone(s: string) {
-  if (s === 'ready' || s === 'approved') return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: s === 'approved' ? 'Approved' : 'Ready' }
-  if (s === 'needs_review')              return { dot: 'bg-[#D4AF37]', text: 'text-[#F8E7AE]', label: 'Review' }
+  if (s === 'ready' || s === 'approved') return { dot: 'bg-gold', text: 'text-gold', label: s === 'approved' ? 'Approved' : 'Ready' }
+  if (s === 'needs_review')              return { dot: 'bg-gold', text: 'text-[#F8E7AE]', label: 'Review' }
   return                                        { dot: 'bg-red-400',   text: 'text-red-300',   label: 'Missing' }
 }
 
 function adTone(s: string) {
-  if (s === 'ready')        return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Ready' }
+  if (s === 'ready')        return { dot: 'bg-gold', text: 'text-gold', label: 'Ready' }
   if (s === 'blocked')      return { dot: 'bg-red-400',     text: 'text-red-300',     label: 'Blocked' }
-  return                           { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Needs assets' }
+  return                           { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  label: 'Needs assets' }
 }
 
 function reviewTone(s: string) {
-  if (s === 'approved')         return { dot: 'bg-[#D4AF37]', text: 'text-[#D4AF37]', label: 'Approved' }
-  if (s === 'pending_approval') return { dot: 'bg-[#D4AF37]',   text: 'text-[#F8E7AE]',  label: 'Pending' }
+  if (s === 'approved')         return { dot: 'bg-gold', text: 'text-gold', label: 'Approved' }
+  if (s === 'pending_approval') return { dot: 'bg-gold',   text: 'text-[#F8E7AE]',  label: 'Pending' }
   return                               { dot: 'bg-white/30',    text: 'text-slate-500',    label: 'Open' }
 }
 
@@ -55,7 +54,7 @@ export default function DashboardProjectsPage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
           <FolderKanban className="h-3.5 w-3.5" /> Projects Admin
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -68,12 +67,12 @@ export default function DashboardProjectsPage() {
 
       <section className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Ad ready',          value: ready,      tone: 'text-[#D4AF37]' },
+          { label: 'Ad ready',          value: ready,      tone: 'text-gold' },
           { label: 'Blocked',           value: blocked,    tone: 'text-red-400' },
-          { label: 'Review pending',    value: pending,    tone: 'text-[#D4AF37]' },
+          { label: 'Review pending',    value: pending,    tone: 'text-gold' },
           { label: 'Open requirements', value: totalReqs,  tone: 'text-slate-400' },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-[18px] border border-slate-800 bg-slate-900 p-5">
+          <div key={kpi.label} className="rounded-[18px] border border-line bg-surface p-5">
             <div className={`text-[28px] font-semibold ${kpi.tone}`}>{kpi.value}</div>
             <div className="mt-0.5 text-sm text-slate-500">{kpi.label}</div>
           </div>
@@ -97,9 +96,9 @@ export default function DashboardProjectsPage() {
                   ? key === 'blocked'
                     ? 'border-red-400/40 bg-red-400/10 text-red-300'
                     : key === 'ready'
-                    ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                    ? 'border-emerald-400/40 bg-gold/10 text-gold'
+                    : 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}>{label}</button>
           ))}
           <span className="self-center text-slate-600">|</span>
@@ -113,9 +112,9 @@ export default function DashboardProjectsPage() {
               className={['rounded-full border px-3 py-1 text-sm font-medium transition',
                 reviewFilter === key
                   ? key === 'approved'
-                    ? 'border-emerald-400/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-[#D4AF37]/40 bg-[#D4AF37]/10 text-[#D4AF37]'
-                  : 'border-slate-800 bg-slate-800/40 text-slate-500 hover:text-slate-300',
+                    ? 'border-emerald-400/40 bg-gold/10 text-gold'
+                    : 'border-gold/40 bg-gold/10 text-gold'
+                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}>{label}</button>
           ))}
         </div>
@@ -126,9 +125,9 @@ export default function DashboardProjectsPage() {
         </p>
 
         {filtered.length === 0 ? (
-          <div className="mt-5 rounded-[22px] border border-slate-800 bg-slate-900 px-6 py-10 text-center text-sm text-slate-500">
+          <div className="mt-5 rounded-[22px] border border-line bg-surface px-6 py-10 text-center text-sm text-slate-500">
             No projects match these filters.{' '}
-            <button onClick={() => { setAdFilter('All'); setReviewFilter('All') }} className="ml-1 text-[#D4AF37]/60 hover:text-[#D4AF37]">Clear</button>
+            <button onClick={() => { setAdFilter('All'); setReviewFilter('All') }} className="ml-1 text-gold/60 hover:text-gold">Clear</button>
           </div>
         ) : (
           <div className="mt-5 space-y-3">
@@ -137,13 +136,13 @@ export default function DashboardProjectsPage() {
               const ad   = adTone(listing.adReadiness)
               const rev  = reviewTone(listing.reviewStatus)
               return (
-                <div key={listing.id} className="rounded-[22px] border border-slate-800 bg-slate-900 p-5 sm:p-6">
+                <div key={listing.id} className="rounded-[22px] border border-line bg-surface p-5 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <Link
                           href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-                          className="text-[17px] font-semibold text-white transition hover:text-[#D4AF37]"
+                          className="text-[17px] font-semibold text-white transition hover:text-gold"
                         >
                           {listing.name}
                         </Link>
@@ -184,7 +183,7 @@ export default function DashboardProjectsPage() {
                       <span>{listing.tasks} tasks</span>
                       <Link
                         href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-                        className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-[#D4AF37]"
+                        className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-gold"
                       >
                         Open workspace <ArrowUpRight className="h-3 w-3" />
                       </Link>
@@ -197,17 +196,6 @@ export default function DashboardProjectsPage() {
         )}
       </section>
 
-      <section className="mt-12">
-        <AiPrompt
-          placeholder="Ask about projects, readiness, status…"
-          suggestions={[
-            'Which projects are ready to launch ads right now?',
-            'What is blocking the Palm Jumeirah campaign?',
-            'List all projects missing landing pages.',
-          ]}
-        />
-      </section>
-
       <section className="mt-6 flex flex-wrap gap-3">
         {[
           { label: 'Lead Machine', href: '/freehold-intelligence/lead-machine' },
@@ -218,7 +206,7 @@ export default function DashboardProjectsPage() {
           <Link
             key={link.href}
             href={link.href}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-800 bg-slate-800/40 px-4 py-2 text-sm text-slate-400 transition hover:border-[#D4AF37]/30 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition hover:border-gold/30 hover:text-white"
           >
             {link.label} <ArrowUpRight className="h-3 w-3" />
           </Link>

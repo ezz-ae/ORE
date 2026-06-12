@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Zap, BarChart2 } from 'lucide-react'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
 import {
   leadMachineListings,
   type LeadMachineListing,
@@ -9,9 +8,9 @@ import {
 
 function dot(value: string) {
   const v = value.toLowerCase()
-  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-[#D4AF37]'
+  if (v.includes('ready') || v.includes('approved') || v.includes('active')) return 'bg-gold'
   if (v.includes('block') || v.includes('missing')) return 'bg-red-400'
-  if (v.includes('review') || v.includes('draft') || v.includes('access') || v.includes('pending')) return 'bg-[#D4AF37]'
+  if (v.includes('review') || v.includes('draft') || v.includes('access') || v.includes('pending')) return 'bg-gold'
   return 'bg-slate-500'
 }
 
@@ -32,7 +31,7 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
-    <article className="group overflow-hidden rounded-[24px] border border-slate-800 bg-slate-900 transition hover:border-slate-700 lg:rounded-[28px]">
+    <article className="group overflow-hidden rounded-[24px] border border-line bg-surface transition hover:border-line-strong lg:rounded-[28px]">
       <div className="relative">
         <div
           className="aspect-[16/9] bg-cover bg-center transition duration-700 group-hover:scale-[1.015]"
@@ -41,7 +40,7 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0D10] via-[#0A0D10]/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-4 p-5 sm:p-7 lg:p-8">
           <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gold/85">
               {listing.area} · {listing.developer}
             </div>
             <h3 className="mt-1.5 text-xl font-semibold leading-tight text-white sm:text-2xl lg:text-[28px]">
@@ -81,11 +80,11 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
         </div>
 
         {listing.missingRequirements.length > 0 && (
-          <div className="mt-5 border-t border-slate-800 pt-4">
+          <div className="mt-5 border-t border-line pt-4">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Holding it back</div>
             <ul className="mt-2 grid gap-1 text-sm text-slate-300">
               {listing.missingRequirements.map((req) => (
-                <li key={req} className="flex items-start gap-2 before:mt-[7px] before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-[#D4AF37]/60">
+                <li key={req} className="flex items-start gap-2 before:mt-[7px] before:h-1 before:w-1 before:shrink-0 before:rounded-full before:bg-gold/60">
                   {req}
                 </li>
               ))}
@@ -96,13 +95,13 @@ function ListingStory({ listing }: { listing: LeadMachineListing }) {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#0D1117] transition hover:gap-2.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-ink transition hover:gap-2.5"
           >
             Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/requirements"
-            className="rounded-full border border-slate-700 bg-slate-800/50 px-4 py-2 text-xs text-slate-400 transition hover:border-[#D4AF37]/25 hover:text-white"
+            className="rounded-full border border-line-strong bg-surface-2 px-4 py-2 text-xs text-slate-400 transition hover:border-gold/25 hover:text-white"
           >
             Requirements
           </Link>
@@ -131,7 +130,7 @@ export default async function LeadMachinePage() {
         {/* ══════════════════ MAIN ══════════════════ */}
         <div className="min-w-0">
           <section>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/85">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
               <Zap className="h-3.5 w-3.5" /> Lead Machine
             </div>
             <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
@@ -156,27 +155,19 @@ export default async function LeadMachinePage() {
 
           {/* Mobile stats */}
           <div className="mt-8 grid grid-cols-3 gap-3 lg:hidden">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+            <div className="rounded-2xl border border-line bg-surface p-4 text-center">
               <div className="text-[22px] font-semibold text-white">{leadMachineListings.length}</div>
               <div className="text-xs text-slate-500">Active</div>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
-              <div className="text-[22px] font-semibold text-[#D4AF37]">{readyCount}</div>
+            <div className="rounded-2xl border border-line bg-surface p-4 text-center">
+              <div className="text-[22px] font-semibold text-gold">{readyCount}</div>
               <div className="text-xs text-slate-500">Ready</div>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+            <div className="rounded-2xl border border-line bg-surface p-4 text-center">
               <div className="text-[22px] font-semibold text-red-400">{blockedCount}</div>
               <div className="text-xs text-slate-500">Blocked</div>
             </div>
           </div>
-
-          {/* Mobile AI prompt */}
-          <section className="mt-8 lg:hidden">
-            <AiPrompt
-              placeholder="Ask about listings, landings, ads, blockers…"
-              suggestions={['Which listings are ready for ads?', 'What is blocking Meta launch?', 'Show the readiness matrix.']}
-            />
-          </section>
 
           {/* Listings */}
           <section className="mt-12">
@@ -185,7 +176,7 @@ export default async function LeadMachinePage() {
                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Featured</div>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Today's curated set</h2>
               </div>
-              <Link href="/freehold-intelligence/lead-machine/listings" className="hidden sm:inline-flex sm:items-center sm:gap-1.5 text-xs font-medium text-[#D4AF37]/70 hover:text-[#D4AF37]">
+              <Link href="/freehold-intelligence/lead-machine/listings" className="hidden sm:inline-flex sm:items-center sm:gap-1.5 text-xs font-medium text-gold/70 hover:text-gold">
                 All listings <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
@@ -198,8 +189,8 @@ export default async function LeadMachinePage() {
           </section>
 
           {/* AI take */}
-          <section className="mt-12 rounded-[24px] border border-[#D4AF37]/15 bg-[#D4AF37]/[0.035] px-6 py-7 lg:rounded-[28px] lg:px-9 lg:py-9">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]/80">
+          <section className="mt-12 rounded-[24px] border border-gold/15 bg-gold/[0.035] px-6 py-7 lg:rounded-[28px] lg:px-9 lg:py-9">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80">
               <Sparkles className="h-3 w-3" /> AI take
             </div>
             <p className="mt-3 text-base font-medium leading-[1.65] text-slate-100 lg:text-lg">
@@ -213,7 +204,7 @@ export default async function LeadMachinePage() {
           <div className="sticky top-20 space-y-3">
 
             {/* Readiness scorecard */}
-            <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-[20px] border border-line bg-surface p-5">
               <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <BarChart2 className="h-3 w-3" /> Readiness
               </div>
@@ -223,7 +214,7 @@ export default async function LeadMachinePage() {
                   <div className="text-xs text-slate-500">Active</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[28px] font-semibold text-[#D4AF37]">{readyCount}</div>
+                  <div className="text-[28px] font-semibold text-gold">{readyCount}</div>
                   <div className="text-xs text-slate-500">Ready</div>
                 </div>
                 <div className="text-center">
@@ -235,9 +226,9 @@ export default async function LeadMachinePage() {
                 {leadMachineListings.slice(0, 4).map((l) => (
                   <div key={l.id} className="flex items-center gap-3">
                     <div className="w-[90px] shrink-0 truncate text-xs text-slate-300">{l.projectName.split(' ').slice(0, 2).join(' ')}</div>
-                    <div className="flex-1 overflow-hidden rounded-full bg-slate-800">
+                    <div className="flex-1 overflow-hidden rounded-full bg-surface-2">
                       <div
-                        className="h-1.5 rounded-full bg-[#D4AF37]"
+                        className="h-1.5 rounded-full bg-gold"
                         style={{ width: `${l.adReadinessScore}%` }}
                       />
                     </div>
@@ -248,7 +239,7 @@ export default async function LeadMachinePage() {
             </div>
 
             {/* Quick links */}
-            <div className="rounded-[20px] border border-slate-800 bg-slate-900 p-4">
+            <div className="rounded-[20px] border border-line bg-surface p-4">
               <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">In Lead Machine</div>
               <div className="space-y-1">
                 {[
@@ -259,7 +250,7 @@ export default async function LeadMachinePage() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="flex items-center justify-between rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2.5 text-sm text-slate-400 transition hover:border-slate-700 hover:text-slate-200"
+                    className="flex items-center justify-between rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-slate-400 transition hover:border-line-strong hover:text-slate-200"
                   >
                     {item.label}
                     <ArrowUpRight className="h-3 w-3 opacity-50" />
@@ -268,16 +259,6 @@ export default async function LeadMachinePage() {
               </div>
             </div>
 
-            {/* AI Prompt */}
-            <AiPrompt
-              placeholder="Ask about listings, landings, ads, blockers…"
-              suggestions={[
-                'Which listings are ready for ads?',
-                'What is blocking Meta launch?',
-                'Show the readiness matrix.',
-                'Draft a landing request for Business Bay.',
-              ]}
-            />
 
           </div>
         </aside>

@@ -443,8 +443,7 @@ export const inventoryProperties: InventoryProperty[] = [...curatedProperties, .
 
 // ── Stats helper ──────────────────────────────────────────────────────────────
 
-export function getInventoryStats() {
-  const props = inventoryProperties
+export function getInventoryStats(props: InventoryProperty[] = inventoryProperties) {
   return {
     total: props.length,
     live: props.filter((p) => p.landingStatus === 'live').length,
@@ -548,8 +547,8 @@ function nextActionFor(p: InventoryProperty, verdict: AdVerdict): string {
   }
 }
 
-export function getAdCandidates(): AdCandidate[] {
-  return inventoryProperties
+export function getAdCandidates(props: InventoryProperty[] = inventoryProperties): AdCandidate[] {
+  return props
     .map((p) => {
       const score = adOpportunityScore(p)
       const verdict = verdictFor(p, score)
@@ -581,8 +580,8 @@ export interface InventoryAnalysis {
   missedOpportunities: AdCandidate[]
 }
 
-export function getInventoryAnalysis(): InventoryAnalysis {
-  const candidates = getAdCandidates()
+export function getInventoryAnalysis(props: InventoryProperty[] = inventoryProperties): InventoryAnalysis {
+  const candidates = getAdCandidates(props)
   return {
     topPicks: candidates.filter((c) => c.verdict === 'launch' || c.verdict === 'scale').slice(0, 5),
     fixFirst: candidates.filter((c) => c.verdict === 'fix_first').slice(0, 5),

@@ -4,9 +4,20 @@ import Link from "next/link"
 import { ContactEnquiryForm } from "@/components/contact-enquiry-form"
 
 export const metadata = {
-  title: "Contact Us",
-  description: "Get in touch with Freehold Property UAE - Schedule a consultation, ask questions, or visit our Dubai office.",
+  title: "Contact Freehold Property UAE | Dubai Real Estate Advisors",
+  description: "Get in touch with Freehold Property UAE — schedule a consultation, ask about Dubai projects, or visit our Business Bay office.",
   alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Freehold Property UAE | Dubai Real Estate Advisors",
+    description: "Schedule a consultation or ask about Dubai projects. Our team is available 6 days a week from our Business Bay office.",
+    url: "/contact",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Freehold Property UAE" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact Freehold Property UAE",
+    images: ["/og-image.png"],
+  },
 }
 
 const contactChannels = [

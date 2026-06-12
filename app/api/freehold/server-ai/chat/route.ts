@@ -129,7 +129,11 @@ Topic of this query: ${topic}.
 Freehold is a premium Dubai real estate company in UAE. Answer concisely and directly.
 Be operational — give specific next actions, message drafts, or data insights.
 When drafting messages, write them ready-to-send with no placeholders.
-Keep answers under 200 words unless more detail is requested.`
+Keep answers under 200 words unless more detail is requested.
+
+CRITICAL: Do NOT invent or guess project names, prices, handover dates, developer names, yields, or area details.
+If the user asks for specific verified listings or data not included in the context above, respond:
+"I don't have verified data for that query in this session. Use the Inventory or Search tabs for live project data."`
 
         const answer = await queryServerAgent(message, {
           sessionId,

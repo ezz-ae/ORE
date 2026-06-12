@@ -7,7 +7,7 @@ import {
   hashPassword,
   logActivity,
 } from "@/lib/auth"
-import { upsertUserProfile } from "@/lib/ore"
+import { upsertUserProfile } from "@/lib/data"
 
 export const runtime = "nodejs"
 
@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
     }
 
     const expectedKey = getSetupKey()
-    if (!expectedKey && process.env.NODE_ENV === "production") {
+    if (!expectedKey) {
       return NextResponse.json(
         { error: "Admin bootstrap is disabled. Set CRM_ADMIN_SETUP_KEY and try again." },
         { status: 503 },
       )
     }
 
-    if (expectedKey && setupKey !== expectedKey) {
+    if (setupKey !== expectedKey) {
       return NextResponse.json({ error: "Invalid setup key." }, { status: 403 })
     }
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const record = await upsertUserProfile({
       id: existing?.id || randomUUID(),
-      name: name || existing?.name || "CRM Admin",
+      name: name || existing?.name || "Admin",
       email,
       role: "admin",
       org_title: existing?.org_title || existing?.role || "Admin",

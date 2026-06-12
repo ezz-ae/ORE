@@ -33,9 +33,7 @@ export function safePercent(
   decimals = 1,
   fallback = "—",
 ): string {
-  if (val === null || val === undefined || typeof val !== "number" || !Number.isFinite(val)) {
-    return fallback
-  }
+  if (!isPositiveNumber(val)) return fallback
   return `${val.toFixed(decimals)}%`
 }
 

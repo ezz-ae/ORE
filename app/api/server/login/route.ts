@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { authenticate } from '@/lib/freehold/accounts'
+import { authenticateFromDB } from '@/lib/freehold/auth-db'
 import { signSession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 
 const DAY = 60 * 60 * 24
@@ -12,7 +13,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 })
   }
 
-  const user = authenticate(body.email ?? '', body.password ?? '')
+  const email = body.email ?? ''
+  const password = body.password ?? ''
+
+  // Try DB first, then fall back to hardcoded accounts
+  let user = await authenticateFromDB(email, password)
+  if (!user) {
+    user = authenticate(email, password)
+  }
+
   if (!user) {
     return NextResponse.json({ error: 'Incorrect email or password' }, { status: 401 })
   }
@@ -27,7 +36,6 @@ export async function POST(req: Request) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    // remember → persistent cookie; otherwise a session cookie (no maxAge)
     ...(remember ? { maxAge: 30 * DAY } : {}),
   })
   return res
