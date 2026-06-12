@@ -16,20 +16,24 @@ const internalPagePrefixes = [
   "/settings",
 ]
 
-// Internal API groups — operational endpoints (ads, messaging, intelligence)
-// that must only be callable with a valid Freehold session.
+// Internal API groups — operational endpoints (ads, messaging, intelligence,
+// CRM, finance) that must only be callable with a valid Freehold session.
 const internalApiPrefixes = [
   "/api/google/",
   "/api/meta/",
   "/api/whatsapp/",
+  "/api/freehold/",
   "/api/freehold-intelligence/",
-  "/api/freehold/notebook/",
   "/api/ai/generate-ad",
   "/api/ai/recommend-followup",
   "/api/ai/summarize-lead",
   "/api/ai/ask-notebook",
   "/api/ai/upload-brochure",
 ]
+
+// Endpoints under the internal prefixes that intentionally serve the public
+// site (anonymous visitors) and must stay open.
+const publicApiPrefixes = ["/api/freehold/public/"]
 
 // Inbound webhooks authenticate via their own signatures, not session cookies.
 const webhookPaths = new Set(["/api/whatsapp/webhook"])
@@ -66,6 +70,7 @@ export async function proxy(request: NextRequest) {
   // ── Session auth for internal APIs ─────────────────────────────────────────
   const isInternalApi =
     internalApiPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix)) &&
+    !publicApiPrefixes.some((prefix) => pathname.startsWith(prefix)) &&
     !webhookPaths.has(pathname)
   if (isInternalApi) {
     const token = request.cookies.get(SESSION_COOKIE)?.value

@@ -241,6 +241,80 @@ ${projectLines || "- No shortlist attached"}
   return { sent: true as const }
 }
 
+export interface FollowUpDigestLead {
+  name: string | null
+  phone: string | null
+  status: string | null
+  source: string | null
+  daysOverdue: number
+  leadUrl: string
+}
+
+export async function sendFollowUpDigestEmail(input: {
+  to: string[]
+  recipientName?: string | null
+  leads: FollowUpDigestLead[]
+}) {
+  if (!resendApiKey || !input.to.length || !input.leads.length) {
+    return { sent: false, reason: "missing-config" as const }
+  }
+
+  const greeting = input.recipientName?.trim() ? `Hi ${input.recipientName.trim()},` : "Hi,"
+  const count = input.leads.length
+  const subject = `${count} lead${count === 1 ? "" : "s"} waiting on follow-up`
+
+  const text = `${greeting}
+
+The following lead${count === 1 ? " has" : "s have"} had no contact for over 48 hours:
+
+${input.leads
+  .map(
+    (lead) =>
+      `- ${lead.name || "Unknown"} | ${lead.phone || "—"} | ${lead.status || "new"} | ${lead.daysOverdue}d overdue | ${lead.leadUrl}`,
+  )
+  .join("\n")}
+
+Open the CRM to follow up: ${baseUrl}/crm/leads
+`
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>${greeting}</p>
+      <p>The following lead${count === 1 ? " has" : "s have"} had no contact for over 48 hours:</p>
+      <ul>${input.leads
+        .map(
+          (lead) =>
+            `<li><a href="${lead.leadUrl}">${lead.name || "Unknown"}</a> · ${lead.phone || "—"} · ${lead.status || "new"} · ${lead.daysOverdue}d overdue</li>`,
+        )
+        .join("")}</ul>
+      <p><a href="${baseUrl}/crm/leads">Open the CRM</a> to follow up.</p>
+    </div>
+  `
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: input.to,
+      subject,
+      text,
+      html,
+    }),
+  })
+
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "")
+    console.error("[email] follow-up digest resend error", payload)
+    return { sent: false, reason: "provider-error" as const }
+  }
+
+  return { sent: true as const }
+}
+
 export async function getLeadershipLeadRecipients() {
   const configuredEmails = uniqueValues(
     (
