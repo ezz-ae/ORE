@@ -35,7 +35,7 @@ const MessageCircleIcon = () => (
 
 const mainLinks = [
   { href: "/", label: "Home", description: "Platform overview and market highlights." },
-  { href: "/properties", label: "Properties", description: "Browse 3,655 live listings." },
+  { href: "/properties", label: "Properties", description: "Browse live project-backed listings." },
   { href: "/projects", label: "Projects", description: "Master developments and launches." },
   { href: "/areas", label: "Areas", description: "Compare districts and demand." },
   { href: "/developers", label: "Developers", description: "Track records and delivery stats." },

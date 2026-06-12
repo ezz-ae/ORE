@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
-import { ensureLeadsTable, getProjectBySlug } from "@/lib/data"
+import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
 import {
   getLeadershipLeadRecipients,
   sendInternalLeadAlertEmail,
@@ -14,6 +14,33 @@ export const dynamic = "force-dynamic"
 
 const toText = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "https://freeholdproperty.ae"
+
+// Compare on the last 9 digits so "+971 50 123 4567", "0501234567" and
+// "971501234567" all match the same person.
+const phoneKey = (value: string) => value.replace(/\D/g, "").slice(-9)
+
+interface ExistingLeadRow {
+  id: string
+  status: string | null
+}
+
+async function findExistingLead(phone: string, email: string): Promise<ExistingLeadRow | null> {
+  const digits = phoneKey(phone)
+  const normalizedEmail = email.toLowerCase()
+  if (!digits && !normalizedEmail) return null
+  const rows = await query<ExistingLeadRow>(
+    `SELECT id, status FROM freehold_site_leads
+     WHERE status NOT IN ('closed', 'lost')
+       AND (
+         ($1 <> '' AND RIGHT(regexp_replace(phone, '\\D', '', 'g'), 9) = $1)
+         OR ($2 <> '' AND LOWER(email) = $2)
+       )
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [digits, normalizedEmail],
+  ).catch(() => [] as ExistingLeadRow[])
+  return rows[0] ?? null
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,8 +77,40 @@ export async function POST(req: NextRequest) {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_region text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_city text`)
 
-    const leadId = randomUUID()
-    await query(
+    // Repeat inquiry from a known open lead: log it on their timeline
+    // instead of creating a duplicate pipeline entry.
+    const existing = await findExistingLead(phone, email)
+    let leadId: string = randomUUID()
+    let isRepeatInquiry = false
+
+    if (existing) {
+      isRepeatInquiry = true
+      leadId = existing.id
+      await ensureLeadActivityTable()
+      const inquiryDetail = [
+        projectSlug ? `Project: ${projectSlug}` : null,
+        landingSlug ? `Landing page: ${landingSlug}` : null,
+        interest ? `Interest: ${interest}` : null,
+        message ? `Message: ${message}` : null,
+        budget ? `Budget: ${budget}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, 'repeat_inquiry', $3, NULL)`,
+        [
+          randomUUID(),
+          leadId,
+          inquiryDetail || `New inquiry via ${source || "website"}`,
+        ],
+      ).catch((error) => console.error("[lp-leads] repeat-inquiry activity failed", error))
+      await query(`UPDATE freehold_site_leads SET updated_at = now() WHERE id = $1`, [leadId]).catch(
+        () => undefined,
+      )
+    }
+
+    if (!isRepeatInquiry) await query(
       `INSERT INTO freehold_site_leads (
         id, name, phone, email, source, project_slug, landing_slug, interest, message, budget, status,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
@@ -123,8 +182,8 @@ export async function POST(req: NextRequest) {
       notificationTasks.push(
         sendInternalLeadAlertEmail({
           to: leadershipRecipients.emails,
-          subject: "New lead registered",
-          headline: "New lead registered",
+          subject: isRepeatInquiry ? "Repeat inquiry from existing lead" : "New lead registered",
+          headline: isRepeatInquiry ? "Repeat inquiry from existing lead" : "New lead registered",
           lead: {
             name,
             email: email || null,
@@ -168,7 +227,7 @@ export async function POST(req: NextRequest) {
 
     await Promise.allSettled(notificationTasks)
 
-    return NextResponse.json({ ok: true, id: leadId })
+    return NextResponse.json({ ok: true, id: leadId, repeat: isRepeatInquiry })
   } catch (error) {
     console.error("[lp-leads] create error", error)
     return NextResponse.json({ error: "Unable to capture lead" }, { status: 500 })

@@ -138,10 +138,10 @@ Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)
 ━━━ ENV VARS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   NEON_DATABASE_URL        (already set)
   GEMINI_API_KEY           (for AI chat)
-  NEXT_PUBLIC_BASE_URL     https://orerealestate.ae
+  NEXT_PUBLIC_BASE_URL     https://freeholdproperty.ae
 
 ━━━ DESIGN TOKENS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  gold:     #D4AF37 → #AA8122  (ore-gradient — CTA, headings, badges)
+  gold:     #D4AF37 → #AA8122  (freehold-gradient — CTA, headings, badges)
   dark bg:  #0a0a0a  (Pure luxury dark)
   card:     #121212 dark / #FFFFFF light
   headings: Playfair Display · body: Inter / Geist

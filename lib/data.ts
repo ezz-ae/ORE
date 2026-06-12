@@ -1543,7 +1543,7 @@ export async function ensureLeadActivityTable() {
   `)
 }
 
-const scoreLead = (lead: LeadRecord) => {
+export const scoreLead = (lead: LeadRecord) => {
   let score = 0
   if (lead.email) score += 2
   if (lead.phone) score += 2
