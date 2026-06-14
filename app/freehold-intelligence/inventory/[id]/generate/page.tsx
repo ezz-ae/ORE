@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import {
   Sparkles, Check, ArrowLeft, Eye, Globe, ChevronDown, ChevronUp,
-  RotateCcw, Pencil, Phone, MapPin, Shield, Star, TrendingUp, ChevronRight,
+  RotateCcw, Phone, MapPin, Shield, Star, TrendingUp, ChevronRight, Loader2, ExternalLink,
 } from 'lucide-react'
 import {
   inventoryProperties,
@@ -179,7 +179,9 @@ export default function GenerateLandingPage() {
   const [open, setOpen] = useState<Section>('hero')
   const [redesigning, setRedesigning] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [published, setPublished] = useState(prop?.landingStatus === 'live')
+  const [publishStep, setPublishStep] = useState('')
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [publishError, setPublishError] = useState('')
   const [aiPrompt, setAiPrompt] = useState('')
   const [showAiBox, setShowAiBox] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -193,8 +195,6 @@ export default function GenerateLandingPage() {
     )
   }
 
-  const lpUrl = `/lp/${prop.slug}`
-
   function toggleSection(s: Section) {
     setOpen((prev) => (prev === s ? (null as any) : s))
   }
@@ -203,7 +203,7 @@ export default function GenerateLandingPage() {
     setRedesigning(true)
     setTimeout(() => {
       const patch = AI_VARIANTS[variant](prop!)
-      setConfig((prev) => ({ ...prev, ...patch }))
+      setConfig((prev) => ({ ...prev, ...patch, template: variant }))
       setRedesigning(false)
     }, 1400)
   }
@@ -216,20 +216,61 @@ export default function GenerateLandingPage() {
         : aiPrompt.toLowerCase().includes('end user') || aiPrompt.toLowerCase().includes('family') ? 'end_user'
         : 'investor'
       const patch = AI_VARIANTS[variant](prop!)
-      setConfig((prev) => ({ ...prev, ...patch }))
+      setConfig((prev) => ({ ...prev, ...patch, template: variant }))
       setAiPrompt('')
       setShowAiBox(false)
       setRedesigning(false)
     }, 1600)
   }
 
-  function publish() {
+  async function publish() {
+    if (!prop) return
     setPublishing(true)
-    setTimeout(() => { setPublished(true); setPublishing(false) }, 1200)
+    setPublishError('')
+    try {
+      // Step 1: create or locate the DB landing page record
+      setPublishStep('Creating page…')
+      const createRes = await fetch('/api/crm/landing-pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectSlug: prop.slug,
+          campaignName: config.template,
+          headline: config.headline,
+          subheadline: config.subheadline,
+          ctaText: config.ctaText,
+          status: 'published',
+        }),
+      })
+      const createData = await createRes.json()
+      if (!createRes.ok) throw new Error(createData?.error || 'Failed to create landing page')
+
+      const newSlug: string = createData.slug
+      setPublishStep('Generating AI content…')
+
+      // Step 2: generate AI content (best effort — page already works even if this fails)
+      await fetch('/api/crm/landing-pages/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectSlug: prop.slug,
+          audience: config.template,
+          slug: newSlug,
+        }),
+      }).catch(() => null)
+
+      setPublishedUrl(`/lp/${newSlug}`)
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : 'Failed to publish')
+    } finally {
+      setPublishStep('')
+      setPublishing(false)
+    }
   }
 
   function copyUrl() {
-    navigator.clipboard.writeText(window.location.origin + lpUrl)
+    if (!publishedUrl) return
+    navigator.clipboard.writeText(window.location.origin + publishedUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -251,29 +292,31 @@ export default function GenerateLandingPage() {
             <p className="mt-1 text-xs text-slate-500">{prop.name} · {prop.area} · {prop.developer}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={lpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
-            >
-              <Eye className="h-3.5 w-3.5" /> Preview
-            </a>
+            {publishedUrl && (
+              <a
+                href={publishedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
+              >
+                <Eye className="h-3.5 w-3.5" /> View Live Page
+              </a>
+            )}
             <button
               onClick={publish}
-              disabled={publishing || published}
+              disabled={publishing || !!publishedUrl}
               className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition ${
-                published
+                publishedUrl
                   ? 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-400'
                   : 'bg-gold text-ink hover:bg-[#F0CB67]'
               }`}
             >
               {publishing ? (
-                <><Sparkles className="h-3.5 w-3.5 animate-spin" /> Publishing…</>
-              ) : published ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {publishStep || 'Publishing…'}</>
+              ) : publishedUrl ? (
                 <><Check className="h-3.5 w-3.5" /> Published</>
               ) : (
-                <><Globe className="h-3.5 w-3.5" /> Publish</>
+                <><Globe className="h-3.5 w-3.5" /> Create & Publish</>
               )}
             </button>
           </div>
@@ -281,20 +324,29 @@ export default function GenerateLandingPage() {
       </div>
 
       {/* Published banner */}
-      {published && (
+      {publishedUrl && (
         <div className="mb-6 flex items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
           <Check className="h-4 w-4 shrink-0 text-emerald-400" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-medium text-emerald-300">Landing page is live — </span>
-            <a href={lpUrl} target="_blank" rel="noopener noreferrer"
+            <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
               className="font-mono text-xs text-emerald-400/80 underline underline-offset-2 hover:text-emerald-400">
-              {typeof window !== 'undefined' ? window.location.origin : ''}{lpUrl}
+              freeholdproperty.ae{publishedUrl}
             </a>
           </div>
-          <button onClick={copyUrl}
-            className="shrink-0 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10">
-            {copied ? 'Copied!' : 'Copy URL'}
-          </button>
+          <a
+            href={publishedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10"
+          >
+            Open <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      )}
+      {publishError && (
+        <div className="mb-6 rounded-[14px] border border-red-400/20 bg-red-400/[0.05] px-5 py-3.5 text-sm text-red-300">
+          {publishError}
         </div>
       )}
 
@@ -479,16 +531,18 @@ export default function GenerateLandingPage() {
         <div className="hidden lg:block shrink-0 sticky top-6">
           <div className="mb-3 text-center text-xs text-slate-600 uppercase tracking-wider">Live Preview</div>
           <PhonePreview prop={prop} config={config} />
-          <div className="mt-4 text-center">
-            <a
-              href={lpUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-xs text-slate-500 transition hover:text-slate-300"
-            >
-              <Eye className="h-3.5 w-3.5" /> Open full page
-            </a>
-          </div>
+          {publishedUrl && (
+            <div className="mt-4 text-center">
+              <a
+                href={publishedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.05] px-4 py-2 text-xs text-emerald-400 transition hover:bg-emerald-400/10"
+              >
+                <Eye className="h-3.5 w-3.5" /> Open live page
+              </a>
+            </div>
+          )}
         </div>
 
       </div>
