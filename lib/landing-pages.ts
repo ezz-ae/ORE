@@ -75,6 +75,7 @@ export interface LandingPageData {
   subtitle: string
   heroImage: string
   ctaText: string
+  isDraft: boolean
   seo: {
     title: string
     description: string
@@ -676,6 +677,7 @@ export async function getLandingPageBySlug(
     subtitle,
     heroImage,
     ctaText,
+    isDraft: !isPublishedNow(row),
     seo: {
       title: seoTitle,
       description: seoDescription,

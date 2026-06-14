@@ -793,7 +793,7 @@ function NotFound() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const page = await getLandingPageBySlug(slug)
+  const page = await getLandingPageBySlug(slug, { includeDraft: true })
   if (!page) return { title: 'Property | Freehold UAE' }
   return {
     title: page.seo.title || page.title,
@@ -807,13 +807,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function LandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  const page = await getLandingPageBySlug(slug)
+  const page = await getLandingPageBySlug(slug, { includeDraft: true })
   if (!page) return <NotFound />
 
   return (
     <div className="min-h-screen bg-[#08090E] text-white">
+      {page.isDraft && (
+        <div className="bg-amber-500/20 border-b border-amber-500/30 px-4 py-2 text-center text-[12px] font-medium text-amber-300">
+          DRAFT — this page is not published yet. Go to CRM → Landing Pages → Edit to publish.
+        </div>
+      )}
       <Topbar />
-      <div className="pt-[52px]">
+      <div className={page.isDraft ? 'pt-[84px]' : 'pt-[52px]'}>
         {page.sections.map((section, i) => (
           <Section key={`${section.type}-${i}`} section={section} page={page} />
         ))}
