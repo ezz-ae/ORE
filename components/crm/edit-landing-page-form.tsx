@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Sparkles, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,39 @@ export function EditLandingPageForm({ landingPage }: { landingPage: LandingPageE
   const [form, setForm] = useState(landingPage)
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [aiAudience, setAiAudience] = useState<"investor" | "luxury" | "end_user" | "generic">("investor")
+  const [aiStatus, setAiStatus] = useState<"idle" | "generating" | "done" | "error">("idle")
+  const [aiMessage, setAiMessage] = useState("")
+
+  const handleAiGenerate = async () => {
+    if (!form.projectSlug) {
+      setAiMessage("No project slug — cannot generate.")
+      setAiStatus("error")
+      return
+    }
+    setAiStatus("generating")
+    setAiMessage("")
+    try {
+      const res = await fetch("/api/crm/landing-pages/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectSlug: form.projectSlug,
+          audience: aiAudience,
+          slug: form.slug,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || "Generation failed")
+      if (data.headline) setForm((f) => ({ ...f, headline: data.headline, subheadline: data.subheadline || f.subheadline, ctaText: data.ctaText || f.ctaText }))
+      setAiStatus("done")
+      setAiMessage(`AI generated ${data.sections?.length || 0} sections for "${aiAudience}" audience. Headline updated. Save to confirm.`)
+      router.refresh()
+    } catch (err) {
+      setAiStatus("error")
+      setAiMessage(err instanceof Error ? err.message : "Generation failed.")
+    }
+  }
 
   const handleChange =
     (key: keyof LandingPageEditorData) =>
@@ -142,6 +176,69 @@ export function EditLandingPageForm({ landingPage }: { landingPage: LandingPageE
               <Input id="lp-og" value={form.ogImage} onChange={handleChange("ogImage")} />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-purple-500/20 bg-purple-500/[0.02]">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-purple-400" />
+            <CardTitle>AI Content Generation</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Let AI write unique, artful landing page copy for this property — headlines, proof points, FAQs, and more.
+            Choose the audience, generate, then preview the public page.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="ai-audience">Target Audience</Label>
+              <select
+                id="ai-audience"
+                value={aiAudience}
+                onChange={(e) => setAiAudience(e.target.value as typeof aiAudience)}
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                <option value="investor">Investor — yield, ROI, Golden Visa</option>
+                <option value="luxury">Luxury — prestige, exclusivity, lifestyle</option>
+                <option value="end_user">End User — family, community, move-in</option>
+                <option value="generic">Generic — balanced mix of all angles</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                className="w-full gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={aiStatus === "generating"}
+                onClick={handleAiGenerate}
+              >
+                {aiStatus === "generating" ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Generating…</>
+                ) : (
+                  <><Sparkles className="h-4 w-4" /> Generate with AI</>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {aiMessage && (
+            <div className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+              aiStatus === "error"
+                ? "border-destructive/30 bg-destructive/10 text-destructive"
+                : "border-purple-500/30 bg-purple-500/10 text-purple-300"
+            }`}>
+              {aiStatus === "done" ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              {aiMessage}
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            Sections stored in the database are immediately visible at <span className="font-medium">/lp/{form.slug}</span> — no deploy needed.
+          </p>
         </CardContent>
       </Card>
 

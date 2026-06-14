@@ -28,6 +28,10 @@ export type LandingSectionType =
   | "why-dubai"
   | "amenities"
   | "location"
+  | "golden-visa"
+  | "social-proof"
+  | "developer-profile"
+  | "neighborhood"
   | "ai-concierge"
   | "faq"
   | "download-brochure"
@@ -250,6 +254,24 @@ const normalizeType = (value: string): LandingSectionType | null => {
       return "amenities"
     case "location":
       return "location"
+    case "golden-visa":
+    case "goldenvisa":
+    case "visa":
+      return "golden-visa"
+    case "social-proof":
+    case "socialproof":
+    case "testimonials":
+    case "reviews":
+      return "social-proof"
+    case "developer-profile":
+    case "developer":
+    case "developerprofile":
+      return "developer-profile"
+    case "neighborhood":
+    case "neighbourhood":
+    case "area-lifestyle":
+    case "lifestyle":
+      return "neighborhood"
     case "ai-concierge":
     case "ai":
     case "assistant":
@@ -533,9 +555,13 @@ const normalizeSections = (
     "key-facts",
     "payment-plan",
     "roi",
+    "golden-visa",
     "why-dubai",
     "amenities",
     "location",
+    "neighborhood",
+    "developer-profile",
+    "social-proof",
     "ai-concierge",
     "faq",
     "download-brochure",
