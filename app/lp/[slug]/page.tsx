@@ -1,8 +1,107 @@
 import type { Metadata } from 'next'
 import { Phone, MapPin, Check, TrendingUp, Shield, Star, Building2, Globe, Wifi, ChevronRight, MessageCircle, Sparkles } from 'lucide-react'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
+import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
+
+// ─── Inventory fallback ───────────────────────────────────────────────────────
+// When no DB record exists for a slug, build LandingPageData from static inventory
+// so old /lp/{property-slug} URLs continue to work.
+
+function inventoryToLandingPage(slug: string): LandingPageData | null {
+  const prop = inventoryProperties.find((p) => p.slug === slug)
+  if (!prop) return null
+
+  const fmtP = (n: number | null) =>
+    n ? (n >= 1_000_000 ? `AED ${(n / 1_000_000).toFixed(1)}M` : `AED ${(n / 1_000).toFixed(0)}K`) : 'Price on request'
+
+  const yieldText = prop.roi ? `${prop.roi.toFixed(1)}% rental yield` : 'Competitive returns'
+  const priceText = fmtP(prop.startingPriceAED)
+
+  const sections: LandingSection[] = [
+    {
+      type: 'hero',
+      data: {
+        eyebrow: `${prop.area} · ${prop.developer}`,
+        title: `${prop.name} — ${prop.area}`,
+        subtitle: `${prop.type.charAt(0).toUpperCase() + prop.type.slice(1)} residences by ${prop.developer}. From ${priceText}.${prop.roi ? ` ${prop.roi.toFixed(1)}% projected annual yield.` : ''}`,
+        chips: [prop.area, priceText, yieldText],
+      },
+    },
+    {
+      type: 'key-facts',
+      data: {
+        items: [
+          { label: 'Bedrooms', value: prop.bedrooms },
+          { label: 'Size', value: prop.sizeRange },
+          { label: prop.roi ? 'Yield' : 'Status', value: prop.roi ? `${prop.roi.toFixed(1)}%` : prop.status.replace('_', ' ') },
+          { label: prop.handoverYear ? 'Handover' : 'Developer', value: prop.handoverYear ? String(prop.handoverYear) : prop.developer },
+        ],
+      },
+    },
+    ...(prop.paymentPlan ? [{
+      type: 'payment-plan' as const,
+      data: { downPayment: 20, duringConstruction: 50, onHandover: 30, postHandover: 0 },
+    }] : []),
+    ...(prop.roi ? [{
+      type: 'roi' as const,
+      data: { rentalYield: prop.roi, expectedRoi: prop.roi, startPriceAed: prop.startingPriceAED ?? 0 },
+    }] : []),
+    {
+      type: 'why-dubai',
+      data: {},
+    },
+    {
+      type: 'ai-concierge',
+      data: {
+        title: 'Ask Freehold AI',
+        subtitle: `Get instant answers about ${prop.name} from our AI advisor`,
+        prompts: [
+          `Is ${prop.name} better for rental yield or capital appreciation?`,
+          `What type of buyer is ${prop.name} best suited for?`,
+          `How does ${prop.area} compare to other Dubai areas for investment?`,
+        ],
+      },
+    },
+    {
+      type: 'lead-form',
+      data: {
+        title: 'Get the Full Brochure & Pricing',
+        subtitle: 'A senior investment consultant will contact you within 24 hours.',
+      },
+    },
+  ]
+
+  return {
+    slug: prop.slug,
+    projectSlug: prop.slug,
+    title: `${prop.name} — ${prop.area}`,
+    subtitle: `From ${priceText} · ${yieldText}`,
+    heroImage: '/logo.png',
+    ctaText: prop.roi ? 'Get Investment Analysis' : 'Request Brochure & Pricing',
+    isDraft: false,
+    seo: {
+      title: `${prop.name} | Freehold Property UAE`,
+      description: `${prop.name} in ${prop.area}. From ${priceText}. ${yieldText}. ${prop.developer}.`,
+      ogImage: '/logo.png',
+    },
+    pixels: {},
+    sections,
+    project: {
+      slug: prop.slug,
+      name: prop.name,
+      area: prop.area,
+      developerName: prop.developer,
+      heroImage: '/logo.png',
+      priceFromAed: prop.startingPriceAED,
+      priceToAed: prop.maxPriceAED,
+      rentalYield: prop.roi,
+      amenities: [],
+      faqs: [],
+    },
+  }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -791,9 +890,19 @@ function NotFound() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+async function getPage(slug: string): Promise<LandingPageData | null> {
+  try {
+    const dbPage = await getLandingPageBySlug(slug, { includeDraft: true })
+    if (dbPage) return dbPage
+  } catch {
+    // DB unavailable — fall through to inventory
+  }
+  return inventoryToLandingPage(slug)
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const page = await getLandingPageBySlug(slug, { includeDraft: true })
+  const page = await getPage(slug)
   if (!page) return { title: 'Property | Freehold UAE' }
   return {
     title: page.seo.title || page.title,
@@ -807,7 +916,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function LandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  const page = await getLandingPageBySlug(slug, { includeDraft: true })
+  const page = await getPage(slug)
   if (!page) return <NotFound />
 
   return (
