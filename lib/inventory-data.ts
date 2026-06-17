@@ -21,7 +21,6 @@ type DBProjectRow = {
   market_score: string | null
   hero_image: string | null
   payload: Record<string, unknown> | null
-  leads_30d: string | number
 }
 
 // ── Row mappers ───────────────────────────────────────────────────────────────
@@ -105,12 +104,12 @@ function bedroomsLabel(unitTypes: string[]): string {
   return `${sorted[0]}–${sorted[sorted.length - 1]}`
 }
 
-function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>): InventoryProperty {
+function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>, leadCounts: Map<string, number>): InventoryProperty {
   const score = Number(row.market_score) || 45
   const hasImages = !!row.hero_image
   const unitTypes = extractUnitTypes(row.payload)
   const paymentPlan = extractPaymentPlan(row.payload)
-  const leads30d = Number(row.leads_30d) || 0
+  const leads30d = leadCounts.get(row.slug) || 0
   const hasLanding = landingSlugs.has(row.slug)
   const handoverYear = extractHandoverYear(row.payload)
 
@@ -174,8 +173,6 @@ function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>): Invent
 // ── Shared SQL fragments ──────────────────────────────────────────────────────
 
 // Only columns proven to exist on freehold_site_projects (mirrors lib/ore.ts).
-// Handover year and landing status are derived from payload / a separate
-// guarded lookup so a missing optional column or table never breaks the query.
 const SELECT_FIELDS = `
   p.id::text,
   p.slug,
@@ -189,18 +186,26 @@ const SELECT_FIELDS = `
   p.golden_visa_eligible,
   p.market_score,
   p.hero_image,
-  p.payload,
-  COALESCE(lc.leads_30d, 0) AS leads_30d
+  p.payload
 `
 
-const LEADS_JOIN = `
-  LEFT JOIN (
-    SELECT project_slug, COUNT(*)::int AS leads_30d
-    FROM freehold_site_leads
-    WHERE created_at > NOW() - INTERVAL '30 days'
-    GROUP BY project_slug
-  ) lc ON lc.project_slug = p.slug
-`
+/**
+ * Returns lead counts per project slug, guarded against missing table.
+ */
+async function getLeadCounts(): Promise<Map<string, number>> {
+  try {
+    const rows = await query<{ project_slug: string; leads_30d: number }>(
+      `SELECT project_slug, COUNT(*)::int AS leads_30d
+       FROM freehold_site_leads
+       WHERE created_at > NOW() - INTERVAL '30 days'
+         AND project_slug IS NOT NULL
+       GROUP BY project_slug`,
+    )
+    return new Map(rows.map((r) => [r.project_slug, Number(r.leads_30d) || 0]))
+  } catch {
+    return new Map()
+  }
+}
 
 /**
  * Returns the set of project slugs that have a landing page.
@@ -229,17 +234,17 @@ async function getLandingSlugs(): Promise<Set<string>> {
  */
 export async function getInventoryPropertiesFromDB(): Promise<InventoryProperty[]> {
   try {
-    const [rows, landingSlugs] = await Promise.all([
+    const [rows, landingSlugs, leadCounts] = await Promise.all([
       query<DBProjectRow>(
         `SELECT ${SELECT_FIELDS}
          FROM freehold_site_projects p
-         ${LEADS_JOIN}
          ORDER BY COALESCE(p.market_score, 0) DESC NULLS LAST
          LIMIT 500`,
       ),
       getLandingSlugs(),
+      getLeadCounts(),
     ])
-    return rows.map((row) => mapRowToInventory(row, landingSlugs))
+    return rows.map((row) => mapRowToInventory(row, landingSlugs, leadCounts))
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertiesFromDB failed', err)
     return []
@@ -254,18 +259,18 @@ export async function getInventoryPropertyBySlug(
   slug: string,
 ): Promise<InventoryProperty | null> {
   try {
-    const [rows, landingSlugs] = await Promise.all([
+    const [rows, landingSlugs, leadCounts] = await Promise.all([
       query<DBProjectRow>(
         `SELECT ${SELECT_FIELDS}
          FROM freehold_site_projects p
-         ${LEADS_JOIN}
-         WHERE p.slug = $1
+         WHERE lower(p.slug) = lower($1)
          LIMIT 1`,
         [slug],
       ),
       getLandingSlugs(),
+      getLeadCounts(),
     ])
-    return rows[0] ? mapRowToInventory(rows[0], landingSlugs) : null
+    return rows[0] ? mapRowToInventory(rows[0], landingSlugs, leadCounts) : null
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertyBySlug failed', err)
     return null
