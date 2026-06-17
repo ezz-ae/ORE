@@ -11,11 +11,13 @@ type AudienceType = "investor" | "luxury" | "end_user" | "generic"
 const SECTION_POOLS: Record<AudienceType, string[]> = {
   investor: [
     "hero",
+    "key-facts",
+    "description",
+    "units",
     "market-intelligence",
     "roi",
     "payment-plan",
     "golden-visa",
-    "key-facts",
     "why-dubai",
     "ai-concierge",
     "faq",
@@ -24,7 +26,10 @@ const SECTION_POOLS: Record<AudienceType, string[]> = {
   luxury: [
     "hero",
     "key-facts",
+    "description",
+    "gallery",
     "amenities",
+    "units",
     "developer-profile",
     "location",
     "social-proof",
@@ -36,6 +41,8 @@ const SECTION_POOLS: Record<AudienceType, string[]> = {
   end_user: [
     "hero",
     "key-facts",
+    "description",
+    "units",
     "amenities",
     "neighborhood",
     "location",
@@ -46,8 +53,11 @@ const SECTION_POOLS: Record<AudienceType, string[]> = {
   ],
   generic: [
     "hero",
-    "market-intelligence",
     "key-facts",
+    "description",
+    "gallery",
+    "units",
+    "market-intelligence",
     "payment-plan",
     "roi",
     "golden-visa",
@@ -85,6 +95,59 @@ Target audience: ${audience}
     "title": "<compelling headline, max 10 words, unique to this property and audience>",
     "subtitle": "<one sentence, 15-25 words, the strongest investment/lifestyle angle>",
     "chips": ["<price chip>", "<yield or key stat>", "<area or handover>"]
+  }
+}`,
+    description: `{
+  "type": "description",
+  "data": {
+    "title": "<property name> — a compelling 4-6 word subtitle",
+    "body": "<Write 3 compelling paragraphs (200-280 words total) about this specific property. Paragraph 1: the property concept, architecture, and what makes it distinct. Paragraph 2: the lifestyle and community it offers. Paragraph 3: the investment case and why now is the right time. Separate paragraphs with a blank line. Write like a senior Dubai property expert, NOT generic copy.>",
+    "highlights": [
+      "<unique selling point 1 — specific to this property>",
+      "<unique selling point 2>",
+      "<unique selling point 3>",
+      "<unique selling point 4>"
+    ]
+  }
+}`,
+    gallery: `{
+  "type": "gallery",
+  "data": {
+    "title": "Inside ${project.name || "the Development"}",
+    "labels": [
+      "<specific space label 1, e.g. 'Grand Lobby' or 'Master Suite'>",
+      "<specific space label 2>",
+      "<specific space label 3>",
+      "<specific space label 4>",
+      "<specific amenity or view label>",
+      "<another specific label>"
+    ]
+  }
+}`,
+    units: `{
+  "type": "units",
+  "data": {
+    "title": "Residence Types & Pricing",
+    "units": [
+      {
+        "type": "<e.g. '1 Bedroom Apartment'>",
+        "size": "<realistic sqft range for ${project.area || "Dubai"}, e.g. '650–850 sqft'>",
+        "price": "<realistic AED price range based on project data, e.g. 'AED 1.2M – 1.6M'>",
+        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
+      },
+      {
+        "type": "<e.g. '2 Bedroom Apartment'>",
+        "size": "<realistic sqft range>",
+        "price": "<realistic AED price range>",
+        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
+      },
+      {
+        "type": "<e.g. '3 Bedroom Penthouse' or '3BR + Maid'>",
+        "size": "<realistic sqft range>",
+        "price": "<realistic AED price range>",
+        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
+      }
+    ]
   }
 }`,
     "market-intelligence": `{
@@ -197,10 +260,14 @@ Target audience: ${audience}
   "type": "faq",
   "data": {
     "items": [
-      {"question": "<common investor question about this type of property>", "answer": "<clear, 2-sentence answer>"},
-      {"question": "<question about payment plan or financing>", "answer": "<clear answer>"},
-      {"question": "<question about handover or completion>", "answer": "<clear answer>"},
-      {"question": "<question about rental management or ROI realisation>", "answer": "<clear answer>"}
+      {"question": "<specific question about ${project.name || "this property"} ROI or yield>", "answer": "<clear, 2-sentence answer with specific numbers if available>"},
+      {"question": "<question about the payment plan structure>", "answer": "<clear answer explaining the plan>"},
+      {"question": "<question about handover date or construction timeline>", "answer": "<clear answer>"},
+      {"question": "<question about rental management or income realization>", "answer": "<clear answer>"},
+      {"question": "<question about Golden Visa eligibility>", "answer": "<clear answer about AED 2M threshold and process>"},
+      {"question": "<question about ${project.area || "this area"} vs other Dubai areas>", "answer": "<clear comparison answer>"},
+      {"question": "<question about resale or exit strategy>", "answer": "<clear answer about liquidity and market depth>"},
+      {"question": "<question about service charges or running costs>", "answer": "<honest, clear answer>"}
     ]
   }
 }`,

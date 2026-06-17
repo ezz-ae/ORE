@@ -21,6 +21,9 @@ type ProjectRow = {
 
 export type LandingSectionType =
   | "hero"
+  | "description"
+  | "gallery"
+  | "units"
   | "market-intelligence"
   | "key-facts"
   | "payment-plan"
@@ -234,6 +237,23 @@ const normalizeType = (value: string): LandingSectionType | null => {
   switch (normalized) {
     case "hero":
       return "hero"
+    case "description":
+    case "about":
+    case "overview":
+    case "property-description":
+      return "description"
+    case "gallery":
+    case "photos":
+    case "images":
+    case "visuals":
+      return "gallery"
+    case "units":
+    case "unit-types":
+    case "unittypes":
+    case "residences":
+    case "apartments":
+    case "floor-plans":
+      return "units"
     case "market-intelligence":
     case "market":
     case "intelligence":
@@ -552,13 +572,16 @@ const normalizeSections = (
 
   const fallbackOrder: LandingSectionType[] = [
     "hero",
-    "market-intelligence",
     "key-facts",
+    "description",
+    "gallery",
+    "units",
+    "market-intelligence",
     "payment-plan",
     "roi",
     "golden-visa",
-    "why-dubai",
     "amenities",
+    "why-dubai",
     "location",
     "neighborhood",
     "developer-profile",
