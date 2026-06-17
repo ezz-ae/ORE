@@ -594,9 +594,23 @@ const normalizeSections = (
 
   const withFallbacks = [...sections]
   const existing = new Set(withFallbacks.map((section) => section.type))
-  for (const fallback of buildDefaultSections(project, row)) {
-    if (!existing.has(fallback.type)) {
-      withFallbacks.push(fallback)
+
+  // Only bulk-add defaults when the section list is very sparse (legacy/empty pages).
+  // For AI-generated pages (which always produce 8+ sections), skip bulk-adding to
+  // prevent audience-specific pages from being polluted with irrelevant defaults.
+  if (sections.length < 4) {
+    for (const fallback of buildDefaultSections(project, row)) {
+      if (!existing.has(fallback.type)) {
+        withFallbacks.push(fallback)
+        existing.add(fallback.type)
+      }
+    }
+  } else {
+    // Always ensure a lead-form exists — it's the conversion element
+    if (!existing.has("lead-form")) {
+      const defaults = buildDefaultSections(project, row)
+      const leadForm = defaults.find((s) => s.type === "lead-form")
+      if (leadForm) withFallbacks.push(leadForm)
     }
   }
 

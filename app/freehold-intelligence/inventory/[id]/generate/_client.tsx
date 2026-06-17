@@ -14,7 +14,7 @@ function fmtPrice(n: number | null): string {
   return `AED ${(n / 1_000).toFixed(0)}K`
 }
 
-type Section = 'hero' | 'highlights' | 'payment' | 'form'
+type Section = 'hero' | 'highlights' | 'payment' | 'form' | null
 
 interface LandingConfig {
   headline: string
@@ -155,7 +155,7 @@ function SectionPanel({
 
 export function GenerateClient({ prop }: { prop: InventoryProperty }) {
   const [config, setConfig] = useState<LandingConfig>(() => buildConfig(prop))
-  const [open, setOpen] = useState<Section>('hero')
+  const [open, setOpen] = useState<Section>('hero' as Section)
   const [redesigning, setRedesigning] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [publishStep, setPublishStep] = useState('')
@@ -164,8 +164,8 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
   const [aiPrompt, setAiPrompt] = useState('')
   const [showAiBox, setShowAiBox] = useState(false)
 
-  function toggleSection(s: Section) {
-    setOpen((prev) => (prev === s ? ('hero' as Section) : s))
+  function toggleSection(s: Exclude<Section, null>) {
+    setOpen((prev) => (prev === s ? null : s))
   }
 
   function aiRedesign(variant: 'investor' | 'luxury' | 'end_user') {

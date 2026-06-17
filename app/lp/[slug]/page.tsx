@@ -744,6 +744,45 @@ function SocialProofSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
+function NeighborhoodSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
+  const area = pick(d, 'area') || page.project?.area || 'Dubai'
+  const description = pick(d, 'description', 'body', 'about')
+  const highlights = pickArr(d, 'highlights').map(toStr).filter(Boolean)
+
+  const defaultHighlights = [
+    `${area} is one of Dubai's most connected and sought-after communities`,
+    'Access to world-class schools, retail, dining, and lifestyle infrastructure',
+    'Strong rental demand driven by young professionals and families',
+    'Capital growth track record with continued development investment',
+  ]
+
+  return (
+    <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+          <div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Neighbourhood</div>
+            <h2 className="mb-4 text-[34px] font-bold text-white">Life in {area}</h2>
+            {description && (
+              <p className="text-[15px] text-white/50 leading-relaxed">{description}</p>
+            )}
+          </div>
+          <div className="space-y-3">
+            {(highlights.length ? highlights : defaultHighlights).map((h, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] px-5 py-4">
+                <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15">
+                  <Check className="h-3 w-3 text-[#D4AF37]" />
+                </div>
+                <span className="text-[14px] text-white/65">{h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function MarketIntelligenceSection({ d }: { d: Record<string, unknown> }) {
   const summary = pick(d, 'summary')
   const bullets = pickArr(d, 'bullets').map(toStr).filter(Boolean)
@@ -899,7 +938,7 @@ function Section({ section, page }: { section: LandingSection; page: LandingPage
     case 'social-proof': return <SocialProofSection d={d} />
     case 'market-intelligence': return <MarketIntelligenceSection d={d} />
     case 'ai-concierge': return <AiConciergeSection d={d} page={page} />
-    case 'neighborhood': return null
+    case 'neighborhood': return <NeighborhoodSection d={d} page={page} />
     case 'faq': {
       const items = (pickArr(d, 'items') as Array<{ question?: string; answer?: string }>)
         .map(it => ({ question: toStr(it?.question), answer: toStr(it?.answer) }))
