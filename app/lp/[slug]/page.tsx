@@ -9,6 +9,7 @@ import { inventoryProperties } from '@/src/features/freehold-intelligence/invent
 import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
+import { Tracker } from './_tracker'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -181,7 +182,7 @@ function HeroSection({ d, page }: { d: Record<string, unknown>; page: LandingPag
                 <h3 className="text-[20px] font-bold text-white">Request Investment Pack</h3>
                 <p className="mt-1 text-[13px] text-white/40">Floor plans, pricing, and ROI analysis — delivered within 24 hours.</p>
               </div>
-              <LeadForm propertyName={page.project?.name || title} slug={page.slug} ctaText={page.ctaText} />
+              <LeadForm propertyName={page.project?.name || title} slug={page.slug} ctaText={page.ctaText} pixels={page.pixels} />
             </div>
           </div>
         </div>
@@ -887,7 +888,7 @@ function LeadFormSection({ d, page }: { d: Record<string, unknown>; page: Landin
           </div>
           <div>
             <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#0A0D16] p-8">
-              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} />
+              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} pixels={page.pixels} />
             </div>
           </div>
         </div>
@@ -1063,6 +1064,14 @@ export default async function LandingPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="min-h-screen bg-[#06070C] text-white">
+      <Tracker
+        slug={page.slug}
+        projectSlug={page.projectSlug}
+        metaPixelId={page.pixels.metaPixelId}
+        googleTagId={page.pixels.googleTagId}
+        googleConversionId={page.pixels.googleConversionId}
+        tiktokPixelId={page.pixels.tiktokPixelId}
+      />
       <Topbar page={page} />
       <div className="pt-[52px]">
         {page.sections.map((section, i) => (

@@ -2,14 +2,21 @@
 
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
+import { trackConversion } from './_tracker'
 
 interface LeadFormProps {
   propertyName: string
   slug: string
   ctaText?: string
+  pixels?: {
+    metaPixelId?: string
+    googleTagId?: string
+    googleConversionId?: string
+    tiktokPixelId?: string
+  }
 }
 
-export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pricing' }: LeadFormProps) {
+export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pricing', pixels = {} }: LeadFormProps) {
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -37,6 +44,7 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
       })
       const payload = await res.json()
       if (!res.ok) throw new Error(payload?.error || 'Unable to send your request.')
+      trackConversion(slug, pixels)
       setSubmitted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to send your request.')
