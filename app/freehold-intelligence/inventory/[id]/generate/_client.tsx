@@ -160,7 +160,9 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
   const [publishing, setPublishing] = useState(false)
   const [publishStep, setPublishStep] = useState('')
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [publishedSlug, setPublishedSlug] = useState<string | null>(null)
   const [publishError, setPublishError] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [showAiBox, setShowAiBox] = useState(false)
 
@@ -190,6 +192,24 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
       setShowAiBox(false)
       setRedesigning(false)
     }, 1600)
+  }
+
+  async function regenerateAi() {
+    if (!publishedSlug) return
+    setAiGenerating(true)
+    try {
+      await fetch('/api/crm/landing-pages/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectSlug: prop.slug,
+          audience: config.template,
+          slug: publishedSlug,
+        }),
+      })
+    } finally {
+      setAiGenerating(false)
+    }
   }
 
   async function publish() {
@@ -225,6 +245,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
         }),
       }).catch(() => null)
 
+      setPublishedSlug(newSlug)
       setPublishedUrl(`/lp/${newSlug}`)
     } catch (err) {
       setPublishError(err instanceof Error ? err.message : 'Failed to publish')
@@ -282,7 +303,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
       </div>
 
       {publishedUrl && (
-        <div className="mb-6 flex items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
           <Check className="h-4 w-4 shrink-0 text-emerald-400" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-medium text-emerald-300">Landing page is live — </span>
@@ -291,6 +312,14 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
               freeholdproperty.ae{publishedUrl}
             </a>
           </div>
+          <button
+            onClick={regenerateAi}
+            disabled={aiGenerating}
+            className="shrink-0 flex items-center gap-1 rounded-full border border-gold/20 px-3 py-1 text-xs text-gold/70 transition hover:bg-gold/10 disabled:opacity-50"
+          >
+            {aiGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+            {aiGenerating ? 'Regenerating…' : 'Regen AI'}
+          </button>
           <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
             className="shrink-0 flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10">
             Open <ExternalLink className="h-3 w-3" />
