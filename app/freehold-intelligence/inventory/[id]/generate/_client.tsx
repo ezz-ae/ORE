@@ -320,6 +320,14 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             {aiGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
             {aiGenerating ? 'Regenerating…' : 'Regen AI'}
           </button>
+          {publishedSlug && (
+            <Link
+              href={`/crm/landing-pages/${publishedSlug}`}
+              className="shrink-0 flex items-center gap-1 rounded-full border border-white/[0.12] px-3 py-1 text-xs text-slate-400 transition hover:text-slate-200"
+            >
+              Edit in CRM
+            </Link>
+          )}
           <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
             className="shrink-0 flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10">
             Open <ExternalLink className="h-3 w-3" />

@@ -361,9 +361,20 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
 
       {/* Landing status */}
       <td className="px-4 py-3.5">
-        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${landingBadge(prop.landingStatus)}`}>
-          {landingLabel(prop.landingStatus)}
-        </span>
+        {prop.landingUrl ? (
+          <a
+            href={prop.landingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium transition hover:opacity-80 ${landingBadge(prop.landingStatus)}`}
+          >
+            {landingLabel(prop.landingStatus)} <ArrowUpRight className="h-3 w-3" />
+          </a>
+        ) : (
+          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${landingBadge(prop.landingStatus)}`}>
+            {landingLabel(prop.landingStatus)}
+          </span>
+        )}
       </td>
 
       {/* Data quality */}
