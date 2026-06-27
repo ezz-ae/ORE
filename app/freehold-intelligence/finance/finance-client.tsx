@@ -5,14 +5,31 @@ import { DollarSign } from 'lucide-react'
 import { financeSummary as defaultFinanceSummary } from '@/src/features/freehold-intelligence/finance'
 import { PageHeader, StatCard, Section, Panel, StatusPill } from '@/components/freehold/ui'
 
+interface DealTotals {
+  totalSalesAed: number
+  totalCommissionAed: number
+  netCommissionAed: number
+  totalPaidAed: number
+  totalOutstandingAed: number
+  approvedDeals: number
+}
+
 interface FinanceClientProps {
   initialSummary?: typeof defaultFinanceSummary
   creditBalances?: Record<string, unknown>[]
   ledgerSummary?: Record<string, unknown>[]
+  dealTotals?: DealTotals
 }
 
 function fmt(n: number) {
   return 'AED ' + n.toLocaleString('en-US')
+}
+
+function fmtCompact(n: number) {
+  if (!n || n <= 0) return 'AED 0'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
 }
 
 function PlatformBadge({ platform }: { platform: 'meta' | 'google' }) {
@@ -62,7 +79,7 @@ function ProgressBar({ label, spent, budget, utilization, color }: {
   )
 }
 
-export default function FinanceClient({ initialSummary, creditBalances: _creditBalances, ledgerSummary: _ledgerSummary }: FinanceClientProps) {
+export default function FinanceClient({ initialSummary, creditBalances: _creditBalances, ledgerSummary: _ledgerSummary, dealTotals }: FinanceClientProps) {
   const f = initialSummary ?? defaultFinanceSummary
 
   const [invoiceFilter, setInvoiceFilter] = useState<'All' | 'paid' | 'processing' | 'overdue'>('All')
@@ -104,6 +121,18 @@ export default function FinanceClient({ initialSummary, creditBalances: _creditB
         <StatCard label="Total Leads" value={f.totalLeads30d} hint="Last 30 days · all campaigns" delta={{ value: 'incoming', direction: 'up' }} />
         <StatCard label="Avg CPL" value={`AED ${f.avgCpl30d}`} hint="Cost per lead · 30d average" />
       </div>
+
+      {/* ── Sales & Commission (deal-backed) ── */}
+      {dealTotals && (
+        <Section title="Sales & Commission" description={`${dealTotals.approvedDeals} approved deal${dealTotals.approvedDeals === 1 ? '' : 's'}`}>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard label="Total Sales" value={fmtCompact(dealTotals.totalSalesAed)} hint="Property value · approved deals" />
+            <StatCard label="Total Commission" value={fmtCompact(dealTotals.totalCommissionAed)} hint="Gross agency commission" />
+            <StatCard label="Total Paid" value={fmtCompact(dealTotals.totalPaidAed)} hint="Commission received" />
+            <StatCard label="Outstanding" value={fmtCompact(dealTotals.totalOutstandingAed)} hint="Commission still due" delta={dealTotals.totalOutstandingAed > 0 ? { value: 'awaiting', direction: 'down' } : undefined} />
+          </div>
+        </Section>
+      )}
 
       {/* ── Budget Utilization ── */}
       <Section title="Budget Utilization">

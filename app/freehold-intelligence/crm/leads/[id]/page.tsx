@@ -301,7 +301,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* Quick actions */}
           <div className="rounded-xl border border-line bg-surface p-5">
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Actions</p>
-            <QuickActions leadId={lead.id} leadName={lead.name} currentStage={lead.stage} />
+            <QuickActions
+              leadId={lead.id}
+              leadName={lead.name}
+              currentStage={lead.stage}
+              lead={{
+                phone: lead.phone,
+                email: lead.email,
+                projectInterest: lead.projectInterest,
+                budgetAED: lead.budgetAED,
+              }}
+            />
           </div>
 
           {/* Activity */}

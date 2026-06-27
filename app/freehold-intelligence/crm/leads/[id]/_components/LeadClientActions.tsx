@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Copy, CheckCircle, MessageSquare, BookOpen, Zap, User, ArrowUpRight, Bell } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { Copy, CheckCircle, MessageSquare, BookOpen, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
+import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
 
 interface CopyButtonProps {
   text: string
@@ -69,17 +72,29 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
   )
 }
 
+interface LeadSnapshot {
+  phone?: string
+  email?: string
+  projectInterest?: string
+  budgetAED?: string
+}
+
 interface QuickActionsProps {
   leadId: string
   leadName: string
   currentStage: string
+  lead?: LeadSnapshot
 }
 
 type ActionKey = 'hot' | 'reassign' | 'snooze'
 
-export function QuickActions({ leadId, leadName, currentStage }: QuickActionsProps) {
+export function QuickActions({ leadId, leadName, currentStage, lead }: QuickActionsProps) {
+  const router = useRouter()
   const [applied, setApplied] = useState<Set<ActionKey>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
+  const [dealModal, setDealModal] = useState<null | { closeLead: boolean }>(null)
+
+  const isClosed = currentStage.toLowerCase() === 'closed'
 
   function handleAction(key: ActionKey, label: string) {
     if (applied.has(key)) return
@@ -87,6 +102,8 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
     setFlash(label)
     setTimeout(() => setFlash(null), 2500)
   }
+
+  const budgetNum = Number(String(lead?.budgetAED ?? '').replace(/[^0-9.]/g, '')) || 0
 
   const actions: { key: ActionKey; label: string; icon: typeof Zap; accent: string }[] = [
     { key: 'hot',      label: 'Moved to Hot',        icon: Zap,          accent: 'hover:border-gold/30 hover:text-[#F8E7AE]' },
@@ -97,6 +114,24 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
   return (
     <>
       <div className="space-y-2">
+        {/* Convert to deal / close-won */}
+        <button
+          onClick={() => setDealModal({ closeLead: false })}
+          className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
+        >
+          <Briefcase className="h-3.5 w-3.5" />
+          Convert to Deal
+        </button>
+        {!isClosed && (
+          <button
+            onClick={() => setDealModal({ closeLead: true })}
+            className="flex w-full items-center gap-2.5 rounded-[12px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/15"
+          >
+            <Trophy className="h-3.5 w-3.5" />
+            Mark as Closed (Won)
+          </button>
+        )}
+
         {actions.map((action) => {
           const Icon = action.icon
           const done = applied.has(action.key)
@@ -126,11 +161,103 @@ export function QuickActions({ leadId, leadName, currentStage }: QuickActionsPro
         </Link>
       </div>
 
+      {dealModal && (
+        <ConvertToDealModal
+          leadId={leadId}
+          leadName={leadName}
+          lead={lead}
+          budgetNum={budgetNum}
+          closeLead={dealModal.closeLead}
+          onClose={() => setDealModal(null)}
+          onDone={() => { setDealModal(null); router.refresh() }}
+        />
+      )}
+
       {flash && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-lg">
           {flash}
         </div>
       )}
     </>
+  )
+}
+
+function ConvertToDealModal({
+  leadId, leadName, lead, budgetNum, closeLead, onClose, onDone,
+}: {
+  leadId: string
+  leadName: string
+  lead?: LeadSnapshot
+  budgetNum: number
+  closeLead: boolean
+  onClose: () => void
+  onDone: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+
+  async function submit(values: DealFormValues) {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/freehold/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...values, leadId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed to create deal')
+
+      if (closeLead) {
+        await fetch(`/api/freehold/crm/leads/${leadId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'closed', last_contact_at: new Date().toISOString() }),
+        }).catch(() => null)
+      }
+
+      toast.success(closeLead ? 'Deal created · lead closed (won)' : 'Deal created — sent for approval')
+      onDone()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create deal')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+      <div className="my-8 w-full max-w-3xl rounded-2xl border border-line-strong bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <div>
+            <h2 className="text-base font-semibold text-white">
+              {closeLead ? 'Close Deal (Won)' : 'Convert Lead to Deal'}
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {closeLead
+                ? 'Capture the deal — it will be sent to management for approval and the lead marked closed.'
+                : 'Capture the deal commercials. Agent deals route through 2-step approval.'}
+            </p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-500 transition hover:bg-surface-2 hover:text-white">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-6">
+          <DealForm
+            submitLabel={closeLead ? 'Create deal & close lead' : 'Create deal'}
+            busy={busy}
+            onCancel={onClose}
+            enableLeadLookup={false}
+            initial={{
+              leadId,
+              leadName,
+              clientPhone: lead?.phone || '',
+              clientEmail: lead?.email || '',
+              projectName: lead?.projectInterest || '',
+              propertyValueAed: budgetNum,
+            }}
+            onSubmit={submit}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
