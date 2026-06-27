@@ -161,6 +161,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
   const [publishStep, setPublishStep] = useState('')
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null)
+  const [pendingAuth, setPendingAuth] = useState(false)
   const [publishError, setPublishError] = useState('')
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
@@ -232,6 +233,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
       const createData = await createRes.json()
       if (!createRes.ok) throw new Error(createData?.error || 'Failed to create landing page')
 
+      setPendingAuth(Boolean(createData.pendingPublish))
       const newSlug: string = createData.slug
       setPublishStep('Generating AI content…')
 
@@ -303,12 +305,14 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
       </div>
 
       {publishedUrl && (
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-5 py-3.5">
-          <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+        <div className={`mb-6 flex flex-wrap items-center gap-3 rounded-[14px] border px-5 py-3.5 ${pendingAuth ? 'border-amber-400/25 bg-amber-400/[0.05]' : 'border-emerald-400/20 bg-emerald-400/[0.05]'}`}>
+          <Check className={`h-4 w-4 shrink-0 ${pendingAuth ? 'text-amber-400' : 'text-emerald-400'}`} />
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium text-emerald-300">Landing page is live — </span>
+            <span className={`text-sm font-medium ${pendingAuth ? 'text-amber-300' : 'text-emerald-300'}`}>
+              {pendingAuth ? 'Submitted for authorization — a manager must approve before it goes live. Preview: ' : 'Landing page is live — '}
+            </span>
             <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
-              className="font-mono text-xs text-emerald-400/80 underline underline-offset-2 hover:text-emerald-400">
+              className={`font-mono text-xs underline underline-offset-2 ${pendingAuth ? 'text-amber-400/80 hover:text-amber-400' : 'text-emerald-400/80 hover:text-emerald-400'}`}>
               freeholdproperty.ae{publishedUrl}
             </a>
           </div>

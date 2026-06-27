@@ -102,6 +102,8 @@ export type CRMLeadIntelligence = {
   nextBestAction: string
   suggestedMessage: string
   aiSummary: string
+  /** ISO timestamp until which this lead is snoozed (hidden from follow-up queue). */
+  snoozeUntil?: string | null
 }
 
 export type NotebookOutput = {

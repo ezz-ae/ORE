@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
        FROM freehold_site_leads
        WHERE COALESCE(status, 'new') NOT IN ('closed', 'lost')
          AND COALESCE(last_contact_at, created_at) < now() - interval '48 hours'
+         AND (snooze_until IS NULL OR snooze_until < now())
        ORDER BY COALESCE(last_contact_at, created_at) ASC
        LIMIT 500`,
     )

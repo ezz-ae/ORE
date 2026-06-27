@@ -2,12 +2,19 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, X } from 'lucide-react'
+import { Clock, MessageCircle, AlertCircle, CheckCircle, Bell, BellOff, X } from 'lucide-react'
 import type { CRMFollowUpItem } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 
 type Urgency = 'All' | 'Critical' | 'High' | 'Medium' | 'Low'
+
+const SNOOZE_OPTIONS: { label: string; hours: number }[] = [
+  { label: '4 hours', hours: 4 },
+  { label: '24 hours', hours: 24 },
+  { label: '3 days', hours: 72 },
+  { label: '7 days', hours: 168 },
+]
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { label: 'Critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300', dot: 'bg-red-400' }
@@ -19,6 +26,14 @@ function urgencyTone(u: string) {
 function overdueLabel(hours: number) {
   if (hours < 24) return `${hours}h overdue`
   return `${Math.floor(hours / 24)}d overdue`
+}
+
+function snoozeLabel(iso: string) {
+  const ms = new Date(iso).getTime() - Date.now()
+  if (ms <= 0) return 'now'
+  const h = Math.round(ms / (60 * 60 * 1000))
+  if (h < 24) return `${h}h`
+  return `${Math.round(h / 24)}d`
 }
 
 const urgencyPills: Urgency[] = ['All', 'Critical', 'High', 'Medium', 'Low']
@@ -39,12 +54,15 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   Low:      'border-line-strong bg-surface-2 text-slate-300',
 }
 
+type QueueItem = CRMFollowUpItem & { snoozeUntil: string | null }
+
 export default function FollowUpQueuePage() {
   const { leads } = useLiveLeads()
   const [activeUrgency, setActiveUrgency] = useState<Urgency>('All')
   const [activeAgent, setActiveAgent] = useState<string>('All')
   const [done, setDone] = useState<Set<string>>(new Set())
-  const [snoozed, setSnoozed] = useState<Set<string>>(new Set())
+  // Optimistic snooze overrides keyed by lead id (ISO string or null = cleared)
+  const [snoozeOverrides, setSnoozeOverrides] = useState<Record<string, string | null>>({})
   const [flash, setFlash] = useState<string | null>(null)
 
   useEffect(() => {
@@ -53,9 +71,13 @@ export default function FollowUpQueuePage() {
     return () => clearTimeout(t)
   }, [flash])
 
+  const effectiveSnooze = (id: string, fallback: string | null) =>
+    id in snoozeOverrides ? snoozeOverrides[id] : fallback
+  const isSnoozed = (iso: string | null) => !!iso && new Date(iso).getTime() > Date.now()
+
   // Map live leads in contacted/qualified stages to the follow-up queue shape
-  const followUpQueue = useMemo<CRMFollowUpItem[]>(() => {
-    const NOW_MS = new Date('2026-06-08T12:00:00+04:00').getTime()
+  const followUpQueue = useMemo<QueueItem[]>(() => {
+    const NOW_MS = Date.now()
     return leads
       .filter((l) => l.pipelineStage === 'contacted' || l.pipelineStage === 'qualified')
       .map((l) => {
@@ -77,9 +99,11 @@ export default function FollowUpQueuePage() {
           nextBestAction: l.nextBestAction,
           duplicateRisk: l.duplicateRisk,
           wrongNumberRisk: l.wrongNumberRisk,
-        } satisfies CRMFollowUpItem
+          snoozeUntil:   effectiveSnooze(l.id, l.snoozeUntil ?? null),
+        } satisfies QueueItem
       })
-  }, [leads])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, snoozeOverrides])
 
   const allAgents = useMemo(
     () => ['All', ...Array.from(new Set(followUpQueue.map((l) => l.assignedAgent)))],
@@ -93,32 +117,42 @@ export default function FollowUpQueuePage() {
 
   const visible = useMemo(() => {
     return sortedQueue.filter((item) => {
-      if (done.has(item.leadId) || snoozed.has(item.leadId)) return false
+      if (done.has(item.leadId) || isSnoozed(item.snoozeUntil)) return false
       if (activeUrgency !== 'All' && item.urgency !== activeUrgency.toLowerCase()) return false
       if (activeAgent !== 'All' && item.assignedAgent !== activeAgent) return false
       return true
     })
-  }, [sortedQueue, done, snoozed, activeUrgency, activeAgent])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedQueue, done, activeUrgency, activeAgent])
+
+  const snoozedList = useMemo(
+    () => sortedQueue.filter((item) => !done.has(item.leadId) && isSnoozed(item.snoozeUntil)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortedQueue, done],
+  )
 
   const stats = useMemo(() => {
-    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId))
+    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil))
     const total = active.length
     const critical = active.filter((l) => l.urgency === 'critical').length
     const avgOverdue = total > 0 ? Math.round(active.reduce((s, l) => s + l.overdueHours, 0) / total) : 0
-    return { total, critical, avgOverdue, doneCount: done.size }
-  }, [sortedQueue, done, snoozed])
+    return { total, critical, avgOverdue, snoozedCount: snoozedList.length }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedQueue, done, snoozedList])
 
   const byAgent = useMemo(() => {
-    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId))
+    const active = sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil))
     return active.reduce<Record<string, number>>((acc, l) => {
       acc[l.assignedAgent] = (acc[l.assignedAgent] ?? 0) + 1
       return acc
     }, {})
-  }, [sortedQueue, done, snoozed])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedQueue, done])
 
   const riskLeads = useMemo(
-    () => sortedQueue.filter((l) => !done.has(l.leadId) && !snoozed.has(l.leadId) && (l.duplicateRisk || l.wrongNumberRisk)).length,
-    [sortedQueue, done, snoozed],
+    () => sortedQueue.filter((l) => !done.has(l.leadId) && !isSnoozed(l.snoozeUntil) && (l.duplicateRisk || l.wrongNumberRisk)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortedQueue, done],
   )
 
   function markDone(id: string) {
@@ -126,9 +160,29 @@ export default function FollowUpQueuePage() {
     setFlash('Marked done')
   }
 
-  function snooze(id: string) {
-    setSnoozed((prev) => new Set([...prev, id]))
-    setFlash('Snoozed 24h')
+  async function persistSnooze(id: string, iso: string | null) {
+    try {
+      await fetch(`/api/freehold/crm/leads/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snooze_until: iso }),
+      })
+    } catch {
+      setFlash('Could not save snooze — will retry on reload')
+    }
+  }
+
+  function snooze(id: string, hours: number) {
+    const iso = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
+    setSnoozeOverrides((p) => ({ ...p, [id]: iso }))
+    setFlash(`Snoozed ${hours < 24 ? `${hours}h` : `${hours / 24}d`}`)
+    persistSnooze(id, iso)
+  }
+
+  function unsnooze(id: string) {
+    setSnoozeOverrides((p) => ({ ...p, [id]: null }))
+    setFlash('Un-snoozed')
+    persistSnooze(id, null)
   }
 
   return (
@@ -149,7 +203,7 @@ export default function FollowUpQueuePage() {
             <StatCard label="Overdue"          value={stats.total}     hint="in queue"    />
             <StatCard label="Critical"         value={stats.critical}  hint="act now"     delta={stats.critical > 0 ? { value: 'urgent', direction: 'down' } : undefined} />
             <StatCard label="Avg delay"        value={`${stats.avgOverdue}h`} hint="average hours" />
-            <StatCard label="Done this session" value={stats.doneCount} hint="actioned"   delta={stats.doneCount > 0 ? { value: 'completed', direction: 'up' } : undefined} />
+            <StatCard label="Snoozed"          value={stats.snoozedCount} hint="scheduled later" />
           </div>
 
           {/* Filters */}
@@ -231,12 +285,7 @@ export default function FollowUpQueuePage() {
                         >
                           <CheckCircle className="h-3.5 w-3.5" /> Mark Done
                         </button>
-                        <button
-                          onClick={() => snooze(item.leadId)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-gold/20 bg-gold/[0.05] px-4 py-2 text-xs font-medium text-gold/80 transition hover:border-gold/40 hover:bg-gold/10 hover:text-gold"
-                        >
-                          <Bell className="h-3.5 w-3.5" /> Snooze 24h
-                        </button>
+                        <SnoozeControl onPick={(h) => snooze(item.leadId, h)} />
                         <Link
                           href={`/freehold-intelligence/crm/leads/${item.leadId}`}
                           className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-4 py-2 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white"
@@ -250,6 +299,35 @@ export default function FollowUpQueuePage() {
               })
             )}
           </div>
+
+          {/* Snoozed section — editable */}
+          {snoozedList.length > 0 && (
+            <div className="mt-8">
+              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <Bell className="h-3.5 w-3.5" /> Snoozed ({snoozedList.length})
+              </div>
+              <div className="space-y-2">
+                {snoozedList.map((item) => (
+                  <div key={item.leadId} className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-2/40 px-4 py-3">
+                    <Link href={`/freehold-intelligence/crm/leads/${item.leadId}`} className="text-sm font-medium text-slate-200 transition hover:text-gold">
+                      {item.leadName}
+                    </Link>
+                    <span className="text-xs text-slate-500">wakes in {item.snoozeUntil ? snoozeLabel(item.snoozeUntil) : '—'}</span>
+                    <span className="text-xs text-slate-600">· {item.assignedAgent}</span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <SnoozeControl label="Reschedule" onPick={(h) => snooze(item.leadId, h)} />
+                      <button
+                        onClick={() => unsnooze(item.leadId)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/30 hover:text-white"
+                      >
+                        <BellOff className="h-3.5 w-3.5" /> Un-snooze
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -297,6 +375,36 @@ export default function FollowUpQueuePage() {
             </button>
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+function SnoozeControl({ onPick, label = 'Snooze' }: { onPick: (hours: number) => void; label?: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-gold/20 bg-gold/[0.05] px-4 py-2 text-xs font-medium text-gold/80 transition hover:border-gold/40 hover:bg-gold/10 hover:text-gold"
+      >
+        <Bell className="h-3.5 w-3.5" /> {label}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-line-strong bg-surface shadow-xl">
+            {SNOOZE_OPTIONS.map((opt) => (
+              <button
+                key={opt.hours}
+                onClick={() => { onPick(opt.hours); setOpen(false) }}
+                className="block w-full px-3 py-2 text-left text-xs text-slate-300 transition hover:bg-surface-2 hover:text-white"
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

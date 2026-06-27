@@ -1517,7 +1517,8 @@ export async function ensureLeadsTable() {
       ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now(),
       ADD COLUMN IF NOT EXISTS ai_ack_sent_at timestamptz,
       ADD COLUMN IF NOT EXISTS ai_ack_project_slug text,
-      ADD COLUMN IF NOT EXISTS ai_broker_notified_at timestamptz
+      ADD COLUMN IF NOT EXISTS ai_broker_notified_at timestamptz,
+      ADD COLUMN IF NOT EXISTS snooze_until timestamptz
   `)
 }
 

@@ -94,6 +94,7 @@ export interface LandingPageDashboardRow {
   projectSlug: string
   headline: string
   status: string
+  pendingPublish: boolean
   isLiveNow: boolean
   publishFrom: string | null
   publishTo: string | null
@@ -512,6 +513,10 @@ const ensureLandingPagesSchema = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS tiktok_pixel_id text`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_by text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_at timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_by text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_at timestamptz`)
 }
 
 const ensureLandingPagesSchemaOnce = async () => {
@@ -843,12 +848,15 @@ export async function getLandingPagesForDashboard(limit = 100): Promise<LandingP
       const slug = pickString(row.slug).toLowerCase()
       if (!slug) return null
       const metric = analyticsMap.get(slug)
-      const status = normalizeLandingStatus(pickString(row.status, row.publish_status))
+      const rawStatus = pickString(row.status, row.publish_status).toLowerCase()
+      const pendingPublish = rawStatus === "pending_publish"
+      const status = normalizeLandingStatus(rawStatus)
       return {
         slug,
         projectSlug: pickString(row.project_slug),
         headline: pickString(row.headline) || slug,
         status,
+        pendingPublish,
         isLiveNow: isPublishedNow(row),
         publishFrom: row.publish_from || null,
         publishTo: row.publish_to || null,

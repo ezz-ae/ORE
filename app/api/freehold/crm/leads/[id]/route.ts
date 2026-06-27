@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
+import { ensureLeadsTable } from '@/lib/data'
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(
@@ -44,7 +46,7 @@ export async function PATCH(
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Bad request' }, { status: 400 }) }
 
-  const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message']
+  const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message', 'snooze_until']
   const updates: string[] = []
   const values: unknown[] = []
 
@@ -61,6 +63,7 @@ export async function PATCH(
   values.push(id)
 
   try {
+    await ensureLeadsTable()
     await query(
       `UPDATE freehold_site_leads SET ${updates.join(', ')} WHERE id = $${values.length}`,
       values

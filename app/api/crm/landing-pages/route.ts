@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
-import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -112,6 +112,10 @@ const ensureLandingTable = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS tiktok_pixel_id text`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now()`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_by text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_at timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_by text`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_at timestamptz`)
 }
 
 const getLandingColumns = async () => {
@@ -316,6 +320,25 @@ export async function POST(req: NextRequest) {
     const columns = await getLandingColumns()
 
     const nowIso = new Date().toISOString()
+
+    // Publish authorization gate: a publish request from a non-authorizer is
+    // held as `pending_publish` until a manager authorizes it.
+    const wantsPublish = ["published", "active", "live"].includes(status.toLowerCase())
+    const canAuth = canAuthorizePublish(user.role, user.org_title)
+    let effectiveStatus = status
+    const publishAudit: Record<string, string> = {}
+    if (wantsPublish) {
+      if (canAuth) {
+        effectiveStatus = "published"
+        publishAudit.authorized_by = user.name
+        publishAudit.authorized_at = nowIso
+      } else {
+        effectiveStatus = "pending_publish"
+        publishAudit.publish_requested_by = user.name
+        publishAudit.publish_requested_at = nowIso
+      }
+    }
+
     const columnValues: Record<string, string> = {
       id: randomUUID(),
       slug: finalSlug,
@@ -326,8 +349,9 @@ export async function POST(req: NextRequest) {
       subtitle: subheadline,
       hero_image: heroImage,
       cta_text: ctaText,
-      status,
-      publish_status: status,
+      status: effectiveStatus,
+      publish_status: effectiveStatus,
+      ...publishAudit,
       sections_json: JSON.stringify(sections),
       sections: JSON.stringify(sections),
       content_json: JSON.stringify(sections),
@@ -368,7 +392,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       slug: finalSlug,
-      status,
+      status: effectiveStatus,
+      pendingPublish: effectiveStatus === "pending_publish",
       url: `/lp/${finalSlug}`,
       previewUrl: `/lp/${finalSlug}`,
       crmUrl: `/crm/landing-pages`,

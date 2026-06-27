@@ -2,7 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
 import { getLandingPagesForDashboard } from "@/lib/landing-pages"
 import { LandingPagesList } from "@/components/crm/landing-pages-list"
 
@@ -24,6 +24,7 @@ export default async function CrmLandingPagesPage() {
   }
 
   const pages = await getLandingPagesForDashboard(200)
+  const canAuthorize = canAuthorizePublish(user.role, user.org_title)
 
   return (
     <div className="space-y-8">
@@ -48,7 +49,7 @@ export default async function CrmLandingPagesPage() {
           </div>
         </div>
       </section>
-      <LandingPagesList initialPages={pages} />
+      <LandingPagesList initialPages={pages} canAuthorize={canAuthorize} />
     </div>
   )
 }
