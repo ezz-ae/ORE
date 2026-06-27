@@ -868,3 +868,68 @@ export async function getLandingPagesForDashboard(limit = 100): Promise<LandingP
     })
     .filter(Boolean) as LandingPageDashboardRow[]
 }
+
+export interface LandingAttribution {
+  slug: string
+  headline: string
+  status: string
+  isLiveNow: boolean
+  pageViews: number
+  formSubmissions: number
+  leadCount: number
+}
+
+/**
+ * Attribution + live performance for a single landing page, used to surface
+ * which campaign page a CRM lead came from. Guarded against missing tables.
+ */
+export async function getLandingAttribution(slug: string): Promise<LandingAttribution | null> {
+  const norm = slug.trim().toLowerCase()
+  if (!norm) return null
+  try {
+    await ensureLandingPagesSchemaOnce()
+    const rows = await query<LandingPageRow>(
+      `SELECT * FROM freehold_site_project_landing_pages WHERE lower(slug) = $1 LIMIT 1`,
+      [norm],
+    )
+    const row = rows[0]
+    if (!row) return null
+
+    let pageViews = 0
+    let formSubmissions = 0
+    try {
+      const a = await query<{ pv: number; fs: number }>(
+        `SELECT COUNT(*) FILTER (WHERE event_name = 'page_view')::int AS pv,
+                COUNT(*) FILTER (WHERE event_name = 'form_submit')::int AS fs
+         FROM freehold_site_lp_analytics WHERE lower(landing_slug) = $1`,
+        [norm],
+      )
+      pageViews = Number(a[0]?.pv) || 0
+      formSubmissions = Number(a[0]?.fs) || 0
+    } catch { /* analytics table optional */ }
+
+    let leadCount = 0
+    try {
+      const l = await query<{ c: number }>(
+        `SELECT COUNT(*)::int AS c FROM freehold_site_leads
+         WHERE lower(landing_slug) = $1
+            OR lower(REGEXP_REPLACE(COALESCE(source, ''), '^lp:', '', 'g')) = $1`,
+        [norm],
+      )
+      leadCount = Number(l[0]?.c) || 0
+    } catch { /* leads table optional */ }
+
+    return {
+      slug: pickString(row.slug) || norm,
+      headline: pickString(row.headline, row.title) || norm,
+      status: normalizeLandingStatus(pickString(row.status, row.publish_status)),
+      isLiveNow: isPublishedNow(row),
+      pageViews,
+      formSubmissions,
+      leadCount,
+    }
+  } catch (error) {
+    console.error("[landing-pages] getLandingAttribution failed", error)
+    return null
+  }
+}

@@ -38,6 +38,7 @@ export default function CrmLeadsPage() {
   const [query,       setQuery]       = useState('')
   const [activeStage, setActiveStage] = useState('All')
   const [activeAgent, setActiveAgent] = useState('All')
+  const [activeLanding, setActiveLanding] = useState('All')
 
   const ALL_STAGES = useMemo(
     () => ['All', ...Array.from(new Set(leads.map((l) => l.stage)))],
@@ -46,6 +47,11 @@ export default function CrmLeadsPage() {
 
   const ALL_AGENTS = useMemo(
     () => ['All', ...Array.from(new Set(leads.map((l) => l.assignedAgent)))],
+    [leads],
+  )
+
+  const ALL_LANDINGS = useMemo(
+    () => ['All', ...Array.from(new Set(leads.map((l) => l.landingId).filter((s): s is string => !!s)))],
     [leads],
   )
 
@@ -59,23 +65,25 @@ export default function CrmLeadsPage() {
     return sorted.filter(lead => {
       if (activeStage !== 'All' && lead.stage !== activeStage) return false
       if (activeAgent !== 'All' && lead.assignedAgent !== activeAgent) return false
+      if (activeLanding !== 'All' && lead.landingId !== activeLanding) return false
       if (q) return (
         lead.name.toLowerCase().includes(q) ||
         lead.source.toLowerCase().includes(q) ||
         lead.stage.toLowerCase().includes(q) ||
-        lead.assignedAgent.toLowerCase().includes(q)
+        lead.assignedAgent.toLowerCase().includes(q) ||
+        (lead.landingId || '').toLowerCase().includes(q)
       )
       return true
     })
-  }, [sorted, query, activeStage, activeAgent])
+  }, [sorted, query, activeStage, activeAgent, activeLanding])
 
   const hot       = leads.filter(l => l.urgency === 'critical' || l.urgency === 'high').length
   const avgIntent = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + l.intentScore, 0) / leads.length) : 0
   const withRisk  = leads.filter(l => l.duplicateRisk || l.wrongNumberRisk).length
 
-  const hasFilters = query.trim() || activeStage !== 'All' || activeAgent !== 'All'
+  const hasFilters = query.trim() || activeStage !== 'All' || activeAgent !== 'All' || activeLanding !== 'All'
 
-  function clearFilters() { setQuery(''); setActiveStage('All'); setActiveAgent('All') }
+  function clearFilters() { setQuery(''); setActiveStage('All'); setActiveAgent('All'); setActiveLanding('All') }
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -159,6 +167,21 @@ export default function CrmLeadsPage() {
               {agent === 'All' ? 'All agents' : agent.split(' ')[0]}
             </button>
           ))}
+
+          {ALL_LANDINGS.length > 1 && (
+            <>
+              <span className="mx-0.5 text-slate-700">·</span>
+              <select
+                value={activeLanding}
+                onChange={(e) => setActiveLanding(e.target.value)}
+                className="shrink-0 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400 outline-none transition hover:text-slate-200 focus:border-gold/40"
+              >
+                {ALL_LANDINGS.map((lp) => (
+                  <option key={lp} value={lp} className="bg-surface">{lp === 'All' ? 'All landing pages' : lp}</option>
+                ))}
+              </select>
+            </>
+          )}
 
           {hasFilters && (
             <button
@@ -252,6 +275,11 @@ export default function CrmLeadsPage() {
                     {/* Source */}
                     <div className="hidden flex-1 sm:block">
                       <span className="line-clamp-1 text-xs text-slate-500">{lead.source}</span>
+                      {lead.landingId && (
+                        <span className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-gold/15 bg-gold/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-gold/70">
+                          LP · {lead.landingId}
+                        </span>
+                      )}
                     </div>
 
                     <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />

@@ -10,6 +10,7 @@ import { crmLeads, crmActivityLog, type CRMLeadIntelligence } from '@/src/featur
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { query } from '@/lib/db'
+import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page
 async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
@@ -19,9 +20,10 @@ async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
       source: string | null; project_slug: string | null; assigned_broker_id: string | null;
       status: string | null; priority: string | null; budget_aed: number | null;
       interest: string | null; message: string | null; created_at: string;
+      landing_slug: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
-              status, priority, budget_aed, interest, message, created_at::text
+              status, priority, budget_aed, interest, message, created_at::text, landing_slug
        FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [id]
     )
@@ -32,7 +34,8 @@ async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
     return {
       id: r.id, hubspotLeadId: '', name: r.name ?? 'Unknown',
       phone: r.phone ?? '', email: r.email ?? '', source: r.source ?? 'direct',
-      landingId: '', campaignId: '', stage: stage.charAt(0).toUpperCase() + stage.slice(1),
+      landingId: r.landing_slug ?? (r.source?.startsWith('lp:') ? r.source.slice(3) : ''),
+      campaignId: '', stage: stage.charAt(0).toUpperCase() + stage.slice(1),
       pipelineStage: stage, temperature,
       budgetAED: r.budget_aed ? `AED ${r.budget_aed.toLocaleString()}` : 'Unknown',
       projectInterest: r.interest ?? r.project_slug ?? 'General enquiry',
@@ -70,6 +73,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
+
+  // Landing-page attribution: which campaign page produced this lead (live data).
+  const landingSlug = lead.landingId && lead.landingId !== 'direct_whatsapp' ? lead.landingId : ''
+  const landingAttribution: LandingAttribution | null = landingSlug ? await getLandingAttribution(landingSlug) : null
 
   const leadActivity = crmActivityLog
     .filter((e) => e.leadId === id)
@@ -222,6 +229,44 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               ))}
             </div>
           </div>
+
+          {/* Landing page attribution (live) */}
+          {landingAttribution && (
+            <div className="rounded-xl border border-gold/15 bg-gold/[0.03] p-5">
+              <div className="mb-4 flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-gold/70">
+                <Globe className="h-3 w-3" /> Source landing page
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-slate-200">{landingAttribution.headline}</div>
+                  <div className="mt-0.5 font-mono text-xs text-slate-500">/lp/{landingAttribution.slug}</div>
+                </div>
+                <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${landingAttribution.isLiveNow ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
+                  {landingAttribution.isLiveNow ? 'Live' : landingAttribution.status}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Views', value: landingAttribution.pageViews },
+                  { label: 'Submits', value: landingAttribution.formSubmissions },
+                  { label: 'Leads', value: landingAttribution.leadCount },
+                ].map((m) => (
+                  <div key={m.label} className="rounded-lg border border-line bg-surface-2/50 px-2 py-2 text-center">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">{m.label}</div>
+                    <div className="mt-0.5 text-sm font-semibold tabular-nums text-white">{m.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-3 text-xs">
+                <a href={`/lp/${landingAttribution.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-gold/70 transition hover:text-gold">
+                  View page <ArrowUpRight className="h-2.5 w-2.5" />
+                </a>
+                <Link href={`/crm/landing-pages/${landingAttribution.slug}`} className="inline-flex items-center gap-1 text-slate-400 transition hover:text-slate-200">
+                  Edit in CRM
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Attribution card */}
           <div className="rounded-xl border border-line bg-surface p-5">
