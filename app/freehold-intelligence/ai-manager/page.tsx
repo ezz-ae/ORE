@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity, Sparkles } from 'lucide-react'
+import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
-import { sendToExpert } from '@/lib/freehold/expert-bus'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 const CONTENT_TYPES = [
   { labelKey: 'studio.ct.listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,      summary: '28 listings',          alert: '5 need updates',       alertColor: 'text-slate-400' },
   { labelKey: 'studio.ct.areas',      href: '/freehold-intelligence/ai-manager/areas',      icon: MapPin,   summary: '12 area guides',        alert: '3 missing content',    alertColor: 'text-amber-400' },
@@ -34,30 +34,7 @@ export default function AiManagerPage() {
       </div>
 
       {/* Expert depth — plan / fix / audit content via the single docked Expert */}
-      <section className="mt-6 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
-            <Sparkles className="h-4 w-4 text-gold" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-white">{t('studio.ai.title')}</div>
-            <div className="text-xs text-slate-400">{t('studio.ai.subtitle')}</div>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {depth.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => sendToExpert(t(q))}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3.5 py-1.5 text-sm text-slate-300 transition-colors hover:border-gold/40 hover:text-white"
-            >
-              {t(q)}
-              <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 transition-colors group-hover:text-gold" />
-            </button>
-          ))}
-        </div>
-      </section>
+      <ExpertDepth prompts={depth} titleKey="studio.ai.title" subtitleKey="studio.ai.subtitle" className="mt-6" />
 
       {/* Content type cards */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

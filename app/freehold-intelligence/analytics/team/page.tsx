@@ -1,11 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Sparkles, ArrowUpRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
-import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { STAGE_ORDER } from '@/lib/freehold/analytics-format'
 import { ComparisonTable, type CmpColumn, type CmpItem, type CmpPreset } from '@/components/freehold/analytics/comparison-table'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type AgentMetric = {
   name: string; tenureDays: number | null
@@ -95,27 +94,12 @@ export default function TeamAnalyticsPage() {
       </div>
 
       {/* Depth: prompt the single side-docked Expert (no separate conversation) */}
-      <section className="overflow-hidden rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
-            <Sparkles className="h-4 w-4 text-gold" />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-white">{t('analytics.ai.title')}</div>
-            <div className="text-xs text-slate-400">{t('analytics.ai.subtitle')}</div>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {questions.map((q) => (
-            <button key={q} type="button" onClick={() => sendToExpert(t(q))}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3.5 py-1.5 text-sm text-slate-300 transition-colors hover:border-gold/40 hover:text-white">
-              {t(q)}
-              <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 transition-colors group-hover:text-gold" />
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-slate-500">{t('analytics.ai.disclaimer')}</p>
-      </section>
+      <ExpertDepth
+        prompts={questions}
+        titleKey="analytics.ai.title"
+        subtitleKey="analytics.ai.subtitle"
+        noteKey="analytics.ai.disclaimer"
+      />
 
       {/* Custom comparison — choose metrics + items, save to Notebook */}
       <ComparisonTable items={cmpItems} columns={COLUMNS} presets={PRESETS} loading={!agents} />

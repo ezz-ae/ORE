@@ -7,6 +7,8 @@ import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
+import { getFinanceTotals } from '@/lib/deals'
+import { query } from '@/lib/db'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 
@@ -57,16 +59,43 @@ async function gatherSystemContext(role: Role): Promise<Record<string, unknown>>
   // questions with depth, grounded in live data.
   const canSeeTeam = role === 'owner' || role === 'admin' || role === 'sales_manager'
 
-  const [server, blockers, inventory, integrations, leadMachine, team] = await Promise.all([
+  const [server, blockers, inventory, integrations, leadMachine, team, finance, crm] = await Promise.all([
     safe('server-summary'),
     safe('launch-blockers'),
     safe('inventory-analysis'),
     safe('integration-summary'),
     safe('lead-machine-summary'),
     canSeeTeam ? gatherTeamMetrics().catch(() => null) : Promise.resolve(null),
+    // Finance + CRM pipeline round out the single shared context so the one
+    // Expert answers finance/CRM questions with live data — management-gated.
+    canSeeTeam ? getFinanceTotals().catch(() => null) : Promise.resolve(null),
+    canSeeTeam ? crmPipelineSnapshot().catch(() => null) : Promise.resolve(null),
   ])
 
-  return { server, launchBlockers: blockers, inventory, integrations, leadMachine, teamPerformance: team }
+  return { server, launchBlockers: blockers, inventory, integrations, leadMachine, teamPerformance: team, finance, crm }
+}
+
+/** Compact CRM pipeline snapshot (counts by stage) for the Expert context. */
+async function crmPipelineSnapshot(): Promise<Record<string, number> | null> {
+  try {
+    const [row] = await query<{ total: string; new_count: string; closed: string; hot: string; overdue: string }>(`
+      SELECT COUNT(*)::text AS total,
+        COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
+        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+        COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue
+      FROM freehold_site_leads`)
+    if (!row) return null
+    return {
+      totalLeads: parseInt(row.total, 10),
+      newLeads: parseInt(row.new_count, 10),
+      closedLeads: parseInt(row.closed, 10),
+      hotLeads: parseInt(row.hot, 10),
+      overdueFollowups: parseInt(row.overdue, 10),
+    }
+  } catch {
+    return null
+  }
 }
 
 /** Parse the model's JSON into blocks; fall back to a single text block. */

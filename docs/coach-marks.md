@@ -74,17 +74,35 @@ are tracked here.
    correctly per role and closes a privilege-escalation hole (a client could
    previously claim `owner`).
 
-4. **Analytics — mock display enriched by partial live stats.**
-   `app/freehold-intelligence/analytics/page.tsx` (~lines 206-216) renders a
-   mock analytics layout and overlays live DB counts where available. The
-   marketing tour highlights Analytics; the non-live portions remain sample.
+4. **Analytics — ✅ rebuilt as 4 live, role-scoped sections.**
+   Analytics is now Company · Team · Market · Marketing. Company (lead + deal
+   KPIs, funnel, sources), Team (agent leaderboard, comparison table) and
+   Marketing (lead channels, ad spend, lead breakdown by channel/country/team)
+   are wired to live CRM/deal/market data. The only remaining sample portion is
+   pure **web-traffic** (page views, sessions, devices, countries) which is
+   clearly badged *Sample data* until a web-analytics integration (GA/Plausible)
+   is connected — there is no data source for it yet.
 
-5. **Integrations → Google — explicitly sample.**
+5. **Integrations → Google — intentional sample (kept).**
    `app/freehold-intelligence/integrations/google/page.tsx` shows a
-   *“Sample data shown”* badge until backend credentials connect. Honest, but
-   still placeholder for admin/marketing.
+   *“Sample data shown”* badge until backend credentials connect. This is the
+   correct, honest behavior for an unconnected integration.
 
 > Note: many other surfaces (CRM board/leads, credits, account wallet,
 > integrations list) follow a deliberate **live-DB-with-mock-fallback** pattern
 > — they show real data when the DB has rows and fall back to demo data when
 > empty. Those are intentional and not listed above.
+
+## AI side Expert — available on every app
+
+The single docked Freehold Expert (`components/freehold/expert-chat.tsx`) is the
+only AI conversation. On-page surfaces never open their own chat — they push a
+prompt into it via `sendToExpert()` (`lib/freehold/expert-bus.ts`). A reusable
+strip, `components/freehold/expert-depth.tsx` (`<ExpertDepth prompts={[…]} />`),
+renders the contextual "Ask the Expert" quick-prompts and is dropped onto each
+app's landing page with app-specific prompts (keys under `expert.depth.<app>.*`).
+The Expert's server context (`gatherSystemContext` in the chat route) gathers a
+single, shared live snapshot — server summary, launch blockers, inventory,
+integrations, lead-machine, plus role-gated team / finance / CRM slices — so the
+one conversation answers app-specific questions with real data, with no
+duplicated endpoints.
