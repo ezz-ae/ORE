@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
@@ -130,6 +130,35 @@ export default function SettingsPage() {
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
   const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
+  const loaded = useRef(false)
+
+  // Load saved workspace settings.
+  useEffect(() => {
+    fetch('/api/freehold/settings', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        const s = d?.settings
+        if (s?.aiActions) setAiActions(s.aiActions)
+        if (s?.crmFields) setCrmFields(s.crmFields)
+        if (s?.thresholds) setThresholds(s.thresholds)
+        if (s?.notifs) setNotifs(s.notifs)
+        if (typeof s?.theme === 'string') setTheme(s.theme)
+      })
+      .catch(() => {})
+      .finally(() => { loaded.current = true })
+  }, [])
+
+  // Persist (debounced) after initial load.
+  useEffect(() => {
+    if (!loaded.current) return
+    const t = setTimeout(() => {
+      fetch('/api/freehold/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme }),
+      }).catch(() => {})
+    }, 400)
+    return () => clearTimeout(t)
+  }, [aiActions, crmFields, thresholds, notifs, theme])
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
 

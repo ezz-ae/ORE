@@ -2400,7 +2400,8 @@ export async function ensureUsersTable() {
       ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz,
       ADD COLUMN IF NOT EXISTS last_login_at timestamptz,
       ADD COLUMN IF NOT EXISTS ai_access boolean DEFAULT false,
-      ADD COLUMN IF NOT EXISTS suspended boolean DEFAULT false
+      ADD COLUMN IF NOT EXISTS suspended boolean DEFAULT false,
+      ADD COLUMN IF NOT EXISTS settings jsonb
   `)
 }
 
