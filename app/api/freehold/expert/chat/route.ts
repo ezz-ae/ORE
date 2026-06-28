@@ -6,6 +6,7 @@ import { getSkill } from '@/lib/freehold/ai-skills'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 
@@ -51,15 +52,21 @@ async function gatherSystemContext(role: Role): Promise<Record<string, unknown>>
     }
   }
 
-  const [server, blockers, inventory, integrations, leadMachine] = await Promise.all([
+  // Team performance (effort + experience + results) is management-only — it
+  // lets the one Expert answer best-performer, ad-budget and retention/flight-risk
+  // questions with depth, grounded in live data.
+  const canSeeTeam = role === 'owner' || role === 'admin' || role === 'sales_manager'
+
+  const [server, blockers, inventory, integrations, leadMachine, team] = await Promise.all([
     safe('server-summary'),
     safe('launch-blockers'),
     safe('inventory-analysis'),
     safe('integration-summary'),
     safe('lead-machine-summary'),
+    canSeeTeam ? gatherTeamMetrics().catch(() => null) : Promise.resolve(null),
   ])
 
-  return { server, launchBlockers: blockers, inventory, integrations, leadMachine }
+  return { server, launchBlockers: blockers, inventory, integrations, leadMachine, teamPerformance: team }
 }
 
 /** Parse the model's JSON into blocks; fall back to a single text block. */
