@@ -11,6 +11,7 @@ import {
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { LeadMachineLanding, LeadMachineListing } from '@/src/features/freehold-intelligence/lead-machine'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { defaultConfig, type AutomationStep, type WorkspaceAutomationConfig } from '@/lib/automation/types'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -541,6 +542,17 @@ export default function CampaignLaunchPage() {
   const [generatedLandings, setGeneratedLandings] = useState<LeadMachineLanding[]>([])
   const [generatingId,     setGeneratingId]     = useState<string | null>(null)
   const [newKeyword,       setNewKeyword]       = useState('')
+  const [launchError,      setLaunchError]      = useState<string | null>(null)
+  // Workspace automation config — controls which wizard steps the AI prefills.
+  // 'auto'/'assisted' ⇒ AI fills the field; 'manual' ⇒ left blank for the user.
+  const [autoCfg,          setAutoCfg]          = useState<WorkspaceAutomationConfig>(defaultConfig)
+  useEffect(() => {
+    fetch('/api/freehold/automation/config')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.config) setAutoCfg(d.config) })
+      .catch(() => {})
+  }, [])
+  const aiFills = (s: AutomationStep) => autoCfg.steps[s] !== 'manual'
   // Date label for the auto-generated campaign name — computed on the client only
   // to avoid a server/client hydration mismatch from new Date() during render.
   const [dateLabel,        setDateLabel]        = useState('')
@@ -555,11 +567,13 @@ export default function CampaignLaunchPage() {
   function selectProperty(id: string) {
     const listing   = leadMachineListings.find((l) => l.id === id)
     if (!listing) return
-    const strategy  = computeAIStrategy(listing)
-    const budget    = computeAIBudget(strategy)
-    const channel   = computeAIChannel(strategy, budget)
-    const locations = computeAILocations(strategy)
-    const interests = computeAIInterests(strategy)
+    // Each step's values are AI-computed only when that step's mode allows it.
+    const strategy  = aiFills('ad.strategy') ? computeAIStrategy(listing) : state.strategy
+    const budget    = aiFills('ad.budget')   ? computeAIBudget(strategy)  : state.budget
+    const channel   = aiFills('ad.budget')   ? computeAIChannel(strategy, budget) : state.channel
+    const locations = aiFills('ad.audience') ? computeAILocations(strategy) : state.locations
+    const interests = aiFills('ad.audience') ? computeAIInterests(strategy) : state.interests
+    const creative  = aiFills('ad.creative')
     const headlines = generateHeadlines(listing, strategy)
     const bodies    = generateBodyCopy(listing, strategy)
     const landing   = [...leadMachineLandings, ...generatedLandings].find((l) => l.projectId === listing.projectId)
@@ -567,12 +581,12 @@ export default function CampaignLaunchPage() {
     setState((s) => ({
       ...s,
       propertyId: id, strategy, channel, budget, locations, interests,
-      headline: headlines[0], body: bodies[0],
-      googleHeadlines:    generateGoogleHeadlines(listing, strategy),
-      googleDescriptions: generateGoogleDescriptions(listing, strategy),
+      headline: creative ? headlines[0] : '', body: creative ? bodies[0] : '',
+      googleHeadlines:    creative ? generateGoogleHeadlines(listing, strategy) : [],
+      googleDescriptions: creative ? generateGoogleDescriptions(listing, strategy) : [],
       googleDisplayPath:  slugify(listing.projectName),
-      googleKeywords:     generateKeywords(listing, strategy),
-      landingId: landing?.id ?? '',
+      googleKeywords:     creative ? generateKeywords(listing, strategy) : [],
+      landingId: aiFills('ad.landing') ? (landing?.id ?? '') : '',
     }))
   }
 
@@ -671,11 +685,77 @@ export default function CampaignLaunchPage() {
   const isGenerating     = generatingId === state.propertyId
   const alreadyGenerated = generatedLandings.some((l) => l.projectId === listing?.projectId)
 
-  function handleLaunch() {
+  async function handleLaunch() {
     if (launching) return
-    patch('campaignName', campaignName)
+    const name = campaignName
+    patch('campaignName', name)
+    setLaunchError(null)
     setLaunching(true)
-    setTimeout(() => { setLaunching(false); setLaunched(true) }, 1800)
+
+    const landingUrl = state.landingUrl
+      || selectedLanding?.landingUrl
+      || (listing ? `https://freeholdproperty.ae/off-plan/${listing.projectId}` : '')
+    const monthly = (channel: 'meta' | 'google') =>
+      state.channel === 'both' ? (channel === 'meta' ? metaBudget : googleBudget) : state.budget
+    const daily = (channel: 'meta' | 'google') => Math.max(50, Math.round(monthly(channel) / 30))
+
+    try {
+      const calls: Promise<{ ok: boolean; error?: string }>[] = []
+
+      if (state.channel === 'meta' || state.channel === 'both') {
+        const metaPayload = {
+          campaignName:   name,
+          objective:      'LEAD_GENERATION',
+          listingId:      state.propertyId,
+          listingName:    listing?.projectName ?? name,
+          dailyBudgetAED: daily('meta'),
+          targeting: {
+            countries:          ['AE'],
+            cityKeys:           state.locations,
+            ageMin:             25,
+            ageMax:             65,
+            publisherPlatforms: ['facebook', 'instagram'],
+            interests:          state.interests.map((i) => ({ id: i, name: i })),
+          },
+          creative: {
+            primaryText: state.body,
+            headline:    state.headline,
+            description: state.body.slice(0, 90),
+            landingUrl,
+            cta:         state.cta || 'LEARN_MORE',
+          },
+          launchStatus: 'PAUSED',
+        }
+        calls.push(
+          fetch('/api/meta/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(metaPayload) })
+            .then(async (r) => ({ ok: r.ok, error: r.ok ? undefined : (await r.json().catch(() => ({}))).error || 'Meta launch failed' })),
+        )
+      }
+
+      if (state.channel === 'google' || state.channel === 'both') {
+        const googlePayload = {
+          campaignName:   name,
+          finalUrl:       landingUrl,
+          dailyBudgetAED: daily('google'),
+          headlines:      state.googleHeadlines.filter(Boolean),
+          descriptions:   state.googleDescriptions.filter(Boolean),
+          keywords:       state.googleKeywords,
+        }
+        calls.push(
+          fetch('/api/google/campaigns/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(googlePayload) })
+            .then(async (r) => ({ ok: r.ok, error: r.ok ? undefined : (await r.json().catch(() => ({}))).error || 'Google launch failed' })),
+        )
+      }
+
+      const results = await Promise.all(calls)
+      const failed = results.find((r) => !r.ok)
+      if (failed) throw new Error(failed.error)
+      setLaunched(true)
+    } catch (e) {
+      setLaunchError(e instanceof Error ? e.message : 'Launch failed. Check platform credentials and try again.')
+    } finally {
+      setLaunching(false)
+    }
   }
 
   // ── Launched ─────────────────────────────────────────────────────────────────
@@ -1468,6 +1548,12 @@ export default function CampaignLaunchPage() {
             </div>
           </div>
 
+          {launchError && (
+            <div className="mb-3 flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-400/[0.06] px-4 py-3 text-sm text-red-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{launchError}</span>
+            </div>
+          )}
           <button onClick={handleLaunch} disabled={launching}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/15 py-4 text-sm font-semibold text-gold transition hover:bg-gold/22 disabled:opacity-60">
             {launching
