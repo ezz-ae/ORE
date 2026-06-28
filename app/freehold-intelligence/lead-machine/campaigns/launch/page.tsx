@@ -541,6 +541,7 @@ export default function CampaignLaunchPage() {
   const [generatedLandings, setGeneratedLandings] = useState<LeadMachineLanding[]>([])
   const [generatingId,     setGeneratingId]     = useState<string | null>(null)
   const [newKeyword,       setNewKeyword]       = useState('')
+  const [launchError,      setLaunchError]      = useState<string | null>(null)
   // Date label for the auto-generated campaign name — computed on the client only
   // to avoid a server/client hydration mismatch from new Date() during render.
   const [dateLabel,        setDateLabel]        = useState('')
@@ -671,11 +672,77 @@ export default function CampaignLaunchPage() {
   const isGenerating     = generatingId === state.propertyId
   const alreadyGenerated = generatedLandings.some((l) => l.projectId === listing?.projectId)
 
-  function handleLaunch() {
+  async function handleLaunch() {
     if (launching) return
-    patch('campaignName', campaignName)
+    const name = campaignName
+    patch('campaignName', name)
+    setLaunchError(null)
     setLaunching(true)
-    setTimeout(() => { setLaunching(false); setLaunched(true) }, 1800)
+
+    const landingUrl = state.landingUrl
+      || selectedLanding?.landingUrl
+      || (listing ? `https://freeholdproperty.ae/off-plan/${listing.projectId}` : '')
+    const monthly = (channel: 'meta' | 'google') =>
+      state.channel === 'both' ? (channel === 'meta' ? metaBudget : googleBudget) : state.budget
+    const daily = (channel: 'meta' | 'google') => Math.max(50, Math.round(monthly(channel) / 30))
+
+    try {
+      const calls: Promise<{ ok: boolean; error?: string }>[] = []
+
+      if (state.channel === 'meta' || state.channel === 'both') {
+        const metaPayload = {
+          campaignName:   name,
+          objective:      'LEAD_GENERATION',
+          listingId:      state.propertyId,
+          listingName:    listing?.projectName ?? name,
+          dailyBudgetAED: daily('meta'),
+          targeting: {
+            countries:          ['AE'],
+            cityKeys:           state.locations,
+            ageMin:             25,
+            ageMax:             65,
+            publisherPlatforms: ['facebook', 'instagram'],
+            interests:          state.interests.map((i) => ({ id: i, name: i })),
+          },
+          creative: {
+            primaryText: state.body,
+            headline:    state.headline,
+            description: state.body.slice(0, 90),
+            landingUrl,
+            cta:         state.cta || 'LEARN_MORE',
+          },
+          launchStatus: 'PAUSED',
+        }
+        calls.push(
+          fetch('/api/meta/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(metaPayload) })
+            .then(async (r) => ({ ok: r.ok, error: r.ok ? undefined : (await r.json().catch(() => ({}))).error || 'Meta launch failed' })),
+        )
+      }
+
+      if (state.channel === 'google' || state.channel === 'both') {
+        const googlePayload = {
+          campaignName:   name,
+          finalUrl:       landingUrl,
+          dailyBudgetAED: daily('google'),
+          headlines:      state.googleHeadlines.filter(Boolean),
+          descriptions:   state.googleDescriptions.filter(Boolean),
+          keywords:       state.googleKeywords,
+        }
+        calls.push(
+          fetch('/api/google/campaigns/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(googlePayload) })
+            .then(async (r) => ({ ok: r.ok, error: r.ok ? undefined : (await r.json().catch(() => ({}))).error || 'Google launch failed' })),
+        )
+      }
+
+      const results = await Promise.all(calls)
+      const failed = results.find((r) => !r.ok)
+      if (failed) throw new Error(failed.error)
+      setLaunched(true)
+    } catch (e) {
+      setLaunchError(e instanceof Error ? e.message : 'Launch failed. Check platform credentials and try again.')
+    } finally {
+      setLaunching(false)
+    }
   }
 
   // ── Launched ─────────────────────────────────────────────────────────────────
@@ -1468,6 +1535,12 @@ export default function CampaignLaunchPage() {
             </div>
           </div>
 
+          {launchError && (
+            <div className="mb-3 flex items-start gap-2 rounded-xl border border-red-400/25 bg-red-400/[0.06] px-4 py-3 text-sm text-red-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{launchError}</span>
+            </div>
+          )}
           <button onClick={handleLaunch} disabled={launching}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/15 py-4 text-sm font-semibold text-gold transition hover:bg-gold/22 disabled:opacity-60">
             {launching
