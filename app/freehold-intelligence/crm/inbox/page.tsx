@@ -17,8 +17,8 @@ function urgencyTone(u: string) {
 }
 
 function timeAgo(iso: string) {
-  const now  = new Date('2026-06-04T12:00:00+04:00').getTime()
-  const mins = Math.floor((now - new Date(iso).getTime()) / 60000)
+  const now  = Date.now()
+  const mins = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000))
   if (mins < 60) return `${mins}m ago`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`

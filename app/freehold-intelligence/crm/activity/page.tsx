@@ -206,8 +206,8 @@ function toDateKey(iso: string): string {
   return iso.slice(0, 10)
 }
 
-const TODAY    = '2026-06-05'
-const YESTERDAY = '2026-06-04'
+const TODAY     = new Date().toISOString().slice(0, 10)
+const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
 function dateLabel(key: string): string {
   if (key === TODAY)     return 'Today'

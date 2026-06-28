@@ -98,7 +98,7 @@ export default function AgentCreditsPage() {
 
       {/* Credit Economy banner */}
       <Link
-        href="/freehold-intelligence/management/credits"
+        href="/freehold-intelligence/management"
         className="group mb-6 flex items-center gap-4 rounded-xl border border-gold/25 bg-gold/[0.06] px-5 py-4 transition hover:border-gold/40 hover:bg-gold/10"
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">

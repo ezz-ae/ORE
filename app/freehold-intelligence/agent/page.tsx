@@ -111,7 +111,7 @@ export default function AgentHomePage() {
       id:      'settings',
       label:   'Settings',
       Icon:    Settings,
-      href:    '/freehold-intelligence/agent',
+      href:    '/freehold-intelligence/settings',
       metric:  'Account preferences',
       badge:   0,
       accent:  'gray',

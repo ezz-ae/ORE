@@ -19,7 +19,7 @@ const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
 
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string; value: string }> = {
   'New':       { tone: 'text-slate-400',       dot: 'bg-sky-400',      dotBg: 'bg-sky-400/20',      value: 'AED 12.6M' },
-  'Follow-up': { tone: 'text-slate-400',        dot: 'bg-violet-400',   dotBg: 'bg-violet-400/20',   value: 'AED 9.4M'  },
+  'Follow-up': { tone: 'text-slate-400',        dot: 'bg-amber-400',   dotBg: 'bg-amber-400/20',   value: 'AED 9.4M'  },
   'Qualified': { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 7.2M'  },
   'Hot':       { tone: 'text-red-300',          dot: 'bg-red-400',      dotBg: 'bg-red-400/20',      value: 'AED 11.2M' },
   'Won':       { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 9.8M'  },
