@@ -6,6 +6,7 @@ import { ArrowUpRight, Radio, TrendingDown, TrendingUp } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 // 4-week CPL trend: Meta vs Google
 const CPL_TREND = [
@@ -41,9 +42,15 @@ function UtilBar({ pct }: { pct: number }) {
 }
 
 export default function AdsLivePage() {
+  const t = useT()
   const [platform, setPlatform] = useState<Platform>('All')
 
   const tabs: Platform[] = ['All', 'Meta', 'Google']
+  const tabLabel: Record<Platform, string> = {
+    All: t('lm.live.tab.all'),
+    Meta: t('lm.live.tab.meta'),
+    Google: t('lm.live.tab.google'),
+  }
 
   const campaigns = financeSummary.topSpendCampaigns.filter((c) => {
     if (platform === 'All') return true
@@ -71,44 +78,44 @@ export default function AdsLivePage() {
 
       {/* Header */}
       <PageHeader
-        eyebrow="Ads Live"
+        eyebrow={t('lm.live.eyebrow')}
         Icon={Radio}
-        title="Live ad performance"
-        subtitle="Real-time spend, leads and CPL across Meta and Google"
+        title={t('lm.live.title')}
+        subtitle={t('lm.live.subtitle')}
         actions={
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
             </span>
-            Live · {now} GST
+            {t('lm.live.status', { time: now })}
           </span>
         }
       />
 
       {/* Platform toggle */}
       <div className="mt-6 flex gap-1 rounded-xl border border-line bg-surface-2 p-1 w-fit">
-        {tabs.map((t) => (
+        {tabs.map((tab) => (
           <button
-            key={t}
-            onClick={() => setPlatform(t)}
+            key={tab}
+            onClick={() => setPlatform(tab)}
             className={`rounded-lg px-5 py-2 text-sm font-semibold transition ${
-              platform === t
+              platform === tab
                 ? 'bg-gold text-ink'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {t}
+            {tabLabel[tab]}
           </button>
         ))}
       </div>
 
       {/* Top metrics */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total Spend 30d" value="AED 31,290" hint="Both platforms" />
-        <StatCard label="Total Leads" value={415} hint="30-day window" delta={{ value: '+12%', direction: 'up' }} />
-        <StatCard label="Avg CPL" value="AED 75.4" hint="Blended average" delta={{ value: '−18.5%', direction: 'up' }} />
-        <StatCard label="Active Campaigns" value={6} hint="Meta + Google" />
+        <StatCard label={t('lm.live.stat.totalSpend')} value="AED 31,290" hint={t('lm.live.stat.totalSpend.hint')} />
+        <StatCard label={t('lm.live.stat.totalLeads')} value={415} hint={t('lm.live.stat.totalLeads.hint')} delta={{ value: '+12%', direction: 'up' }} />
+        <StatCard label={t('lm.live.stat.avgCpl')} value="AED 75.4" hint={t('lm.live.stat.avgCpl.hint')} delta={{ value: '−18.5%', direction: 'up' }} />
+        <StatCard label={t('lm.live.stat.activeCampaigns')} value={6} hint={t('lm.live.stat.activeCampaigns.hint')} />
       </div>
 
       {/* Platform split */}
@@ -118,27 +125,27 @@ export default function AdsLivePage() {
         <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#1877F2' }} />
-            <span className="text-sm font-semibold" style={{ color: '#1877F2' }}>Meta Ads</span>
+            <span className="text-sm font-semibold" style={{ color: '#1877F2' }}>{t('lm.ads.meta.label')}</span>
           </div>
           <div className="mt-5 space-y-4">
             <div>
               <div className="flex items-baseline justify-between">
-                <span className="text-xs text-slate-400">Spend this month</span>
+                <span className="text-xs text-slate-400">{t('lm.live.spendThisMonth')}</span>
                 <span className="text-sm font-semibold text-white">AED 18,420</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between text-sm text-slate-500">
-                <span>Budget AED 25,000</span>
+                <span>{t('lm.live.budget', { amount: 'AED 25,000' })}</span>
                 <span>73.7%</span>
               </div>
               <UtilBar pct={financeSummary.budgetUtilizationMeta} />
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <div className="text-sm text-slate-400">Leads</div>
+                <div className="text-sm text-slate-400">{t('lm.live.leads')}</div>
                 <div className="mt-0.5 text-xl font-semibold text-white">248</div>
               </div>
               <div>
-                <div className="text-sm text-slate-400">CPL</div>
+                <div className="text-sm text-slate-400">{t('lm.live.cpl')}</div>
                 <div className="mt-0.5 text-xl font-semibold text-white">AED 74.3</div>
               </div>
             </div>
@@ -147,7 +154,7 @@ export default function AdsLivePage() {
             href="/freehold-intelligence/ads-live/meta"
             className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-[#1877F2]/70 transition hover:text-[#1877F2]"
           >
-            Meta Ads <ArrowUpRight className="h-3 w-3" />
+            {t('lm.ads.meta.label')} <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
 
@@ -155,27 +162,27 @@ export default function AdsLivePage() {
         <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: '#4285F4' }} />
-            <span className="text-sm font-semibold" style={{ color: '#4285F4' }}>Google Ads</span>
+            <span className="text-sm font-semibold" style={{ color: '#4285F4' }}>{t('lm.ads.google.label')}</span>
           </div>
           <div className="mt-5 space-y-4">
             <div>
               <div className="flex items-baseline justify-between">
-                <span className="text-xs text-slate-400">Spend this month</span>
+                <span className="text-xs text-slate-400">{t('lm.live.spendThisMonth')}</span>
                 <span className="text-sm font-semibold text-white">AED 12,870</span>
               </div>
               <div className="mt-1 flex items-baseline justify-between text-sm text-slate-500">
-                <span>Budget AED 18,000</span>
+                <span>{t('lm.live.budget', { amount: 'AED 18,000' })}</span>
                 <span>71.5%</span>
               </div>
               <UtilBar pct={financeSummary.budgetUtilizationGoogle} />
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <div className="text-sm text-slate-400">Leads</div>
+                <div className="text-sm text-slate-400">{t('lm.live.leads')}</div>
                 <div className="mt-0.5 text-xl font-semibold text-white">167</div>
               </div>
               <div>
-                <div className="text-sm text-slate-400">CPL</div>
+                <div className="text-sm text-slate-400">{t('lm.live.cpl')}</div>
                 <div className="mt-0.5 text-xl font-semibold text-white">AED 77.1</div>
               </div>
             </div>
@@ -184,7 +191,7 @@ export default function AdsLivePage() {
             href="/freehold-intelligence/ads-live/google"
             className="mt-5 inline-flex items-center gap-1 text-xs font-medium text-[#4285F4]/70 transition hover:text-[#4285F4]"
           >
-            Google Ads <ArrowUpRight className="h-3 w-3" />
+            {t('lm.ads.google.label')} <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
       </div>
@@ -192,14 +199,14 @@ export default function AdsLivePage() {
       {/* Live campaigns */}
       <Section
         className="mt-10"
-        title="Live Campaigns"
+        title={t('lm.live.section.campaigns')}
         action={
           <span className="flex items-center gap-1.5 text-xs text-gold/70">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
             </span>
-            Live data
+            {t('lm.live.liveData')}
           </span>
         }
       >
@@ -247,7 +254,7 @@ export default function AdsLivePage() {
                   {/* Stats */}
                   <div className="flex gap-5 text-xs text-slate-400">
                     <span>AED {c.spendAED.toLocaleString()}</span>
-                    <span className="font-semibold text-gold">{c.leads} leads</span>
+                    <span className="font-semibold text-gold">{t('lm.live.leadsCount', { count: String(c.leads) })}</span>
                     <span className={`flex items-center gap-0.5 font-medium ${below ? 'text-emerald-400' : 'text-red-400'}`}>
                       <CplIcon className="h-3 w-3" />
                       AED {c.cpl}
@@ -266,13 +273,13 @@ export default function AdsLivePage() {
             href="/freehold-intelligence/lead-machine/campaigns/attribution"
             className="flex items-center gap-1 text-xs text-gold/50 transition hover:text-gold"
           >
-            Full attribution report <ArrowUpRight className="h-3 w-3" />
+            {t('lm.live.fullAttribution')} <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
       </Section>
 
       {/* CPL trend chart */}
-      <Section className="mt-10" title="CPL trend · last 4 weeks">
+      <Section className="mt-10" title={t('lm.live.section.cplTrend')}>
         <div className="rounded-2xl border border-line bg-surface-2 p-6">
           <div className="flex items-center gap-6 mb-4 text-xs">
             <span className="flex items-center gap-1.5"><span className="h-0.5 w-5 rounded-full" style={{ backgroundColor: '#1877F2' }} />Meta</span>
@@ -309,7 +316,7 @@ export default function AdsLivePage() {
               })}
             </svg>
           </div>
-          <p className="mt-2 text-sm text-slate-500">Both platforms trending down — Meta dropped 18.5% over 4 weeks</p>
+          <p className="mt-2 text-sm text-slate-500">{t('lm.live.cplTrendNote')}</p>
         </div>
       </Section>
 
@@ -319,19 +326,19 @@ export default function AdsLivePage() {
           href="/freehold-intelligence/ads-live/meta"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#1877F2]/30 hover:text-white"
         >
-          Meta Ads <ArrowUpRight className="h-3.5 w-3.5 text-[#1877F2]" />
+          {t('lm.ads.meta.label')} <ArrowUpRight className="h-3.5 w-3.5 text-[#1877F2]" />
         </Link>
         <Link
           href="/freehold-intelligence/ads-live/google"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
         >
-          Google Ads <ArrowUpRight className="h-3.5 w-3.5 text-[#4285F4]" />
+          {t('lm.ads.google.label')} <ArrowUpRight className="h-3.5 w-3.5 text-[#4285F4]" />
         </Link>
         <Link
           href="/freehold-intelligence/ads-live/preview"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
         >
-          Ad Preview <ArrowUpRight className="h-3.5 w-3.5 text-gold" />
+          {t('lm.live.adPreview')} <ArrowUpRight className="h-3.5 w-3.5 text-gold" />
         </Link>
       </div>
 

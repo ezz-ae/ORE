@@ -9,22 +9,23 @@ import {
 } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
 
-const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: React.ElementType }> = {
-  live:           { label: 'Live',           dot: 'bg-emerald-400', badge: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/[0.08]', icon: CheckCircle2 },
-  draft:          { label: 'Draft',          dot: 'bg-amber-400',   badge: 'text-amber-400 border-amber-400/25 bg-amber-400/[0.08]',       icon: Pencil       },
-  pending_review: { label: 'Pending Review', dot: 'bg-gold',        badge: 'text-gold border-gold/25 bg-gold/[0.08]',                      icon: Clock        },
-  missing:        { label: 'Missing',        dot: 'bg-red-400',     badge: 'text-red-400 border-red-400/25 bg-red-400/[0.08]',             icon: AlertTriangle },
+const STATUS_CONFIG: Record<string, { labelKey: string; dot: string; badge: string; icon: React.ElementType }> = {
+  live:           { labelKey: 'lm.landings.status.live',          dot: 'bg-emerald-400', badge: 'text-emerald-400 border-emerald-400/25 bg-emerald-400/[0.08]', icon: CheckCircle2 },
+  draft:          { labelKey: 'lm.landings.status.draft',         dot: 'bg-amber-400',   badge: 'text-amber-400 border-amber-400/25 bg-amber-400/[0.08]',       icon: Pencil       },
+  pending_review: { labelKey: 'lm.landings.status.pendingReview', dot: 'bg-gold',        badge: 'text-gold border-gold/25 bg-gold/[0.08]',                      icon: Clock        },
+  missing:        { labelKey: 'lm.landings.status.missing',       dot: 'bg-red-400',     badge: 'text-red-400 border-red-400/25 bg-red-400/[0.08]',             icon: AlertTriangle },
 }
 
-const FILTER_PILLS: { id: StatusFilter; label: string }[] = [
-  { id: 'All',           label: 'All' },
-  { id: 'live',          label: 'Live' },
-  { id: 'pending_review',label: 'Pending Review' },
-  { id: 'draft',         label: 'Draft' },
-  { id: 'missing',       label: 'Missing' },
+const FILTER_PILLS: { id: StatusFilter; labelKey: string }[] = [
+  { id: 'All',           labelKey: 'lm.landings.filter.all' },
+  { id: 'live',          labelKey: 'lm.landings.filter.live' },
+  { id: 'pending_review',labelKey: 'lm.landings.filter.pendingReview' },
+  { id: 'draft',         labelKey: 'lm.landings.filter.draft' },
+  { id: 'missing',       labelKey: 'lm.landings.filter.missing' },
 ]
 
 function fmtPrice(n: number | null): string {
@@ -39,6 +40,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   const [query, setQuery] = useState('')
   const [bulkCreating, setBulkCreating] = useState(false)
   const [generatingId, setGeneratingId] = useState<string | null>(null)
+  const t = useT()
 
   const props = properties
     .filter((p) => filter === 'All' || p.landingStatus === filter)
@@ -85,10 +87,10 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={t('lm.hub.eyebrow')}
         Icon={Globe}
-        title="Landing Pages"
-        subtitle={`${properties.length} properties — each property has a dedicated ad landing page`}
+        title={t('lm.landings.title')}
+        subtitle={t('lm.landings.subtitle', { n: String(properties.length) })}
         actions={
           <button
             onClick={bulkCreate}
@@ -96,9 +98,9 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
             className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-60"
           >
             {bulkCreating ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Creating all…</>
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.landings.creatingAll')}</>
             ) : (
-              <><Plus className="h-3.5 w-3.5" /> Create all missing</>
+              <><Plus className="h-3.5 w-3.5" /> {t('lm.landings.createAll')}</>
             )}
           </button>
         }
@@ -107,10 +109,10 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
 
       {/* Summary tiles */}
       <div className="mb-5 grid grid-cols-4 gap-3">
-        <StatCard label="Live"    value={live}    hint="active pages"    Icon={CheckCircle2} />
-        <StatCard label="Pending" value={pending} hint="in review"       Icon={Clock}        />
-        <StatCard label="Draft"   value={draft}   hint="unpublished"     Icon={Pencil}       />
-        <StatCard label="Missing" value={missing} hint="need pages"      Icon={AlertTriangle} />
+        <StatCard label={t('lm.landings.stat.live')}    value={live}    hint={t('lm.landings.stat.activePages')} Icon={CheckCircle2} />
+        <StatCard label={t('lm.landings.stat.pending')} value={pending} hint={t('lm.landings.stat.inReview')}   Icon={Clock}        />
+        <StatCard label={t('lm.landings.stat.draft')}   value={draft}   hint={t('lm.landings.stat.unpublished')} Icon={Pencil}       />
+        <StatCard label={t('lm.landings.stat.missing')} value={missing} hint={t('lm.landings.stat.needPages')}  Icon={AlertTriangle} />
       </div>
 
       {/* Missing alert */}
@@ -119,15 +121,15 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400/80" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-red-300">
-              {missing} {missing === 1 ? 'property is' : 'properties are'} missing landing pages
+              {t('lm.landings.alertTitle', { n: String(missing), singular: missing === 1 ? 'property is' : 'properties are', plural: missing === 1 ? '' : 's' })}
             </div>
             <div className="mt-0.5 text-xs text-slate-500">
-              Properties without landing pages cannot run ad campaigns. Generate or publish them below.
+              {t('lm.landings.alertDesc')}
             </div>
           </div>
           <button onClick={bulkCreate} disabled={bulkCreating}
             className="shrink-0 rounded-full border border-red-400/20 bg-red-400/[0.07] px-3 py-1.5 text-xs text-red-400/80 transition hover:bg-red-400/15 disabled:opacity-50">
-            {bulkCreating ? 'Creating…' : 'Generate all'}
+            {bulkCreating ? t('lm.landings.creating') : t('lm.landings.generateAll')}
           </button>
         </div>
       )}
@@ -138,19 +140,19 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-600" />
           <input
             type="text"
-            placeholder="Search properties…"
+            placeholder={t('lm.landings.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder-white/20 outline-none focus:border-amber-400/30"
           />
         </div>
         <div className="flex gap-1 rounded-[10px] border border-line bg-surface p-1">
-          {FILTER_PILLS.map(({ id, label }) => (
+          {FILTER_PILLS.map(({ id, labelKey }) => (
             <button key={id} onClick={() => setFilter(id)}
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium transition whitespace-nowrap ${
                 filter === id ? 'bg-surface-2 text-white' : 'text-slate-600 hover:text-slate-400'
               }`}>
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -159,7 +161,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
       {/* Property list */}
       <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
         {props.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-slate-600">No properties match this filter.</div>
+          <div className="px-5 py-10 text-center text-sm text-slate-600">{t('lm.landings.empty')}</div>
         )}
         {props.map((p) => {
           const sc = STATUS_CONFIG[p.landingStatus]
@@ -171,7 +173,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-white truncate">{p.name}</span>
                     <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${sc.badge}`}>
-                      <StatusIcon className="h-3 w-3" /> {sc.label}
+                      <StatusIcon className="h-3 w-3" /> {t(sc.labelKey)}
                     </span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-600 flex-wrap">
@@ -182,7 +184,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                     <span>{fmtPrice(p.startingPriceAED)}</span>
                     {p.linkedCampaigns > 0 && (
                       <><span>·</span>
-                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? 'campaign' : 'campaigns'}</span></>
+                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? t('lm.landings.campaign') : t('lm.landings.campaigns')}</span></>
                     )}
                   </div>
 
@@ -194,7 +196,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                         style={{ width: `${p.adReadiness}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-slate-600">{p.adReadiness}% ad ready</span>
+                    <span className="text-[10px] text-slate-600">{t('lm.landings.adReady', { n: String(p.adReadiness) })}</span>
                   </div>
                 </div>
 
@@ -208,13 +210,13 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
 
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
-                    <Pencil className="h-3 w-3" /> Edit
+                    <Pencil className="h-3 w-3" /> {t('lm.landings.edit')}
                   </Link>
 
                   {p.landingStatus === 'missing' ? (
                     <button onClick={() => generateOne(p)} disabled={generatingId === p.id}
                       className="flex items-center gap-1 rounded-full border border-gold/25 bg-gold/[0.07] px-2.5 py-1.5 text-xs text-gold/80 transition hover:text-gold disabled:opacity-50">
-                      {generatingId === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} Create
+                      {generatingId === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />} {t('lm.landings.create')}
                     </button>
                   ) : (
                     <Link href={`/freehold-intelligence/inventory/${p.id}`}
@@ -234,9 +236,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
         <div className="flex items-start gap-3 text-xs text-slate-500">
           <Globe className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
           <div>
-            Each property automatically gets a landing page at <span className="font-mono text-slate-500">/lp/{'{property-slug}'}</span>.
-            Landing pages are standalone (no site navigation) and optimized for ad campaigns.
-            Use the editor to customize copy, highlights, and lead form fields per property or campaign theme.
+            {t('lm.landings.footer', { path: '/lp/{property-slug}' })}
           </div>
         </div>
       </div>

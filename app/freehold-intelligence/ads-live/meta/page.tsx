@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
 import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
+import { useT } from '@/lib/i18n/provider'
 
 const META_BLUE = '#1877F2'
 
@@ -63,15 +64,16 @@ const campaigns: MetaCampaign[] = [
 ]
 
 const adSets = [
-  { name: 'UAE Homebuyers 25–45', budget: 'AED 450/day', status: 'Active',  audience: '2.1M' },
-  { name: 'GCC Investors',         budget: 'AED 280/day', status: 'Active',  audience: '840K' },
-  { name: 'Expat Professionals',   budget: 'AED 170/day', status: 'Paused', audience: '1.4M' },
+  { nameKey: 'lm.meta.adSet.uaeHomebuyers',      budgetAmount: '450', status: 'Active',  audience: '2.1M' },
+  { nameKey: 'lm.meta.adSet.gccInvestors',        budgetAmount: '280', status: 'Active',  audience: '840K' },
+  { nameKey: 'lm.meta.adSet.expatProfessionals',  budgetAmount: '170', status: 'Paused', audience: '1.4M' },
 ]
 
 type StatusFilter = 'All' | 'Active' | 'Paused'
 type SortCol = 'spend' | 'leads' | 'cpl' | 'impressions'
 
 export default function MetaAdsPage() {
+  const t = useT()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
   const [sortCol, setSortCol] = useState<SortCol>('leads')
   const [sortAsc, setSortAsc] = useState(false)
@@ -102,11 +104,11 @@ export default function MetaAdsPage() {
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill={META_BLUE}>
               <path d="M12 2.04c-5.5 0-9.96 4.46-9.96 9.96 0 4.41 2.87 8.16 6.84 9.49v-6.71H6.9v-2.78h1.98V9.84c0-1.95 1.17-3.03 2.94-3.03.85 0 1.74.15 1.74.15v1.92h-.98c-.97 0-1.27.6-1.27 1.21v1.46h2.16l-.34 2.78h-1.82V21.5c3.97-1.33 6.84-5.08 6.84-9.5 0-5.5-4.46-9.96-9.96-9.96z" />
             </svg>
-            Meta Ads
+            {t('lm.meta.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Meta campaigns<br />
-            <span className="text-slate-500">Freehold Property Dubai.</span>
+            {t('lm.meta.title')}<br />
+            <span className="text-slate-500">{t('lm.meta.subtitle')}</span>
           </h1>
         </section>
 
@@ -114,11 +116,11 @@ export default function MetaAdsPage() {
           {/* Connected badge */}
           <span className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-1.5 text-sm font-medium text-gold">
             <CheckCircle2 className="h-3 w-3" />
-            Connected
+            {t('lm.meta.connected')}
           </span>
           {/* Manage external link */}
-          <button onClick={() => { window.open('https://business.facebook.com/adsmanager', '_blank'); toast.info('Opening Meta Ads Manager') }} className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
-            Manage in Meta <ArrowUpRight className="h-3 w-3" />
+          <button onClick={() => { window.open('https://business.facebook.com/adsmanager', '_blank'); toast.info(t('lm.meta.openingManager')) }} className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
+            {t('lm.meta.manageInMeta')} <ArrowUpRight className="h-3 w-3" />
           </button>
         </div>
       </div>
@@ -134,20 +136,20 @@ export default function MetaAdsPage() {
           </svg>
         </div>
         <div>
-          <div className="text-sm font-semibold text-white">Freehold Property Dubai</div>
-          <div className="text-sm text-slate-400">Facebook Page · Business Account connected</div>
+          <div className="text-sm font-semibold text-white">{t('lm.meta.accountName')}</div>
+          <div className="text-sm text-slate-400">{t('lm.meta.accountDesc')}</div>
         </div>
       </div>
 
       {/* KPI row */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: 'Spend',        value: 'AED 18,420' },
-          { label: 'Reach',        value: '142,000' },
-          { label: 'Impressions',  value: '380,000' },
-          { label: 'Leads',        value: '248',       color: 'text-gold' },
-          { label: 'CPL',          value: 'AED 74.3' },
-          { label: 'CTR',          value: '2.1%' },
+          { label: t('lm.meta.kpi.spend'),       value: 'AED 18,420' },
+          { label: t('lm.meta.kpi.reach'),        value: '142,000' },
+          { label: t('lm.meta.kpi.impressions'),  value: '380,000' },
+          { label: t('lm.meta.kpi.leads'),        value: '248',       color: 'text-gold' },
+          { label: t('lm.meta.kpi.cpl'),          value: 'AED 74.3' },
+          { label: t('lm.meta.kpi.ctr'),          value: '2.1%' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-line bg-surface-2 p-4">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{k.label}</div>
@@ -159,7 +161,7 @@ export default function MetaAdsPage() {
       {/* Campaigns table */}
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Campaigns</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.meta.section.campaigns')}</div>
           <div className="flex gap-1.5">
             {(['All', 'Active', 'Paused'] as StatusFilter[]).map((f) => (
               <button
@@ -172,7 +174,7 @@ export default function MetaAdsPage() {
                     : 'border border-line-strong text-slate-400 hover:text-slate-200',
                 ].join(' ')}
               >
-                {f}
+                {f === 'All' ? t('lm.meta.filter.all') : f === 'Active' ? t('lm.meta.filter.active') : t('lm.meta.filter.paused')}
               </button>
             ))}
           </div>
@@ -182,14 +184,14 @@ export default function MetaAdsPage() {
             {/* Table header */}
             <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 border-b border-line px-5 py-3">
               {[
-                { label: 'Campaign', col: null },
-                { label: 'Status',   col: null },
-                { label: 'Daily Bdgt', col: null },
-                { label: 'Spend',    col: 'spend' as SortCol },
-                { label: 'Impr.',    col: 'impressions' as SortCol },
-                { label: 'Clicks',   col: null },
-                { label: 'Leads',    col: 'leads' as SortCol },
-                { label: 'CPL',      col: 'cpl' as SortCol },
+                { label: t('lm.meta.col.campaign'),    col: null },
+                { label: t('lm.meta.col.status'),      col: null },
+                { label: t('lm.meta.col.dailyBudget'), col: null },
+                { label: t('lm.meta.col.spend'),       col: 'spend' as SortCol },
+                { label: t('lm.meta.col.impressions'), col: 'impressions' as SortCol },
+                { label: t('lm.meta.col.clicks'),      col: null },
+                { label: t('lm.meta.col.leads'),       col: 'leads' as SortCol },
+                { label: t('lm.meta.col.cpl'),         col: 'cpl' as SortCol },
               ].map(({ label, col }) => (
                 <button
                   key={label}
@@ -226,7 +228,7 @@ export default function MetaAdsPage() {
                           : 'border border-gold/20 bg-gold/10 text-gold'
                       }`}
                     >
-                      {c.status}
+                      {c.status === 'Active' ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
                     </span>
                   </div>
                   <div className="text-xs text-slate-300">
@@ -256,15 +258,15 @@ export default function MetaAdsPage() {
 
       {/* Ad sets */}
       <section className="mt-10">
-        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">Ad Sets</div>
+        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.meta.section.adSets')}</div>
         <div className="grid gap-3 sm:grid-cols-3">
           {adSets.map((s) => (
             <div
-              key={s.name}
+              key={s.nameKey}
               className="rounded-2xl border border-line bg-surface-2 p-5"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-slate-100">{s.name}</span>
+                <span className="text-sm font-semibold text-slate-100">{t(s.nameKey)}</span>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                     s.status === 'Active'
@@ -272,12 +274,12 @@ export default function MetaAdsPage() {
                       : 'border border-gold/20 bg-gold/10 text-gold'
                   }`}
                 >
-                  {s.status}
+                  {s.status === 'Active' ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
                 </span>
               </div>
               <div className="mt-3 space-y-1.5 text-xs text-slate-400">
-                <div>Budget <span className="text-slate-300">{s.budget}</span></div>
-                <div>Audience size <span className="text-slate-300">{s.audience}</span></div>
+                <div>{t('lm.meta.adSet.budget')} <span className="text-slate-300">{t('lm.meta.budgetPerDay', { amount: s.budgetAmount })}</span></div>
+                <div>{t('lm.meta.adSet.audienceSize')} <span className="text-slate-300">{s.audience}</span></div>
               </div>
             </div>
           ))}
@@ -290,13 +292,13 @@ export default function MetaAdsPage() {
           href="/freehold-intelligence/lead-machine/campaigns/new"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
         >
-          <Plus className="h-4 w-4 text-gold" /> Create Campaign
+          <Plus className="h-4 w-4 text-gold" /> {t('lm.meta.createCampaign')}
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/creatives"
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
         >
-          <Palette className="h-4 w-4 text-gold" /> View Creatives
+          <Palette className="h-4 w-4 text-gold" /> {t('lm.meta.viewCreatives')}
         </Link>
       </div>
 
