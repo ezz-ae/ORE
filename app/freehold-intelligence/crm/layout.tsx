@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   ArrowLeft, Users, Plus,
   LayoutGrid, Clock, TrendingUp,
@@ -9,6 +10,20 @@ import {
 } from 'lucide-react'
 import { crmLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
+
+// CRM sub-pages a broker may access (their own daily work). Everything else
+// (assignment, agents, reports, duplicates, pipeline, activity) is management-only.
+const BROKER_CRM_PREFIXES = [
+  '/freehold-intelligence/crm',
+  '/freehold-intelligence/crm/inbox',
+  '/freehold-intelligence/crm/follow-up',
+  '/freehold-intelligence/crm/board',
+  '/freehold-intelligence/crm/leads',
+]
+function brokerCanAccess(pathname: string): boolean {
+  if (pathname === '/freehold-intelligence/crm') return true
+  return BROKER_CRM_PREFIXES.some((p) => p !== '/freehold-intelligence/crm' && (pathname === p || pathname.startsWith(p + '/')))
+}
 
 // ── Nav sections ──────────────────────────────────────────────────────────────
 
@@ -56,6 +71,14 @@ const BADGES: Record<string, number | undefined> = {
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const { user } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Brokers may only reach their own daily-work CRM pages; bounce deep-links to
+  // management-only sub-pages back to their leads.
+  const brokerBlocked = user?.role === 'broker' && !brokerCanAccess(pathname)
+  useEffect(() => {
+    if (brokerBlocked) router.replace('/freehold-intelligence/crm')
+  }, [brokerBlocked, router])
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href || pathname.startsWith('/freehold-intelligence/crm/leads')
@@ -69,6 +92,12 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
 
   // Flat tab list for mobile scroll nav
   const allTabs = navSections.flatMap(s => s.items)
+
+  if (brokerBlocked) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
 
   return (
     <div className="flex flex-col min-h-full">
