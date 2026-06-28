@@ -78,6 +78,22 @@ const en: Dict = {
   'deals.newDeal': 'New Deal',
   'deals.convertToDeal': 'Convert to Deal',
   'deals.approvalQueue': 'Approval Queue',
+  // hub / dashboard
+  'hub.goodMorning': 'Good morning',
+  'hub.goodAfternoon': 'Good afternoon',
+  'hub.goodEvening': 'Good evening',
+  'hub.urgent': 'Urgent',
+  'hub.blocked': 'blocked',
+  'hub.pending': 'pending',
+  'hub.open': 'open',
+  'hub.priorities': 'Priorities',
+  'hub.liveActivity': 'Live activity',
+  'hub.fix': 'Fix',
+  'hub.allClear': 'All clear — no open priorities',
+  'hub.askPlaceholder': "Ask anything about today's priorities…",
+  'hub.thinking': 'Thinking…',
+  'hub.fullConversation': 'Full conversation',
+  'hub.dismiss': 'Dismiss',
 }
 
 const ar: Dict = {
@@ -142,6 +158,21 @@ const ar: Dict = {
   'deals.newDeal': 'صفقة جديدة',
   'deals.convertToDeal': 'تحويل إلى صفقة',
   'deals.approvalQueue': 'قائمة الموافقات',
+  'hub.goodMorning': 'صباح الخير',
+  'hub.goodAfternoon': 'مساء الخير',
+  'hub.goodEvening': 'مساء الخير',
+  'hub.urgent': 'عاجل',
+  'hub.blocked': 'محظور',
+  'hub.pending': 'قيد الانتظار',
+  'hub.open': 'مفتوح',
+  'hub.priorities': 'الأولويات',
+  'hub.liveActivity': 'النشاط المباشر',
+  'hub.fix': 'إصلاح',
+  'hub.allClear': 'كل شيء على ما يرام — لا توجد أولويات مفتوحة',
+  'hub.askPlaceholder': 'اسأل أي شيء عن أولويات اليوم…',
+  'hub.thinking': 'جارٍ التفكير…',
+  'hub.fullConversation': 'المحادثة الكاملة',
+  'hub.dismiss': 'إغلاق',
 }
 
 const ru: Dict = {
@@ -206,6 +237,21 @@ const ru: Dict = {
   'deals.newDeal': 'Новая сделка',
   'deals.convertToDeal': 'Преобразовать в сделку',
   'deals.approvalQueue': 'Очередь согласования',
+  'hub.goodMorning': 'Доброе утро',
+  'hub.goodAfternoon': 'Добрый день',
+  'hub.goodEvening': 'Добрый вечер',
+  'hub.urgent': 'Срочно',
+  'hub.blocked': 'заблокировано',
+  'hub.pending': 'в ожидании',
+  'hub.open': 'открыто',
+  'hub.priorities': 'Приоритеты',
+  'hub.liveActivity': 'Активность',
+  'hub.fix': 'Исправить',
+  'hub.allClear': 'Всё в порядке — нет открытых приоритетов',
+  'hub.askPlaceholder': 'Спросите о приоритетах на сегодня…',
+  'hub.thinking': 'Думаю…',
+  'hub.fullConversation': 'Полный разговор',
+  'hub.dismiss': 'Закрыть',
 }
 
 export const DICTIONARIES: Record<Locale, Dict> = { en, ar, ru }
