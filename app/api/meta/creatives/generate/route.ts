@@ -97,6 +97,49 @@ function buildVariants(p: GenerateCreativePayload): GeneratedCreativeVariant[] {
   return angleVariants.map((v, i) => ({ id: `variant_${i + 1}`, cta, ...v }))
 }
 
+// Live Gemini creative generation. Returns null on no-key / error / bad output
+// so the caller falls back to the deterministic template.
+async function geminiCreatives(p: GenerateCreativePayload): Promise<GeneratedCreativeVariant[] | null> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return null
+  const price = fmtPrice(p.startingPrice)
+  const prompt = `You are a senior Meta (Facebook/Instagram) ads copywriter for Dubai freehold real estate.
+Write ad creative for: "${p.listingName}" by ${p.developer} in ${p.area}, Dubai.
+Angle: ${p.angle}. Tone: ${p.tone}. Starting price ${price}.${p.paymentPlan ? ` Payment plan: ${p.paymentPlan}.` : ''}
+Produce exactly 3 distinct variants. Each: primaryText (1-3 short sentences, line breaks ok), headline (MAX 40 characters), description (MAX 30 characters).
+Return ONLY JSON, no markdown:
+{"variants":[{"primaryText":"...","headline":"...","description":"..."}]}`
+  try {
+    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.85, maxOutputTokens: 2048, responseMimeType: 'application/json' },
+        }),
+      },
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ''
+    const parsed = JSON.parse(raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()) as { variants?: Array<{ primaryText?: string; headline?: string; description?: string }> }
+    if (!Array.isArray(parsed.variants) || parsed.variants.length === 0) return null
+    const out = parsed.variants.slice(0, 4).map((v, i) => ({
+      id: `variant_${i + 1}`,
+      cta: p.cta as MetaCta,
+      primaryText: String(v.primaryText || '').trim(),
+      headline: String(v.headline || '').slice(0, 40),
+      description: String(v.description || '').slice(0, 30),
+    })).filter((v) => v.primaryText && v.headline)
+    return out.length ? out : null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as GenerateCreativePayload
@@ -106,8 +149,9 @@ export async function POST(req: NextRequest) {
       if (!body[field]) return NextResponse.json({ error: `Missing field: ${field}` }, { status: 400 })
     }
 
-    const variants = buildVariants(body)
-    return NextResponse.json({ variants })
+    const ai = await geminiCreatives(body)
+    const variants = ai ?? buildVariants(body)
+    return NextResponse.json({ variants, source: ai ? 'gemini' : 'template' })
   } catch {
     return NextResponse.json({ error: 'Generation failed' }, { status: 500 })
   }
