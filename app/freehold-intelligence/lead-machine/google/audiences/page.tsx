@@ -11,6 +11,7 @@ import {
   Upload,
   Info,
   Plus,
+  X,
 } from 'lucide-react'
 import type { GoogleAudience, GoogleAudienceType } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
@@ -93,7 +94,7 @@ interface AudiencesApiResponse {
 
 // ─── Audience card ────────────────────────────────────────────────────────────
 
-function AudienceCard({ audience }: { audience: GoogleAudience }) {
+function AudienceCard({ audience, onRemove, removeLabel }: { audience: GoogleAudience; onRemove?: () => void; removeLabel?: string }) {
   const typeCls  = TYPE_BADGE[audience.type] ?? 'bg-surface-2 text-slate-500 border-line'
   const typeLabel = TYPE_LABEL[audience.type] ?? audience.type
 
@@ -122,6 +123,12 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
         >
           {audience.status === 'OPEN' ? 'Active' : 'Closed'}
         </span>
+
+        {onRemove && audience.id.startsWith('local-') && (
+          <button onClick={onRemove} title={removeLabel} className="mt-0.5 shrink-0 rounded p-1 text-slate-600 transition hover:bg-white/[0.06] hover:text-red-400">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Size */}
@@ -194,6 +201,16 @@ export default function GoogleAudiencesPage() {
     } catch {
       toast.error(t('lm.google.actions.failed'))
     } finally { setAdding(false) }
+  }
+
+  async function removeAudience(id: string) {
+    try {
+      const res = await fetch(`/api/google/audiences?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    }
   }
 
   async function fetchData(quiet = false) {
@@ -360,7 +377,7 @@ export default function GoogleAudiencesPage() {
           {filtered.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {filtered.map((audience) => (
-                <AudienceCard key={audience.id} audience={audience} />
+                <AudienceCard key={audience.id} audience={audience} onRemove={() => removeAudience(audience.id)} removeLabel={t('common.remove')} />
               ))}
             </div>
           ) : (
