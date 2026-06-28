@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { FileText, Loader2, ExternalLink, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { prettySource, STAGE_ORDER, fmtAed } from '@/lib/freehold/analytics-format'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type LiveLeads = { total: number; last30d: number; last7d: number; closed: number; new: number; closingRate: number }
 type LiveData = {
@@ -133,6 +134,8 @@ export default function CompanyAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      <ExpertDepth prompts={['expert.depth.analyticsCompany.q1', 'expert.depth.analyticsCompany.q2', 'expert.depth.analyticsCompany.q3']} />
 
       {/* KPI grid — live lead + deal metrics */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

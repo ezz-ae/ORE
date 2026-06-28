@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Building2, MapPin, TrendingUp, Hammer } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type MarketAreaStat = { name: string; pricePerSqft: number | null; rentalYield: number | null }
 type MarketStats = {
@@ -45,6 +46,8 @@ export default function MarketAnalyticsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('analytics.tab.market')}</h1>
         <p className="mt-1 text-sm text-slate-400">{t('analytics.market.sub')}</p>
       </div>
+
+      <ExpertDepth prompts={['expert.depth.market.q1', 'expert.depth.market.q2', 'expert.depth.market.q3']} />
 
       {/* Live market overview from the public catalogue */}
       <section>

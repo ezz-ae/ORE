@@ -7,6 +7,7 @@ import {
   TrendingUp, Inbox, ArrowUpRight,
 } from 'lucide-react'
 import { Section } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 type SubApp = {
@@ -162,6 +163,8 @@ export default function AdsLauncher() {
           </div>
         </div>
       </section>
+
+      <ExpertDepth prompts={['expert.depth.ads.q1', 'expert.depth.ads.q2', 'expert.depth.ads.q3', 'expert.depth.ads.q4']} className="mb-8" />
 
       {/* Platforms */}
       <Section title={t('lm.ads.section.platforms')} className="mb-8">

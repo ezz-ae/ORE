@@ -12,6 +12,7 @@ import {
   Target, Zap, Coins,
 } from 'lucide-react'
 import { StatCard, type StatDelta } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useI18n } from '@/lib/i18n/provider'
 
 function fmtAedShort(n: number): string {
@@ -162,6 +163,8 @@ export default function ManagementDashboard() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
+
+        <ExpertDepth prompts={['expert.depth.management.q1', 'expert.depth.management.q2', 'expert.depth.management.q3', 'expert.depth.management.q4']} />
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">

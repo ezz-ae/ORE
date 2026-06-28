@@ -13,6 +13,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,6 +149,8 @@ export default function FreeholdCrmPage() {
               {t('crm.board')} <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
+
+          <ExpertDepth prompts={['expert.depth.crm.q1', 'expert.depth.crm.q2', 'expert.depth.crm.q3', 'expert.depth.crm.q4']} className="mb-5" />
 
           {/* ── 6 Metric tiles ── */}
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
