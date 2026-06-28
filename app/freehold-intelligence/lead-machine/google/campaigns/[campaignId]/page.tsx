@@ -20,6 +20,7 @@ import type {
   GoogleAdStrength,
   GoogleKeywordMatchType,
 } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,7 @@ export default function GoogleCampaignDetailPage({
 }: {
   params: Promise<{ campaignId: string }>
 }) {
+  const t = useT()
   const [campaignId, setCampaignId] = useState<string | null>(null)
 
   const [campaign, setCampaign]   = useState<GoogleCampaign | null>(null)
@@ -265,7 +267,7 @@ export default function GoogleCampaignDetailPage({
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        All campaigns
+        {t('lm.google.campaignDetail.back')}
       </Link>
 
       {/* ── Loading ────────────────────────────────────────────────────────── */}
@@ -283,14 +285,14 @@ export default function GoogleCampaignDetailPage({
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
               <div className="text-sm font-semibold text-white">
-                Google Ads not connected
+                {t('lm.google.common.notConnected')}
               </div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -386,7 +388,7 @@ export default function GoogleCampaignDetailPage({
                   <RefreshCw
                     className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
                   />
-                  Refresh
+                  {t('lm.google.common.refresh')}
                 </button>
 
                 <button
@@ -406,7 +408,7 @@ export default function GoogleCampaignDetailPage({
                   ) : (
                     <Play className="h-3.5 w-3.5" />
                   )}
-                  {isEnabled ? 'Pause campaign' : 'Activate campaign'}
+                  {isEnabled ? t('lm.google.campaignDetail.pauseBtn') : t('lm.google.campaignDetail.resumeBtn')}
                 </button>
               </div>
             </div>

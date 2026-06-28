@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, AlertCircle, ArrowUpRight, Info } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { GeneratedRsaVariant, GenerateRsaPayload } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,8 @@ const DESCRIPTION_WARN  = 85
 function CopyButton({ text, className }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false)
 
+  const t = useT()
+
   function copy() {
     navigator.clipboard.writeText(text)
     setCopied(true)
@@ -56,7 +59,7 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
       {copied
         ? <Check className="h-3 w-3 text-gold" />
         : <Copy className="h-3 w-3" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('lm.google.adsGenerate.copied') : t('lm.google.adsGenerate.copy')}
     </button>
   )
 }
@@ -89,6 +92,7 @@ function CharBadge({ text, limit, warn }: { text: string; limit: number; warn: n
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function GenerateRsaPage() {
+  const t = useT()
   const [listingId, setListingId] = useState<string>(leadMachineListings[0]?.id ?? '')
   const [angle, setAngle]         = useState<RsaAngle>('investor')
   const [tone, setTone]           = useState<RsaTone>('direct')
@@ -198,7 +202,7 @@ export default function GenerateRsaPage() {
         href="/freehold-intelligence/lead-machine/google/ads"
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> Google Ads
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.google.adsGenerate.back')}
       </Link>
 
       {/* Header */}
@@ -300,11 +304,11 @@ export default function GenerateRsaPage() {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <Sparkles className="h-4 w-4 animate-pulse" /> Generating…
+                <Sparkles className="h-4 w-4 animate-pulse" /> {t('lm.google.adsGenerate.generating')}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <Wand2 className="h-4 w-4" /> Generate RSA variants
+                <Wand2 className="h-4 w-4" /> {t('lm.google.adsGenerate.generateBtn')}
               </span>
             )}
           </button>
@@ -320,7 +324,7 @@ export default function GenerateRsaPage() {
                     href="/freehold-intelligence/integrations/google"
                     className="mt-1.5 inline-flex items-center gap-1 text-sm text-[#4285F4]/80 transition hover:text-[#4285F4]"
                   >
-                    Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                    {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
                   </Link>
                 </div>
               </div>
@@ -342,7 +346,7 @@ export default function GenerateRsaPage() {
           {variants.length === 0 && !loading && (
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border border-dashed border-line px-8 text-center">
               <Wand2 className="mb-4 h-8 w-8 text-slate-600" />
-              <div className="text-[14px] text-slate-500">RSA copy will appear here</div>
+              <div className="text-[14px] text-slate-500">{t('lm.google.adsGenerate.emptyTitle')}</div>
               <div className="mt-4 max-w-xs rounded-[14px] border border-line bg-surface-2 px-4 py-4 text-left">
                 <div className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">RSA format</div>
                 <div className="space-y-1.5 text-sm text-slate-500">
@@ -365,7 +369,7 @@ export default function GenerateRsaPage() {
             <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
               <Sparkles className="h-6 w-6 animate-pulse text-[#4285F4]/60" />
               <div className="text-sm text-slate-500">
-                Building RSA variants — {angleConfig.label} · {tone}…
+                {t('lm.google.adsGenerate.building')} — {angleConfig.label} · {tone}…
               </div>
             </div>
           )}
@@ -406,7 +410,7 @@ export default function GenerateRsaPage() {
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
                         <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Headlines
+                          {t('lm.google.adsGenerate.field.headlines')}
                         </span>
                         <span className="text-xs text-slate-600">
                           {v.headlines.length}/15 max · 30 char limit
@@ -439,7 +443,7 @@ export default function GenerateRsaPage() {
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
                         <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Descriptions
+                          {t('lm.google.adsGenerate.field.descriptions')}
                         </span>
                         <span className="text-xs text-slate-600">
                           {v.descriptions.length}/4 max · 90 char limit

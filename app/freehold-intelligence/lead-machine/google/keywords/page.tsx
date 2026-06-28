@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { GoogleKeyword, NegativeKeyword, GoogleKeywordMatchType } from '@/lib/google/types'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ interface KeywordsApiResponse {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GoogleKeywordsPage() {
+  const t = useT()
   const [data, setData]               = useState<KeywordsApiResponse>({})
   const [loading, setLoading]         = useState(true)
   const [refreshing, setRefreshing]   = useState(false)
@@ -156,7 +158,7 @@ export default function GoogleKeywordsPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
         </div>
       </div>
@@ -167,13 +169,13 @@ export default function GoogleKeywordsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -192,7 +194,7 @@ export default function GoogleKeywordsPage() {
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading keywords…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.keywords.title')}…</div>
       )}
 
       {!loading && !isConfigErr && (
@@ -200,13 +202,13 @@ export default function GoogleKeywordsPage() {
           {/* ── Stats row ── */}
           <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-6">
             {[
-              { label: 'Total',       value: keywords.length,            color: 'text-white'       },
-              { label: 'Broad',       value: broadCount,                 color: 'text-slate-400'    },
-              { label: 'Phrase',      value: phraseCount,                color: 'text-slate-400'     },
-              { label: 'Exact',       value: exactCount,                 color: 'text-gold' },
-              { label: 'Impressions', value: totalImps.toLocaleString(), color: 'text-white'       },
+              { label: t('lm.google.keywords.filter.all'),    value: keywords.length,            color: 'text-white'       },
+              { label: t('lm.google.common.broad'),           value: broadCount,                 color: 'text-slate-400'    },
+              { label: t('lm.google.common.phrase'),          value: phraseCount,                color: 'text-slate-400'     },
+              { label: t('lm.google.common.exact'),           value: exactCount,                 color: 'text-gold' },
+              { label: t('lm.google.common.impressions'),     value: totalImps.toLocaleString(), color: 'text-white'       },
               {
-                label: 'Avg QS',
+                label: t('lm.google.common.qualityScore'),
                 value: avgQS != null ? avgQS.toFixed(1) : '—',
                 color:
                   avgQS == null
@@ -325,7 +327,7 @@ export default function GoogleKeywordsPage() {
             /* ── Empty state ── */
             <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
-              <div className="text-[16px] font-semibold text-white">No keywords found</div>
+              <div className="text-[16px] font-semibold text-white">{t('lm.google.keywords.empty')}</div>
               <p className="mt-2 text-sm text-slate-500">
                 {matchFilter !== 'ALL'
                   ? `No ${MATCH_LABEL[matchFilter as GoogleKeywordMatchType].toLowerCase()} match keywords. Try a different filter.`

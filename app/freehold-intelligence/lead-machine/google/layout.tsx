@@ -4,21 +4,23 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AdsConversationSidebar } from '@/components/google/ads-conversation-sidebar'
 import { AdsContextProvider } from '@/lib/google/ads-context'
+import { useT } from '@/lib/i18n/provider'
 
 const BASE = '/freehold-intelligence/lead-machine/google'
 
-const tabs = [
-  { label: 'Overview',   href: BASE },
-  { label: 'Campaigns',  href: `${BASE}/campaigns` },
-  { label: 'Keywords',   href: `${BASE}/keywords` },
-  { label: 'Ads',        href: `${BASE}/ads` },
-  { label: 'Audiences',  href: `${BASE}/audiences` },
-  { label: 'Extensions', href: `${BASE}/extensions` },
-  { label: 'Reports',    href: `${BASE}/reports` },
+const TAB_HREFS = [
+  { labelKey: 'lm.google.layout.overview',   href: BASE },
+  { labelKey: 'lm.google.layout.campaigns',  href: `${BASE}/campaigns` },
+  { labelKey: 'lm.google.layout.keywords',   href: `${BASE}/keywords` },
+  { labelKey: 'lm.google.layout.ads',        href: `${BASE}/ads` },
+  { labelKey: 'lm.google.layout.audiences',  href: `${BASE}/audiences` },
+  { labelKey: 'lm.google.layout.extensions', href: `${BASE}/extensions` },
+  { labelKey: 'lm.google.layout.reports',    href: `${BASE}/reports` },
 ]
 
 export default function GoogleAdsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const t = useT()
 
   return (
     <AdsContextProvider>
@@ -27,7 +29,7 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
       <div className="border-b border-line bg-[#04060A]">
         <div className="overflow-x-auto px-6">
           <nav className="flex min-w-max gap-0">
-            {tabs.map((tab) => {
+            {TAB_HREFS.map((tab) => {
               const isActive =
                 tab.href === BASE
                   ? pathname === BASE
@@ -44,7 +46,7 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
                       : 'border-b-2 border-transparent text-slate-500 hover:text-slate-400',
                   ].join(' ')}
                 >
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </Link>
               )
             })}

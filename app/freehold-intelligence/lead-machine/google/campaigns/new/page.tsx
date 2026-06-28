@@ -6,6 +6,7 @@ import { ArrowLeft, Search, ChevronDown, Check, Zap, AlertCircle, ArrowRight } f
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
 import type { GoogleCampaignType, GoogleBiddingStrategy, GoogleKeywordMatchType } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 type WizardStep = 1 | 2 | 3 | 4 | 5
 
@@ -51,6 +52,7 @@ const DEFAULT_DESCRIPTIONS = [
 const STEPS = ['Objective', 'Budget & Bid', 'Keywords', 'Ad Copy', 'Review']
 
 export default function GoogleCampaignNewPage() {
+  const t = useT()
   const [step, setStep]       = useState<WizardStep>(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -203,7 +205,7 @@ export default function GoogleCampaignNewPage() {
         href="/freehold-intelligence/lead-machine/google/campaigns"
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.google.campaignNew.back')}
       </Link>
 
       {/* Header */}
@@ -249,7 +251,7 @@ export default function GoogleCampaignNewPage() {
         <section className="mt-10 space-y-6">
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Listing
+              {t('lm.google.campaignNew.label.listing')}
             </label>
             <div className="relative">
               <select
@@ -273,7 +275,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Campaign name
+              {t('lm.google.campaignNew.label.name')}
             </label>
             <input
               type="text"
@@ -286,7 +288,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Campaign type
+              {t('lm.google.campaignNew.label.type')}
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
               {CAMPAIGN_TYPES.map((t) => (
@@ -317,7 +319,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Landing URL
+              {t('lm.google.campaignNew.label.finalUrl')}
             </label>
             <input
               type="url"
@@ -335,7 +337,7 @@ export default function GoogleCampaignNewPage() {
         <section className="mt-10 space-y-6">
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Daily budget (AED)
+              {t('lm.google.campaignNew.label.dailyBudget')}
             </label>
             <input
               type="number"
@@ -364,7 +366,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Bidding strategy
+              {t('lm.google.campaignNew.label.bidStrategy')}
             </label>
             <div className="space-y-2">
               {BIDDING_STRATEGIES.map((s) => (
@@ -395,7 +397,7 @@ export default function GoogleCampaignNewPage() {
           {form.biddingStrategy === 'TARGET_CPA' && (
             <div>
               <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-                Target CPA (AED)
+                {t('lm.google.campaignNew.label.targetCpa')}
               </label>
               <input
                 type="number"
@@ -410,7 +412,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Start date (optional)
+              {t('lm.google.campaignNew.label.startDate')}
             </label>
             <input
               type="date"
@@ -475,7 +477,7 @@ export default function GoogleCampaignNewPage() {
 
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Custom keywords (one per line)
+              {t('lm.google.campaignNew.label.keywords')}
             </label>
             <textarea
               value={form.customKeywords}
@@ -608,7 +610,7 @@ export default function GoogleCampaignNewPage() {
           disabled={step === 1}
           className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition hover:text-white disabled:opacity-30"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back
+          <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.google.campaignNew.btn.cancel')}
         </button>
 
         {step < 5 ? (
@@ -620,7 +622,7 @@ export default function GoogleCampaignNewPage() {
             }
             className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5] disabled:opacity-50"
           >
-            Next <ArrowRight className="h-3.5 w-3.5" />
+            {t('lm.google.campaignNew.btn.preview')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
         ) : (
           <button
@@ -628,7 +630,7 @@ export default function GoogleCampaignNewPage() {
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5] disabled:opacity-50"
           >
-            {submitting ? 'Creating…' : <><Zap className="h-4 w-4" /> Launch campaign</>}
+            {submitting ? `${t('lm.google.campaignNew.btn.create')}…` : <><Zap className="h-4 w-4" /> {t('lm.google.campaignNew.btn.create')}</>}
           </button>
         )}
       </div>

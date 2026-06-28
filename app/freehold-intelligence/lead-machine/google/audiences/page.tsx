@@ -11,6 +11,7 @@ import {
   Info,
 } from 'lucide-react'
 import type { GoogleAudience, GoogleAudienceType } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -167,6 +168,7 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GoogleAudiencesPage() {
+  const t = useT()
   const [data, setData]             = useState<AudiencesApiResponse>({})
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -231,7 +233,7 @@ export default function GoogleAudiencesPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
         </div>
       </div>
@@ -242,13 +244,13 @@ export default function GoogleAudiencesPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -267,7 +269,7 @@ export default function GoogleAudiencesPage() {
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading audiences…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.audiences.title')}…</div>
       )}
 
       {!loading && !isConfigErr && (
@@ -275,9 +277,9 @@ export default function GoogleAudiencesPage() {
           {/* ── Stats row ── */}
           <div className="mt-8 grid grid-cols-3 gap-3">
             {[
-              { label: 'Total audiences',    value: audiences.length,            color: 'text-white'           },
-              { label: 'Customer Match lists', value: customerMatchCount,         color: 'text-gold'       },
-              { label: 'Total reach',          value: totalReach > 0 ? fmtReach(totalReach) : '—',
+              { label: t('lm.google.audiences.title'),       value: audiences.length,            color: 'text-white'           },
+              { label: t('lm.google.audiences.type.customerMatch'), value: customerMatchCount,   color: 'text-gold'       },
+              { label: t('lm.google.audiences.col.size'),    value: totalReach > 0 ? fmtReach(totalReach) : '—',
                                                                                   color: 'text-white'           },
             ].map((s) => (
               <div key={s.label} className="rounded-[16px] border border-line bg-surface px-4 py-3">

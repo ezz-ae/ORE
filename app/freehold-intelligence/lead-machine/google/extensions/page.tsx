@@ -22,6 +22,7 @@ import type {
   GoogleCalloutExtension,
   GoogleCallExtension,
 } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── API shape ────────────────────────────────────────────────────────────────
 
@@ -229,6 +230,7 @@ function RecommendedCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GoogleExtensionsPage() {
+  const t = useT()
   const [data, setData]             = useState<ExtensionsApiResponse>({})
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -340,7 +342,7 @@ export default function GoogleExtensionsPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
         </div>
       </div>
@@ -351,13 +353,13 @@ export default function GoogleExtensionsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -376,7 +378,7 @@ export default function GoogleExtensionsPage() {
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading extensions…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.extensions.title')}…</div>
       )}
 
       {!loading && !isConfigErr && (
@@ -415,7 +417,7 @@ export default function GoogleExtensionsPage() {
           ) : (
             <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-12 text-center">
               <MessageSquare className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
-              <div className="text-sm font-semibold text-white">No extensions found</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.extensions.empty')}</div>
               <p className="mt-2 text-sm text-slate-500">
                 {filter !== 'ALL'
                   ? `No ${FILTER_TABS.find((t) => t.value === filter)?.label.toLowerCase()} configured yet.`
