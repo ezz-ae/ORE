@@ -1,47 +1,57 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   UserPlus, MoreHorizontal, Mail, CheckCircle,
   Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
 
-type Role = 'Owner' | 'Admin' | 'Agent' | 'Viewer'
+// Canonical roles — these map 1:1 to the database, so editing a member's role
+// never silently demotes them (e.g. sales_manager → admin).
+type Role = 'ceo' | 'director' | 'admin' | 'sales_manager' | 'marketing' | 'broker'
 type Status = 'active' | 'invited' | 'suspended'
 
 type TeamMember = {
   id: string
   name: string
   email: string
-  role: Role
+  role: string          // UI bucket from the API (legacy)
+  dbRole: Role          // canonical DB role — source of truth
   status: Status
   joinedAt: string
   lastActive?: string | null
   initials: string
 }
 
-const ROLE_META: Record<Role, { Icon: React.ElementType; color: string; desc: string }> = {
-  Owner:  { Icon: Crown,  color: 'text-gold',        desc: 'Full access + billing' },
-  Admin:  { Icon: Shield, color: 'text-violet-400',  desc: 'Manage team & settings' },
-  Agent:  { Icon: User,   color: 'text-sky-400',     desc: 'Own leads & campaigns' },
-  Viewer: { Icon: User,   color: 'text-slate-400',   desc: 'Read-only access' },
+const ROLE_META: Record<Role, { labelKey: string; Icon: React.ElementType; color: string; descKey: string }> = {
+  ceo:           { labelKey: 'settings.role.ceo.label',           Icon: Crown,  color: 'text-gold',        descKey: 'settings.role.ceo.desc' },
+  director:      { labelKey: 'settings.role.director.label',      Icon: Crown,  color: 'text-gold/80',     descKey: 'settings.role.director.desc' },
+  admin:         { labelKey: 'settings.role.admin.label',         Icon: Shield, color: 'text-violet-400',  descKey: 'settings.role.admin.desc' },
+  sales_manager: { labelKey: 'settings.role.sales_manager.label', Icon: Shield, color: 'text-sky-300',     descKey: 'settings.role.sales_manager.desc' },
+  marketing:     { labelKey: 'settings.role.marketing.label',     Icon: User,   color: 'text-pink-300',    descKey: 'settings.role.marketing.desc' },
+  broker:        { labelKey: 'settings.role.broker.label',        Icon: User,   color: 'text-sky-400',     descKey: 'settings.role.broker.desc' },
 }
 
-const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; color: string }> = {
-  active:    { label: 'Active',    Icon: CheckCircle, color: 'text-emerald-400' },
-  invited:   { label: 'Invited',   Icon: Clock,       color: 'text-amber-400'   },
-  suspended: { label: 'Suspended', Icon: XCircle,     color: 'text-red-400'     },
+const STATUS_META: Record<Status, { labelKey: string; Icon: React.ElementType; color: string }> = {
+  active:    { labelKey: 'settings.status.active',    Icon: CheckCircle, color: 'text-emerald-400' },
+  invited:   { labelKey: 'settings.status.invited',   Icon: Clock,       color: 'text-amber-400'   },
+  suspended: { labelKey: 'settings.status.suspended', Icon: XCircle,     color: 'text-red-400'     },
 }
 
-const ROLES: Role[] = ['Owner', 'Admin', 'Agent', 'Viewer']
+// All assignable roles. CEO is the protected owner role — not assignable from the UI.
+const ROLES: Role[] = ['ceo', 'director', 'admin', 'sales_manager', 'marketing', 'broker']
+const ASSIGNABLE_ROLES: Role[] = ['director', 'admin', 'sales_manager', 'marketing', 'broker']
 
 export default function TeamPage() {
   const [members, setMembers]         = useState<TeamMember[]>([])
   const [loading, setLoading]         = useState(true)
   const [showInvite, setShowInvite]   = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole]   = useState<Role>('Agent')
+  const [inviteRole, setInviteRole]   = useState<Role>('broker')
   const [openMenu, setOpenMenu]       = useState<string | null>(null)
+  const { t, locale } = useI18n()
 
   useEffect(() => {
     fetch('/api/freehold/team')
@@ -52,45 +62,67 @@ export default function TeamPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  function invite() {
+  function refetch() {
+    fetch('/api/freehold/team', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => { if (data.members) setMembers(data.members) })
+      .catch(() => {})
+  }
+
+  async function invite() {
     if (!inviteEmail.trim()) return
     const n = inviteEmail.split('@')[0]
-    setMembers((prev) => [
-      ...prev,
-      {
-        id:       `inv_${Date.now()}`,
-        name:     n,
-        email:    inviteEmail.trim(),
-        role:     inviteRole,
-        status:   'invited',
-        joinedAt: new Date().toISOString().slice(0, 10),
-        initials: n.slice(0, 2).toUpperCase(),
-      },
-    ])
-    setInviteEmail('')
-    setShowInvite(false)
+    try {
+      const res = await fetch('/api/freehold/team', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: n, email: inviteEmail.trim(), role: inviteRole }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || t('settings.team.failedInvite'))
+      toast.success(t('settings.team.invited', { email: inviteEmail.trim() }))
+      setInviteEmail('')
+      setShowInvite(false)
+      refetch()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('settings.team.failedInvite'))
+    }
   }
 
   function changeRole(id: string, role: Role) {
-    setMembers((prev) => prev.map((m) => m.id === id ? { ...m, role } : m))
+    setMembers((prev) => prev.map((m) => m.id === id ? { ...m, dbRole: role, role: t(ROLE_META[role].labelKey) } : m))
     setOpenMenu(null)
+    fetch(`/api/freehold/team/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    }).then((r) => { if (r.ok) toast.success(t('settings.team.roleUpdated')); else toast.error(t('settings.team.roleUpdateError')) }).catch(() => {})
   }
 
   function toggleSuspend(id: string) {
+    let nextSuspended = false
     setMembers((prev) =>
-      prev.map((m) => m.id === id ? { ...m, status: m.status === 'suspended' ? 'active' : 'suspended' } : m),
+      prev.map((m) => {
+        if (m.id !== id) return m
+        nextSuspended = m.status !== 'suspended'
+        return { ...m, status: nextSuspended ? 'suspended' : 'active' }
+      }),
     )
     setOpenMenu(null)
+    fetch(`/api/freehold/team/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suspended: nextSuspended }),
+    }).catch(() => {})
   }
 
-  function removeMember(id: string) {
+  async function removeMember(id: string) {
     setMembers((prev) => prev.filter((m) => m.id !== id))
     setOpenMenu(null)
+    const res = await fetch(`/api/freehold/team/${id}`, { method: 'DELETE' }).catch(() => null)
+    if (res && res.ok) toast.success(t('settings.team.memberRemoved')); else toast.error(t('settings.team.removeError'))
   }
 
   const active  = members.filter((m) => m.status === 'active').length
   const invited = members.filter((m) => m.status === 'invited').length
-  const agents  = members.filter((m) => m.role === 'Agent').length
+  const agents  = members.filter((m) => m.dbRole === 'broker').length
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -98,9 +130,15 @@ export default function TeamPage() {
       {/* Header */}
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Team</h1>
+          <h1 className="text-xl font-semibold text-white">{t('settings.team.title')}</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {loading ? 'Loading…' : `${active} active · ${invited > 0 ? `${invited} invited · ` : ''}${agents} agents`}
+            {loading
+              ? t('settings.team.loading')
+              : t('settings.team.summary', {
+                  active,
+                  invitedPart: invited > 0 ? t('settings.team.invitedPart', { count: invited }) : '',
+                  agents,
+                })}
           </p>
         </div>
         <button
@@ -108,18 +146,18 @@ export default function TeamPage() {
           className="flex shrink-0 items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15"
         >
           <UserPlus className="h-4 w-4" />
-          Invite
+          {t('settings.team.invite')}
         </button>
       </div>
 
       {/* Invite form */}
       {showInvite && (
         <div className="mb-6 rounded-[18px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
-          <div className="text-sm font-semibold text-white">Invite team member</div>
+          <div className="text-sm font-semibold text-white">{t('settings.team.inviteMember')}</div>
           <div className="flex gap-3 flex-col sm:flex-row">
             <input
               type="email"
-              placeholder="Email address"
+              placeholder={t('settings.team.emailPlaceholder')}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               className="flex-1 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
@@ -130,8 +168,8 @@ export default function TeamPage() {
                 onChange={(e) => setInviteRole(e.target.value as Role)}
                 className="appearance-none rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-gold/40"
               >
-                {ROLES.filter((r) => r !== 'Owner').map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {ASSIGNABLE_ROLES.map((r) => (
+                  <option key={r} value={r}>{t(ROLE_META[r].labelKey)}</option>
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
@@ -140,25 +178,25 @@ export default function TeamPage() {
           <div className="flex gap-2">
             <button onClick={invite}
               className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
-              <Mail className="h-3.5 w-3.5" /> Send invite
+              <Mail className="h-3.5 w-3.5" /> {t('settings.team.sendInvite')}
             </button>
             <button onClick={() => setShowInvite(false)}
               className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
-              Cancel
+              {t('settings.team.cancel')}
             </button>
           </div>
         </div>
       )}
 
       {/* Role descriptions */}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {ROLES.map((role) => {
           const rm = ROLE_META[role]
           return (
             <div key={role} className="rounded-[12px] border border-line bg-surface px-3 py-2.5">
               <rm.Icon className={`h-4 w-4 ${rm.color}`} />
-              <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{role}</div>
-              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rm.desc}</div>
+              <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{t(rm.labelKey)}</div>
+              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{t(rm.descKey)}</div>
             </div>
           )
         })}
@@ -168,7 +206,7 @@ export default function TeamPage() {
       {loading && (
         <div className="flex items-center justify-center py-16 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
-          <span className="text-sm">Loading team…</span>
+          <span className="text-sm">{t('settings.team.loadingTeam')}</span>
         </div>
       )}
 
@@ -176,8 +214,9 @@ export default function TeamPage() {
       {!loading && (
         <div className="space-y-2">
           {members.map((member) => {
-            const rm = ROLE_META[member.role]
+            const rm = ROLE_META[member.dbRole] ?? ROLE_META.broker
             const sm = STATUS_META[member.status]
+            const isOwner = member.dbRole === 'ceo'
 
             return (
               <div
@@ -188,8 +227,8 @@ export default function TeamPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                    member.role === 'Owner' ? 'bg-gold/20 text-gold' :
-                    member.role === 'Admin' ? 'bg-violet-400/15 text-violet-300' :
+                    member.dbRole === 'ceo' || member.dbRole === 'director' ? 'bg-gold/20 text-gold' :
+                    member.dbRole === 'admin' ? 'bg-violet-400/15 text-violet-300' :
                     'bg-surface-2 text-slate-400'
                   }`}>
                     {member.initials}
@@ -205,7 +244,7 @@ export default function TeamPage() {
                         {member.email}
                       </span>
                       {member.lastActive && (
-                        <span>Active {new Date(member.lastActive).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                        <span>{t('settings.team.activeOn', { date: new Date(member.lastActive).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) })}</span>
                       )}
                     </div>
                   </div>
@@ -213,13 +252,13 @@ export default function TeamPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="hidden sm:flex items-center gap-1.5">
                       <rm.Icon className={`h-3.5 w-3.5 ${rm.color}`} />
-                      <span className={`text-xs font-medium ${rm.color}`}>{member.role}</span>
+                      <span className={`text-xs font-medium ${rm.color}`}>{t(rm.labelKey)}</span>
                     </div>
                     <div className={`flex items-center gap-1 text-xs ${sm.color}`}>
                       <sm.Icon className="h-3 w-3" />
-                      <span className="hidden sm:block">{sm.label}</span>
+                      <span className="hidden sm:block">{t(sm.labelKey)}</span>
                     </div>
-                    {member.role !== 'Owner' && (
+                    {!isOwner && (
                       <div className="relative">
                         <button
                           onClick={() => setOpenMenu(openMenu === member.id ? null : member.id)}
@@ -228,14 +267,14 @@ export default function TeamPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                         {openMenu === member.id && (
-                          <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
-                            {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
+                          <div className="absolute right-0 top-9 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
+                            {ASSIGNABLE_ROLES.filter((r) => r !== member.dbRole).map((r) => {
                               const RoleIcon = ROLE_META[r].Icon
                               return (
                                 <button key={r} onClick={() => changeRole(member.id, r)}
                                   className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-400 transition hover:bg-surface-2 hover:text-white">
                                   <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
-                                  Set as {r}
+                                  {t('settings.team.setAs', { role: t(ROLE_META[r].labelKey) })}
                                 </button>
                               )
                             })}
@@ -243,12 +282,12 @@ export default function TeamPage() {
                             <button onClick={() => toggleSuspend(member.id)}
                               className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-amber-400/80 transition hover:bg-surface-2 hover:text-amber-400">
                               <XCircle className="h-3.5 w-3.5" />
-                              {member.status === 'suspended' ? 'Reactivate' : 'Suspend'}
+                              {member.status === 'suspended' ? t('settings.team.reactivate') : t('settings.team.suspend')}
                             </button>
                             <button onClick={() => removeMember(member.id)}
                               className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-red-400/80 transition hover:bg-surface-2 hover:text-red-400">
                               <Trash2 className="h-3.5 w-3.5" />
-                              Remove
+                              {t('settings.team.remove')}
                             </button>
                           </div>
                         )}

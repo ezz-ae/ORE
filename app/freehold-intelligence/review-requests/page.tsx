@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { CheckSquare, AlertCircle, Clock, MessageSquare, CheckCircle2, ArrowUpRight, Sparkles, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
 type ReviewType = 'approval' | 'decision' | 'correction' | 'access request' | 'comment'
@@ -137,6 +137,21 @@ export default function ReviewRequestsPage() {
   const [commentText, setCommentText]   = useState('')
   const [commentFlash, setCommentFlash] = useState(false)
 
+  // Load persisted resolutions so approve/reject decisions survive reloads.
+  useEffect(() => {
+    fetch('/api/freehold/reviews', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d?.resolutions) return
+        const mapped: Record<string, Resolution> = {}
+        for (const [id, val] of Object.entries(d.resolutions as Record<string, { status: string }>)) {
+          mapped[id] = { status: val.status as Resolution['status'] }
+        }
+        setResolutions((prev) => ({ ...mapped, ...prev }))
+      })
+      .catch(() => {})
+  }, [])
+
   const filtered = useMemo(() => {
     const base = items.filter((r) => !resolutions[r.id])
     const typed = activeType === 'All' ? base : base.filter((r) => r.type === activeType)
@@ -152,6 +167,10 @@ export default function ReviewRequestsPage() {
 
   function resolve(id: string, status: 'approved' | 'rejected') {
     setResolutions((prev) => ({ ...prev, [id]: { status } }))
+    fetch('/api/freehold/reviews', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId: id, status }),
+    }).catch(() => {})
   }
 
   function handleComment(e: React.FormEvent) {
@@ -168,6 +187,10 @@ export default function ReviewRequestsPage() {
       requestedBy: commentName || 'Owner',
     }
     setItems((prev) => [...prev, newItem])
+    fetch('/api/freehold/reviews', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'comment', author: commentName || 'Owner', body: commentText }),
+    }).catch(() => {})
     setCommentName('')
     setCommentText('')
     setCommentFlash(true)
@@ -198,7 +221,7 @@ export default function ReviewRequestsPage() {
       </section>
 
       {/* Stat tiles */}
-      <section className="mt-8 grid grid-cols-4 gap-3">
+      <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
           <p className="text-xs text-red-400/60 mt-1">Blockers</p>

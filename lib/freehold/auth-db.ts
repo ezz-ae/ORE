@@ -11,6 +11,8 @@ interface DbUser {
   role: string
   password_hash: string | null
   ai_access: boolean
+  suspended: boolean | null
+  banned: boolean | null
 }
 
 // Hash a plaintext password to compare with DB hash
@@ -46,7 +48,8 @@ const ROLE_HOME: Record<string, string> = {
 export async function authenticateFromDB(email: string, password: string): Promise<SessionUser | null> {
   try {
     const rows = await query<DbUser>(
-      `SELECT id, name, email, role, password_hash, ai_access
+      `SELECT id, name, email, role, password_hash, ai_access,
+              COALESCE(suspended, false) AS suspended, COALESCE(banned, false) AS banned
        FROM freehold_site_users
        WHERE email = $1 LIMIT 1`,
       [email.trim().toLowerCase()]
@@ -54,6 +57,8 @@ export async function authenticateFromDB(email: string, password: string): Promi
     if (rows.length === 0) return null
     const u = rows[0]
     if (!verifyPassword(password, u.password_hash)) return null
+    // Disabled or banned accounts cannot sign in.
+    if (u.suspended || u.banned) return null
     const role = u.role as SessionUser['role']
     return {
       email: u.email,
@@ -61,7 +66,9 @@ export async function authenticateFromDB(email: string, password: string): Promi
       initials: (u.name ?? u.email).split(' ').map((p: string) => p[0]).slice(0,2).join('').toUpperCase(),
       role,
       home: ROLE_HOME[role] ?? '/freehold-intelligence',
-      ...(role === 'broker' ? { brokerId: `bc_${u.id}` } : {}),
+      // brokerId MUST equal the user id so leads' assigned_broker_id (set to the
+      // user id by inbox/assignment) matches the broker's session for filtering.
+      ...(role === 'broker' ? { brokerId: u.id } : {}),
     }
   } catch {
     return null

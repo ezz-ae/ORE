@@ -8,19 +8,20 @@ import {
   type PipelineStage,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Stage config ──────────────────────────────────────────────────────────────
 
-type StageConfig = { id: PipelineStage; label: string; dot: string; color: string }
+type StageConfig = { id: PipelineStage; labelKey: string; dot: string; color: string }
 
 const STAGES: StageConfig[] = [
-  { id: 'new',         label: 'New',         dot: 'bg-sky-400',     color: 'text-sky-400'     },
-  { id: 'contacted',   label: 'Contacted',   dot: 'bg-amber-400',   color: 'text-amber-400'   },
-  { id: 'qualified',   label: 'Qualified',   dot: 'bg-violet-400',  color: 'text-violet-400'  },
-  { id: 'viewing',     label: 'Viewing',     dot: 'bg-blue-400',    color: 'text-blue-400'    },
-  { id: 'negotiation', label: 'Negotiation', dot: 'bg-orange-400',  color: 'text-orange-400'  },
-  { id: 'closed',      label: 'Closed',      dot: 'bg-emerald-400', color: 'text-emerald-400' },
-  { id: 'lost',        label: 'Lost',        dot: 'bg-red-400/50',  color: 'text-red-400/50'  },
+  { id: 'new',         labelKey: 'crm.stage.new',         dot: 'bg-sky-400',     color: 'text-sky-400'     },
+  { id: 'contacted',   labelKey: 'crm.stage.contacted',   dot: 'bg-amber-400',   color: 'text-amber-400'   },
+  { id: 'qualified',   labelKey: 'crm.stage.qualified',   dot: 'bg-violet-400',  color: 'text-violet-400'  },
+  { id: 'viewing',     labelKey: 'crm.stage.viewing',     dot: 'bg-blue-400',    color: 'text-blue-400'    },
+  { id: 'negotiation', labelKey: 'crm.stage.negotiation', dot: 'bg-orange-400',  color: 'text-orange-400'  },
+  { id: 'closed',      labelKey: 'crm.stage.closed',      dot: 'bg-emerald-400', color: 'text-emerald-400' },
+  { id: 'lost',        labelKey: 'crm.stage.lost',        dot: 'bg-red-400/50',  color: 'text-red-400/50'  },
 ]
 
 // ─── Temperature config ────────────────────────────────────────────────────────
@@ -31,11 +32,11 @@ const TEMP_BADGE: Record<string, string> = {
   warm:     'bg-amber-400/10 text-amber-400 border-amber-400/20',
   cold:     'bg-surface-2 text-slate-500 border-line-strong',
 }
-const TEMP_LABEL: Record<string, string> = {
-  priority: '★ Priority',
-  hot:      '● Hot',
-  warm:     '◎ Warm',
-  cold:     '○ Cold',
+const TEMP_LABEL_KEY: Record<string, string> = {
+  priority: 'crm.temp.priority',
+  hot:      'crm.temp.hot',
+  warm:     'crm.temp.warm',
+  cold:     'crm.temp.cold',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ function buildMapFromLeads(leads: CRMLeadIntelligence[]): StageMap {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CrmBoardPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
 
   const [stageMap, setStageMap] = useState<StageMap>(() => buildMapFromLeads(leads))
@@ -83,16 +85,23 @@ export default function CrmBoardPage() {
   function onDrop(e: DragEvent, to: PipelineStage) {
     e.preventDefault()
     const from = fromStage.current
-    if (!draggingId || !from || from === to) { reset(); return }
+    const movingId = draggingId
+    if (!movingId || !from || from === to) { reset(); return }
     setStageMap(prev => {
-      const lead = prev[from].find(l => l.id === draggingId)
+      const lead = prev[from].find(l => l.id === movingId)
       if (!lead) return prev
       return {
         ...prev,
-        [from]: prev[from].filter(l => l.id !== draggingId),
-        [to]:   [...prev[to], lead],
+        [from]: prev[from].filter(l => l.id !== movingId),
+        [to]:   [...prev[to], { ...lead, pipelineStage: to, stage: to.charAt(0).toUpperCase() + to.slice(1) }],
       }
     })
+    // Persist the stage change.
+    fetch(`/api/freehold/crm/leads/${movingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: to, last_contact_at: new Date().toISOString() }),
+    }).catch(() => {})
     reset()
   }
 
@@ -125,7 +134,7 @@ export default function CrmBoardPage() {
               <div className="flex items-center justify-between px-3.5 pb-2.5 pt-3.5">
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-                  <span className={`text-sm font-semibold ${col.color}`}>{col.label}</span>
+                  <span className={`text-sm font-semibold ${col.color}`}>{t(col.labelKey)}</span>
                 </div>
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-surface-2 text-xs font-medium text-slate-400">
                   {leads.length}
@@ -136,7 +145,7 @@ export default function CrmBoardPage() {
               <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2.5 pb-2.5">
                 {leads.length === 0 && (
                   <div className="flex flex-1 items-center justify-center py-8">
-                    <p className="text-xs text-slate-600">Drop here</p>
+                    <p className="text-xs text-slate-600">{t('crm.dropHere')}</p>
                   </div>
                 )}
                 {leads.map(lead => {
@@ -169,7 +178,7 @@ export default function CrmBoardPage() {
                       {/* Temperature badge */}
                       <div className="mt-2">
                         <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${TEMP_BADGE[lead.temperature]}`}>
-                          {TEMP_LABEL[lead.temperature]}
+                          {t(TEMP_LABEL_KEY[lead.temperature])}
                         </span>
                       </div>
 
@@ -200,7 +209,7 @@ export default function CrmBoardPage() {
       {/* Drag hint */}
       <div className="flex items-center justify-center gap-1.5 border-t border-line py-2.5 text-xs text-slate-600">
         <MoveHorizontal className="h-3.5 w-3.5" />
-        Drag cards to move leads through the pipeline
+        {t('crm.dragHint')}
       </div>
     </div>
   )

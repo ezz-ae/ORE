@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
+import { rolesForApp } from '@/lib/freehold/apps'
 
 export default function AnalyticsLayout({ children }: { children: React.ReactNode }) {
-  const { ready } = useSessionGuard(['admin', 'sales_manager', 'director', 'ceo', 'marketing'])
+  const { ready } = useSessionGuard(rolesForApp('analytics'))
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">

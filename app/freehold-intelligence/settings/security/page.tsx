@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   Key, Shield, Copy, Eye, EyeOff, CheckCircle,
   Plus, Trash2, AlertCircle, Lock, Smartphone,
@@ -34,36 +35,78 @@ const AUDIT_LOG = [
 const ALL_SCOPES = ['leads:read', 'leads:write', 'crm:read', 'crm:write', 'campaigns:read', 'campaigns:write', 'analytics:read', 'finance:read']
 
 export default function SecurityPage() {
-  const [keys, setKeys]       = useState<ApiKey[]>(INITIAL_KEYS)
+  const [keys, setKeys]       = useState<ApiKey[]>([])
   const [showNew, setShowNew] = useState(false)
   const [newName, setNewName] = useState('')
   const [newScopes, setNewScopes] = useState<string[]>([])
   const [revealed, setRevealed] = useState<string | null>(null)
+  const [newSecret, setNewSecret] = useState<string | null>(null)
   const [copied, setCopied]   = useState<string | null>(null)
   const [twoFaOn, setTwoFaOn] = useState(true)
 
-  function createKey() {
+  function loadKeys() {
+    fetch('/api/freehold/settings/api-keys', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d?.keys) return
+        setKeys(d.keys.map((k: { id: string; name: string; prefix: string; scopes: string[]; createdAt: string; lastUsedAt?: string; revoked: boolean }) => ({
+          id: k.id, name: k.name, prefix: k.prefix, scopes: k.scopes || [],
+          createdAt: (k.createdAt || '').slice(0, 10), lastUsed: k.lastUsedAt ? k.lastUsedAt.slice(0, 10) : undefined,
+          active: !k.revoked,
+        })))
+      }).catch(() => {})
+  }
+  useEffect(() => {
+    loadKeys()
+    fetch('/api/freehold/settings', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.settings && typeof d.settings.twoFa === 'boolean') setTwoFaOn(d.settings.twoFa) })
+      .catch(() => {})
+  }, [])
+
+  async function createKey() {
     if (!newName.trim() || newScopes.length === 0) return
-    const newKey: ApiKey = {
-      id:        `k${Date.now()}`,
-      name:      newName.trim(),
-      prefix:    `fh_prod_${Math.random().toString(36).slice(2, 8)}`,
-      scopes:    newScopes,
-      createdAt: new Date().toISOString().slice(0, 10),
-      active:    true,
+    try {
+      const res = await fetch('/api/freehold/settings/api-keys', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), scopes: newScopes }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed')
+      setNewSecret(data.secret)
+      setRevealed(data.id)
+      setNewName(''); setNewScopes([]); setShowNew(false)
+      loadKeys()
+      toast.success('API key created — copy it now, it won’t be shown again')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create key')
     }
-    setKeys((prev) => [...prev, newKey])
-    setNewName('')
-    setNewScopes([])
-    setShowNew(false)
   }
 
-  function revokeKey(id: string) {
+  async function revokeKey(id: string) {
     setKeys((prev) => prev.map((k) => k.id === id ? { ...k, active: false } : k))
+    await fetch(`/api/freehold/settings/api-keys/${id}`, { method: 'DELETE' }).catch(() => {})
   }
 
   function deleteKey(id: string) {
+    revokeKey(id)
     setKeys((prev) => prev.filter((k) => k.id !== id))
+  }
+
+  function setTwoFa(v: boolean) {
+    setTwoFaOn(v)
+    fetch('/api/freehold/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ twoFa: v }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error()
+        toast.success(v ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled')
+      })
+      .catch(() => {
+        setTwoFaOn(!v) // revert optimistic toggle on failure
+        toast.error('Could not update two-factor authentication')
+      })
   }
 
   function toggleScope(scope: string) {
@@ -96,7 +139,7 @@ export default function SecurityPage() {
             </div>
           </div>
           <button
-            onClick={() => setTwoFaOn((v) => !v)}
+            onClick={() => setTwoFa(!twoFaOn)}
             className={`relative h-6 w-11 shrink-0 rounded-full transition ${twoFaOn ? 'bg-emerald-400' : 'bg-surface-3'}`}
           >
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${twoFaOn ? 'left-[22px]' : 'left-0.5'}`} />
@@ -109,6 +152,21 @@ export default function SecurityPage() {
           </div>
         )}
       </section>
+
+      {/* One-time secret reveal */}
+      {newSecret && (
+        <section className="mb-4 rounded-[14px] border border-emerald-400/25 bg-emerald-400/[0.05] p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Key className="h-4 w-4" /> New API key — copy it now</div>
+          <p className="mt-1 text-xs text-slate-400">This secret is shown once and never again.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 truncate rounded-lg border border-line bg-surface-2 px-3 py-2 font-mono text-xs text-slate-200">{newSecret}</code>
+            <button onClick={() => { copy(newSecret, 'new'); }} className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20">
+              {copied === 'new' ? 'Copied' : 'Copy'}
+            </button>
+            <button onClick={() => setNewSecret(null)} className="rounded-lg border border-line px-3 py-2 text-xs text-slate-400 hover:text-slate-200">Done</button>
+          </div>
+        </section>
+      )}
 
       {/* API Keys */}
       <section className="mb-6">

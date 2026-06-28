@@ -65,6 +65,16 @@ export const canDeleteCrmRecords = (role?: string | null, orgTitle?: string | nu
   return normalized === "ceo" || normalized === "admin"
 }
 
+/**
+ * Who may authorize a landing page / inventory page to go live.
+ * Non-authorizers (e.g. marketing, sales_manager) can request publish; a
+ * manager then authorizes. Admins/CEO/Director/GM authorize directly.
+ */
+export const canAuthorizePublish = (role?: string | null, orgTitle?: string | null) => {
+  const normalized = resolvePermissionRole(role, orgTitle)
+  return ["ceo", "director", "admin", "general_manager"].includes(normalized)
+}
+
 export async function ensureAuthTables() {
   await ensureUsersTable()
   await query(`

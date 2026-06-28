@@ -76,6 +76,14 @@ export default function IntegrationsPage() {
   const [connecting, setConnecting] = useState<string | null>(null)
   const [connected,  setConnected]  = useState<string[]>([])
 
+  // Restore previously connected integrations (persisted on device).
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fh_connected_integrations') || '[]')
+      if (Array.isArray(saved) && saved.length) setConnected(saved)
+    } catch {}
+  }, [])
+
   // Live data — fetched on mount; falls back to mock when unavailable
   const [integrations, setIntegrations] = useState<any[]>(mockIntegrations)
   // Blockers come from mock; API doesn't yet expose them
@@ -264,9 +272,13 @@ export default function IntegrationsPage() {
                             setConnecting(integration.id)
                             setTimeout(() => {
                               setConnecting(null)
-                              setConnected((prev) => [...prev, integration.id])
+                              setConnected((prev) => {
+                                const next = [...prev, integration.id]
+                                try { localStorage.setItem('fh_connected_integrations', JSON.stringify(next)) } catch {}
+                                return next
+                              })
                               toast.success(integration.name + ' connected')
-                            }, 1800)
+                            }, 1200)
                           }}
                           className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60 sm:inline-flex"
                         >

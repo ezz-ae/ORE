@@ -102,6 +102,10 @@ export type CRMLeadIntelligence = {
   nextBestAction: string
   suggestedMessage: string
   aiSummary: string
+  /** ISO timestamp until which this lead is snoozed (hidden from follow-up queue). */
+  snoozeUntil?: string | null
+  /** Sequential lead code / serial number, e.g. FH-0001. */
+  leadCode?: string | null
 }
 
 export type NotebookOutput = {
@@ -403,6 +407,8 @@ export type CRMAgentCapacity = {
   status: "available" | "at_capacity" | "overloaded"
   specialty: string
   recentWins: number
+  email?: string
+  phone?: string
 }
 
 export type CRMInboxLead = {

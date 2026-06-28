@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Sparkles, Database, Zap, Shield,
@@ -8,27 +8,25 @@ import {
   Sliders,
 } from 'lucide-react'
 import { PageHeader, buttonClass } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AiAction {
   id: string
-  label: string
-  description: string
   role: 'Owner' | 'Admin'
   enabled: boolean
 }
 
 interface CrmField {
-  source: string
-  target: string
+  id: string
+  srcKey: string
+  tgtKey: string
   mapped: boolean
 }
 
 interface LmThreshold {
   id: string
-  label: string
-  description: string
   value: number
   min: number
   max: number
@@ -39,45 +37,53 @@ interface LmThreshold {
 // ─── Static data ──────────────────────────────────────────────────────────────
 
 const INITIAL_AI_ACTIONS: AiAction[] = [
-  { id: 'send_whatsapp',    label: 'Send WhatsApp messages',        description: 'AI can send WhatsApp messages to leads on your behalf', role: 'Owner', enabled: true  },
-  { id: 'post_social',      label: 'Post to social channels',       description: 'AI can publish content to Instagram and LinkedIn',       role: 'Admin', enabled: false },
-  { id: 'launch_ad',        label: 'Launch paid ad campaigns',      description: 'AI can create and activate campaigns on Meta and Google', role: 'Owner', enabled: true  },
-  { id: 'create_landing',   label: 'Auto-generate landing pages',   description: 'AI can publish new landing pages from inventory data',    role: 'Admin', enabled: true  },
-  { id: 'export_crm',       label: 'Export CRM data',               description: 'AI can export leads and contact data to CSV or HubSpot',  role: 'Owner', enabled: false },
-  { id: 'assign_leads',     label: 'Auto-assign new leads',         description: 'AI can assign incoming leads to agents based on workload', role: 'Admin', enabled: true  },
+  { id: 'send_whatsapp',    role: 'Owner', enabled: true  },
+  { id: 'post_social',      role: 'Admin', enabled: false },
+  { id: 'launch_ad',        role: 'Owner', enabled: true  },
+  { id: 'create_landing',   role: 'Admin', enabled: true  },
+  { id: 'export_crm',       role: 'Owner', enabled: false },
+  { id: 'assign_leads',     role: 'Admin', enabled: true  },
 ]
 
 const INITIAL_CRM_FIELDS: CrmField[] = [
-  { source: 'HubSpot Deal Stage',   target: 'Pipeline stage',        mapped: true  },
-  { source: 'HubSpot Lead Score',   target: 'Intent score',          mapped: true  },
-  { source: 'Meta Lead Form',       target: 'Source: paid social',   mapped: true  },
-  { source: 'Google Lead Form',     target: 'Source: paid search',   mapped: true  },
-  { source: 'WhatsApp Contact',     target: 'Source: WhatsApp',      mapped: false },
-  { source: 'HubSpot Owner',        target: 'Agent assignment',      mapped: false },
+  { id: 'hubspot_deal_stage', srcKey: 'hubspot_deal_stage', tgtKey: 'pipeline_stage',     mapped: true  },
+  { id: 'hubspot_lead_score', srcKey: 'hubspot_lead_score', tgtKey: 'intent_score',       mapped: true  },
+  { id: 'meta_lead_form',     srcKey: 'meta_lead_form',     tgtKey: 'source_paid_social', mapped: true  },
+  { id: 'google_lead_form',   srcKey: 'google_lead_form',   tgtKey: 'source_paid_search', mapped: true  },
+  { id: 'whatsapp_contact',   srcKey: 'whatsapp_contact',   tgtKey: 'source_whatsapp',    mapped: false },
+  { id: 'hubspot_owner',      srcKey: 'hubspot_owner',      tgtKey: 'agent_assignment',   mapped: false },
 ]
 
 const INITIAL_THRESHOLDS: LmThreshold[] = [
-  { id: 'min_ad_readiness',   label: 'Minimum ad readiness',          description: 'Required before allowing campaign launch',                value: 80, min: 0,  max: 100, step: 5,  unit: '%'   },
-  { id: 'min_landing_ready',  label: 'Minimum landing readiness',      description: 'Required before publishing a landing page',               value: 80, min: 0,  max: 100, step: 5,  unit: '%'   },
-  { id: 'auto_block_score',   label: 'Auto-block threshold',           description: 'Opportunity score below this is auto-blocked from launch', value: 30, min: 0,  max: 100, step: 5,  unit: 'pts' },
-  { id: 'ad_req_expiry',      label: 'Ad request expiry',              description: 'Days before an unreviewed ad request expires',            value: 7,  min: 1,  max: 30,  step: 1,  unit: 'd'   },
-  { id: 'lead_sla_hours',     label: 'Lead response SLA',              description: 'Hours until a new lead is flagged as uncontacted',        value: 4,  min: 1,  max: 48,  step: 1,  unit: 'h'   },
-  { id: 'max_cpl',            label: 'Max CPL alert threshold',        description: 'CPL above this triggers an alert in the Finance section', value: 120, min: 50, max: 500, step: 10, unit: 'AED' },
+  { id: 'min_ad_readiness',   value: 80,  min: 0,  max: 100, step: 5,  unit: '%'   },
+  { id: 'min_landing_ready',  value: 80,  min: 0,  max: 100, step: 5,  unit: '%'   },
+  { id: 'auto_block_score',   value: 30,  min: 0,  max: 100, step: 5,  unit: 'pts' },
+  { id: 'ad_req_expiry',      value: 7,   min: 1,  max: 30,  step: 1,  unit: 'd'   },
+  { id: 'lead_sla_hours',     value: 4,   min: 1,  max: 48,  step: 1,  unit: 'h'   },
+  { id: 'max_cpl',            value: 120, min: 50, max: 500, step: 10, unit: 'AED' },
 ]
 
 const NOTIFICATION_SETTINGS = [
-  { id: 'new_lead',       label: 'New lead received',              enabled: true  },
-  { id: 'cpl_alert',     label: 'CPL exceeds threshold',          enabled: true  },
-  { id: 'campaign_paused', label: 'Campaign paused automatically', enabled: false },
-  { id: 'budget_80pct',  label: 'Budget 80% consumed',            enabled: true  },
-  { id: 'landing_live',  label: 'Landing page goes live',         enabled: false },
-  { id: 'lead_overdue',  label: 'Lead SLA breached',              enabled: true  },
+  { id: 'new_lead',        enabled: true  },
+  { id: 'cpl_alert',       enabled: true  },
+  { id: 'campaign_paused', enabled: false },
+  { id: 'budget_80pct',    enabled: true  },
+  { id: 'landing_live',    enabled: false },
+  { id: 'lead_overdue',    enabled: true  },
 ]
 
+// Brand fields — `labelKey` maps to the dictionary; `value` is real config data.
 const BRAND_SETTINGS = [
-  { label: 'Company Name',   value: 'Freehold Property Dubai' },
-  { label: 'Primary Domain', value: 'freeholdproperty.ae' },
-  { label: 'CRM Timezone',   value: 'Asia/Dubai (UTC+4)' },
+  { labelKey: 'settings.brand.companyName',   value: 'Freehold Property Dubai' },
+  { labelKey: 'settings.brand.primaryDomain', value: 'freeholdproperty.ae' },
+  { labelKey: 'settings.brand.crmTimezone',   value: 'Asia/Dubai (UTC+4)' },
+]
+
+// Theme options — `value` is the persisted identifier; `labelKey` is the display label.
+const THEME_OPTIONS = [
+  { value: 'Dark (current)', labelKey: 'settings.brand.theme.dark',   bg: 'bg-surface'   },
+  { value: 'Darker',         labelKey: 'settings.brand.theme.darker', bg: 'bg-black'     },
+  { value: 'Navy',           labelKey: 'settings.brand.theme.navy',   bg: 'bg-[#0a0f1e]' },
 ]
 
 // ─── Toggle component ────────────────────────────────────────────────────────
@@ -130,6 +136,38 @@ export default function SettingsPage() {
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
   const [theme,       setTheme]       = useState('Dark (current)')
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
+  const loaded = useRef(false)
+  const t = useT()
+
+  // Load saved workspace settings.
+  useEffect(() => {
+    fetch('/api/freehold/settings', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        const s = d?.settings
+        if (s?.aiActions) setAiActions(s.aiActions)
+        if (s?.crmFields) setCrmFields(s.crmFields)
+        if (s?.thresholds) setThresholds(s.thresholds)
+        if (s?.notifs) setNotifs(s.notifs)
+        if (typeof s?.theme === 'string') setTheme(s.theme)
+      })
+      .catch(() => {})
+      .finally(() => { loaded.current = true })
+  }, [])
+
+  // Persist (debounced) after initial load.
+  useEffect(() => {
+    if (!loaded.current) return
+    const timer = setTimeout(() => {
+      fetch('/api/freehold/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme }),
+      })
+        .then((r) => { if (!r.ok) throw new Error() })
+        .catch(() => toast.error(t('settings.general.saveError')))
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [aiActions, crmFields, thresholds, notifs, theme, t])
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
 
@@ -142,7 +180,7 @@ export default function SettingsPage() {
   }
 
   function updateThreshold(id: string, value: number) {
-    setThresholds((prev) => prev.map((t) => t.id === id ? { ...t, value } : t))
+    setThresholds((prev) => prev.map((th) => th.id === id ? { ...th, value } : th))
   }
 
   function toggleNotif(id: string) {
@@ -150,11 +188,11 @@ export default function SettingsPage() {
   }
 
   const TABS = [
-    { id: 'ai'            as const, label: 'AI Permissions', icon: Sparkles },
-    { id: 'crm'           as const, label: 'CRM Mapping',    icon: Database  },
-    { id: 'thresholds'    as const, label: 'Thresholds',     icon: Sliders   },
-    { id: 'notifications' as const, label: 'Notifications',  icon: Bell      },
-    { id: 'brand'         as const, label: 'Brand',          icon: Globe     },
+    { id: 'ai'            as const, label: t('settings.general.tab.ai'),            icon: Sparkles },
+    { id: 'crm'           as const, label: t('settings.general.tab.crm'),           icon: Database  },
+    { id: 'thresholds'    as const, label: t('settings.general.tab.thresholds'),    icon: Sliders   },
+    { id: 'notifications' as const, label: t('settings.general.tab.notifications'), icon: Bell      },
+    { id: 'brand'         as const, label: t('settings.general.tab.brand'),         icon: Globe     },
   ]
 
   return (
@@ -162,10 +200,10 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-4xl">
 
         <PageHeader
-          eyebrow="System Settings"
+          eyebrow={t('settings.general.eyebrow')}
           Icon={SettingsIcon}
-          title="Settings"
-          subtitle="Configure AI permissions, data mapping, and platform thresholds"
+          title={t('settings.general.title')}
+          subtitle={t('settings.general.subtitle')}
           className="mb-8"
         />
 
@@ -194,22 +232,22 @@ export default function SettingsPage() {
             <SectionHead
               icon={Sparkles}
               accent="text-gold/80"
-              title="AI Action Permissions"
-              sub="Control which actions the AI can take autonomously on your behalf"
+              title={t('settings.ai.head.title')}
+              sub={t('settings.ai.head.sub')}
             />
             <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {aiActions.map((a) => (
                 <div key={a.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-100">{a.label}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">{a.description}</p>
+                    <p className="text-sm font-medium text-slate-100">{t(`settings.ai.${a.id}.label`)}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{t(`settings.ai.${a.id}.desc`)}</p>
                     <span className="mt-1 inline-block rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-500">
-                      {a.role} approval
+                      {t('settings.ai.approval', { role: a.role })}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`text-xs font-medium ${a.enabled ? 'text-gold' : 'text-slate-500'}`}>
-                      {a.enabled ? 'Enabled' : 'Off'}
+                      {a.enabled ? t('settings.ai.enabled') : t('settings.ai.off')}
                     </span>
                     <Toggle on={a.enabled} onChange={() => toggleAiAction(a.id)} />
                   </div>
@@ -217,7 +255,7 @@ export default function SettingsPage() {
               ))}
             </div>
             <p className="mt-3 text-xs text-slate-500">
-              {aiActions.filter((a) => a.enabled).length} of {aiActions.length} actions enabled
+              {t('settings.ai.count', { enabled: aiActions.filter((a) => a.enabled).length, total: aiActions.length })}
             </p>
           </section>
         )}
@@ -228,28 +266,30 @@ export default function SettingsPage() {
             <SectionHead
               icon={Database}
               accent="text-gold/80"
-              title="CRM Field Mapping"
-              sub="Map external data sources to internal CRM intelligence fields"
+              title={t('settings.crm.head.title')}
+              sub={t('settings.crm.head.sub')}
             />
             {unmappedCount > 0 && (
               <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
                 <p className="text-sm text-slate-300">
-                  {unmappedCount} field{unmappedCount > 1 ? 's' : ''} unmapped — toggle to configure
+                  {unmappedCount > 1
+                    ? t('settings.crm.unmappedMany', { count: unmappedCount })
+                    : t('settings.crm.unmappedOne', { count: unmappedCount })}
                 </p>
               </div>
             )}
             <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {crmFields.map((f, idx) => (
-                <div key={f.source} className="flex items-center gap-4 px-5 py-4">
+                <div key={f.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                    <p className="truncate text-sm text-slate-400">{f.source}</p>
+                    <p className="truncate text-sm text-slate-400">{t(`settings.crm.src.${f.srcKey}`)}</p>
                     <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-600" />
-                    <p className="truncate text-sm font-medium text-slate-100">{f.target}</p>
+                    <p className="truncate text-sm font-medium text-slate-100">{t(`settings.crm.tgt.${f.tgtKey}`)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`text-xs font-medium ${f.mapped ? 'text-gold' : 'text-amber-400'}`}>
-                      {f.mapped ? 'Mapped' : 'Unmapped'}
+                      {f.mapped ? t('settings.crm.mapped') : t('settings.crm.unmapped')}
                     </span>
                     <Toggle on={f.mapped} onChange={() => toggleCrmField(idx)} />
                   </div>
@@ -265,32 +305,32 @@ export default function SettingsPage() {
             <SectionHead
               icon={Sliders}
               accent="text-gold/80"
-              title="Lead Machine Thresholds"
-              sub="Minimum bars for landing generation, ad requests, and campaign launch"
+              title={t('settings.thresholds.head.title')}
+              sub={t('settings.thresholds.head.sub')}
             />
             <div className="grid gap-4 sm:grid-cols-2">
-              {thresholds.map((t) => (
-                <div key={t.id} className="rounded-2xl border border-line bg-surface p-5">
-                  <p className="text-sm font-medium text-slate-100">{t.label}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{t.description}</p>
+              {thresholds.map((th) => (
+                <div key={th.id} className="rounded-2xl border border-line bg-surface p-5">
+                  <p className="text-sm font-medium text-slate-100">{t(`settings.thresholds.${th.id}.label`)}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{t(`settings.thresholds.${th.id}.desc`)}</p>
                   <div className="mt-4 flex items-center gap-3">
                     <input
                       type="range"
-                      min={t.min}
-                      max={t.max}
-                      step={t.step}
-                      value={t.value}
-                      onChange={(e) => updateThreshold(t.id, Number(e.target.value))}
+                      min={th.min}
+                      max={th.max}
+                      step={th.step}
+                      value={th.value}
+                      onChange={(e) => updateThreshold(th.id, Number(e.target.value))}
                       className="flex-1 accent-gold"
                     />
                     <div className="shrink-0 rounded-xl border border-line-strong bg-surface-2 px-2.5 py-1 text-sm font-semibold tabular-nums text-white min-w-[56px] text-center">
-                      {t.value}
-                      <span className="ml-0.5 text-xs font-normal text-slate-500">{t.unit}</span>
+                      {th.value}
+                      <span className="ml-0.5 text-xs font-normal text-slate-500">{th.unit}</span>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between text-xs text-slate-600">
-                    <span>{t.min}{t.unit}</span>
-                    <span>{t.max}{t.unit}</span>
+                    <span>{th.min}{th.unit}</span>
+                    <span>{th.max}{th.unit}</span>
                   </div>
                 </div>
               ))}
@@ -304,18 +344,18 @@ export default function SettingsPage() {
             <SectionHead
               icon={Bell}
               accent="text-slate-400"
-              title="Notification Triggers"
-              sub="Choose which platform events generate alerts in your dashboard"
+              title={t('settings.gnotif.head.title')}
+              sub={t('settings.gnotif.head.sub')}
             />
             <div className="divide-y divide-line rounded-2xl border border-line bg-surface overflow-hidden">
               {notifs.map((n) => (
                 <div key={n.id} className="flex items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-100">{n.label}</p>
+                    <p className="text-sm font-medium text-slate-100">{t(`settings.gnotif.${n.id}`)}</p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`text-xs font-medium ${n.enabled ? 'text-gold' : 'text-slate-500'}`}>
-                      {n.enabled ? 'On' : 'Off'}
+                      {n.enabled ? t('settings.gnotif.on') : t('settings.gnotif.off')}
                     </span>
                     <Toggle on={n.enabled} onChange={() => toggleNotif(n.id)} />
                   </div>
@@ -323,7 +363,7 @@ export default function SettingsPage() {
               ))}
             </div>
             <p className="mt-3 text-xs text-slate-500">
-              {notifs.filter((n) => n.enabled).length} of {notifs.length} notifications active
+              {t('settings.gnotif.count', { enabled: notifs.filter((n) => n.enabled).length, total: notifs.length })}
             </p>
           </section>
         )}
@@ -334,13 +374,13 @@ export default function SettingsPage() {
             <SectionHead
               icon={Globe}
               accent="text-slate-400"
-              title="Brand & Identity"
-              sub="Core identity settings used across campaigns, landing pages, and AI-generated content"
+              title={t('settings.brand.head.title')}
+              sub={t('settings.brand.head.sub')}
             />
             <div className="space-y-4">
               {BRAND_SETTINGS.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-line bg-surface p-5">
-                  <label className="block text-xs font-medium text-slate-500 mb-2">{s.label}</label>
+                <div key={s.labelKey} className="rounded-2xl border border-line bg-surface p-5">
+                  <label className="block text-xs font-medium text-slate-500 mb-2">{t(s.labelKey)}</label>
                   <input
                     type="text"
                     defaultValue={s.value}
@@ -351,20 +391,16 @@ export default function SettingsPage() {
 
               {/* Theme */}
               <div className="rounded-2xl border border-line bg-surface p-5">
-                <label className="block text-xs font-medium text-slate-500 mb-3">Dashboard Theme</label>
+                <label className="block text-xs font-medium text-slate-500 mb-3">{t('settings.brand.dashboardTheme')}</label>
                 <div className="flex gap-3">
-                  {[
-                    { label: 'Dark (current)', bg: 'bg-surface' },
-                    { label: 'Darker',         bg: 'bg-black'     },
-                    { label: 'Navy',           bg: 'bg-[#0a0f1e]' },
-                  ].map((t) => (
+                  {THEME_OPTIONS.map((opt) => (
                     <button
-                      key={t.label}
-                      onClick={() => { setTheme(t.label); toast.success(t.label + ' theme applied') }}
+                      key={opt.value}
+                      onClick={() => { setTheme(opt.value); toast.success(t('settings.brand.themeApplied', { theme: t(opt.labelKey) })) }}
                       className="flex flex-col items-center gap-1.5"
                     >
-                      <div className={`h-8 w-8 rounded-lg border border-line-strong ${t.bg} ${theme === t.label ? 'ring-gold ring-2' : 'ring-line-strong'}`} />
-                      <span className="text-xs text-slate-500">{t.label}</span>
+                      <div className={`h-8 w-8 rounded-lg border border-line-strong ${opt.bg} ${theme === opt.value ? 'ring-gold ring-2' : 'ring-line-strong'}`} />
+                      <span className="text-xs text-slate-500">{t(opt.labelKey)}</span>
                     </button>
                   ))}
                 </div>
@@ -374,13 +410,13 @@ export default function SettingsPage() {
               <div className="rounded-2xl border border-line bg-surface p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Lock className="h-3.5 w-3.5 text-slate-500" />
-                  <label className="text-xs font-medium text-slate-500">Access Control</label>
+                  <label className="text-xs font-medium text-slate-500">{t('settings.brand.accessControl')}</label>
                 </div>
                 <div className="space-y-2">
                   {[
-                    { role: 'Owner (you)',     perms: 'Full access',           email: 'm@ezz.ae' },
-                    { role: 'Admin',           perms: 'All except billing',    email: 'admin@freeholdproperty.ae' },
-                    { role: 'Sales Agent',     perms: 'CRM + Lead Machine',    email: '3 members' },
+                    { role: t('settings.brand.access.owner'),      perms: t('settings.brand.access.owner.perms'),      email: 'm@ezz.ae' },
+                    { role: t('settings.brand.access.admin'),      perms: t('settings.brand.access.admin.perms'),      email: 'admin@freeholdproperty.ae' },
+                    { role: t('settings.brand.access.salesAgent'), perms: t('settings.brand.access.salesAgent.perms'), email: t('settings.brand.access.members', { count: 3 }) },
                   ].map((u) => (
                     <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
                       <div>

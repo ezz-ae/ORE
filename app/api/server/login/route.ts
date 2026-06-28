@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
-import { authenticate } from '@/lib/freehold/accounts'
+import { authenticate, seedTeam } from '@/lib/freehold/accounts'
 import { authenticateFromDB } from '@/lib/freehold/auth-db'
 import { signSession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+
+export const runtime = 'nodejs'
 
 const DAY = 60 * 60 * 24
 
@@ -15,6 +17,10 @@ export async function POST(req: Request) {
 
   const email = body.email ?? ''
   const password = body.password ?? ''
+
+  // Ensure the real team exists in the DB so login, Team, Assignment and Agent
+  // capacity all share the same accounts.
+  await seedTeam()
 
   // Try DB first, then fall back to hardcoded accounts
   let user = await authenticateFromDB(email, password)

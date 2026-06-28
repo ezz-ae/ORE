@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   ArrowLeft, Bot,
-  LayoutDashboard, Building2, MapPin, HardHat, Globe, Hash, Lightbulb,
+  LayoutDashboard, Building2, MapPin, HardHat, Globe, Hash, Lightbulb, MonitorSmartphone,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 
@@ -14,6 +14,7 @@ const tabs = [
   { label: 'Areas',      href: '/freehold-intelligence/ai-manager/areas',                    Icon: MapPin          },
   { label: 'Developers', href: '/freehold-intelligence/ai-manager/developers',               Icon: HardHat         },
   { label: 'Pages',      href: '/freehold-intelligence/ai-manager/pages',                    Icon: Globe           },
+  { label: 'Microsites', href: '/freehold-intelligence/ai-manager/microsites',               Icon: MonitorSmartphone },
   { label: 'Topics',     href: '/freehold-intelligence/ai-manager/topics',                   Icon: Hash            },
   { label: 'Insights',   href: '/freehold-intelligence/ai-manager/insights',                 Icon: Lightbulb       },
 ]

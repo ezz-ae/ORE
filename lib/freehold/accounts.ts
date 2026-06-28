@@ -13,7 +13,10 @@
  *   Broker    → FH_Broker_2026
  */
 
+import { createHash } from 'node:crypto'
 import type { SessionUser } from './session-types'
+import { query } from '@/lib/db'
+import { ensureUsersTable } from '@/lib/data'
 
 interface Account {
   password: string
@@ -139,4 +142,36 @@ export function authenticate(email: string, password: string): SessionUser | nul
   const acct = ACCOUNTS[email.trim().toLowerCase()]
   if (!acct || acct.password !== password) return null
   return acct.user
+}
+
+let seedDone = false
+/**
+ * Seed the real team into freehold_site_users so Team, Assignment, Agent
+ * capacity, lead ownership and login all share the same accounts. The user id
+ * equals the broker's brokerId (or user_<localpart>) so assigned_broker_id
+ * matches the broker session's brokerId. Idempotent; passwords are only set if
+ * not already present (never overwrites a changed password).
+ */
+export async function seedTeam(): Promise<void> {
+  if (seedDone) return
+  try {
+    await ensureUsersTable()
+    for (const [email, acct] of Object.entries(ACCOUNTS)) {
+      const u = acct.user
+      const id = u.brokerId || `user_${email.split('@')[0].replace(/[^a-z0-9]/gi, '_')}`
+      const hash = createHash('sha256').update(acct.password).digest('hex')
+      await query(
+        `INSERT INTO freehold_site_users (id, name, email, role, password_hash, ai_access)
+         VALUES ($1, $2, $3, $4, $5, true)
+         ON CONFLICT (email) DO UPDATE SET
+           name = EXCLUDED.name,
+           role = EXCLUDED.role,
+           password_hash = COALESCE(freehold_site_users.password_hash, EXCLUDED.password_hash)`,
+        [id, u.name, email.toLowerCase(), u.role, hash],
+      )
+    }
+    seedDone = true
+  } catch (error) {
+    console.error('[seedTeam] failed', error)
+  }
 }

@@ -27,7 +27,7 @@ const isLiveNow = (status: string, publishFrom: string | null, publishTo: string
 const statusTone = (status: string) =>
   status === "published" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
 
-export function LandingPagesList({ initialPages }: { initialPages: LandingPageDashboardRow[] }) {
+export function LandingPagesList({ initialPages, canAuthorize = false }: { initialPages: LandingPageDashboardRow[]; canAuthorize?: boolean }) {
   const router = useRouter()
   const [pages, setPages] = useState(initialPages)
   const [loadingSlug, setLoadingSlug] = useState<string | null>(null)
@@ -69,12 +69,14 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
           const publishTo = data?.landingPage?.publishTo
             ? new Date(data.landingPage.publishTo).toISOString()
             : null
+          const newStatus = data?.landingPage?.status || status
           return {
             ...page,
-            status: data?.landingPage?.status || status,
+            status: newStatus,
+            pendingPublish: Boolean(data?.pendingPublish),
             publishFrom,
             publishTo,
-            isLiveNow: isLiveNow(data?.landingPage?.status || status, publishFrom, publishTo),
+            isLiveNow: isLiveNow(newStatus, publishFrom, publishTo),
           }
         }),
       )
@@ -82,6 +84,48 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
     } finally {
       setLoadingSlug(null)
     }
+  }
+
+  const renderStatusBadge = (page: LandingPageDashboardRow) =>
+    page.pendingPublish ? (
+      <span className="inline-flex rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600">
+        Pending authorization
+      </span>
+    ) : (
+      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusTone(page.status)}`}>
+        {page.status}
+      </span>
+    )
+
+  const renderPublishButton = (page: LandingPageDashboardRow, fullWidth = false) => {
+    const w = fullWidth ? "w-full" : ""
+    if (page.pendingPublish) {
+      return canAuthorize ? (
+        <Button
+          size="sm"
+          className={`ore-gradient ${w}`}
+          disabled={loadingSlug === page.slug}
+          onClick={() => updateStatus(page.slug, "published")}
+        >
+          {loadingSlug === page.slug ? "Saving..." : "Authorize & Publish"}
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" className={w} disabled>
+          Awaiting authorization
+        </Button>
+      )
+    }
+    return (
+      <Button
+        size="sm"
+        className={page.status === "published" ? w : `ore-gradient ${w}`}
+        variant={page.status === "published" ? "outline" : "default"}
+        disabled={loadingSlug === page.slug}
+        onClick={() => updateStatus(page.slug, page.status === "published" ? "draft" : "published")}
+      >
+        {loadingSlug === page.slug ? "Saving..." : page.status === "published" ? "Unpublish" : page.status === "draft" && !canAuthorize ? "Request Publish" : "Publish"}
+      </Button>
+    )
   }
 
   return (
@@ -144,9 +188,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
             </div>
             <div className="col-span-2 text-muted-foreground truncate">{page.projectSlug || "—"}</div>
             <div>
-              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusTone(page.status)}`}>
-                {page.status}
-              </span>
+              {renderStatusBadge(page)}
             </div>
             <div className="text-muted-foreground">{page.pageViews}</div>
             <div className="text-muted-foreground">{page.leadCount}</div>
@@ -160,15 +202,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
               <Button size="sm" variant="outline" asChild>
                 <Link href={`/lp/${page.slug}`} target="_blank">{page.status === "published" ? "Open" : "Preview"}</Link>
               </Button>
-              <Button
-                size="sm"
-                className={page.status === "published" ? "" : "ore-gradient"}
-                variant={page.status === "published" ? "outline" : "default"}
-                disabled={loadingSlug === page.slug}
-                onClick={() => updateStatus(page.slug, page.status === "published" ? "draft" : "published")}
-              >
-                {loadingSlug === page.slug ? "Saving..." : page.status === "published" ? "Unpublish" : "Publish"}
-              </Button>
+              {renderPublishButton(page)}
             </div>
           </div>
         ))}
@@ -189,9 +223,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
                 <div className="text-xs text-muted-foreground">{page.slug}</div>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className={`inline-flex rounded-full px-2 py-0.5 font-medium ${statusTone(page.status)}`}>
-                  {page.status}
-                </span>
+                {renderStatusBadge(page)}
                 <span className="text-muted-foreground">{page.projectSlug || "—"}</span>
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
@@ -212,15 +244,7 @@ export function LandingPagesList({ initialPages }: { initialPages: LandingPageDa
                 <Button size="sm" variant="outline" asChild className="w-full">
                   <Link href={`/crm/landing-pages/${page.slug}`}>Edit Landing Page</Link>
                 </Button>
-                <Button
-                  size="sm"
-                  className={page.status === "published" ? "w-full" : "ore-gradient w-full"}
-                  variant={page.status === "published" ? "outline" : "default"}
-                  disabled={loadingSlug === page.slug}
-                  onClick={() => updateStatus(page.slug, page.status === "published" ? "draft" : "published")}
-                >
-                  {loadingSlug === page.slug ? "Saving..." : page.status === "published" ? "Unpublish" : "Publish"}
-                </Button>
+                {renderPublishButton(page, true)}
                 <Button size="sm" variant="outline" asChild className="w-full">
                   <Link href={`/lp/${page.slug}`} target="_blank">{page.status === "published" ? "Open Landing Page" : "Preview Draft"}</Link>
                 </Button>

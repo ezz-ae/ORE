@@ -7,6 +7,7 @@ import {
   Settings, ChevronRight, Coins,
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
+import { useI18n } from '@/lib/i18n/provider'
 
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
@@ -20,7 +21,8 @@ const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
 
 export default function AgentHomePage() {
   const { user } = useSession()
-  const now = new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
+  const { t, locale } = useI18n()
+  const now = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
 
   const [liveCritical, setLiveCritical] = useState<number | null>(null)
   const [liveActive,   setLiveActive]   = useState<number | null>(null)
@@ -49,75 +51,75 @@ export default function AgentHomePage() {
   const APPS = useMemo(() => [
     {
       id:      'leads',
-      label:   'My Leads',
+      label:   t('agent.myLeads'),
       Icon:    Users,
       href:    '/freehold-intelligence/agent/leads',
-      metric:  `${displayCritical > 0 ? `${displayCritical} critical · ` : ''}${displayActive} active`,
+      metric:  t('agent.metricLeads', { critical: displayCritical > 0 ? t('agent.metricCritical', { count: displayCritical }) : '', active: displayActive }),
       badge:   displayCritical,
       accent:  displayCritical > 0 ? 'red' : 'sky',
-      sub:     'Pipeline',
+      sub:     t('agent.pipeline'),
     },
     {
       id:      'account',
-      label:   'Account',
+      label:   t('agent.account'),
       Icon:    Wallet,
       href:    '/freehold-intelligence/agent/account',
-      metric:  'Wallet & commissions',
+      metric:  t('agent.walletAndCommissions'),
       badge:   0,
       accent:  'gold',
-      sub:     'Wallet & Profile',
+      sub:     t('agent.walletAndProfile'),
     },
     {
       id:      'campaigns',
-      label:   'Campaigns',
+      label:   t('agent.campaigns'),
       Icon:    Megaphone,
       href:    '/freehold-intelligence/agent/campaigns',
-      metric:  'Ad performance',
+      metric:  t('agent.adPerformance'),
       badge:   0,
       accent:  'blue',
-      sub:     'Ads & Spend',
+      sub:     t('agent.adsAndSpend'),
     },
     {
       id:      'credits',
-      label:   'Credits',
+      label:   t('agent.credits'),
       Icon:    Coins,
       href:    '/freehold-intelligence/agent/credits',
-      metric:  displayBalance > 0 ? `${displayBalance.toLocaleString()} credits left` : 'Credit balance',
+      metric:  displayBalance > 0 ? t('agent.creditsLeft', { balance: displayBalance.toLocaleString() }) : t('agent.creditBalance'),
       badge:   0,
       accent:  'gold',
-      sub:     'Ad Budget',
+      sub:     t('agent.adBudget'),
     },
     {
       id:      'inventory',
-      label:   'Inventory',
+      label:   t('agent.inventory'),
       Icon:    BookOpen,
       href:    '/freehold-intelligence/agent/notebook',
-      metric:  'Property & project data',
+      metric:  t('agent.propertyProjectData'),
       badge:   0,
       accent:  'violet',
-      sub:     'Research',
+      sub:     t('agent.research'),
     },
     {
       id:      'ai',
-      label:   'AI Assistant',
+      label:   t('agent.aiAssistant'),
       Icon:    Sparkles,
       href:    '/freehold-intelligence/agent/ai',
-      metric:  'Freehold Intelligence',
+      metric:  t('agent.freeholdIntelligence'),
       badge:   0,
       accent:  'gold',
-      sub:     'Powered by AI',
+      sub:     t('agent.poweredByAi'),
     },
     {
       id:      'settings',
-      label:   'Settings',
+      label:   t('agent.settings'),
       Icon:    Settings,
-      href:    '/freehold-intelligence/agent',
-      metric:  'Account preferences',
+      href:    '/freehold-intelligence/settings',
+      metric:  t('agent.accountPreferences'),
       badge:   0,
       accent:  'gray',
-      sub:     'Preferences',
+      sub:     t('agent.preferences'),
     },
-  ], [displayCritical, displayActive, displayBalance])
+  ], [displayCritical, displayActive, displayBalance, t])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
@@ -126,7 +128,7 @@ export default function AgentHomePage() {
       <section>
         <div className="text-sm text-slate-500">{now}</div>
         <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-slate-100">
-          Good morning, {(user?.name ?? '').split(' ')[0] || 'there'}.
+          {t('agent.greetingName', { greeting: t('hub.goodMorning'), name: (user?.name ?? '').split(' ')[0] || t('agent.there') })}
         </h1>
 
       </section>
@@ -134,7 +136,7 @@ export default function AgentHomePage() {
       {/* Today's Priority — only shown when there are real critical leads */}
       {displayCritical > 0 && (
         <section className="mt-8">
-          <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Today's focus</div>
+          <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('agent.todaysFocus')}</div>
           <div className="space-y-2">
             <Link
               href="/freehold-intelligence/agent/leads"
@@ -144,11 +146,11 @@ export default function AgentHomePage() {
                 <span className="text-[16px]">⚡</span>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-white">{displayCritical} critical lead{displayCritical !== 1 ? 's' : ''} need immediate action</div>
-                <div className="mt-0.5 text-xs text-slate-400">Response delay detected — act before competitor contact</div>
+                <div className="text-sm font-semibold text-white">{displayCritical !== 1 ? t('agent.criticalLeadsActionPlural', { count: displayCritical }) : t('agent.criticalLeadsAction', { count: displayCritical })}</div>
+                <div className="mt-0.5 text-xs text-slate-400">{t('agent.responseDelay')}</div>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-medium text-red-400">
-                Leads <ChevronRight className="h-3.5 w-3.5" />
+                {t('agent.myLeads')} <ChevronRight className="h-3.5 w-3.5" />
               </div>
             </Link>
           </div>
@@ -157,7 +159,7 @@ export default function AgentHomePage() {
 
       {/* App Grid */}
       <section className="mt-10">
-        <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">My apps</div>
+        <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('agent.myApps')}</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => {
             const a = ACCENT[app.accent]
@@ -192,7 +194,7 @@ export default function AgentHomePage() {
           href="/freehold-intelligence"
           className="text-xs text-slate-600 transition hover:text-slate-400"
         >
-          Switch to manager view →
+          {t('agent.switchToManager')}
         </Link>
       </div>
 

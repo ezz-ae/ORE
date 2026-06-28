@@ -3,20 +3,23 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
-const APP_LABELS: Record<string, string> = {
-  '/freehold-intelligence/agent/leads':     'My Leads',
-  '/freehold-intelligence/agent/account':   'Account',
-  '/freehold-intelligence/agent/campaigns': 'My Campaigns',
-  '/freehold-intelligence/agent/credits':   'Credits',
-  '/freehold-intelligence/agent/notebook':  'Research',
-  '/freehold-intelligence/agent/ai':        'My AI',
+const APP_LABEL_KEYS: Record<string, string> = {
+  '/freehold-intelligence/agent/leads':     'agent.myLeads',
+  '/freehold-intelligence/agent/account':   'agent.account',
+  '/freehold-intelligence/agent/campaigns': 'agent.myCampaigns',
+  '/freehold-intelligence/agent/credits':   'agent.credits',
+  '/freehold-intelligence/agent/notebook':  'agent.research',
+  '/freehold-intelligence/agent/ai':        'agent.myAi',
 }
 
 export default function AgentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const t        = useT()
   const isHome   = pathname === '/freehold-intelligence/agent'
-  const label    = APP_LABELS[pathname] ?? ''
+  const labelKey = APP_LABEL_KEYS[pathname]
+  const label    = labelKey ? t(labelKey) : ''
 
   return (
     <div className="min-h-full">
@@ -31,7 +34,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
               className="flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100"
             >
               <ArrowLeft className="h-4 w-4" />
-              My Workspace
+              {t('agent.myWorkspace')}
             </Link>
           )}
 

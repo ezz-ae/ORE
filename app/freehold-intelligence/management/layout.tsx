@@ -8,21 +8,23 @@ import {
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
+import { useT } from '@/lib/i18n/provider'
 
 const BASE = '/freehold-intelligence/management'
 
 const NAV = [
-  { href: BASE,              label: 'Dashboard',  Icon: LayoutDashboard, exact: true },
-  { href: `${BASE}/events`,  label: 'Events Log', Icon: Activity },
-  { href: `${BASE}/team`,    label: 'Team',       Icon: Users },
-  { href: `${BASE}/deals`,   label: 'Deals',      Icon: Briefcase },
-  { href: `${BASE}/roi`,     label: 'ROI',        Icon: TrendingUp },
-  { href: `${BASE}/reports`, label: 'Reports',    Icon: FileBarChart2 },
+  { href: BASE,              labelKey: 'mgmt.nav.dashboard', Icon: LayoutDashboard, exact: true },
+  { href: `${BASE}/events`,  labelKey: 'mgmt.nav.events',    Icon: Activity },
+  { href: `${BASE}/team`,    labelKey: 'mgmt.nav.team',      Icon: Users },
+  { href: `${BASE}/deals`,   labelKey: 'mgmt.nav.deals',     Icon: Briefcase },
+  { href: `${BASE}/roi`,     labelKey: 'mgmt.nav.roi',       Icon: TrendingUp },
+  { href: `${BASE}/reports`, labelKey: 'mgmt.nav.reports',   Icon: FileBarChart2 },
 ]
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { ready } = useSessionGuard(MANAGEMENT_ROLES)
+  const t = useT()
 
   function isActive(item: typeof NAV[0]) {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href)
@@ -43,7 +45,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <BarChart3 className="h-3.5 w-3.5 text-gold" />
           </div>
-          <span className="text-sm font-semibold text-white">Management</span>
+          <span className="text-sm font-semibold text-white">{t('mgmt.title')}</span>
         </div>
       </header>
 
@@ -69,7 +71,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
                 >
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
                   <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
-                    {item.label}
+                    {t(item.labelKey)}
                   </span>
                 </Link>
               )
@@ -94,7 +96,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
                       active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 )
               })}

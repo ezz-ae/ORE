@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, Search, Target, X, Users, AlertTriangle } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',    label: 'Critical' }
@@ -34,10 +35,12 @@ function stageStyle(stage: string) {
 }
 
 export default function CrmLeadsPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [query,       setQuery]       = useState('')
   const [activeStage, setActiveStage] = useState('All')
   const [activeAgent, setActiveAgent] = useState('All')
+  const [activeLanding, setActiveLanding] = useState('All')
 
   const ALL_STAGES = useMemo(
     () => ['All', ...Array.from(new Set(leads.map((l) => l.stage)))],
@@ -46,6 +49,11 @@ export default function CrmLeadsPage() {
 
   const ALL_AGENTS = useMemo(
     () => ['All', ...Array.from(new Set(leads.map((l) => l.assignedAgent)))],
+    [leads],
+  )
+
+  const ALL_LANDINGS = useMemo(
+    () => ['All', ...Array.from(new Set(leads.map((l) => l.landingId).filter((s): s is string => !!s)))],
     [leads],
   )
 
@@ -59,50 +67,53 @@ export default function CrmLeadsPage() {
     return sorted.filter(lead => {
       if (activeStage !== 'All' && lead.stage !== activeStage) return false
       if (activeAgent !== 'All' && lead.assignedAgent !== activeAgent) return false
+      if (activeLanding !== 'All' && lead.landingId !== activeLanding) return false
       if (q) return (
         lead.name.toLowerCase().includes(q) ||
         lead.source.toLowerCase().includes(q) ||
         lead.stage.toLowerCase().includes(q) ||
-        lead.assignedAgent.toLowerCase().includes(q)
+        lead.assignedAgent.toLowerCase().includes(q) ||
+        (lead.landingId || '').toLowerCase().includes(q) ||
+        (lead.leadCode || '').toLowerCase().includes(q)
       )
       return true
     })
-  }, [sorted, query, activeStage, activeAgent])
+  }, [sorted, query, activeStage, activeAgent, activeLanding])
 
   const hot       = leads.filter(l => l.urgency === 'critical' || l.urgency === 'high').length
   const avgIntent = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + l.intentScore, 0) / leads.length) : 0
   const withRisk  = leads.filter(l => l.duplicateRisk || l.wrongNumberRisk).length
 
-  const hasFilters = query.trim() || activeStage !== 'All' || activeAgent !== 'All'
+  const hasFilters = query.trim() || activeStage !== 'All' || activeAgent !== 'All' || activeLanding !== 'All'
 
-  function clearFilters() { setQuery(''); setActiveStage('All'); setActiveAgent('All') }
+  function clearFilters() { setQuery(''); setActiveStage('All'); setActiveAgent('All'); setActiveLanding('All') }
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <PageHeader
-        eyebrow="CRM"
+        eyebrow={t('crm.crm')}
         Icon={Users}
-        title={`${leads.length} leads`}
-        subtitle={`${hot} need immediate action · sorted by intent score`}
+        title={t('crm.leadsTitle', { count: leads.length })}
+        subtitle={t('crm.leadsSubtitle', { count: hot })}
       />
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total" value={leads.length} hint="in pipeline" Icon={Users} />
+        <StatCard label={t('crm.statTotal')} value={leads.length} hint={t('crm.statTotalHint')} Icon={Users} />
         <StatCard
-          label="Urgent"
+          label={t('crm.statUrgent')}
           value={hot}
-          hint="critical + high"
-          delta={hot > 0 ? { value: 'act now', direction: 'down' } : undefined}
+          hint={t('crm.statUrgentHint')}
+          delta={hot > 0 ? { value: t('crm.statActNow'), direction: 'down' } : undefined}
           Icon={AlertTriangle}
         />
-        <StatCard label="Avg intent" value={avgIntent} hint="out of 100" Icon={Target} />
+        <StatCard label={t('crm.statAvgIntent')} value={avgIntent} hint={t('crm.statAvgIntentHint')} Icon={Target} />
         <StatCard
-          label="Risk flags"
+          label={t('crm.statRiskFlags')}
           value={withRisk}
-          hint={withRisk > 0 ? 'needs review' : 'all clear'}
-          delta={withRisk > 0 ? { value: 'review needed', direction: 'down' } : undefined}
+          hint={withRisk > 0 ? t('crm.statNeedsReview') : t('crm.statAllClear')}
+          delta={withRisk > 0 ? { value: t('crm.statReviewNeeded'), direction: 'down' } : undefined}
         />
       </div>
 
@@ -115,7 +126,7 @@ export default function CrmLeadsPage() {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search name, source, stage, agent…"
+            placeholder={t('crm.searchNameSourceStageAgent')}
             className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder:text-slate-600 outline-none transition focus:border-gold/50"
           />
           {query && (
@@ -140,7 +151,7 @@ export default function CrmLeadsPage() {
                   : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
               }`}
             >
-              {stage}
+              {stage === 'All' ? t('crm.all') : stage}
             </button>
           ))}
 
@@ -156,23 +167,38 @@ export default function CrmLeadsPage() {
                   : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
               }`}
             >
-              {agent === 'All' ? 'All agents' : agent.split(' ')[0]}
+              {agent === 'All' ? t('crm.allAgents') : agent.split(' ')[0]}
             </button>
           ))}
+
+          {ALL_LANDINGS.length > 1 && (
+            <>
+              <span className="mx-0.5 text-slate-700">·</span>
+              <select
+                value={activeLanding}
+                onChange={(e) => setActiveLanding(e.target.value)}
+                className="shrink-0 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400 outline-none transition hover:text-slate-200 focus:border-gold/40"
+              >
+                {ALL_LANDINGS.map((lp) => (
+                  <option key={lp} value={lp} className="bg-surface">{lp === 'All' ? t('crm.allLandingPages') : lp}</option>
+                ))}
+              </select>
+            </>
+          )}
 
           {hasFilters && (
             <button
               onClick={clearFilters}
               className="ml-1 flex items-center gap-1 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400 transition hover:text-slate-200"
             >
-              <X className="h-3 w-3" /> Clear
+              <X className="h-3 w-3" /> {t('crm.clear')}
             </button>
           )}
         </div>
 
         <p className="text-xs text-slate-500">
-          {filtered.length} of {leads.length} leads
-          {hasFilters && <span className="ml-1.5 text-gold/60">· filtered</span>}
+          {t('crm.countOfTotalLeads', { count: filtered.length, total: leads.length })}
+          {hasFilters && <span className="ml-1.5 text-gold/60">· {t('crm.filtered')}</span>}
         </p>
       </div>
 
@@ -181,19 +207,19 @@ export default function CrmLeadsPage() {
         <div className="overflow-hidden rounded-xl border border-line bg-surface">
           {/* Header (desktop) */}
           <div className="hidden grid-cols-[2fr_1fr_72px_96px_1fr_40px] items-center gap-4 border-b border-line px-5 py-2.5 sm:grid">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Lead</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Stage</div>
-            <div className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Score</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Agent</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Source</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t('crm.colLead')}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t('crm.colStage')}</div>
+            <div className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t('crm.score')}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t('crm.colAgent')}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{t('crm.source')}</div>
             <div />
           </div>
 
           {filtered.length === 0 ? (
             <EmptyState
               Icon={Target}
-              title="No leads match these filters"
-              description="Try adjusting the stage or agent filter, or clear the search."
+              title={t('crm.noLeadsMatchFilters')}
+              description={t('crm.noLeadsMatchFiltersDesc')}
               className="rounded-none border-x-0 border-b-0"
             />
           ) : (
@@ -214,12 +240,15 @@ export default function CrmLeadsPage() {
                       <span className={`h-2 w-2 shrink-0 rounded-full ${ug.dot}`} />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
+                          {lead.leadCode && (
+                            <span className="shrink-0 font-mono text-[10px] text-gold/60">{lead.leadCode}</span>
+                          )}
                           <span className="text-sm font-semibold text-slate-100 group-hover:text-white truncate">
                             {lead.name}
                           </span>
                           {hasRisk && (
                             <span className="shrink-0 rounded-full border border-orange-400/20 bg-orange-400/10 px-1.5 py-0.5 text-[9px] font-semibold text-orange-300">
-                              Risk
+                              {t('crm.risk')}
                             </span>
                           )}
                         </div>
@@ -252,6 +281,11 @@ export default function CrmLeadsPage() {
                     {/* Source */}
                     <div className="hidden flex-1 sm:block">
                       <span className="line-clamp-1 text-xs text-slate-500">{lead.source}</span>
+                      {lead.landingId && (
+                        <span className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-gold/15 bg-gold/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-gold/70">
+                          LP · {lead.landingId}
+                        </span>
+                      )}
                     </div>
 
                     <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-gold" />
@@ -264,9 +298,9 @@ export default function CrmLeadsPage() {
       </section>
 
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
-        <span>{filtered.length} leads · sorted by intent score</span>
-        <Link href="/freehold-intelligence/crm" className="text-gold/60 transition hover:text-gold">CRM overview</Link>
-        <Link href="/freehold-intelligence/crm/inbox" className="text-gold/60 transition hover:text-gold">Unassigned inbox</Link>
+        <span>{t('crm.leadsSortedByIntent', { count: filtered.length })}</span>
+        <Link href="/freehold-intelligence/crm" className="text-gold/60 transition hover:text-gold">{t('crm.crmOverview')}</Link>
+        <Link href="/freehold-intelligence/crm/inbox" className="text-gold/60 transition hover:text-gold">{t('crm.unassignedInbox')}</Link>
       </div>
 
     </div>

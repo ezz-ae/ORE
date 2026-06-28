@@ -5,6 +5,9 @@ import {
   Activity, Search, UserPlus, TrendingUp,
   MessageSquare, Clock, CheckCircle2, Loader2, Users,
 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 interface EventItem {
   id: string
@@ -21,26 +24,29 @@ const SEVERITY_STYLES = {
   warning: { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'border-amber-500/20 bg-amber-500/10'   },
 }
 
-function timeLabel(iso: string) {
+function timeLabel(iso: string, t: TFn, locale: string) {
   const d = new Date(iso)
   const diff = Date.now() - d.getTime()
   const h = diff / 3_600_000
-  if (h < 1)  return `${Math.round(h * 60)}m ago`
-  if (h < 24) return `${Math.round(h)}h ago`
-  return d.toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })
+  if (h < 1)  return t('mgmt.events.minAgo', { n: Math.round(h * 60) })
+  if (h < 24) return t('mgmt.events.hourAgo', { n: Math.round(h) })
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+  return d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })
 }
 
-function leadToEvents(lead: any): EventItem[] {
+function leadToEvents(lead: any, t: TFn): EventItem[] {
   const events: EventItem[] = []
-  const name = lead.name || 'Unknown lead'
+  const name = lead.name || t('mgmt.events.unknownLead')
   const source = lead.source || 'direct'
 
   events.push({
     id:          `${lead.id}_created`,
     time:        lead.lastContactAt || new Date().toISOString(),
     user:        source,
-    description: `New lead: ${name}${lead.projectInterest && lead.projectInterest !== 'General enquiry' ? ` — interested in ${lead.projectInterest}` : ''}`,
-    category:    'Leads',
+    description: lead.projectInterest && lead.projectInterest !== 'General enquiry'
+      ? t('mgmt.events.newLeadInterested', { name, project: lead.projectInterest })
+      : t('mgmt.events.newLead', { name }),
+    category:    t('mgmt.events.cat.leads'),
     severity:    lead.temperature === 'hot' || lead.temperature === 'priority' ? 'success' : 'info',
   })
 
@@ -48,9 +54,9 @@ function leadToEvents(lead: any): EventItem[] {
     events.push({
       id:          `${lead.id}_stage`,
       time:        lead.lastContactAt || new Date().toISOString(),
-      user:        lead.assignedAgent || 'System',
-      description: `${name} moved to ${lead.pipelineStage} stage`,
-      category:    'Pipeline',
+      user:        lead.assignedAgent || t('mgmt.events.system'),
+      description: t('mgmt.events.movedStage', { name, stage: lead.pipelineStage }),
+      category:    t('mgmt.events.cat.pipeline'),
       severity:    lead.pipelineStage === 'closed' ? 'success' : lead.pipelineStage === 'lost' ? 'warning' : 'info',
     })
   }
@@ -59,6 +65,7 @@ function leadToEvents(lead: any): EventItem[] {
 }
 
 export default function EventsPage() {
+  const { t, locale } = useI18n()
   const [events,  setEvents]  = useState<EventItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
@@ -68,12 +75,12 @@ export default function EventsPage() {
       .then(r => r.ok ? r.json() : { leads: [] })
       .then(data => {
         const leads: any[] = (data.leads ?? []).slice(0, 50)
-        const items = leads.flatMap(leadToEvents)
+        const items = leads.flatMap((lead) => leadToEvents(lead, t))
         items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
         setEvents(items.slice(0, 60))
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -95,15 +102,15 @@ export default function EventsPage() {
               <Activity className="h-4 w-4 text-slate-300" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-white">Activity Feed</h1>
-              <p className="mt-0.5 text-xs text-slate-500">Recent CRM events</p>
+              <h1 className="text-lg font-semibold text-white">{t('mgmt.events.title')}</h1>
+              <p className="mt-0.5 text-xs text-slate-500">{t('mgmt.events.subtitle')}</p>
             </div>
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
-              placeholder="Search events…"
+              placeholder={t('mgmt.events.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="h-8 w-56 rounded-lg border border-line-strong bg-surface-2 pl-8 pr-3 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-gold/40"
@@ -116,14 +123,14 @@ export default function EventsPage() {
         {loading && (
           <div className="flex items-center justify-center py-24 text-slate-500">
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
-            <span className="text-sm">Loading activity…</span>
+            <span className="text-sm">{t('mgmt.events.loading')}</span>
           </div>
         )}
 
         {!loading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 text-slate-500">
             <Activity className="h-10 w-10 mb-3 opacity-30" />
-            <p className="text-sm">{search ? 'No events match your search.' : 'No activity yet.'}</p>
+            <p className="text-sm">{search ? t('mgmt.events.noMatch') : t('mgmt.events.noActivity')}</p>
           </div>
         )}
 
@@ -143,7 +150,7 @@ export default function EventsPage() {
                       <span>·</span>
                       <span className={`font-medium ${s.text}`}>{event.category}</span>
                       <span>·</span>
-                      <span>{timeLabel(event.time)}</span>
+                      <span>{timeLabel(event.time, t, locale)}</span>
                     </div>
                   </div>
                 </div>

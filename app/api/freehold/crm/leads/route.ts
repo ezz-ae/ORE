@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
+import { ensureLeadsTable } from '@/lib/data'
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 interface DbLead {
@@ -23,6 +25,8 @@ interface DbLead {
   message: string | null
   landing_slug: string | null
   updated_at: string | null
+  snooze_until: string | null
+  lead_code: string | null
 }
 
 function dbLeadToCRM(row: DbLead) {
@@ -63,6 +67,8 @@ function dbLeadToCRM(row: DbLead) {
     viewingProperty: null,
     notes: [],
     taggedProjects: row.project_slug ? [row.project_slug] : [],
+    snoozeUntil: row.snooze_until ?? null,
+    leadCode: row.lead_code ?? null,
   }
 }
 
@@ -73,13 +79,15 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    await ensureLeadsTable()
     const isBroker = user.role === 'broker'
     const brokerId = user.brokerId ?? user.email
 
     const params: unknown[] = []
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
                       status, priority, created_at::text, last_contact_at::text, country,
-                      budget_aed, interest, message, landing_slug, updated_at::text
+                      budget_aed, interest, message, landing_slug, updated_at::text,
+                      snooze_until::text, lead_code
                FROM freehold_site_leads`
 
     if (isBroker && brokerId) {

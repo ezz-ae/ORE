@@ -15,6 +15,9 @@ import {
 import { toast } from 'sonner'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import { useI18n, useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,24 +52,24 @@ interface AISuggestion {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtTime(ts: number) {
-  return new Date(ts * 1000).toLocaleTimeString('en-AE', {
+function fmtTime(ts: number, dateLocale: string) {
+  return new Date(ts * 1000).toLocaleTimeString(dateLocale, {
     hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai',
   })
 }
-function fmtDate(ts: number) {
+function fmtDate(ts: number, t: TFn, dateLocale: string) {
   const d = new Date(ts * 1000)
   const today = new Date()
   const diff = Math.floor((today.getTime() - d.getTime()) / 86400000)
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  return d.toLocaleDateString('en-AE', { dateStyle: 'long' })
+  if (diff === 0) return t('crm.today')
+  if (diff === 1) return t('crm.yesterday')
+  return d.toLocaleDateString(dateLocale, { dateStyle: 'long' })
 }
-function groupByDate(messages: WAMessage[]) {
+function groupByDate(messages: WAMessage[], t: TFn, dateLocale: string) {
   const groups: { label: string; messages: WAMessage[] }[] = []
   let cur = ''
   for (const m of messages) {
-    const label = fmtDate(m.timestamp)
+    const label = fmtDate(m.timestamp, t, dateLocale)
     if (label !== cur) { groups.push({ label, messages: [] }); cur = label }
     groups[groups.length - 1].messages.push(m)
   }
@@ -89,6 +92,7 @@ function StatusIcon({ status }: { status: WAMessage['status'] }) {
 // ── QR Setup Screen ───────────────────────────────────────────────────────────
 
 function QRSetup({ status, onRetry }: { status: WAStatus; onRetry: () => void }) {
+  const t = useT()
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10">
@@ -101,31 +105,31 @@ function QRSetup({ status, onRetry }: { status: WAStatus; onRetry: () => void })
       {status.status === 'qr_ready' && status.qrDataUrl ? (
         <>
           <div>
-            <h2 className="text-[18px] font-semibold text-white">Scan with your phone</h2>
+            <h2 className="text-[18px] font-semibold text-white">{t('crm.scanWithPhone')}</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Open WhatsApp → ⋮ Menu → Linked Devices → Link a Device
+              {t('crm.scanInstructions')}
             </p>
           </div>
           <div className="rounded-[20px] border-4 border-white/90 bg-white p-3 shadow-2xl">
             <Image src={status.qrDataUrl} alt="WhatsApp QR code" width={240} height={240} unoptimized />
           </div>
-          <p className="text-xs text-slate-500">QR expires in 60 seconds. Scan quickly.</p>
+          <p className="text-xs text-slate-500">{t('crm.qrExpires')}</p>
         </>
       ) : status.status === 'connecting' ? (
         <>
-          <h2 className="text-[18px] font-semibold text-white">Connecting…</h2>
-          <p className="text-sm text-slate-500">Generating QR code, please wait.</p>
+          <h2 className="text-[18px] font-semibold text-white">{t('crm.connecting')}</h2>
+          <p className="text-sm text-slate-500">{t('crm.generatingQr')}</p>
           <RefreshCw className="h-6 w-6 animate-spin text-emerald-400" />
         </>
       ) : (
         <>
-          <h2 className="text-[18px] font-semibold text-white">Connect WhatsApp</h2>
+          <h2 className="text-[18px] font-semibold text-white">{t('crm.connectWhatsApp')}</h2>
           <p className="max-w-xs text-sm text-slate-500">
-            Link your WhatsApp to the CRM once. All your conversations will appear here in real-time. No API or business account required.
+            {t('crm.connectWhatsAppDesc')}
           </p>
           <button onClick={onRetry}
             className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400">
-            Connect WhatsApp
+            {t('crm.connectWhatsApp')}
           </button>
         </>
       )}
@@ -145,6 +149,7 @@ function AiPanel({
   onSelect: (text: string) => void
   onClose: () => void
 }) {
+  const t = useT()
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -172,11 +177,11 @@ function AiPanel({
       const data = await res.json() as AISuggestion
       setSuggestions(data.suggestions ?? [])
     } catch {
-      setError('Could not reach AI — check ANTHROPIC_API_KEY')
+      setError(t('crm.aiError'))
     } finally {
       setLoading(false)
     }
-  }, [messages, leadName, phone, inventoryCtx])
+  }, [messages, leadName, phone, inventoryCtx, t])
 
   useEffect(() => { generate() }, [])
 
@@ -184,7 +189,7 @@ function AiPanel({
     <div className="flex w-72 shrink-0 flex-col border-l border-line bg-app">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Sparkles className="h-4 w-4 text-gold" /> AI Replies
+          <Sparkles className="h-4 w-4 text-gold" /> {t('crm.aiReplies')}
         </div>
         <button onClick={onClose} className="rounded p-1 text-slate-500 hover:text-white">
           <X className="h-4 w-4" />
@@ -193,7 +198,7 @@ function AiPanel({
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
         {loading && (
           <div className="flex items-center gap-2 py-4 text-sm text-slate-500">
-            <RefreshCw className="h-4 w-4 animate-spin" /> Analysing conversation…
+            <RefreshCw className="h-4 w-4 animate-spin" /> {t('crm.analysingConversation')}
           </div>
         )}
         {error && <p className="text-xs text-red-400/80">{error}</p>}
@@ -204,11 +209,11 @@ function AiPanel({
           </button>
         ))}
         {!loading && !error && suggestions.length === 0 && (
-          <p className="py-4 text-center text-xs text-slate-600">No suggestions generated.</p>
+          <p className="py-4 text-center text-xs text-slate-600">{t('crm.noSuggestions')}</p>
         )}
         <button onClick={generate} disabled={loading}
           className="mt-1 w-full rounded-full border border-line py-2 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
-          {loading ? 'Generating…' : '↻ Regenerate'}
+          {loading ? t('crm.generating') : t('crm.regenerate')}
         </button>
       </div>
     </div>
@@ -219,6 +224,8 @@ function AiPanel({
 
 export default function WhatsAppPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { t, locale } = useI18n()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
   const { leads } = useLiveLeads()
   const lead = leads.find((l) => l.id === id)
   if (!lead) return null
@@ -357,6 +364,18 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
+  async function patchLead(body: Record<string, unknown>, successMsg: string) {
+    try {
+      const res = await fetch(`/api/freehold/crm/leads/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error('Failed')
+      toast.success(successMsg)
+    } catch {
+      toast.error(t('crm.couldNotUpdateChat'))
+    }
+  }
+
   async function disconnect() {
     await fetch('/api/whatsapp/disconnect', { method: 'POST' })
     setWaStatus({ status: 'disconnected', qrDataUrl: null, connectedPhone: null, connectedName: null })
@@ -364,7 +383,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     eventSourceRef.current?.close()
   }
 
-  const grouped = groupByDate(messages)
+  const grouped = groupByDate(messages, t, dateLocale)
   const isConnected = waStatus.status === 'connected'
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -388,7 +407,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             <div className="text-xs text-slate-500">{lead.phone}</div>
           </div>
           {isConnected && (
-            <button onClick={disconnect} title="Disconnect WhatsApp"
+            <button onClick={disconnect} title={t('crm.disconnectWhatsApp')}
               className="ml-auto rounded-full p-1.5 text-slate-600 transition hover:text-red-400">
               <LogOut className="h-3.5 w-3.5" />
             </button>
@@ -398,13 +417,13 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
         <div className="flex-1 overflow-y-auto">
           {/* Lead info */}
           <div className="border-b border-line px-4 py-4 space-y-2.5">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">Lead Details</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">{t('crm.leadDetailsWa')}</div>
             {[
-              { label: 'Stage',    value: lead.pipelineStage },
-              { label: 'Budget',   value: lead.budgetAED },
-              { label: 'Interest', value: lead.projectInterest },
-              { label: 'Agent',    value: lead.assignedAgent },
-              { label: 'Intent',   value: `${lead.intentScore}/100` },
+              { label: t('crm.stage'),    value: lead.pipelineStage },
+              { label: t('crm.budget'),   value: lead.budgetAED },
+              { label: t('crm.interest'), value: lead.projectInterest },
+              { label: t('crm.agent'),    value: lead.assignedAgent },
+              { label: t('crm.intent'),   value: `${lead.intentScore}/100` },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between gap-3 text-xs">
                 <span className="text-slate-500">{label}</span>
@@ -416,19 +435,26 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           {/* AI next action */}
           <div className="border-b border-line px-4 py-3.5">
             <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-gold/60">
-              <Brain className="h-3 w-3" /> AI Next Action
+              <Brain className="h-3 w-3" /> {t('crm.aiNextAction')}
             </div>
             <p className="text-xs leading-relaxed text-slate-400">{lead.nextBestAction}</p>
           </div>
 
           {/* Inventory matches */}
           <div className="px-4 py-3.5">
-            <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-slate-600">Properties to Share</div>
+            <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-slate-600">{t('crm.propertiesToShare')}</div>
             <div className="space-y-2">
               {invMatches.map((p) => (
                 <button key={p.id}
                   onClick={() => setInput(
-                    `I'd like to share a property that matches your requirements:\n\n*${p.name}* — ${p.area}\nFrom ${p.startingPriceAED ? `AED ${(p.startingPriceAED / 1e6).toFixed(1)}M` : 'price on request'} · ${p.bedrooms} BR${p.roi ? ` · ${p.roi}% ROI` : ''}\n${p.paymentPlan ?? ''}\n\nWould you like to know more?`,
+                    t('crm.sharePropertyMessage', {
+                      name: p.name,
+                      area: p.area,
+                      price: p.startingPriceAED ? `AED ${(p.startingPriceAED / 1e6).toFixed(1)}M` : t('crm.priceOnRequest'),
+                      bedrooms: p.bedrooms,
+                      roi: p.roi ? ` · ${p.roi}% ROI` : '',
+                      plan: p.paymentPlan ?? '',
+                    }),
                   )}
                   className="group w-full rounded-[12px] border border-line bg-[#2A3942] px-3 py-2.5 text-left transition hover:border-emerald-500/30">
                   <div className="flex items-start justify-between gap-2">
@@ -446,7 +472,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                     )}
                   </div>
                   <div className="mt-1.5 text-[10px] text-emerald-400/50 group-hover:text-emerald-400">
-                    ↑ Click to compose message
+                    {t('crm.clickToCompose')}
                   </div>
                 </button>
               ))}
@@ -457,7 +483,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
           <div className="border-t border-line px-4 py-3">
             <Link href={`/freehold-intelligence/notebook?lead=${lead.id}`}
               className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-gold">
-              <BookOpen className="h-3.5 w-3.5" /> View in Notebook
+              <BookOpen className="h-3.5 w-3.5" /> {t('crm.viewInNotebook')}
             </Link>
           </div>
         </div>
@@ -479,12 +505,12 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             <div className="text-[14px] font-semibold text-white">{lead.name}</div>
             <div className="flex items-center gap-1.5 text-xs">
               {isConnected ? (
-                <><Wifi className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">Connected</span></>
+                <><Wifi className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">{t('crm.connected')}</span></>
               ) : (
-                <><WifiOff className="h-3 w-3 text-slate-500" /><span className="text-slate-500">Not connected</span></>
+                <><WifiOff className="h-3 w-3 text-slate-500" /><span className="text-slate-500">{t('crm.notConnected')}</span></>
               )}
               {waStatus.connectedPhone && (
-                <span className="ml-1 text-slate-600">· via {waStatus.connectedPhone}</span>
+                <span className="ml-1 text-slate-600">· {t('crm.via', { phone: waStatus.connectedPhone })}</span>
               )}
             </div>
           </div>
@@ -503,10 +529,15 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               </button>
               {showOptions && (
                 <div className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
-                  {['Archive chat', 'Mute notifications', 'Clear messages', 'Block contact'].map((opt) => (
-                    <button key={opt} onClick={() => { setShowOptions(false); toast.success(opt) }}
+                  {([
+                    { label: t('crm.archiveChat'), run: () => patchLead({ archived: true }, t('crm.chatArchived')) },
+                    { label: t('crm.muteNotifications'), run: () => patchLead({ muted_until: new Date(Date.now() + 30 * 864e5).toISOString() }, t('crm.mutedDays')) },
+                    { label: t('crm.clearMessages'), run: () => { setMessages([]); toast.success(t('crm.messagesCleared')) } },
+                    { label: t('crm.blockContact'), run: () => patchLead({ blocked: true, status: 'lost' }, t('crm.contactBlocked')) },
+                  ]).map((opt) => (
+                    <button key={opt.label} onClick={() => { setShowOptions(false); opt.run() }}
                       className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white">
-                      {opt}
+                      {opt.label}
                     </button>
                   ))}
                 </div>
@@ -536,8 +567,8 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.113.55 4.1 1.513 5.826L0 24l6.335-1.492A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 01-4.991-1.366l-.358-.212-3.76.885.924-3.661-.233-.376A9.772 9.772 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.43-4.388 9.818-9.818 9.818z"/>
                   </svg>
                 </div>
-                <p className="mt-3 text-[14px] font-medium text-slate-500">No messages yet</p>
-                <p className="mt-1 max-w-xs text-xs text-slate-600">Send a message to {lead.name} or wait for them to reach out.</p>
+                <p className="mt-3 text-[14px] font-medium text-slate-500">{t('crm.noMessagesYet')}</p>
+                <p className="mt-1 max-w-xs text-xs text-slate-600">{t('crm.sendMessageOrWait', { name: lead.name })}</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -565,7 +596,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                             }`}>
                               <p className="whitespace-pre-wrap text-[13.5px] leading-[1.55]">{msg.body}</p>
                               <div className={`mt-0.5 flex items-center gap-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <span className="text-[10px] text-slate-500">{fmtTime(msg.timestamp)}</span>
+                                <span className="text-[10px] text-slate-500">{fmtTime(msg.timestamp, dateLocale)}</span>
                                 {isMe && <StatusIcon status={msg.status} />}
                               </div>
                             </div>
@@ -606,7 +637,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             {input === '' && (
               <button onClick={() => setShowAI(true)}
                 className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-gold/20 py-1.5 text-xs text-gold/50 transition hover:border-gold/40 hover:text-gold">
-                <Sparkles className="h-3 w-3" /> Ask AI to suggest a reply
+                <Sparkles className="h-3 w-3" /> {t('crm.askAiSuggestReply')}
               </button>
             )}
 
@@ -630,7 +661,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               <input ref={fileAttachRef} type="file" multiple className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? [])
-                  if (files.length) toast.success(`${files.length} file${files.length > 1 ? 's' : ''} ready to send`)
+                  if (files.length) toast.success(files.length === 1 ? t('crm.fileReadyToSend', { count: files.length }) : t('crm.filesReadyToSend', { count: files.length }))
                 }}
               />
               <button onClick={() => fileAttachRef.current?.click()} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
@@ -644,7 +675,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={onKeyDown}
-                  placeholder="Type a message"
+                  placeholder={t('crm.typeMessage')}
                   rows={1}
                   className="flex-1 resize-none bg-transparent text-[14px] text-white placeholder:text-slate-500 focus:outline-none"
                   style={{ maxHeight: 120, lineHeight: '1.4' }}
@@ -663,7 +694,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               ) : (
                 <button
                   onMouseDown={() => setRecording(true)}
-                  onMouseUp={() => { setRecording(false); toast.success('Voice note recorded — tap Send to deliver') }}
+                  onMouseUp={() => { setRecording(false); toast.success(t('crm.voiceNoteRecorded')) }}
                   onMouseLeave={() => setRecording(false)}
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition ${recording ? 'bg-red-500 animate-pulse' : 'bg-[#00A884] hover:bg-emerald-400'}`}
                 >
@@ -678,7 +709,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
       {/* Copied toast */}
       {copied && (
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#2A3942] px-4 py-2 text-xs text-slate-300 shadow-lg">
-          Copied
+          {t('crm.copied')}
         </div>
       )}
     </div>

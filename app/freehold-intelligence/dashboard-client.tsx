@@ -16,6 +16,15 @@ import {
 import { useSession } from '@/lib/freehold/use-session'
 import { visibleApps } from '@/lib/freehold/apps'
 import { Section, Panel, PanelHeader } from '@/components/freehold/ui'
+import { useI18n } from '@/lib/i18n/provider'
+
+// app id → nav translation key (labels are shared with the nav spine)
+const NAV_KEYS: Record<string, string> = {
+  crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
+  'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
+  integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
+  agent: 'nav.agent',
+}
 
 
 const ACTIVITY = [
@@ -26,10 +35,10 @@ const ACTIVITY = [
   { time: 'Yesterday', label: 'Invoice issued',    detail: 'INV-META-0526 · AED 18,420',      type: 'info'    },
 ]
 
-function getGreeting(name: string) {
+function getGreeting(name: string, t: (k: string) => string) {
   const h = new Date().getHours()
-  const t = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
-  return `${t}, ${name}.`
+  const greet = h < 12 ? t('hub.goodMorning') : h < 17 ? t('hub.goodAfternoon') : t('hub.goodEvening')
+  return `${greet}, ${name}.`
 }
 
 function urgentCardCls(p: ServerActionCard['priority']) {
@@ -70,16 +79,18 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const { user }   = useSession()
   const role       = user?.role
   const router     = useRouter()
+  const { t, locale } = useI18n()
+  const localeTag  = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
   const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
-    setDateStr(new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
-  }, [])
+    setDateStr(new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
+  }, [localeTag])
 
   useEffect(() => {
     if (!user?.name) return
-    setGreeting(getGreeting(user.name))
-  }, [user?.name])
+    setGreeting(getGreeting(user.name, t))
+  }, [user?.name, t])
 
   useEffect(() => {
     if (user?.role === 'broker') {
@@ -165,13 +176,13 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                {serverSummary.urgentTasks.length} urgent
+                {serverSummary.urgentTasks.length} {t('hub.urgent').toLowerCase()}
               </span>
               <span className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-400">
-                {serverSummary.blockedItems.length} blocked
+                {serverSummary.blockedItems.length} {t('hub.blocked')}
               </span>
               <span className="flex items-center gap-2 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-sm text-slate-400">
-                {serverSummary.pendingApprovals.length} pending
+                {serverSummary.pendingApprovals.length} {t('hub.pending')}
               </span>
               <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
                 <Globe className="h-3.5 w-3.5" />
@@ -196,7 +207,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
-                placeholder="Ask anything about today's priorities…"
+                placeholder={t('hub.askPlaceholder')}
                 className="flex-1 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-gold/50 transition-colors"
               />
               <button
@@ -235,7 +246,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                           style={{ animationDelay: `${i * 0.15}s` }} />
                       ))}
                     </span>
-                    Thinking…
+                    {t('hub.thinking')}
                   </div>
                 ) : (
                   <>
@@ -245,11 +256,11 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                     <div className="mt-3 flex items-center justify-between border-t border-line-strong pt-3">
                       <Link href="/freehold-intelligence/agent"
                         className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors">
-                        Full conversation <ChevronRight className="h-3.5 w-3.5" />
+                        {t('hub.fullConversation')} <ChevronRight className="h-3.5 w-3.5" />
                       </Link>
                       <button type="button" onClick={() => setChatReply(null)}
                         className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
-                        Dismiss
+                        {t('hub.dismiss')}
                       </button>
                     </div>
                   </>
@@ -263,8 +274,8 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       {/* ── Urgent actions ──────────────────────────────────────────────────── */}
       <Section
         className="mb-8"
-        title={<><AlertTriangle className="inline h-3.5 w-3.5 text-red-400 mr-1.5 -mt-0.5" />Urgent</>}
-        action={<span className="text-xs text-slate-500">{serverSummary.urgentTasks.length} open</span>}
+        title={<><AlertTriangle className="inline h-3.5 w-3.5 text-red-400 mr-1.5 -mt-0.5" />{t('hub.urgent')}</>}
+        action={<span className="text-xs text-slate-500">{serverSummary.urgentTasks.length} {t('hub.open')}</span>}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {serverSummary.urgentTasks.map((task) => (
@@ -294,7 +305,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       </Section>
 
       {/* ── App grid ──────────────────────────────────────────────────────────── */}
-      <Section title="Apps">
+      <Section title={t('common.apps')}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {apps.map((app) => {
             const metric = DYNAMIC_META[app.id]?.metric ?? app.metric
@@ -314,7 +325,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4 flex-1">
-                  <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
+                  <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{NAV_KEYS[app.id] ? t(NAV_KEYS[app.id]) : app.label}</div>
                   <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
                 </div>
                 <div className="mt-4 flex items-center justify-between">
@@ -335,9 +346,9 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
         {/* Priority queue */}
         <Panel>
           <PanelHeader
-            title="Priorities"
+            title={t('hub.priorities')}
             icon={<AlertCircle className="h-4 w-4 text-amber-400" />}
-            action={<span className="text-xs text-slate-500">{priorities.length} open</span>}
+            action={<span className="text-xs text-slate-500">{priorities.length} {t('hub.open')}</span>}
           />
           <div className="divide-y divide-white/[0.06]">
             {priorities.slice(0, 3).map((p) => (
@@ -350,7 +361,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                 <div className="flex shrink-0 items-center gap-1.5">
                   <Link href={p.href}
                     className="rounded-lg border border-white/[0.1] px-3 py-1 text-sm text-slate-300 transition-colors hover:text-white hover:border-white/[0.25]">
-                    Fix
+                    {t('hub.fix')}
                   </Link>
                   <button type="button" onClick={() => setDismissed((s) => new Set([...s, p.id]))}
                     className="p-1 text-slate-600 hover:text-slate-300 transition-colors">
@@ -362,7 +373,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
             {priorities.length === 0 && (
               <div className="flex items-center gap-3 px-5 py-4">
                 <CheckCircle2 className="h-4 w-4 text-gold" />
-                <span className="text-sm text-slate-300">All clear — no open priorities</span>
+                <span className="text-sm text-slate-300">{t('hub.allClear')}</span>
               </div>
             )}
           </div>
@@ -370,7 +381,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
 
         {/* Live activity */}
         <Panel>
-          <PanelHeader title="Live activity" icon={<Activity className="h-4 w-4" />} />
+          <PanelHeader title={t('hub.liveActivity')} icon={<Activity className="h-4 w-4" />} />
           <div className="divide-y divide-white/[0.06]">
             {ACTIVITY.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">

@@ -4,6 +4,7 @@ import { getSessionUser, isAdminRole } from "@/lib/auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 type AudienceType = "investor" | "luxury" | "end_user" | "generic"
 

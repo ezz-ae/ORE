@@ -9,14 +9,25 @@ import { BRAND } from '@/lib/freehold/brand'
 import { useSession } from '@/lib/freehold/use-session'
 import { clearSession } from '@/lib/freehold/session'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
+import { useT } from '@/lib/i18n/provider'
+import { LanguageSwitcher } from '@/components/freehold/language-switcher'
 
 const HOME_HREF = '/freehold-intelligence'
+
+// Map an app id to its nav translation key; falls back to the app's own label.
+const NAV_KEYS: Record<string, string> = {
+  crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
+  'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
+  integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
+  agent: 'nav.agent',
+}
 
 export function SpacesNav() {
   const pathname = usePathname()
   const router   = useRouter()
   const { user } = useSession()
   const role     = user?.role
+  const t        = useT()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -72,12 +83,13 @@ export function SpacesNav() {
               ].join(' ')}
             >
               <Home className="h-3.5 w-3.5" />
-              Home
+              {t('nav.home')}
             </Link>
           )}
 
           {apps.map((app) => {
             const active = isActive(app.href)
+            const key = NAV_KEYS[app.id]
             return (
               <Link
                 key={app.id}
@@ -89,7 +101,7 @@ export function SpacesNav() {
                     : 'border-transparent text-slate-400 hover:text-white hover:border-white/[0.2]',
                 ].join(' ')}
               >
-                {app.label}
+                {key ? t(key) : app.label}
               </Link>
             )
           })}
@@ -137,15 +149,20 @@ export function SpacesNav() {
                 onClick={() => setMenuOpen(false)}
                 className="block px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               >
-                Settings
+                {t('nav.settings')}
               </Link>
             )}
+            {/* Language */}
+            <div className="border-t border-white/[0.07] px-4 py-3">
+              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('common.language')}</div>
+              <LanguageSwitcher variant="inline" />
+            </div>
             <button
               onClick={signOut}
               className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
             >
               <LogOut className="h-4 w-4" />
-              Sign out
+              {t('common.signOut')}
             </button>
           </div>
         )}

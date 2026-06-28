@@ -3,17 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, Package } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 const tabs = [
-  { label: 'All Units',     href: '/freehold-intelligence/inventory',                  exact: true },
-  { label: 'Projects',      href: '/freehold-intelligence/inventory/projects' },
-  { label: 'Off-Plan',      href: '/freehold-intelligence/inventory/off-plan' },
-  { label: 'Ready',         href: '/freehold-intelligence/inventory/ready' },
-  { label: 'Data Quality',  href: '/freehold-intelligence/inventory/data-quality' },
+  { key: 'inv.tab.allUnits',     href: '/freehold-intelligence/inventory',                  exact: true },
+  { key: 'inv.tab.projects',     href: '/freehold-intelligence/inventory/projects' },
+  { key: 'inv.tab.offPlan',      href: '/freehold-intelligence/inventory/off-plan' },
+  { key: 'inv.tab.ready',        href: '/freehold-intelligence/inventory/ready' },
+  { key: 'inv.tab.dataQuality',  href: '/freehold-intelligence/inventory/data-quality' },
 ]
 
 export default function InventoryLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const t = useT()
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href
@@ -30,14 +32,14 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Apps</span>
+          <span className="hidden sm:block">{t('inv.apps')}</span>
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-400/25 bg-amber-400/10">
             <Package className="h-3.5 w-3.5 text-amber-400" />
           </div>
-          <span className="text-sm font-semibold text-white">Inventory</span>
+          <span className="text-sm font-semibold text-white">{t('inv.inventory')}</span>
         </div>
       </header>
 
@@ -60,7 +62,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
                       : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
                   ].join(' ')}
                 >
-                  {tab.label}
+                  {t(tab.key)}
                 </Link>
               )
             })}
@@ -83,7 +85,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
                       active ? 'border-amber-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {tab.label}
+                    {t(tab.key)}
                   </Link>
                 )
               })}

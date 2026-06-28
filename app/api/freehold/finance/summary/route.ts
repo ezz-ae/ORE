@@ -10,6 +10,8 @@ export async function GET() {
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const user = await verifySession(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Company-wide ad-spend totals are management/marketing only — not individual brokers.
+  if (user.role === 'broker') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
     const [spendRows, campaignRows] = await Promise.all([

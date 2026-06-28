@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 type Agent = {
   id: string
@@ -33,6 +34,7 @@ const NEXT_RESET = (() => {
 })()
 
 export default function AgentCreditsPage() {
+  const t = useT()
   const [agents, setAgents]           = useState<Agent[]>([])
   const [loading, setLoading]         = useState(true)
   const [saved, setSaved]             = useState<string[]>([])
@@ -98,44 +100,44 @@ export default function AgentCreditsPage() {
 
       {/* Credit Economy banner */}
       <Link
-        href="/freehold-intelligence/management/credits"
+        href="/freehold-intelligence/management"
         className="group mb-6 flex items-center gap-4 rounded-xl border border-gold/25 bg-gold/[0.06] px-5 py-4 transition hover:border-gold/40 hover:bg-gold/10"
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
           <Coins className="h-5 w-5 text-gold" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white">Ad-credit economy &amp; AI financial analysis now live in the Admin panel</p>
+          <p className="text-sm font-semibold text-white">{t('finance.credits.bannerTitle')}</p>
           <p className="mt-0.5 text-xs text-slate-400">
-            Broker ad budgets, blended ROI, and AI-recommended refills — the full Credit Economy dashboard.
+            {t('finance.credits.bannerDesc')}
           </p>
         </div>
         <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-gold">
-          Open <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          {t('finance.credits.open')} <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       </Link>
 
       {/* Header */}
       <PageHeader
-        eyebrow="Finance"
+        eyebrow={t('finance.eyebrow')}
         Icon={Coins}
-        title="Agent Lead Credits"
-        subtitle="Control how many leads each agent receives per month. Credits reset on the 1st of each month."
+        title={t('finance.credits.title')}
+        subtitle={t('finance.credits.subtitle')}
         className="mb-8"
       />
 
       {/* Summary row */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        <StatCard label="Total quota"    value={totalQuota}              Icon={Zap}         hint="credits allocated" />
-        <StatCard label="Used this month" value={totalUsed}              Icon={Users}       hint="credits consumed"  />
-        <StatCard label="Remaining"       value={totalQuota - totalUsed} Icon={CheckCircle} hint="available now"     />
+        <StatCard label={t('finance.credits.totalQuota')}    value={totalQuota}              Icon={Zap}         hint={t('finance.credits.creditsAllocated')} />
+        <StatCard label={t('finance.credits.usedThisMonth')} value={totalUsed}              Icon={Users}       hint={t('finance.credits.creditsConsumed')}  />
+        <StatCard label={t('finance.credits.remaining')}       value={totalQuota - totalUsed} Icon={CheckCircle} hint={t('finance.credits.availableNow')}     />
       </div>
 
       {/* Agents */}
       {loading && (
         <div className="flex items-center justify-center py-16 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin mr-2" />
-          <span className="text-sm">Loading agents…</span>
+          <span className="text-sm">{t('finance.credits.loadingAgents')}</span>
         </div>
       )}
       <div className="space-y-3">
@@ -159,12 +161,12 @@ export default function AgentCreditsPage() {
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
                       {agent.tier}
                     </span>
-                    <span className="text-xs text-slate-500">Resets {new Date(agent.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-xs text-slate-500">{t('finance.credits.resets', { date: new Date(agent.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' }) })}</span>
                   </div>
                 </div>
                 {isSaved && (
                   <div className="flex items-center gap-1 text-xs text-emerald-400">
-                    <CheckCircle className="h-3.5 w-3.5" /> Saved
+                    <CheckCircle className="h-3.5 w-3.5" /> {t('finance.credits.saved')}
                   </div>
                 )}
               </div>
@@ -172,10 +174,10 @@ export default function AgentCreditsPage() {
               {/* Usage bar */}
               <div className="mb-4">
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">{agent.used} of {agent.quota} leads used</span>
+                  <span className="text-slate-400">{t('finance.credits.leadsUsed', { used: agent.used, quota: agent.quota })}</span>
                   {agent.pending > 0 && (
                     <span className="flex items-center gap-1 text-amber-400/70">
-                      <Clock className="h-3 w-3" /> {agent.pending} pending
+                      <Clock className="h-3 w-3" /> {t('finance.credits.pending', { count: agent.pending })}
                     </span>
                   )}
                 </div>
@@ -192,7 +194,7 @@ export default function AgentCreditsPage() {
 
                 {/* Tier selector */}
                 <div>
-                  <div className="mb-1.5 text-[10px] text-slate-500 uppercase tracking-wider">Tier</div>
+                  <div className="mb-1.5 text-[10px] text-slate-500 uppercase tracking-wider">{t('finance.credits.tier')}</div>
                   <div className="flex gap-1.5">
                     {(['Bronze', 'Silver', 'Gold', 'Platinum'] as const).map((t) => (
                       <button
@@ -210,7 +212,7 @@ export default function AgentCreditsPage() {
 
                 {/* Manual quota adjustment */}
                 <div className="ml-auto flex items-center gap-2">
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">Bonus credits</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('finance.credits.bonusCredits')}</div>
                   <div className="flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-1 py-1">
                     <button
                       onClick={() => adjust(agent.id, -1)}
@@ -233,7 +235,7 @@ export default function AgentCreditsPage() {
                       onClick={() => applyAdjustment(agent.id)}
                       className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-gold/90"
                     >
-                      Apply
+                      {t('finance.credits.apply')}
                     </button>
                   )}
                 </div>

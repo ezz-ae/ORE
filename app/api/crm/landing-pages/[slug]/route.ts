@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
-import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
 import { getLandingPageForEditor } from "@/lib/landing-pages"
 
 export const runtime = "nodejs"
@@ -64,6 +64,27 @@ export async function PATCH(
       return NextResponse.json({ error: "Headline is required." }, { status: 400 })
     }
 
+    // Publish authorization gate. A publish request from a non-authorizer is
+    // held as `pending_publish` until a manager authorizes it.
+    const nowIso = new Date().toISOString()
+    const canAuth = canAuthorizePublish(user.role, user.org_title)
+    let effectiveStatus: string = status
+    let authorizedBy: string | null = null
+    let authorizedAt: string | null = null
+    let requestedBy: string | null = null
+    let requestedAt: string | null = null
+    if (status === "published") {
+      if (canAuth) {
+        effectiveStatus = "published"
+        authorizedBy = user.name
+        authorizedAt = nowIso
+      } else {
+        effectiveStatus = "pending_publish"
+        requestedBy = user.name
+        requestedAt = nowIso
+      }
+    }
+
     await query(
       `UPDATE freehold_site_project_landing_pages
        SET headline = $2,
@@ -85,6 +106,10 @@ export async function PATCH(
            google_tag_id = $13,
            google_conversion_id = $14,
            tiktok_pixel_id = $15,
+           authorized_by = COALESCE($16, authorized_by),
+           authorized_at = COALESCE($17, authorized_at),
+           publish_requested_by = COALESCE($18, publish_requested_by),
+           publish_requested_at = COALESCE($19, publish_requested_at),
            updated_at = now()
        WHERE lower(slug) = $1`,
       [
@@ -93,7 +118,7 @@ export async function PATCH(
         subheadline,
         heroImage,
         ctaText,
-        status,
+        effectiveStatus,
         publishFrom,
         publishTo,
         seoTitle,
@@ -103,11 +128,15 @@ export async function PATCH(
         googleTagId || null,
         googleConversionId || null,
         tiktokPixelId || null,
+        authorizedBy,
+        authorizedAt,
+        requestedBy,
+        requestedAt,
       ],
     )
 
     const updated = await getLandingPageForEditor(slug)
-    return NextResponse.json({ ok: true, landingPage: updated })
+    return NextResponse.json({ ok: true, landingPage: updated, pendingPublish: effectiveStatus === "pending_publish" })
   } catch (error) {
     console.error("[crm-landing-pages] update error", error)
     return NextResponse.json({ error: "Failed to update landing page." }, { status: 500 })

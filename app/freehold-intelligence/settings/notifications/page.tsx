@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Bell, Mail, MessageSquare, Zap } from 'lucide-react'
 
 type Channel = 'email' | 'whatsapp' | 'in_app'
@@ -36,6 +36,33 @@ const CATEGORIES = [...new Set(INITIAL_RULES.map((r) => r.category))]
 
 export default function NotificationsPage() {
   const [rules, setRules] = useState<NotifRule[]>(INITIAL_RULES)
+  const loaded = useRef(false)
+
+  // Load saved channel overrides and merge onto the rule set.
+  useEffect(() => {
+    fetch('/api/freehold/settings', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        const saved = d?.settings?.notifRules as Record<string, NotifRule['channels']> | undefined
+        if (saved) setRules((prev) => prev.map((r) => saved[r.id] ? { ...r, channels: saved[r.id] } : r))
+      })
+      .catch(() => {})
+      .finally(() => { loaded.current = true })
+  }, [])
+
+  // Persist (debounced) whenever rules change after initial load.
+  useEffect(() => {
+    if (!loaded.current) return
+    const map: Record<string, NotifRule['channels']> = {}
+    for (const r of rules) map[r.id] = r.channels
+    const t = setTimeout(() => {
+      fetch('/api/freehold/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notifRules: map }),
+      }).catch(() => {})
+    }, 400)
+    return () => clearTimeout(t)
+  }, [rules])
 
   function toggle(id: string, channel: Channel) {
     setRules((prev) =>

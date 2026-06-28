@@ -17,6 +17,7 @@ export async function GET() {
       id: string
       name: string
       email: string
+      phone: string | null
       role: string
       total_leads: string
       hot_leads: string
@@ -27,6 +28,7 @@ export async function GET() {
          u.id,
          u.name,
          u.email,
+         u.phone,
          u.role,
          COALESCE(l.total_leads, 0)::text        AS total_leads,
          COALESCE(l.hot_leads, 0)::text           AS hot_leads,
@@ -71,6 +73,8 @@ export async function GET() {
         status,
         specialty: '',
         recentWins: parseInt(r.recent_wins, 10),
+        email: r.email || '',
+        phone: r.phone || '',
       }
     })
 
