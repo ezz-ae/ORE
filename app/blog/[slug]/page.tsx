@@ -5,8 +5,13 @@ import Image from "next/image"
 import Link from "next/link"
 
 export async function generateStaticParams() {
-  const posts = await getBlogPosts(20, 0)
-  return posts.map((post) => ({ slug: post.slug }))
+  try {
+    const posts = await getBlogPosts(20, 0)
+    return posts.map((post) => ({ slug: post.slug }))
+  } catch {
+    // DB unreachable at build → render on demand instead of failing the build.
+    return []
+  }
 }
 
 export async function generateMetadata({

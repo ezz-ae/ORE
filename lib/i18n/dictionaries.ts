@@ -15,6 +15,7 @@ import { notebook } from './dictionaries/notebook'
 import { expertChat } from './dictionaries/expert'
 import { expertDepth } from './dictionaries/expert-depth'
 import { lm_google_actions } from './dictionaries/lm_google_actions'
+import { crm_lead_ask } from './dictionaries/crm_lead_ask'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -403,7 +404,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru },
 }

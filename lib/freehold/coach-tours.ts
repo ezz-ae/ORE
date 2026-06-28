@@ -31,7 +31,7 @@ export interface CoachStep {
 }
 
 /** Bump when tour content changes enough to re-show it to returning users. */
-export const COACH_VERSION = 'v2'
+export const COACH_VERSION = 'v3'
 
 const COMMON_TAIL: CoachStep[] = [
   { key: 'coach.common.expert', anchor: 'expert-chat', placement: 'left' },
@@ -44,6 +44,7 @@ export const TOURS: Record<Role, CoachStep[]> = {
     { key: 'coach.broker.welcome', placement: 'center' },
     { key: 'coach.broker.workspace', anchor: 'nav-agent', placement: 'bottom' },
     { key: 'coach.broker.apps', anchor: 'agent-apps', placement: 'top' },
+    { key: 'coach.broker.depth', anchor: 'expert-depth', placement: 'bottom' },
     ...COMMON_TAIL,
   ],
   admin: [

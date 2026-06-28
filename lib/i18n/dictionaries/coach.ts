@@ -40,6 +40,8 @@ const en: Dict = {
   'coach.broker.workspace.body': 'This tab is your home base. It always brings you back to your dashboard with your urgent leads, active pipeline and credit balance.',
   'coach.broker.apps.title': 'Everything you need, daily',
   'coach.broker.apps.body': 'Jump into My Leads to work your pipeline, Campaigns to promote a property, Credits to top up, or the Notebook for AI research. Badges flag what needs you first.',
+  'coach.broker.depth.title': 'Ask the Expert, in context',
+  'coach.broker.depth.body': 'These quick prompts open the docked Expert with your real data — what to focus on, a follow-up for your hottest lead, or a plan to hit target. Every app has its own set.',
 
   // ── admin ──────────────────────────────────────────────────────────────────
   'coach.admin.welcome.title': 'Welcome, {name} 👋',
@@ -111,6 +113,8 @@ const ar: Dict = {
   'coach.broker.workspace.body': 'هذا التبويب هو نقطة انطلاقك. يعيدك دائماً إلى لوحتك مع عملائك العاجلين ومسار مبيعاتك النشط ورصيدك.',
   'coach.broker.apps.title': 'كل ما تحتاجه يومياً',
   'coach.broker.apps.body': 'انتقل إلى «عملائي» لإدارة مسارك، أو «الحملات» للترويج لعقار، أو «الرصيد» لإعادة الشحن، أو «دفتر الملاحظات» للبحث بالذكاء الاصطناعي. تشير الشارات إلى ما يحتاج انتباهك أولاً.',
+  'coach.broker.depth.title': 'اسأل الخبير ضمن السياق',
+  'coach.broker.depth.body': 'تفتح هذه الإرشادات السريعة الخبير المثبّت مستنداً إلى بياناتك الفعلية — علام تركّز، أو رسالة متابعة لأهم عملائك، أو خطة لتحقيق الهدف. لكل تطبيق مجموعته الخاصة.',
 
   'coach.admin.welcome.title': 'مرحباً، {name} 👋',
   'coach.admin.welcome.body': 'لديك صلاحية إدارية كاملة. تعرض لك هذه الجولة السريعة مكان عناصر التحكم على مستوى الشركة لتجهيز فريقك للنجاح.',
@@ -177,6 +181,8 @@ const ru: Dict = {
   'coach.broker.workspace.body': 'Эта вкладка — ваша база. Она всегда возвращает на дашборд со срочными лидами, активной воронкой и балансом кредитов.',
   'coach.broker.apps.title': 'Всё нужное — каждый день',
   'coach.broker.apps.body': 'Откройте «Мои лиды» для работы с воронкой, «Кампании» для продвижения объекта, «Кредиты» для пополнения или «Блокнот» для ИИ-исследований. Значки показывают, что требует внимания в первую очередь.',
+  'coach.broker.depth.title': 'Спросите Эксперта в контексте',
+  'coach.broker.depth.body': 'Эти быстрые подсказки открывают закреплённого Эксперта с вашими реальными данными — на чём сосредоточиться, касание для самого горячего лида или план достижения цели. В каждом приложении свой набор.',
 
   'coach.admin.welcome.title': 'Добро пожаловать, {name} 👋',
   'coach.admin.welcome.body': 'У вас полный административный доступ. Этот короткий тур показывает, где находятся настройки уровня компании, чтобы вы подготовили команду к работе.',

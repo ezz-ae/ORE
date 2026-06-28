@@ -16,6 +16,7 @@ import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pa
 import { getDealByLeadId } from '@/lib/deals'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getServerT } from '@/lib/i18n/server'
+import { LeadExpertStrip } from '@/components/freehold/lead-expert-strip'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page.
 // Brokers may only read their own leads — pass their brokerId to scope the query.
@@ -154,6 +155,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
         {/* Main column */}
         <div className="space-y-5">
+
+          {/* Ask the Expert about this lead */}
+          <LeadExpertStrip name={lead.name} />
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">
