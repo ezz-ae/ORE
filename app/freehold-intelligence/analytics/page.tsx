@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
-import { FileText, Loader2, ExternalLink } from 'lucide-react'
+import { FileText, Loader2, ExternalLink, X } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { prettySource, STAGE_ORDER, fmtAed } from '@/lib/freehold/analytics-format'
 
@@ -82,6 +82,7 @@ export default function CompanyAnalyticsPage() {
 
   const [reporting, setReporting] = useState(false)
   const [report, setReport] = useState<{ id: string; title: string; content: string } | null>(null)
+  const [showReport, setShowReport] = useState(false)
 
   async function generateReport() {
     setReporting(true)
@@ -99,13 +100,10 @@ export default function CompanyAnalyticsPage() {
     }
   }
 
+  // View the AI report in a sandboxed iframe (no script execution / same-origin
+  // access), matching the Notebook viewer — the content is model-generated HTML.
   function openReport() {
-    if (!report) return
-    const w = window.open('', '_blank')
-    if (w) {
-      w.document.write(`<!doctype html><meta charset="utf-8"><title>${report.title}</title><body style="margin:0;background:#0B131F;color:#e2e8f0;font-family:system-ui,sans-serif;padding:32px;max-width:900px;margin:0 auto">${report.content}</body>`)
-      w.document.close()
-    }
+    if (report) setShowReport(true)
   }
 
   return (
@@ -205,6 +203,26 @@ export default function CompanyAnalyticsPage() {
           </div>
         </section>
       </div>
+
+      {/* Report viewer — sandboxed iframe (model-generated HTML, no script/same-origin) */}
+      {showReport && report && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowReport(false)}>
+          <div className="relative flex h-[82vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-line bg-[#0B131F]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
+              <span className="truncate text-sm font-semibold text-white">{report.title}</span>
+              <button onClick={() => setShowReport(false)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <iframe
+              title={report.title}
+              sandbox=""
+              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0B131F;color:#e2e8f0;font-family:system-ui,sans-serif;padding:24px">${report.content}</body>`}
+              className="min-h-0 flex-1 w-full bg-[#0B131F]"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

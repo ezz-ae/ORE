@@ -18,6 +18,9 @@ export type CmpItem = { id: string; label: string; values: Record<string, number
 export type CmpPreset = { labelKey: string; columns: string[] }
 
 const intl = (n: number) => (Number.isFinite(n) ? n.toLocaleString('en-US') : '—')
+// Round an average to 1 dp before formatting so percentage/ratio columns don't
+// render long floats (e.g. 33.33333%) on screen or in the saved Notebook HTML.
+const avgDisplay = (n: number) => (Number.isInteger(n) ? n : Math.round(n * 10) / 10)
 
 export function ComparisonTable({
   titleKey = 'analytics.cmp.title',
@@ -71,7 +74,7 @@ export function ComparisonTable({
     try {
       const fmt = (col: CmpColumn, v: number) => (col.fmt ? col.fmt(v) : intl(v))
       const head = `<tr><th style="text-align:left;padding:8px 12px;border-bottom:1px solid #334155">${t('analytics.cmp.metric')}</th>${effectiveItems.map((i) => `<th style="text-align:right;padding:8px 12px;border-bottom:1px solid #334155">${i.label}</th>`).join('')}<th style="text-align:right;padding:8px 12px;border-bottom:1px solid #334155">${t('analytics.cmp.average')}</th></tr>`
-      const body = rows.map((r) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #1e293b">${t(r.col.labelKey)}</td>${r.cells.map((c) => `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b${c.id === r.bestId ? ';color:#D4AF37;font-weight:600' : ''}">${fmt(r.col, c.v)}</td>`).join('')}<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b;color:#94a3b8">${fmt(r.col, r.avg)}</td></tr>`).join('')
+      const body = rows.map((r) => `<tr><td style="padding:8px 12px;border-bottom:1px solid #1e293b">${t(r.col.labelKey)}</td>${r.cells.map((c) => `<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b${c.id === r.bestId ? ';color:#D4AF37;font-weight:600' : ''}">${fmt(r.col, c.v)}</td>`).join('')}<td style="text-align:right;padding:8px 12px;border-bottom:1px solid #1e293b;color:#94a3b8">${fmt(r.col, avgDisplay(r.avg))}</td></tr>`).join('')
       const html = `<table style="border-collapse:collapse;width:100%;font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0"><thead>${head}</thead><tbody>${body}</tbody></table>`
       const title = `${t(titleKey)} — ${effectiveItems.length} × ${cols.length}`
       const res = await fetch('/api/freehold/notebook/save-output', {
@@ -181,7 +184,7 @@ export function ComparisonTable({
                         {r.col.fmt ? r.col.fmt(c.v) : intl(c.v)}
                       </td>
                     ))}
-                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">{r.col.fmt ? r.col.fmt(r.avg) : intl(Math.round(r.avg))}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">{r.col.fmt ? r.col.fmt(avgDisplay(r.avg)) : intl(Math.round(r.avg))}</td>
                   </tr>
                 ))}
               </tbody>

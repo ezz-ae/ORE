@@ -119,6 +119,20 @@ const en: Dict = {
   'studio.ai.q2': 'Which listings have low data quality, and how do I fix each one?',
   'studio.ai.q3': "Plan this week's content and SEO updates.",
   'studio.ai.q4': 'Review ad readiness across inventory and suggest fixes.',
+  'studio.title': 'AI Manager',
+  'studio.subtitle': 'AI-powered content management for freeholdproperty.ae',
+  'studio.activity': 'AI Activity',
+  'studio.ct.listings': 'Listings',
+  'studio.ct.areas': 'Areas',
+  'studio.ct.developers': 'Developers',
+  'studio.ct.pages': 'Pages',
+  'studio.ct.topics': 'Topics',
+  // notebook + expert (strings added this session)
+  'nb.savedReports': 'Saved tables & reports',
+  'expert.save': 'Save to Notebook',
+  'expert.saved': 'Saved to Notebook',
+  'expert.saveOk': 'Saved to Notebook',
+  'expert.saveErr': 'Could not save to Notebook',
 }
 
 const ar: Dict = {
@@ -209,6 +223,19 @@ const ar: Dict = {
   'studio.ai.q2': 'أي القوائم لديها جودة بيانات منخفضة، وكيف أصلح كلاً منها؟',
   'studio.ai.q3': 'خطّط تحديثات المحتوى وتحسين محركات البحث لهذا الأسبوع.',
   'studio.ai.q4': 'راجع جاهزية الإعلانات عبر المخزون واقترح إصلاحات.',
+  'studio.title': 'مدير الذكاء الاصطناعي',
+  'studio.subtitle': 'إدارة محتوى مدعومة بالذكاء الاصطناعي لموقع freeholdproperty.ae',
+  'studio.activity': 'نشاط الذكاء الاصطناعي',
+  'studio.ct.listings': 'القوائم',
+  'studio.ct.areas': 'المناطق',
+  'studio.ct.developers': 'المطوّرون',
+  'studio.ct.pages': 'الصفحات',
+  'studio.ct.topics': 'المواضيع',
+  'nb.savedReports': 'الجداول والتقارير المحفوظة',
+  'expert.save': 'حفظ في دفتر الملاحظات',
+  'expert.saved': 'تم الحفظ في دفتر الملاحظات',
+  'expert.saveOk': 'تم الحفظ في دفتر الملاحظات',
+  'expert.saveErr': 'تعذّر الحفظ في دفتر الملاحظات',
 }
 
 const ru: Dict = {
@@ -299,6 +326,19 @@ const ru: Dict = {
   'studio.ai.q2': 'У каких объявлений низкое качество данных и как исправить каждое?',
   'studio.ai.q3': 'Спланируйте обновления контента и SEO на эту неделю.',
   'studio.ai.q4': 'Проверьте готовность к рекламе по объектам и предложите исправления.',
+  'studio.title': 'AI-менеджер',
+  'studio.subtitle': 'Управление контентом на базе ИИ для freeholdproperty.ae',
+  'studio.activity': 'Активность ИИ',
+  'studio.ct.listings': 'Объявления',
+  'studio.ct.areas': 'Районы',
+  'studio.ct.developers': 'Застройщики',
+  'studio.ct.pages': 'Страницы',
+  'studio.ct.topics': 'Темы',
+  'nb.savedReports': 'Сохранённые таблицы и отчёты',
+  'expert.save': 'Сохранить в Блокнот',
+  'expert.saved': 'Сохранено в Блокнот',
+  'expert.saveOk': 'Сохранено в Блокнот',
+  'expert.saveErr': 'Не удалось сохранить в Блокнот',
 }
 
 // Merge the core dictionary with every per-surface namespace. Later spreads win,

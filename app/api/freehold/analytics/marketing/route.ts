@@ -6,7 +6,11 @@ import { query } from '@/lib/db'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const ALLOWED = new Set(['admin', 'ceo', 'director', 'marketing', 'sales_manager'])
+// Marketing analytics — matches the marketing tab's role allow-list.
+const ALLOWED = new Set(['admin', 'ceo', 'director', 'marketing'])
+// Per-broker (dim=agent) breakdown is management-only — keeps individual
+// performance out of the marketing role, consistent with the team route.
+const AGENT_ALLOWED = new Set(['admin', 'ceo', 'director'])
 
 // Whitelisted dimensions → safe SQL. `agent` joins the users table for a name.
 const PERIODS: Record<string, string> = { '7': "7 days", '30': "30 days", '90': "90 days" }
@@ -22,6 +26,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const dim = url.searchParams.get('dim') || 'source'
   const period = url.searchParams.get('period') || '30'
+
+  // Don't expose per-broker performance to the marketing role.
+  if (dim === 'agent' && !AGENT_ALLOWED.has(user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const where = PERIODS[period] ? `WHERE l.created_at >= now() - INTERVAL '${PERIODS[period]}'` : ''
 
   try {

@@ -177,12 +177,16 @@ function CoachOverlay({
     const el = step.anchor
       ? (document.querySelector(`[data-coach="${step.anchor}"]`) as HTMLElement | null)
       : null
-    if (el) {
-      try { el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }) } catch {}
+    // Centered step (no anchor, or anchor not on this page): set rect once and
+    // skip the per-frame tracking loop entirely — nothing to follow.
+    if (!el) {
+      if (rectRef.current !== null) { rectRef.current = null; setRect(null) }
+      return
     }
+    try { el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }) } catch {}
     let raf = 0
     const loop = () => {
-      const next = el && document.contains(el) ? el.getBoundingClientRect() : null
+      const next = document.contains(el) ? el.getBoundingClientRect() : null
       if (!sameRect(rectRef.current, next)) {
         rectRef.current = next
         setRect(next)

@@ -10,6 +10,7 @@ import {
   BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper,
 } from 'lucide-react'
 import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
+import { useT } from '@/lib/i18n/provider'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ function SourceCheckbox({ checked, onChange }: { checked: boolean; onChange: () 
 // ── main page ─────────────────────────────────────────────────────────────────
 
 export default function NotebookPage() {
+  const t = useT()
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
   const [showAddSource, setShowAddSource] = useState(false)
@@ -570,7 +572,7 @@ export default function NotebookPage() {
             {/* Persisted outputs — saved tables & reports from across the app */}
             {dbOutputs.length > 0 && (
               <div className="mb-5 space-y-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Saved tables & reports</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('nb.savedReports')}</div>
                 {dbOutputs.map(o => {
                   const isOpen = openOutput === o.id
                   const isHtml = o.type === 'comparison' || o.type === 'report' || o.content.trimStart().startsWith('<')

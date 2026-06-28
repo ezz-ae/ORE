@@ -22,7 +22,8 @@ const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
 export default function AgentHomePage() {
   const { user } = useSession()
   const { t, locale } = useI18n()
-  const now = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
+  const localeTag = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+  const now = new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
 
   const [liveCritical, setLiveCritical] = useState<number | null>(null)
   const [liveActive,   setLiveActive]   = useState<number | null>(null)

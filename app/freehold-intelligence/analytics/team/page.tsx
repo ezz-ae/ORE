@@ -24,7 +24,7 @@ function loadColor(u: number) {
 
 // Computed "math" metrics derived from the raw signals.
 const convRate = (a: AgentMetric) => (a.totalLeads > 0 ? Math.round((a.wins30d / a.totalLeads) * 100) : 0)
-const effortPerLead = (a: AgentMetric) => (a.totalLeads > 0 ? Math.round((a.activity30d / a.totalLeads) * 10) / 10 : a.activity30d)
+const effortPerLead = (a: AgentMetric) => (a.totalLeads > 0 ? Math.round((a.activity30d / a.totalLeads) * 10) / 10 : 0)
 const responseHealth = (a: AgentMetric) => (a.totalLeads > 0 ? Math.max(0, Math.min(100, Math.round((1 - a.overdueFollowups / a.totalLeads) * 100))) : 100)
 
 const COLUMNS: CmpColumn[] = [

@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
+import { useT } from '@/lib/i18n/provider'
 
 /** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
 function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
@@ -70,6 +71,7 @@ function actionClass(style?: string) {
 }
 
 export function ExpertChat() {
+  const t = useT()
   const pathname = usePathname()
   const [open, setOpen] = useState(true)
   const [width, setWidth] = useState(DEFAULT_W)
@@ -192,10 +194,10 @@ export function ExpertChat() {
       })
       if (!res.ok) throw new Error('save failed')
       setSavedIdx(idx)
-      toast.success('Saved to Notebook')
+      toast.success(t('expert.saveOk'))
       setTimeout(() => setSavedIdx((s) => (s === idx ? null : s)), 2500)
     } catch {
-      toast.error('Could not save to Notebook')
+      toast.error(t('expert.saveErr'))
     }
   }
 
@@ -304,7 +306,7 @@ export function ExpertChat() {
                       className="inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200"
                     >
                       {savedIdx === i ? <Check className="h-3.5 w-3.5 text-gold" /> : <BookmarkPlus className="h-3.5 w-3.5" />}
-                      {savedIdx === i ? 'Saved to Notebook' : 'Save to Notebook'}
+                      {savedIdx === i ? t('expert.saved') : t('expert.save')}
                     </button>
                   </div>
                 ),

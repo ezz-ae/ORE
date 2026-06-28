@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '@/lib/i18n/provider'
+import { useSession } from '@/lib/freehold/use-session'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
 
@@ -40,6 +41,8 @@ type BreakRow = { key: string; label: string; leads: number; closed: number; con
 
 export default function MarketingAnalyticsPage() {
   const t = useT()
+  const { user } = useSession()
+  const role = user?.role
   const a = siteAnalytics
   const [live, setLive] = useState<Live>(null)
   const [spend, setSpend] = useState<{ total: number; last30: number } | null>(null)
@@ -55,8 +58,9 @@ export default function MarketingAnalyticsPage() {
     fetch('/api/freehold/finance/summary')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        const s = d?.summary
-        if (s) setSpend({ total: Number(s.total_aed ?? 0), last30: Number(s.last_30d_aed ?? 0) })
+        if (d && (d.totalSpendAED != null || d.last30dSpendAED != null)) {
+          setSpend({ total: Number(d.totalSpendAED ?? 0), last30: Number(d.last30dSpendAED ?? 0) })
+        }
       })
       .catch(() => {})
   }, [])
@@ -69,10 +73,13 @@ export default function MarketingAnalyticsPage() {
       .catch(() => {})
   }, [dim, period])
 
+  // Per-broker breakdown is management-only (matches the API). Marketing users
+  // never see the "By team member" dimension.
+  const canSeeAgents = ['admin', 'ceo', 'director'].includes(role ?? '')
   const DIMS: { id: 'source' | 'country' | 'agent'; labelKey: string }[] = [
     { id: 'source', labelKey: 'analytics.mk.byChannel' },
     { id: 'country', labelKey: 'analytics.mk.byCountry' },
-    { id: 'agent', labelKey: 'analytics.mk.byMember' },
+    ...(canSeeAgents ? [{ id: 'agent' as const, labelKey: 'analytics.mk.byMember' }] : []),
   ]
   const PERIODS: ('7' | '30' | '90')[] = ['7', '30', '90']
 
