@@ -46,21 +46,21 @@ type CenterTab = 'chat' | 'saved' | 'pinned'
 // ── studio generate grid ─────────────────────────────────────────────────────
 
 const GENERATE_TYPES = [
-  { key: 'brochure',      label: 'Brochure',       icon: <FileText className="h-5 w-5" /> },
-  { key: 'ad_copy',       label: 'Ad Copy',         icon: <Megaphone className="h-5 w-5" /> },
-  { key: 'whatsapp',      label: 'WhatsApp',        icon: <Phone className="h-5 w-5" /> },
-  { key: 'comparison',    label: 'Comparison',      icon: <GitBranch className="h-5 w-5" /> },
-  { key: 'offer_letter',  label: 'Offer Letter',    icon: <FileImage className="h-5 w-5" /> },
-  { key: 'script',        label: 'Script',          icon: <Layers className="h-5 w-5" /> },
-  { key: 'market_report', label: 'Market Report',   icon: <BarChart2 className="h-5 w-5" /> },
-  { key: 'social_post',   label: 'Social Post',     icon: <Newspaper className="h-5 w-5" /> },
+  { key: 'brochure',      labelKey: 'nb.gen.brochure',     icon: <FileText className="h-5 w-5" /> },
+  { key: 'ad_copy',       labelKey: 'nb.gen.adCopy',       icon: <Megaphone className="h-5 w-5" /> },
+  { key: 'whatsapp',      labelKey: 'nb.gen.whatsapp',     icon: <Phone className="h-5 w-5" /> },
+  { key: 'comparison',    labelKey: 'nb.gen.comparison',   icon: <GitBranch className="h-5 w-5" /> },
+  { key: 'offer_letter',  labelKey: 'nb.gen.offerLetter',  icon: <FileImage className="h-5 w-5" /> },
+  { key: 'script',        labelKey: 'nb.gen.script',       icon: <Layers className="h-5 w-5" /> },
+  { key: 'market_report', labelKey: 'nb.gen.marketReport', icon: <BarChart2 className="h-5 w-5" /> },
+  { key: 'social_post',   labelKey: 'nb.gen.socialPost',   icon: <Newspaper className="h-5 w-5" /> },
 ]
 
 const SEND_DESTINATIONS = [
-  { key: 'crm',       label: 'CRM',       icon: <Users className="h-3.5 w-3.5" /> },
-  { key: 'ads_live',  label: 'Ads Live',  icon: <Globe className="h-3.5 w-3.5" /> },
-  { key: 'whatsapp',  label: 'WhatsApp',  icon: <Phone className="h-3.5 w-3.5" /> },
-  { key: 'email',     label: 'Email',     icon: <Mail className="h-3.5 w-3.5" /> },
+  { key: 'crm',       labelKey: 'nb.dest.crm',      icon: <Users className="h-3.5 w-3.5" /> },
+  { key: 'ads_live',  labelKey: 'nb.dest.adsLive',  icon: <Globe className="h-3.5 w-3.5" /> },
+  { key: 'whatsapp',  labelKey: 'nb.dest.whatsapp', icon: <Phone className="h-3.5 w-3.5" /> },
+  { key: 'email',     labelKey: 'nb.dest.email',    icon: <Mail className="h-3.5 w-3.5" /> },
 ]
 
 const MOCK_UPLOADS = [
@@ -70,10 +70,10 @@ const MOCK_UPLOADS = [
 ]
 
 const CHAT_SUGGESTIONS = [
-  'Draft a WhatsApp for the hottest lead.',
-  'Comparison: Palm vs Hills for AED 2.5M investor.',
-  'Three Meta ad angles for Dubai Hills.',
-  'Offer letter for Business Bay entry.',
+  'nb.suggestion.whatsappHotLead',
+  'nb.suggestion.palmVsHills',
+  'nb.suggestion.metaAdAngles',
+  'nb.suggestion.offerLetterBusinessBay',
 ]
 
 // ── components ────────────────────────────────────────────────────────────────
@@ -143,13 +143,13 @@ export default function NotebookPage() {
     try {
       const res = await fetch('/api/freehold/ai/generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Generate a ${type.label} for a Dubai real-estate workspace. ${genInput || ''}`.trim() }),
+        body: JSON.stringify({ prompt: `Generate a ${t(type.labelKey)} for a Dubai real-estate workspace. ${genInput || ''}`.trim() }),
       })
       const data = await res.json()
-      if (!res.ok || !data.text) throw new Error(data?.error || 'Generation failed')
+      if (!res.ok || !data.text) throw new Error(data?.error || t('nb.generationFailed'))
       setGenResult(data.text)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Generation failed')
+      toast.error(err instanceof Error ? err.message : t('nb.generationFailed'))
     } finally { setGenLoading(false) }
   }
 
@@ -202,10 +202,10 @@ export default function NotebookPage() {
       const data = await res.json()
       const answer =
         data?.data?.answer || data?.answer || data?.message || data?.reply ||
-        'I reviewed your notebook sources. Try one of the suggested prompts.'
+        t('nb.chatFallback')
       setChatMessages(m => [...m, { role: 'assistant', content: answer }])
     } catch {
-      setChatMessages(m => [...m, { role: 'assistant', content: 'Could not reach the server. Try again in a moment.' }])
+      setChatMessages(m => [...m, { role: 'assistant', content: t('nb.chatError') }])
     } finally {
       setChatPending(false)
     }
@@ -219,9 +219,9 @@ export default function NotebookPage() {
 
         {/* header */}
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
-          <span className="text-sm font-semibold text-white">Sources</span>
+          <span className="text-sm font-semibold text-white">{t('nb.sources')}</span>
           <button onClick={() => setShowAddSource((v) => !v)} className="flex items-center gap-1 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1 text-xs text-slate-300 transition hover:border-gold/30 hover:text-gold">
-            <Plus className="h-3 w-3" /> {showAddSource ? 'Cancel' : 'Add source'}
+            <Plus className="h-3 w-3" /> {showAddSource ? t('common.cancel') : t('nb.addSource')}
           </button>
         </div>
 
@@ -231,7 +231,7 @@ export default function NotebookPage() {
           <input
             value={sourceQuery}
             onChange={e => setSourceQuery(e.target.value)}
-            placeholder="Search sources…"
+            placeholder={t('nb.searchSources')}
             className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
           />
           {sourceQuery && (
@@ -250,7 +250,7 @@ export default function NotebookPage() {
               const url = addSourceInput.trim()
               if (!url) return
               setCustomSources((prev) => [...prev, { id: `src_${Date.now()}`, name: url }])
-              toast.success('Source added')
+              toast.success(t('nb.sourceAdded'))
               setAddSourceInput('')
               setShowAddSource(false)
             }}
@@ -259,10 +259,10 @@ export default function NotebookPage() {
               autoFocus
               value={addSourceInput}
               onChange={(e) => setAddSourceInput(e.target.value)}
-              placeholder="Paste a URL…"
+              placeholder={t('nb.pasteUrl')}
               className="flex-1 min-w-0 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
-            <button type="submit" className="shrink-0 rounded-lg bg-gold/80 px-2.5 py-1.5 text-xs font-semibold text-black">Add</button>
+            <button type="submit" className="shrink-0 rounded-lg bg-gold/80 px-2.5 py-1.5 text-xs font-semibold text-black">{t('common.add')}</button>
           </form>
         )}
 
@@ -272,14 +272,14 @@ export default function NotebookPage() {
             onClick={() => toggleAll(true)}
             className={`text-xs transition ${allChecked ? 'text-gold' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            Select all
+            {t('nb.selectAll')}
           </button>
           <span className="text-slate-700">·</span>
           <button
             onClick={() => toggleAll(false)}
             className={`text-xs transition ${noneChecked ? 'text-gold' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            Deselect all
+            {t('nb.deselectAll')}
           </button>
         </div>
 
@@ -294,10 +294,10 @@ export default function NotebookPage() {
               <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-100">All Conversations</span>
+                  <span className="text-xs font-medium text-slate-100">{t('nb.allConversations')}</span>
                   <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{notebookConversations.length}</span>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">All notebook threads</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.allNotebookThreads')}</p>
               </div>
             </div>
           </div>
@@ -326,16 +326,16 @@ export default function NotebookPage() {
               <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-100">Live Projects</span>
+                  <span className="text-xs font-medium text-slate-100">{t('nb.liveProjects')}</span>
                   <Link
                     href="/freehold-intelligence/inventory"
                     onClick={e => e.stopPropagation()}
                     className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-gold transition"
                   >
-                    Inventory ↗
+                    {t('nb.inventoryLink')}
                   </Link>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">933 project records</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.projectRecords', { count: 933 })}</p>
               </div>
             </div>
           </div>
@@ -348,16 +348,16 @@ export default function NotebookPage() {
               <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-100">CRM Leads</span>
+                  <span className="text-xs font-medium text-slate-100">{t('nb.crmLeads')}</span>
                   <Link
                     href="/freehold-intelligence/crm"
                     onClick={e => e.stopPropagation()}
                     className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400 hover:text-gold transition"
                   >
-                    CRM ↗
+                    {t('nb.crmLink')}
                   </Link>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">18 active leads</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.activeLeads', { count: 18 })}</p>
               </div>
             </div>
           </div>
@@ -370,10 +370,10 @@ export default function NotebookPage() {
               <FolderOpen className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-100">Uploads</span>
+                  <span className="text-xs font-medium text-slate-100">{t('nb.uploads')}</span>
                   <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{MOCK_UPLOADS.length}</span>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">PDFs & documents</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.pdfsDocuments')}</p>
               </div>
             </div>
           </div>
@@ -405,7 +405,7 @@ export default function NotebookPage() {
                   <FileText className="h-3 w-3 shrink-0 text-slate-500" />
                   <div className="min-w-0">
                     <p className="truncate text-xs text-slate-300">{s.name}</p>
-                    <p className="text-[10px] text-slate-600">added source</p>
+                    <p className="text-[10px] text-slate-600">{t('nb.addedSource')}</p>
                   </div>
                 </div>
               ))}
@@ -426,7 +426,7 @@ export default function NotebookPage() {
           ].join(' ')}
         >
           <Upload className="h-4 w-4" />
-          <p className="text-xs leading-tight">Drop files here<br /><span className="text-slate-700">or click to upload</span></p>
+          <p className="text-xs leading-tight">{t('nb.dropFilesHere')}<br /><span className="text-slate-700">{t('nb.orClickToUpload')}</span></p>
         </div>
 
       </aside>
@@ -453,7 +453,7 @@ export default function NotebookPage() {
             <button
               onClick={() => setEditingTitle(true)}
               className="text-slate-600 hover:text-slate-400 transition"
-              aria-label="Edit title"
+              aria-label={t('nb.editTitle')}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -470,7 +470,7 @@ export default function NotebookPage() {
                     : 'text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
-                {tab === 'saved' ? 'Saved Outputs' : tab === 'pinned' ? 'Pinned' : 'Chat'}
+                {tab === 'saved' ? t('nb.savedOutputs') : tab === 'pinned' ? t('nb.pinned') : t('nb.chat')}
               </button>
             ))}
           </div>
@@ -485,7 +485,7 @@ export default function NotebookPage() {
                 <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center gap-3">
                   <Sparkles className="h-8 w-8 text-gold/30" />
                   <p className="text-sm text-slate-500 max-w-xs">
-                    Ask anything about your projects, leads, or campaigns. Your active sources are used as context.
+                    {t('nb.chatEmptyState')}
                   </p>
                 </div>
               )}
@@ -503,7 +503,7 @@ export default function NotebookPage() {
                       ? <Sparkles className="h-3 w-3 text-gold/60" />
                       : <div className="h-3 w-3 rounded-full bg-surface-3" />}
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                      {m.role === 'assistant' ? 'Freehold AI' : 'You'}
+                      {m.role === 'assistant' ? t('nb.freeholdAi') : t('nb.you')}
                     </span>
                   </div>
                   <p className="whitespace-pre-wrap text-sm leading-[1.7] text-slate-100">{m.content}</p>
@@ -512,7 +512,7 @@ export default function NotebookPage() {
               {chatPending && (
                 <div className="mr-8 flex items-center gap-2 rounded-2xl border border-gold/12 bg-gold/[0.04] px-4 py-3">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-gold/60" />
-                  <span className="text-xs text-slate-500">Thinking…</span>
+                  <span className="text-xs text-slate-500">{t('nb.thinking')}</span>
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -525,10 +525,10 @@ export default function NotebookPage() {
                   {CHAT_SUGGESTIONS.map(s => (
                     <button
                       key={s}
-                      onClick={() => sendChat(s)}
+                      onClick={() => sendChat(t(s))}
                       className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-400 transition hover:border-gold/25 hover:text-slate-200"
                     >
-                      {s}
+                      {t(s)}
                     </button>
                   ))}
                 </div>
@@ -541,7 +541,7 @@ export default function NotebookPage() {
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() } }}
                   rows={1}
-                  placeholder="Generate an offer, comparison, WhatsApp message, ad copy…"
+                  placeholder={t('nb.composerPlaceholder')}
                   className="flex-1 resize-none bg-transparent text-sm leading-7 text-white outline-none placeholder:text-slate-600"
                 />
                 <button
@@ -564,7 +564,7 @@ export default function NotebookPage() {
               <input
                 value={convQuery}
                 onChange={e => setConvQuery(e.target.value)}
-                placeholder="Search conversations…"
+                placeholder={t('nb.searchConversations')}
                 className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
               />
             </div>
@@ -634,11 +634,11 @@ export default function NotebookPage() {
                         <span className="shrink-0 text-xs text-slate-500">{relativeTime(conv.updatedAt)}</span>
                       </div>
                       <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
-                        {lastMsg.role === 'assistant' ? 'AI: ' : 'You: '}{lastMsg.content.slice(0, 100)}
+                        {lastMsg.role === 'assistant' ? t('nb.aiPrefix') : t('nb.youPrefix')}{lastMsg.content.slice(0, 100)}
                       </p>
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                        <span>{conv.messages.length} msgs</span>
-                        {outputCount > 0 && <span className="text-gold/60">{outputCount} outputs</span>}
+                        <span>{t('nb.msgCount', { count: conv.messages.length })}</span>
+                        {outputCount > 0 && <span className="text-gold/60">{t('nb.outputCount', { count: outputCount })}</span>}
                       </div>
                     </div>
                   </Link>
@@ -654,7 +654,7 @@ export default function NotebookPage() {
             {pinnedOutputs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 gap-2 text-slate-500">
                 <Pin className="h-6 w-6 opacity-30" />
-                <p className="text-sm">No pinned outputs yet.</p>
+                <p className="text-sm">{t('nb.noPinnedOutputs')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -697,14 +697,14 @@ export default function NotebookPage() {
 
         {/* header */}
         <div className="border-b border-line px-4 py-3.5">
-          <span className="text-sm font-semibold text-white">Studio</span>
+          <span className="text-sm font-semibold text-white">{t('nb.studio')}</span>
         </div>
 
         <div className="flex-1 overflow-y-auto">
 
           {/* generate section */}
           <div className="border-b border-line px-4 py-4">
-            <p className="mb-3 text-xs font-medium text-slate-400">Generate</p>
+            <p className="mb-3 text-xs font-medium text-slate-400">{t('nb.generate')}</p>
             <div className="grid grid-cols-4 gap-2">
               {GENERATE_TYPES.map(g => (
                 <button
@@ -718,7 +718,7 @@ export default function NotebookPage() {
                   ].join(' ')}
                 >
                   {g.icon}
-                  <span className="text-[10px] leading-tight">{g.label}</span>
+                  <span className="text-[10px] leading-tight">{t(g.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -726,13 +726,13 @@ export default function NotebookPage() {
             {activeGenerate && (
               <div className="mt-3 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
                 <p className="mb-2 text-xs font-medium text-gold/80 capitalize">
-                  {GENERATE_TYPES.find(g => g.key === activeGenerate)?.label}
+                  {(() => { const lk = GENERATE_TYPES.find(g => g.key === activeGenerate)?.labelKey; return lk ? t(lk) : '' })()}
                 </p>
                 <div className="flex items-center gap-2">
                   <input
                     value={genInput}
                     onChange={e => setGenInput(e.target.value)}
-                    placeholder="Describe what to generate…"
+                    placeholder={t('nb.describeToGenerate')}
                     className="flex-1 rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-xs text-white placeholder-slate-600 outline-none transition focus:border-gold/30"
                     onKeyDown={e => { if (e.key === 'Enter' && !genLoading) runGenerate() }}
                   />
@@ -748,10 +748,10 @@ export default function NotebookPage() {
                   <div className="mt-2 rounded-lg border border-line bg-surface p-2.5">
                     <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">{genResult}</p>
                     <button
-                      onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success('Copied') }}
+                      onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success(t('nb.copied')) }}
                       className="mt-2 text-[10px] font-medium text-gold/80 hover:text-gold"
                     >
-                      Copy to clipboard
+                      {t('nb.copyToClipboard')}
                     </button>
                   </div>
                 )}
@@ -761,7 +761,7 @@ export default function NotebookPage() {
 
           {/* recent outputs */}
           <div className="px-4 py-4">
-            <p className="mb-3 text-xs font-medium text-slate-400">Recent Outputs</p>
+            <p className="mb-3 text-xs font-medium text-slate-400">{t('nb.recentOutputs')}</p>
             <div className="space-y-2">
               {allOutputs.slice(0, 6).map(output => (
                 <div
@@ -784,7 +784,7 @@ export default function NotebookPage() {
                     onClick={() => setActiveSendOutput(activeSendOutput === output.id ? null : output.id)}
                     className="shrink-0 rounded-lg border border-line-strong bg-surface-2 px-2 py-1 text-[10px] text-slate-400 transition hover:border-gold/30 hover:text-gold"
                   >
-                    Send
+                    {t('nb.send')}
                   </button>
                 </div>
               ))}
@@ -794,7 +794,7 @@ export default function NotebookPage() {
           {/* send to */}
           {activeSendOutput && (
             <div className="border-t border-line px-4 py-4">
-              <p className="mb-2 text-xs font-medium text-slate-400">Send to…</p>
+              <p className="mb-2 text-xs font-medium text-slate-400">{t('nb.sendTo')}</p>
               <div className="flex flex-wrap gap-2">
                 {SEND_DESTINATIONS.map(d => (
                   <button
@@ -807,7 +807,7 @@ export default function NotebookPage() {
                         : 'border-line-strong text-slate-400 hover:border-line-strong hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {d.icon} {d.label}
+                    {d.icon} {t(d.labelKey)}
                   </button>
                 ))}
               </div>
@@ -816,7 +816,8 @@ export default function NotebookPage() {
                   onClick={() => {
                     const output = allOutputs.find(o => o.id === activeSendOutput)
                     const dest = SEND_DESTINATIONS.find(d => d.key === activeSendDest)
-                    const text = `${output?.title ?? 'Notebook output'} (${output?.type ?? 'note'})`
+                    const destLabel = dest ? t(dest.labelKey) : t('nb.destinationFallback')
+                    const text = `${output?.title ?? t('nb.notebookOutput')} (${output?.type ?? 'note'})`
                     if (activeSendDest === 'download') {
                       const blob = new Blob([text], { type: 'text/plain' })
                       const url = URL.createObjectURL(blob); const a = document.createElement('a')
@@ -825,13 +826,13 @@ export default function NotebookPage() {
                     } else {
                       navigator.clipboard.writeText(text).catch(() => {})
                     }
-                    toast.success(`Sent to ${dest?.label ?? 'destination'}`)
+                    toast.success(t('nb.sentTo', { label: destLabel }))
                     setActiveSendDest(null); setActiveSendOutput(null)
                   }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#E8C657]"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  Send to {SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.label}
+                  {t('nb.sendToLabel', { label: (() => { const lk = SEND_DESTINATIONS.find(d => d.key === activeSendDest)?.labelKey; return lk ? t(lk) : '' })() })}
                 </button>
               )}
             </div>

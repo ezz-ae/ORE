@@ -86,12 +86,6 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
     ? Math.round(inventoryData.reduce((s, p) => s + p.dataQuality, 0) / inventoryData.length)
     : 0
 
-  // Live values that override the registry's static defaults on the hub cards.
-  const DYNAMIC_META: Record<string, { metric?: string; badge?: number }> = {
-    analytics:    { metric: `${(totalVisitors / 1000).toFixed(1)}K visitors · 30d` },
-    'ai-manager': { metric: `Data quality ${avgDataQuality} · ${stats.total} listings`, badge: avgDataQuality < 70 ? 1 : 0 },
-    inventory:    { metric: `${stats.total} properties · ${stats.missingLanding} missing`, badge: stats.missingLanding },
-  }
   const [greeting, setGreeting]       = useState('')
   const [chatInput, setChatInput]     = useState('')
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
@@ -105,6 +99,13 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const router     = useRouter()
   const { t, locale } = useI18n()
   const localeTag  = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+
+  // Live values that override the registry's static defaults on the hub cards.
+  const DYNAMIC_META: Record<string, { metric?: string; badge?: number }> = {
+    analytics:    { metric: t('hub.metric.visitors', { count: (totalVisitors / 1000).toFixed(1) }) },
+    'ai-manager': { metric: t('hub.metric.dataQuality', { score: avgDataQuality, count: stats.total }), badge: avgDataQuality < 70 ? 1 : 0 },
+    inventory:    { metric: t('hub.metric.properties', { count: stats.total, missing: stats.missingLanding }), badge: stats.missingLanding },
+  }
 
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
@@ -192,17 +193,17 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const priorities = [
     ...missingLandings.filter((p) => !dismissed.has(p.id)).map((p) => ({
       id: p.id, name: p.name,
-      note: `No landing page${p.linkedCampaigns > 0 ? ` — ${p.linkedCampaigns} campaign(s) paused` : ''}`,
+      note: `${t('hub.note.noLanding')}${p.linkedCampaigns > 0 ? t('hub.note.campaignsPaused', { count: p.linkedCampaigns }) : ''}`,
       sev: 'red' as const, href: '/freehold-intelligence/inventory',
     })),
     ...lowAdReadiness.filter((p) => !dismissed.has(p.id)).map((p) => ({
       id: p.id, name: p.name,
-      note: `Ad readiness ${p.adReadiness}% — needs creative & copy`,
+      note: t('hub.note.adReadiness', { pct: p.adReadiness }),
       sev: 'amber' as const, href: '/freehold-intelligence/inventory',
     })),
     ...noImages.filter((p) => !missingLandings.includes(p) && !dismissed.has(p.id)).map((p) => ({
       id: p.id, name: p.name,
-      note: 'No images — blocks ad creative generation',
+      note: t('hub.note.noImages'),
       sev: 'amber' as const, href: '/freehold-intelligence/inventory',
     })),
   ]
@@ -231,7 +232,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                 <Sparkles className="h-5 w-5 text-gold" />
               </div>
               <div>
-                <div className="text-base font-semibold text-white">{greeting || 'Freehold Intelligence'}</div>
+                <div className="text-base font-semibold text-white">{greeting || t('hub.title')}</div>
                 <div className="text-sm text-slate-400 mt-0.5">{dateStr}</div>
               </div>
             </div>

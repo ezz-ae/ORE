@@ -11,6 +11,8 @@ import { lm_ads } from './dictionaries/lm_ads'
 import { lm_core } from './dictionaries/lm_core'
 import { coach } from './dictionaries/coach'
 import { analytics } from './dictionaries/analytics'
+import { notebook } from './dictionaries/notebook'
+import { expertChat } from './dictionaries/expert'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -112,6 +114,14 @@ const en: Dict = {
   'hub.yesterday': 'Yesterday',
   'hub.briefingLive': '{urgent} urgent, {blocked} blocked and {pending} awaiting approval right now.',
   'hub.noUrgent': 'Nothing urgent right now — you\'re ahead.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count}K visitors · 30d',
+  'hub.metric.dataQuality': 'Data quality {score} · {count} listings',
+  'hub.metric.properties': '{count} properties · {missing} missing',
+  'hub.note.noLanding': 'No landing page',
+  'hub.note.campaignsPaused': ' — {count} campaign(s) paused',
+  'hub.note.adReadiness': 'Ad readiness {pct}% — needs creative & copy',
+  'hub.note.noImages': 'No images — blocks ad creative generation',
   // Web Studio — Expert depth prompts (route into the single conversation)
   'studio.ai.title': 'Ask the Expert',
   'studio.ai.subtitle': 'Plan, fix and audit content with the docked AI',
@@ -217,6 +227,14 @@ const ar: Dict = {
   'hub.yesterday': 'أمس',
   'hub.briefingLive': '{urgent} عاجلة، و{blocked} محظورة، و{pending} بانتظار الموافقة الآن.',
   'hub.noUrgent': 'لا شيء عاجل الآن — أنت متقدّم على العمل.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count} ألف زائر · 30 يوماً',
+  'hub.metric.dataQuality': 'جودة البيانات {score} · {count} قائمة',
+  'hub.metric.properties': '{count} عقار · {missing} ناقص',
+  'hub.note.noLanding': 'لا توجد صفحة هبوط',
+  'hub.note.campaignsPaused': ' — {count} حملة متوقفة',
+  'hub.note.adReadiness': 'جاهزية الإعلان {pct}% — تحتاج تصميماً ونصاً',
+  'hub.note.noImages': 'لا توجد صور — يمنع إنشاء تصميم الإعلان',
   'studio.ai.title': 'اسأل الخبير',
   'studio.ai.subtitle': 'خطّط وأصلح ودقّق المحتوى عبر الذكاء الاصطناعي المثبّت',
   'studio.ai.q1': 'دقّق جميع صفحات الهبوط بحثاً عن بيانات قديمة أو منتهية واذكر ما يجب تحديثه.',
@@ -320,6 +338,14 @@ const ru: Dict = {
   'hub.yesterday': 'Вчера',
   'hub.briefingLive': 'Сейчас: {urgent} срочных, {blocked} заблокировано и {pending} ждут согласования.',
   'hub.noUrgent': 'Сейчас ничего срочного — вы на шаг впереди.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count}K посетителей · 30д',
+  'hub.metric.dataQuality': 'Качество данных {score} · {count} объявл.',
+  'hub.metric.properties': '{count} объектов · {missing} без лендинга',
+  'hub.note.noLanding': 'Нет лендинга',
+  'hub.note.campaignsPaused': ' — приостановлено кампаний: {count}',
+  'hub.note.adReadiness': 'Готовность к рекламе {pct}% — нужны креатив и текст',
+  'hub.note.noImages': 'Нет изображений — блокирует генерацию креатива',
   'studio.ai.title': 'Спросите Эксперта',
   'studio.ai.subtitle': 'Планируйте, исправляйте и проверяйте контент через закреплённый ИИ',
   'studio.ai.q1': 'Проверьте все лендинги на устаревшие или просроченные данные и перечислите, что обновить.',
@@ -344,7 +370,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru },
 }
