@@ -357,6 +357,18 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
+  async function patchLead(body: Record<string, unknown>, successMsg: string) {
+    try {
+      const res = await fetch(`/api/freehold/crm/leads/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error('Failed')
+      toast.success(successMsg)
+    } catch {
+      toast.error('Could not update chat')
+    }
+  }
+
   async function disconnect() {
     await fetch('/api/whatsapp/disconnect', { method: 'POST' })
     setWaStatus({ status: 'disconnected', qrDataUrl: null, connectedPhone: null, connectedName: null })
@@ -503,10 +515,15 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               </button>
               {showOptions && (
                 <div className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
-                  {['Archive chat', 'Mute notifications', 'Clear messages', 'Block contact'].map((opt) => (
-                    <button key={opt} onClick={() => { setShowOptions(false); toast.success(opt) }}
+                  {([
+                    { label: 'Archive chat', run: () => patchLead({ archived: true }, 'Chat archived') },
+                    { label: 'Mute notifications', run: () => patchLead({ muted_until: new Date(Date.now() + 30 * 864e5).toISOString() }, 'Muted for 30 days') },
+                    { label: 'Clear messages', run: () => { setMessages([]); toast.success('Messages cleared from view') } },
+                    { label: 'Block contact', run: () => patchLead({ blocked: true, status: 'lost' }, 'Contact blocked') },
+                  ]).map((opt) => (
+                    <button key={opt.label} onClick={() => { setShowOptions(false); opt.run() }}
                       className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white">
-                      {opt}
+                      {opt.label}
                     </button>
                   ))}
                 </div>

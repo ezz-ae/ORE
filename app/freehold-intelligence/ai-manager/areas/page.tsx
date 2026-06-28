@@ -53,9 +53,11 @@ export default function AreaGuidesPage() {
   const [newName,  setNewName]  = useState('')
 
   useEffect(() => {
-    fetch('/api/freehold/public/areas')
-      .then((r) => r.json())
-      .then((data) => {
+    Promise.all([
+      fetch('/api/freehold/public/areas').then((r) => r.ok ? r.json() : { areas: [] }).catch(() => ({ areas: [] })),
+      fetch('/api/freehold/web-content?kind=area', { cache: 'no-store' }).then((r) => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
+    ])
+      .then(([data, custom]) => {
         const mapped: AreaRow[] = (data.areas ?? []).map((a: {
           slug: string; name: string; avg_score: number | null;
           project_count: number | null; avg_yield: number | null
@@ -68,7 +70,17 @@ export default function AreaGuidesPage() {
           leads30d: 0,
           lastUpdated: new Date().toISOString().slice(0, 10),
         }))
-        setAreas(mapped)
+        const customAreas: AreaRow[] = (custom.items ?? []).map((c: { slug: string; name: string; status: string; body?: string }) => ({
+          slug: c.slug,
+          name: c.name,
+          status: (c.status === 'published' ? 'Published' : 'Draft') as AreaRow['status'],
+          seo: c.body ? 60 : 20,
+          properties: 0,
+          leads30d: 0,
+          lastUpdated: new Date().toISOString().slice(0, 10),
+        }))
+        const seen = new Set(mapped.map((m) => m.slug))
+        setAreas([...customAreas.filter((c) => !seen.has(c.slug)), ...mapped])
       })
       .catch(() => toast.error('Failed to load area data'))
       .finally(() => setLoading(false))
@@ -123,7 +135,20 @@ export default function AreaGuidesPage() {
             onChange={(e) => setNewName(e.target.value)}
             className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40" />
           <div className="flex gap-2">
-            <button onClick={() => { setShowNew(false); setNewName(''); toast.success('Area guide created') }}
+            <button onClick={async () => {
+              const name = newName.trim()
+              if (!name) return
+              try {
+                const res = await fetch('/api/freehold/web-content', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ kind: 'area', name }),
+                })
+                const data = await res.json()
+                if (!res.ok) throw new Error(data?.error || 'Failed')
+                setAreas((prev) => [{ slug: data.item.slug, name: data.item.name, status: 'Draft', seo: 20, properties: 0, leads30d: 0, lastUpdated: new Date().toISOString().slice(0, 10) }, ...prev])
+                setShowNew(false); setNewName(''); toast.success('Area guide created')
+              } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to create') }
+            }}
               className="rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
               Create
             </button>
