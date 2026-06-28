@@ -5,6 +5,7 @@ import { finance } from './dictionaries/finance'
 import { management } from './dictionaries/management'
 import { inventory } from './dictionaries/inventory'
 import { settings } from './dictionaries/settings'
+import { languages } from './dictionaries/languages'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -47,6 +48,8 @@ const en: Dict = {
   'common.account': 'Account',
   'common.apps': 'Apps',
   'common.language': 'Language',
+  'common.showOriginal': 'Show original',
+  'common.translateTo': 'Translate to {lang}',
   // nav / apps
   'nav.home': 'Home',
   'nav.crm': 'CRM',
@@ -132,6 +135,8 @@ const ar: Dict = {
   'common.account': 'الحساب',
   'common.apps': 'التطبيقات',
   'common.language': 'اللغة',
+  'common.showOriginal': 'إظهار الأصل',
+  'common.translateTo': 'ترجمة إلى {lang}',
   'nav.home': 'الرئيسية',
   'nav.crm': 'إدارة العملاء',
   'nav.ads': 'الإعلانات',
@@ -211,6 +216,8 @@ const ru: Dict = {
   'common.account': 'Аккаунт',
   'common.apps': 'Приложения',
   'common.language': 'Язык',
+  'common.showOriginal': 'Показать оригинал',
+  'common.translateTo': 'Перевести на {lang}',
   'nav.home': 'Главная',
   'nav.crm': 'CRM',
   'nav.ads': 'Реклама',
@@ -264,7 +271,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru },
 }

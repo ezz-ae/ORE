@@ -1,0 +1,62 @@
+import type { Locale } from '../config'
+
+// Languages settings page (platform / writing / AI / team-input / inline).
+// Kept in its own namespace file so it never collides with the settings agent.
+type Dict = Record<string, string>
+
+export const languages: Record<Locale, Dict> = {
+  en: {
+    'settings.lang.title': 'Languages',
+    'settings.lang.subtitle': 'Platform, writing, and AI languages — and how team input is handled',
+    'settings.lang.platform': 'Platform language',
+    'settings.lang.platformHint': 'The language the dashboard is shown in for you.',
+    'settings.lang.writing': 'Writing languages',
+    'settings.lang.writingHint': 'Languages you create content in. AI writing tools offer these. Pick one or more.',
+    'settings.lang.ai': 'AI language',
+    'settings.lang.aiHint': 'The language the AI assistant replies in.',
+    'settings.lang.aiAuto': 'Auto (match the message)',
+    'settings.lang.translateTeam': 'Translate team input',
+    'settings.lang.translateTeamHint': 'Auto-translate notes and messages written by teammates into your platform language. Off keeps them as written.',
+    'settings.lang.inline': 'Show inline “Translate”',
+    'settings.lang.inlineHint': 'Offer a one-tap translate on long Arabic / Russian text.',
+    'settings.lang.save': 'Save languages',
+    'settings.lang.saved': 'Language preferences saved',
+    'settings.lang.saveError': 'Could not save language preferences',
+  },
+  ar: {
+    'settings.lang.title': 'اللغات',
+    'settings.lang.subtitle': 'لغات المنصة والكتابة والذكاء الاصطناعي — وكيفية التعامل مع مدخلات الفريق',
+    'settings.lang.platform': 'لغة المنصة',
+    'settings.lang.platformHint': 'اللغة التي تظهر بها لوحة التحكم لك.',
+    'settings.lang.writing': 'لغات الكتابة',
+    'settings.lang.writingHint': 'اللغات التي تنشئ بها المحتوى. تتيحها أدوات الكتابة بالذكاء الاصطناعي. اختر واحدة أو أكثر.',
+    'settings.lang.ai': 'لغة الذكاء الاصطناعي',
+    'settings.lang.aiHint': 'اللغة التي يرد بها المساعد الذكي.',
+    'settings.lang.aiAuto': 'تلقائي (حسب الرسالة)',
+    'settings.lang.translateTeam': 'ترجمة مدخلات الفريق',
+    'settings.lang.translateTeamHint': 'ترجمة الملاحظات والرسائل المكتوبة من الزملاء تلقائياً إلى لغة منصتك. عند الإيقاف تبقى كما كُتبت.',
+    'settings.lang.inline': 'إظهار «ترجمة» مضمّنة',
+    'settings.lang.inlineHint': 'إتاحة ترجمة بنقرة واحدة للنصوص العربية / الروسية الطويلة.',
+    'settings.lang.save': 'حفظ اللغات',
+    'settings.lang.saved': 'تم حفظ تفضيلات اللغة',
+    'settings.lang.saveError': 'تعذّر حفظ تفضيلات اللغة',
+  },
+  ru: {
+    'settings.lang.title': 'Языки',
+    'settings.lang.subtitle': 'Языки платформы, написания и ИИ — и обработка ввода команды',
+    'settings.lang.platform': 'Язык платформы',
+    'settings.lang.platformHint': 'Язык, на котором панель отображается для вас.',
+    'settings.lang.writing': 'Языки написания',
+    'settings.lang.writingHint': 'Языки, на которых вы создаёте контент. Их предлагают ИИ-инструменты. Выберите один или несколько.',
+    'settings.lang.ai': 'Язык ИИ',
+    'settings.lang.aiHint': 'Язык, на котором отвечает ИИ-ассистент.',
+    'settings.lang.aiAuto': 'Авто (по сообщению)',
+    'settings.lang.translateTeam': 'Переводить ввод команды',
+    'settings.lang.translateTeamHint': 'Автоперевод заметок и сообщений коллег на язык вашей платформы. При отключении остаются как есть.',
+    'settings.lang.inline': 'Показывать «Перевести»',
+    'settings.lang.inlineHint': 'Предлагать перевод в одно касание для длинных текстов на арабском / русском.',
+    'settings.lang.save': 'Сохранить языки',
+    'settings.lang.saved': 'Языковые настройки сохранены',
+    'settings.lang.saveError': 'Не удалось сохранить языковые настройки',
+  },
+}
