@@ -407,6 +407,8 @@ export type CRMAgentCapacity = {
   status: "available" | "at_capacity" | "overloaded"
   specialty: string
   recentWins: number
+  email?: string
+  phone?: string
 }
 
 export type CRMInboxLead = {

@@ -6,31 +6,28 @@ import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 
-// Static pipeline value data per stage
-const PIPELINE_VALUE_DATA = [
-  { stage: 'New',       leads: 12, value: 'AED 12.6M', label: 'pipeline',  dot: 'bg-sky-400'     },
-  { stage: 'Follow-up', leads:  8, value: 'AED 9.4M',  label: 'pipeline',  dot: 'bg-amber-400'   },
-  { stage: 'Qualified', leads:  5, value: 'AED 7.2M',  label: 'pipeline',  dot: 'bg-violet-400'  },
-  { stage: 'Hot',       leads:  6, value: 'AED 11.2M', label: 'pipeline',  dot: 'bg-red-400'     },
-  { stage: 'Won (MTD)', leads:  4, value: 'AED 6M',    label: 'closed',    dot: 'bg-[#D4AF37]' },
-]
+// Real pipeline stages (match the lead status taxonomy used across the CRM)
+const STAGE_ORDER = ['New', 'Contacted', 'Qualified', 'Viewing', 'Negotiation', 'Closed']
 
-const STAGE_ORDER = ['New', 'Follow-up', 'Qualified', 'Hot', 'Won']
-
-const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string; value: string }> = {
-  'New':       { tone: 'text-slate-400',       dot: 'bg-sky-400',      dotBg: 'bg-sky-400/20',      value: 'AED 12.6M' },
-  'Follow-up': { tone: 'text-slate-400',        dot: 'bg-amber-400',   dotBg: 'bg-amber-400/20',   value: 'AED 9.4M'  },
-  'Qualified': { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 7.2M'  },
-  'Hot':       { tone: 'text-red-300',          dot: 'bg-red-400',      dotBg: 'bg-red-400/20',      value: 'AED 11.2M' },
-  'Won':       { tone: 'text-[#D4AF37]',        dot: 'bg-[#D4AF37]',    dotBg: 'bg-[#D4AF37]/20',    value: 'AED 9.8M'  },
+const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string }> = {
+  'New':         { tone: 'text-sky-300',    dot: 'bg-sky-400',     dotBg: 'bg-sky-400/20'    },
+  'Contacted':   { tone: 'text-amber-300',  dot: 'bg-amber-400',   dotBg: 'bg-amber-400/20'  },
+  'Qualified':   { tone: 'text-violet-300', dot: 'bg-violet-400',  dotBg: 'bg-violet-400/20' },
+  'Viewing':     { tone: 'text-blue-300',   dot: 'bg-blue-400',    dotBg: 'bg-blue-400/20'   },
+  'Negotiation': { tone: 'text-orange-300', dot: 'bg-orange-400',  dotBg: 'bg-orange-400/20' },
+  'Closed':      { tone: 'text-[#D4AF37]',  dot: 'bg-[#D4AF37]',   dotBg: 'bg-[#D4AF37]/20'  },
 }
 
-const STAGE_DELTA: Record<string, string> = {
-  'New':       '+3 today',
-  'Follow-up': '2 follow-ups due',
-  'Qualified': 'High intent',
-  'Hot':       'Close watch',
-  'Won':       'MTD: AED 32M',
+function parseBudget(s: string): number {
+  const n = Number(String(s || '').replace(/[^0-9.]/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+function fmtAedShort(n: number): string {
+  if (!n || n <= 0) return 'AED 0'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
 }
 
 export default function CrmPipelinePage() {
@@ -46,15 +43,23 @@ export default function CrmPipelinePage() {
     {},
   ), [leads])
 
-  const stages = useMemo(() => STAGE_ORDER.map((name) => ({
-    name,
-    leads: stageCounts[name] || [],
-    count: (stageCounts[name] || []).length,
-    ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-slate-700', value: '—' }),
-    delta: STAGE_DELTA[name] ?? '',
-  })), [stageCounts])
+  const stages = useMemo(() => STAGE_ORDER.map((name) => {
+    const list = stageCounts[name] || []
+    const valueAed = list.reduce((s, l) => s + parseBudget(l.budgetAED), 0)
+    return {
+      name,
+      leads: list,
+      count: list.length,
+      ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-slate-700' }),
+      value: fmtAedShort(valueAed),
+      valueAed,
+      delta: `${list.length} lead${list.length !== 1 ? 's' : ''}`,
+    }
+  }), [stageCounts])
 
   const totalLeads = stages.reduce((s, st) => s + st.count, 0)
+  const totalValueAed = stages.reduce((s, st) => s + st.valueAed, 0)
+  const wonValueAed = stages.find((s) => s.name === 'Closed')?.valueAed ?? 0
 
   // If a stage is selected, show only that stage; otherwise default to Hot + Qualified
   const spotlight = useMemo(() => {
@@ -63,7 +68,7 @@ export default function CrmPipelinePage() {
       return stage && stage.leads.length > 0 ? [{ label: stage.name, leads: stage.leads }] : []
     }
     return stages
-      .filter((s) => s.name === 'Hot' || s.name === 'Qualified')
+      .filter((s) => s.name === 'Negotiation' || s.name === 'Qualified')
       .filter((s) => s.leads.length > 0)
       .map((s) => ({ label: s.name, leads: s.leads }))
   }, [activeStage, stages])
@@ -79,32 +84,32 @@ export default function CrmPipelinePage() {
             Sales pipeline<br/><span className="text-slate-500">by stage.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            {totalLeads} active lead{totalLeads !== 1 ? 's' : ''} · AED 50.2M pipeline · MTD won AED 9.8M. Stage transitions tracked nightly from HubSpot.
+            {totalLeads} active lead{totalLeads !== 1 ? 's' : ''} · {fmtAedShort(totalValueAed)} pipeline (by lead budget) · closed {fmtAedShort(wonValueAed)}.
           </p>
 
           {/* Pipeline Value strip */}
-          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {PIPELINE_VALUE_DATA.map((item) => (
+          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {stages.map((item) => (
               <div
-                key={item.stage}
+                key={item.name}
                 className="rounded-2xl border border-slate-800 bg-slate-800/50 p-4"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
                   <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 truncate">
-                    {item.stage}
+                    {item.name}
                   </span>
                 </div>
-                <div className="text-[22px] font-semibold text-white leading-none">{item.leads}</div>
-                <div className="mt-0.5 text-xs text-slate-400">lead{item.leads !== 1 ? 's' : ''}</div>
+                <div className="text-[22px] font-semibold text-white leading-none">{item.count}</div>
+                <div className="mt-0.5 text-xs text-slate-400">lead{item.count !== 1 ? 's' : ''}</div>
                 <div className="mt-3 text-sm font-semibold text-slate-300">{item.value}</div>
-                <div className="text-xs text-slate-500">{item.label}</div>
+                <div className="text-xs text-slate-500">{item.name === 'Closed' ? 'closed' : 'pipeline'}</div>
               </div>
             ))}
           </div>
 
           {/* Kanban — click to filter spotlight below */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {stages.map((stage) => {
               const isSelected = activeStage === stage.name
               return (

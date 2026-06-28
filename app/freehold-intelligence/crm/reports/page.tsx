@@ -78,6 +78,26 @@ export default function CrmReportsPage() {
 
   const maxSource = Math.max(...sources.map((s) => s.count), 1)
 
+  // Real monthly lead activity (last 5 months) from live leads.
+  const monthlyLeads = useMemo(() => {
+    const now = new Date()
+    const buckets: { key: string; month: string; leads: number }[] = []
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      buckets.push({ key: `${d.getFullYear()}-${d.getMonth()}`, month: d.toLocaleString('en-US', { month: 'short' }), leads: 0 })
+    }
+    const idx = new Map(buckets.map((b, i) => [b.key, i]))
+    for (const l of leads) {
+      const d = new Date(l.lastContactAt)
+      if (Number.isNaN(d.getTime())) continue
+      const k = `${d.getFullYear()}-${d.getMonth()}`
+      const i = idx.get(k)
+      if (i != null) buckets[i].leads++
+    }
+    return buckets
+  }, [leads])
+  const maxMonthly = Math.max(...monthlyLeads.map((m) => m.leads), 1)
+
   // Live stats from real data
   const totalLeads   = leads.length
   const critical     = leads.filter((l) => l.urgency === 'critical').length
@@ -137,33 +157,8 @@ export default function CrmReportsPage() {
 
           <Section
             className="mt-10"
-            title="Lead Sources (30d)"
-            action={<span className="rounded-full border border-sky-400/20 bg-sky-400/[0.06] px-2 py-0.5 text-xs text-slate-400">Static · paid channels</span>}
-          >
-            <Panel className="p-6 sm:p-8">
-              <div className="space-y-5">
-                {LEAD_SOURCES.map((src) => (
-                  <div key={src.label}>
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="font-medium text-slate-300">{src.label}</span>
-                      <span className="text-slate-400">{src.count} leads</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-                      <div
-                        className={`h-full rounded-full ${src.bar}`}
-                        style={{ width: `${(src.count / MAX_LEAD_SOURCE) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          </Section>
-
-          <Section
-            className="mt-10"
-            title="Monthly Lead Trend"
-            action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>}
+            title="Monthly Lead Activity"
+            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">Live · last 5 months</span>}
           >
             <Panel className="p-6 sm:p-8">
               <div className="overflow-x-auto">
@@ -173,41 +168,17 @@ export default function CrmReportsPage() {
                   viewBox={`0 0 ${SVG_W} ${SVG_H + 28}`}
                   className="min-w-[360px]"
                 >
-                  {MONTHLY_LEADS.map((m, i) => {
-                    const barH = Math.round((m.leads / MAX_MONTHLY_LEADS) * SVG_H)
+                  {monthlyLeads.map((m, i) => {
+                    const barH = Math.round((m.leads / maxMonthly) * SVG_H)
                     const x = i * BAR_TOTAL
                     const y = SVG_H - barH
+                    const current = i === monthlyLeads.length - 1
                     return (
-                      <g key={m.month}>
-                        <rect
-                          x={x}
-                          y={y}
-                          width={BAR_W}
-                          height={barH}
-                          rx={6}
-                          fill={m.current ? '#D4AF37' : 'rgba(148,163,184,0.15)'}
-                        />
-                        <text
-                          x={x + BAR_W / 2}
-                          y={SVG_H + 18}
-                          textAnchor="middle"
-                          fontSize={10}
-                          fill="rgba(148,163,184,0.60)"
-                          fontFamily="inherit"
-                        >
-                          {m.month}
-                        </text>
-                        {m.current && (
-                          <text
-                            x={x + BAR_W / 2}
-                            y={y - 6}
-                            textAnchor="middle"
-                            fontSize={9}
-                            fill="#D4AF37"
-                            fontFamily="inherit"
-                          >
-                            {m.leads}
-                          </text>
+                      <g key={m.key}>
+                        <rect x={x} y={y} width={BAR_W} height={barH} rx={6} fill={current ? '#D4AF37' : 'rgba(148,163,184,0.15)'} />
+                        <text x={x + BAR_W / 2} y={SVG_H + 18} textAnchor="middle" fontSize={10} fill="rgba(148,163,184,0.60)" fontFamily="inherit">{m.month}</text>
+                        {m.leads > 0 && (
+                          <text x={x + BAR_W / 2} y={y - 6} textAnchor="middle" fontSize={9} fill={current ? '#D4AF37' : 'rgba(148,163,184,0.6)'} fontFamily="inherit">{m.leads}</text>
                         )}
                       </g>
                     )

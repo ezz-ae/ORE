@@ -61,10 +61,18 @@ export default function CrmAgentsPage() {
     })
   }, [statusFilter, sortBy])
 
-  function handleContact(agentId: string, agentName: string, mode: 'call' | 'message') {
-    setContacted((prev) => new Set([...prev, agentId]))
-    setFlash(`${mode === 'call' ? 'Calling' : 'Messaging'} ${agentName}…`)
-    setTimeout(() => setFlash(null), 2500)
+  function handleContact(agent: { id: string; name: string; email?: string; phone?: string }, mode: 'call' | 'message') {
+    const phone = (agent.phone || '').replace(/[^0-9+]/g, '')
+    if (mode === 'call') {
+      if (phone) { window.location.href = `tel:${phone}` }
+      else if (agent.email) { window.location.href = `mailto:${agent.email}` }
+      else { setFlash('No contact number on file'); setTimeout(() => setFlash(null), 2500); return }
+    } else {
+      if (phone) { window.open(`https://wa.me/${phone.replace(/^\+/, '')}`, '_blank') }
+      else if (agent.email) { window.location.href = `mailto:${agent.email}` }
+      else { setFlash('No contact details on file'); setTimeout(() => setFlash(null), 2500); return }
+    }
+    setContacted((prev) => new Set([...prev, agent.id]))
   }
 
   return (
@@ -200,13 +208,13 @@ export default function CrmAgentsPage() {
                         </Link>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleContact(agent.id, agent.name, 'call')}
+                            onClick={() => handleContact(agent, 'call')}
                             className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
                             <Phone className="h-3 w-3" /> Call
                           </button>
                           <button
-                            onClick={() => handleContact(agent.id, agent.name, 'message')}
+                            onClick={() => handleContact(agent, 'message')}
                             className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
                             <MessageSquare className="h-3 w-3" /> Message
