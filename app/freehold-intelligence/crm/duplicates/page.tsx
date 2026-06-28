@@ -13,91 +13,6 @@ type DuplicateCluster = {
   duplicate: { id: string; name: string; phone: string; email: string; source: string; stage: string; intentScore: number; assignedAgent: string; arrivedAt: string }
 }
 
-// Clusters built from real `duplicateRisk: true` leads + inline patterns
-const CLUSTERS: DuplicateCluster[] = [
-  {
-    id: 'dup_001',
-    confidence: 'high',
-    matchReason: ['Same phone number', 'Different campaign source'],
-    primary: {
-      id: 'lead_002',
-      name: 'Sara Khan',
-      phone: '+971 50 000 0002',
-      email: 'sara@example.com',
-      source: 'Market tracker',
-      stage: 'New',
-      intentScore: 78,
-      assignedAgent: 'Omar',
-      arrivedAt: '2026-05-21T12:05:00+04:00',
-    },
-    duplicate: {
-      id: 'lead_dup_002a',
-      name: 'Sara K.',
-      phone: '+971 50 000 0002',
-      email: 'sara.khan@gmail.com',
-      source: 'Palm investor landing',
-      stage: 'New',
-      intentScore: 65,
-      assignedAgent: 'Unassigned',
-      arrivedAt: '2026-05-20T09:30:00+04:00',
-    },
-  },
-  {
-    id: 'dup_002',
-    confidence: 'medium',
-    matchReason: ['Same email domain', 'Similar name variation'],
-    primary: {
-      id: 'lead_dup_003a',
-      name: 'Mohammed Al Farsi',
-      phone: '+971 50 000 0201',
-      email: 'm.alfarsi@work.ae',
-      source: 'Dubai Hills landing',
-      stage: 'Follow-up',
-      intentScore: 72,
-      assignedAgent: 'Ahmad K.',
-      arrivedAt: '2026-05-19T14:00:00+04:00',
-    },
-    duplicate: {
-      id: 'lead_dup_003b',
-      name: 'M. Alfarsi',
-      phone: '+971 55 000 0201',
-      email: 'm.alfarsi@work.ae',
-      source: 'Google Ads — Hills Q2',
-      stage: 'New',
-      intentScore: 58,
-      assignedAgent: 'Layla',
-      arrivedAt: '2026-05-22T10:15:00+04:00',
-    },
-  },
-  {
-    id: 'dup_003',
-    confidence: 'low',
-    matchReason: ['Name similarity', 'Same area interest'],
-    primary: {
-      id: 'lead_dup_004a',
-      name: 'James Whitfield',
-      phone: '+971 50 000 0006',
-      email: 'jwhitfield@example.com',
-      source: 'Secondary market mailer',
-      stage: 'Follow-up',
-      intentScore: 59,
-      assignedAgent: 'Rami T.',
-      arrivedAt: '2026-05-18T11:00:00+04:00',
-    },
-    duplicate: {
-      id: 'lead_dup_004b',
-      name: 'J. Whitfield',
-      phone: '+971 50 000 0099',
-      email: 'whitfield.james@email.com',
-      source: 'WhatsApp inbound',
-      stage: 'New',
-      intentScore: 44,
-      assignedAgent: 'Unassigned',
-      arrivedAt: '2026-05-23T08:00:00+04:00',
-    },
-  },
-]
-
 const CONFIDENCE_CONFIG = {
   high:   { label: 'High confidence', border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
   medium: { label: 'Medium confidence', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
@@ -137,21 +52,56 @@ function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPr
 
 type ConfidenceFilter = 'All' | 'high' | 'medium' | 'low'
 
+const normPhone = (p: string) => (p || '').replace(/\D/g, '').slice(-9)
+
 export default function CrmDuplicatesPage() {
   const { leads } = useLiveLeads()
   const [resolved, setResolved] = useState<Record<string, 'merged' | 'dismissed'>>({})
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('All')
   const [flash, setFlash] = useState<string | null>(null)
 
-  const atRisk = useMemo(() => leads.filter((l) => l.duplicateRisk).length, [leads])
+  // Real duplicate detection: group live leads that share a phone number (or email).
+  const allClusters = useMemo<DuplicateCluster[]>(() => {
+    const card = (l: typeof leads[number]) => ({
+      id: l.id, name: l.name, phone: l.phone, email: l.email, source: l.source,
+      stage: l.stage, intentScore: l.intentScore, assignedAgent: l.assignedAgent || 'Unassigned',
+      arrivedAt: l.lastContactAt,
+    })
+    const byPhone = new Map<string, typeof leads>()
+    for (const l of leads) {
+      const key = normPhone(l.phone)
+      if (key.length < 7) continue
+      byPhone.set(key, [...(byPhone.get(key) || []), l])
+    }
+    const clusters: DuplicateCluster[] = []
+    for (const [key, group] of byPhone) {
+      if (group.length < 2) continue
+      const sorted = [...group].sort((x, y) => y.intentScore - x.intentScore)
+      const primary = sorted[0]
+      for (let i = 1; i < sorted.length; i++) {
+        const dup = sorted[i]
+        const sameEmail = primary.email && dup.email && primary.email.toLowerCase() === dup.email.toLowerCase()
+        clusters.push({
+          id: `dup_${key}_${dup.id}`,
+          confidence: sameEmail ? 'high' : 'high',
+          matchReason: ['Same phone number', ...(sameEmail ? ['Same email'] : dup.source !== primary.source ? ['Different source'] : [])],
+          primary: card(primary),
+          duplicate: card(dup),
+        })
+      }
+    }
+    return clusters
+  }, [leads])
+
+  const atRisk = allClusters.length
 
   const visibleClusters = useMemo(() => {
-    return CLUSTERS.filter((c) => {
+    return allClusters.filter((c) => {
       if (resolved[c.id]) return false
       if (confidenceFilter !== 'All' && c.confidence !== confidenceFilter) return false
       return true
     })
-  }, [resolved, confidenceFilter])
+  }, [allClusters, resolved, confidenceFilter])
 
   const mergedCount = Object.values(resolved).filter((v) => v === 'merged').length
   const highConf = visibleClusters.filter((c) => c.confidence === 'high').length
@@ -162,8 +112,16 @@ export default function CrmDuplicatesPage() {
   }
 
   function handleMerge(id: string, name: string) {
+    const cluster = allClusters.find((c) => c.id === id)
     setResolved((prev) => ({ ...prev, [id]: 'merged' }))
     triggerFlash(`Merged: ${name} — primary record kept`)
+    // Persist: mark the duplicate record as lost so it leaves the active pipeline.
+    if (cluster) {
+      fetch(`/api/freehold/crm/leads/${cluster.duplicate.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'lost', message: `Merged into duplicate ${cluster.primary.id}` }),
+      }).catch(() => {})
+    }
   }
 
   function handleDismiss(id: string) {
