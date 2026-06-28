@@ -202,7 +202,7 @@ export default function NotebookPage() {
     <div className="flex overflow-hidden bg-ink" style={{ height: 'calc(100dvh - 56px)' }}>
 
       {/* ── LEFT PANEL — Sources ─────────────────────────────────────────── */}
-      <aside className="flex w-[280px] shrink-0 flex-col border-r border-line bg-app overflow-hidden">
+      <aside className="hidden w-[280px] shrink-0 flex-col border-r border-line bg-app overflow-hidden lg:flex">
 
         {/* header */}
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
@@ -633,7 +633,7 @@ export default function NotebookPage() {
       </main>
 
       {/* ── RIGHT PANEL — Studio ─────────────────────────────────────────── */}
-      <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-surface">
+      <aside className="hidden w-[320px] shrink-0 flex-col overflow-hidden border-l border-line bg-surface lg:flex">
 
         {/* header */}
         <div className="border-b border-line px-4 py-3.5">

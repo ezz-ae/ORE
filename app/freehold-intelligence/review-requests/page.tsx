@@ -221,7 +221,7 @@ export default function ReviewRequestsPage() {
       </section>
 
       {/* Stat tiles */}
-      <section className="mt-8 grid grid-cols-4 gap-3">
+      <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
           <p className="text-xs text-red-400/60 mt-1">Blockers</p>

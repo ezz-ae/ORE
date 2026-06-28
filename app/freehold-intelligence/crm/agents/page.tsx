@@ -165,7 +165,7 @@ export default function CrmAgentsPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-4 gap-5 sm:gap-6">
+                      <div className="grid grid-cols-2 gap-5 sm:grid-cols-4 sm:gap-6">
                         <div className="text-center">
                           <div className="text-[22px] font-semibold text-white">{agent.totalLeads}</div>
                           <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Leads</div>

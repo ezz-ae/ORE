@@ -275,7 +275,7 @@ export default function CrmReportsPage() {
             action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>}
           >
             <Panel className="p-6 sm:p-8">
-              <div className="grid grid-cols-5 gap-3 sm:gap-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-5">
                 {MONTHLY.map((m) => (
                   <div key={m.month} className="flex flex-col items-center gap-3">
                     <div className="flex h-32 w-full items-end overflow-hidden rounded-lg bg-surface-2">

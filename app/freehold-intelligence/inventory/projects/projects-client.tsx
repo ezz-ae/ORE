@@ -69,7 +69,7 @@ export default function ProjectsClient({ initialProperties }: { initialPropertie
       </div>
 
       {/* Tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Developers',   value: totalDevelopers,      color: 'text-amber-400'   },
           { label: 'Total units',  value: totalUnits,           color: 'text-slate-200'     },

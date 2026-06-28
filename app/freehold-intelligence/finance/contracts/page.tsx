@@ -106,7 +106,7 @@ export default function ContractsPage() {
       />
 
       {/* Summary tiles */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Total"      value={contracts.length} Icon={FileCheck}   />
         <StatCard label="Active"     value={active}           Icon={CheckCircle2} />
         <StatCard label="Expiring"   value={expiring.length}  Icon={AlertCircle}  />
