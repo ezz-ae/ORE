@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   UserPlus, MoreHorizontal, Mail, CheckCircle,
   Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
@@ -52,40 +53,65 @@ export default function TeamPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  function invite() {
+  const uiToDbRole = (role: string): string =>
+    role === 'Owner' ? 'ceo' : role === 'Admin' ? 'admin' : 'broker'
+
+  function refetch() {
+    fetch('/api/freehold/team', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => { if (data.members) setMembers(data.members) })
+      .catch(() => {})
+  }
+
+  async function invite() {
     if (!inviteEmail.trim()) return
     const n = inviteEmail.split('@')[0]
-    setMembers((prev) => [
-      ...prev,
-      {
-        id:       `inv_${Date.now()}`,
-        name:     n,
-        email:    inviteEmail.trim(),
-        role:     inviteRole,
-        status:   'invited',
-        joinedAt: new Date().toISOString().slice(0, 10),
-        initials: n.slice(0, 2).toUpperCase(),
-      },
-    ])
-    setInviteEmail('')
-    setShowInvite(false)
+    try {
+      const res = await fetch('/api/freehold/team', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: n, email: inviteEmail.trim(), role: uiToDbRole(inviteRole) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed to invite')
+      toast.success(`Invited ${inviteEmail.trim()}`)
+      setInviteEmail('')
+      setShowInvite(false)
+      refetch()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to invite')
+    }
   }
 
   function changeRole(id: string, role: Role) {
     setMembers((prev) => prev.map((m) => m.id === id ? { ...m, role } : m))
     setOpenMenu(null)
+    fetch(`/api/freehold/team/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: uiToDbRole(role) }),
+    }).then((r) => { if (r.ok) toast.success('Role updated'); else toast.error('Could not update role') }).catch(() => {})
   }
 
   function toggleSuspend(id: string) {
+    let nextSuspended = false
     setMembers((prev) =>
-      prev.map((m) => m.id === id ? { ...m, status: m.status === 'suspended' ? 'active' : 'suspended' } : m),
+      prev.map((m) => {
+        if (m.id !== id) return m
+        nextSuspended = m.status !== 'suspended'
+        return { ...m, status: nextSuspended ? 'suspended' : 'active' }
+      }),
     )
     setOpenMenu(null)
+    fetch(`/api/freehold/team/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suspended: nextSuspended }),
+    }).catch(() => {})
   }
 
-  function removeMember(id: string) {
+  async function removeMember(id: string) {
     setMembers((prev) => prev.filter((m) => m.id !== id))
     setOpenMenu(null)
+    const res = await fetch(`/api/freehold/team/${id}`, { method: 'DELETE' }).catch(() => null)
+    if (res && res.ok) toast.success('Member removed'); else toast.error('Could not remove member')
   }
 
   const active  = members.filter((m) => m.status === 'active').length
