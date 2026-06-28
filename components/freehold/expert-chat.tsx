@@ -6,30 +6,55 @@ import Link from 'next/link'
 import {
   Sparkles, ArrowUp, Loader2, X, Plus, PanelRightClose, PanelRightOpen,
   Check, Rocket, Pencil, Eye, ThumbsUp, ArrowRight, ImageIcon, Copy, ListChecks,
+  BookmarkPlus,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
+import { useT } from '@/lib/i18n/provider'
+
+/** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
+function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  let title = 'Expert note'
+  const parts: string[] = []
+  for (const b of blocks) {
+    if (b.type === 'text') {
+      if (title === 'Expert note') title = b.content.slice(0, 60)
+      parts.push(`<p style="margin:0 0 12px;line-height:1.6">${esc(b.content)}</p>`)
+    } else if (b.type === 'plan') {
+      title = b.title || 'Plan'
+      parts.push(`<h3 style="margin:16px 0 8px">${esc(b.title || 'Plan')}</h3><ol style="padding-left:18px;line-height:1.6">${b.steps.map((s) => `<li><strong>${esc(s.step)}</strong>${s.detail ? `<br><span style="color:#94a3b8">${esc(s.detail)}</span>` : ''}</li>`).join('')}</ol>`)
+    } else if (b.type === 'landing') {
+      title = b.title || 'Landing'
+      parts.push(`<h3 style="margin:16px 0 4px">${esc(b.title)}</h3>${b.subhead ? `<p style="color:#94a3b8;margin:0 0 8px">${esc(b.subhead)}</p>` : ''}${b.sections.map((s) => `<h4 style="margin:10px 0 2px">${esc(s.heading)}</h4><p style="margin:0 0 8px;line-height:1.6">${esc(s.body)}</p>`).join('')}`)
+    } else if (b.type === 'media') {
+      parts.push(`<h4 style="margin:10px 0 2px">${esc(b.label)}</h4><p style="margin:0 0 8px;color:#94a3b8;line-height:1.6">${esc(b.prompt)}</p>`)
+    }
+  }
+  return { html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0">${parts.join('') || '<p>(empty)</p>'}</div>`, title }
+}
 
 type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[] }
 
-const STARTERS = [
-  'What should I focus on right now?',
-  'Design a landing page for the top ad-ready property.',
-  'Which properties should we advertise this week?',
-  'Give me a 7-day plan to get the first campaign live.',
+const STARTER_KEYS = [
+  'expert.starter1',
+  'expert.starter2',
+  'expert.starter3',
+  'expert.starter4',
 ]
 
-const PAGE_LABELS: { match: (p: string) => boolean; label: string }[] = [
-  { match: (p) => p === '/freehold-intelligence', label: 'Home' },
-  { match: (p) => p.startsWith('/freehold-intelligence/lead-machine'), label: 'Lead Machine' },
-  { match: (p) => p.startsWith('/freehold-intelligence/crm'), label: 'CRM' },
-  { match: (p) => p.startsWith('/freehold-intelligence/inventory'), label: 'Inventory' },
-  { match: (p) => p.startsWith('/freehold-intelligence/ads'), label: 'Ads' },
-  { match: (p) => p.startsWith('/freehold-intelligence/ai-manager'), label: 'Web Studio' },
-  { match: (p) => p.startsWith('/freehold-intelligence/integrations'), label: 'Integrations' },
-  { match: (p) => p.startsWith('/freehold-intelligence/analytics'), label: 'Analytics' },
+const PAGE_LABELS: { match: (p: string) => boolean; labelKey: string }[] = [
+  { match: (p) => p === '/freehold-intelligence', labelKey: 'nav.home' },
+  { match: (p) => p.startsWith('/freehold-intelligence/lead-machine'), labelKey: 'expert.pageLeadMachine' },
+  { match: (p) => p.startsWith('/freehold-intelligence/crm'), labelKey: 'nav.crm' },
+  { match: (p) => p.startsWith('/freehold-intelligence/inventory'), labelKey: 'nav.inventory' },
+  { match: (p) => p.startsWith('/freehold-intelligence/ads'), labelKey: 'nav.ads' },
+  { match: (p) => p.startsWith('/freehold-intelligence/ai-manager'), labelKey: 'nav.ai-manager' },
+  { match: (p) => p.startsWith('/freehold-intelligence/integrations'), labelKey: 'nav.integrations' },
+  { match: (p) => p.startsWith('/freehold-intelligence/analytics'), labelKey: 'nav.analytics' },
 ]
-const pageLabel = (p: string) => PAGE_LABELS.find((x) => x.match(p))?.label ?? 'Workspace'
+const pageLabelKey = (p: string) => PAGE_LABELS.find((x) => x.match(p))?.labelKey ?? 'expert.pageWorkspace'
 
 const MIN_W = 340
 const MAX_W = 760
@@ -46,6 +71,7 @@ function actionClass(style?: string) {
 }
 
 export function ExpertChat() {
+  const t = useT()
   const pathname = usePathname()
   const [open, setOpen] = useState(true)
   const [width, setWidth] = useState(DEFAULT_W)
@@ -53,6 +79,7 @@ export function ExpertChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [pending, setPending] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [savedIdx, setSavedIdx] = useState<number | null>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const sessionId = useRef(`expert-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -118,17 +145,17 @@ export function ExpertChat() {
       const res = await fetch('/api/freehold/expert/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, role: 'owner', sessionId: sessionId.current, page: pathname }),
+        body: JSON.stringify({ message, sessionId: sessionId.current, page: pathname }),
       })
       const data = await res.json()
-      const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: 'I reviewed the system state. Try a suggested prompt.' }]
+      const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: t('expert.fallbackOk') }]
       setMessages((m) => [...m, { role: 'assistant', blocks }])
     } catch {
-      setMessages((m) => [...m, { role: 'assistant', blocks: [{ type: 'text', content: 'I could not reach the system. Try again in a moment.' }] }])
+      setMessages((m) => [...m, { role: 'assistant', blocks: [{ type: 'text', content: t('expert.fallbackErr') }] }])
     } finally {
       setPending(false)
     }
-  }, [value, pending, pathname])
+  }, [value, pending, pathname, t])
 
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
@@ -157,12 +184,30 @@ export function ExpertChat() {
     setTimeout(() => setCopied((c) => (c === key ? null : c)), 1800)
   }
 
+  async function saveToNotebook(blocks: ExpertBlock[], idx: number) {
+    try {
+      const { html, title } = blocksToHtml(blocks)
+      const res = await fetch('/api/freehold/notebook/save-output', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, type: 'note', content: html }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      setSavedIdx(idx)
+      toast.success(t('expert.saveOk'))
+      setTimeout(() => setSavedIdx((s) => (s === idx ? null : s)), 2500)
+    } catch {
+      toast.error(t('expert.saveErr'))
+    }
+  }
+
   // ─── Collapsed rail ──
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        aria-label="Open Freehold Expert"
+        aria-label={t('expert.openAria')}
+        data-coach="expert-chat"
         className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-line bg-app py-4 transition hover:bg-surface-2 md:flex"
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-gold/15 ring-1 ring-gold/30">
@@ -180,13 +225,14 @@ export function ExpertChat() {
     <>
       {/* Mobile backdrop */}
       <button
-        aria-label="Close Expert"
+        aria-label={t('expert.closeAria')}
         onClick={() => setOpen(false)}
         className="fixed inset-0 z-[190] bg-black/50 md:hidden"
       />
 
       <aside
         style={{ width }}
+        data-coach="expert-chat"
         className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-line bg-app md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}
@@ -206,17 +252,17 @@ export function ExpertChat() {
               <Sparkles className="h-3.5 w-3.5 text-gold" />
             </span>
             <div>
-              <div className="text-sm font-semibold text-slate-100">Freehold Expert</div>
-              <div className="text-xs text-slate-500">Full-system · {pageLabel(pathname)}</div>
+              <div className="text-sm font-semibold text-slate-100">{t('expert.title')}</div>
+              <div className="text-xs text-slate-500">{t('expert.subtitle', { page: t(pageLabelKey(pathname)) })}</div>
             </div>
           </div>
           <div className="flex items-center gap-0.5">
             {messages.length > 0 && (
-              <button onClick={reset} title="New chat" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
+              <button onClick={reset} title={t('expert.newChat')} className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
                 <Plus className="h-4 w-4" />
               </button>
             )}
-            <button onClick={() => setOpen(false)} title="Collapse (⌘J)" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
+            <button onClick={() => setOpen(false)} title={t('expert.collapse')} className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
               <PanelRightClose className="hidden h-4 w-4 md:block" />
               <X className="h-4 w-4 md:hidden" />
             </button>
@@ -229,16 +275,14 @@ export function ExpertChat() {
             <div className="flex h-full flex-col">
               <div className="mb-4 rounded-xl border border-gold/15 bg-gold/[0.05] p-4">
                 <p className="text-sm leading-relaxed text-slate-300">
-                  I'm your full-system partner. Ask me to plan, design a landing page, pick colours,
-                  draft a campaign, review or launch — I'll build it right here in the conversation,
-                  grounded in your live data.
+                  {t('expert.intro')}
                 </p>
               </div>
               <div className="grid gap-2">
-                {STARTERS.map((q) => (
-                  <button key={q} onClick={() => send(q)}
+                {STARTER_KEYS.map((k) => (
+                  <button key={k} onClick={() => send(t(k))}
                     className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white">
-                    {q}
+                    {t(k)}
                   </button>
                 ))}
               </div>
@@ -255,13 +299,20 @@ export function ExpertChat() {
                     {m.blocks.map((b, j) => (
                       <BlockView key={j} block={b} idx={`${i}-${j}`} onAction={send} onCopy={copy} copied={copied} />
                     ))}
+                    <button
+                      onClick={() => saveToNotebook(m.blocks, i)}
+                      className="inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200"
+                    >
+                      {savedIdx === i ? <Check className="h-3.5 w-3.5 text-gold" /> : <BookmarkPlus className="h-3.5 w-3.5" />}
+                      {savedIdx === i ? t('expert.saved') : t('expert.save')}
+                    </button>
                   </div>
                 ),
               )}
               {pending && (
                 <div className="mr-auto flex items-center gap-2 rounded-xl rounded-bl-md border border-gold/20 bg-gold/[0.06] px-4 py-3 text-sm text-slate-300">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-gold" />
-                  Reading the system & building…
+                  {t('expert.pending')}
                 </div>
               )}
             </div>
@@ -278,10 +329,10 @@ export function ExpertChat() {
               <textarea
                 ref={taRef} value={value} onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-                rows={1} placeholder="Ask, design, plan, or launch…"
+                rows={1} placeholder={t('expert.composerPlaceholder')}
                 className="flex-1 cursor-text resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
-              <button onClick={() => send()} disabled={!value.trim() || pending} aria-label="Send"
+              <button onClick={() => send()} disabled={!value.trim() || pending} aria-label={t('expert.sendAria')}
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
               </button>
@@ -304,6 +355,7 @@ function BlockView({
   onCopy: (text: string, key: string) => void
   copied: string | null
 }) {
+  const t = useT()
   switch (block.type) {
     case 'text':
       return (
@@ -316,7 +368,7 @@ function BlockView({
       return (
         <div className="rounded-xl border border-line bg-surface-2 p-4">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold">
-            <ListChecks className="h-3.5 w-3.5" /> {block.title ?? 'Plan'}
+            <ListChecks className="h-3.5 w-3.5" /> {block.title ?? t('expert.plan')}
           </div>
           <ol className="grid gap-3">
             {block.steps.map((s, i) => (
@@ -362,7 +414,7 @@ function BlockView({
           {block.label && <div className="mb-3 text-sm font-medium text-slate-300">{block.label}</div>}
           <div className="flex flex-wrap gap-3">
             {block.colors.map((c) => (
-              <button key={c} onClick={() => onAction(`Use the accent colour ${c} — apply it and show the result.`)}
+              <button key={c} onClick={() => onAction(t('expert.useColorPrompt', { color: c }))}
                 title={c}
                 className="group flex flex-col items-center gap-1.5">
                 <span className="h-10 w-10 rounded-full ring-2 ring-line-strong transition group-hover:ring-gold/60" style={{ backgroundColor: c }} />
@@ -384,7 +436,7 @@ function BlockView({
         <div className="overflow-hidden rounded-xl border border-line-strong bg-ink">
           {/* Hero preview */}
           <div className="relative px-5 py-6" style={{ background: `linear-gradient(135deg, ${accent}1A, transparent 70%)` }}>
-            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>Landing preview</div>
+            <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: accent }}>{t('expert.landingPreview')}</div>
             <h3 className="mt-2 text-lg font-semibold leading-tight text-white">{block.title}</h3>
             {block.subhead && <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{block.subhead}</p>}
             {block.cta && (
@@ -404,18 +456,18 @@ function BlockView({
           </div>
           {/* Toolbar */}
           <div className="flex items-center gap-2 border-t border-line px-3 py-2.5">
-            <button onClick={() => onAction('Edit this landing — rewrite the hero headline 3 ways and tighten the sections.')}
+            <button onClick={() => onAction(t('expert.editLandingPrompt'))}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
-              <Pencil className="h-3.5 w-3.5" /> Edit
+              <Pencil className="h-3.5 w-3.5" /> {t('expert.edit')}
             </button>
-            <button onClick={() => onAction('Launch this landing — give me the publish + tracking + ad-request plan.')}
+            <button onClick={() => onAction(t('expert.launchLandingPrompt'))}
               className="inline-flex items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90">
-              <Rocket className="h-3.5 w-3.5" /> Launch
+              <Rocket className="h-3.5 w-3.5" /> {t('expert.launch')}
             </button>
             <button onClick={() => onCopy(full, `landing-${idx}`)}
               className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:text-slate-200">
               {copied === `landing-${idx}` ? <Check className="h-3.5 w-3.5 text-gold" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === `landing-${idx}` ? 'Copied' : 'Copy'}
+              {copied === `landing-${idx}` ? t('expert.copied') : t('expert.copy')}
             </button>
           </div>
         </div>
@@ -426,7 +478,7 @@ function BlockView({
       return (
         <div className="rounded-xl border border-line bg-surface-2 p-4">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <ImageIcon className="h-3.5 w-3.5 text-gold" /> Media brief
+            <ImageIcon className="h-3.5 w-3.5 text-gold" /> {t('expert.mediaBrief')}
             {block.aspect && <span className="ml-1 rounded bg-surface-3 px-1.5 py-0.5 text-xs text-slate-400">{block.aspect}</span>}
           </div>
           <div className="text-sm font-medium text-slate-200">{block.label}</div>
@@ -435,11 +487,11 @@ function BlockView({
             <button onClick={() => onCopy(block.prompt, `media-${idx}`)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
               {copied === `media-${idx}` ? <Check className="h-3.5 w-3.5 text-gold" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === `media-${idx}` ? 'Copied prompt' : 'Copy prompt'}
+              {copied === `media-${idx}` ? t('expert.copiedPrompt') : t('expert.copyPrompt')}
             </button>
-            <button onClick={() => onAction(`Refine this media brief: "${block.label}". Give 3 stronger variations of the prompt.`)}
+            <button onClick={() => onAction(t('expert.refineMediaPrompt', { label: block.label }))}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:text-white">
-              <Sparkles className="h-3.5 w-3.5" /> Refine
+              <Sparkles className="h-3.5 w-3.5" /> {t('expert.refine')}
             </button>
           </div>
         </div>

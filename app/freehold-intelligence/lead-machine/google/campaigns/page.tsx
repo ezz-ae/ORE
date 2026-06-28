@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import type { GoogleCampaign, GoogleCampaignType } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ function BiddingBadge({ strategy }: { strategy: string }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function GoogleCampaignsPage() {
+  const t = useT()
   const [campaigns, setCampaigns]   = useState<GoogleCampaign[]>([])
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -181,13 +183,13 @@ export default function GoogleCampaignsPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
             className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
-            <Zap className="h-4 w-4" /> New campaign
+            <Zap className="h-4 w-4" /> {t('lm.google.common.newCampaign')}
           </Link>
         </div>
       </div>
@@ -199,14 +201,14 @@ export default function GoogleCampaignsPage() {
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
               <div className="text-sm font-semibold text-white">
-                Google Ads not connected
+                {t('lm.google.common.notConnected')}
               </div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -227,7 +229,7 @@ export default function GoogleCampaignsPage() {
       {loading && (
         <div className="mt-20 flex items-center justify-center gap-3 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-[14px]">Loading campaigns…</span>
+          <span className="text-[14px]">{t('lm.google.campaigns.title')}…</span>
         </div>
       )}
 
@@ -237,17 +239,17 @@ export default function GoogleCampaignsPage() {
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               {
-                label: 'Active',
+                label: t('lm.google.common.active'),
                 value: activeCount,
                 color: 'text-gold',
               },
               {
-                label: 'Paused',
+                label: t('lm.google.common.paused'),
                 value: pausedCount,
                 color: 'text-slate-400',
               },
               {
-                label: 'Total spend',
+                label: t('lm.google.campaigns.col.spend'),
                 value: `AED ${(totalSpend / 1_000_000).toLocaleString('en-AE', {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
@@ -255,7 +257,7 @@ export default function GoogleCampaignsPage() {
                 color: 'text-white',
               },
               {
-                label: 'Total conversions',
+                label: t('lm.google.common.conversions'),
                 value: Math.round(totalConvs).toLocaleString(),
                 color: totalConvs > 0 ? 'text-[#FBBC04]' : 'text-slate-400',
               },
@@ -385,7 +387,7 @@ export default function GoogleCampaignsPage() {
                         ) : (
                           <Play className="h-3 w-3" />
                         )}
-                        {isEnabled ? 'Pause' : 'Activate'}
+                        {isEnabled ? t('lm.google.campaigns.pauseBtn') : t('lm.google.campaigns.resumeBtn')}
                       </button>
                     </div>
                   </div>
@@ -399,17 +401,16 @@ export default function GoogleCampaignsPage() {
             <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
               <Search className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/40" />
               <div className="text-[18px] font-semibold text-white">
-                No Google Ads campaigns yet
+                {t('lm.google.campaigns.empty')}
               </div>
               <p className="mt-2 text-[14px] text-slate-400">
-                Create your first Search or Performance Max campaign to start
-                capturing leads from Google.
+                {t('lm.google.campaigns.emptyNote')}
               </p>
               <Link
                 href="/freehold-intelligence/lead-machine/google/campaigns/new"
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
               >
-                <Zap className="h-4 w-4" /> Create first campaign
+                <Zap className="h-4 w-4" /> {t('lm.google.common.newCampaign')}
               </Link>
             </div>
           )}

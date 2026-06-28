@@ -11,6 +11,8 @@ import { clearSession } from '@/lib/freehold/session'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
 import { useT } from '@/lib/i18n/provider'
 import { LanguageSwitcher } from '@/components/freehold/language-switcher'
+import { useCoach } from '@/components/freehold/coach/coach-marks'
+import { Compass } from 'lucide-react'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -28,6 +30,7 @@ export function SpacesNav() {
   const { user } = useSession()
   const role     = user?.role
   const t        = useT()
+  const coach    = useCoach()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -69,12 +72,13 @@ export function SpacesNav() {
       </Link>
 
       {/* App spine — role-aware, single source of truth */}
-      <nav className="flex h-full flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <nav data-coach="nav-spine" className="flex h-full flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         <div className="flex h-full min-w-max">
           {/* Home — hidden for brokers (they use My Workspace tab) */}
           {role !== 'broker' && (
             <Link
               href={HOME_HREF}
+              data-coach="nav-home"
               className={[
                 'flex h-full items-center gap-1.5 border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                 isActive(HOME_HREF, true)
@@ -94,6 +98,7 @@ export function SpacesNav() {
               <Link
                 key={app.id}
                 href={app.href}
+                data-coach={`nav-${app.id}`}
                 className={[
                   'flex h-full items-center border-b-2 px-4 text-sm font-medium whitespace-nowrap transition-colors',
                   active
@@ -112,6 +117,7 @@ export function SpacesNav() {
       <div ref={menuRef} className="relative flex h-full shrink-0 items-center border-l border-white/[0.07] px-3">
         <button
           onClick={() => setMenuOpen((o) => !o)}
+          data-coach="user-menu"
           className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
         >
           <span
@@ -157,6 +163,15 @@ export function SpacesNav() {
               <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('common.language')}</div>
               <LanguageSwitcher variant="inline" />
             </div>
+            {coach.available && (
+              <button
+                onClick={() => { setMenuOpen(false); coach.start() }}
+                className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              >
+                <Compass className="h-4 w-4" />
+                {t('coach.ui.replay')}
+              </button>
+            )}
             <button
               onClick={signOut}
               className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"

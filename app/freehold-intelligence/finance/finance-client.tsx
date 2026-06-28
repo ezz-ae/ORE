@@ -2,6 +2,7 @@
 
 import { DollarSign } from 'lucide-react'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 interface DealTotals {
@@ -47,6 +48,8 @@ export default function FinanceClient({ dealTotals, realSpend }: FinanceClientPr
         title={t('finance.overview.title')}
         subtitle={t('finance.overview.subtitle')}
       />
+
+      <ExpertDepth prompts={['expert.depth.finance.q1', 'expert.depth.finance.q2', 'expert.depth.finance.q3', 'expert.depth.finance.q4']} />
 
       {/* ── Marketing spend (real, from ad_spend ledger) ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

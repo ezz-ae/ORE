@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Link as LinkIcon,
   AlertCircle,
@@ -15,6 +16,7 @@ import {
   Layers,
   Info,
   FileText,
+  Plus,
 } from 'lucide-react'
 import type {
   GoogleExtension,
@@ -22,6 +24,7 @@ import type {
   GoogleCalloutExtension,
   GoogleCallExtension,
 } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── API shape ────────────────────────────────────────────────────────────────
 
@@ -229,10 +232,32 @@ function RecommendedCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GoogleExtensionsPage() {
+  const t = useT()
   const [data, setData]             = useState<ExtensionsApiResponse>({})
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter]         = useState<ExtensionFilter>('ALL')
+  const [newText, setNewText]       = useState('')
+  const [newType, setNewType]       = useState<'SITELINK' | 'CALLOUT'>('SITELINK')
+  const [adding, setAdding]         = useState(false)
+
+  async function addExtension() {
+    const text = newText.trim()
+    if (!text || adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/google/extensions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: newType, text }),
+      })
+      if (!res.ok) throw new Error()
+      setNewText('')
+      toast.success(t('lm.google.extensions.added'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    } finally { setAdding(false) }
+  }
 
   async function fetchData(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -340,7 +365,7 @@ export default function GoogleExtensionsPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
         </div>
       </div>
@@ -351,13 +376,13 @@ export default function GoogleExtensionsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -376,7 +401,7 @@ export default function GoogleExtensionsPage() {
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading extensions…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.extensions.title')}…</div>
       )}
 
       {!loading && !isConfigErr && (
@@ -407,6 +432,32 @@ export default function GoogleExtensionsPage() {
             })}
           </div>
 
+          {/* ── Create extension ── */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addExtension() }}
+              placeholder={t('lm.google.extensions.newPlaceholder')}
+              className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
+            />
+            <select
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as 'SITELINK' | 'CALLOUT')}
+              className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-slate-200 outline-none"
+            >
+              <option value="SITELINK">Sitelink</option>
+              <option value="CALLOUT">Callout</option>
+            </select>
+            <button
+              onClick={addExtension}
+              disabled={adding || !newText.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t('lm.google.extensions.addBtn')}
+            </button>
+          </div>
+
           {/* ── Extension groups ── */}
           {filteredGroups.length > 0 ? (
             filteredGroups.map(([type, exts]) => (
@@ -415,7 +466,7 @@ export default function GoogleExtensionsPage() {
           ) : (
             <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-12 text-center">
               <MessageSquare className="mx-auto mb-4 h-7 w-7 text-[#4285F4]/30" />
-              <div className="text-sm font-semibold text-white">No extensions found</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.extensions.empty')}</div>
               <p className="mt-2 text-sm text-slate-500">
                 {filter !== 'ALL'
                   ? `No ${FILTER_TABS.find((t) => t.value === filter)?.label.toLowerCase()} configured yet.`

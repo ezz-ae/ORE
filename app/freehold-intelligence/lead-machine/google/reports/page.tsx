@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { BarChart2, AlertCircle, ArrowUpRight } from 'lucide-react'
 import type { GoogleReportSummary, SearchTermRow, GoogleCampaign } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Re-export types to satisfy import requirements (used in scope below) ────
 type _GoogleCampaign = GoogleCampaign
@@ -68,6 +69,7 @@ const DEVICE_ICON: Record<string, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GoogleReportsPage() {
+  const t = useT()
   const [range, setRange]         = useState<DateRange>('30d')
   const [report, setReport]       = useState<GoogleReportSummary | null>(null)
   const [loading, setLoading]     = useState(true)
@@ -189,13 +191,13 @@ export default function GoogleReportsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -223,7 +225,7 @@ export default function GoogleReportsPage() {
       {!loading && !error && !report && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <BarChart2 className="mx-auto mb-4 h-8 w-8 text-[#4285F4]/30" />
-          <div className="text-[17px] font-semibold text-white">No report data</div>
+          <div className="text-[17px] font-semibold text-white">{t('lm.google.reports.empty')}</div>
           <p className="mt-2 text-sm text-slate-500">
             No performance data is available for the selected window.
           </p>
@@ -239,12 +241,12 @@ export default function GoogleReportsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {[
-                { label: 'Impressions',  value: fmtNum(report.totalImpressions)       },
-                { label: 'Clicks',       value: fmtNum(report.totalClicks)            },
-                { label: 'Spend',        value: fmtMicros(report.totalCostMicros)     },
-                { label: 'Conversions',  value: fmtNum(Math.round(report.totalConversions)) },
-                { label: 'Avg CTR',      value: fmtPct(report.avgCtr)                 },
-                { label: 'Avg CPC',      value: fmtMicros(report.avgCpcMicros)        },
+                { label: t('lm.google.common.impressions'),  value: fmtNum(report.totalImpressions)       },
+                { label: t('lm.google.common.clicks'),       value: fmtNum(report.totalClicks)            },
+                { label: t('lm.google.common.spend'),        value: fmtMicros(report.totalCostMicros)     },
+                { label: t('lm.google.common.conversions'),  value: fmtNum(Math.round(report.totalConversions)) },
+                { label: t('lm.google.overview.stat.ctr'),   value: fmtPct(report.avgCtr)                 },
+                { label: t('lm.google.overview.stat.cpc'),   value: fmtMicros(report.avgCpcMicros)        },
               ].map((kpi) => (
                 <div
                   key={kpi.label}

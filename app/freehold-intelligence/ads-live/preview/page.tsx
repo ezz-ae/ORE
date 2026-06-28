@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Copy, ChevronDown } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
+type PropertyKey = 'lm.preview.prop.palm' | 'lm.preview.prop.hills' | 'lm.preview.prop.jvc' | 'lm.preview.prop.sobha'
 type Property = 'Palm Jumeirah' | 'Dubai Hills' | 'JVC Investor' | 'Sobha Hartland'
 type AdFormat = 'Meta Feed' | 'Meta Story' | 'Google Search' | 'Google Display'
 
@@ -203,6 +205,7 @@ function GoogleDisplayPreview({ property, headline, description }: { property: P
 }
 
 export default function AdPreviewPage() {
+  const t = useT()
   const [property, setProperty] = useState<Property>('Palm Jumeirah')
   const [format, setFormat] = useState<AdFormat>('Meta Feed')
   const [showDropdown, setShowDropdown] = useState(false)
@@ -231,11 +234,11 @@ export default function AdPreviewPage() {
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.07A1 1 0 0121 8.85v6.298a1 1 0 01-1.447.9L15 14M4 8h11a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V10a2 2 0 012-2z" />
             </svg>
-            Ad Preview
+            {t('lm.preview.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-            Ad preview<br />
-            <span className="text-slate-500">across formats.</span>
+            {t('lm.preview.title')}<br />
+            <span className="text-slate-500">{t('lm.preview.subtitle')}</span>
           </h1>
         </section>
       </div>
@@ -311,32 +314,32 @@ export default function AdPreviewPage() {
 
       {/* Ad copy editor */}
       <section className="mt-8">
-        <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">Ad Copy</div>
+        <div className="mb-4 text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.preview.section.adCopy')}</div>
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs text-slate-400">Headline</label>
+            <label className="mb-1.5 block text-xs text-slate-400">{t('lm.preview.headline')}</label>
             <input
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
               className="w-full rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 transition"
-              placeholder="Ad headline…"
+              placeholder={t('lm.preview.headlinePlaceholder')}
             />
             <div className="mt-1 flex justify-end text-xs text-slate-500">
-              {headline.length} chars
+              {t('lm.preview.chars', { count: String(headline.length) })}
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-slate-400">Description</label>
+            <label className="mb-1.5 block text-xs text-slate-400">{t('lm.preview.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="w-full resize-none rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 transition"
-              placeholder="Ad description…"
+              placeholder={t('lm.preview.descriptionPlaceholder')}
             />
             <div className="mt-1 flex justify-end text-xs text-slate-500">
-              {description.length} chars
+              {t('lm.preview.chars', { count: String(description.length) })}
             </div>
           </div>
         </div>
@@ -352,7 +355,7 @@ export default function AdPreviewPage() {
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-[#1877F2]/30 hover:text-white"
         >
           <Copy className="h-3.5 w-3.5" style={{ color: META_BLUE }} />
-          Copy for Meta
+          {t('lm.preview.copyForMeta')}
         </button>
         <button
           onClick={() => {
@@ -362,7 +365,7 @@ export default function AdPreviewPage() {
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-[#4285F4]/30 hover:text-white"
         >
           <Copy className="h-3.5 w-3.5" style={{ color: GOOGLE_BLUE }} />
-          Copy for Google
+          {t('lm.preview.copyForGoogle')}
         </button>
       </div>
 

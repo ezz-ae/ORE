@@ -7,14 +7,16 @@ import {
   TrendingUp, Inbox, ArrowUpRight,
 } from 'lucide-react'
 import { Section } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
+import { useT } from '@/lib/i18n/provider'
 
 type SubApp = {
   id: string
-  label: string
-  sub: string
+  labelKey: string
+  subKey: string
   href: string
   Icon: typeof Megaphone
-  metric: string
+  metricKey: string
   accent: string
   card: string
   icon: string
@@ -22,23 +24,23 @@ type SubApp = {
 
 const PLATFORMS: SubApp[] = [
   {
-    id: 'meta', label: 'Meta Ads', sub: 'Facebook · Instagram · Lead Gen',
+    id: 'meta', labelKey: 'lm.ads.meta.label', subKey: 'lm.ads.meta.sub',
     href: '/freehold-intelligence/ads-live/meta', Icon: Facebook,
-    metric: 'Campaigns · forms · audiences',
+    metricKey: 'lm.ads.meta.metric',
     accent: '#60A5FA', card: 'border-blue-400/15 hover:border-blue-400/35',
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
   {
-    id: 'google', label: 'Google Ads', sub: 'Search · PMax · Display · Video',
+    id: 'google', labelKey: 'lm.ads.google.label', subKey: 'lm.ads.google.sub',
     href: '/freehold-intelligence/lead-machine/google', Icon: Chrome,
-    metric: 'Campaigns · keywords · RSAs',
+    metricKey: 'lm.ads.google.metric',
     accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/35',
     icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   },
   {
-    id: 'live', label: 'Live Performance', sub: 'Real-time spend · leads · CPL',
+    id: 'live', labelKey: 'lm.ads.live.label', subKey: 'lm.ads.live.sub',
     href: '/freehold-intelligence/ads-live', Icon: Activity,
-    metric: 'All platforms · live feed',
+    metricKey: 'lm.ads.live.metric',
     accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/35',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
   },
@@ -46,37 +48,37 @@ const PLATFORMS: SubApp[] = [
 
 const BUILD: SubApp[] = [
   {
-    id: 'campaigns', label: 'Campaigns', sub: 'Launch · manage · monitor',
+    id: 'campaigns', labelKey: 'lm.ads.campaigns.label', subKey: 'lm.ads.campaigns.sub',
     href: '/freehold-intelligence/lead-machine/campaigns', Icon: Rocket,
-    metric: 'Meta + Google campaigns',
+    metricKey: 'lm.ads.campaigns.metric',
     accent: '#D4AF37', card: 'border-gold/15 hover:border-gold/35',
     icon: 'text-gold bg-gold/10 border-gold/20',
   },
   {
-    id: 'forms', label: 'Lead Forms', sub: 'Instant forms · lead capture',
+    id: 'forms', labelKey: 'lm.ads.forms.label', subKey: 'lm.ads.forms.sub',
     href: '/freehold-intelligence/lead-machine/forms', Icon: FileText,
-    metric: 'Meta lead forms',
+    metricKey: 'lm.ads.forms.metric',
     accent: '#A78BFA', card: 'border-violet-400/15 hover:border-violet-400/30',
     icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
   },
   {
-    id: 'creatives', label: 'Creatives', sub: 'Ad images · video · copy',
+    id: 'creatives', labelKey: 'lm.ads.creatives.label', subKey: 'lm.ads.creatives.sub',
     href: '/freehold-intelligence/lead-machine/creatives', Icon: ImageIcon,
-    metric: 'Creative library',
+    metricKey: 'lm.ads.creatives.metric',
     accent: '#38BDF8', card: 'border-sky-400/15 hover:border-sky-400/30',
     icon: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
   },
   {
-    id: 'rsa', label: 'RSA Generator', sub: 'AI search-ad copywriter',
+    id: 'rsa', labelKey: 'lm.ads.rsa.label', subKey: 'lm.ads.rsa.sub',
     href: '/freehold-intelligence/lead-machine/google/ads/generate', Icon: Sparkles,
-    metric: 'AI headlines + descriptions',
+    metricKey: 'lm.ads.rsa.metric',
     accent: '#FBBF24', card: 'border-amber-400/15 hover:border-amber-400/30',
     icon: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
   },
   {
-    id: 'landings', label: 'Landing Pages', sub: 'Build · publish · convert',
+    id: 'landings', labelKey: 'lm.ads.landings.label', subKey: 'lm.ads.landings.sub',
     href: '/freehold-intelligence/lead-machine/landings', Icon: LayoutTemplate,
-    metric: 'Campaign landing pages',
+    metricKey: 'lm.ads.landings.metric',
     accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/30',
     icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   },
@@ -84,36 +86,37 @@ const BUILD: SubApp[] = [
 
 const OPTIMIZE: SubApp[] = [
   {
-    id: 'targeting', label: 'Targeting', sub: 'Audiences · geo · interests',
+    id: 'targeting', labelKey: 'lm.ads.targeting.label', subKey: 'lm.ads.targeting.sub',
     href: '/freehold-intelligence/lead-machine/targeting', Icon: Target,
-    metric: 'Audience rules',
+    metricKey: 'lm.ads.targeting.metric',
     accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/30',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
   },
   {
-    id: 'attribution', label: 'Attribution', sub: 'Source · channel · ROI',
+    id: 'attribution', labelKey: 'lm.ads.attribution.label', subKey: 'lm.ads.attribution.sub',
     href: '/freehold-intelligence/lead-machine/campaigns/attribution', Icon: GitBranch,
-    metric: 'Lead source tracking',
+    metricKey: 'lm.ads.attribution.metric',
     accent: '#60A5FA', card: 'border-blue-400/15 hover:border-blue-400/30',
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
   {
-    id: 'optimizer', label: 'Optimizer', sub: 'Budget · bids · scaling',
+    id: 'optimizer', labelKey: 'lm.ads.optimizer.label', subKey: 'lm.ads.optimizer.sub',
     href: '/freehold-intelligence/lead-machine/campaigns/optimize', Icon: TrendingUp,
-    metric: 'Spend optimization',
+    metricKey: 'lm.ads.optimizer.metric',
     accent: '#A78BFA', card: 'border-violet-400/15 hover:border-violet-400/30',
     icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
   },
   {
-    id: 'requests', label: 'Ad Requests', sub: 'Briefs · approvals · queue',
+    id: 'requests', labelKey: 'lm.ads.requests.label', subKey: 'lm.ads.requests.sub',
     href: '/freehold-intelligence/lead-machine/ad-requests', Icon: Inbox,
-    metric: 'Campaign brief queue',
+    metricKey: 'lm.ads.requests.metric',
     accent: 'rgba(255,255,255,0.4)', card: 'border-line hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-surface-2 border-line',
   },
 ]
 
 function Grid({ apps }: { apps: SubApp[] }) {
+  const t = useT()
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {apps.map((app) => (
@@ -126,11 +129,11 @@ function Grid({ apps }: { apps: SubApp[] }) {
             <app.Icon className="h-5 w-5" />
           </div>
           <div className="mt-4 flex-1">
-            <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{app.label}</div>
-            <div className="mt-1 text-sm text-slate-400">{app.sub}</div>
+            <div className="text-sm font-semibold text-slate-100 group-hover:text-white">{t(app.labelKey)}</div>
+            <div className="mt-1 text-sm text-slate-400">{t(app.subKey)}</div>
           </div>
           <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-slate-400 font-medium">{app.metric}</div>
+            <div className="text-sm text-slate-400 font-medium">{t(app.metricKey)}</div>
             <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-white" />
           </div>
         </Link>
@@ -140,6 +143,7 @@ function Grid({ apps }: { apps: SubApp[] }) {
 }
 
 export default function AdsLauncher() {
+  const t = useT()
   return (
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
@@ -151,27 +155,29 @@ export default function AdsLauncher() {
               <Megaphone className="h-5 w-5 text-gold" />
             </div>
             <div>
-              <div className="text-base font-semibold text-white">Ads</div>
+              <div className="text-base font-semibold text-white">{t('lm.ads.title')}</div>
               <div className="text-sm text-slate-400 mt-0.5">
-                Every advertising tool in one place — Meta, Google, forms, creatives & live performance
+                {t('lm.ads.subtitle')}
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      <ExpertDepth prompts={['expert.depth.ads.q1', 'expert.depth.ads.q2', 'expert.depth.ads.q3', 'expert.depth.ads.q4']} className="mb-8" />
+
       {/* Platforms */}
-      <Section title="Platforms" className="mb-8">
+      <Section title={t('lm.ads.section.platforms')} className="mb-8">
         <Grid apps={PLATFORMS} />
       </Section>
 
       {/* Build */}
-      <Section title="Build & Create" className="mb-8">
+      <Section title={t('lm.ads.section.build')} className="mb-8">
         <Grid apps={BUILD} />
       </Section>
 
       {/* Optimize */}
-      <Section title="Optimize & Track">
+      <Section title={t('lm.ads.section.optimize')}>
         <Grid apps={OPTIMIZE} />
       </Section>
 

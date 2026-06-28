@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
 import { useI18n } from '@/lib/i18n/provider'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
@@ -22,7 +23,8 @@ const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
 export default function AgentHomePage() {
   const { user } = useSession()
   const { t, locale } = useI18n()
-  const now = new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
+  const localeTag = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+  const now = new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' })
 
   const [liveCritical, setLiveCritical] = useState<number | null>(null)
   const [liveActive,   setLiveActive]   = useState<number | null>(null)
@@ -133,6 +135,11 @@ export default function AgentHomePage() {
 
       </section>
 
+      <ExpertDepth
+        prompts={['expert.depth.agent.q1', 'expert.depth.agent.q2', 'expert.depth.agent.q3', 'expert.depth.agent.q4']}
+        className="mt-8"
+      />
+
       {/* Today's Priority — only shown when there are real critical leads */}
       {displayCritical > 0 && (
         <section className="mt-8">
@@ -158,7 +165,7 @@ export default function AgentHomePage() {
       )}
 
       {/* App Grid */}
-      <section className="mt-10">
+      <section data-coach="agent-apps" className="mt-10">
         <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('agent.myApps')}</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => {

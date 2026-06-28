@@ -31,10 +31,12 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export async function generateStaticParams() {
-  const properties = await getProperties(5)
-  return properties.map((property) => ({
-    id: property.slug,
-  }))
+  try {
+    const properties = await getProperties(5)
+    return properties.map((property) => ({ id: property.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({

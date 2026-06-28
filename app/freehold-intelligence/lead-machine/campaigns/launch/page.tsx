@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useT } from '@/lib/i18n/provider'
 import Link from 'next/link'
 import {
   Sparkles, ChevronRight, ChevronLeft, Check, Zap, Target,
@@ -85,8 +86,6 @@ const BID_STRATEGIES: { key: BidStrategy; label: string; sub: string }[] = [
   { key: 'targetCpa',      label: 'Target CPA',      sub: `AED ${Math.round(financeSummary.avgCpl30d)} target` },
   { key: 'maxClicks',      label: 'Max Clicks',      sub: 'Drive volume to landing' },
 ]
-
-const STEP_LABELS = ['Property', 'Strategy', 'Budget', 'Audience', 'Creative', 'Landing', 'Launch']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -409,6 +408,7 @@ function EditableField({
   value: string; onChange: (v: string) => void
   rows?: number; placeholder?: string; className?: string; maxChars?: number
 }) {
+  const t = useT()
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState(value)
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -449,11 +449,11 @@ function EditableField({
       <div className="flex items-center gap-2 border-t border-line px-3 py-2">
         <button onClick={() => { onChange(draft); setEditing(false) }}
           className="rounded-lg bg-gold/15 px-3 py-1 text-xs font-medium text-gold transition hover:bg-gold/25">
-          Apply
+          {t('lm.launchWizard.apply')}
         </button>
         <button onClick={() => { setDraft(value); setEditing(false) }}
           className="rounded-lg px-3 py-1 text-xs text-slate-500 transition hover:text-slate-300">
-          Cancel
+          {t('lm.launchWizard.cancel')}
         </button>
         {maxChars && (
           <span className={`ml-auto text-xs tabular-nums ${over ? 'text-red-400' : 'text-slate-600'}`}>
@@ -467,10 +467,11 @@ function EditableField({
 
 // ─── Shared UI atoms ──────────────────────────────────────────────────────────
 
-function AIBadge({ label = 'AI Pick' }: { label?: string }) {
+function AIBadge({ labelKey = 'lm.launchWizard.aiPick' }: { labelKey?: string }) {
+  const t = useT()
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
-      <Sparkles className="h-2.5 w-2.5" /> {label}
+      <Sparkles className="h-2.5 w-2.5" /> {t(labelKey)}
     </span>
   )
 }
@@ -498,10 +499,20 @@ function SectionLabel({ icon: Icon, label, sub }: { icon: typeof Target; label: 
 }
 
 function StepHeader({ step }: { step: number }) {
+  const t = useT()
+  const labels = [
+    t('lm.launchWizard.step.property'),
+    t('lm.launchWizard.step.strategy'),
+    t('lm.launchWizard.step.budget'),
+    t('lm.launchWizard.step.audience'),
+    t('lm.launchWizard.step.creative'),
+    t('lm.launchWizard.step.landing'),
+    t('lm.launchWizard.step.launch'),
+  ]
   return (
     <div className="mb-7">
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {STEP_LABELS.map((label, i) => {
+        {labels.map((label, i) => {
           const n = i + 1; const done = n < step; const active = n === step
           return (
             <div key={n} className="flex items-center gap-1.5 shrink-0">
@@ -515,7 +526,7 @@ function StepHeader({ step }: { step: number }) {
                   {label}
                 </span>
               </div>
-              {i < STEP_LABELS.length - 1 && (
+              {i < labels.length - 1 && (
                 <div className={`h-px w-6 shrink-0 ${n < step ? 'bg-gold/35' : 'bg-surface-2'}`} />
               )}
             </div>
@@ -524,7 +535,7 @@ function StepHeader({ step }: { step: number }) {
       </div>
       <div className="mt-2.5 h-0.5 w-full rounded-full bg-surface-2">
         <div className="h-full rounded-full bg-gold transition-all duration-500"
-          style={{ width: `${((step - 1) / (STEP_LABELS.length - 1)) * 100}%` }} />
+          style={{ width: `${((step - 1) / (labels.length - 1)) * 100}%` }} />
       </div>
     </div>
   )
@@ -533,6 +544,7 @@ function StepHeader({ step }: { step: number }) {
 // ─── Main wizard ──────────────────────────────────────────────────────────────
 
 export default function CampaignLaunchPage() {
+  const t = useT()
   const [step,             setStep]             = useState(1)
   const [launched,         setLaunched]         = useState(false)
   const [launching,        setLaunching]        = useState(false)
@@ -760,44 +772,49 @@ export default function CampaignLaunchPage() {
 
   // ── Launched ─────────────────────────────────────────────────────────────────
   if (launched) {
-    const channelLabel = state.channel === 'both' ? 'Meta + Google Ads' : state.channel === 'meta' ? 'Meta Ads' : 'Google Ads'
+    const channelLabel = state.channel === 'both'
+      ? t('lm.launchWizard.channelBoth')
+      : state.channel === 'meta'
+        ? t('lm.launchWizard.channelMeta')
+        : t('lm.launchWizard.channelGoogle')
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center p-8 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-gold/10">
           <Rocket className="h-6 w-6 text-gold" />
         </div>
-        <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">Campaign Live</h2>
+        <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">{t('lm.launchWizard.launched.title')}</h2>
         <p className="mt-1.5 max-w-sm text-sm text-slate-500">
-          <span className="font-medium text-slate-300">{state.campaignName || campaignName}</span> is running on {channelLabel}.
+          <span className="font-medium text-slate-300">{state.campaignName || campaignName}</span>{' '}
+          {t('lm.launchWizard.launched.runningOn', { channel: channelLabel })}
         </p>
 
         {/* Platform status cards */}
         <div className="mt-6 flex gap-3">
           {(state.channel === 'meta' || state.channel === 'both') && (
             <div className="rounded-2xl border border-blue-400/15 bg-blue-400/[0.04] px-5 py-4 text-center">
-              <div className="text-xs font-medium uppercase tracking-wider text-blue-400/60">Meta Ads</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-blue-400/60">{t('lm.launchWizard.channelMeta')}</div>
               <div className="mt-1.5 text-sm font-semibold text-slate-100">
                 {state.channel === 'both' ? fmt(metaBudget) : fmt(state.budget)}
               </div>
               <div className="mt-0.5 text-xs text-slate-500">
-                ~{state.channel === 'both' ? Math.round(metaBudget / est.cpl) : est.leads} leads / mo
+                ~{state.channel === 'both' ? Math.round(metaBudget / est.cpl) : est.leads} {t('lm.launchWizard.launched.leadsPerMo')}
               </div>
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2 py-0.5 text-xs text-blue-400">
-                <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" /> Live
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" /> {t('lm.launchWizard.launched.live')}
               </div>
             </div>
           )}
           {(state.channel === 'google' || state.channel === 'both') && (
             <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] px-5 py-4 text-center">
-              <div className="text-xs font-medium uppercase tracking-wider text-gold/60">Google Ads</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-gold/60">{t('lm.launchWizard.channelGoogle')}</div>
               <div className="mt-1.5 text-sm font-semibold text-slate-100">
                 {state.channel === 'both' ? fmt(googleBudget) : fmt(state.budget)}
               </div>
               <div className="mt-0.5 text-xs text-slate-500">
-                ~{state.channel === 'both' ? Math.round(googleBudget / est.cpl) : est.leads} leads / mo
+                ~{state.channel === 'both' ? Math.round(googleBudget / est.cpl) : est.leads} {t('lm.launchWizard.launched.leadsPerMo')}
               </div>
               <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5 text-xs text-gold">
-                <div className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> Live
+                <div className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> {t('lm.launchWizard.launched.live')}
               </div>
             </div>
           )}
@@ -805,9 +822,9 @@ export default function CampaignLaunchPage() {
 
         <div className="mt-4 grid grid-cols-3 gap-3">
           {[
-            { label: 'Total Budget',       value: fmt(state.budget) },
-            { label: 'Est. Leads / Month', value: `~${est.leads}` },
-            { label: 'Target CPL',         value: `AED ${est.cpl}` },
+            { label: t('lm.launchWizard.launched.totalBudget'),    value: fmt(state.budget) },
+            { label: t('lm.launchWizard.launched.estLeadsMonth'),  value: `~${est.leads}` },
+            { label: t('lm.launchWizard.launched.targetCpl'),      value: `AED ${est.cpl}` },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-2xl border border-line bg-surface-2 px-4 py-3">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
@@ -818,12 +835,12 @@ export default function CampaignLaunchPage() {
         <div className="mt-5 flex gap-3">
           <Link href="/freehold-intelligence/lead-machine/campaigns"
             className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/20 hover:text-white">
-            View Campaigns
+            {t('lm.launchWizard.launched.viewCampaigns')}
           </Link>
           <button
             onClick={() => { setLaunched(false); setStep(1); setState(buildInitialState()) }}
             className="inline-flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15">
-            <Plus className="h-3.5 w-3.5" /> New Campaign
+            <Plus className="h-3.5 w-3.5" /> {t('lm.launchWizard.launched.newCampaign')}
           </button>
         </div>
       </div>
@@ -835,11 +852,11 @@ export default function CampaignLaunchPage() {
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
       <Link href="/freehold-intelligence/lead-machine/campaigns"
         className="mb-5 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400">
-        <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.launchWizard.back')}
       </Link>
       <div className="mb-5">
-        <h1 className="text-xl font-semibold tracking-tight text-white">Launch Campaign</h1>
-        <p className="mt-0.5 text-xs text-slate-500">AI pre-fills every field from your property data — adjust anything</p>
+        <h1 className="text-xl font-semibold tracking-tight text-white">{t('lm.launchWizard.title')}</h1>
+        <p className="mt-0.5 text-xs text-slate-500">{t('lm.launchWizard.subtitle')}</p>
       </div>
       <StepHeader step={step} />
       <AIReason text={reason} />
@@ -847,7 +864,7 @@ export default function CampaignLaunchPage() {
       {/* ── Step 1: Property ─────────────────────────────────────────────────── */}
       {step === 1 && (
         <div className="space-y-3">
-          <SectionLabel icon={Building2} label="Which property?" />
+          <SectionLabel icon={Building2} label={t('lm.launchWizard.s1.whichProperty')} />
           {leadMachineListings.map((l) => {
             const isSelected = state.propertyId === l.id
             const isAIPick   = l.id === aiPropId
@@ -868,23 +885,25 @@ export default function CampaignLaunchPage() {
                       {isAIPick && <AIBadge />}
                       {!canLaunch && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-red-400/20 bg-red-400/[0.06] px-2 py-0.5 text-xs text-red-400">
-                          <AlertCircle className="h-2.5 w-2.5" /> Not ready
+                          <AlertCircle className="h-2.5 w-2.5" /> {t('lm.launchWizard.s1.notReady')}
                         </span>
                       )}
                     </div>
                     <div className="mt-0.5 text-xs text-slate-500">{l.area} · {l.developer}</div>
                     {!canLaunch && l.missingRequirements.length > 0 && (
-                      <div className="mt-1 text-xs text-red-400/60">Missing: {l.missingRequirements.slice(0, 2).join(', ')}</div>
+                      <div className="mt-1 text-xs text-red-400/60">
+                        {t('lm.launchWizard.s1.missing')} {l.missingRequirements.slice(0, 2).join(', ')}
+                      </div>
                     )}
                     {canLaunch && (
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                        <span>Readiness <span className={l.adReadinessScore >= 70 ? 'text-gold' : 'text-amber-400'}>{l.adReadinessScore}%</span></span>
+                        <span>{t('lm.launchWizard.s1.readiness')} <span className={l.adReadinessScore >= 70 ? 'text-gold' : 'text-amber-400'}>{l.adReadinessScore}%</span></span>
                         <span className="h-3 w-px bg-surface-2" />
-                        <span>Score <span className="text-slate-400">{score}</span></span>
+                        <span>{t('lm.launchWizard.s1.score')} <span className="text-slate-400">{score}</span></span>
                         {l.startingPrice && (
                           <>
                             <span className="h-3 w-px bg-surface-2" />
-                            <span>from <span className="text-slate-400">AED {(l.startingPrice / 1_000_000).toFixed(1)}M</span></span>
+                            <span>{t('lm.launchWizard.s1.from')} <span className="text-slate-400">AED {(l.startingPrice / 1_000_000).toFixed(1)}M</span></span>
                           </>
                         )}
                       </div>
@@ -903,13 +922,13 @@ export default function CampaignLaunchPage() {
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-400" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-slate-100">
-                    {listing.projectName} has no live landing page
+                    {t('lm.launchWizard.s1.noLanding', { name: listing.projectName })}
                   </div>
                   <div className="mt-0.5 text-xs text-slate-500">
-                    Generate one now from your property data — AI fills every field. It auto-selects in Step 6.
+                    {t('lm.launchWizard.s1.noLandingDesc')}
                   </div>
                   <div className="mt-3 rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-xs text-slate-500">
-                    <span className="text-slate-600">URL preview: </span>
+                    <span className="text-slate-600">{t('lm.launchWizard.s1.urlPreview')} </span>
                     /lp/<span className="text-gold/70">{slugify(listing.projectName)}</span>
                   </div>
                   <button
@@ -917,8 +936,8 @@ export default function CampaignLaunchPage() {
                     disabled={isGenerating}
                     className="mt-3 inline-flex items-center gap-2 rounded-xl border border-gold/25 bg-gold/10 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15 disabled:opacity-60">
                     {isGenerating
-                      ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Generating…</>
-                      : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
+                      ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> {t('lm.launchWizard.s1.generating')}</>
+                      : <><Sparkles className="h-3.5 w-3.5" /> {t('lm.launchWizard.s1.generateLanding')}</>}
                   </button>
                 </div>
               </div>
@@ -930,7 +949,7 @@ export default function CampaignLaunchPage() {
             <div className="mt-2 flex items-center gap-3 rounded-2xl border border-gold/20 bg-gold/[0.04] px-4 py-3">
               <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gold">Landing page generated</div>
+                <div className="text-sm font-medium text-gold">{t('lm.launchWizard.s1.landingGenerated')}</div>
                 <div className="text-xs text-slate-500">
                   /lp/{slugify(listing.projectName)} · pre-selected in Step 6
                 </div>
@@ -943,14 +962,15 @@ export default function CampaignLaunchPage() {
       {/* ── Step 2: Strategy ─────────────────────────────────────────────────── */}
       {step === 2 && (
         <div className="space-y-3">
-          <SectionLabel icon={Target} label="Campaign strategy" />
+          <SectionLabel icon={Target} label={t('lm.launchWizard.s2.campaignStrategy')} />
           {STRATEGIES.map((s) => {
             const Icon       = s.icon
             const isSelected = state.strategy === s.id
             const isAIPick   = s.id === computeAIStrategy(listing ?? leadMachineListings[0])
-            const cplVsAcct  = s.cplBase < financeSummary.avgCpl30d
-              ? `−${Math.round(financeSummary.avgCpl30d - s.cplBase)} vs your avg`
-              : `+${Math.round(s.cplBase - financeSummary.avgCpl30d)} vs your avg`
+            const cplDiff    = financeSummary.avgCpl30d - s.cplBase
+            const cplVsAcct  = cplDiff > 0
+              ? t('lm.launchWizard.s2.cplBelow', { n: String(Math.round(cplDiff)) })
+              : t('lm.launchWizard.s2.cplAbove', { n: String(Math.round(-cplDiff)) })
             return (
               <button key={s.id} onClick={() => selectStrategy(s.id)}
                 className={['w-full rounded-2xl border p-4 text-left transition',
@@ -968,9 +988,9 @@ export default function CampaignLaunchPage() {
                     </div>
                     <p className="mt-1 text-xs leading-relaxed text-slate-500">{s.description}</p>
                     <div className="mt-2 flex items-center gap-3 text-xs">
-                      <span className="text-slate-500">Est. CPL: <span className="font-medium text-slate-400">AED {s.cplBase}</span></span>
+                      <span className="text-slate-500">{t('lm.launchWizard.s2.estCplLabel')} <span className="font-medium text-slate-400">AED {s.cplBase}</span></span>
                       <span className="h-3 w-px bg-surface-2" />
-                      <span className={s.cplBase < financeSummary.avgCpl30d ? 'text-gold/70' : 'text-slate-500'}>{cplVsAcct}</span>
+                      <span className={cplDiff > 0 ? 'text-gold/70' : 'text-slate-500'}>{cplVsAcct}</span>
                     </div>
                   </div>
                   {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-gold" />}
@@ -986,12 +1006,12 @@ export default function CampaignLaunchPage() {
         <div className="space-y-6">
           {/* Channel selector */}
           <div>
-            <SectionLabel icon={Zap} label="Channels" />
+            <SectionLabel icon={Zap} label={t('lm.launchWizard.s3.channels')} />
             <div className="grid grid-cols-3 gap-2.5">
               {([
-                { key: 'meta'   as Channel, label: 'Meta Ads',      sub: 'Instagram · Facebook' },
-                { key: 'google' as Channel, label: 'Google Ads',    sub: 'Search · Perf Max' },
-                { key: 'both'   as Channel, label: 'Meta + Google', sub: 'Best coverage' },
+                { key: 'meta'   as Channel, labelKey: 'lm.launchWizard.s3.metaAds',    subKey: 'lm.launchWizard.s3.metaAdsSub' },
+                { key: 'google' as Channel, labelKey: 'lm.launchWizard.s3.googleAds',  subKey: 'lm.launchWizard.s3.googleAdsSub' },
+                { key: 'both'   as Channel, labelKey: 'lm.launchWizard.s3.metaGoogle', subKey: 'lm.launchWizard.s3.metaGoogleSub' },
               ]).map((c) => {
                 const isSelected = state.channel === c.key
                 const isAIPick   = c.key === computeAIChannel(state.strategy, state.budget)
@@ -1000,8 +1020,8 @@ export default function CampaignLaunchPage() {
                     className={['rounded-2xl border p-3.5 text-center transition',
                       isSelected ? 'border-gold/50 bg-gold/[0.06]' :
                                    'border-line bg-surface-2 hover:border-white/[0.12]'].join(' ')}>
-                    <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-300'}`}>{c.label}</div>
-                    <div className="mt-0.5 text-xs text-slate-500">{c.sub}</div>
+                    <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-300'}`}>{t(c.labelKey)}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{t(c.subKey)}</div>
                     {isAIPick && <div className="mt-2 flex justify-center"><AIBadge /></div>}
                   </button>
                 )
@@ -1013,9 +1033,9 @@ export default function CampaignLaunchPage() {
           {state.channel === 'both' && (
             <div className="rounded-2xl border border-line bg-surface-2 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-300">Budget allocation</span>
+                <span className="text-sm font-medium text-slate-300">{t('lm.launchWizard.s3.budgetAlloc')}</span>
                 <span className="text-xs text-slate-500">
-                  Meta {state.metaShare}% · Google {100 - state.metaShare}%
+                  {t('lm.launchWizard.s3.metaShareLabel', { meta: String(state.metaShare), google: String(100 - state.metaShare) })}
                 </span>
               </div>
               {/* Quick split presets */}
@@ -1043,11 +1063,11 @@ export default function CampaignLaunchPage() {
               />
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-blue-400/15 bg-blue-400/[0.04] p-3 text-center">
-                  <div className="text-xs text-blue-400/60">Meta Ads</div>
+                  <div className="text-xs text-blue-400/60">{t('lm.launchWizard.s3.metaAds')}</div>
                   <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(metaBudget)}</div>
                 </div>
                 <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-3 text-center">
-                  <div className="text-xs text-gold/60">Google Ads</div>
+                  <div className="text-xs text-gold/60">{t('lm.launchWizard.s3.googleAds')}</div>
                   <div className="mt-0.5 text-[14px] font-semibold tabular-nums text-slate-200">{fmt(googleBudget)}</div>
                 </div>
               </div>
@@ -1056,8 +1076,8 @@ export default function CampaignLaunchPage() {
 
           {/* Monthly budget */}
           <div>
-            <SectionLabel icon={DollarSign} label="Monthly budget"
-              sub={`AI targets ~200 leads at AED ${est.cpl} CPL — your account avg is AED ${financeSummary.avgCpl30d}`} />
+            <SectionLabel icon={DollarSign} label={t('lm.launchWizard.s3.monthlyBudget')}
+              sub={t('lm.launchWizard.s3.monthlyBudgetSub', { cpl: String(est.cpl), avgCpl: String(financeSummary.avgCpl30d) })} />
             <div className="flex flex-wrap gap-2">
               {[5000, 10000, 15000, 25000].map((v) => {
                 const isAIPick = v === computeAIBudget(state.strategy)
@@ -1082,14 +1102,14 @@ export default function CampaignLaunchPage() {
 
           {/* Duration */}
           <div>
-            <SectionLabel icon={Target} label="Duration" />
+            <SectionLabel icon={Target} label={t('lm.launchWizard.s3.duration')} />
             <div className="flex gap-2">
               {([14, 30, 60] as Duration[]).map((d) => (
                 <button key={d} onClick={() => patch('duration', d)}
                   className={['rounded-xl border px-4 py-2 text-sm font-medium transition',
                     state.duration === d ? 'border-gold/40 bg-gold/10 text-gold' :
                                           'border-line text-slate-500 hover:border-white/20 hover:text-slate-300'].join(' ')}>
-                  {d} days{d === 30 && <span className="ml-1.5 text-[10px] opacity-50">AI</span>}
+                  {t('lm.launchWizard.s3.days', { n: String(d) })}{d === 30 && <span className="ml-1.5 text-[10px] opacity-50">AI</span>}
                 </button>
               ))}
             </div>
@@ -1098,14 +1118,14 @@ export default function CampaignLaunchPage() {
           {/* Live projection */}
           <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] p-4">
             <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold/60">
-              <Sparkles className="h-3 w-3" /> Live Projection
+              <Sparkles className="h-3 w-3" /> {t('lm.launchWizard.s3.liveProjection')}
             </div>
             <div className="grid grid-cols-4 gap-3">
               {[
-                { label: 'Budget',      value: fmt(state.budget) },
-                { label: 'Est. Leads',  value: `~${est.leads}` },
-                { label: 'Target CPL',  value: `AED ${est.cpl}` },
-                { label: 'Daily Spend', value: fmt(Math.round(state.budget / state.duration)) },
+                { label: t('lm.launchWizard.s3.projBudget'),    value: fmt(state.budget) },
+                { label: t('lm.launchWizard.s3.projEstLeads'),  value: `~${est.leads}` },
+                { label: t('lm.launchWizard.s3.projTargetCpl'), value: `AED ${est.cpl}` },
+                { label: t('lm.launchWizard.s3.projDailySpend'), value: fmt(Math.round(state.budget / state.duration)) },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">{label}</div>
@@ -1114,7 +1134,7 @@ export default function CampaignLaunchPage() {
               ))}
             </div>
             <div className="mt-3 border-t border-line pt-3 text-xs text-slate-500">
-              Best campaign in your account: <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
+              {t('lm.launchWizard.s3.bestCampaign')} <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
               {' · '}{financeSummary.topSpendCampaigns[0].name}
             </div>
           </div>
@@ -1127,11 +1147,11 @@ export default function CampaignLaunchPage() {
           {state.channel !== 'meta' && (
             <div className="flex items-start gap-2.5 rounded-xl border border-gold/15 bg-gold/[0.04] px-4 py-3">
               <Search className="h-3.5 w-3.5 text-gold/60 mt-0.5 shrink-0" />
-              <p className="text-xs text-slate-400">Locations geo-target both Meta and Google. Google additionally uses keyword intent — configure keywords in Step 5.</p>
+              <p className="text-xs text-slate-400">{t('lm.launchWizard.s4.geoNote')}</p>
             </div>
           )}
           <div>
-            <SectionLabel icon={Globe} label="Target locations" />
+            <SectionLabel icon={Globe} label={t('lm.launchWizard.s4.targetLocations')} />
             <div className="flex flex-wrap gap-2">
               {LOCATIONS.map((loc) => {
                 const on       = state.locations.includes(loc.key)
@@ -1150,7 +1170,7 @@ export default function CampaignLaunchPage() {
           </div>
           {state.channel !== 'google' && (
             <div>
-              <SectionLabel icon={Users} label="Audience interests" sub="Meta & Instagram targeting" />
+              <SectionLabel icon={Users} label={t('lm.launchWizard.s4.audienceInterests')} sub={t('lm.launchWizard.s4.metaTargeting')} />
               <div className="flex flex-wrap gap-2">
                 {INTERESTS.map((int) => {
                   const on = state.interests.includes(int.key)
@@ -1176,9 +1196,9 @@ export default function CampaignLaunchPage() {
                 {state.useLookalike && <Check className="h-3 w-3 text-ink" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-200">CRM Lookalike Audience</div>
+                <div className="text-sm font-medium text-slate-200">{t('lm.launchWizard.s4.lookalike')}</div>
                 <div className="mt-0.5 text-xs text-slate-500">
-                  Based on {financeSummary.totalLeads30d * 4 + 215} existing leads · 1% similarity · +180K reach
+                  {t('lm.launchWizard.s4.lookalikeDesc', { n: String(financeSummary.totalLeads30d * 4 + 215) })}
                 </div>
               </div>
               {state.useLookalike && <AIBadge />}
@@ -1187,7 +1207,7 @@ export default function CampaignLaunchPage() {
           <div className="rounded-2xl border border-line bg-surface-2 p-4">
             <div className="flex items-baseline justify-between">
               <div className="text-xs text-slate-500">
-                {state.channel === 'google' ? 'Geo-targeted market' : 'Estimated Reach'}
+                {state.channel === 'google' ? t('lm.launchWizard.s4.geoMarket') : t('lm.launchWizard.s4.estReach')}
               </div>
               <div className="text-xs text-slate-600">
                 {state.locations.length} loc{state.channel !== 'google' && ` · ${state.interests.length} int${state.useLookalike ? ' · lookalike' : ''}`}
@@ -1211,15 +1231,15 @@ export default function CampaignLaunchPage() {
           {state.channel !== 'meta' && (
             <div className="flex rounded-xl border border-line bg-surface-2 p-1">
               {([
-                { key: 'meta'   as CreativeTab, label: 'Meta Ad',      icon: '📘' },
-                { key: 'google' as CreativeTab, label: 'Google Search', icon: '🔍' },
-              ] as { key: CreativeTab; label: string; icon: string }[])
-                .filter((t) => state.channel === 'both' || t.key === state.channel)
-                .map((t) => (
-                  <button key={t.key} onClick={() => setCreativeTab(t.key)}
+                { key: 'meta'   as CreativeTab, labelKey: 'lm.launchWizard.s5.metaAd' },
+                { key: 'google' as CreativeTab, labelKey: 'lm.launchWizard.s5.googleSearch' },
+              ] as { key: CreativeTab; labelKey: string }[])
+                .filter((tb) => state.channel === 'both' || tb.key === state.channel)
+                .map((tb) => (
+                  <button key={tb.key} onClick={() => setCreativeTab(tb.key)}
                     className={['flex-1 rounded-lg py-2 text-sm font-medium transition',
-                      creativeTab === t.key ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'].join(' ')}>
-                    {t.label}
+                      creativeTab === tb.key ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'].join(' ')}>
+                    {t(tb.labelKey)}
                   </button>
                 ))}
             </div>
@@ -1229,7 +1249,7 @@ export default function CampaignLaunchPage() {
           {(state.channel === 'meta' || creativeTab === 'meta') && (
             <div className="space-y-5">
               <div>
-                <SectionLabel icon={FileText} label="Headline" sub="AI generated from your property data — pick one or edit below" />
+                <SectionLabel icon={FileText} label={t('lm.launchWizard.s5.headline')} sub={t('lm.launchWizard.s5.headlineSub')} />
                 <div className="space-y-2">
                   {headlines.map((h, i) => (
                     <button key={i} onClick={() => rotateHeadline(i)}
@@ -1250,19 +1270,19 @@ export default function CampaignLaunchPage() {
               </div>
               <div>
                 <div className="flex items-center justify-between">
-                  <SectionLabel icon={FileText} label="Body copy" />
+                  <SectionLabel icon={FileText} label={t('lm.launchWizard.s5.bodyCopy')} />
                   <button onClick={nextBody}
                     className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-gold">
-                    <RefreshCw className="h-3 w-3" /> Rephrase
+                    <RefreshCw className="h-3 w-3" /> {t('lm.launchWizard.s5.rephrase')}
                   </button>
                 </div>
                 <EditableField value={state.body} onChange={(v) => patch('body', v)} rows={4} />
                 <p className="mt-1.5 text-xs text-slate-600">
-                  Written for <span className="text-slate-500">{listing?.projectName}</span> · {listing?.area}
+                  {t('lm.launchWizard.s5.writtenFor')} <span className="text-slate-500">{listing?.projectName}</span> · {listing?.area}
                 </p>
               </div>
               <div>
-                <SectionLabel icon={Target} label="Call to action" />
+                <SectionLabel icon={Target} label={t('lm.launchWizard.s5.cta')} />
                 <div className="flex flex-wrap gap-2">
                   {CTAS.map((cta) => (
                     <button key={cta} onClick={() => patch('cta', cta)}
@@ -1277,7 +1297,7 @@ export default function CampaignLaunchPage() {
               {/* Meta preview */}
               <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
                 <div className="border-b border-line bg-surface-2 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
-                  Preview · Meta Feed
+                  {t('lm.launchWizard.s5.previewMeta')}
                 </div>
                 <div className="p-4">
                   <div className="mb-3 flex items-center gap-2">
@@ -1286,11 +1306,11 @@ export default function CampaignLaunchPage() {
                     </div>
                     <div>
                       <div className="text-xs font-semibold text-slate-200">Freehold Property</div>
-                      <div className="text-xs text-slate-600">Sponsored</div>
+                      <div className="text-xs text-slate-600">{t('lm.launchWizard.s5.sponsored')}</div>
                     </div>
                   </div>
                   <div className="mb-3 flex h-20 items-center justify-center rounded-xl border border-line bg-surface-2">
-                    <span className="text-xs text-slate-600">Property image · {listing?.area}</span>
+                    <span className="text-xs text-slate-600">{t('lm.launchWizard.s5.propertyImage')} · {listing?.area}</span>
                   </div>
                   <div className="text-sm font-semibold leading-tight text-white">{state.headline}</div>
                   <div className="mt-1 line-clamp-2 text-xs leading-snug text-slate-500">{state.body}</div>
@@ -1305,7 +1325,7 @@ export default function CampaignLaunchPage() {
             <div className="space-y-5">
               {/* Headlines */}
               <div>
-                <SectionLabel icon={Search} label="Headlines" sub="3 headlines · max 30 chars each · Google rotates them" />
+                <SectionLabel icon={Search} label={t('lm.launchWizard.s5.headlines')} sub={t('lm.launchWizard.s5.googleHeadlinesSub')} />
                 <div className="space-y-2">
                   {state.googleHeadlines.map((h, i) => (
                     <EditableField key={i} value={h} onChange={(v) => patchGoogleHeadline(i, v)}
@@ -1316,7 +1336,7 @@ export default function CampaignLaunchPage() {
 
               {/* Descriptions */}
               <div>
-                <SectionLabel icon={FileText} label="Descriptions" sub="2 descriptions · max 90 chars each" />
+                <SectionLabel icon={FileText} label={t('lm.launchWizard.s5.descriptions')} sub={t('lm.launchWizard.s5.descriptionsSub')} />
                 <div className="space-y-2">
                   {state.googleDescriptions.map((d, i) => (
                     <EditableField key={i} value={d} onChange={(v) => patchGoogleDescription(i, v)}
@@ -1327,7 +1347,7 @@ export default function CampaignLaunchPage() {
 
               {/* Display URL */}
               <div>
-                <SectionLabel icon={Globe} label="Display URL" />
+                <SectionLabel icon={Globe} label={t('lm.launchWizard.s5.displayUrl')} />
                 <div className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm">
                   <span className="text-slate-600 shrink-0">freeholdproperty.ae /</span>
                   <input
@@ -1342,7 +1362,7 @@ export default function CampaignLaunchPage() {
 
               {/* Keywords */}
               <div>
-                <SectionLabel icon={Target} label="Keyword themes" sub="Google uses these to match search intent" />
+                <SectionLabel icon={Target} label={t('lm.launchWizard.s5.keywordThemes')} sub={t('lm.launchWizard.s5.keywordThemesSub')} />
                 <div className="flex flex-wrap gap-2">
                   {state.googleKeywords.map((kw) => (
                     <span key={kw} className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1 text-xs text-gold/80">
@@ -1358,7 +1378,7 @@ export default function CampaignLaunchPage() {
                       value={newKeyword}
                       onChange={(e) => setNewKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
-                      placeholder="Add keyword…"
+                      placeholder={t('lm.launchWizard.s5.addKeyword')}
                       className="w-24 bg-transparent text-xs text-slate-400 placeholder:text-slate-600 focus:outline-none"
                     />
                     <button onClick={addKeyword} className="text-slate-600 transition hover:text-gold">
@@ -1370,7 +1390,7 @@ export default function CampaignLaunchPage() {
 
               {/* Bid strategy */}
               <div>
-                <SectionLabel icon={DollarSign} label="Bid strategy" />
+                <SectionLabel icon={DollarSign} label={t('lm.launchWizard.s5.bidStrategy')} />
                 <div className="grid grid-cols-3 gap-2">
                   {BID_STRATEGIES.map((b) => {
                     const isSelected = state.googleBidStrategy === b.key
@@ -1391,11 +1411,11 @@ export default function CampaignLaunchPage() {
               {/* Google SERP preview */}
               <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
                 <div className="border-b border-line bg-surface-2 px-4 py-2 text-xs font-medium uppercase tracking-wider text-slate-600">
-                  Preview · Google Search
+                  {t('lm.launchWizard.s5.previewGoogle')}
                 </div>
                 <div className="p-4">
                   <div className="mb-1 flex items-center gap-1.5">
-                    <span className="rounded border border-green-600/40 px-1 text-[10px] text-green-500/70">Sponsored</span>
+                    <span className="rounded border border-green-600/40 px-1 text-[10px] text-green-500/70">{t('lm.launchWizard.s5.sponsored')}</span>
                     <span className="text-xs text-green-500/70">freeholdproperty.ae/{state.googleDisplayPath}</span>
                   </div>
                   <div className="text-sm font-medium leading-snug text-blue-400">
@@ -1418,10 +1438,10 @@ export default function CampaignLaunchPage() {
         const displayLandings      = propLandingsFiltered.length ? propLandingsFiltered : allLandings
         return (
           <div className="space-y-3">
-            <SectionLabel icon={Globe} label="Landing page" sub="All ad clicks go here — must be live before launch." />
+            <SectionLabel icon={Globe} label={t('lm.launchWizard.s6.landingPage')} sub={t('lm.launchWizard.s6.landingPageSub')} />
             {displayLandings.map((land) => {
-              const isSelected = state.landingId === land.id
-              const isLive     = land.status === 'Landing Active' || land.status === 'Approved'
+              const isSelected  = state.landingId === land.id
+              const isLive      = land.status === 'Landing Active' || land.status === 'Approved'
               const isGenerated = land.id.startsWith('generated_')
               return (
                 <button key={land.id} onClick={() => patch('landingId', land.id)}
@@ -1437,10 +1457,10 @@ export default function CampaignLaunchPage() {
                                    'border-amber-400/20 bg-amber-400/10 text-amber-400'].join(' ')}>
                           {land.status}
                         </span>
-                        {isLive && <AIBadge label="Recommended" />}
+                        {isLive && <AIBadge labelKey="lm.launchWizard.aiRecommended" />}
                         {isGenerated && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/20 bg-purple-400/[0.06] px-2 py-0.5 text-xs text-purple-400">
-                            <Sparkles className="h-2.5 w-2.5" /> AI Generated
+                            <Sparkles className="h-2.5 w-2.5" /> {t('lm.launchWizard.aiGenerated')}
                           </span>
                         )}
                       </div>
@@ -1448,7 +1468,7 @@ export default function CampaignLaunchPage() {
                         <div className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
                           <div className="h-full rounded-full bg-gold" style={{ width: `${land.completion}%` }} />
                         </div>
-                        <span className="text-xs text-slate-500">{land.completion}% complete</span>
+                        <span className="text-xs text-slate-500">{t('lm.launchWizard.s6.complete', { n: String(land.completion) })}</span>
                       </div>
                       {land.aiReviewSummary && (
                         <div className="mt-1.5 text-xs text-slate-500 line-clamp-1">{land.aiReviewSummary}</div>
@@ -1463,21 +1483,23 @@ export default function CampaignLaunchPage() {
             {propLandingsFiltered.length === 0 && !alreadyGenerated && (
               <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-5 text-center">
                 <AlertCircle className="mx-auto mb-2 h-5 w-5 text-amber-400" />
-                <div className="text-sm font-medium text-amber-300">No landing page for {listing?.projectName}</div>
-                <div className="mt-1 text-xs text-slate-500">Generate one now or pick from existing landings above.</div>
+                <div className="text-sm font-medium text-amber-300">
+                  {t('lm.launchWizard.s6.noLandingFor', { name: listing?.projectName ?? '' })}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">{t('lm.launchWizard.s6.noLandingDesc')}</div>
                 <button
                   onClick={() => listing && handleGenerateLanding(listing)}
                   disabled={isGenerating}
                   className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-gold/25 bg-gold/10 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15 disabled:opacity-60">
                   {isGenerating
-                    ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Generating…</>
-                    : <><Sparkles className="h-3.5 w-3.5" /> Generate Landing Page</>}
+                    ? <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> {t('lm.launchWizard.s6.generating')}</>
+                    : <><Sparkles className="h-3.5 w-3.5" /> {t('lm.launchWizard.s6.generateLanding')}</>}
                 </button>
               </div>
             )}
 
             <div className="rounded-2xl border border-line bg-surface-2 p-4">
-              <div className="mb-2 text-xs text-slate-500">Or enter a URL directly</div>
+              <div className="mb-2 text-xs text-slate-500">{t('lm.launchWizard.s6.orEnterUrl')}</div>
               <input type="text" value={state.landingUrl}
                 onChange={(e) => patch('landingUrl', e.target.value)}
                 placeholder="https://freeholdproperty.ae/…"
@@ -1491,32 +1513,32 @@ export default function CampaignLaunchPage() {
       {step === 7 && (
         <div className="space-y-5">
           <div>
-            <SectionLabel icon={Rocket} label="Campaign name" sub="Auto-generated — click to edit" />
+            <SectionLabel icon={Rocket} label={t('lm.launchWizard.s7.rowProperty')} sub={t('lm.launchWizard.s7.campaignNameSub')} />
             <EditableField value={campaignName} onChange={(v) => patch('campaignName', v)} rows={1} />
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-line bg-surface-2 divide-y divide-white/[0.04]">
             {([
-              { label: 'Property',  value: listing?.projectName ?? '—' },
-              { label: 'Strategy',  value: STRATEGIES.find((s) => s.id === state.strategy)?.label ?? '—' },
-              { label: 'Channels',  value: state.channel === 'both' ? 'Meta + Google Ads' : state.channel === 'meta' ? 'Meta Ads' : 'Google Ads' },
+              { label: t('lm.launchWizard.s7.rowProperty'),  value: listing?.projectName ?? '—' },
+              { label: t('lm.launchWizard.s7.rowStrategy'),  value: STRATEGIES.find((s) => s.id === state.strategy)?.label ?? '—' },
+              { label: t('lm.launchWizard.s7.rowChannels'),  value: state.channel === 'both' ? t('lm.launchWizard.channelBoth') : state.channel === 'meta' ? t('lm.launchWizard.channelMeta') : t('lm.launchWizard.channelGoogle') },
               state.channel === 'both'
-                ? { label: 'Meta Budget',   value: `${fmt(metaBudget)} / ${state.duration} days` }
-                : { label: 'Budget',        value: `${fmt(state.budget)} / ${state.duration} days` },
+                ? { label: t('lm.launchWizard.s7.rowMetaBudget'),   value: `${fmt(metaBudget)} / ${state.duration} days` }
+                : { label: t('lm.launchWizard.s7.rowBudget'),        value: `${fmt(state.budget)} / ${state.duration} days` },
               state.channel === 'both'
-                ? { label: 'Google Budget', value: `${fmt(googleBudget)} / ${state.duration} days` }
+                ? { label: t('lm.launchWizard.s7.rowGoogleBudget'), value: `${fmt(googleBudget)} / ${state.duration} days` }
                 : null,
-              { label: 'Locations', value: LOCATIONS.filter((l) => state.locations.includes(l.key)).map((l) => l.label).join(', ') || '—' },
-              { label: 'Reach',     value: fmtReach(reach) },
-              { label: 'Headline',  value: state.headline },
+              { label: t('lm.launchWizard.s7.rowLocations'), value: LOCATIONS.filter((l) => state.locations.includes(l.key)).map((l) => l.label).join(', ') || '—' },
+              { label: t('lm.launchWizard.s7.rowReach'),     value: fmtReach(reach) },
+              { label: t('lm.launchWizard.s7.rowHeadline'),  value: state.headline },
               state.channel !== 'meta'
-                ? { label: 'Google H1',  value: state.googleHeadlines[0] }
+                ? { label: t('lm.launchWizard.s7.rowGoogleH1'),  value: state.googleHeadlines[0] }
                 : null,
               state.channel !== 'meta'
-                ? { label: 'Keywords',   value: state.googleKeywords.slice(0, 3).join(', ') + (state.googleKeywords.length > 3 ? '…' : '') }
+                ? { label: t('lm.launchWizard.s7.rowKeywords'),   value: state.googleKeywords.slice(0, 3).join(', ') + (state.googleKeywords.length > 3 ? '…' : '') }
                 : null,
-              { label: 'CTA',       value: state.cta },
-              { label: 'Landing',   value: (selectedLanding?.landingUrl ?? state.landingUrl) || 'Not set' },
+              { label: t('lm.launchWizard.s7.rowCta'),       value: state.cta },
+              { label: t('lm.launchWizard.s7.rowLanding'),   value: (selectedLanding?.landingUrl ?? state.landingUrl) || t('lm.launchWizard.s7.notSet') },
             ].filter(Boolean) as { label: string; value: string }[]).map(({ label, value }) => (
               <div key={label} className="flex items-baseline justify-between gap-4 px-4 py-3">
                 <span className="w-24 shrink-0 text-xs text-slate-500">{label}</span>
@@ -1527,14 +1549,14 @@ export default function CampaignLaunchPage() {
 
           <div className="rounded-2xl border border-gold/15 bg-gold/[0.04] p-4">
             <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-gold/55">
-              <Sparkles className="h-3 w-3" /> Projection
+              <Sparkles className="h-3 w-3" /> {t('lm.launchWizard.s7.projection')}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'Total Budget', value: fmt(state.budget) },
-                { label: 'Est. Leads',   value: `~${est.leads}` },
-                { label: 'Target CPL',   value: `AED ${est.cpl}` },
-                { label: 'Daily Spend',  value: fmt(Math.round(state.budget / state.duration)) },
+                { label: t('lm.launchWizard.s7.projTotalBudget'), value: fmt(state.budget) },
+                { label: t('lm.launchWizard.s7.projEstLeads'),    value: `~${est.leads}` },
+                { label: t('lm.launchWizard.s7.projTargetCpl'),   value: `AED ${est.cpl}` },
+                { label: t('lm.launchWizard.s7.projDailySpend'),  value: fmt(Math.round(state.budget / state.duration)) },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div className="text-[10px] font-medium uppercase tracking-wider text-slate-600">{label}</div>
@@ -1543,8 +1565,9 @@ export default function CampaignLaunchPage() {
               ))}
             </div>
             <div className="mt-3 border-t border-line pt-3 text-xs text-slate-500">
-              Account best: <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
-              {' · '}30-day avg: <span className="text-slate-400">AED {financeSummary.avgCpl30d}</span>
+              {t('lm.launchWizard.s7.acctBest')} <span className="text-gold">AED {Math.min(...financeSummary.topSpendCampaigns.map((c) => c.cpl)).toFixed(0)} CPL</span>
+              {' · '}
+              {t('lm.launchWizard.s7.avg30d')} <span className="text-slate-400">AED {financeSummary.avgCpl30d}</span>
             </div>
           </div>
 
@@ -1557,8 +1580,8 @@ export default function CampaignLaunchPage() {
           <button onClick={handleLaunch} disabled={launching}
             className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/15 py-4 text-sm font-semibold text-gold transition hover:bg-gold/22 disabled:opacity-60">
             {launching
-              ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> Launching…</>
-              : <><Rocket className="h-4 w-4" /> Launch Campaign</>}
+              ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-gold/40 border-t-gold" /> {t('lm.launchWizard.s7.launching')}</>
+              : <><Rocket className="h-4 w-4" /> {t('lm.launchWizard.s7.launchBtn')}</>}
           </button>
         </div>
       )}
@@ -1568,12 +1591,12 @@ export default function CampaignLaunchPage() {
         <button onClick={() => setStep((s) => Math.max(1, s - 1) as typeof step)}
           disabled={step === 1}
           className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-slate-500 transition hover:border-white/20 hover:text-slate-300 disabled:opacity-25 disabled:cursor-not-allowed">
-          <ChevronLeft className="h-4 w-4" /> Back
+          <ChevronLeft className="h-4 w-4" /> {t('lm.launchWizard.nav.back')}
         </button>
         {step < 7 && (
           <button onClick={() => setStep((s) => (s + 1) as typeof step)}
             className="inline-flex items-center gap-2 rounded-xl border border-gold/30 bg-gold/10 px-5 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15">
-            Continue <ChevronRight className="h-4 w-4" />
+            {t('lm.launchWizard.nav.continue')} <ChevronRight className="h-4 w-4" />
           </button>
         )}
       </div>

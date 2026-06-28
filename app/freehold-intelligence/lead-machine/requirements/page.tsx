@@ -5,23 +5,30 @@ import Link from 'next/link'
 import { AlertCircle, CheckCircle2, Clock, ArrowUpRight, Search, X } from 'lucide-react'
 import { leadMachineRequirements, leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import { PageHeader, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 type SeverityFilter = 'All' | 'critical' | 'high' | 'medium' | 'low'
 type StatusFilter   = 'All' | 'Open' | 'Done'
 
-const SEVERITY_PILLS: { key: SeverityFilter; label: string }[] = [
-  { key: 'All',      label: 'All'      },
-  { key: 'critical', label: 'Critical' },
-  { key: 'high',     label: 'High'     },
-  { key: 'medium',   label: 'Medium'   },
-  { key: 'low',      label: 'Low'      },
+const SEVERITY_PILLS: { key: SeverityFilter; labelKey: string }[] = [
+  { key: 'All',      labelKey: 'lm.requirements.filter.all'      },
+  { key: 'critical', labelKey: 'lm.requirements.filter.critical' },
+  { key: 'high',     labelKey: 'lm.requirements.filter.high'     },
+  { key: 'medium',   labelKey: 'lm.requirements.filter.medium'   },
+  { key: 'low',      labelKey: 'lm.requirements.filter.low'      },
+]
+
+const STATUS_PILLS: { key: StatusFilter; labelKey: string }[] = [
+  { key: 'All',  labelKey: 'lm.requirements.filter.all'  },
+  { key: 'Open', labelKey: 'lm.requirements.filter.open' },
+  { key: 'Done', labelKey: 'lm.requirements.filter.done' },
 ]
 
 function severityTone(s: string) {
-  if (s === 'critical') return { ring: 'border-red-400/25',      bg: 'bg-red-400/[0.06]',      text: 'text-red-300',      dot: 'bg-red-400',    label: 'Critical', active: 'border-red-400/40 bg-red-400/15 text-red-300' }
-  if (s === 'high')     return { ring: 'border-gold/25',    bg: 'bg-gold/[0.05]',   text: 'text-[#F8E7AE]',    dot: 'bg-gold', label: 'High',     active: 'border-gold/40 bg-gold/15 text-[#F8E7AE]' }
-  if (s === 'medium')   return { ring: 'border-sky-400/20',      bg: 'bg-sky-400/[0.05]',      text: 'text-sky-200',      dot: 'bg-sky-400',   label: 'Medium',   active: 'border-sky-400/40 bg-sky-400/15 text-sky-200' }
-  return                       { ring: 'border-line',    bg: 'bg-surface',           text: 'text-slate-400',     dot: 'bg-white/30',  label: 'Low',      active: 'border-white/20 bg-surface-2 text-slate-300' }
+  if (s === 'critical') return { ring: 'border-red-400/25',      bg: 'bg-red-400/[0.06]',      text: 'text-red-300',      dot: 'bg-red-400',    labelKey: 'lm.requirements.severity.critical', active: 'border-red-400/40 bg-red-400/15 text-red-300' }
+  if (s === 'high')     return { ring: 'border-gold/25',    bg: 'bg-gold/[0.05]',   text: 'text-[#F8E7AE]',    dot: 'bg-gold', labelKey: 'lm.requirements.severity.high',     active: 'border-gold/40 bg-gold/15 text-[#F8E7AE]' }
+  if (s === 'medium')   return { ring: 'border-sky-400/20',      bg: 'bg-sky-400/[0.05]',      text: 'text-sky-200',      dot: 'bg-sky-400',   labelKey: 'lm.requirements.severity.medium',   active: 'border-sky-400/40 bg-sky-400/15 text-sky-200' }
+  return                       { ring: 'border-line',    bg: 'bg-surface',           text: 'text-slate-400',     dot: 'bg-white/30',  labelKey: 'lm.requirements.severity.low',      active: 'border-white/20 bg-surface-2 text-slate-300' }
 }
 
 function statusIcon(s: string) {
@@ -33,6 +40,7 @@ function statusIcon(s: string) {
 const projectName = (id: string) => leadMachineListings.find((l) => l.projectId === id)?.projectName || id
 
 export default function RequirementsPage() {
+  const t = useT()
   const [query,          setQuery]          = useState('')
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('All')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
@@ -70,25 +78,25 @@ export default function RequirementsPage() {
 
       {/* Header */}
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={t('lm.requirements.eyebrow')}
         Icon={AlertCircle}
-        title={<>{totalOpen} open. <span className="text-slate-500">{criticalCount} critical.</span></>}
-        subtitle="Everything blocking landing generation, ad launch, and campaign go-live. Resolve in priority order."
+        title={<>{totalOpen} {t('lm.requirements.titleOpen')}. <span className="text-slate-500">{criticalCount} {t('lm.requirements.titleCritical')}.</span></>}
+        subtitle={t('lm.requirements.subtitle')}
       />
 
       {/* Stat tiles */}
       <section className="mt-8 grid grid-cols-3 gap-3">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{criticalCount}</p>
-          <p className="mt-1 text-xs text-red-400/60">Critical</p>
+          <p className="mt-1 text-xs text-red-400/60">{t('lm.requirements.stat.critical')}</p>
         </div>
         <div className="rounded-[18px] border border-gold/20 bg-gold/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{leadMachineRequirements.filter(r => r.severity === 'high').length}</p>
-          <p className="mt-1 text-xs text-gold/60">High</p>
+          <p className="mt-1 text-xs text-gold/60">{t('lm.requirements.stat.high')}</p>
         </div>
         <div className="rounded-[18px] border border-line bg-surface p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{totalOpen}</p>
-          <p className="mt-1 text-xs text-slate-500">Total open</p>
+          <p className="mt-1 text-xs text-slate-500">{t('lm.requirements.stat.totalOpen')}</p>
         </div>
       </section>
 
@@ -101,7 +109,7 @@ export default function RequirementsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search requirements…"
+            placeholder={t('lm.requirements.searchPlaceholder')}
             className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
           />
           {query && (
@@ -113,7 +121,7 @@ export default function RequirementsPage() {
 
         {/* Severity + Status pills */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {SEVERITY_PILLS.map(({ key, label }) => {
+          {SEVERITY_PILLS.map(({ key, labelKey }) => {
             const tone = key !== 'All' ? severityTone(key) : null
             const isActive = severityFilter === key
             return (
@@ -129,25 +137,25 @@ export default function RequirementsPage() {
                     : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
-                {label}
+                {t(labelKey)}
               </button>
             )
           })}
           <span className="self-center text-slate-600">|</span>
-          {(['All', 'Open', 'Done'] as StatusFilter[]).map((s) => (
+          {STATUS_PILLS.map(({ key, labelKey }) => (
             <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
+              key={key}
+              onClick={() => setStatusFilter(key)}
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
-                statusFilter === s
-                  ? s === 'Done'
+                statusFilter === key
+                  ? key === 'Done'
                     ? 'border-emerald-400/35 bg-gold/10 text-gold'
                     : 'border-gold/40 bg-gold/10 text-gold'
                   : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
-              {s}
+              {t(labelKey)}
             </button>
           ))}
           {(query || severityFilter !== 'All' || statusFilter !== 'All') && (
@@ -155,7 +163,7 @@ export default function RequirementsPage() {
               onClick={clearFilters}
               className="ml-1 text-sm text-slate-500 transition hover:text-slate-400"
             >
-              Clear
+              {t('lm.requirements.clear')}
             </button>
           )}
         </div>
@@ -163,8 +171,8 @@ export default function RequirementsPage() {
         {/* Count */}
         <p className="mt-2 text-xs text-slate-500">
           {filtered.length === leadMachineRequirements.length
-            ? `${leadMachineRequirements.length} requirements`
-            : `${filtered.length} of ${leadMachineRequirements.length} requirements`}
+            ? t('lm.requirements.count', { n: String(leadMachineRequirements.length) })
+            : t('lm.requirements.countFiltered', { n: String(filtered.length), total: String(leadMachineRequirements.length) })}
         </p>
       </section>
 
@@ -173,13 +181,13 @@ export default function RequirementsPage() {
         {filtered.length === 0 ? (
           <EmptyState
             Icon={AlertCircle}
-            title="No requirements match these filters"
+            title={t('lm.requirements.noMatch')}
             action={
               <button
                 onClick={clearFilters}
                 className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
               >
-                Clear filters
+                {t('lm.requirements.clearAll')}
               </button>
             }
           />
@@ -192,7 +200,7 @@ export default function RequirementsPage() {
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                      {tone.label}
+                      {t(tone.labelKey)}
                     </span>
                     <span className="text-sm text-slate-500">{req.type}</span>
                   </div>
@@ -207,9 +215,9 @@ export default function RequirementsPage() {
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
                   <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                    <span>Project: <span className="text-slate-400">{projectName(req.projectId)}</span></span>
-                    <span>Owner: <span className="text-slate-400">{req.owner}</span></span>
-                    <span>Due: <span className="text-slate-400">{req.dueDate}</span></span>
+                    <span>{t('lm.requirements.field.project')} <span className="text-slate-400">{projectName(req.projectId)}</span></span>
+                    <span>{t('lm.requirements.field.owner')} <span className="text-slate-400">{req.owner}</span></span>
+                    <span>{t('lm.requirements.field.due')} <span className="text-slate-400">{req.dueDate}</span></span>
                   </div>
                   <div className={`text-xs font-medium ${tone.text}`}>→ {req.nextAction}</div>
                 </div>
@@ -218,7 +226,7 @@ export default function RequirementsPage() {
                   href={`/freehold-intelligence/lead-machine/listings/${leadMachineListings.find(l => l.projectId === req.projectId)?.id || ''}`}
                   className="mt-3 inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-gold"
                 >
-                  View listing <ArrowUpRight className="h-3 w-3" />
+                  {t('lm.requirements.viewListing')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
             )

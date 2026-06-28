@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Palette, Plus, AlertCircle, RefreshCw, ArrowUpRight, Wand2, ExternalLink } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 interface CreativeDetail {
   id: string
@@ -34,6 +35,7 @@ function truncate(s: string | undefined, n: number) {
 }
 
 export default function CreativesPage() {
+  const t = useT()
   const [data, setData]       = useState<CreativesResponse>({})
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -58,6 +60,12 @@ export default function CreativesPage() {
   const creatives     = data.creatives ?? []
   const isConfigError = data.type === 'config'
 
+  const stats = [
+    { labelKey: 'lm.creatives.stat.total',     value: creatives.length },
+    { labelKey: 'lm.creatives.stat.withImage',  value: creatives.filter((c) => c.object_story_spec?.link_data?.picture).length },
+    { labelKey: 'lm.creatives.stat.named',      value: creatives.filter((c) => c.name && c.name !== 'Unnamed').length },
+  ]
+
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
@@ -65,12 +73,12 @@ export default function CreativesPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <section>
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Palette className="h-3.5 w-3.5" /> Ad Creatives
+            <Palette className="h-3.5 w-3.5" /> {t('lm.creatives.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-            Creative library<br />
+            {t('lm.creatives.title')}<br />
             <span className="text-slate-500">
-              {loading ? '…' : isConfigError ? 'not connected.' : `${creatives.length} total.`}
+              {loading ? t('lm.creatives.titleLoading') : isConfigError ? t('lm.creatives.titleNotConnected') : t('lm.creatives.titleTotal', { n: String(creatives.length) })}
             </span>
           </h1>
         </section>
@@ -79,7 +87,7 @@ export default function CreativesPage() {
           href="/freehold-intelligence/lead-machine/creatives/generate"
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] sm:mt-10"
         >
-          <Wand2 className="h-4 w-4" /> Generate copy
+          <Wand2 className="h-4 w-4" /> {t('lm.creatives.generateCopy')}
         </Link>
       </div>
 
@@ -89,10 +97,10 @@ export default function CreativesPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Meta Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.creatives.metaNotConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link href="/freehold-intelligence/integrations/meta" className="mt-3 inline-flex items-center gap-1 text-xs text-gold/80 transition hover:text-gold">
-                Set up Meta integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.creatives.setupMeta')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -113,14 +121,10 @@ export default function CreativesPage() {
       {!isConfigError && !loading && (
         <div className="mt-8 flex items-center justify-between">
           <div className="flex gap-3">
-            {[
-              { label: 'Total creatives',   value: creatives.length },
-              { label: 'With image',        value: creatives.filter((c) => c.object_story_spec?.link_data?.picture).length },
-              { label: 'Named creatives',   value: creatives.filter((c) => c.name && c.name !== 'Unnamed').length },
-            ].map((s) => (
-              <div key={s.label} className="rounded-[14px] border border-line bg-surface px-4 py-3">
+            {stats.map((s) => (
+              <div key={s.labelKey} className="rounded-[14px] border border-line bg-surface px-4 py-3">
                 <div className="text-[20px] font-semibold text-white">{s.value}</div>
-                <div className="text-xs text-slate-500">{s.label}</div>
+                <div className="text-xs text-slate-500">{t(s.labelKey)}</div>
               </div>
             ))}
           </div>
@@ -130,20 +134,20 @@ export default function CreativesPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.creatives.refresh')}
           </button>
         </div>
       )}
 
       {/* Loading state */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading creatives…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.creatives.loading')}</div>
       )}
 
       {/* Creative grid */}
       {!loading && creatives.length > 0 && (
         <section className="mt-8">
-          <div className="text-sm font-medium uppercase tracking-wider text-slate-500 mb-4">All creatives</div>
+          <div className="text-sm font-medium uppercase tracking-wider text-slate-500 mb-4">{t('lm.creatives.allCreatives')}</div>
           <div className="grid gap-4 sm:grid-cols-2">
             {creatives.map((creative) => {
               const ld       = creative.object_story_spec?.link_data
@@ -202,7 +206,7 @@ export default function CreativesPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-gold"
                           >
-                            <ExternalLink className="h-3 w-3" /> Landing
+                            <ExternalLink className="h-3 w-3" /> {t('lm.creatives.landing')}
                           </a>
                         )}
                       </div>
@@ -223,13 +227,13 @@ export default function CreativesPage() {
       {!loading && !isConfigError && creatives.length === 0 && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Palette className="mx-auto h-8 w-8 text-gold/40 mb-4" />
-          <div className="text-[18px] font-semibold text-white">No creatives yet</div>
-          <p className="mt-2 text-[14px] text-slate-500">Generate ad copy with AI or launch a campaign to create creatives automatically.</p>
+          <div className="text-[18px] font-semibold text-white">{t('lm.creatives.emptyTitle')}</div>
+          <p className="mt-2 text-[14px] text-slate-500">{t('lm.creatives.emptyDesc')}</p>
           <Link
             href="/freehold-intelligence/lead-machine/creatives/generate"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
-            <Wand2 className="h-4 w-4" /> Generate first creative
+            <Wand2 className="h-4 w-4" /> {t('lm.creatives.generateFirst')}
           </Link>
         </div>
       )}

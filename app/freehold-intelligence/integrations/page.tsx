@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
 import { PageHeader } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 // Map live API status to the page's expected shape
 function liveToIntegration(l: { id: string; name: string; state: string; note: string }) {
@@ -139,6 +140,8 @@ export default function IntegrationsPage() {
         title="Integrations"
         subtitle={`${connectedCount} of ${integrations.length} external systems connected. Ads and writes stay disabled until critical access is granted.`}
       />
+
+      <ExpertDepth prompts={['expert.depth.integrations.q1', 'expert.depth.integrations.q2', 'expert.depth.integrations.q3']} className="mt-8" />
 
       {/* Critical blockers */}
       {critical.length > 0 && (

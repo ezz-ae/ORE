@@ -6,6 +6,16 @@ import { management } from './dictionaries/management'
 import { inventory } from './dictionaries/inventory'
 import { settings } from './dictionaries/settings'
 import { languages } from './dictionaries/languages'
+import { lm_wizard } from './dictionaries/lm_wizard'
+import { lm_ads } from './dictionaries/lm_ads'
+import { lm_core } from './dictionaries/lm_core'
+import { coach } from './dictionaries/coach'
+import { analytics } from './dictionaries/analytics'
+import { notebook } from './dictionaries/notebook'
+import { expertChat } from './dictionaries/expert'
+import { expertDepth } from './dictionaries/expert-depth'
+import { lm_google_actions } from './dictionaries/lm_google_actions'
+import { crm_lead_ask } from './dictionaries/crm_lead_ask'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -104,6 +114,49 @@ const en: Dict = {
   'hub.thinking': 'Thinking…',
   'hub.fullConversation': 'Full conversation',
   'hub.dismiss': 'Dismiss',
+  'hub.yesterday': 'Yesterday',
+  'hub.briefingLive': '{urgent} urgent, {blocked} blocked and {pending} awaiting approval right now.',
+  'hub.noUrgent': 'Nothing urgent right now — you\'re ahead.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count}K visitors · 30d',
+  'hub.metric.dataQuality': 'Data quality {score} · {count} listings',
+  'hub.metric.properties': '{count} properties · {missing} missing',
+  'hub.note.noLanding': 'No landing page',
+  'hub.note.campaignsPaused': ' — {count} campaign(s) paused',
+  'hub.note.adReadiness': 'Ad readiness {pct}% — needs creative & copy',
+  'hub.note.noImages': 'No images — blocks ad creative generation',
+  // Demo activity fallback (shown only on an empty/fresh workspace)
+  'hub.demo.newLead.l': 'New lead',
+  'hub.demo.newLead.d': 'Palm Jumeirah — Meta Ads',
+  'hub.demo.campaignPaused.l': 'Campaign paused',
+  'hub.demo.campaignPaused.d': 'Off Plan Dubai 2025 — Google',
+  'hub.demo.landingPublished.l': 'Landing published',
+  'hub.demo.landingPublished.d': 'JVC Investor · /lp/jvc-investor',
+  'hub.demo.leads.l': '88 leads',
+  'hub.demo.leads.d': 'Dubai Hills Yield — 24h',
+  'hub.demo.invoice.l': 'Invoice issued',
+  'hub.demo.invoice.d': 'INV-META-0526 · AED 18,420',
+  // Web Studio — Expert depth prompts (route into the single conversation)
+  'studio.ai.title': 'Ask the Expert',
+  'studio.ai.subtitle': 'Plan, fix and audit content with the docked AI',
+  'studio.ai.q1': 'Audit all landing pages for stale or expired data and list what to refresh.',
+  'studio.ai.q2': 'Which listings have low data quality, and how do I fix each one?',
+  'studio.ai.q3': "Plan this week's content and SEO updates.",
+  'studio.ai.q4': 'Review ad readiness across inventory and suggest fixes.',
+  'studio.title': 'AI Manager',
+  'studio.subtitle': 'AI-powered content management for freeholdproperty.ae',
+  'studio.activity': 'AI Activity',
+  'studio.ct.listings': 'Listings',
+  'studio.ct.areas': 'Areas',
+  'studio.ct.developers': 'Developers',
+  'studio.ct.pages': 'Pages',
+  'studio.ct.topics': 'Topics',
+  // notebook + expert (strings added this session)
+  'nb.savedReports': 'Saved tables & reports',
+  'expert.save': 'Save to Notebook',
+  'expert.saved': 'Saved to Notebook',
+  'expert.saveOk': 'Saved to Notebook',
+  'expert.saveErr': 'Could not save to Notebook',
 }
 
 const ar: Dict = {
@@ -185,6 +238,46 @@ const ar: Dict = {
   'hub.thinking': 'جارٍ التفكير…',
   'hub.fullConversation': 'المحادثة الكاملة',
   'hub.dismiss': 'إغلاق',
+  'hub.yesterday': 'أمس',
+  'hub.briefingLive': '{urgent} عاجلة، و{blocked} محظورة، و{pending} بانتظار الموافقة الآن.',
+  'hub.noUrgent': 'لا شيء عاجل الآن — أنت متقدّم على العمل.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count} ألف زائر · 30 يوماً',
+  'hub.metric.dataQuality': 'جودة البيانات {score} · {count} قائمة',
+  'hub.metric.properties': '{count} عقار · {missing} ناقص',
+  'hub.note.noLanding': 'لا توجد صفحة هبوط',
+  'hub.note.campaignsPaused': ' — {count} حملة متوقفة',
+  'hub.note.adReadiness': 'جاهزية الإعلان {pct}% — تحتاج تصميماً ونصاً',
+  'hub.note.noImages': 'لا توجد صور — يمنع إنشاء تصميم الإعلان',
+  'hub.demo.newLead.l': 'عميل محتمل جديد',
+  'hub.demo.newLead.d': 'نخلة جميرا — إعلانات ميتا',
+  'hub.demo.campaignPaused.l': 'حملة متوقفة',
+  'hub.demo.campaignPaused.d': 'أوف بلان دبي 2025 — جوجل',
+  'hub.demo.landingPublished.l': 'تم نشر صفحة هبوط',
+  'hub.demo.landingPublished.d': 'مستثمر JVC · /lp/jvc-investor',
+  'hub.demo.leads.l': '88 عميلاً محتملاً',
+  'hub.demo.leads.d': 'عائد دبي هيلز — 24 ساعة',
+  'hub.demo.invoice.l': 'تم إصدار فاتورة',
+  'hub.demo.invoice.d': 'INV-META-0526 · 18,420 درهم',
+  'studio.ai.title': 'اسأل الخبير',
+  'studio.ai.subtitle': 'خطّط وأصلح ودقّق المحتوى عبر الذكاء الاصطناعي المثبّت',
+  'studio.ai.q1': 'دقّق جميع صفحات الهبوط بحثاً عن بيانات قديمة أو منتهية واذكر ما يجب تحديثه.',
+  'studio.ai.q2': 'أي القوائم لديها جودة بيانات منخفضة، وكيف أصلح كلاً منها؟',
+  'studio.ai.q3': 'خطّط تحديثات المحتوى وتحسين محركات البحث لهذا الأسبوع.',
+  'studio.ai.q4': 'راجع جاهزية الإعلانات عبر المخزون واقترح إصلاحات.',
+  'studio.title': 'مدير الذكاء الاصطناعي',
+  'studio.subtitle': 'إدارة محتوى مدعومة بالذكاء الاصطناعي لموقع freeholdproperty.ae',
+  'studio.activity': 'نشاط الذكاء الاصطناعي',
+  'studio.ct.listings': 'القوائم',
+  'studio.ct.areas': 'المناطق',
+  'studio.ct.developers': 'المطوّرون',
+  'studio.ct.pages': 'الصفحات',
+  'studio.ct.topics': 'المواضيع',
+  'nb.savedReports': 'الجداول والتقارير المحفوظة',
+  'expert.save': 'حفظ في دفتر الملاحظات',
+  'expert.saved': 'تم الحفظ في دفتر الملاحظات',
+  'expert.saveOk': 'تم الحفظ في دفتر الملاحظات',
+  'expert.saveErr': 'تعذّر الحفظ في دفتر الملاحظات',
 }
 
 const ru: Dict = {
@@ -266,12 +359,52 @@ const ru: Dict = {
   'hub.thinking': 'Думаю…',
   'hub.fullConversation': 'Полный разговор',
   'hub.dismiss': 'Закрыть',
+  'hub.yesterday': 'Вчера',
+  'hub.briefingLive': 'Сейчас: {urgent} срочных, {blocked} заблокировано и {pending} ждут согласования.',
+  'hub.noUrgent': 'Сейчас ничего срочного — вы на шаг впереди.',
+  'hub.title': 'Freehold Intelligence',
+  'hub.metric.visitors': '{count}K посетителей · 30д',
+  'hub.metric.dataQuality': 'Качество данных {score} · {count} объявл.',
+  'hub.metric.properties': '{count} объектов · {missing} без лендинга',
+  'hub.note.noLanding': 'Нет лендинга',
+  'hub.note.campaignsPaused': ' — приостановлено кампаний: {count}',
+  'hub.note.adReadiness': 'Готовность к рекламе {pct}% — нужны креатив и текст',
+  'hub.note.noImages': 'Нет изображений — блокирует генерацию креатива',
+  'hub.demo.newLead.l': 'Новый лид',
+  'hub.demo.newLead.d': 'Палм Джумейра — Meta Ads',
+  'hub.demo.campaignPaused.l': 'Кампания приостановлена',
+  'hub.demo.campaignPaused.d': 'Off Plan Dubai 2025 — Google',
+  'hub.demo.landingPublished.l': 'Лендинг опубликован',
+  'hub.demo.landingPublished.d': 'JVC Investor · /lp/jvc-investor',
+  'hub.demo.leads.l': '88 лидов',
+  'hub.demo.leads.d': 'Dubai Hills Yield — 24ч',
+  'hub.demo.invoice.l': 'Счёт выставлен',
+  'hub.demo.invoice.d': 'INV-META-0526 · 18 420 AED',
+  'studio.ai.title': 'Спросите Эксперта',
+  'studio.ai.subtitle': 'Планируйте, исправляйте и проверяйте контент через закреплённый ИИ',
+  'studio.ai.q1': 'Проверьте все лендинги на устаревшие или просроченные данные и перечислите, что обновить.',
+  'studio.ai.q2': 'У каких объявлений низкое качество данных и как исправить каждое?',
+  'studio.ai.q3': 'Спланируйте обновления контента и SEO на эту неделю.',
+  'studio.ai.q4': 'Проверьте готовность к рекламе по объектам и предложите исправления.',
+  'studio.title': 'AI-менеджер',
+  'studio.subtitle': 'Управление контентом на базе ИИ для freeholdproperty.ae',
+  'studio.activity': 'Активность ИИ',
+  'studio.ct.listings': 'Объявления',
+  'studio.ct.areas': 'Районы',
+  'studio.ct.developers': 'Застройщики',
+  'studio.ct.pages': 'Страницы',
+  'studio.ct.topics': 'Темы',
+  'nb.savedReports': 'Сохранённые таблицы и отчёты',
+  'expert.save': 'Сохранить в Блокнот',
+  'expert.saved': 'Сохранено в Блокнот',
+  'expert.saveOk': 'Сохранено в Блокнот',
+  'expert.saveErr': 'Не удалось сохранить в Блокнот',
 }
 
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru },
 }

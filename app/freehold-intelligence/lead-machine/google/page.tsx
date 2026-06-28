@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Search, BarChart2, Zap, AlertCircle, ArrowUpRight, TrendingUp, RefreshCw, Monitor } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
 import { useAdsContext } from '@/lib/google/ads-context'
+import { useT } from '@/lib/i18n/provider'
 
 interface OverviewData {
   campaigns?: GoogleCampaign[]
@@ -35,6 +36,7 @@ const CAMPAIGN_TYPE_COLOR: Record<string, string> = {
 }
 
 export default function GoogleOverviewPage() {
+  const t = useT()
   const [campaigns, setCampaigns] = useState<GoogleCampaign[]>([])
   const [report, setReport]       = useState<GoogleReportSummary | null>(null)
   const [error, setError]         = useState<string | null>(null)
@@ -120,13 +122,13 @@ export default function GoogleOverviewPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
             className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
-            <Zap className="h-4 w-4" /> New campaign
+            <Zap className="h-4 w-4" /> {t('lm.google.common.newCampaign')}
           </Link>
         </div>
       </div>
@@ -137,13 +139,13 @@ export default function GoogleOverviewPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -162,7 +164,7 @@ export default function GoogleOverviewPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading Google Ads data…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.overview.noData')}</div>
       )}
 
       {!loading && !configErr && (
@@ -170,10 +172,10 @@ export default function GoogleOverviewPage() {
           {/* KPI row */}
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Active',       value: active,          color: 'text-gold' },
-              { label: 'Paused',       value: paused,          color: 'text-slate-400'   },
-              { label: '30d Spend',    value: fmtMicros(spend), color: 'text-white'       },
-              { label: '30d Conversions', value: Math.round(convs), color: 'text-[#FBBC04]' },
+              { label: t('lm.google.common.active'),      value: active,          color: 'text-gold' },
+              { label: t('lm.google.common.paused'),      value: paused,          color: 'text-slate-400'   },
+              { label: t('lm.google.overview.stat.spend'),  value: fmtMicros(spend), color: 'text-white'       },
+              { label: t('lm.google.overview.stat.conversions'), value: Math.round(convs), color: 'text-[#FBBC04]' },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-line bg-surface p-4">
                 <div className={`text-[24px] font-semibold leading-none ${s.color}`}>{s.value}</div>
@@ -185,9 +187,9 @@ export default function GoogleOverviewPage() {
           {/* Secondary metrics */}
           <div className="mt-3 grid grid-cols-3 gap-3">
             {[
-              { label: 'Impressions',  value: imps.toLocaleString()     },
-              { label: 'Clicks',       value: clicks.toLocaleString()   },
-              { label: 'Avg CTR',      value: imps > 0 ? fmtPct(clicks / imps) : '—' },
+              { label: t('lm.google.common.impressions'), value: imps.toLocaleString()     },
+              { label: t('lm.google.common.clicks'),       value: clicks.toLocaleString()   },
+              { label: t('lm.google.overview.stat.ctr'),   value: imps > 0 ? fmtPct(clicks / imps) : '—' },
             ].map((s) => (
               <div key={s.label} className="rounded-[14px] border border-line bg-surface px-4 py-3">
                 <div className="text-[18px] font-semibold text-white">{s.value}</div>
@@ -200,7 +202,7 @@ export default function GoogleOverviewPage() {
           {report && report.byCampaign.length > 0 && (
             <section className="mt-10">
               <div className="text-sm font-medium uppercase tracking-wider text-slate-400 mb-4">
-                Channel breakdown
+                {t('lm.google.overview.topCampaigns')}
               </div>
               <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
                 <div className="divide-y divide-line">
@@ -232,13 +234,13 @@ export default function GoogleOverviewPage() {
             <section className="mt-10">
               <div className="mb-4 flex items-center justify-between">
                 <div className="text-sm font-medium uppercase tracking-wider text-slate-400">
-                  Top campaigns — 30d spend
+                  {t('lm.google.overview.topCampaigns')}
                 </div>
                 <Link
                   href="/freehold-intelligence/lead-machine/google/campaigns"
                   className="text-xs text-slate-400 transition hover:text-white"
                 >
-                  View all <ArrowUpRight className="inline h-3 w-3" />
+                  {t('lm.google.overview.viewAll')} <ArrowUpRight className="inline h-3 w-3" />
                 </Link>
               </div>
               <div className="space-y-2">
@@ -299,13 +301,13 @@ export default function GoogleOverviewPage() {
       {!loading && !configErr && !error && campaigns.length === 0 && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Search className="mx-auto h-8 w-8 text-[#4285F4]/40 mb-4" />
-          <div className="text-[18px] font-semibold text-white">No Google Ads campaigns yet</div>
-          <p className="mt-2 text-[14px] text-slate-400">Create your first Search or Performance Max campaign to start capturing leads from Google.</p>
+          <div className="text-[18px] font-semibold text-white">{t('lm.google.campaigns.empty')}</div>
+          <p className="mt-2 text-[14px] text-slate-400">{t('lm.google.campaigns.emptyNote')}</p>
           <Link
             href="/freehold-intelligence/lead-machine/google/campaigns/new"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
-            <Zap className="h-4 w-4" /> Create first campaign
+            <Zap className="h-4 w-4" /> {t('lm.google.common.newCampaign')}
           </Link>
         </div>
       )}

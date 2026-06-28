@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Monitor, RefreshCw, AlertCircle, ArrowUpRight, Wand2 } from 'lucide-react'
 import type { GoogleResponsiveSearchAd, GoogleAdStrength } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 interface AdsData {
   ads?: GoogleResponsiveSearchAd[]
@@ -34,6 +35,7 @@ function strengthBar(strength: GoogleAdStrength) {
 }
 
 export default function GoogleAdsLibraryPage() {
+  const t = useT()
   const [data, setData]           = useState<AdsData>({})
   const [loading, setLoading]     = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -89,13 +91,13 @@ export default function GoogleAdsLibraryPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google/ads/generate"
             className="inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
-            <Wand2 className="h-4 w-4" /> Generate RSA copy
+            <Wand2 className="h-4 w-4" /> {t('lm.google.ads.generateBtn')}
           </Link>
         </div>
       </div>
@@ -106,10 +108,10 @@ export default function GoogleAdsLibraryPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link href="/freehold-intelligence/integrations/google" className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]">
-                Set up Google integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -127,7 +129,7 @@ export default function GoogleAdsLibraryPage() {
       )}
 
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading ads…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.ads.title')}…</div>
       )}
 
       {!loading && !isConfigError && ads.length > 0 && (
@@ -201,7 +203,7 @@ export default function GoogleAdsLibraryPage() {
                     {/* Headlines */}
                     <div>
                       <div className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                        Headlines ({ad.headlines.length})
+                        {t('lm.google.adsGenerate.field.headlines')} ({ad.headlines.length})
                       </div>
                       <div className="space-y-1">
                         {ad.headlines.slice(0, 5).map((h, i) => (
@@ -222,7 +224,7 @@ export default function GoogleAdsLibraryPage() {
                     {/* Descriptions */}
                     <div>
                       <div className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                        Descriptions ({ad.descriptions.length})
+                        {t('lm.google.adsGenerate.field.descriptions')} ({ad.descriptions.length})
                       </div>
                       <div className="space-y-2">
                         {ad.descriptions.map((d, i) => (
@@ -251,13 +253,13 @@ export default function GoogleAdsLibraryPage() {
       {!loading && !isConfigError && ads.length === 0 && (
         <div className="mt-16 rounded-[28px] border border-line bg-surface-2 px-7 py-14 text-center">
           <Monitor className="mx-auto h-8 w-8 text-[#4285F4]/40 mb-4" />
-          <div className="text-[18px] font-semibold text-white">No ads yet</div>
-          <p className="mt-2 text-[14px] text-slate-500">Create a campaign and add Responsive Search Ads, or generate copy with AI first.</p>
+          <div className="text-[18px] font-semibold text-white">{t('lm.google.ads.empty')}</div>
+          <p className="mt-2 text-[14px] text-slate-500">{t('lm.google.ads.emptyNote')}</p>
           <Link
             href="/freehold-intelligence/lead-machine/google/ads/generate"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4285F4] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5A97F5]"
           >
-            <Wand2 className="h-4 w-4" /> Generate RSA copy
+            <Wand2 className="h-4 w-4" /> {t('lm.google.ads.generateBtn')}
           </Link>
         </div>
       )}

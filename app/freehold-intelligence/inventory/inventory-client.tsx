@@ -13,6 +13,7 @@ import {
   type AdVerdict,
 } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
@@ -147,6 +148,11 @@ export default function InventoryClient({ initialProperties }: { initialProperti
         Icon={LayoutGrid}
         title={t('inv.pageTitle')}
         subtitle={t('inv.pageSubtitle')}
+      />
+
+      <ExpertDepth
+        className="mt-6"
+        prompts={['expert.depth.inventory.q1', 'expert.depth.inventory.q2', 'expert.depth.inventory.q3', 'expert.depth.inventory.q4']}
       />
 
       {/* Stats row */}

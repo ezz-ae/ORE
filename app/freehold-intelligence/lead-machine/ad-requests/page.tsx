@@ -9,6 +9,7 @@ import {
   type LeadMachineAdRequest,
 } from '@/src/features/freehold-intelligence/lead-machine'
 import { PageHeader, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 type StatusFilter = 'All' | 'Running' | 'Pending Review' | 'Blocked' | 'Paused'
 type PlatformFilter = 'All' | 'Meta' | 'Google'
@@ -30,6 +31,7 @@ function platformStyle(platform: string) {
 }
 
 function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
+  const t = useT()
   const listing = leadMachineListings.find((l) => l.projectId === request.projectId)
   const status = statusStyle(request.status)
   const platform = platformStyle(request.platform)
@@ -47,20 +49,10 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
             </h3>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <span
-              className={[
-                'rounded-full border px-2.5 py-1 text-sm font-medium',
-                platform,
-              ].join(' ')}
-            >
+            <span className={['rounded-full border px-2.5 py-1 text-sm font-medium', platform].join(' ')}>
               {request.platform}
             </span>
-            <span
-              className={[
-                'rounded-full border px-2.5 py-1 text-sm font-medium',
-                status.badge,
-              ].join(' ')}
-            >
+            <span className={['rounded-full border px-2.5 py-1 text-sm font-medium', status.badge].join(' ')}>
               {request.status}
             </span>
           </div>
@@ -68,22 +60,22 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Objective</div>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{t('lm.requests.field.objective')}</div>
             <p className="mt-1 text-sm text-slate-300">{request.campaignObjective}</p>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Budget</div>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{t('lm.requests.field.budget')}</div>
             <p className="mt-1 text-sm font-semibold text-white">{request.budget}</p>
           </div>
           <div className="sm:col-span-2">
-            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Campaign Angle</div>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{t('lm.requests.field.angle')}</div>
             <p className="mt-1 text-sm leading-[1.55] text-slate-300">{request.campaignAngle}</p>
           </div>
         </div>
 
         {request.blockers.length > 0 && (
           <div className="mt-5 rounded-2xl border border-red-400/15 bg-red-400/[0.04] px-4 py-3.5">
-            <div className="text-xs font-medium uppercase tracking-[0.2em] text-red-400/70">Blockers</div>
+            <div className="text-xs font-medium uppercase tracking-[0.2em] text-red-400/70">{t('lm.requests.field.blockers')}</div>
             <ul className="mt-1.5 grid gap-1 text-sm text-slate-300">
               {request.blockers.map((b) => (
                 <li
@@ -104,7 +96,7 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
             href={listing ? `/freehold-intelligence/lead-machine/listings/${listing.id}` : '/freehold-intelligence/lead-machine/listings'}
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:gap-2.5"
           >
-            Open listing workspace <ArrowUpRight className="h-3.5 w-3.5" />
+            {t('lm.requests.openListing')} <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <span className="text-xs text-slate-500">{request.approvalStatus}</span>
         </div>
@@ -113,10 +105,22 @@ function AdRequestCard({ request }: { request: LeadMachineAdRequest }) {
   )
 }
 
-const STATUS_PILLS: StatusFilter[] = ['All', 'Running', 'Pending Review', 'Blocked', 'Paused']
-const PLATFORM_PILLS: PlatformFilter[] = ['All', 'Meta', 'Google']
+const STATUS_PILLS: { value: StatusFilter; labelKey: string }[] = [
+  { value: 'All',           labelKey: 'lm.requests.filter.all'          },
+  { value: 'Running',       labelKey: 'lm.requests.filter.running'       },
+  { value: 'Pending Review',labelKey: 'lm.requests.filter.pendingReview' },
+  { value: 'Blocked',       labelKey: 'lm.requests.filter.blocked'       },
+  { value: 'Paused',        labelKey: 'lm.requests.filter.paused'        },
+]
+
+const PLATFORM_PILLS: { value: PlatformFilter; labelKey: string }[] = [
+  { value: 'All',    labelKey: 'lm.requests.filter.all'    },
+  { value: 'Meta',   labelKey: 'lm.requests.filter.meta'   },
+  { value: 'Google', labelKey: 'lm.requests.filter.google' },
+]
 
 export default function AdRequestsPage() {
+  const t = useT()
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('All')
 
@@ -137,23 +141,24 @@ export default function AdRequestsPage() {
   const pending = leadMachineAdRequests.filter((r) => r.status === 'Pending Review').length
   const running = leadMachineAdRequests.filter((r) => r.status === 'Running').length
   const blocked = leadMachineAdRequests.filter((r) => r.status === 'Blocked' || r.status === 'Needs Changes').length
+  const n = leadMachineAdRequests.length
 
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-16">
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={t('lm.requests.eyebrow')}
         Icon={Megaphone}
-        title="Ad Requests"
+        title={t('lm.requests.title')}
         subtitle={
-          leadMachineAdRequests.length > 0 ? (
+          n > 0 ? (
             <>
-              <span className="text-white">{leadMachineAdRequests.length} campaign request{leadMachineAdRequests.length !== 1 ? 's' : ''}</span> across active listings.{' '}
-              {running > 0 && <>{running} running. </>}
-              {pending > 0 && <>{pending} pending approval before launch. </>}
-              {blocked > 0 && <>{blocked} blocked on access or creative.</>}
+              <span className="text-white">{t('lm.requests.subtitle.count', { n: String(n), plural: n !== 1 ? 's' : '' })}</span>{' '}
+              {running > 0 && <>{t('lm.requests.running', { n: String(running) })}</>}
+              {pending > 0 && <>{t('lm.requests.pending', { n: String(pending) })}</>}
+              {blocked > 0 && <>{t('lm.requests.blocked', { n: String(blocked) })}</>}
             </>
           ) : (
-            'No ad requests have been created yet. Open a listing workspace to draft a campaign.'
+            t('lm.requests.noRequests')
           )
         }
         className="mb-10"
@@ -164,44 +169,44 @@ export default function AdRequestsPage() {
           <div>
             <div className="text-sm font-medium uppercase tracking-wider text-slate-500">
               {filtered.length === leadMachineAdRequests.length
-                ? 'All'
-                : `${filtered.length} of ${leadMachineAdRequests.length}`}
+                ? t('lm.requests.countAll')
+                : t('lm.requests.countFiltered', { n: String(filtered.length), total: String(leadMachineAdRequests.length) })}
             </div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              {filtered.length} request{filtered.length !== 1 ? 's' : ''}
+              {t('lm.requests.requests', { n: String(filtered.length), plural: filtered.length !== 1 ? 's' : '' })}
             </h2>
           </div>
         </div>
 
         {/* Filter pills */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {STATUS_PILLS.map((s) => (
+          {STATUS_PILLS.map(({ value, labelKey }) => (
             <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
+              key={value}
+              onClick={() => setStatusFilter(value)}
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
-                statusFilter === s
+                statusFilter === value
                   ? 'border-gold/40 bg-gold/10 text-gold'
                   : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
-              {s}
+              {t(labelKey)}
             </button>
           ))}
           <span className="self-center text-slate-600">|</span>
-          {PLATFORM_PILLS.map((p) => (
+          {PLATFORM_PILLS.map(({ value, labelKey }) => (
             <button
-              key={p}
-              onClick={() => setPlatformFilter(p)}
+              key={value}
+              onClick={() => setPlatformFilter(value)}
               className={[
                 'rounded-full border px-3 py-1 text-sm font-medium transition',
-                platformFilter === p
+                platformFilter === value
                   ? 'border-gold/40 bg-gold/10 text-gold'
                   : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300',
               ].join(' ')}
             >
-              {p}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -215,13 +220,13 @@ export default function AdRequestsPage() {
         {filtered.length === 0 && (
           <EmptyState
             Icon={Megaphone}
-            title="No requests match these filters"
+            title={t('lm.requests.noMatch')}
             action={
               <button
                 onClick={() => { setStatusFilter('All'); setPlatformFilter('All') }}
                 className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-500 transition hover:text-slate-300"
               >
-                Clear filters
+                {t('lm.requests.clearFilters')}
               </button>
             }
             className="mt-8"

@@ -8,6 +8,7 @@ import {
   getLeadMachineSummary,
 } from '@/src/features/freehold-intelligence/lead-machine'
 import { PageHeader, StatCard, Section, Panel, buttonClass } from '@/components/freehold/ui'
+import { getServerT } from '@/lib/i18n/server'
 
 function scoreBg(score: number) {
   if (score >= 80) return 'bg-gold'
@@ -35,62 +36,63 @@ function statusIcon(status: string) {
   return <Clock className="h-3.5 w-3.5 text-gold" />
 }
 
-const NAV_SECTIONS = [
-  {
-    label: 'Listings',
-    href: '/freehold-intelligence/lead-machine/listings',
-    icon: BarChart2,
-    desc: 'All active listings with readiness scores, blockers, and next actions.',
-    count: leadMachineListings.length,
-    countLabel: 'listings',
-  },
-  {
-    label: 'Landings',
-    href: '/freehold-intelligence/lead-machine/landings',
-    icon: FileText,
-    desc: 'Landing page status, completion scores, and review queue.',
-    count: leadMachineLandings.length,
-    countLabel: 'pages',
-  },
-  {
-    label: 'Ad Requests',
-    href: '/freehold-intelligence/lead-machine/ad-requests',
-    icon: Megaphone,
-    desc: 'Campaign briefs, platform, budget, creative requirements.',
-    count: leadMachineAdRequests.length,
-    countLabel: 'requests',
-  },
-  {
-    label: 'Requirements',
-    href: '/freehold-intelligence/lead-machine/requirements',
-    icon: AlertOctagon,
-    desc: 'Every open requirement blocking landing generation or ad launch.',
-    count: leadMachineRequirements.filter(r => r.status !== 'Done').length,
-    countLabel: 'open',
-  },
-]
-
-export default function LeadMachineOverviewPage() {
+export default async function LeadMachineOverviewPage() {
+  const { t } = await getServerT()
   const summary = getLeadMachineSummary()
   const criticalReqs = leadMachineRequirements.filter(r => r.severity === 'critical')
   const readyListings = leadMachineListings.filter(l => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80)
+
+  const navSections = [
+    {
+      label: t('lm.hub.nav.listings'),
+      href: '/freehold-intelligence/lead-machine/listings',
+      icon: BarChart2,
+      desc: t('lm.hub.nav.listings.desc'),
+      count: leadMachineListings.length,
+      countLabel: t('lm.hub.count.listings'),
+    },
+    {
+      label: t('lm.hub.nav.landings'),
+      href: '/freehold-intelligence/lead-machine/landings',
+      icon: FileText,
+      desc: t('lm.hub.nav.landings.desc'),
+      count: leadMachineLandings.length,
+      countLabel: t('lm.hub.count.pages'),
+    },
+    {
+      label: t('lm.hub.nav.adRequests'),
+      href: '/freehold-intelligence/lead-machine/ad-requests',
+      icon: Megaphone,
+      desc: t('lm.hub.nav.adRequests.desc'),
+      count: leadMachineAdRequests.length,
+      countLabel: t('lm.hub.count.requests'),
+    },
+    {
+      label: t('lm.hub.nav.requirements'),
+      href: '/freehold-intelligence/lead-machine/requirements',
+      icon: AlertOctagon,
+      desc: t('lm.hub.nav.requirements.desc'),
+      count: leadMachineRequirements.filter(r => r.status !== 'Done').length,
+      countLabel: t('lm.hub.count.open'),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       {/* Header */}
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={t('lm.hub.eyebrow')}
         Icon={Zap}
-        title={readyListings.length > 0 ? `${readyListings.length} listings ready to launch` : 'Listings to campaigns'}
-        subtitle={`${criticalReqs.length} blockers to resolve · full pipeline from raw data to live paid traffic`}
+        title={readyListings.length > 0 ? t('lm.hub.titleReady', { n: String(readyListings.length) }) : t('lm.hub.titleDefault')}
+        subtitle={t('lm.hub.subtitle', { n: String(criticalReqs.length), plural: criticalReqs.length !== 1 ? 's' : '' })}
         actions={
           <>
             <Link href="/freehold-intelligence/lead-machine/campaigns/launch" className={buttonClass('primary', 'md')}>
-              <Zap className="h-3.5 w-3.5" /> Launch Campaign
+              <Zap className="h-3.5 w-3.5" /> {t('lm.hub.launch')}
             </Link>
             <Link href="/freehold-intelligence/lead-machine/campaigns" className={buttonClass('secondary', 'md')}>
-              All Campaigns <ArrowUpRight className="h-3.5 w-3.5" />
+              {t('lm.hub.allCampaigns')} <ArrowUpRight className="h-3.5 w-3.5" />
             </Link>
           </>
         }
@@ -98,16 +100,16 @@ export default function LeadMachineOverviewPage() {
 
       {/* Stats row */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Active Listings" value={leadMachineListings.length} hint="tracked" />
-        <StatCard label="Landings Ready" value={summary.landingPagesReady} hint="can launch" delta={{ value: 'ready', direction: 'up' }} />
-        <StatCard label="Pending Requests" value={summary.pendingAdRequests} hint="awaiting launch" />
-        <StatCard label="Blocked on Access" value={summary.blockedByAccess} hint="need credentials" delta={summary.blockedByAccess > 0 ? { value: 'action needed', direction: 'down' } : undefined} />
+        <StatCard label={t('lm.hub.stat.activeListings')} value={leadMachineListings.length} hint={t('lm.hub.stat.tracked')} />
+        <StatCard label={t('lm.hub.stat.landingsReady')} value={summary.landingPagesReady} hint={t('lm.hub.stat.canLaunch')} delta={{ value: 'ready', direction: 'up' }} />
+        <StatCard label={t('lm.hub.stat.pendingRequests')} value={summary.pendingAdRequests} hint={t('lm.hub.stat.awaitingLaunch')} />
+        <StatCard label={t('lm.hub.stat.blockedAccess')} value={summary.blockedByAccess} hint={t('lm.hub.stat.needCredentials')} delta={summary.blockedByAccess > 0 ? { value: t('lm.hub.stat.actionNeeded'), direction: 'down' } : undefined} />
       </div>
 
       {/* Critical blockers */}
       {criticalReqs.length > 0 && (
         <section className="mt-8">
-          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-red-300/80">Critical — blocks launch</div>
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-red-300/80">{t('lm.hub.critical')}</div>
           <div className="space-y-3">
             {criticalReqs.map(req => (
               <div key={req.id} className="flex items-start gap-4 rounded-xl border border-red-400/20 bg-red-400/[0.05] p-5">
@@ -131,11 +133,11 @@ export default function LeadMachineOverviewPage() {
       {/* Readiness matrix */}
       <Section
         className="mt-8"
-        title="Readiness Matrix"
-        description="Score by listing"
+        title={t('lm.hub.readinessMatrix')}
+        description={t('lm.hub.scoreByListing')}
         action={
           <Link href="/freehold-intelligence/lead-machine/listings" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">
-            All listings <ArrowUpRight className="h-3 w-3" />
+            {t('lm.hub.allListings')} <ArrowUpRight className="h-3 w-3" />
           </Link>
         }
       >
@@ -143,8 +145,8 @@ export default function LeadMachineOverviewPage() {
         <Panel>
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-4 border-b border-line px-6 py-3">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Project</div>
-            {['Data', 'Landing', 'Ads', 'Opp'].map(h => (
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('lm.hub.col.project')}</div>
+            {[t('lm.hub.col.data'), t('lm.hub.col.landing'), t('lm.hub.col.ads'), t('lm.hub.col.opp')].map(h => (
               <div key={h} className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 text-center">{h}</div>
             ))}
           </div>
@@ -176,7 +178,7 @@ export default function LeadMachineOverviewPage() {
 
       {/* Sub-section nav */}
       <section className="mt-8 grid gap-3 sm:grid-cols-2">
-        {NAV_SECTIONS.map(({ label, href, icon: Icon, desc, count, countLabel }) => (
+        {navSections.map(({ label, href, icon: Icon, desc, count, countLabel }) => (
           <Link
             key={href}
             href={href}
@@ -200,7 +202,7 @@ export default function LeadMachineOverviewPage() {
       </section>
 
       {/* Landing & ad status table */}
-      <Section className="mt-8" title="Campaign readiness by listing">
+      <Section className="mt-8" title={t('lm.hub.campaignReadiness')}>
         <Panel>
           <div className="divide-y divide-line">
             {leadMachineListings.map(listing => (
@@ -212,15 +214,15 @@ export default function LeadMachineOverviewPage() {
                 <div className="flex items-center gap-3 text-xs">
                   <span className="flex items-center gap-1.5 text-slate-400">
                     {statusIcon(listing.landingStatus)}
-                    Landing
+                    {t('lm.hub.landingLabel')}
                   </span>
                   <span className="flex items-center gap-1.5 text-slate-400">
                     {statusIcon(listing.adStatus)}
-                    Ads
+                    {t('lm.hub.adsLabel')}
                   </span>
                 </div>
                 <Link href={`/freehold-intelligence/lead-machine/listings/${listing.id}`} className="hidden sm:inline-flex items-center gap-1 text-sm text-slate-500 hover:text-gold transition">
-                  Open <ArrowUpRight className="h-3 w-3" />
+                  {t('lm.hub.open')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
             ))}
@@ -231,7 +233,7 @@ export default function LeadMachineOverviewPage() {
       {/* AI take */}
       <section className="mt-8 rounded-xl border border-gold/15 bg-gold/[0.035] px-6 py-7">
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/80">
-          <Sparkles className="h-3 w-3" /> AI take
+          <Sparkles className="h-3 w-3" /> {t('lm.hub.aiTake')}
         </div>
         <p className="mt-3 text-sm font-medium leading-[1.65] text-slate-100">
           One listing is ready for paid traffic — the bottleneck is the Meta billing owner. Resolve that and Dubai Hills launches today. Palm needs a single landing approval. Business Bay needs payment-plan data before a landing can be generated.

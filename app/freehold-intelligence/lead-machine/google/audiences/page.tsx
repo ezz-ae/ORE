@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Users,
   AlertCircle,
@@ -9,8 +10,10 @@ import {
   ArrowUpRight,
   Upload,
   Info,
+  Plus,
 } from 'lucide-react'
 import type { GoogleAudience, GoogleAudienceType } from '@/lib/google/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -167,10 +170,31 @@ function AudienceCard({ audience }: { audience: GoogleAudience }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GoogleAudiencesPage() {
+  const t = useT()
   const [data, setData]             = useState<AudiencesApiResponse>({})
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter]         = useState<AudienceFilter>('ALL')
+  const [newName, setNewName]       = useState('')
+  const [adding, setAdding]         = useState(false)
+
+  async function addAudience() {
+    const name = newName.trim()
+    if (!name || adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/google/audiences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) throw new Error()
+      setNewName('')
+      toast.success(t('lm.google.audiences.added'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    } finally { setAdding(false) }
+  }
 
   async function fetchData(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -231,7 +255,7 @@ export default function GoogleAudiencesPage() {
             className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('lm.google.common.refresh')}
           </button>
         </div>
       </div>
@@ -242,13 +266,13 @@ export default function GoogleAudiencesPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('lm.google.common.notConnected')}</div>
               <p className="mt-1 text-sm text-slate-400">{data.error}</p>
               <Link
                 href="/freehold-intelligence/integrations/google"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 transition hover:text-[#4285F4]"
               >
-                Set up Google Ads integration <ArrowUpRight className="h-3 w-3" />
+                {t('lm.google.common.setup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -267,7 +291,7 @@ export default function GoogleAudiencesPage() {
 
       {/* ── Loading ── */}
       {loading && (
-        <div className="mt-12 text-center text-[14px] text-slate-500">Loading audiences…</div>
+        <div className="mt-12 text-center text-[14px] text-slate-500">{t('lm.google.audiences.title')}…</div>
       )}
 
       {!loading && !isConfigErr && (
@@ -275,9 +299,9 @@ export default function GoogleAudiencesPage() {
           {/* ── Stats row ── */}
           <div className="mt-8 grid grid-cols-3 gap-3">
             {[
-              { label: 'Total audiences',    value: audiences.length,            color: 'text-white'           },
-              { label: 'Customer Match lists', value: customerMatchCount,         color: 'text-gold'       },
-              { label: 'Total reach',          value: totalReach > 0 ? fmtReach(totalReach) : '—',
+              { label: t('lm.google.audiences.title'),       value: audiences.length,            color: 'text-white'           },
+              { label: t('lm.google.audiences.type.customerMatch'), value: customerMatchCount,   color: 'text-gold'       },
+              { label: t('lm.google.audiences.col.size'),    value: totalReach > 0 ? fmtReach(totalReach) : '—',
                                                                                   color: 'text-white'           },
             ].map((s) => (
               <div key={s.label} className="rounded-[16px] border border-line bg-surface px-4 py-3">
@@ -315,6 +339,24 @@ export default function GoogleAudiencesPage() {
           </div>
 
           {/* ── Audience grid ── */}
+          {/* ── Create audience ── */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addAudience() }}
+              placeholder={t('lm.google.audiences.newPlaceholder')}
+              className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
+            />
+            <button
+              onClick={addAudience}
+              disabled={adding || !newName.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t('lm.google.audiences.addBtn')}
+            </button>
+          </div>
+
           {filtered.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {filtered.map((audience) => (

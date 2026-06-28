@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
 const UAE_INTERESTS = [
@@ -68,11 +69,16 @@ const CTA_OPTIONS: { value: MetaCta; label: string }[] = [
   { value: 'APPLY_NOW',    label: 'Apply Now' },
 ]
 
-const STEPS = [
-  { n: 1, label: 'Campaign', icon: Megaphone },
-  { n: 2, label: 'Targeting', icon: Users },
-  { n: 3, label: 'Creative', icon: FileText },
-  { n: 4, label: 'Launch', icon: Rocket },
+const STEPS: { n: number; labelKey: string; icon: typeof Megaphone }[] = [
+  { n: 1, labelKey: 'lm.newCampaign.step.campaign',  icon: Megaphone },
+  { n: 2, labelKey: 'lm.newCampaign.step.targeting', icon: Users },
+  { n: 3, labelKey: 'lm.newCampaign.step.creative',  icon: FileText },
+  { n: 4, labelKey: 'lm.newCampaign.step.launch',    icon: Rocket },
+]
+
+const LAUNCH_MODE_OPTIONS: { value: 'PAUSED' | 'ACTIVE'; labelKey: string; descKey: string }[] = [
+  { value: 'PAUSED', labelKey: 'lm.newCampaign.launchMode.paused.label', descKey: 'lm.newCampaign.launchMode.paused.desc' },
+  { value: 'ACTIVE', labelKey: 'lm.newCampaign.launchMode.active.label', descKey: 'lm.newCampaign.launchMode.active.desc' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,6 +97,7 @@ function Label({ children }: { children: React.ReactNode }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function NewCampaignPage() {
+  const t = useT()
   const router = useRouter()
   const [step,    setStep]    = useState<WizardStep>(1)
   const [loading, setLoading] = useState(false)
@@ -204,24 +211,24 @@ export default function NewCampaignPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 text-center sm:px-6">
         <CheckCircle2 className="mx-auto h-14 w-14 text-gold" />
-        <h1 className="mt-6 text-[32px] font-semibold text-white">Campaign created</h1>
+        <h1 className="mt-6 text-[32px] font-semibold text-white">{t('lm.newCampaign.success.title')}</h1>
         <p className="mt-3 text-[16px] text-slate-400">
           {launched.status === 'ACTIVE'
-            ? 'Your campaign is now live on Meta and Instagram.'
-            : 'Your campaign was created in paused state. Activate it from the campaign dashboard.'}
+            ? t('lm.newCampaign.success.liveMsg')
+            : t('lm.newCampaign.success.pausedMsg')}
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/campaigns/${launched.campaignId}`}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
-            Open campaign dashboard
+            {t('lm.newCampaign.success.openDashboard')}
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns"
             className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-surface-2"
           >
-            All campaigns
+            {t('lm.newCampaign.success.allCampaigns')}
           </Link>
         </div>
       </div>
@@ -230,19 +237,28 @@ export default function NewCampaignPage() {
 
   const selectedListing = leadMachineListings.find((l) => l.id === form.listingId)
 
+  const summaryTiles = [
+    { labelKey: 'lm.newCampaign.s4.tileLabel.listing',   value: selectedListing?.projectName ?? form.listingId },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.objective',  value: OBJECTIVES.find((o) => o.value === form.objective)?.label ?? form.objective },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.budget',     value: `AED ${form.dailyBudgetAED.toLocaleString()}` },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.audience',   value: t('lm.newCampaign.s4.audienceValue', { min: String(form.ageMin), max: String(form.ageMax) }) },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.platforms',  value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.cta',        value: CTA_OPTIONS.find((c) => c.value === form.cta)?.label ?? form.cta },
+  ]
+
   return (
     <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> Campaigns
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.newCampaign.back')}
       </Link>
 
       <div className="mt-7">
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Megaphone className="h-3.5 w-3.5" /> New Meta Campaign
+          <Megaphone className="h-3.5 w-3.5" /> {t('lm.newCampaign.eyebrow')}
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white sm:text-[40px]">
-          Launch a campaign
+          {t('lm.newCampaign.title')}
         </h1>
       </div>
 
@@ -261,7 +277,7 @@ export default function NewCampaignPage() {
               }`}>
                 {done ? <CheckCircle2 className="h-4 w-4" /> : s.n}
               </div>
-              <span className={`ml-2 hidden text-sm font-medium sm:block ${active ? 'text-white' : done ? 'text-gold/70' : 'text-slate-600'}`}>{s.label}</span>
+              <span className={`ml-2 hidden text-sm font-medium sm:block ${active ? 'text-white' : done ? 'text-gold/70' : 'text-slate-600'}`}>{t(s.labelKey)}</span>
               {i < STEPS.length - 1 && (
                 <div className={`mx-3 h-px flex-1 ${done ? 'bg-gold/30' : 'bg-surface-2'}`} />
               )}
@@ -275,10 +291,10 @@ export default function NewCampaignPage() {
         {/* ── Step 1: Campaign ──────────────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-6">
-            <h2 className="text-[18px] font-semibold text-white">Choose listing & objective</h2>
+            <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
 
             <div>
-              <Label>Listing</Label>
+              <Label>{t('lm.newCampaign.s1.label.listing')}</Label>
               <select
                 className={inputCls()}
                 value={form.listingId}
@@ -291,7 +307,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Campaign objective</Label>
+              <Label>{t('lm.newCampaign.s1.label.objective')}</Label>
               <div className="space-y-2">
                 {OBJECTIVES.map((obj) => (
                   <button
@@ -317,7 +333,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Campaign name</Label>
+              <Label>{t('lm.newCampaign.s1.label.name')}</Label>
               <input
                 className={inputCls()}
                 value={form.campaignName}
@@ -331,10 +347,10 @@ export default function NewCampaignPage() {
         {/* ── Step 2: Targeting ─────────────────────────────────────────── */}
         {step === 2 && (
           <div className="space-y-6">
-            <h2 className="text-[18px] font-semibold text-white">Budget & targeting</h2>
+            <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
 
             <div>
-              <Label>Daily budget (AED) — minimum AED 50</Label>
+              <Label>{t('lm.newCampaign.s2.label.budget')}</Label>
               <input
                 type="number"
                 min="50"
@@ -342,11 +358,13 @@ export default function NewCampaignPage() {
                 value={form.dailyBudgetAED}
                 onChange={(e) => update('dailyBudgetAED', Math.max(50, parseInt(e.target.value) || 50))}
               />
-              <p className="mt-1 text-sm text-slate-500">≈ AED {(form.dailyBudgetAED * 30).toLocaleString()} / month at this rate</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('lm.newCampaign.s2.monthlyNote', { n: (form.dailyBudgetAED * 30).toLocaleString() })}
+              </p>
             </div>
 
             <div>
-              <Label>Target cities (UAE)</Label>
+              <Label>{t('lm.newCampaign.s2.label.cities')}</Label>
               <div className="flex flex-wrap gap-2">
                 {UAE_CITIES.map((city) => {
                   const selected = form.cityKeys.includes(city.key)
@@ -376,7 +394,7 @@ export default function NewCampaignPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Min age</Label>
+                <Label>{t('lm.newCampaign.s2.label.ageMin')}</Label>
                 <input
                   type="number" min="18" max="65"
                   className={inputCls()}
@@ -385,7 +403,7 @@ export default function NewCampaignPage() {
                 />
               </div>
               <div>
-                <Label>Max age</Label>
+                <Label>{t('lm.newCampaign.s2.label.ageMax')}</Label>
                 <input
                   type="number" min="18" max="65"
                   className={inputCls()}
@@ -396,7 +414,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Interests</Label>
+              <Label>{t('lm.newCampaign.s2.label.interests')}</Label>
               <div className="flex flex-wrap gap-2">
                 {UAE_INTERESTS.map((int) => {
                   const selected = form.interestIds.includes(int.id)
@@ -425,7 +443,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Publisher platforms</Label>
+              <Label>{t('lm.newCampaign.s2.label.platforms')}</Label>
               <div className="flex flex-wrap gap-2">
                 {[
                   { value: 'facebook',  label: 'Facebook' },
@@ -462,10 +480,10 @@ export default function NewCampaignPage() {
         {/* ── Step 3: Creative ──────────────────────────────────────────── */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="text-[18px] font-semibold text-white">Ad creative</h2>
+            <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s3.heading')}</h2>
 
             <div>
-              <Label>Primary text (shown above the ad)</Label>
+              <Label>{t('lm.newCampaign.s3.label.primaryText')}</Label>
               <textarea
                 rows={4}
                 className={`${inputCls(!form.primaryText)} resize-none`}
@@ -473,11 +491,13 @@ export default function NewCampaignPage() {
                 onChange={(e) => update('primaryText', e.target.value)}
                 placeholder="The investor pitch — 2–3 sentences that lead with the strongest signal."
               />
-              <p className="mt-1 text-sm text-slate-500">{form.primaryText.length}/500 · Aim for under 125 characters for mobile preview.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {t('lm.newCampaign.s3.charCount', { n: String(form.primaryText.length) })}
+              </p>
             </div>
 
             <div>
-              <Label>Headline</Label>
+              <Label>{t('lm.newCampaign.s3.label.headline')}</Label>
               <input
                 className={inputCls(!form.headline)}
                 value={form.headline}
@@ -487,7 +507,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Description (optional — shown under headline on some placements)</Label>
+              <Label>{t('lm.newCampaign.s3.label.description')}</Label>
               <input
                 className={inputCls()}
                 value={form.description}
@@ -497,7 +517,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Landing page URL</Label>
+              <Label>{t('lm.newCampaign.s3.label.landingUrl')}</Label>
               <input
                 className={inputCls(!form.landingUrl)}
                 value={form.landingUrl}
@@ -507,7 +527,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Image URL (optional — leave blank to let Meta use link preview)</Label>
+              <Label>{t('lm.newCampaign.s3.label.imageUrl')}</Label>
               <input
                 className={inputCls()}
                 value={form.imageUrl}
@@ -517,7 +537,7 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>Call to action</Label>
+              <Label>{t('lm.newCampaign.s3.label.cta')}</Label>
               <select
                 className={inputCls()}
                 value={form.cta}
@@ -534,20 +554,13 @@ export default function NewCampaignPage() {
         {/* ── Step 4: Review & Launch ───────────────────────────────────── */}
         {step === 4 && (
           <div className="space-y-6">
-            <h2 className="text-[18px] font-semibold text-white">Review & launch</h2>
+            <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s4.heading')}</h2>
 
             {/* Summary tiles */}
             <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { label: 'Listing',     value: selectedListing?.projectName ?? form.listingId },
-                { label: 'Objective',   value: OBJECTIVES.find((o) => o.value === form.objective)?.label ?? form.objective },
-                { label: 'Daily budget', value: `AED ${form.dailyBudgetAED.toLocaleString()}` },
-                { label: 'Audience',    value: `Ages ${form.ageMin}–${form.ageMax} · UAE` },
-                { label: 'Platforms',   value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
-                { label: 'CTA',         value: CTA_OPTIONS.find((c) => c.value === form.cta)?.label ?? form.cta },
-              ].map((item) => (
-                <div key={item.label} className="rounded-[14px] border border-line bg-surface-2 px-4 py-3">
-                  <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{item.label}</div>
+              {summaryTiles.map((item) => (
+                <div key={item.labelKey} className="rounded-[14px] border border-line bg-surface-2 px-4 py-3">
+                  <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t(item.labelKey)}</div>
                   <div className="mt-1 text-[14px] font-semibold text-white">{item.value}</div>
                 </div>
               ))}
@@ -555,7 +568,7 @@ export default function NewCampaignPage() {
 
             {/* Creative preview */}
             <div className="rounded-[16px] border border-line bg-surface-2 p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">Creative preview</div>
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">{t('lm.newCampaign.s4.creativePreview')}</div>
               <div className="text-xs leading-relaxed text-slate-400 mb-2">{form.primaryText}</div>
               <div className="text-[14px] font-semibold text-white">{form.headline}</div>
               <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
@@ -566,16 +579,13 @@ export default function NewCampaignPage() {
 
             {/* Launch mode toggle */}
             <div>
-              <Label>Launch mode</Label>
+              <Label>{t('lm.newCampaign.s4.label.launchMode')}</Label>
               <div className="flex gap-3">
-                {[
-                  { value: 'PAUSED', label: 'Create paused', desc: 'Review in Meta Business Manager before going live.' },
-                  { value: 'ACTIVE', label: 'Launch now', desc: 'Campaign goes live immediately on Meta and Instagram.' },
-                ].map((opt) => (
+                {LAUNCH_MODE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => update('launchStatus', opt.value as 'ACTIVE' | 'PAUSED')}
+                    onClick={() => update('launchStatus', opt.value)}
                     className={`flex-1 rounded-[14px] border p-4 text-left transition ${
                       form.launchStatus === opt.value
                         ? opt.value === 'ACTIVE'
@@ -584,8 +594,8 @@ export default function NewCampaignPage() {
                         : 'border-line hover:border-white/10'
                     }`}
                   >
-                    <div className="text-sm font-semibold text-white">{opt.label}</div>
-                    <p className="mt-1 text-sm text-slate-500">{opt.desc}</p>
+                    <div className="text-sm font-semibold text-white">{t(opt.labelKey)}</div>
+                    <p className="mt-1 text-sm text-slate-500">{t(opt.descKey)}</p>
                   </button>
                 ))}
               </div>
@@ -609,7 +619,7 @@ export default function NewCampaignPage() {
             onClick={() => setStep((s) => (s - 1) as WizardStep)}
             className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:bg-surface-2"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back
+            <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.newCampaign.nav.back')}
           </button>
         ) : (
           <div />
@@ -626,7 +636,7 @@ export default function NewCampaignPage() {
             }
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Continue <ArrowRight className="h-3.5 w-3.5" />
+            {t('lm.newCampaign.nav.continue')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
         ) : (
           <button
@@ -636,8 +646,8 @@ export default function NewCampaignPage() {
             className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60"
           >
             {loading
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Launching…</>
-              : <><Rocket className="h-4 w-4" /> {form.launchStatus === 'ACTIVE' ? 'Launch now' : 'Create paused'}</>
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('lm.newCampaign.nav.launching')}</>
+              : <><Rocket className="h-4 w-4" /> {form.launchStatus === 'ACTIVE' ? t('lm.newCampaign.launchMode.active.label') : t('lm.newCampaign.launchMode.paused.label')}</>
             }
           </button>
         )}

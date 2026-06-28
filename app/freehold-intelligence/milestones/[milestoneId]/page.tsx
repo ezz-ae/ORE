@@ -5,8 +5,12 @@ import { getMilestone, getMilestones, getReviewItems } from '@/src/features/free
 import { CommentsPanel } from '@/src/features/freehold-intelligence/components/comments-panel'
 
 export async function generateStaticParams() {
-  const milestones = await getMilestones()
-  return milestones.map((m) => ({ milestoneId: m.code }))
+  try {
+    const milestones = await getMilestones()
+    return milestones.map((m) => ({ milestoneId: m.code }))
+  } catch {
+    return []
+  }
 }
 
 function healthTone(health?: string | null) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { listCampaigns } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
-import { demoCampaigns } from '@/lib/google/demo-data'
+import { listLocalCampaigns } from '@/lib/google/local-store'
 
 export async function GET() {
   try {
@@ -9,7 +9,9 @@ export async function GET() {
     return NextResponse.json({ campaigns })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      return NextResponse.json({ campaigns: demoCampaigns, demo: true })
+      // Not connected → serve the local store (seeded from demo, includes any
+      // campaigns created in-app) so the flow stays fully interactive.
+      return NextResponse.json({ campaigns: await listLocalCampaigns(), demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message, details: e.details }, { status: e.status })

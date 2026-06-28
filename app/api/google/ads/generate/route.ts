@@ -185,14 +185,58 @@ function buildRsaVariants(p: GenerateRsaPayload): GeneratedRsaVariant[] {
   return base[p.angle] ?? []
 }
 
+// Live Gemini RSA generation. Returns null on no-key / error / bad output so the
+// caller falls back to the deterministic template (button always works).
+async function geminiRsa(p: GenerateRsaPayload): Promise<GeneratedRsaVariant[] | null> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return null
+  const price = fmtPrice(p.startingPrice)
+  const prompt = `You are a senior Google Ads copywriter for Dubai freehold real estate.
+Write Responsive Search Ad copy for: "${p.listingName}" by ${p.developer || 'the developer'} in ${p.area || 'Dubai'}.
+Angle: ${p.angle}. Tone: ${p.tone}.${price ? ` Starting price ${price}.` : ''}${p.paymentPlan ? ` Payment plan: ${p.paymentPlan}.` : ''}
+Produce exactly 2 distinct variants. Each variant: 12 headlines (each MAX 30 characters) and 3 descriptions (each MAX 90 characters).
+Return ONLY JSON, no markdown:
+{"variants":[{"note":"short label","headlines":["..."],"descriptions":["..."]}]}`
+  try {
+    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 2048, responseMimeType: 'application/json' },
+        }),
+      },
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ''
+    const parsed = JSON.parse(raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()) as { variants?: Array<{ note?: string; headlines?: string[]; descriptions?: string[] }> }
+    if (!Array.isArray(parsed.variants) || parsed.variants.length === 0) return null
+    const id = () => Math.random().toString(36).slice(2, 9)
+    const out = parsed.variants.slice(0, 3).map((v) => ({
+      id: id(),
+      note: (v.note || 'AI variant').slice(0, 60),
+      headlines: (v.headlines || []).filter(Boolean).slice(0, 15).map((h) => String(h).slice(0, 30)),
+      descriptions: (v.descriptions || []).filter(Boolean).slice(0, 4).map((d) => String(d).slice(0, 90)),
+    })).filter((v) => v.headlines.length >= 3 && v.descriptions.length >= 1)
+    return out.length ? out : null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json() as GenerateRsaPayload
     if (!body.listingName || !body.angle || !body.tone) {
       return NextResponse.json({ error: 'listingName, angle, and tone are required' }, { status: 400 })
     }
-    const variants = buildRsaVariants(body)
-    return NextResponse.json({ variants })
+    const ai = await geminiRsa(body)
+    const variants = ai ?? buildRsaVariants(body)
+    return NextResponse.json({ variants, source: ai ? 'gemini' : 'template' })
   } catch {
     return NextResponse.json({ error: 'Generation failed' }, { status: 500 })
   }

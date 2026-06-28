@@ -7,6 +7,7 @@ import {
   ArrowUpRight, Zap, BarChart3, ChevronRight,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { useT } from '@/lib/i18n/provider'
 
 const AVG = financeSummary.avgCpl30d
 
@@ -103,6 +104,7 @@ function cplStyle(cpl: number) {
 }
 
 export default function CampaignOptimizePage() {
+  const t = useT()
   const [applied, setApplied] = useState<Set<string>>(new Set())
 
   function apply(id: string) {
@@ -125,13 +127,13 @@ export default function CampaignOptimizePage() {
       {/* Header */}
       <section>
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Sparkles className="h-3.5 w-3.5" /> AI Budget Optimizer
+          <Sparkles className="h-3.5 w-3.5" /> {t('lm.optimize.eyebrow')}
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-          Budget optimizer
+          {t('lm.optimize.title')}
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-[1.65] text-slate-400">
-          AI-ranked recommendations based on CPL performance, budget utilization, and lead volume.
+          {t('lm.optimize.subtitle')}{' '}
           Current target: <span className="text-white">AED {AVG} avg CPL</span> across both platforms.
         </p>
       </section>
@@ -153,7 +155,7 @@ export default function CampaignOptimizePage() {
                 </div>
                 {underSpent && (
                   <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-300">
-                    Under-utilised
+                    {t('lm.optimize.underUtilised')}
                   </span>
                 )}
               </div>
@@ -167,7 +169,7 @@ export default function CampaignOptimizePage() {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <div className="mt-1.5 text-xs text-slate-500">{pct}% utilised this month</div>
+              <div className="mt-1.5 text-xs text-slate-500">{t('lm.optimize.utilised', { n: String(pct) })}</div>
             </div>
           )
         })}
@@ -177,13 +179,13 @@ export default function CampaignOptimizePage() {
       <section className="mt-10">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-            <BarChart3 className="h-3 w-3" /> Campaign Efficiency Rank
+            <BarChart3 className="h-3 w-3" /> {t('lm.optimize.efficiencyRank')}
           </div>
           <Link
             href="/freehold-intelligence/lead-machine/campaigns/attribution"
             className="flex items-center gap-1 text-xs text-gold/50 transition hover:text-gold"
           >
-            Full attribution <ChevronRight className="h-3 w-3" />
+            {t('lm.optimize.fullAttribution')} <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
         <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
@@ -219,7 +221,7 @@ export default function CampaignOptimizePage() {
       {/* AI Recommendations */}
       <section className="mt-10">
         <div className="mb-5 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-          <Sparkles className="h-3 w-3 text-gold/60" /> AI Recommendations
+          <Sparkles className="h-3 w-3 text-gold/60" /> {t('lm.optimize.aiRecommendations')}
         </div>
         <div className="space-y-4">
           {RECOMMENDATIONS.map((r) => {
@@ -237,7 +239,7 @@ export default function CampaignOptimizePage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${style.cls}`}>
-                        {r.type}
+                        {t(`lm.optimize.type.${r.type}`)}
                       </span>
                       <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${plat.cls}`}>
                         {plat.label}
@@ -246,7 +248,7 @@ export default function CampaignOptimizePage() {
                     {isApplied ? (
                       <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        Applied
+                        {t('lm.optimize.applied')}
                       </div>
                     ) : null}
                   </div>
@@ -256,17 +258,17 @@ export default function CampaignOptimizePage() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <div className="rounded-[12px] border border-line bg-surface-2 px-3 py-2">
-                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Action</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{t('lm.optimize.field.action')}</div>
                       <div className="mt-0.5 text-sm font-medium text-slate-100">{r.action}</div>
                     </div>
                     <div className="rounded-[12px] border border-line bg-surface-2 px-3 py-2">
-                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Est. leads</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{t('lm.optimize.field.estimatedLeads')}</div>
                       <div className={`mt-0.5 text-sm font-semibold ${r.projectedLeadDelta > 0 ? 'text-emerald-400' : r.projectedLeadDelta < 0 ? 'text-red-400' : 'text-slate-500'}`}>
                         {r.projectedLeadDelta > 0 ? `+${r.projectedLeadDelta}` : r.projectedLeadDelta === 0 ? 'No change' : r.projectedLeadDelta}/mo
                       </div>
                     </div>
                     <div className="rounded-[12px] border border-line bg-surface-2 px-3 py-2">
-                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">Spend Δ</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{t('lm.optimize.field.spendDelta')}</div>
                       <div className={`mt-0.5 text-sm font-semibold ${r.projectedSpendDelta < 0 ? 'text-emerald-400' : 'text-slate-100'}`}>
                         {r.projectedSpendDelta < 0
                           ? `–AED ${Math.abs(r.projectedSpendDelta).toLocaleString()}`
@@ -281,7 +283,7 @@ export default function CampaignOptimizePage() {
                       onClick={() => apply(r.id)}
                       className="mt-4 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/15"
                     >
-                      <Zap className="h-3.5 w-3.5" /> Apply recommendation
+                      <Zap className="h-3.5 w-3.5" /> {t('lm.optimize.applyReco')}
                     </button>
                   )}
                 </div>
@@ -296,17 +298,17 @@ export default function CampaignOptimizePage() {
         <section className="mt-8">
           <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-400/[0.04] p-6">
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-emerald-400/80">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Projected impact — {appliedRecos.length} recommendation{appliedRecos.length !== 1 ? 's' : ''} applied
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t('lm.optimize.projectedImpact', { n: String(appliedRecos.length), plural: appliedRecos.length !== 1 ? 's' : '' })}
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'New leads/mo',    value: projNewLeads.toLocaleString(),              good: projLeadDelta > 0 },
-                { label: 'Spend/mo',        value: `AED ${projNewSpend.toLocaleString()}`,     good: projSpendDelta <= 0 },
-                { label: 'Projected CPL',   value: `AED ${projNewCpl.toFixed(0)}`,             good: projNewCpl < AVG },
-                { label: 'CPL saving',      value: `AED ${Math.max(0, AVG - projNewCpl).toFixed(0)}`, good: true },
+                { labelKey: 'lm.optimize.projected.leads', value: projNewLeads.toLocaleString(),              good: projLeadDelta > 0 },
+                { labelKey: 'lm.optimize.projected.spend', value: `AED ${projNewSpend.toLocaleString()}`,     good: projSpendDelta <= 0 },
+                { labelKey: 'lm.optimize.projected.cpl',   value: `AED ${projNewCpl.toFixed(0)}`,             good: projNewCpl < AVG },
+                { labelKey: 'lm.optimize.projected.saving',value: `AED ${Math.max(0, AVG - projNewCpl).toFixed(0)}`, good: true },
               ].map((m) => (
-                <div key={m.label} className="rounded-[14px] border border-line bg-surface-2 px-3 py-3">
-                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{m.label}</div>
+                <div key={m.labelKey} className="rounded-[14px] border border-line bg-surface-2 px-3 py-3">
+                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em]">{t(m.labelKey)}</div>
                   <div className={`mt-1.5 text-[20px] font-semibold tabular-nums leading-none ${m.good ? 'text-emerald-400' : 'text-slate-100'}`}>
                     {m.value}
                   </div>
@@ -314,7 +316,7 @@ export default function CampaignOptimizePage() {
               ))}
             </div>
             <div className="mt-4 text-xs text-slate-500">
-              Estimates based on current CPL trends. Actual results may vary within ±15%.
+              {t('lm.optimize.cplNote')}
             </div>
           </div>
         </section>
@@ -326,13 +328,13 @@ export default function CampaignOptimizePage() {
           href="/freehold-intelligence/lead-machine/campaigns/attribution"
           className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-400 transition hover:border-gold/30 hover:text-white"
         >
-          Attribution report <ArrowUpRight className="h-3.5 w-3.5" />
+          {t('lm.optimize.attributionReport')} <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
         <Link
           href="/freehold-intelligence/lead-machine/campaigns/launch"
           className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/15"
         >
-          <Zap className="h-3.5 w-3.5" /> Launch new campaign
+          <Zap className="h-3.5 w-3.5" /> {t('lm.optimize.launchNew')}
         </Link>
       </div>
 
