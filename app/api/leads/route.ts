@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
+import { handleNewLead } from "@/lib/automation/engine"
 import {
   getLeadershipLeadRecipients,
   sendInternalLeadAlertEmail,
@@ -145,6 +146,12 @@ export async function POST(req: NextRequest) {
         toText(req.headers.get("x-vercel-ip-city")),
       ],
     )
+
+    // Run the automation engine for brand-new leads: auto-distribution + any
+    // matching lead.created rules. Never throws — intake must not be blocked.
+    if (!isRepeatInquiry) {
+      await handleNewLead(leadId)
+    }
 
     const project = projectSlug ? await getProjectBySlug(projectSlug) : null
     const projects = project
