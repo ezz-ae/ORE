@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, Search, Calculator } from 'lucide-react'
+import { Loader2, Search, Calculator, Building2, X } from 'lucide-react'
 
 export interface DealFormValues {
   leadId?: string | null
@@ -18,6 +18,8 @@ export interface DealFormValues {
   referralCommissionAed: number
   cashbackPct: number
   cashbackAed: number
+  coAgentName: string
+  agentSharePct: number
   notes: string
 }
 
@@ -36,7 +38,17 @@ const EMPTY: DealFormValues = {
   referralCommissionAed: 0,
   cashbackPct: 0,
   cashbackAed: 0,
+  coAgentName: '',
+  agentSharePct: 100,
   notes: '',
+}
+
+interface InventoryOption {
+  slug: string
+  name: string
+  area: string
+  developer: string
+  startingPriceAED: number | null
 }
 
 interface LeadOption {
@@ -74,6 +86,13 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
   const [showResults, setShowResults] = useState(false)
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState('')
+
+  // Inventory project picker
+  const [showInventory, setShowInventory] = useState(false)
+  const [inventory, setInventory] = useState<InventoryOption[]>([])
+  const [invLoading, setInvLoading] = useState(false)
+  const [invQuery, setInvQuery] = useState('')
+  const [shared, setShared] = useState(Boolean(initial?.coAgentName))
 
   const set = <K extends keyof DealFormValues>(key: K, value: DealFormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: value }))
@@ -144,6 +163,49 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
     setLeadResults([])
   }
 
+  // ── Inventory project picker ────────────────────────────────────────────────
+  async function openInventory() {
+    setShowInventory(true)
+    if (inventory.length || invLoading) return
+    setInvLoading(true)
+    try {
+      const res = await fetch('/api/freehold/inventory', { cache: 'no-store' })
+      const data = await res.json()
+      const props: InventoryOption[] = (data.properties || []).map((p: Record<string, unknown>) => ({
+        slug: String(p.slug || ''),
+        name: String(p.name || ''),
+        area: String(p.area || ''),
+        developer: String(p.developer || ''),
+        startingPriceAED: typeof p.startingPriceAED === 'number' ? p.startingPriceAED : null,
+      }))
+      setInventory(props)
+    } catch {
+      setInventory([])
+    } finally {
+      setInvLoading(false)
+    }
+  }
+
+  function applyInventory(p: InventoryOption) {
+    setV((prev) => ({
+      ...prev,
+      developerName: p.developer || prev.developerName,
+      projectName: p.name || prev.projectName,
+      projectSlug: p.slug,
+      propertyValueAed: p.startingPriceAED || prev.propertyValueAed,
+    }))
+    setShowInventory(false)
+    setInvQuery('')
+  }
+
+  const invFiltered = useMemo(() => {
+    const s = invQuery.trim().toLowerCase()
+    const list = s
+      ? inventory.filter((p) => [p.name, p.area, p.developer].some((x) => x.toLowerCase().includes(s)))
+      : inventory
+    return list.slice(0, 40)
+  }, [inventory, invQuery])
+
   async function handleSubmit() {
     setError('')
     if (!v.leadName.trim()) {
@@ -209,20 +271,69 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div>
-          <label className={labelCls}>Email</label>
-          <input className={inputCls} value={v.clientEmail} onChange={(e) => set('clientEmail', e.target.value)} placeholder="client@email.com" />
-        </div>
-        <div>
-          <label className={labelCls}>Developer name</label>
-          <input className={inputCls} value={v.developerName} onChange={(e) => set('developerName', e.target.value)} placeholder="e.g. Emaar" />
-        </div>
-        <div>
-          <label className={labelCls}>Project name</label>
-          <input className={inputCls} value={v.projectName} onChange={(e) => set('projectName', e.target.value)} placeholder="e.g. Dubai Hills Estate" />
-        </div>
+      <div>
+        <label className={labelCls}>Email</label>
+        <input className={inputCls} value={v.clientEmail} onChange={(e) => set('clientEmail', e.target.value)} placeholder="client@email.com" />
       </div>
+
+      {/* Property: choose from inventory or enter manually */}
+      <div className="rounded-xl border border-line-strong bg-surface-2/50 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <Building2 className="h-3.5 w-3.5 text-gold" /> Property
+          </div>
+          <button
+            type="button"
+            onClick={openInventory}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1 text-xs font-medium text-gold transition hover:bg-gold/15"
+          >
+            <Search className="h-3 w-3" /> Choose from inventory
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>Developer name</label>
+            <input className={inputCls} value={v.developerName} onChange={(e) => set('developerName', e.target.value)} placeholder="e.g. Emaar" />
+          </div>
+          <div>
+            <label className={labelCls}>Project name</label>
+            <input className={inputCls} value={v.projectName} onChange={(e) => set('projectName', e.target.value)} placeholder="e.g. Dubai Hills Estate" />
+          </div>
+        </div>
+        {v.projectSlug && <p className="mt-2 text-xs text-emerald-400">Linked to inventory project · {v.projectSlug}</p>}
+      </div>
+
+      {showInventory && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm" onClick={() => setShowInventory(false)}>
+          <div className="my-10 w-full max-w-lg rounded-2xl border border-line-strong bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+              <h3 className="text-sm font-semibold text-white">Choose project from inventory</h3>
+              <button onClick={() => setShowInventory(false)} className="rounded p-1 text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="p-4">
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input autoFocus className={`${inputCls} pl-9`} value={invQuery} onChange={(e) => setInvQuery(e.target.value)} placeholder="Search project, area, developer…" />
+              </div>
+              <div className="max-h-[50vh] space-y-1 overflow-y-auto">
+                {invLoading ? (
+                  <div className="flex items-center justify-center py-8 text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
+                ) : invFiltered.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-slate-500">No projects found.</div>
+                ) : invFiltered.map((p) => (
+                  <button key={p.slug} type="button" onClick={() => applyInventory(p)} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-surface-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm text-white">{p.name}</div>
+                      <div className="truncate text-xs text-slate-500">{p.area} · {p.developer}</div>
+                    </div>
+                    {p.startingPriceAED ? <span className="shrink-0 text-xs text-gold/70">{fmtAED(p.startingPriceAED)}</span> : null}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Commercials */}
       <div className="rounded-xl border border-line-strong bg-surface-2/50 p-4">
@@ -278,6 +389,40 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Shared deal (2 agents) */}
+      <div className="rounded-xl border border-line-strong bg-surface-2/50 p-4">
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            className="accent-gold"
+            checked={shared}
+            onChange={(e) => {
+              setShared(e.target.checked)
+              if (!e.target.checked) { set('coAgentName', ''); set('agentSharePct', 100) }
+              else if (v.agentSharePct === 100) set('agentSharePct', 50)
+            }}
+          />
+          <span className="text-sm font-medium text-white">Shared deal (split between 2 agents)</span>
+        </label>
+        {shared && (
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Co-agent name</label>
+              <input className={inputCls} value={v.coAgentName} onChange={(e) => set('coAgentName', e.target.value)} placeholder="Second agent's name" />
+            </div>
+            <div>
+              <label className={labelCls}>Your share % <span className="text-slate-600">(co-agent gets the rest)</span></label>
+              <input type="number" min={1} max={99} className={inputCls} value={v.agentSharePct || ''} onChange={(e) => set('agentSharePct', Number(e.target.value) || 0)} placeholder="e.g. 50" />
+              {shared && v.coAgentName.trim() && (
+                <p className="mt-1 text-xs text-slate-500">
+                  You: {fmtAED((breakdown.net * Math.min(100, Math.max(0, v.agentSharePct))) / 100)} · {v.coAgentName}: {fmtAED((breakdown.net * (100 - Math.min(100, Math.max(0, v.agentSharePct)))) / 100)}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div>

@@ -163,7 +163,10 @@ export function DealsClient() {
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-100">{deal.leadName}</td>
                     <td className="max-w-[180px] truncate px-4 py-3 text-slate-400">{deal.projectName || '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-400">{deal.developerName || '—'}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-400">{deal.agentName || '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-400">
+                      {deal.agentName || '—'}
+                      {deal.coAgentName && <span className="text-slate-500"> + {deal.coAgentName} ({deal.agentSharePct}/{100 - deal.agentSharePct})</span>}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3 font-semibold tabular-nums text-white">{fmtAED(deal.propertyValueAed)}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums text-gold">{fmtAED(deal.agencyCommissionAed)}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-300">{fmtAED(deal.commissionReceivedAed)}</td>
@@ -249,6 +252,7 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
           </div>
           <p className="truncate text-xs text-slate-500">
             {deal.projectName || '—'}{deal.developerName ? ` · ${deal.developerName}` : ''} · {deal.agentName}
+            {deal.coAgentName ? ` + ${deal.coAgentName} (${deal.agentSharePct}/${100 - deal.agentSharePct})` : ''}
           </p>
         </div>
         <div className="shrink-0 text-right">

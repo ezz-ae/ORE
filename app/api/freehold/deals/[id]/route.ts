@@ -125,6 +125,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           referralCommissionAed: numOrUndef(body.referralCommissionAed),
           cashbackPct: numOrUndef(body.cashbackPct),
           cashbackAed: numOrUndef(body.cashbackAed),
+          coAgentName: strOrUndef(body.coAgentName),
+          agentSharePct: numOrUndef(body.agentSharePct),
           notes: strOrUndef(body.notes),
         })
         return NextResponse.json({ deal })

@@ -11,6 +11,7 @@ import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { query } from '@/lib/db'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
+import { getDealByLeadId } from '@/lib/deals'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page
 async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
@@ -77,6 +78,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Landing-page attribution: which campaign page produced this lead (live data).
   const landingSlug = lead.landingId && lead.landingId !== 'direct_whatsapp' ? lead.landingId : ''
   const landingAttribution: LandingAttribution | null = landingSlug ? await getLandingAttribution(landingSlug) : null
+
+  // A lead can be converted to a deal only once.
+  const existingDeal = await getDealByLeadId(lead.id)
 
   const leadActivity = crmActivityLog
     .filter((e) => e.leadId === id)
@@ -350,6 +354,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               leadId={lead.id}
               leadName={lead.name}
               currentStage={lead.stage}
+              existingDeal={existingDeal ? { id: existingDeal.id, status: existingDeal.status } : null}
               lead={{
                 phone: lead.phone,
                 email: lead.email,

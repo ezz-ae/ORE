@@ -56,6 +56,8 @@ export interface Deal {
   developerName: string
   agentId: string
   agentName: string
+  coAgentName: string
+  agentSharePct: number
   propertyValueAed: number
   agencyCommissionPct: number
   agencyCommissionAed: number
@@ -101,6 +103,8 @@ export interface DealInput {
   referralCommissionAed?: number
   cashbackPct?: number
   cashbackAed?: number
+  coAgentName?: string
+  agentSharePct?: number
   notes?: string
 }
 
@@ -197,6 +201,8 @@ const ensureDealsSchema = async () => {
       developer_name text,
       agent_id text,
       agent_name text,
+      co_agent_name text,
+      agent_share_pct numeric DEFAULT 100,
       property_value_aed numeric DEFAULT 0,
       agency_commission_pct numeric DEFAULT 0,
       agency_commission_aed numeric DEFAULT 0,
@@ -229,6 +235,7 @@ const ensureDealsSchema = async () => {
     ["lead_id", "text"], ["lead_name", "text"], ["client_phone", "text"], ["client_email", "text"],
     ["project_slug", "text"], ["project_name", "text"], ["developer_name", "text"],
     ["agent_id", "text"], ["agent_name", "text"],
+    ["co_agent_name", "text"], ["agent_share_pct", "numeric DEFAULT 100"],
     ["property_value_aed", "numeric DEFAULT 0"], ["agency_commission_pct", "numeric DEFAULT 0"],
     ["agency_commission_aed", "numeric DEFAULT 0"], ["referral_commission_pct", "numeric DEFAULT 0"],
     ["referral_commission_aed", "numeric DEFAULT 0"], ["cashback_pct", "numeric DEFAULT 0"],
@@ -295,6 +302,8 @@ const mapRow = (row: DealRow): Deal => {
     developerName: str(row.developer_name),
     agentId: str(row.agent_id),
     agentName: str(row.agent_name),
+    coAgentName: str(row.co_agent_name),
+    agentSharePct: row.agent_share_pct == null ? 100 : num(row.agent_share_pct),
     propertyValueAed: num(row.property_value_aed),
     agencyCommissionPct: num(row.agency_commission_pct),
     agencyCommissionAed,
@@ -326,7 +335,7 @@ const mapRow = (row: DealRow): Deal => {
 
 const SELECT = `
   id, lead_id, lead_name, client_phone, client_email, project_slug, project_name, developer_name,
-  agent_id, agent_name, property_value_aed, agency_commission_pct, agency_commission_aed,
+  agent_id, agent_name, co_agent_name, agent_share_pct, property_value_aed, agency_commission_pct, agency_commission_aed,
   referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
   commission_received_aed, payment_status, status, documents,
   step1_by, step1_at::text, step1_notes, step2_by, step2_at::text, step2_notes,
@@ -383,6 +392,24 @@ export async function getDealById(id: string): Promise<Deal | null> {
   }
 }
 
+/** Most recent deal linked to a given CRM lead (null if none). Used to enforce
+ *  "convert a lead to a deal once". */
+export async function getDealByLeadId(leadId: string): Promise<Deal | null> {
+  if (!leadId) return null
+  try {
+    await ensureDealsSchemaOnce()
+    const rows = await query<DealRow>(
+      `SELECT ${SELECT} FROM freehold_site_deals WHERE lead_id = $1
+       ORDER BY created_at DESC NULLS LAST LIMIT 1`,
+      [leadId],
+    )
+    return rows[0] ? mapRow(rows[0]) : null
+  } catch (error) {
+    console.error("[deals] getDealByLeadId failed", error)
+    return null
+  }
+}
+
 export async function createDeal(
   input: DealInput,
   creator: { id: string; name: string; role?: string | null },
@@ -403,14 +430,17 @@ export async function createDeal(
   // Agent (broker) deals enter the 2-step approval queue.
   const status: DealStatus = isManagementRole(creator.role) ? "approved" : "pending_step1"
 
+  const sharePct = input.agentSharePct == null ? 100 : Math.min(100, Math.max(1, num(input.agentSharePct)))
+
   const rows = await query<DealRow>(
     `INSERT INTO freehold_site_deals (
       id, lead_id, lead_name, client_phone, client_email, project_slug, project_name, developer_name,
-      agent_id, agent_name, property_value_aed, agency_commission_pct, agency_commission_aed,
+      agent_id, agent_name, co_agent_name, agent_share_pct,
+      property_value_aed, agency_commission_pct, agency_commission_aed,
       referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
       status, notes, created_by, created_at, updated_at
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, now(), now()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, now(), now()
     ) RETURNING ${SELECT}`,
     [
       id,
@@ -423,6 +453,8 @@ export async function createDeal(
       input.developerName || "",
       input.agentId || creator.id,
       input.agentName || creator.name,
+      input.coAgentName || "",
+      sharePct,
       commission.propertyValueAed,
       commission.agencyCommissionPct,
       commission.agencyCommissionAed,
@@ -472,6 +504,8 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       cashback_aed = $14,
       net_commission_aed = $15,
       notes = COALESCE($16, notes),
+      co_agent_name = COALESCE($17, co_agent_name),
+      agent_share_pct = COALESCE($18, agent_share_pct),
       updated_at = now()
      WHERE id = $1 RETURNING ${SELECT}`,
     [
@@ -491,6 +525,8 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       commission.cashbackAed,
       commission.netCommissionAed,
       input.notes ?? null,
+      input.coAgentName ?? null,
+      input.agentSharePct ?? null,
     ],
   )
   return rows[0] ? mapRow(rows[0]) : null

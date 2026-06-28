@@ -84,11 +84,20 @@ interface QuickActionsProps {
   leadName: string
   currentStage: string
   lead?: LeadSnapshot
+  existingDeal?: { id: string; status: string } | null
 }
 
 type ActionKey = 'hot' | 'reassign' | 'snooze'
 
-export function QuickActions({ leadId, leadName, currentStage, lead }: QuickActionsProps) {
+const DEAL_STATUS_LABEL: Record<string, string> = {
+  pending_step1: 'Awaiting docs/KYC',
+  pending_step2: 'Awaiting final approval',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  closed: 'Closed · Paid',
+}
+
+export function QuickActions({ leadId, leadName, currentStage, lead, existingDeal }: QuickActionsProps) {
   const router = useRouter()
   const [applied, setApplied] = useState<Set<ActionKey>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
@@ -114,22 +123,34 @@ export function QuickActions({ leadId, leadName, currentStage, lead }: QuickActi
   return (
     <>
       <div className="space-y-2">
-        {/* Convert to deal / close-won */}
-        <button
-          onClick={() => setDealModal({ closeLead: false })}
-          className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
-        >
-          <Briefcase className="h-3.5 w-3.5" />
-          Convert to Deal
-        </button>
-        {!isClosed && (
-          <button
-            onClick={() => setDealModal({ closeLead: true })}
-            className="flex w-full items-center gap-2.5 rounded-[12px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/15"
+        {/* Deal: convert once, then show its status */}
+        {existingDeal ? (
+          <Link
+            href="/freehold-intelligence/management/deals"
+            className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
           >
-            <Trophy className="h-3.5 w-3.5" />
-            Mark as Closed (Won)
-          </button>
+            <Briefcase className="h-3.5 w-3.5" />
+            Deal created · {DEAL_STATUS_LABEL[existingDeal.status] || existingDeal.status}
+          </Link>
+        ) : (
+          <>
+            <button
+              onClick={() => setDealModal({ closeLead: false })}
+              className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
+            >
+              <Briefcase className="h-3.5 w-3.5" />
+              Convert to Deal
+            </button>
+            {!isClosed && (
+              <button
+                onClick={() => setDealModal({ closeLead: true })}
+                className="flex w-full items-center gap-2.5 rounded-[12px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/15"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                Mark as Closed (Won)
+              </button>
+            )}
+          </>
         )}
 
         {actions.map((action) => {
