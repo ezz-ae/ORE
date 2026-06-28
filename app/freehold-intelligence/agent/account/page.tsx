@@ -10,6 +10,7 @@ import {
   type WalletEntry, type Achievement, type ExpertiseEntry,
 } from '@/src/features/freehold-intelligence/agent'
 import { useSession } from '@/lib/freehold/use-session'
+import { useI18n } from '@/lib/i18n/provider'
 
 interface LiveBalance {
   broker_id: string
@@ -43,10 +44,10 @@ const LEVEL_COLOR: Record<string, { text: string; bg: string }> = {
   Untested: { text: 'text-slate-500',   bg: 'bg-surface-2'    },
 }
 
-const STATUS_META: Record<WalletEntry['status'], { icon: ReactNode; text: string; color: string }> = {
-  paid:       { icon: <CheckCircle className="h-3.5 w-3.5" />, text: 'Paid',       color: 'text-emerald-400' },
-  processing: { icon: <Clock       className="h-3.5 w-3.5" />, text: 'Processing', color: 'text-amber-400'   },
-  pending:    { icon: <AlertCircle className="h-3.5 w-3.5" />, text: 'Pending',    color: 'text-sky-400'     },
+const STATUS_META: Record<WalletEntry['status'], { icon: ReactNode; textKey: string; color: string }> = {
+  paid:       { icon: <CheckCircle className="h-3.5 w-3.5" />, textKey: 'agent.statusPaid',       color: 'text-emerald-400' },
+  processing: { icon: <Clock       className="h-3.5 w-3.5" />, textKey: 'agent.statusProcessing', color: 'text-amber-400'   },
+  pending:    { icon: <AlertCircle className="h-3.5 w-3.5" />, textKey: 'agent.statusPending',    color: 'text-sky-400'     },
 }
 
 function fmtAED(n: number) {
@@ -58,6 +59,7 @@ function fmtAED(n: number) {
 }
 
 function WalletRow({ entry }: { entry: WalletEntry }) {
+  const { t } = useI18n()
   const meta = STATUS_META[entry.status]
   return (
     <div className="flex items-center gap-4 rounded-[14px] border border-line bg-surface-2 px-4 py-3.5">
@@ -69,7 +71,7 @@ function WalletRow({ entry }: { entry: WalletEntry }) {
       </div>
       <div className={`flex items-center gap-1 text-xs font-medium ${meta.color}`}>
         {meta.icon}
-        {meta.text}
+        {t(meta.textKey)}
       </div>
       <div className={`min-w-[80px] text-right text-sm font-semibold tabular-nums ${entry.amount < 0 ? 'text-red-400' : 'text-white'}`}>
         {fmtAED(entry.amount)}
@@ -103,6 +105,7 @@ function AchievementCard({ item }: { item: Achievement }) {
 }
 
 function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
+  const { t } = useI18n()
   const lc = LEVEL_COLOR[entry.level]
   const barW = entry.level === 'Expert' ? 100 : entry.level === 'Strong' ? 65 : entry.level === 'Learning' ? 30 : 5
   const barColor = entry.level === 'Expert' ? 'bg-gold' : entry.level === 'Strong' ? 'bg-emerald-400' : entry.level === 'Learning' ? 'bg-sky-400' : 'bg-surface-3'
@@ -112,7 +115,7 @@ function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
       <div className="w-[140px] shrink-0">
         <div className="text-sm font-medium text-slate-300">{entry.area}</div>
         {entry.lastDeal && (
-          <div className="mt-0.5 text-xs text-slate-500">Last deal {new Date(entry.lastDeal).toLocaleDateString('en-AE', { month: 'short', year: '2-digit' })}</div>
+          <div className="mt-0.5 text-xs text-slate-500">{t('agent.lastDeal', { date: new Date(entry.lastDeal).toLocaleDateString('en-AE', { month: 'short', year: '2-digit' }) })}</div>
         )}
       </div>
       <div className="flex-1">
@@ -129,6 +132,7 @@ function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
 }
 
 export default function AgentAccountPage() {
+  const { t } = useI18n()
   const { user } = useSession()
   const [liveBalance, setLiveBalance] = useState<LiveBalance | null>(null)
   const [liveLedger, setLiveLedger] = useState<LiveLedgerEntry[] | null>(null)
@@ -150,7 +154,7 @@ export default function AgentAccountPage() {
   const walletEntries: WalletEntry[] = liveLedger && liveLedger.length > 0
     ? liveLedger.map(e => ({
         id: e.id,
-        description: e.note ?? (e.type === 'spend' ? 'Campaign spend' : e.type === 'allocation' ? 'Credits allocated' : 'Credit adjustment'),
+        description: e.note ?? (e.type === 'spend' ? t('agent.campaignSpend') : e.type === 'allocation' ? t('agent.creditsAllocated') : t('agent.creditAdjustment')),
         amount: e.type === 'spend' ? -(e.amount * 10) : e.amount * 10,
         type: (e.type === 'spend' ? 'campaign_debit' : 'bonus') as WalletEntry['type'],
         status: 'paid' as const,
@@ -188,26 +192,26 @@ export default function AgentAccountPage() {
           <div className="mt-0.5 text-sm text-slate-400">{agentProfile.title}</div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${tierClass}`}>
-              {agentProfile.tier} Tier
+              {t('agent.tierLabel', { tier: agentProfile.tier })}
             </span>
-            <span className="text-xs text-slate-500">Since {joinedSince}</span>
+            <span className="text-xs text-slate-500">{t('agent.since', { date: joinedSince })}</span>
           </div>
         </div>
         <div className="hidden sm:block text-right">
           <div className="text-[22px] font-semibold text-emerald-400 tabular-nums">
             AED {(agentProfile.revMTD / 1_000_000).toFixed(1)}M
           </div>
-          <div className="text-xs text-slate-500">MTD revenue</div>
+          <div className="text-xs text-slate-500">{t('agent.mtdRevenue')}</div>
         </div>
       </section>
 
       {/* Quick stats */}
       <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { Icon: Zap,       label: 'Response time',    value: `${agentProfile.avgResponseH}h avg`,   color: 'text-gold'  },
-          { Icon: Users,     label: 'Viewing rate',     value: `${agentProfile.leadToViewingPct}%`,   color: 'text-sky-400'    },
-          { Icon: TrendingUp,label: 'Offer rate',       value: `${agentProfile.viewingToOfferPct}%`,  color: 'text-violet-400' },
-          { Icon: Star,      label: 'Wins this month',  value: `${agentProfile.wins} closed`,         color: 'text-gold'  },
+          { Icon: Zap,       label: t('agent.responseTime'),  value: t('agent.responseTimeValue', { hours: agentProfile.avgResponseH }), color: 'text-gold'  },
+          { Icon: Users,     label: t('agent.viewingRate'),   value: `${agentProfile.leadToViewingPct}%`,   color: 'text-sky-400'    },
+          { Icon: TrendingUp,label: t('agent.offerRate'),     value: `${agentProfile.viewingToOfferPct}%`,  color: 'text-violet-400' },
+          { Icon: Star,      label: t('agent.winsThisMonth'), value: t('agent.winsValue', { count: agentProfile.wins }),         color: 'text-gold'  },
         ].map(({ Icon, label, value, color }) => (
           <div key={label} className="rounded-[16px] border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
@@ -220,26 +224,26 @@ export default function AgentAccountPage() {
       {/* Wallet */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Wallet</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.wallet')}</div>
           <div className="flex items-center gap-1 text-sm text-gold">
             <Wallet className="h-3.5 w-3.5" />
-            {fmtAED(pendingBalance)} pending
+            {t('agent.pendingAmount', { amount: fmtAED(pendingBalance) })}
           </div>
         </div>
         <div className="mb-3 flex gap-4 rounded-[16px] border border-line bg-surface p-4">
           <div>
-            <div className="text-xs text-slate-500">Total earned</div>
+            <div className="text-xs text-slate-500">{t('agent.totalEarned')}</div>
             <div className="mt-0.5 text-lg font-semibold text-white tabular-nums">{fmtAED(totalEarned)}</div>
           </div>
           <div className="ml-auto text-right">
-            <div className="text-xs text-slate-500">Ad spend (personal)</div>
+            <div className="text-xs text-slate-500">{t('agent.adSpendPersonal')}</div>
             <div className="mt-0.5 text-lg font-semibold text-red-400 tabular-nums">-AED {adSpend.toLocaleString()}</div>
           </div>
         </div>
         {liveBalance && (
           <div className="mb-3 rounded-[14px] border border-gold/20 bg-gold/[0.04] px-4 py-3 text-xs text-slate-400">
-            <span className="font-medium text-gold">{liveBalance.balance} credits</span> remaining · {liveBalance.total_spent} spent this cycle
-            {liveBalance.cycle_end && ` · resets ${new Date(liveBalance.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}`}
+            <span className="font-medium text-gold">{t('agent.creditsRemainingCycle', { balance: liveBalance.balance })}</span>{t('agent.remainingSpentCycle', { spent: liveBalance.total_spent })}
+            {liveBalance.cycle_end && t('agent.resetsOn', { date: new Date(liveBalance.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' }) })}
           </div>
         )}
         <div className="space-y-2">
@@ -249,24 +253,24 @@ export default function AgentAccountPage() {
 
       {/* Lead pool */}
       <section className="mt-8">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Lead Pool</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.leadPool')}</div>
         <div className="rounded-[18px] border border-line bg-surface p-5">
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-sm font-semibold text-slate-300">{agentLeadPool.tier} Tier — {agentLeadPool.monthlyQuota} leads / month</div>
+              <div className="text-sm font-semibold text-slate-300">{t('agent.tierQuota', { tier: agentLeadPool.tier, quota: agentLeadPool.monthlyQuota })}</div>
               <div className="mt-1 text-xs text-slate-400 leading-relaxed max-w-sm">{agentLeadPool.tierCriteria}</div>
             </div>
             <div className="text-right ml-4">
               <div className="text-[26px] font-semibold text-gold tabular-nums">{agentLeadPool.monthlyQuota - agentLeadPool.used}</div>
-              <div className="text-xs text-slate-500">remaining</div>
+              <div className="text-xs text-slate-500">{t('agent.remaining')}</div>
             </div>
           </div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-2">
             <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${poolPct}%` }} />
           </div>
           <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-            <span>{agentLeadPool.used} used of {agentLeadPool.monthlyQuota}</span>
-            <span>Resets {new Date(agentLeadPool.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' })}</span>
+            <span>{t('agent.usedOf', { used: agentLeadPool.used, quota: agentLeadPool.monthlyQuota })}</span>
+            <span>{t('agent.resetsLabel', { date: new Date(agentLeadPool.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'long' }) })}</span>
           </div>
         </div>
       </section>
@@ -274,7 +278,7 @@ export default function AgentAccountPage() {
       {/* Expertise map */}
       <section className="mt-8">
         <div className="mb-3 flex items-center gap-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Expertise Map</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.expertiseMap')}</div>
           <MapPin className="h-3 w-3 text-slate-600" />
         </div>
         <div className="rounded-[18px] border border-line bg-surface p-5 space-y-4">
@@ -284,7 +288,7 @@ export default function AgentAccountPage() {
 
       {/* Achievements */}
       <section className="mt-8">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Achievements</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.achievements')}</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {agentAchievements.map((item) => <AchievementCard key={item.id} item={item} />)}
         </div>
