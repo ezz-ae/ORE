@@ -118,6 +118,27 @@ export default function NotebookPage() {
   const [activeGenerate, setActiveGenerate] = useState<string | null>(null)
   const [activeSendDest, setActiveSendDest] = useState<string | null>(null)
   const [activeSendOutput, setActiveSendOutput] = useState<string | null>(null)
+  const [customSources, setCustomSources] = useState<{ id: string; name: string }[]>([])
+  const [genInput, setGenInput] = useState('')
+  const [genResult, setGenResult] = useState('')
+  const [genLoading, setGenLoading] = useState(false)
+
+  async function runGenerate() {
+    const type = GENERATE_TYPES.find((g) => g.key === activeGenerate)
+    if (!type) return
+    setGenLoading(true); setGenResult('')
+    try {
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: `Generate a ${type.label} for a Dubai real-estate workspace. ${genInput || ''}`.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.text) throw new Error(data?.error || 'Generation failed')
+      setGenResult(data.text)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Generation failed')
+    } finally { setGenLoading(false) }
+  }
 
   // auto-resize textarea
   useEffect(() => {
@@ -215,6 +236,7 @@ export default function NotebookPage() {
               e.preventDefault()
               const url = addSourceInput.trim()
               if (!url) return
+              setCustomSources((prev) => [...prev, { id: `src_${Date.now()}`, name: url }])
               toast.success('Source added')
               setAddSourceInput('')
               setShowAddSource(false)
@@ -357,6 +379,20 @@ export default function NotebookPage() {
                   <div className="min-w-0">
                     <p className="truncate text-xs text-slate-300">{u.name}</p>
                     <p className="text-[10px] text-slate-600">{u.size}</p>
+                  </div>
+                </div>
+              ))}
+              {customSources.map(s => (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-1.5 rounded px-2 py-1.5 hover:bg-surface-2 transition cursor-pointer"
+                  onClick={() => toggleSource(s.id)}
+                >
+                  <SourceCheckbox checked={!!checkedSources[s.id]} onChange={() => toggleSource(s.id)} />
+                  <FileText className="h-3 w-3 shrink-0 text-slate-500" />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-slate-300">{s.name}</p>
+                    <p className="text-[10px] text-slate-600">added source</p>
                   </div>
                 </div>
               ))}
@@ -634,17 +670,31 @@ export default function NotebookPage() {
                 </p>
                 <div className="flex items-center gap-2">
                   <input
+                    value={genInput}
+                    onChange={e => setGenInput(e.target.value)}
                     placeholder="Describe what to generate…"
                     className="flex-1 rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-xs text-white placeholder-slate-600 outline-none transition focus:border-gold/30"
-                    onKeyDown={e => { if (e.key === 'Enter') setActiveGenerate(null) }}
+                    onKeyDown={e => { if (e.key === 'Enter' && !genLoading) runGenerate() }}
                   />
                   <button
-                    onClick={() => setActiveGenerate(null)}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold text-ink transition hover:bg-[#E8C657]"
+                    onClick={runGenerate}
+                    disabled={genLoading}
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gold text-ink transition hover:bg-[#E8C657] disabled:opacity-50"
                   >
-                    <ArrowUp className="h-3.5 w-3.5" />
+                    {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
                   </button>
                 </div>
+                {genResult && (
+                  <div className="mt-2 rounded-lg border border-line bg-surface p-2.5">
+                    <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">{genResult}</p>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success('Copied') }}
+                      className="mt-2 text-[10px] font-medium text-gold/80 hover:text-gold"
+                    >
+                      Copy to clipboard
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -703,7 +753,21 @@ export default function NotebookPage() {
               </div>
               {activeSendDest && (
                 <button
-                  onClick={() => { setActiveSendDest(null); setActiveSendOutput(null) }}
+                  onClick={() => {
+                    const output = allOutputs.find(o => o.id === activeSendOutput)
+                    const dest = SEND_DESTINATIONS.find(d => d.key === activeSendDest)
+                    const text = `${output?.title ?? 'Notebook output'} (${output?.type ?? 'note'})`
+                    if (activeSendDest === 'download') {
+                      const blob = new Blob([text], { type: 'text/plain' })
+                      const url = URL.createObjectURL(blob); const a = document.createElement('a')
+                      a.href = url; a.download = `${(output?.title ?? 'output').replace(/\s+/g, '-').toLowerCase()}.txt`
+                      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+                    } else {
+                      navigator.clipboard.writeText(text).catch(() => {})
+                    }
+                    toast.success(`Sent to ${dest?.label ?? 'destination'}`)
+                    setActiveSendDest(null); setActiveSendOutput(null)
+                  }}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#E8C657]"
                 >
                   <Send className="h-3.5 w-3.5" />
