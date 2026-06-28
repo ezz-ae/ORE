@@ -103,6 +103,17 @@ export default function NotebookPage() {
   })
   const [isDragOver, setIsDragOver] = useState(false)
 
+  // Persisted outputs (saved tables / reports) from the DB.
+  type SavedOutput = { id: string; title: string; type: string; content: string; created_at: string }
+  const [dbOutputs, setDbOutputs] = useState<SavedOutput[]>([])
+  const [openOutput, setOpenOutput] = useState<string | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/notebook/save-output')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.outputs)) setDbOutputs(d.outputs) })
+      .catch(() => {})
+  }, [])
+
   // center panel
   const [centerTab, setCenterTab] = useState<CenterTab>('chat')
   const [chatInput, setChatInput] = useState('')
@@ -555,6 +566,53 @@ export default function NotebookPage() {
                 className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
               />
             </div>
+
+            {/* Persisted outputs — saved tables & reports from across the app */}
+            {dbOutputs.length > 0 && (
+              <div className="mb-5 space-y-2">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Saved tables & reports</div>
+                {dbOutputs.map(o => {
+                  const isOpen = openOutput === o.id
+                  const isHtml = o.type === 'comparison' || o.type === 'report' || o.content.trimStart().startsWith('<')
+                  return (
+                    <div key={o.id} className="overflow-hidden rounded-xl border border-line bg-surface">
+                      <button
+                        onClick={() => setOpenOutput(isOpen ? null : o.id)}
+                        className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-surface-2"
+                      >
+                        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line-strong bg-surface-2">
+                          {outputTypeIcon(o.type)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-white">{o.title}</div>
+                          <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                            <span className="capitalize">{o.type.replace(/_/g, ' ')}</span>
+                            <span>·</span>
+                            <span>{relativeTime(o.created_at)}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      </button>
+                      {isOpen && (
+                        <div className="border-t border-line bg-white/[0.02] p-3">
+                          {isHtml ? (
+                            <iframe
+                              title={o.title}
+                              sandbox=""
+                              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0B131F;padding:12px">${o.content}</body>`}
+                              className="h-64 w-full rounded-lg border border-line bg-[#0B131F]"
+                            />
+                          ) : (
+                            <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-app p-3 text-xs leading-relaxed text-slate-300">{o.content}</pre>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
             <div className="space-y-2">
               {filteredConvs.map(conv => {
                 const lastMsg = conv.messages[conv.messages.length - 1]
