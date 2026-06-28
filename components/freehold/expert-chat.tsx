@@ -6,9 +6,33 @@ import Link from 'next/link'
 import {
   Sparkles, ArrowUp, Loader2, X, Plus, PanelRightClose, PanelRightOpen,
   Check, Rocket, Pencil, Eye, ThumbsUp, ArrowRight, ImageIcon, Copy, ListChecks,
+  BookmarkPlus,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
+
+/** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
+function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  let title = 'Expert note'
+  const parts: string[] = []
+  for (const b of blocks) {
+    if (b.type === 'text') {
+      if (title === 'Expert note') title = b.content.slice(0, 60)
+      parts.push(`<p style="margin:0 0 12px;line-height:1.6">${esc(b.content)}</p>`)
+    } else if (b.type === 'plan') {
+      title = b.title || 'Plan'
+      parts.push(`<h3 style="margin:16px 0 8px">${esc(b.title || 'Plan')}</h3><ol style="padding-left:18px;line-height:1.6">${b.steps.map((s) => `<li><strong>${esc(s.step)}</strong>${s.detail ? `<br><span style="color:#94a3b8">${esc(s.detail)}</span>` : ''}</li>`).join('')}</ol>`)
+    } else if (b.type === 'landing') {
+      title = b.title || 'Landing'
+      parts.push(`<h3 style="margin:16px 0 4px">${esc(b.title)}</h3>${b.subhead ? `<p style="color:#94a3b8;margin:0 0 8px">${esc(b.subhead)}</p>` : ''}${b.sections.map((s) => `<h4 style="margin:10px 0 2px">${esc(s.heading)}</h4><p style="margin:0 0 8px;line-height:1.6">${esc(s.body)}</p>`).join('')}`)
+    } else if (b.type === 'media') {
+      parts.push(`<h4 style="margin:10px 0 2px">${esc(b.label)}</h4><p style="margin:0 0 8px;color:#94a3b8;line-height:1.6">${esc(b.prompt)}</p>`)
+    }
+  }
+  return { html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0">${parts.join('') || '<p>(empty)</p>'}</div>`, title }
+}
 
 type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[] }
 
@@ -53,6 +77,7 @@ export function ExpertChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [pending, setPending] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const [savedIdx, setSavedIdx] = useState<number | null>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const sessionId = useRef(`expert-${Date.now()}-${Math.random().toString(36).slice(2)}`)
@@ -157,6 +182,23 @@ export function ExpertChat() {
     setTimeout(() => setCopied((c) => (c === key ? null : c)), 1800)
   }
 
+  async function saveToNotebook(blocks: ExpertBlock[], idx: number) {
+    try {
+      const { html, title } = blocksToHtml(blocks)
+      const res = await fetch('/api/freehold/notebook/save-output', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, type: 'note', content: html }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      setSavedIdx(idx)
+      toast.success('Saved to Notebook')
+      setTimeout(() => setSavedIdx((s) => (s === idx ? null : s)), 2500)
+    } catch {
+      toast.error('Could not save to Notebook')
+    }
+  }
+
   // ─── Collapsed rail ──
   if (!open) {
     return (
@@ -257,6 +299,13 @@ export function ExpertChat() {
                     {m.blocks.map((b, j) => (
                       <BlockView key={j} block={b} idx={`${i}-${j}`} onAction={send} onCopy={copy} copied={copied} />
                     ))}
+                    <button
+                      onClick={() => saveToNotebook(m.blocks, i)}
+                      className="inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200"
+                    >
+                      {savedIdx === i ? <Check className="h-3.5 w-3.5 text-gold" /> : <BookmarkPlus className="h-3.5 w-3.5" />}
+                      {savedIdx === i ? 'Saved to Notebook' : 'Save to Notebook'}
+                    </button>
                   </div>
                 ),
               )}
