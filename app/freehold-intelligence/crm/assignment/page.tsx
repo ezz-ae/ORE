@@ -103,7 +103,7 @@ function LeadCard({
   agents: CRMAgentCapacity[]
   justAssigned: boolean
   assignedName: string | null
-  onAssign: (leadId: string, agentName: string) => void
+  onAssign: (leadId: string, agentId: string, agentName: string) => void
 }) {
   const availableAgents = agents.filter((a) => a.status !== 'overloaded').slice(0, 3)
 
@@ -141,7 +141,7 @@ function LeadCard({
             <AgentButton
               key={agent.id}
               agent={agent}
-              onAssign={() => onAssign(lead.id, agent.name)}
+              onAssign={() => onAssign(lead.id, agent.id, agent.name)}
             />
           ))}
         </div>
@@ -288,9 +288,15 @@ export default function AssignmentPage() {
   const totalUnassigned = unassignedLeads.length
   const totalLeadsAll = leads.length
 
-  function handleAssign(leadId: string, agentName: string) {
+  function handleAssign(leadId: string, agentId: string, agentName: string) {
     setAssignments((prev) => ({ ...prev, [leadId]: agentName }))
     setJustAssigned((prev) => new Set([...prev, leadId]))
+
+    // Persist the assignment.
+    fetch(`/api/freehold/crm/leads/${leadId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assigned_broker_id: agentId }),
+    }).catch(() => {})
 
     // Remove from flash set after 2 seconds
     setTimeout(() => {

@@ -342,7 +342,10 @@ export default function FreeholdCrmPage() {
             <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Integrations</div>
-                <button className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
+                <button
+                  onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
+                  className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
+                >
                   <RefreshCw className="h-3 w-3" /> Sync now
                 </button>
               </div>

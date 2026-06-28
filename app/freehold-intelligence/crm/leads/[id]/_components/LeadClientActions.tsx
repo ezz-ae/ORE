@@ -103,22 +103,60 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
   const [flash, setFlash] = useState<string | null>(null)
   const [dealModal, setDealModal] = useState<null | { closeLead: boolean }>(null)
 
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
+  const [showReassign, setShowReassign] = useState(false)
   const isClosed = currentStage.toLowerCase() === 'closed'
 
-  function handleAction(key: ActionKey, label: string) {
-    if (applied.has(key)) return
-    setApplied((prev) => new Set(prev).add(key))
+  function flashMsg(label: string) {
     setFlash(label)
     setTimeout(() => setFlash(null), 2500)
   }
 
-  const budgetNum = Number(String(lead?.budgetAED ?? '').replace(/[^0-9.]/g, '')) || 0
+  async function patchLead(body: Record<string, unknown>) {
+    try {
+      const res = await fetch(`/api/freehold/crm/leads/${leadId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      return res.ok
+    } catch { return false }
+  }
 
-  const actions: { key: ActionKey; label: string; icon: typeof Zap; accent: string }[] = [
-    { key: 'hot',      label: 'Moved to Hot',        icon: Zap,          accent: 'hover:border-gold/30 hover:text-[#F8E7AE]' },
-    { key: 'reassign', label: 'Queued for reassign',  icon: User,         accent: 'hover:border-sky-400/30 hover:text-sky-200' },
-    { key: 'snooze',   label: 'Snoozed 24h',          icon: Bell,         accent: 'hover:border-orange-400/30 hover:text-orange-200' },
-  ]
+  async function markHot() {
+    if (applied.has('hot')) return
+    const ok = await patchLead({ priority: 'hot' })
+    if (ok) { setApplied((p) => new Set(p).add('hot')); flashMsg('Marked as Hot'); router.refresh() }
+    else flashMsg('Could not update')
+  }
+
+  async function snooze24h() {
+    if (applied.has('snooze')) return
+    const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    const ok = await patchLead({ snooze_until: until })
+    if (ok) { setApplied((p) => new Set(p).add('snooze')); flashMsg('Snoozed 24h') }
+    else flashMsg('Could not snooze')
+  }
+
+  async function toggleReassign() {
+    setShowReassign((v) => !v)
+    if (!agents.length) {
+      try {
+        const res = await fetch('/api/freehold/team', { cache: 'no-store' })
+        const data = await res.json()
+        const list = (data.members || []).filter((m: { dbRole?: string }) => m.dbRole === 'broker')
+          .map((m: { id: string; name: string }) => ({ id: m.id, name: m.name }))
+        setAgents(list.length ? list : (data.members || []).map((m: { id: string; name: string }) => ({ id: m.id, name: m.name })))
+      } catch { /* keep empty */ }
+    }
+  }
+
+  async function reassignTo(agentId: string, agentName: string) {
+    const ok = await patchLead({ assigned_broker_id: agentId })
+    setShowReassign(false)
+    if (ok) { setApplied((p) => new Set(p).add('reassign')); flashMsg(`Reassigned to ${agentName}`); router.refresh() }
+    else flashMsg('Could not reassign')
+  }
+
+  const budgetNum = Number(String(lead?.budgetAED ?? '').replace(/[^0-9.]/g, '')) || 0
 
   return (
     <>
@@ -153,26 +191,48 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           </>
         )}
 
-        {actions.map((action) => {
-          const Icon = action.icon
-          const done = applied.has(action.key)
-          return (
-            <button
-              key={action.key}
-              onClick={() => handleAction(action.key, action.label)}
-              disabled={done}
-              className={[
-                'flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition',
-                done
-                  ? 'text-gold/60 border-emerald-400/15 cursor-default'
-                  : `text-slate-400 ${action.accent}`,
-              ].join(' ')}
-            >
-              {done ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Icon className="h-3.5 w-3.5" />}
-              {done ? action.label : action.label.replace('Moved to', 'Move to').replace('Queued for', 'Reassign').replace('Snoozed', 'Snooze')}
-            </button>
-          )
-        })}
+        {/* Move to Hot */}
+        <button
+          onClick={markHot}
+          disabled={applied.has('hot')}
+          className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('hot') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-gold/30 hover:text-[#F8E7AE]'}`}
+        >
+          {applied.has('hot') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Zap className="h-3.5 w-3.5" />}
+          {applied.has('hot') ? 'Marked as Hot' : 'Move to Hot'}
+        </button>
+
+        {/* Reassign */}
+        <div className="relative">
+          <button
+            onClick={toggleReassign}
+            className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('reassign') ? 'text-gold/60 border-emerald-400/15' : 'text-slate-400 hover:border-sky-400/30 hover:text-sky-200'}`}
+          >
+            {applied.has('reassign') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <User className="h-3.5 w-3.5" />}
+            Reassign
+          </button>
+          {showReassign && (
+            <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-[12px] border border-line-strong bg-surface shadow-xl">
+              {agents.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-slate-500">Loading agents…</div>
+              ) : agents.map((a) => (
+                <button key={a.id} onClick={() => reassignTo(a.id, a.name)} className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-surface-2 hover:text-white">
+                  {a.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Snooze */}
+        <button
+          onClick={snooze24h}
+          disabled={applied.has('snooze')}
+          className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('snooze') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-orange-400/30 hover:text-orange-200'}`}
+        >
+          {applied.has('snooze') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Bell className="h-3.5 w-3.5" />}
+          {applied.has('snooze') ? 'Snoozed 24h' : 'Snooze 24h'}
+        </button>
+
         <Link
           href="/freehold-intelligence/crm/pipeline"
           className="flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm text-slate-400 transition hover:border-line-strong hover:text-white"

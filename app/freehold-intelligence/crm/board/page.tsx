@@ -83,16 +83,23 @@ export default function CrmBoardPage() {
   function onDrop(e: DragEvent, to: PipelineStage) {
     e.preventDefault()
     const from = fromStage.current
-    if (!draggingId || !from || from === to) { reset(); return }
+    const movingId = draggingId
+    if (!movingId || !from || from === to) { reset(); return }
     setStageMap(prev => {
-      const lead = prev[from].find(l => l.id === draggingId)
+      const lead = prev[from].find(l => l.id === movingId)
       if (!lead) return prev
       return {
         ...prev,
-        [from]: prev[from].filter(l => l.id !== draggingId),
-        [to]:   [...prev[to], lead],
+        [from]: prev[from].filter(l => l.id !== movingId),
+        [to]:   [...prev[to], { ...lead, pipelineStage: to, stage: to.charAt(0).toUpperCase() + to.slice(1) }],
       }
     })
+    // Persist the stage change.
+    fetch(`/api/freehold/crm/leads/${movingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: to, last_contact_at: new Date().toISOString() }),
+    }).catch(() => {})
     reset()
   }
 

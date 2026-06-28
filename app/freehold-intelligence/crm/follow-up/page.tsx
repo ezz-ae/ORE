@@ -158,6 +158,12 @@ export default function FollowUpQueuePage() {
   function markDone(id: string) {
     setDone((prev) => new Set([...prev, id]))
     setFlash('Marked done')
+    // Persist: logging contact now resets the 72h follow-up window so the lead
+    // legitimately leaves the overdue queue.
+    fetch(`/api/freehold/crm/leads/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ last_contact_at: new Date().toISOString() }),
+    }).catch(() => {})
   }
 
   async function persistSnooze(id: string, iso: string | null) {

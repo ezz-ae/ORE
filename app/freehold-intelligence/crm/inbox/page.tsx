@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
 import type { CRMInboxLead } from '@/src/features/freehold-intelligence/server-session'
@@ -35,6 +35,19 @@ export default function CrmInboxPage() {
   const [justAssigned, setJustAssigned] = useState<string | null>(null)
 
   const available = crmAgentRoster.filter((a) => a.status === 'available')
+
+  // Real agents (brokers) from the team API — used for actual assignment.
+  const [realAgents, setRealAgents] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    fetch('/api/freehold/team', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d?.members) return
+        const brokers = d.members.filter((m: { dbRole?: string }) => m.dbRole === 'broker')
+        setRealAgents((brokers.length ? brokers : d.members).map((m: { id: string; name: string }) => ({ id: m.id, name: m.name })))
+      })
+      .catch(() => {})
+  }, [])
 
   // Map live leads (filtered to new pipeline stage) to CRMInboxLead shape
   const inboxLeads = useMemo<CRMInboxLead[]>(
@@ -95,10 +108,17 @@ export default function CrmInboxPage() {
       ? filteredLeads.filter((l) => l.effectiveStatus !== 'unassigned')
       : filteredLeads
 
-  function handleAssign(leadId: string, agentName: string) {
+  function patchLead(leadId: string, body: Record<string, unknown>) {
+    return fetch(`/api/freehold/crm/leads/${leadId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).catch(() => null)
+  }
+
+  function handleAssign(leadId: string, agentId: string, agentName: string) {
     setAssignments((prev) => ({ ...prev, [leadId]: agentName }))
     setJustAssigned(agentName)
     setTimeout(() => setJustAssigned(null), 2000)
+    patchLead(leadId, { assigned_broker_id: agentId })
   }
 
   function handleContacted(leadId: string) {
@@ -107,6 +127,7 @@ export default function CrmInboxPage() {
       next.add(leadId)
       return next
     })
+    patchLead(leadId, { status: 'contacted', last_contact_at: new Date().toISOString() })
   }
 
   return (
@@ -197,10 +218,10 @@ export default function CrmInboxPage() {
                         </div>
                         <div className="flex flex-col gap-2 sm:shrink-0">
                           <div className="flex flex-wrap gap-2">
-                            {available.map((agent) => (
+                            {(realAgents.length ? realAgents : available).map((agent) => (
                               <button
                                 key={agent.id}
-                                onClick={() => handleAssign(lead.id, agent.name)}
+                                onClick={() => handleAssign(lead.id, agent.id, agent.name)}
                                 className="inline-flex items-center rounded-full border border-line-strong bg-surface-2 px-3.5 py-2 text-xs text-slate-300 transition hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white active:scale-95"
                               >
                                 → {agent.name}
