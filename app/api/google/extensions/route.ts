@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
 import { listExtensions } from '@/lib/google/client'
-import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
+import { GoogleConfigError, GoogleApiError, type GoogleExtension } from '@/lib/google/types'
 import { demoExtensions } from '@/lib/google/demo-data'
+import { listLocalEntities, createLocalEntity, removeLocalEntity, localId } from '@/lib/google/local-store'
+
+const KIND = 'extension'
 
 export async function GET() {
   try {
@@ -9,11 +12,41 @@ export async function GET() {
     return NextResponse.json({ extensions })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      return NextResponse.json({ extensions: demoExtensions, demo: true })
+      const local = await listLocalEntities<GoogleExtension>(KIND)
+      return NextResponse.json({ extensions: [...local, ...demoExtensions], demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })
     }
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
+}
+
+// Create a SITELINK (link text + URL) or CALLOUT (text only) extension.
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => null) as { type?: string; text?: string; finalUrl?: string } | null
+  const text = body?.text?.trim()
+  if (!text) return NextResponse.json({ error: 'text is required' }, { status: 400 })
+  const id = localId('ext')
+  let extension: GoogleExtension
+  if (body?.type === 'CALLOUT') {
+    extension = { type: 'CALLOUT', id, calloutText: text }
+  } else {
+    extension = {
+      type: 'SITELINK',
+      id,
+      linkText: text,
+      finalUrls: [body?.finalUrl?.trim() || 'https://freeholdproperty.ae'],
+    }
+  }
+  await createLocalEntity(KIND, extension)
+  return NextResponse.json({ extension, demo: true }, { status: 201 })
+}
+
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+  await removeLocalEntity(KIND, id)
+  return NextResponse.json({ ok: true })
 }

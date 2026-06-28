@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Link as LinkIcon,
   AlertCircle,
@@ -15,6 +16,7 @@ import {
   Layers,
   Info,
   FileText,
+  Plus,
 } from 'lucide-react'
 import type {
   GoogleExtension,
@@ -235,6 +237,27 @@ export default function GoogleExtensionsPage() {
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter]         = useState<ExtensionFilter>('ALL')
+  const [newText, setNewText]       = useState('')
+  const [newType, setNewType]       = useState<'SITELINK' | 'CALLOUT'>('SITELINK')
+  const [adding, setAdding]         = useState(false)
+
+  async function addExtension() {
+    const text = newText.trim()
+    if (!text || adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/google/extensions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: newType, text }),
+      })
+      if (!res.ok) throw new Error()
+      setNewText('')
+      toast.success(t('lm.google.extensions.added'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    } finally { setAdding(false) }
+  }
 
   async function fetchData(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -407,6 +430,32 @@ export default function GoogleExtensionsPage() {
                 </button>
               )
             })}
+          </div>
+
+          {/* ── Create extension ── */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addExtension() }}
+              placeholder={t('lm.google.extensions.newPlaceholder')}
+              className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
+            />
+            <select
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as 'SITELINK' | 'CALLOUT')}
+              className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-slate-200 outline-none"
+            >
+              <option value="SITELINK">Sitelink</option>
+              <option value="CALLOUT">Callout</option>
+            </select>
+            <button
+              onClick={addExtension}
+              disabled={adding || !newText.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t('lm.google.extensions.addBtn')}
+            </button>
           </div>
 
           {/* ── Extension groups ── */}

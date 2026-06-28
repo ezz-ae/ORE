@@ -108,3 +108,61 @@ export async function createLocalCampaign(p: LaunchGoogleCampaignPayload, create
   } catch { /* fail soft — return the synthesized campaign even without persistence */ }
   return campaign
 }
+
+// ── Generic entity store (keywords / audiences / extensions) ──────────────────
+// Used by the read-only Google sub-pages to become interactive when the Google
+// API isn't connected: created items persist locally and merge ahead of demo.
+
+let ensuredEntities: Promise<void> | null = null
+async function ensureEntities(): Promise<void> {
+  if (!ensuredEntities) {
+    ensuredEntities = query(`
+      CREATE TABLE IF NOT EXISTS freehold_site_google_entities (
+        kind        text NOT NULL,
+        id          text NOT NULL,
+        status      text,
+        data        jsonb NOT NULL,
+        created_by  text,
+        created_at  timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (kind, id)
+      )`).then(() => undefined).catch((e) => { ensuredEntities = null; throw e })
+  }
+  await ensuredEntities
+}
+
+export function localId(prefix: string): string {
+  const r = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 12)
+  return `local-${prefix}-${r}`
+}
+
+export async function listLocalEntities<T>(kind: string): Promise<T[]> {
+  try {
+    await ensureEntities()
+    const rows = await query<{ data: T }>(
+      `SELECT data FROM freehold_site_google_entities WHERE kind = $1 ORDER BY created_at DESC`, [kind])
+    return rows.map((r) => r.data)
+  } catch {
+    return []
+  }
+}
+
+export async function createLocalEntity<T extends { id: string; status?: string }>(kind: string, data: T, createdBy?: string): Promise<T> {
+  try {
+    await ensureEntities()
+    await query(
+      `INSERT INTO freehold_site_google_entities (kind, id, status, data, created_by)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (kind, id) DO UPDATE SET data = EXCLUDED.data, status = EXCLUDED.status`,
+      [kind, data.id, data.status ?? null, JSON.stringify(data), createdBy ?? null])
+  } catch { /* fail soft */ }
+  return data
+}
+
+export async function removeLocalEntity(kind: string, id: string): Promise<boolean> {
+  try {
+    await ensureEntities()
+    await query(`DELETE FROM freehold_site_google_entities WHERE kind = $1 AND id = $2`, [kind, id])
+    return true
+  } catch {
+    return false
+  }
+}

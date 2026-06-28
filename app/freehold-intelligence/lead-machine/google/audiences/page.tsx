@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Users,
   AlertCircle,
@@ -9,6 +10,7 @@ import {
   ArrowUpRight,
   Upload,
   Info,
+  Plus,
 } from 'lucide-react'
 import type { GoogleAudience, GoogleAudienceType } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
@@ -173,6 +175,26 @@ export default function GoogleAudiencesPage() {
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [filter, setFilter]         = useState<AudienceFilter>('ALL')
+  const [newName, setNewName]       = useState('')
+  const [adding, setAdding]         = useState(false)
+
+  async function addAudience() {
+    const name = newName.trim()
+    if (!name || adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/google/audiences', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) throw new Error()
+      setNewName('')
+      toast.success(t('lm.google.audiences.added'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    } finally { setAdding(false) }
+  }
 
   async function fetchData(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -317,6 +339,24 @@ export default function GoogleAudiencesPage() {
           </div>
 
           {/* ── Audience grid ── */}
+          {/* ── Create audience ── */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addAudience() }}
+              placeholder={t('lm.google.audiences.newPlaceholder')}
+              className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
+            />
+            <button
+              onClick={addAudience}
+              disabled={adding || !newName.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t('lm.google.audiences.addBtn')}
+            </button>
+          </div>
+
           {filtered.length > 0 ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {filtered.map((audience) => (

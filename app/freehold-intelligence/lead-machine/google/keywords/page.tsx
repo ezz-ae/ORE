@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   Search,
   AlertCircle,
@@ -9,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowUpRight,
+  Plus,
 } from 'lucide-react'
 import type { GoogleKeyword, NegativeKeyword, GoogleKeywordMatchType } from '@/lib/google/types'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
@@ -91,6 +93,30 @@ export default function GoogleKeywordsPage() {
   const [refreshing, setRefreshing]   = useState(false)
   const [matchFilter, setMatchFilter] = useState<MatchFilter>('ALL')
   const [negsOpen, setNegsOpen]       = useState(false)
+  const [newKw, setNewKw]             = useState('')
+  const [newMatch, setNewMatch]       = useState<GoogleKeywordMatchType>('BROAD')
+  const [adding, setAdding]           = useState(false)
+
+  async function addKeyword() {
+    const text = newKw.trim()
+    if (!text || adding) return
+    setAdding(true)
+    try {
+      const res = await fetch('/api/google/keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, matchType: newMatch }),
+      })
+      if (!res.ok) throw new Error()
+      setNewKw('')
+      toast.success(t('lm.google.keywords.added'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    } finally {
+      setAdding(false)
+    }
+  }
 
   async function fetchData(quiet = false) {
     if (quiet) setRefreshing(true)
@@ -250,6 +276,33 @@ export default function GoogleKeywordsPage() {
                 </button>
               )
             })}
+          </div>
+
+          {/* ── Add keyword ── */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={newKw}
+              onChange={(e) => setNewKw(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') addKeyword() }}
+              placeholder={t('lm.google.keywords.addPlaceholder')}
+              className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
+            />
+            <select
+              value={newMatch}
+              onChange={(e) => setNewMatch(e.target.value as GoogleKeywordMatchType)}
+              className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-slate-200 outline-none"
+            >
+              <option value="BROAD">{t('lm.google.keywords.matchBroad')}</option>
+              <option value="PHRASE">{t('lm.google.keywords.matchPhrase')}</option>
+              <option value="EXACT">{t('lm.google.keywords.matchExact')}</option>
+            </select>
+            <button
+              onClick={addKeyword}
+              disabled={adding || !newKw.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t('lm.google.keywords.addBtn')}
+            </button>
           </div>
 
           {/* ── Keywords table ── */}
