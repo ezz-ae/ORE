@@ -36,11 +36,16 @@ function SampleTag({ label }: { label: string }) {
   )
 }
 
+type BreakRow = { key: string; label: string; leads: number; closed: number; convRate: number; hotShare: number; avgBudget: number; score: number }
+
 export default function MarketingAnalyticsPage() {
   const t = useT()
   const a = siteAnalytics
   const [live, setLive] = useState<Live>(null)
   const [spend, setSpend] = useState<{ total: number; last30: number } | null>(null)
+  const [dim, setDim] = useState<'source' | 'country' | 'agent'>('source')
+  const [period, setPeriod] = useState<'7' | '30' | '90'>('30')
+  const [rows, setRows] = useState<BreakRow[] | null>(null)
 
   useEffect(() => {
     fetch('/api/freehold/analytics/leads')
@@ -55,6 +60,21 @@ export default function MarketingAnalyticsPage() {
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    setRows(null)
+    fetch(`/api/freehold/analytics/marketing?dim=${dim}&period=${period}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.rows)) setRows(d.rows) })
+      .catch(() => {})
+  }, [dim, period])
+
+  const DIMS: { id: 'source' | 'country' | 'agent'; labelKey: string }[] = [
+    { id: 'source', labelKey: 'analytics.mk.byChannel' },
+    { id: 'country', labelKey: 'analytics.mk.byCountry' },
+    { id: 'agent', labelKey: 'analytics.mk.byMember' },
+  ]
+  const PERIODS: ('7' | '30' | '90')[] = ['7', '30', '90']
 
   const channels = live?.sources ?? []
   const maxChannel = Math.max(1, ...channels.map((c) => c.count))
@@ -118,6 +138,74 @@ export default function MarketingAnalyticsPage() {
           </div>
         </section>
       </div>
+
+      {/* Live breakdown — by channel / country / team member, with period filter */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+            {t('analytics.mk.breakdown')}
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+              <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              {DIMS.map((d) => (
+                <button key={d.id} onClick={() => setDim(d.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${dim === d.id ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  {t(d.labelKey)}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
+              {PERIODS.map((p) => (
+                <button key={p} onClick={() => setPeriod(p)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${period === p ? 'border border-violet-400/35 bg-violet-400/10 text-violet-300' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  {t(`analytics.period.${p}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{dim === 'country' ? t('analytics.th.country') : dim === 'agent' ? t('analytics.th.agent') : t('analytics.th.source')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.leads')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.conversions')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.convRate')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.mk.hotShare')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.mk.score')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.mk.avgBudget')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {rows && rows.length > 0 ? (
+                  rows.map((r) => (
+                    <tr key={r.key} className="transition hover:bg-slate-800/40">
+                      <td className="px-4 py-3 font-medium text-slate-200">{dim === 'source' ? prettySource(r.label) : r.label}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.leads.toLocaleString('en-US')}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[#D4AF37]">{r.closed.toLocaleString('en-US')}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.convRate}%</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.hotShare}%</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.score}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-400">{r.avgBudget > 0 ? fmtAed(r.avgBudget) : '—'}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-500">
+                      {rows ? t('analytics.empty.leads') : t('analytics.loading')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
       {/* Sample web-traffic banner */}
       <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
