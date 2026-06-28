@@ -3,12 +3,26 @@
 import { useState, useMemo, useEffect } from 'react'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 
-type DbStats = {
-  total_leads: number
-  leads_30d: number
-  closed_leads: number
-  new_leads: number
+type LiveLeads = { total: number; last30d: number; last7d: number; closed: number; new: number; closingRate: number }
+type LiveData = {
+  leads: LiveLeads
+  sources: { label: string; count: number }[]
+  stages: { stage: string; count: number }[]
+  daily: { date: string; leads: number }[]
 } | null
+
+// CRM lead pipeline — canonical order for the live funnel.
+const STAGE_ORDER = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed']
+const STAGE_LABEL: Record<string, string> = {
+  new: 'New', contacted: 'Contacted', qualified: 'Qualified',
+  viewing: 'Viewing', negotiation: 'Negotiation', closed: 'Closed', lost: 'Lost',
+}
+const SOURCE_LABEL: Record<string, string> = {
+  direct: 'Direct', organic: 'Organic', paid: 'Paid', social: 'Social',
+  referral: 'Referral', email: 'Email', meta: 'Meta', google: 'Google',
+  whatsapp: 'WhatsApp', website: 'Website', landing: 'Landing page',
+}
+const prettySource = (s: string) => SOURCE_LABEL[s.toLowerCase()] ?? (s.charAt(0).toUpperCase() + s.slice(1))
 
 const FLAG: Record<string, string> = {
   AE: '🇦🇪',
@@ -23,6 +37,16 @@ function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}m ${s}s`
+}
+
+// Small "Live" pill marking values backed by live CRM data.
+function LiveTag() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+      <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+      Live
+    </span>
+  )
 }
 
 function SourceBadge({ type }: { type: string }) {
@@ -203,18 +227,36 @@ export default function AnalyticsPage() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilterValue>('All')
   const [deviceFilter, setDeviceFilter] = useState<DeviceFilterValue>('All')
 
-  // Live DB stats — fetched on mount; enriches the mock analytics display
-  const [dbStats, setDbStats] = useState<DbStats>(null)
+  // Live CRM data — fetched on mount. Drives the KPI row, leads-by-source and
+  // the pipeline funnel. The web-traffic sections below remain sample data
+  // until a web-analytics integration is connected.
+  const [live, setLive] = useState<LiveData>(null)
 
   useEffect(() => {
     fetch('/api/freehold/analytics/leads')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.leads) setDbStats({ total_leads: d.leads.total, leads_30d: d.leads.last30d, closed_leads: d.leads.closed, new_leads: d.leads.new }) })
+      .then(d => {
+        if (d?.leads) setLive({ leads: d.leads, sources: d.sources ?? [], stages: d.stages ?? [], daily: d.daily ?? [] })
+      })
       .catch(() => {})
   }, [])
 
   // Use DB conversion count when available; fall back to mock
-  const totalConversions = dbStats?.closed_leads ?? a.totalConversions
+  const totalConversions = live?.leads.closed ?? a.totalConversions
+
+  // Live leads-by-source (sorted, with a max for the bar widths).
+  const liveSources = live?.sources ?? []
+  const maxSourceCount = Math.max(1, ...liveSources.map((s) => s.count))
+
+  // Live pipeline funnel, in canonical stage order.
+  const stageCounts = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const s of live?.stages ?? []) m[s.stage] = s.count
+    return m
+  }, [live?.stages])
+  const liveFunnel = STAGE_ORDER.map((stage) => ({ stage, count: stageCounts[stage] ?? 0 }))
+  const liveFunnelMax = Math.max(1, ...liveFunnel.map((s) => s.count))
+  const hasLiveFunnel = liveFunnel.some((s) => s.count > 0)
 
   // Filtered traffic sources (shared by bar chart and table)
   const filteredSources = useMemo(
@@ -255,38 +297,130 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Top KPI row ── */}
+      {/* ── Top KPI row — live CRM lead metrics ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Page Views</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {a.totalPageViews.toLocaleString('en-US')}
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Leads</div>
+            <LiveTag />
           </div>
-          <div className="mt-1 text-xs text-slate-500">Total impressions</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {live ? live.leads.total.toLocaleString('en-US') : '—'}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">All time</div>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Unique Visitors</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {a.totalUniqueSessions.toLocaleString('en-US')}
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-400">New Leads</div>
+            <LiveTag />
           </div>
-          <div className="mt-1 text-xs text-slate-500">Sessions · 30d</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {live ? live.leads.last30d.toLocaleString('en-US') : '—'}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">Last 30 days</div>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Conversions</div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Conversions</div>
+            <LiveTag />
+          </div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">
             {totalConversions.toLocaleString('en-US')}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {(a.conversionRate * 100).toFixed(1)}% conv. rate
-          </div>
+          <div className="mt-1 text-xs text-slate-500">Closed leads</div>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Avg Session</div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
-            {formatDuration(a.avgSessionDuration)}
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Closing Rate</div>
+            <LiveTag />
           </div>
-          <div className="mt-1 text-xs text-slate-500">Avg duration</div>
+          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">
+            {live ? `${live.leads.closingRate}%` : '—'}
+          </div>
+          <div className="mt-1 text-xs text-slate-500">Closed / total</div>
         </div>
+      </div>
+
+      {/* ── Live CRM: leads by source + pipeline funnel ── */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Leads by source */}
+        <section>
+          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+            Leads by Source <LiveTag />
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+            {liveSources.length > 0 ? (
+              <div className="space-y-2.5">
+                {liveSources.map((src) => {
+                  const pct = (src.count / maxSourceCount) * 100
+                  return (
+                    <div key={src.label} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-300 truncate">{prettySource(src.label)}</span>
+                          <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{src.count.toLocaleString('en-US')}</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+                          <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500">
+                {live ? 'No leads yet.' : 'Loading live data…'}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Pipeline funnel (live) */}
+        <section>
+          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+            Lead Pipeline <LiveTag />
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 space-y-4">
+            {hasLiveFunnel ? (
+              liveFunnel.map((step, i) => {
+                const widthPct = Math.round((step.count / liveFunnelMax) * 100)
+                const isLast = i === liveFunnel.length - 1
+                return (
+                  <div key={step.stage}>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-300">{STAGE_LABEL[step.stage] ?? step.stage}</span>
+                      <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
+                    </div>
+                    <div className="h-6 w-full overflow-hidden rounded-lg bg-slate-800/50">
+                      <div
+                        className={`h-full rounded-lg transition-all ${isLast ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`}
+                        style={{ width: `${widthPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500">
+                {live ? 'No pipeline data yet.' : 'Loading live data…'}
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Website traffic (sample) divider ── */}
+      <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400/80">Sample data</span>
+          <span className="text-sm text-slate-300">Website traffic metrics below</span>
+        </div>
+        <p className="mt-1.5 text-xs text-slate-500">
+          Page views, sessions, devices and country breakdowns are illustrative until a web-analytics
+          integration (e.g. Google Analytics or Plausible) is connected. Conversions, sources and the
+          pipeline above reflect live CRM data.
+        </p>
       </div>
 
       {/* ── Daily Traffic Chart ── */}
