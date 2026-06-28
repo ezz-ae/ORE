@@ -1,12 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, Wallet, RefreshCw } from 'lucide-react'
-import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, RefreshCw, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
 
-function fmt(n: number) { return 'AED ' + n.toLocaleString('en-US') }
+function fmt(n: number) {
+  if (!n || n <= 0) return 'AED 0'
+  return 'AED ' + Math.round(n).toLocaleString('en-US')
+}
+
+interface Payout {
+  id: string
+  agentName: string
+  coAgentName: string
+  projectName: string
+  leadName: string
+  commissionAed: number
+  receivedAed: number
+  outstandingAed: number
+}
 
 const PAYMENT_METHODS = [
   { id: 'pm1', brand: 'Visa',       last4: '4242', expiry: '08/27', isDefault: true  },
@@ -34,14 +47,42 @@ const PENDING_COMMISSIONS = [
 ]
 
 export default function PaymentsPage() {
-  const [tab, setTab] = useState<'schedule' | 'history' | 'commissions'>('schedule')
+  const [tab, setTab] = useState<'commissions' | 'schedule' | 'history'>('commissions')
   const [addingCard, setAddingCard] = useState(false)
   const [defaultCard, setDefaultCard] = useState('pm1')
-  const [paidNow, setPaidNow] = useState<string[]>([])
+  const [payouts, setPayouts] = useState<Payout[]>([])
+  const [payingId, setPayingId] = useState<string | null>(null)
+
+  function loadPayouts() {
+    fetch('/api/freehold/finance/entries', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.payouts) setPayouts(d.payouts) })
+      .catch(() => {})
+  }
+  useEffect(() => {
+    loadPayouts()
+    try { const dc = localStorage.getItem('fh_default_card'); if (dc) setDefaultCard(dc) } catch {}
+  }, [])
+
+  async function payCommission(p: Payout) {
+    setPayingId(p.id)
+    try {
+      const res = await fetch(`/api/freehold/deals/${p.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'record_payment', amountAed: p.outstandingAed }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed')
+      toast.success(`Commission paid to ${p.agentName}`)
+      loadPayouts()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Payment failed')
+    } finally { setPayingId(null) }
+  }
 
   const totalScheduled = SCHEDULED.filter((s) => s.status === 'upcoming').reduce((sum, s) => sum + s.amount, 0)
   const totalHistory   = TRANSFERS.reduce((sum, t) => sum + t.amount, 0)
-  const pendingCommissions = PENDING_COMMISSIONS.filter((c) => c.status === 'pending').reduce((sum, c) => sum + c.amount, 0)
+  const pendingCommissions = payouts.reduce((sum, p) => sum + p.outstandingAed, 0)
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -83,7 +124,7 @@ export default function PaymentsPage() {
               </div>
               {defaultCard === pm.id
                 ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Default</span>
-                : <button onClick={() => { setDefaultCard(pm.id); toast.success('Default payment method updated') }} className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
+                : <button onClick={() => { setDefaultCard(pm.id); try { localStorage.setItem('fh_default_card', pm.id) } catch {}; toast.success('Default payment method updated') }} className="text-xs text-slate-500 hover:text-slate-300 transition">Set default</button>
               }
             </div>
           ))}
@@ -107,7 +148,7 @@ export default function PaymentsPage() {
               <input placeholder="CVV" className="w-20 rounded-[9px] border border-line bg-surface-2 px-3 py-2 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50" />
             </div>
             <div className="flex gap-2 pt-1">
-              <button onClick={() => { setAddingCard(false); toast.success('Card saved') }} className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
+              <button onClick={() => { setAddingCard(false); try { localStorage.setItem('fh_card_added', '1') } catch {}; toast.success('Card saved') }} className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-400 transition">Save card</button>
               <button onClick={() => setAddingCard(false)} className="rounded-full border border-line px-4 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">Cancel</button>
             </div>
           </div>
@@ -172,10 +213,14 @@ export default function PaymentsPage() {
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-sm font-semibold text-emerald-400">{fmt(t.amount)}</span>
                 <button
-                  onClick={() => toast.promise(
-                    new Promise(r => setTimeout(r, 1100)),
-                    { loading: `Preparing receipt…`, success: `Receipt downloaded`, error: 'Download failed' }
-                  )}
+                  onClick={() => {
+                    const rows = [['Reference', t.ref], ['Transaction', t.id], ['Method', t.method], ['Date', t.date], ['Amount AED', String(t.amount)], ['Status', t.status]]
+                    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')
+                    const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a'); a.href = url; a.download = `receipt-${t.id}.csv`
+                    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+                    toast.success('Receipt downloaded')
+                  }}
                   className="text-slate-600 hover:text-slate-400 transition"
                 >
                   <ArrowDownToLine className="h-3.5 w-3.5" />
@@ -190,42 +235,40 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {/* Commissions */}
+      {/* Commissions — real, from approved deals */}
       {tab === 'commissions' && (
         <div className="space-y-3">
           <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
-            {PENDING_COMMISSIONS.map((c) => (
-              <div key={c.agent} className="flex items-center gap-4 px-5 py-4">
+            {payouts.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">No commission outstanding — all approved deals are settled.</div>
+            ) : payouts.map((c) => (
+              <div key={c.id} className="flex items-center gap-4 px-5 py-4">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/10 text-xs font-bold text-gold">
-                  {c.agent[0]}
+                  {(c.agentName || '?')[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-100">{c.agent}</div>
-                  <div className="text-xs text-slate-500 truncate">{c.property}</div>
+                  <div className="text-sm font-medium text-slate-100">{c.agentName}{c.coAgentName ? ` + ${c.coAgentName}` : ''}</div>
+                  <div className="text-xs text-slate-500 truncate">{c.leadName}{c.projectName ? ` · ${c.projectName}` : ''}</div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-sm font-semibold text-gold">{fmt(c.amount)}</span>
-                  {c.status === 'approved'
-                    ? paidNow.includes(c.agent)
-                      ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">Paid</span>
-                      : <button
-                          onClick={() => {
-                            setPaidNow(p => [...p, c.agent])
-                            toast.success(`Payment initiated for ${c.agent}`)
-                          }}
-                          className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1"
-                        >
-                          <RefreshCw className="h-3 w-3" /> Pay now
-                        </button>
-                    : <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-medium text-amber-400">Pending</span>
-                  }
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-gold">{fmt(c.outstandingAed)}</div>
+                    <div className="text-[10px] text-slate-500">of {fmt(c.commissionAed)}</div>
+                  </div>
+                  <button
+                    onClick={() => payCommission(c)}
+                    disabled={payingId === c.id}
+                    className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 transition flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {payingId === c.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Pay now
+                  </button>
                 </div>
               </div>
             ))}
           </div>
           <div className="rounded-[12px] border border-line bg-surface-2 px-4 py-3 flex items-center gap-2 text-xs text-slate-500">
             <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-400/50" />
-            Approved commissions auto-transfer on the 1st of each month. Pending items require owner approval.
+            Commission payouts are computed live from approved deals. &quot;Pay now&quot; records the payment against the deal.
           </div>
         </div>
       )}

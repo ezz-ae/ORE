@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { FileCheck, Calendar, RefreshCw, CheckCircle2, AlertCircle, Clock, ExternalLink, Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
@@ -22,56 +22,6 @@ interface Contract {
   daysLeft?: number
 }
 
-const CONTRACTS: Contract[] = [
-  {
-    id: 'CTR-001', name: 'Meta Business Agreement',
-    type: 'platform', counterparty: 'Meta Platforms Inc.',
-    value: 'AED 25,000 / mo', startDate: 'Jan 2025', endDate: 'Dec 2026',
-    status: 'active', autoRenew: true, daysLeft: 213,
-    notes: 'Covers all Meta ad products. Includes monthly invoicing through Business Manager.',
-  },
-  {
-    id: 'CTR-002', name: 'Google Ads Terms of Service',
-    type: 'platform', counterparty: 'Google LLC',
-    value: 'AED 18,000 / mo', startDate: 'Jan 2025', endDate: 'Dec 2026',
-    status: 'active', autoRenew: true, daysLeft: 213,
-    notes: 'Performance Max + Search campaigns. Developer token approved under Standard Access.',
-  },
-  {
-    id: 'CTR-003', name: 'DLD Data Feed License',
-    type: 'data', counterparty: 'Dubai Land Department',
-    value: 'AED 12,000 / yr', startDate: 'Mar 2025', endDate: 'Feb 2027',
-    status: 'active', autoRenew: false, daysLeft: 270,
-    notes: 'Property transaction data. Annual renewal required — no auto-renew available.',
-  },
-  {
-    id: 'CTR-004', name: 'PropTrack Data API',
-    type: 'data', counterparty: 'PropTrack DMCC',
-    value: 'AED 8,400 / yr', startDate: 'Jun 2025', endDate: 'May 2026',
-    status: 'expiring', autoRenew: false, daysLeft: 18,
-    notes: 'Market data and price index API. Quote requested for renewal — awaiting response.',
-  },
-  {
-    id: 'CTR-005', name: 'Agency Retainer — Digital Media',
-    type: 'agency', counterparty: 'Pixel House Agency LLC',
-    value: 'AED 15,000 / mo', startDate: 'Oct 2025', endDate: 'Sep 2026',
-    status: 'active', autoRenew: false, daysLeft: 120,
-    notes: 'Creative production, social media management, monthly strategy sessions.',
-  },
-  {
-    id: 'CTR-006', name: 'Legal Advisory — Real Estate',
-    type: 'legal', counterparty: 'Al Tamimi & Company',
-    value: 'AED 5,000 / mo', startDate: 'Jan 2026', endDate: 'Dec 2026',
-    status: 'active', autoRenew: true, daysLeft: 213,
-  },
-  {
-    id: 'CTR-007', name: 'Cloud Infrastructure (Vercel Pro)',
-    type: 'service', counterparty: 'Vercel Inc.',
-    value: 'USD 150 / mo', startDate: 'Mar 2026', endDate: 'Mar 2027',
-    status: 'active', autoRenew: true, daysLeft: 303,
-  },
-]
-
 const TYPE_COLORS: Record<ContractType, string> = {
   platform: 'text-blue-400   bg-blue-400/10   border-blue-400/20',
   data:     'text-violet-400 bg-violet-400/10 border-violet-400/20',
@@ -88,23 +38,53 @@ const STATUS_COLORS: Record<ContractStatus, string> = {
 }
 
 export default function ContractsPage() {
+  const [contracts, setContracts] = useState<Contract[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [renewing, setRenewing] = useState<string | null>(null)
-  const [renewed,  setRenewed]  = useState<string[]>([])
   const [showNew,  setShowNew]  = useState(false)
   const [newName,  setNewName]  = useState('')
   const [newParty, setNewParty] = useState('')
+  const [newValue, setNewValue] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  const expiring = CONTRACTS.filter((c) => c.status === 'expiring')
-  const active   = CONTRACTS.filter((c) => c.status === 'active').length
-  const autoRenewCount = CONTRACTS.filter((c) => c.autoRenew).length
+  function load() {
+    fetch('/api/freehold/contracts', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.contracts) setContracts(d.contracts) })
+      .catch(() => {})
+  }
+  useEffect(() => { load() }, [])
 
-  function startRenewal(id: string) {
+  const expiring = contracts.filter((c) => c.status === 'expiring')
+  const active   = contracts.filter((c) => c.status === 'active').length
+  const autoRenewCount = contracts.filter((c) => c.autoRenew).length
+
+  async function startRenewal(id: string) {
     setRenewing(id)
-    setTimeout(() => {
-      setRenewing(null)
-      setRenewed((prev) => [...prev, id])
-    }, 2000)
+    try {
+      const res = await fetch(`/api/freehold/contracts/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'renew' }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      toast.success('Contract renewed — extended 1 year')
+      load()
+    } catch { toast.error('Renewal failed') } finally { setRenewing(null) }
+  }
+
+  async function saveContract() {
+    if (!newName.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/freehold/contracts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), counterparty: newParty.trim(), value: newValue.trim() }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      toast.success('Contract added')
+      setShowNew(false); setNewName(''); setNewParty(''); setNewValue('')
+      load()
+    } catch { toast.error('Could not add contract') } finally { setSaving(false) }
   }
 
   return (
@@ -127,7 +107,7 @@ export default function ContractsPage() {
 
       {/* Summary tiles */}
       <div className="mb-5 grid grid-cols-4 gap-3">
-        <StatCard label="Total"      value={CONTRACTS.length} Icon={FileCheck}   />
+        <StatCard label="Total"      value={contracts.length} Icon={FileCheck}   />
         <StatCard label="Active"     value={active}           Icon={CheckCircle2} />
         <StatCard label="Expiring"   value={expiring.length}  Icon={AlertCircle}  />
         <StatCard label="Auto-renew" value={autoRenewCount}   Icon={RefreshCw}    />
@@ -165,13 +145,16 @@ export default function ContractsPage() {
             />
             <input
               placeholder="Value (e.g. AED 10,000 / mo)"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
               className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400/40"
             />
           </div>
           <div className="flex gap-2 pt-1">
             <button
-              onClick={() => { setShowNew(false); setNewName(''); setNewParty(''); toast.success('Contract added') }}
-              className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-4 py-2 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/30"
+              onClick={saveContract}
+              disabled={saving || !newName.trim()}
+              className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-4 py-2 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/30 disabled:opacity-50"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Save contract
             </button>
@@ -184,10 +167,12 @@ export default function ContractsPage() {
 
       {/* Contract list */}
       <div className="space-y-2">
-        {CONTRACTS.map((c) => {
+        {contracts.length === 0 && (
+          <div className="rounded-[16px] border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">No contracts yet — add one above.</div>
+        )}
+        {contracts.map((c) => {
           const isExpanded = expanded === c.id
           const isRenewing = renewing === c.id
-          const isRenewed  = renewed.includes(c.id)
           return (
             <div key={c.id} className={`rounded-[16px] border bg-surface overflow-hidden transition ${
               c.status === 'expiring' ? 'border-amber-400/20' : 'border-line'
@@ -208,7 +193,7 @@ export default function ContractsPage() {
                     <span>{c.counterparty}</span>
                     <span>·</span>
                     <span>{c.value}</span>
-                    {c.daysLeft !== undefined && c.status !== 'expired' && (
+                    {c.daysLeft != null && c.status !== 'expired' && (
                       <>
                         <span>·</span>
                         <span className={c.status === 'expiring' ? 'text-amber-400' : ''}>
@@ -248,17 +233,12 @@ export default function ContractsPage() {
                     <p className="text-xs text-slate-500 leading-relaxed border-t border-line pt-3">{c.notes}</p>
                   )}
                   <div className="flex items-center gap-2 border-t border-line pt-3">
-                    {c.status === 'expiring' && !isRenewed && (
+                    {(c.status === 'expiring' || c.status === 'expired') && (
                       <button onClick={() => startRenewal(c.id)} disabled={isRenewing}
                         className="flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 px-4 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-400/30 disabled:opacity-50">
                         {isRenewing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Calendar className="h-3 w-3" />}
-                        {isRenewing ? 'Sending renewal…' : 'Request renewal'}
+                        {isRenewing ? 'Renewing…' : 'Renew 1 year'}
                       </button>
-                    )}
-                    {isRenewed && (
-                      <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Renewal requested
-                      </span>
                     )}
                     <a
                       href={`mailto:legal@freeholdproperty.ae?subject=Contract document request — ${c.id}`}
