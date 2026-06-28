@@ -104,6 +104,8 @@ export type CRMLeadIntelligence = {
   aiSummary: string
   /** ISO timestamp until which this lead is snoozed (hidden from follow-up queue). */
   snoozeUntil?: string | null
+  /** Sequential lead code / serial number, e.g. FH-0001. */
+  leadCode?: string | null
 }
 
 export type NotebookOutput = {

@@ -1520,6 +1520,18 @@ export async function ensureLeadsTable() {
       ADD COLUMN IF NOT EXISTS ai_broker_notified_at timestamptz,
       ADD COLUMN IF NOT EXISTS snooze_until timestamptz
   `)
+
+  // Sequential lead code / serial number (e.g. FH-0001). A sequence-backed
+  // default backfills existing rows on add and assigns new rows automatically;
+  // lead_code is a generated column so it always stays in sync. Best-effort —
+  // wrapped so older Postgres or partial schemas never break lead operations.
+  try {
+    await query(`CREATE SEQUENCE IF NOT EXISTS freehold_site_lead_seq`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lead_seq bigint DEFAULT nextval('freehold_site_lead_seq')`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS lead_code text GENERATED ALWAYS AS ('FH-' || lpad(lead_seq::text, 4, '0')) STORED`)
+  } catch (error) {
+    console.error("[leads] lead_code schema setup skipped", error)
+  }
 }
 
 export interface LeadActivityRecord {

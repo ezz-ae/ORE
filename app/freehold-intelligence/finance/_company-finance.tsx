@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Wallet, Plus, Loader2, Check, Trash2, Banknote } from 'lucide-react'
 import { Section, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
-import { FINANCE_CATEGORIES, type FinanceCategory, type FinanceEntry, type CompanyFinanceSummary } from '@/lib/finance'
+import { FINANCE_CATEGORIES, type FinanceCategory, type FinanceEntry, type CompanyFinanceSummary } from '@/lib/finance-shared'
 
 interface Payout {
   id: string

@@ -10,21 +10,23 @@ import { crmLeads, crmActivityLog, type CRMLeadIntelligence } from '@/src/featur
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { query } from '@/lib/db'
+import { ensureLeadsTable } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 import { getDealByLeadId } from '@/lib/deals'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page
 async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
   try {
+    await ensureLeadsTable()
     const rows = await query<{
       id: string; name: string | null; phone: string | null; email: string | null;
       source: string | null; project_slug: string | null; assigned_broker_id: string | null;
       status: string | null; priority: string | null; budget_aed: number | null;
       interest: string | null; message: string | null; created_at: string;
-      landing_slug: string | null;
+      landing_slug: string | null; lead_code: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
-              status, priority, budget_aed, interest, message, created_at::text, landing_slug
+              status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code
        FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
       [id]
     )
@@ -46,6 +48,7 @@ async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
       lastContactAt: r.created_at, nextBestAction: 'Follow up', suggestedMessage: '',
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
+      leadCode: r.lead_code ?? null,
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
@@ -120,6 +123,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             {lead.stage}
           </span>
           <span className="text-sm text-slate-500">{lead.source}</span>
+          {lead.leadCode && (
+            <span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2.5 py-0.5 font-mono text-xs text-gold/80">
+              {lead.leadCode}
+            </span>
+          )}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
           {lead.name}

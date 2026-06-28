@@ -26,6 +26,7 @@ interface DbLead {
   landing_slug: string | null
   updated_at: string | null
   snooze_until: string | null
+  lead_code: string | null
 }
 
 function dbLeadToCRM(row: DbLead) {
@@ -67,6 +68,7 @@ function dbLeadToCRM(row: DbLead) {
     notes: [],
     taggedProjects: row.project_slug ? [row.project_slug] : [],
     snoozeUntil: row.snooze_until ?? null,
+    leadCode: row.lead_code ?? null,
   }
 }
 
@@ -85,7 +87,7 @@ export async function GET() {
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
-                      snooze_until::text
+                      snooze_until::text, lead_code
                FROM freehold_site_leads`
 
     if (isBroker && brokerId) {

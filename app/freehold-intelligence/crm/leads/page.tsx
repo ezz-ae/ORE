@@ -71,7 +71,8 @@ export default function CrmLeadsPage() {
         lead.source.toLowerCase().includes(q) ||
         lead.stage.toLowerCase().includes(q) ||
         lead.assignedAgent.toLowerCase().includes(q) ||
-        (lead.landingId || '').toLowerCase().includes(q)
+        (lead.landingId || '').toLowerCase().includes(q) ||
+        (lead.leadCode || '').toLowerCase().includes(q)
       )
       return true
     })
@@ -237,6 +238,9 @@ export default function CrmLeadsPage() {
                       <span className={`h-2 w-2 shrink-0 rounded-full ${ug.dot}`} />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
+                          {lead.leadCode && (
+                            <span className="shrink-0 font-mono text-[10px] text-gold/60">{lead.leadCode}</span>
+                          )}
                           <span className="text-sm font-semibold text-slate-100 group-hover:text-white truncate">
                             {lead.name}
                           </span>
