@@ -6,6 +6,7 @@ import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles } from 'lucide-rea
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/lib/meta/types'
 import type { MetaCta } from '@/lib/meta/types'
+import { useT } from '@/lib/i18n/provider'
 
 const ANGLES: { value: CreativeAngle; label: string; desc: string }[] = [
   { value: 'investor',    label: 'Investor ROI',    desc: 'Net yield, capital appreciation, rental demand' },
@@ -32,6 +33,7 @@ const CTAS: { value: MetaCta; label: string }[] = [
 ]
 
 function CopyButton({ text }: { text: string }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   function copy() {
     navigator.clipboard.writeText(text)
@@ -44,12 +46,13 @@ function CopyButton({ text }: { text: string }) {
       className="inline-flex items-center gap-1 text-sm text-slate-600 transition hover:text-slate-400"
     >
       {copied ? <Check className="h-3 w-3 text-gold" /> : <Copy className="h-3 w-3" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('lm.creatives.generate.copied') : t('lm.creatives.generate.copy')}
     </button>
   )
 }
 
 export default function GenerateCreativePage() {
+  const t = useT()
   const [listingId, setListingId] = useState(leadMachineListings[0]?.id ?? '')
   const [angle, setAngle]         = useState<CreativeAngle>('investor')
   const [tone, setTone]           = useState<CreativeTone>('direct')
@@ -101,17 +104,17 @@ export default function GenerateCreativePage() {
         href="/freehold-intelligence/lead-machine/creatives"
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> Creative library
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.creatives.generate.back')}
       </Link>
 
       {/* Header */}
       <section className="mt-7">
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Wand2 className="h-3.5 w-3.5" /> AI Copy Generator
+          <Wand2 className="h-3.5 w-3.5" /> {t('lm.creatives.generate.eyebrow')}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          Generate ad copy<br />
-          <span className="text-slate-500">angle + tone → variants.</span>
+          {t('lm.creatives.generate.title')}<br />
+          <span className="text-slate-500">{t('lm.creatives.generate.titleSub')}</span>
         </h1>
       </section>
 
@@ -123,7 +126,7 @@ export default function GenerateCreativePage() {
           {/* Listing */}
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Listing
+              {t('lm.creatives.generate.label.listing')}
             </label>
             <div className="relative">
               <select
@@ -150,7 +153,7 @@ export default function GenerateCreativePage() {
           {/* Angle */}
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Creative angle
+              {t('lm.creatives.generate.label.angle')}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {ANGLES.map((a) => (
@@ -174,21 +177,21 @@ export default function GenerateCreativePage() {
           {/* Tone */}
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Tone
+              {t('lm.creatives.generate.label.tone')}
             </label>
             <div className="flex gap-2">
-              {TONES.map((t) => (
+              {TONES.map((tn) => (
                 <button
-                  key={t.value}
-                  onClick={() => setTone(t.value)}
+                  key={tn.value}
+                  onClick={() => setTone(tn.value)}
                   className={[
                     'flex-1 rounded-[12px] border py-2.5 text-xs font-medium transition',
-                    tone === t.value
+                    tone === tn.value
                       ? 'border-gold/40 bg-gold/[0.07] text-white'
                       : 'border-line bg-surface text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
-                  {t.label}
+                  {tn.label}
                 </button>
               ))}
             </div>
@@ -197,7 +200,7 @@ export default function GenerateCreativePage() {
           {/* CTA */}
           <div>
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-              Call to action
+              {t('lm.creatives.generate.label.cta')}
             </label>
             <div className="relative">
               <select
@@ -221,11 +224,11 @@ export default function GenerateCreativePage() {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <Sparkles className="h-4 w-4 animate-pulse" /> Generating…
+                <Sparkles className="h-4 w-4 animate-pulse" /> {t('lm.creatives.generate.generating')}
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
-                <Wand2 className="h-4 w-4" /> Generate variants
+                <Wand2 className="h-4 w-4" /> {t('lm.creatives.generate.generateBtn')}
               </span>
             )}
           </button>
@@ -242,9 +245,9 @@ export default function GenerateCreativePage() {
           {variants.length === 0 && !loading && (
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-dashed border-line text-center">
               <Wand2 className="mx-auto h-8 w-8 text-slate-600 mb-3" />
-              <div className="text-[14px] text-slate-500">Configure options and generate</div>
+              <div className="text-[14px] text-slate-500">{t('lm.creatives.generate.emptyTitle')}</div>
               <p className="mt-1 text-xs text-slate-600">
-                {ANGLES.length} angles × {TONES.length} tones — up to 12 variants per run
+                {t('lm.creatives.generate.emptyNote', { angles: String(ANGLES.length), tones: String(TONES.length) })}
               </p>
             </div>
           )}
@@ -252,7 +255,7 @@ export default function GenerateCreativePage() {
           {loading && (
             <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-3">
               <Sparkles className="h-6 w-6 animate-pulse text-gold/60" />
-              <div className="text-sm text-slate-500">Building copy variants…</div>
+              <div className="text-sm text-slate-500">{t('lm.creatives.generate.building')}</div>
             </div>
           )}
 
@@ -261,14 +264,19 @@ export default function GenerateCreativePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-                    {variants.length} variant{variants.length !== 1 ? 's' : ''} — {angleConfig.label} · {tone}
+                    {t('lm.creatives.generate.variantLabel', {
+                      n: String(variants.length),
+                      plural: variants.length !== 1 ? 's' : '',
+                      angle: angleConfig.label,
+                      tone,
+                    })}
                   </div>
                 </div>
                 <Link
                   href={campaignNewUrl}
                   className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]"
                 >
-                  Use in campaign
+                  {t('lm.creatives.generate.useInCampaign')}
                 </Link>
               </div>
 
@@ -276,7 +284,7 @@ export default function GenerateCreativePage() {
                 <div key={v.id} className="rounded-[20px] border border-line bg-surface p-5">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
-                      Variant {i + 1}
+                      {t('lm.creatives.generate.variantNum', { n: String(i + 1) })}
                     </span>
                     <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-slate-500">
                       {v.cta.replace(/_/g, ' ')}
@@ -286,7 +294,7 @@ export default function GenerateCreativePage() {
                   <div className="space-y-3">
                     <div>
                       <div className="mb-1 flex items-center justify-between">
-                        <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">Headline</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('lm.creatives.generate.field.headline')}</div>
                         <CopyButton text={v.headline} />
                       </div>
                       <p className="text-sm font-semibold text-white leading-snug">{v.headline}</p>
@@ -294,7 +302,7 @@ export default function GenerateCreativePage() {
 
                     <div>
                       <div className="mb-1 flex items-center justify-between">
-                        <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">Primary text</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('lm.creatives.generate.field.primaryText')}</div>
                         <CopyButton text={v.primaryText} />
                       </div>
                       <p className="text-sm text-slate-300 leading-relaxed">{v.primaryText}</p>
@@ -303,7 +311,7 @@ export default function GenerateCreativePage() {
                     {v.description && (
                       <div>
                         <div className="mb-1 flex items-center justify-between">
-                          <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">Description</div>
+                          <div className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('lm.creatives.generate.field.description')}</div>
                           <CopyButton text={v.description} />
                         </div>
                         <p className="text-xs text-slate-500">{v.description}</p>
@@ -320,7 +328,7 @@ export default function GenerateCreativePage() {
                       }}
                       className="text-sm text-slate-600 transition hover:text-slate-400"
                     >
-                      Copy all
+                      {t('lm.creatives.generate.copyAll')}
                     </button>
                   </div>
                 </div>
