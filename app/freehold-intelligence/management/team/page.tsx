@@ -5,6 +5,7 @@ import {
   Users, Phone, TrendingUp, Clock, MessageSquare,
   Star, Award, Activity, CheckCircle2, Loader2,
 } from 'lucide-react'
+import Link from 'next/link'
 import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 import { TeamAdmin } from './_team-admin'
@@ -189,7 +190,7 @@ export default function TeamPerformancePage() {
                             {agent.initials}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-100 truncate">{agent.name}</p>
+                            <Link href={`/freehold-intelligence/analytics/team/${agent.id}`} className="block truncate text-sm font-medium text-slate-100 transition-colors hover:text-gold">{agent.name}</Link>
                             {rank >= 0 && rank <= 2 && (
                               <span className={['text-xs font-semibold', RANK_TEXT[rank]].join(' ')}>
                                 {t('mgmt.team.rankThisPeriod', { rank: RANK_LABELS[rank] })}
@@ -213,7 +214,7 @@ export default function TeamPerformancePage() {
                               {agent.initials}
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-slate-100">{agent.name}</p>
+                              <Link href={`/freehold-intelligence/analytics/team/${agent.id}`} className="text-sm font-medium text-slate-100 transition-colors hover:text-gold">{agent.name}</Link>
                               <p className="text-xs text-slate-500">{lastActiveLabel(agent.lastActive, t)}</p>
                             </div>
                           </div>
