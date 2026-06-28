@@ -6,6 +6,9 @@ import { management } from './dictionaries/management'
 import { inventory } from './dictionaries/inventory'
 import { settings } from './dictionaries/settings'
 import { languages } from './dictionaries/languages'
+import { lm_wizard } from './dictionaries/lm_wizard'
+import { lm_ads } from './dictionaries/lm_ads'
+import { lm_core } from './dictionaries/lm_core'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
@@ -271,7 +274,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru },
 }
