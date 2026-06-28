@@ -81,9 +81,25 @@ export default function DeveloperProfilesPage() {
     .filter((d) => filter === 'All' || d.profileStatus === filter)
     .filter((d) => !search || d.name.toLowerCase().includes(search.toLowerCase()))
 
-  function aiWrite(name: string) {
+  async function aiWrite(name: string) {
     setWriting(name)
-    setTimeout(() => { setWriting(null); setWritten((p) => [...p, name]) }, 2200)
+    try {
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Write a professional developer profile for ${name}, a UAE real-estate developer. Cover track record, flagship projects, build quality, delivery reputation, and why investors trust them. 250-350 words, ready to publish.`,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
+      try { await navigator.clipboard.writeText(data.text) } catch { /* optional */ }
+      setWritten((p) => [...p, name])
+      toast.success(`AI profile for ${name} generated${data.source === 'gemini' ? ' & copied to clipboard' : ''}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'AI generation failed')
+    } finally {
+      setWriting(null)
+    }
   }
 
   const complete    = developers.filter((d) => d.profileStatus === 'Complete').length

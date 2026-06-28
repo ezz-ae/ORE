@@ -130,11 +130,32 @@ export function AdsStudioClient({ initialProjectId, initialBuyerType }: { initia
             <PlusCircle size={15} aria-hidden="true" />
             Create CRM Opportunity
           </Link>
-          <button className="fh-btn" onClick={() => setToast("Campaign saved to Market Notebook for this workspace session.")}>
+          <button className="fh-btn" onClick={() => {
+            if (!allCopy.trim()) { setToast("Generate a campaign first."); return }
+            try {
+              const key = 'fh_market_notebook'
+              const existing = JSON.parse(localStorage.getItem(key) || '[]')
+              existing.unshift({ projectId, savedAt: new Date().toISOString(), content: allCopy })
+              localStorage.setItem(key, JSON.stringify(existing.slice(0, 100)))
+              setToast("Campaign saved to your Market Notebook.")
+            } catch { setToast("Could not save to notebook.") }
+          }}>
             <BookMarked size={15} aria-hidden="true" />
             Save to Notebook
           </button>
-          <button className="fh-btn" onClick={() => setToast("Campaign brief export prepared as structured JSON in the copy panel.")}>
+          <button className="fh-btn" onClick={() => {
+            if (!allCopy.trim()) { setToast("Generate a campaign first."); return }
+            try {
+              const blob = new Blob([allCopy], { type: 'text/markdown' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `campaign-brief-${projectId || 'freehold'}.md`
+              document.body.appendChild(a); a.click(); a.remove()
+              URL.revokeObjectURL(url)
+              setToast("Campaign brief downloaded.")
+            } catch { setToast("Could not export brief.") }
+          }}>
             <Download size={15} aria-hidden="true" />
             Export Campaign Brief
           </button>

@@ -78,9 +78,25 @@ export default function AreaGuidesPage() {
     .filter((a) => filter === 'All' || a.status === filter)
     .filter((a) => !search || a.name.toLowerCase().includes(search.toLowerCase()))
 
-  function aiWrite(name: string) {
+  async function aiWrite(name: string) {
     setWriting(name)
-    setTimeout(() => { setWriting(null); setWritten((p) => [...p, name]) }, 2200)
+    try {
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Write an SEO-optimised area guide for ${name}, Dubai for property investors and buyers. Cover lifestyle, connectivity, schools, amenities, property types, price trends, and rental yield outlook. 350-450 words, ready to publish.`,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
+      try { await navigator.clipboard.writeText(data.text) } catch { /* clipboard optional */ }
+      setWritten((p) => [...p, name])
+      toast.success(`AI guide for ${name} generated${data.source === 'gemini' ? ' & copied to clipboard' : ''}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'AI generation failed')
+    } finally {
+      setWriting(null)
+    }
   }
 
   const published  = areas.filter((a) => a.status === 'Published').length
