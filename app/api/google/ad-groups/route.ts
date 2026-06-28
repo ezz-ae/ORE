@@ -13,7 +13,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ adGroups })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      return NextResponse.json({ error: e.message, type: 'config' }, { status: 503 })
+      // Not connected → empty (demo) list, consistent with the sibling Google
+      // routes that fall back instead of 503-ing.
+      return NextResponse.json({ adGroups: [], demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })

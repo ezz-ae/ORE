@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listCampaigns, getCampaignInsights } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
-import { demoCampaigns } from '@/lib/meta/demo-data'
+import { listLocalCampaigns } from '@/lib/meta/local-store'
 
 export async function GET() {
   const __auth = await requireSession()
@@ -28,7 +28,9 @@ export async function GET() {
     return NextResponse.json({ campaigns: withInsights })
   } catch (err) {
     if (err instanceof MetaConfigError) {
-      return NextResponse.json({ campaigns: demoCampaigns, demo: true })
+      // Not connected → serve the local store (seeded from demo + any
+      // campaigns launched in-app), so the list stays interactive.
+      return NextResponse.json({ campaigns: await listLocalCampaigns(), demo: true })
     }
     if (err instanceof MetaApiError) {
       return NextResponse.json(
