@@ -62,7 +62,7 @@ export const APPS: AppDef[] = [
   {
     id: 'crm', label: 'CRM', sub: 'Leads · Agents · Pipeline',
     href: '/freehold-intelligence/crm', Icon: Users,
-    metric: '415 leads · 12 urgent', badge: 12, accent: '#D4AF37',
+    metric: 'Leads · pipeline · agents', badge: 0, accent: '#D4AF37',
     card: 'border-[#D4AF37]/15 hover:border-[#D4AF37]/35',
     icon: 'text-[#D4AF37] bg-[#D4AF37]/10 border-[#D4AF37]/20',
   },
@@ -84,7 +84,7 @@ export const APPS: AppDef[] = [
   {
     id: 'finance', label: 'Finance', sub: 'Invoices · Payments · Credits',
     href: '/freehold-intelligence/finance', Icon: DollarSign,
-    metric: 'AED 31.3K · 73% budget', badge: 1, accent: '#34D399',
+    metric: 'Revenue · spend · budget', badge: 0, accent: '#34D399',
     card: 'border-emerald-400/15 hover:border-emerald-400/30',
     icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
     roles: MGMT_ROLES,
@@ -115,7 +115,7 @@ export const APPS: AppDef[] = [
   {
     id: 'integrations', label: 'Integrations', sub: 'Meta · Google · HubSpot · Zapier',
     href: '/freehold-intelligence/integrations', Icon: ShieldCheck,
-    metric: '8 connected · 2 pending', badge: 0, accent: 'rgba(255,255,255,0.4)',
+    metric: 'Meta · Google · HubSpot · more', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
     roles: STUDIO_ROLES,
@@ -123,7 +123,7 @@ export const APPS: AppDef[] = [
   {
     id: 'settings', label: 'Settings', sub: 'Team · Roles · Billing',
     href: '/freehold-intelligence/settings', Icon: Settings,
-    metric: '3 users active', badge: 0, accent: 'rgba(255,255,255,0.4)',
+    metric: 'Team · roles · billing', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
     roles: SETTINGS_ROLES,
