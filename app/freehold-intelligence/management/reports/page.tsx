@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -22,13 +22,17 @@ const TOP_EVENTS = [
   { rank: 10, type: 'ads',      icon: Megaphone,     color: 'text-violet-400 bg-violet-500/15',   text: 'WhatsApp broadcast to 148 warm leads generated 18 deal conversions — highest ROI channel at 1,200%' },
 ]
 
-const WEEKLY_SUMMARY = {
-  leads:   { value: 142,   delta: '+18%', positive: true },
-  deals:   { value: 5,     delta: '+2',   positive: true },
-  revenue: { value: 'AED 320K', delta: '+3.2%', positive: true },
-  spend:   { value: 'AED 18.4K', delta: '-4%', positive: true },
-  cpl:     { value: 'AED 38', delta: '-11%', positive: true },
-  roi:     { value: '835%', delta: '+8%', positive: true },
+function fmtAedShort(n: number): string {
+  if (!n || n <= 0) return 'AED 0'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
+}
+
+type SummaryMetric = { value: string }
+const ZERO_SUMMARY: Record<'leads' | 'deals' | 'revenue' | 'spend' | 'cpl' | 'roi', SummaryMetric> = {
+  leads: { value: '0' }, deals: { value: '0' }, revenue: { value: 'AED 0' },
+  spend: { value: 'AED 0' }, cpl: { value: 'AED 0' }, roi: { value: '—' },
 }
 
 type ReportStatus = 'ready' | 'generating' | 'scheduled'
@@ -104,22 +108,81 @@ const REPORT_TYPES = [
   'Market Trends Report',
 ]
 
+interface Analytics {
+  ytd: { salesAed: number; commissionAed: number; deals: number; leads: number; costPerLeadAed: number }
+  monthlyDeals: { month: string; sales: number; commission: number; deals: number }[]
+  monthlyLeads: { month: string; leads: number }[]
+  leadsBySource: { source: string; leads: number; closed: number; conversionPct: number }[]
+  expensesByCategory: Record<string, number>
+  conversion: { totalLeads: number; closedDeals: number; conversionPct: number }
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
+  URL.revokeObjectURL(url)
+}
+
 export default function ReportsPage() {
   const [reportType, setReportType] = useState(REPORT_TYPES[0])
   const [dateFrom,   setDateFrom]   = useState('2026-06-01')
   const [dateTo,     setDateTo]     = useState('2026-06-06')
   const [generating, setGenerating] = useState(false)
   const [generated,  setGenerated]  = useState(false)
-  const [format,     setFormat]     = useState('PDF')
+  const [format,     setFormat]     = useState('CSV')
+  const [analytics,  setAnalytics]  = useState<Analytics | null>(null)
+  const [summary,    setSummary]    = useState(ZERO_SUMMARY)
+
+  useEffect(() => {
+    fetch('/api/freehold/management/analytics', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: Analytics | null) => {
+        if (!d) return
+        setAnalytics(d)
+        const adSpend = d.expensesByCategory?.ad_spend || 0
+        const roi = adSpend > 0 ? Math.round((d.ytd.commissionAed / adSpend) * 100) : 0
+        setSummary({
+          leads:   { value: String(d.ytd.leads) },
+          deals:   { value: String(d.ytd.deals) },
+          revenue: { value: fmtAedShort(d.ytd.commissionAed) },
+          spend:   { value: fmtAedShort(adSpend) },
+          cpl:     { value: d.ytd.costPerLeadAed > 0 ? `AED ${d.ytd.costPerLeadAed}` : '—' },
+          roi:     { value: roi > 0 ? `${roi}%` : '—' },
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  function buildReportRows(): (string | number)[][] {
+    const a = analytics
+    const rows: (string | number)[][] = [["Freehold Property UAE — " + reportType], ["Generated", new Date().toISOString()], [""]]
+    if (a) {
+      rows.push(["YTD Summary"], ["Leads", a.ytd.leads], ["Deals closed", a.ytd.deals], ["Sales value (AED)", Math.round(a.ytd.salesAed)], ["Commission (AED)", Math.round(a.ytd.commissionAed)], ["Conversion %", a.conversion.conversionPct], [""])
+      rows.push(["Monthly deals"], ["Month", "Deals", "Sales AED", "Commission AED"])
+      a.monthlyDeals.forEach((m) => rows.push([m.month, m.deals, Math.round(m.sales), Math.round(m.commission)]))
+      rows.push([""], ["Leads by source"], ["Source", "Leads", "Closed", "Conversion %"])
+      a.leadsBySource.forEach((s) => rows.push([s.source, s.leads, s.closed, s.conversionPct]))
+    } else {
+      rows.push(["No data available yet."])
+    }
+    return rows
+  }
 
   function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
     setGenerating(true)
     setGenerated(false)
+    // Build a real export from live analytics.
     setTimeout(() => {
+      downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}.csv`, buildReportRows())
       setGenerating(false)
       setGenerated(true)
-    }, 2200)
+      toast.success('Report generated & downloaded')
+    }, 300)
   }
 
   return (
@@ -181,12 +244,12 @@ export default function ReportsPage() {
           </div>
           <div className="grid grid-cols-2 gap-0 divide-y divide-line md:grid-cols-3 md:divide-y-0 xl:grid-cols-6">
             {[
-              { label: 'New Leads',       ...WEEKLY_SUMMARY.leads,   icon: TrendingUp,    unit: '' },
-              { label: 'Deals Closed',    ...WEEKLY_SUMMARY.deals,   icon: CheckCircle2,  unit: '' },
-              { label: 'Revenue MTD',     ...WEEKLY_SUMMARY.revenue, icon: DollarSign,    unit: '' },
-              { label: 'Total Ad Spend',  ...WEEKLY_SUMMARY.spend,   icon: Megaphone,     unit: '' },
-              { label: 'Cost per Lead',   ...WEEKLY_SUMMARY.cpl,     icon: Users,         unit: '' },
-              { label: 'Marketing ROI',   ...WEEKLY_SUMMARY.roi,     icon: ArrowUpRight,  unit: '' },
+              { label: 'YTD Leads',       value: summary.leads.value,   icon: TrendingUp },
+              { label: 'Deals Closed',    value: summary.deals.value,   icon: CheckCircle2 },
+              { label: 'Commission YTD',  value: summary.revenue.value, icon: DollarSign },
+              { label: 'Total Ad Spend',  value: summary.spend.value,   icon: Megaphone },
+              { label: 'Cost per Lead',   value: summary.cpl.value,     icon: Users },
+              { label: 'Marketing ROI',   value: summary.roi.value,     icon: ArrowUpRight },
             ].map((item, idx) => {
               const Icon = item.icon
               return (
@@ -203,9 +266,7 @@ export default function ReportsPage() {
                     <span className="text-xs text-slate-500">{item.label}</span>
                   </div>
                   <p className="text-xl font-bold text-white tabular-nums">{item.value}</p>
-                  <p className={['text-xs font-semibold mt-0.5', item.positive ? 'text-emerald-400' : 'text-red-400'].join(' ')}>
-                    {item.delta} vs last week
-                  </p>
+                  <p className="text-xs font-semibold mt-0.5 text-slate-600">live · year to date</p>
                 </div>
               )
             })}
@@ -271,19 +332,10 @@ export default function ReportsPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => toast.info(`Viewing ${report.name}`)}
-                        className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-line-strong hover:text-white transition-colors">
-                        <Eye className="h-3.5 w-3.5" />
-                        View
-                      </button>
-                      <button
-                        onClick={() => toast.promise(
-                          new Promise(r => setTimeout(r, 1300)),
-                          { loading: 'Generating PDF…', success: `${report.name} downloaded`, error: 'Download failed' }
-                        )}
+                        onClick={() => { downloadCsv(`${report.name.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(`${report.name} downloaded`) }}
                         className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
-                        PDF
+                        CSV
                       </button>
                     </div>
                   </div>
@@ -395,10 +447,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">Your report has been generated successfully</p>
                   </div>
                   <button
-                    onClick={() => toast.promise(
-                      new Promise(r => setTimeout(r, 1000)),
-                      { loading: `Exporting as ${format}…`, success: `Report exported as ${format}`, error: 'Export failed' }
-                    )}
+                    onClick={() => { downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success('Report downloaded') }}
                     className="ml-auto flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
                     Download
@@ -443,20 +492,10 @@ export default function ReportsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toast.info(`Viewing ${report.type}`)}
-                          className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors">
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </button>
-                        <span className="text-slate-700">·</span>
-                        <button
-                          onClick={() => toast.promise(
-                            new Promise(r => setTimeout(r, 1100)),
-                            { loading: 'Preparing PDF…', success: `${report.id} downloaded`, error: 'Download failed' }
-                          )}
+                          onClick={() => { downloadCsv(`${report.id}.csv`, buildReportRows()); toast.success(`${report.id} downloaded`) }}
                           className="flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
-                          PDF
+                          CSV
                         </button>
                       </div>
                     </td>

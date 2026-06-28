@@ -13,38 +13,31 @@ import {
 } from 'lucide-react'
 import { StatCard, type StatDelta } from '@/components/freehold/ui'
 
-const STATS: { label: string; value: string; delta?: StatDelta; hint?: string; icon: LucideIcon }[] = [
-  { label: 'New Leads Today', value: '14',        delta: { value: '+3',  direction: 'up' },   icon: Target },
-  { label: 'Pipeline Value',  value: 'AED 8.4M',  delta: { value: '+12%', direction: 'up' },  icon: TrendingUp },
-  { label: 'Deals Closing',   value: '3',         hint: 'this week',                           icon: Briefcase },
-  { label: 'Ad Spend Today',  value: 'AED 2,180', delta: { value: '-4%', direction: 'down' },  icon: Megaphone },
-  { label: 'Revenue MTD',     value: 'AED 320K',  delta: { value: '+18%', direction: 'up' },   icon: DollarSign },
-  { label: 'Team Online',     value: '7 / 12',    hint: 'agents',                              icon: Users },
-]
+function fmtAedShort(n: number): string {
+  if (!n || n <= 0) return 'AED 0'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
+}
 
-const TASKS = [
-  { id: 1, priority: 'high',   text: 'Review 3 new leads from Meta campaign — follow-up due today', done: false },
-  { id: 2, priority: 'high',   text: 'Approve invoices for 2 closed deals before 12:00 PM', done: false },
-  { id: 3, priority: 'medium', text: 'Check Google Ads campaign performance — CTR dropped 15%', done: false },
-  { id: 4, priority: 'medium', text: 'Schedule team briefing for Q3 targets', done: false },
-  { id: 5, priority: 'low',    text: 'Review new inventory listings from Emaar — 6 units added', done: true },
-  { id: 6, priority: 'low',    text: 'Update ROI report for last month', done: true },
-]
+interface DashboardStats {
+  newLeadsToday: number
+  newLeadsDelta: number
+  pipelineValueAed: number
+  dealsClosingWeek: number
+  revenueMtdAed: number
+  teamCount: number
+  openLeads: number
+  commissionOutstandingAed: number
+}
+interface DashTask { id: string; priority: string; text: string; done: boolean }
+interface DashEvent { time: string; user: string; action: string; tag: string }
+interface DashLead { name: string; status: string }
 
-const EVENTS = [
-  { id: 1, time: '08:47',  user: 'Sara Al Mansoori', action: 'Closed deal on Dubai Hills villa', tag: 'deal',   color: 'text-emerald-400' },
-  { id: 2, time: '08:31',  user: 'Meta Ads',          action: 'CPL dropped to AED 38 — best this month',        tag: 'ads',    color: 'text-violet-400' },
-  { id: 3, time: '08:15',  user: 'Ahmad Khalil',      action: 'Logged in · 6 leads followed up',                tag: 'sales',  color: 'text-sky-400' },
-  { id: 4, time: '07:55',  user: 'System',            action: 'Nightly sync complete — 2,813 listings indexed',  tag: 'system', color: 'text-slate-400' },
-  { id: 5, time: '07:40',  user: 'Google Ads',        action: 'New campaign "Palm Q3" went live',                tag: 'ads',    color: 'text-violet-400' },
-]
-
-const EMAILS = [
-  { id: 1, from: 'Emaar Properties',    subject: '6 new off-plan units available — Downtown',    urgent: true },
-  { id: 2, from: 'DLD Portal',          subject: 'Transaction report ready — May 2026',           urgent: true },
-  { id: 3, from: 'Client: Ahmed Hassan', subject: 'Re: Palm Jumeirah offer — counter proposal',   urgent: false },
-  { id: 4, from: 'Google Ads',          subject: 'Monthly performance report — May 2026',         urgent: false },
-]
+const EVENT_COLOR: Record<string, string> = {
+  deal: 'text-emerald-400',
+  lead: 'text-sky-400',
+}
 
 const QUICK_NAV = [
   { href: '/freehold-intelligence/management/events',   label: 'Events Log', icon: Activity,      color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
@@ -61,14 +54,15 @@ const QUICK_NAV = [
 
 export default function ManagementDashboard() {
   const router = useRouter()
-  const [tasks, setTasks]   = useState(TASKS)
+  const [tasks, setTasks]   = useState<DashTask[]>([])
+  const [stats, setStats]   = useState<DashboardStats | null>(null)
+  const [events, setEvents] = useState<DashEvent[]>([])
+  const [recentLeads, setRecentLeads] = useState<DashLead[]>([])
   const [aiInput, setAiInput] = useState('')
   const [aiPending, setAiPending] = useState(false)
   const [greeting, setGreeting] = useState('')
   const [dateStr, setDateStr]   = useState('')
-  const [aiMessages, setAiMessages] = useState([
-    { role: 'assistant', text: `Good morning. Here is your briefing:\n\n**3 urgent deals** need attention before end of day. Your best agent Sara closed a villa in Dubai Hills — congratulations to her. Meta ad spend is performing well today with CPL at AED 38. Google Ads CTR dropped 15% — worth reviewing.\n\nWhat would you like to focus on first?` },
-  ])
+  const [aiMessages, setAiMessages] = useState<{ role: string; text: string }[]>([])
 
   useEffect(() => {
     const now  = new Date()
@@ -77,8 +71,44 @@ export default function ManagementDashboard() {
     setDateStr(now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dubai' }))
   }, [])
 
-  function toggleTask(id: number) {
-    setTasks(t => t.map(task => task.id === id ? { ...task, done: !task.done } : task))
+  // Load real dashboard data.
+  useEffect(() => {
+    fetch('/api/freehold/dashboard/stats', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d) return
+        setStats(d.stats)
+        setTasks(d.tasks || [])
+        setEvents(d.events || [])
+        setRecentLeads(d.recentLeads || [])
+        const s = d.stats
+        if (s) {
+          setAiMessages([{ role: 'assistant', text: `Here is your live briefing:\n\n**${s.newLeadsToday} new lead${s.newLeadsToday === 1 ? '' : 's'} today**${s.newLeadsDelta !== 0 ? ` (${s.newLeadsDelta > 0 ? '+' : ''}${s.newLeadsDelta} vs yesterday)` : ''}. Pipeline value is ${fmtAedShort(s.pipelineValueAed)} across approved deals, with **${s.dealsClosingWeek} deal${s.dealsClosingWeek === 1 ? '' : 's'} closed this week**. ${s.commissionOutstandingAed > 0 ? `Commission outstanding: ${fmtAedShort(s.commissionOutstandingAed)}. ` : ''}${s.openLeads} open lead${s.openLeads === 1 ? '' : 's'} in the pipeline.\n\nWhat would you like to focus on first?` }])
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const STAT_CARDS: { label: string; value: string; delta?: StatDelta; hint?: string; icon: LucideIcon }[] = stats ? [
+    { label: 'New Leads Today', value: String(stats.newLeadsToday), delta: stats.newLeadsDelta !== 0 ? { value: `${stats.newLeadsDelta > 0 ? '+' : ''}${stats.newLeadsDelta}`, direction: stats.newLeadsDelta >= 0 ? 'up' : 'down' } : undefined, icon: Target },
+    { label: 'Pipeline Value', value: fmtAedShort(stats.pipelineValueAed), hint: 'approved deals', icon: TrendingUp },
+    { label: 'Deals Closed', value: String(stats.dealsClosingWeek), hint: 'this week', icon: Briefcase },
+    { label: 'Open Leads', value: String(stats.openLeads), hint: 'in pipeline', icon: Megaphone },
+    { label: 'Revenue MTD', value: fmtAedShort(stats.revenueMtdAed), hint: 'commission received', icon: DollarSign },
+    { label: 'Team', value: String(stats.teamCount), hint: 'active members', icon: Users },
+  ] : []
+
+  function toggleTask(id: string) {
+    let nextDone = false
+    setTasks(t => t.map(task => {
+      if (task.id !== id) return task
+      nextDone = !task.done
+      return { ...task, done: nextDone }
+    }))
+    fetch(`/api/freehold/tasks/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: nextDone ? 'done' : 'open' }),
+    }).catch(() => {})
   }
 
   async function sendAi(e: React.FormEvent) {
@@ -125,15 +155,19 @@ export default function ManagementDashboard() {
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-          {STATS.map((stat) => (
-            <StatCard
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              delta={stat.delta}
-              hint={stat.hint}
-              Icon={stat.icon}
-            />
+          {(stats ? STAT_CARDS : Array.from({ length: 6 })).map((stat, i) => (
+            stats && stat ? (
+              <StatCard
+                key={(stat as { label: string }).label}
+                label={(stat as { label: string }).label}
+                value={(stat as { value: string }).value}
+                delta={(stat as { delta?: StatDelta }).delta}
+                hint={(stat as { hint?: string }).hint}
+                Icon={(stat as { icon: LucideIcon }).icon}
+              />
+            ) : (
+              <div key={i} className="h-[88px] animate-pulse rounded-xl border border-white/[0.07] bg-surface-2" />
+            )
           ))}
         </div>
 
@@ -247,33 +281,35 @@ export default function ManagementDashboard() {
               </div>
             </div>
 
-            {/* AI Emails Scanner */}
+            {/* Latest Leads */}
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Mail className="h-4 w-4 text-slate-400" />
-                <span className="text-sm font-semibold text-white">AI Emails Scanner</span>
-                <span className="ml-auto rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-400">
-                  2 urgent
-                </span>
+                <span className="text-sm font-semibold text-white">Latest Leads</span>
+                <Link href="/freehold-intelligence/crm/leads" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300">
+                  All <ArrowUpRight className="h-3 w-3" />
+                </Link>
               </div>
               <div className="divide-y divide-white/[0.07]">
-                {EMAILS.map(email => (
-                  <div key={email.id} className="flex items-center gap-4 px-5 py-3.5">
-                    <div className={[
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                      email.urgent ? 'bg-red-500/15 text-red-400' : 'bg-surface-2 text-slate-500',
-                    ].join(' ')}>
-                      {email.urgent ? <AlertCircle className="h-3.5 w-3.5" /> : <Mail className="h-3.5 w-3.5" />}
+                {recentLeads.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-xs text-slate-600">No leads yet.</div>
+                ) : recentLeads.map((lead, i) => {
+                  const hot = lead.status === 'new' || lead.status === 'contacted'
+                  return (
+                    <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                      <div className={[
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                        hot ? 'bg-gold/15 text-gold' : 'bg-surface-2 text-slate-500',
+                      ].join(' ')}>
+                        {(lead.name || '?').slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-100 truncate">{lead.name}</p>
+                        <p className="text-xs text-slate-500 capitalize truncate">{lead.status}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-100 truncate">{email.from}</p>
-                      <p className="text-xs text-slate-500 truncate">{email.subject}</p>
-                    </div>
-                    {email.urgent && (
-                      <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-400">Urgent</span>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -312,14 +348,16 @@ export default function ManagementDashboard() {
                 </Link>
               </div>
               <div className="divide-y divide-white/[0.07]">
-                {EVENTS.map(ev => (
-                  <div key={ev.id} className="px-5 py-3.5">
+                {events.length === 0 ? (
+                  <div className="px-5 py-8 text-center text-xs text-slate-600">No recent activity yet.</div>
+                ) : events.map((ev, i) => (
+                  <div key={i} className="px-5 py-3.5">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="text-xs font-semibold text-slate-400">{ev.user}</span>
                       <span className="text-xs text-slate-600">{ev.time}</span>
                     </div>
                     <p className="text-sm text-slate-300">{ev.action}</p>
-                    <span className={['mt-1 inline-block text-xs font-medium', ev.color].join(' ')}>
+                    <span className={['mt-1 inline-block text-xs font-medium', EVENT_COLOR[ev.tag] || 'text-slate-400'].join(' ')}>
                       #{ev.tag}
                     </span>
                   </div>
