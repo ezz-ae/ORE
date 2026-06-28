@@ -1,10 +1,12 @@
 import type { DashboardSnapshot, Milestone, SystemModule } from "../types"
 
+// When the DB is unreachable we must not invent catalog counts — show 0/"—"
+// rather than fabricated totals. Real numbers come from the live query.
 export const fallbackDashboard: DashboardSnapshot = {
-  total_projects: 7015,
-  total_developers: 669,
-  total_areas: 384,
-  active_users: 1,
+  total_projects: 0,
+  total_developers: 0,
+  total_areas: 0,
+  active_users: 0,
   milestones_done: 0,
   milestones_total: 10,
   open_tasks: 0,
