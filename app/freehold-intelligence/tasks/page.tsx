@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus, X } from 'lucide-react'
 import Link from 'next/link'
 type Task = {
@@ -163,8 +163,29 @@ const PRIORITY_MAP: Record<string, Task['priority']> = {
 
 export default function TasksPage() {
   // --- core state ---
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS)
+  const [tasks, setTasks] = useState<Task[]>([])
   const [statuses, setStatuses] = useState<Record<string, Task['status']>>({})
+
+  // Load real tasks from the API.
+  useEffect(() => {
+    fetch('/api/freehold/tasks', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!d?.tasks) return
+        setTasks(d.tasks.map((t: Record<string, unknown>): Task => ({
+          id: String(t.id),
+          priority: (t.priority as Task['priority']) || 'medium',
+          status: (t.status as Task['status']) || 'open',
+          title: String(t.title || ''),
+          description: String(t.description || ''),
+          owner: String(t.assignee || '—'),
+          assignee: String(t.assignee || '—'),
+          app: 'Tasks',
+          dueDate: t.dueDate ? String(t.dueDate) : undefined,
+        })))
+      })
+      .catch(() => {})
+  }, [])
 
   // --- filter state ---
   const [activeStatus, setActiveStatus] = useState<StatusFilter>('All')
@@ -224,30 +245,38 @@ export default function TasksPage() {
 
   function markDone(id: string) {
     setStatuses(prev => ({ ...prev, [id]: 'done' }))
+    fetch(`/api/freehold/tasks/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'done' }),
+    }).catch(() => {})
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!formTitle.trim()) return
-    const newTask: Task = {
-      id: `task_${Date.now()}`,
-      priority: formPriority,
-      status: 'open',
-      title: formTitle.trim(),
-      description: formDesc.trim(),
-      owner: formAssignee.trim() || 'Owner',
-      assignee: formAssignee.trim() || 'Owner',
-      app: 'Tasks',
-      dueDate: formDue.trim() || undefined,
-    }
-    setTasks(prev => [newTask, ...prev])
-    setFormTitle('')
-    setFormDesc('')
-    setFormAssignee('')
-    setFormPriority('medium')
-    setFormDue('')
-    setShowSuccess(true)
-    setTimeout(() => setShowSuccess(false), 2500)
+    try {
+      const res = await fetch('/api/freehold/tasks', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formTitle.trim(),
+          description: formDesc.trim(),
+          assignee: formAssignee.trim(),
+          priority: formPriority,
+          dueDate: formDue.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.task) throw new Error(data?.error || 'Failed')
+      const t = data.task
+      setTasks(prev => [{
+        id: String(t.id), priority: t.priority || 'medium', status: t.status || 'open',
+        title: t.title, description: t.description || '', owner: t.assignee || '—',
+        assignee: t.assignee || '—', app: 'Tasks', dueDate: t.dueDate || undefined,
+      }, ...prev])
+      setFormTitle(''); setFormDesc(''); setFormAssignee(''); setFormPriority('medium'); setFormDue('')
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 2500)
+    } catch { /* keep form for retry */ }
   }
 
   const inputClass =
