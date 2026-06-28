@@ -8,6 +8,7 @@ import {
   type LeadMachineListing,
 } from '@/src/features/freehold-intelligence/lead-machine'
 import { PageHeader } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 function dot(value: string) {
   const v = value.toLowerCase()
@@ -21,16 +22,17 @@ function statusText(value: string) {
   return value.replace(/[_-]/g, ' ').toLowerCase()
 }
 
-function readiness(listing: LeadMachineListing) {
-  if (listing.adReadinessScore >= 80 && listing.landingReadinessScore >= 80) return 'Ready for paid traffic'
-  if (listing.blockerStatus === 'Needs Access') return 'One access away from launch'
-  if (listing.blockerStatus === 'Needs Data') return 'Missing data before landing'
-  if (listing.landingStatus === 'Needs Review') return 'One approval from launch'
-  if (listing.landingStatus === 'Needs Landing') return 'Needs landing generation'
-  return 'In progress'
+function readiness(listing: LeadMachineListing): string {
+  if (listing.adReadinessScore >= 80 && listing.landingReadinessScore >= 80) return 'lm.listings.readiness.ready'
+  if (listing.blockerStatus === 'Needs Access') return 'lm.listings.readiness.oneAccess'
+  if (listing.blockerStatus === 'Needs Data') return 'lm.listings.readiness.missingData'
+  if (listing.landingStatus === 'Needs Review') return 'lm.listings.readiness.oneApproval'
+  if (listing.landingStatus === 'Needs Landing') return 'lm.listings.readiness.needsLanding'
+  return 'lm.listings.readiness.inProgress'
 }
 
 function ListingCard({ listing }: { listing: LeadMachineListing }) {
+  const t = useT()
   const priceLabel = listing.startingPrice ? `AED ${Number(listing.startingPrice).toLocaleString()}` : null
 
   return (
@@ -60,32 +62,32 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
 
       <div className="px-6 pb-7 pt-5 sm:px-8">
         <p className="text-sm leading-[1.6] text-slate-300">
-          <span className="font-medium text-white">{readiness(listing)}.</span>{' '}
+          <span className="font-medium text-white">{t(readiness(listing))}.</span>{' '}
           {listing.nextAction}
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
           <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.landingStatus)}`} />
-            Landing · <span className="capitalize text-slate-200">{statusText(listing.landingStatus)}</span>
+            {t('lm.listings.label.landing')} · <span className="capitalize text-slate-200">{statusText(listing.landingStatus)}</span>
           </span>
           <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.adStatus)}`} />
-            Ads · <span className="capitalize text-slate-200">{statusText(listing.adStatus)}</span>
+            {t('lm.listings.label.ads')} · <span className="capitalize text-slate-200">{statusText(listing.adStatus)}</span>
           </span>
           <span className="flex items-center gap-2 text-slate-400">
             <span className={`h-1.5 w-1.5 rounded-full ${dot(listing.blockerStatus)}`} />
             <span className="capitalize text-slate-200">{statusText(listing.blockerStatus)}</span>
           </span>
           <span className="text-slate-500">
-            Opportunity{' '}
+            {t('lm.listings.label.opportunity')}{' '}
             <span className="font-semibold tabular-nums text-white">{listing.opportunityScore}</span>
           </span>
         </div>
 
         {listing.missingRequirements.length > 0 && (
           <div className="mt-5 border-t border-line pt-4">
-            <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Holding it back</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{t('lm.listings.holdingBack')}</div>
             <ul className="mt-2 grid gap-1 text-[14px] text-slate-300">
               {listing.missingRequirements.map((req) => (
                 <li
@@ -104,13 +106,13 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:gap-2.5"
           >
-            Open workspace <ArrowUpRight className="h-3.5 w-3.5" />
+            {t('lm.listings.openWorkspace')} <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
           <Link
             href={`/freehold-intelligence/lead-machine/listings/${listing.id}`}
             className="rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
           >
-            View details
+            {t('lm.listings.viewDetails')}
           </Link>
         </div>
       </div>
@@ -120,9 +122,15 @@ function ListingCard({ listing }: { listing: LeadMachineListing }) {
 
 type ReadinessFilter = 'All' | 'Ready' | 'Needs Review' | 'Blocked'
 
-const FILTER_OPTIONS: ReadinessFilter[] = ['All', 'Ready', 'Needs Review', 'Blocked']
+const FILTER_OPTIONS: { value: ReadinessFilter; labelKey: string }[] = [
+  { value: 'All',          labelKey: 'lm.listings.filter.all'         },
+  { value: 'Ready',        labelKey: 'lm.listings.filter.ready'       },
+  { value: 'Needs Review', labelKey: 'lm.listings.filter.needsReview' },
+  { value: 'Blocked',      labelKey: 'lm.listings.filter.blocked'     },
+]
 
 export default function ListingsPage() {
+  const t = useT()
   const total = leadMachineListings.length
   const ready = leadMachineListings.filter(
     (l) => l.adReadinessScore >= 80 && l.landingReadinessScore >= 80,
@@ -161,24 +169,24 @@ export default function ListingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 pb-16 pt-6 sm:pt-8">
       <PageHeader
-        eyebrow="Lead Machine"
+        eyebrow={t('lm.listings.eyebrow')}
         Icon={LayoutList}
-        title={`${total} listings`}
+        title={t('lm.listings.title', { n: String(total) })}
         subtitle={
           ready > 0
-            ? `${ready} ready for paid traffic — the rest pending data, approvals, or landing generation.`
-            : 'None are fully ready yet — resolve blockers to unlock campaigns.'
+            ? t('lm.listings.subtitleReady', { ready: String(ready) })
+            : t('lm.listings.subtitleNone')
         }
       />
 
       <section className="mt-16">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-sm font-medium uppercase tracking-wider text-slate-500">All</div>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-500">{t('lm.listings.sectionAll')}</div>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               {isFiltered
-                ? <>{filtered.length} of {total} listings</>
-                : <>{total} listings</>
+                ? t('lm.listings.countFiltered', { n: String(filtered.length), total: String(total) })
+                : t('lm.listings.count', { n: String(total) })
               }
             </h2>
           </div>
@@ -191,7 +199,7 @@ export default function ListingsPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by project, area, or developer…"
+            placeholder={t('lm.listings.searchPlaceholder')}
             className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
           />
           {query && (
@@ -207,29 +215,29 @@ export default function ListingsPage() {
 
         {/* Readiness filter pills */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {FILTER_OPTIONS.map((option) => (
+          {FILTER_OPTIONS.map(({ value, labelKey }) => (
             <button
-              key={option}
-              onClick={() => setReadinessFilter(option)}
+              key={value}
+              onClick={() => setReadinessFilter(value)}
               className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
-                readinessFilter === option
+                readinessFilter === value
                   ? 'border-gold/40 bg-gold/10 text-gold'
                   : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
               }`}
             >
-              {option}
+              {t(labelKey)}
             </button>
           ))}
         </div>
 
         {filtered.length === 0 ? (
           <div className="mt-16 flex flex-col items-center gap-5 text-center">
-            <p className="text-sm text-slate-500">No listings match these filters</p>
+            <p className="text-sm text-slate-500">{t('lm.listings.noMatch')}</p>
             <button
               onClick={clearFilters}
               className="rounded-full border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white"
             >
-              Clear filters
+              {t('lm.listings.clearFilters')}
             </button>
           </div>
         ) : (
