@@ -110,13 +110,13 @@ export default function CrmPipelinePage() {
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
                   <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 truncate">
-                    {item.name}
+                    {t(STAGE_NAME_KEY[item.name] ?? '') || item.name}
                   </span>
                 </div>
                 <div className="text-[22px] font-semibold text-white leading-none">{item.count}</div>
-                <div className="mt-0.5 text-xs text-slate-400">lead{item.count !== 1 ? 's' : ''}</div>
+                <div className="mt-0.5 text-xs text-slate-400">{item.count !== 1 ? t('crm.leadsLower') : t('crm.leadLower')}</div>
                 <div className="mt-3 text-sm font-semibold text-slate-300">{item.value}</div>
-                <div className="text-xs text-slate-500">{item.name === 'Closed' ? 'closed' : 'pipeline'}</div>
+                <div className="text-xs text-slate-500">{item.name === 'Closed' ? t('crm.closedLower') : t('crm.pipelineLower')}</div>
               </div>
             ))}
           </div>
@@ -138,7 +138,7 @@ export default function CrmPipelinePage() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`h-1.5 w-1.5 rounded-full ${stage.dot}`} />
-                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{stage.name}</div>
+                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t(STAGE_NAME_KEY[stage.name] ?? '') || stage.name}</div>
                   </div>
                   <div className="mt-3 text-[32px] font-semibold text-white">{stage.count}</div>
                   <div className="mt-1 text-xs font-medium text-slate-400">{stage.value}</div>
@@ -150,13 +150,13 @@ export default function CrmPipelinePage() {
 
           {activeStage && (
             <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs text-slate-400">Showing</span>
-              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-sm font-medium text-[#D4AF37]">{activeStage}</span>
+              <span className="text-xs text-slate-400">{t('crm.showing')}</span>
+              <span className="rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-3 py-1 text-sm font-medium text-[#D4AF37]">{t(STAGE_NAME_KEY[activeStage] ?? '') || activeStage}</span>
               <button
                 onClick={() => setActiveStage(null)}
                 className="text-xs text-slate-500 transition hover:text-slate-300"
               >
-                Clear
+                {t('crm.clear')}
               </button>
             </div>
           )}
@@ -165,8 +165,8 @@ export default function CrmPipelinePage() {
           {spotlight.map(({ label, leads }) => (
             <section key={label} className="mt-14">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-[18px] font-semibold text-white">{label}</h2>
-                <span className="text-sm uppercase tracking-[0.18em] text-slate-500">{leads.length} active</span>
+                <h2 className="text-[18px] font-semibold text-white">{t(STAGE_NAME_KEY[label] ?? '') || label}</h2>
+                <span className="text-sm uppercase tracking-[0.18em] text-slate-500">{leads.length} {t('crm.activeLower')}</span>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {leads.map((lead) => (
@@ -185,7 +185,7 @@ export default function CrmPipelinePage() {
                       </span>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-3 text-sm text-slate-400">
-                      <span>Agent: <span className="text-slate-300">{lead.assignedAgent}</span></span>
+                      <span>{t('crm.agentLabel')}<span className="text-slate-300">{lead.assignedAgent}</span></span>
                       <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     </div>
                   </Link>
@@ -196,11 +196,11 @@ export default function CrmPipelinePage() {
 
           <section className="mt-14">
             <AiPrompt
-              placeholder="Ask about pipeline, stage velocity, conversion…"
+              placeholder={t('crm.aiPlaceholderPipeline')}
               suggestions={[
-                'Which stage has the most stalled leads?',
-                'Which agents have the most hot leads right now?',
-                'What is the average time to move from Qualified to Hot?',
+                t('crm.aiSuggest.stalledLeads'),
+                t('crm.aiSuggest.agentsHotLeads'),
+                t('crm.aiSuggest.avgTimeQualified'),
               ]}
             />
           </section>
@@ -211,27 +211,29 @@ export default function CrmPipelinePage() {
           <div className="sticky top-[112px] space-y-5">
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <TrendingUp className="h-3 w-3" /> Conversion rate
+                <TrendingUp className="h-3 w-3" /> {t('crm.conversionRate')}
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">23%</div>
-              <div className="mt-1 text-xs text-[#D4AF37]">+4pp vs last month</div>
+              <div className="mt-1 text-xs text-[#D4AF37]">{t('crm.vsLastMonth')}</div>
             </div>
 
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Clock className="h-3 w-3" /> Avg. time-to-close
+                <Clock className="h-3 w-3" /> {t('crm.avgTimeToClose')}
               </div>
               <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
-              <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
+              <div className="mt-1 text-xs text-slate-400">{t('crm.target21days')}</div>
             </div>
 
             <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-red-300/80">
-                <AlertCircle className="h-3 w-3" /> Stuck stage
+                <AlertCircle className="h-3 w-3" /> {t('crm.stuckStage')}
               </div>
-              <div className="mt-3 text-sm font-semibold text-white">Follow-up → Qualified</div>
+              <div className="mt-3 text-sm font-semibold text-white">{t('crm.followUpToQualified')}</div>
               <div className="mt-2 text-xs leading-relaxed text-slate-400">
-                {(stageCounts['Follow-up'] ?? []).length} lead{(stageCounts['Follow-up'] ?? []).length !== 1 ? 's' : ''} in Follow-up without stage progression this week.
+                {(stageCounts['Follow-up'] ?? []).length !== 1
+                  ? t('crm.stuckStageDesc', { count: (stageCounts['Follow-up'] ?? []).length })
+                  : t('crm.stuckStageDescSingular', { count: (stageCounts['Follow-up'] ?? []).length })}
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { BarChart2, TrendingUp, FileText, Table, Download, Calendar, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 interface Analytics {
   totals: { totalSalesAed: number; totalCommissionAed: number; netCommissionAed: number; totalPaidAed: number; totalOutstandingAed: number }
@@ -20,17 +21,18 @@ function fmt(n: number) {
   return 'AED ' + Math.round(n).toLocaleString('en-US')
 }
 
-function downloadCsv(filename: string, rows: (string | number)[][]) {
-  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob); const a = document.createElement('a')
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-  toast.success(filename + ' downloaded')
-}
-
 export default function FinanceReportsPage() {
+  const t = useT()
   const [a, setA] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
+
+  function downloadCsv(filename: string, rows: (string | number)[][]) {
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob); const a = document.createElement('a')
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
+    toast.success(t('finance.reports.downloaded', { file: filename }))
+  }
 
   useEffect(() => {
     fetch('/api/freehold/management/analytics', { cache: 'no-store' })

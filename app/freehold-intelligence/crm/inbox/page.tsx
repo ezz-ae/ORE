@@ -6,28 +6,39 @@ import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-sess
 import type { CRMInboxLead } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 type FilterTab = 'All' | 'Unassigned' | 'Assigned' | 'Contacted'
 
-function urgencyTone(u: string) {
-  if (u === 'critical') return { label: 'Critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300',         dot: 'bg-red-400'   }
-  if (u === 'high')     return { label: 'High',     badge: 'bg-gold/10 border-gold/25 text-[#F8E7AE]', dot: 'bg-gold' }
-  if (u === 'medium')   return { label: 'Medium',   badge: 'bg-sky-500/10 border-sky-400/25 text-sky-200',        dot: 'bg-sky-400'   }
-  return                       { label: 'Low',      badge: 'bg-surface-2 border-line-strong text-slate-400',     dot: 'bg-slate-500' }
+const FILTER_KEY: Record<FilterTab, string> = {
+  All:        'crm.filterAll',
+  Unassigned: 'crm.filterUnassigned',
+  Assigned:   'crm.filterAssigned',
+  Contacted:  'crm.filterContacted',
 }
 
-function timeAgo(iso: string) {
+function urgencyTone(u: string) {
+  if (u === 'critical') return { labelKey: 'crm.urgency.critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300',         dot: 'bg-red-400'   }
+  if (u === 'high')     return { labelKey: 'crm.urgency.high',     badge: 'bg-gold/10 border-gold/25 text-[#F8E7AE]', dot: 'bg-gold' }
+  if (u === 'medium')   return { labelKey: 'crm.urgency.medium',   badge: 'bg-sky-500/10 border-sky-400/25 text-sky-200',        dot: 'bg-sky-400'   }
+  return                       { labelKey: 'crm.urgency.low',      badge: 'bg-surface-2 border-line-strong text-slate-400',     dot: 'bg-slate-500' }
+}
+
+function timeAgo(iso: string, t: TFn) {
   const now  = Date.now()
   const mins = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000))
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return t('crm.timeMinAgo', { count: mins })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return t('crm.timeHrAgo', { count: hrs })
+  return t('crm.timeDayAgo', { count: Math.floor(hrs / 24) })
 }
 
 const FILTERS: FilterTab[] = ['All', 'Unassigned', 'Assigned', 'Contacted']
 
 export default function CrmInboxPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All')
   const [assignments,  setAssignments]  = useState<Record<string, string>>({})
@@ -136,10 +147,12 @@ export default function CrmInboxPage() {
         <div className="min-w-0">
 
           <PageHeader
-            eyebrow="CRM"
+            eyebrow={t('crm.crm')}
             Icon={Inbox}
-            title="Incoming leads"
-            subtitle={`${inboxLeads.length} leads in the last 48 hours${unassignedCount > 0 ? ` · ${unassignedCount} still unassigned` : ''}`}
+            title={t('crm.incomingLeads')}
+            subtitle={unassignedCount > 0
+              ? t('crm.inboxSubtitleUnassigned', { count: inboxLeads.length, unassigned: unassignedCount })
+              : t('crm.inboxSubtitle', { count: inboxLeads.length })}
             className="mb-6"
           />
 
@@ -155,7 +168,7 @@ export default function CrmInboxPage() {
                     : 'border border-line bg-surface-2 text-slate-400 hover:border-line-strong hover:text-slate-300'
                 }`}
               >
-                {f}
+                {t(FILTER_KEY[f])}
               </button>
             ))}
           </div>
@@ -164,15 +177,15 @@ export default function CrmInboxPage() {
           <div className="mt-6 grid grid-cols-3 gap-3">
             <div className="rounded-[18px] border border-gold/15 bg-gold/[0.04] p-5">
               <div className="text-[28px] font-semibold text-gold">{unassignedCount}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Unassigned</div>
+              <div className="mt-0.5 text-sm text-slate-400">{t('crm.unassigned')}</div>
             </div>
             <div className="rounded-[18px] border border-line bg-surface p-5">
               <div className="text-[28px] font-semibold text-white">{assignedCount}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Assigned</div>
+              <div className="mt-0.5 text-sm text-slate-400">{t('crm.assigned')}</div>
             </div>
             <div className="rounded-[18px] border border-line bg-surface p-5">
               <div className="text-[28px] font-semibold text-gold">{contactedCount}</div>
-              <div className="mt-0.5 text-sm text-slate-400">Contacted</div>
+              <div className="mt-0.5 text-sm text-slate-400">{t('crm.contacted')}</div>
             </div>
           </div>
 
@@ -180,7 +193,7 @@ export default function CrmInboxPage() {
           {justAssigned && (
             <div className="mt-4 flex items-center gap-2 rounded-[14px] border border-gold/25 bg-gold/[0.08] px-4 py-3 text-sm font-medium text-gold">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              Assigned to {justAssigned}
+              {t('crm.assignedTo', { agent: justAssigned })}
             </div>
           )}
 
@@ -188,7 +201,7 @@ export default function CrmInboxPage() {
           {(activeFilter === 'All' || activeFilter === 'Unassigned') && unassignedLeads.length > 0 && (
             <section className="mt-12">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-red-300/70">
-                <AlertCircle className="h-3.5 w-3.5" /> Needs assignment
+                <AlertCircle className="h-3.5 w-3.5" /> {t('crm.needsAssignment')}
               </div>
               <div className="mt-4 space-y-3">
                 {unassignedLeads.map((lead) => {
@@ -204,15 +217,15 @@ export default function CrmInboxPage() {
                             <span className="text-lg font-semibold text-white">{lead.name}</span>
                             <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.badge}`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                              {tone.label}
+                              {t(tone.labelKey)}
                             </span>
-                            <span className="text-sm text-slate-400">Intent {lead.intentScore}</span>
+                            <span className="text-sm text-slate-400">{t('crm.intentLabel', { score: lead.intentScore })}</span>
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                             <span>{lead.source}</span>
                             <span className="text-slate-600">·</span>
                             <Clock className="h-3 w-3" />
-                            <span>{timeAgo(lead.arrivedAt)}</span>
+                            <span>{timeAgo(lead.arrivedAt, t)}</span>
                           </div>
                           <p className="mt-2.5 text-sm leading-relaxed text-slate-300">{lead.aiNote}</p>
                         </div>
@@ -232,7 +245,7 @@ export default function CrmInboxPage() {
                             onClick={() => handleContacted(lead.id)}
                             className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3.5 py-2 text-xs font-medium text-gold transition hover:bg-gold/[0.12] active:scale-95"
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Mark contacted
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {t('crm.markContacted')}
                           </button>
                         </div>
                       </div>
@@ -246,7 +259,7 @@ export default function CrmInboxPage() {
           {/* All leads table */}
           <section className="mt-12">
             <div className="text-sm font-medium uppercase tracking-wider text-slate-400">
-              {activeFilter === 'All' ? 'All leads · last 48h' : `${activeFilter} leads`}
+              {activeFilter === 'All' ? t('crm.allLeadsLast48') : t('crm.filterLeads', { filter: t(FILTER_KEY[activeFilter]) })}
               <span className="ml-2 text-slate-500">({tableLeads.length})</span>
             </div>
             <div className="mt-4 space-y-2">
@@ -264,28 +277,28 @@ export default function CrmInboxPage() {
                         <span className="text-sm font-semibold text-white">{lead.name}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${tone.badge}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                          {tone.label}
+                          {t(tone.labelKey)}
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-slate-400">
-                        {lead.source} · {lead.effectiveAgent ?? 'Unassigned'} · {timeAgo(lead.arrivedAt)}
+                        {lead.source} · {lead.effectiveAgent ?? t('crm.unassigned')} · {timeAgo(lead.arrivedAt, t)}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       {isContacted ? (
-                        <span className="text-xs font-medium text-gold">Contacted</span>
+                        <span className="text-xs font-medium text-gold">{t('crm.contacted')}</span>
                       ) : isAssigned ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-slate-400">Assigned</span>
+                          <span className="text-xs font-medium text-slate-400">{t('crm.assigned')}</span>
                           <button
                             onClick={() => handleContacted(lead.id)}
                             className="rounded-full border border-gold/20 bg-gold/[0.05] px-2.5 py-1 text-xs text-gold transition hover:bg-gold/[0.12] active:scale-95"
                           >
-                            Mark contacted
+                            {t('crm.markContacted')}
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs font-medium text-slate-500">Unassigned</span>
+                        <span className="text-xs font-medium text-slate-500">{t('crm.unassigned')}</span>
                       )}
                       <ArrowUpRight className="h-3.5 w-3.5 text-slate-600" />
                     </div>
@@ -294,7 +307,7 @@ export default function CrmInboxPage() {
               })}
               {tableLeads.length === 0 && (
                 <div className="rounded-[18px] border border-line bg-surface px-5 py-8 text-center text-sm text-slate-400">
-                  No leads match this filter.
+                  {t('crm.noLeadsMatchFilter')}
                 </div>
               )}
             </div>
@@ -307,7 +320,7 @@ export default function CrmInboxPage() {
           <div className="sticky top-[112px] space-y-4">
 
             <Panel>
-              <PanelHeader title="Available agents" />
+              <PanelHeader title={t('crm.availableAgents')} />
               <div className="p-5">
                 <div className="space-y-3">
                   {available.map((agent) => (

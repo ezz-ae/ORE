@@ -99,15 +99,15 @@ export function CompanyFinance() {
   }
 
   async function recordPayout(p: Payout) {
-    const input = window.prompt(`Record commission payment for ${p.leadName} (outstanding ${fmt(p.outstandingAed)}). Amount AED:`, String(Math.round(p.outstandingAed)))
+    const input = window.prompt(t('finance.company.recordPrompt', { lead: p.leadName, amount: fmt(p.outstandingAed) }), String(Math.round(p.outstandingAed)))
     if (input === null) return
     const amount = Number(input)
-    if (!Number.isFinite(amount) || amount <= 0) { toast.error('Invalid amount'); return }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('finance.company.invalidAmount')); return }
     const res = await fetch(`/api/freehold/deals/${p.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'record_payment', amountAed: amount }),
     })
-    if (res.ok) { toast.success('Payment recorded'); load() } else { const d = await res.json(); toast.error(d?.error || 'Failed') }
+    if (res.ok) { toast.success(t('finance.company.paymentRecorded')); load() } else { const d = await res.json(); toast.error(d?.error || t('finance.company.failed')) }
   }
 
   const categoryRows = useMemo(() => {
@@ -122,20 +122,20 @@ export function CompanyFinance() {
   return (
     <div className="space-y-8">
       <Section
-        title="Company Finance"
-        description="Commission income from approved deals, and operating costs across all categories."
+        title={t('finance.company.title')}
+        description={t('finance.company.description')}
         action={
           <button onClick={() => setShowAdd((v) => !v)} className="inline-flex items-center gap-1.5 rounded-lg border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-sm font-medium text-gold transition hover:bg-gold/20">
-            <Plus className="h-3.5 w-3.5" /> {showAdd ? 'Cancel' : 'Add Entry'}
+            <Plus className="h-3.5 w-3.5" /> {showAdd ? t('finance.cancel') : t('finance.company.addEntry')}
           </button>
         }
       >
         {/* Bottom line */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard label="Net Commission" value={fmt(summary?.commissionNetAed || 0)} hint="Income · approved deals" />
-          <StatCard label="Total Expenses" value={fmt(summary?.totalExpensesAed || 0)} hint="All operating costs" />
-          <StatCard label="Net Position" value={fmt(summary?.netPositionAed || 0)} hint="Commission − expenses" delta={summary && summary.netPositionAed < 0 ? { value: 'negative', direction: 'down' } : { value: 'positive', direction: 'up' }} />
-          <StatCard label="Commission Outstanding" value={fmt(summary?.commissionOutstandingAed || 0)} hint="Owed to agents" delta={summary && summary.commissionOutstandingAed > 0 ? { value: 'to pay', direction: 'down' } : undefined} />
+          <StatCard label={t('finance.company.netCommission')} value={fmt(summary?.commissionNetAed || 0)} hint={t('finance.company.netCommissionHint')} />
+          <StatCard label={t('finance.company.totalExpenses')} value={fmt(summary?.totalExpensesAed || 0)} hint={t('finance.company.totalExpensesHint')} />
+          <StatCard label={t('finance.company.netPosition')} value={fmt(summary?.netPositionAed || 0)} hint={t('finance.company.netPositionHint')} delta={summary && summary.netPositionAed < 0 ? { value: t('finance.company.negative'), direction: 'down' } : { value: t('finance.company.positive'), direction: 'up' }} />
+          <StatCard label={t('finance.company.commissionOutstanding')} value={fmt(summary?.commissionOutstandingAed || 0)} hint={t('finance.company.commissionOutstandingHint')} delta={summary && summary.commissionOutstandingAed > 0 ? { value: t('finance.company.toPay'), direction: 'down' } : undefined} />
         </div>
 
         {/* Add entry */}
@@ -143,18 +143,18 @@ export function CompanyFinance() {
           <div className="mt-4 rounded-xl border border-gold/20 bg-gold/[0.03] p-4">
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as FinanceCategory }))} className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40">
-                {FINANCE_CATEGORIES.map((c) => <option key={c.key} value={c.key} className="bg-surface">{c.label}</option>)}
+                {FINANCE_CATEGORIES.map((c) => <option key={c.key} value={c.key} className="bg-surface">{t(CAT_KEY[c.key])}</option>)}
               </select>
-              <input type="number" min={0} value={form.amountAed} onChange={(e) => setForm((f) => ({ ...f, amountAed: e.target.value }))} placeholder="Amount (AED)" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
-              <input value={form.payee} onChange={(e) => setForm((f) => ({ ...f, payee: e.target.value }))} placeholder="Payee / vendor" className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
-              <input value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Description" className="col-span-2 md:col-span-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input type="number" min={0} value={form.amountAed} onChange={(e) => setForm((f) => ({ ...f, amountAed: e.target.value }))} placeholder={t('finance.company.amountPlaceholder')} className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input value={form.payee} onChange={(e) => setForm((f) => ({ ...f, payee: e.target.value }))} placeholder={t('finance.company.payeePlaceholder')} className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
+              <input value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder={t('finance.company.descriptionPlaceholder')} className="col-span-2 md:col-span-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40" />
               <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as 'pending' | 'paid' }))} className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40">
-                <option value="pending" className="bg-surface">Pending</option>
-                <option value="paid" className="bg-surface">Paid</option>
+                <option value="pending" className="bg-surface">{t('finance.status.optPending')}</option>
+                <option value="paid" className="bg-surface">{t('finance.status.optPaid')}</option>
               </select>
             </div>
             <button onClick={addEntry} disabled={busy} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/20 disabled:opacity-50">
-              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save entry
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {t('finance.company.saveEntry')}
             </button>
           </div>
         )}
@@ -163,7 +163,7 @@ export function CompanyFinance() {
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {categoryRows.map((c) => (
             <div key={c.key} className="rounded-xl border border-line bg-surface-2 p-4">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">{c.label}</div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">{t(CAT_KEY[c.key])}</div>
               <div className="mt-1 text-[15px] font-bold tabular-nums text-white">{fmt(c.total)}</div>
             </div>
           ))}
@@ -172,10 +172,10 @@ export function CompanyFinance() {
 
       {/* Commission payouts */}
       <Panel>
-        <PanelHeader title="Commission Payouts" action={<span className="text-xs text-slate-500">Approved deals awaiting payment</span>} />
+        <PanelHeader title={t('finance.company.payouts')} action={<span className="text-xs text-slate-500">{t('finance.company.payoutsAction')}</span>} />
         <div className="divide-y divide-line">
           {payouts.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-slate-500">No commission outstanding.</div>
+            <div className="px-5 py-8 text-center text-sm text-slate-500">{t('finance.company.noOutstanding')}</div>
           ) : payouts.map((p) => (
             <div key={p.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
               <div className="min-w-0 flex-1">
@@ -184,10 +184,10 @@ export function CompanyFinance() {
               </div>
               <div className="text-right">
                 <div className="text-sm font-semibold tabular-nums text-white">{fmt(p.outstandingAed)}</div>
-                <div className="text-xs text-slate-500">of {fmt(p.commissionAed)}</div>
+                <div className="text-xs text-slate-500">{t('finance.company.of', { amount: fmt(p.commissionAed) })}</div>
               </div>
               <button onClick={() => recordPayout(p)} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-500/20">
-                <Banknote className="h-3.5 w-3.5" /> Record payment
+                <Banknote className="h-3.5 w-3.5" /> {t('finance.company.recordPayment')}
               </button>
             </div>
           ))}
@@ -196,28 +196,35 @@ export function CompanyFinance() {
 
       {/* Expense ledger */}
       <Panel>
-        <PanelHeader title="Expense Ledger" action={<span className="text-xs text-slate-500">{entries.length} entries</span>} />
+        <PanelHeader title={t('finance.company.expenseLedger')} action={<span className="text-xs text-slate-500">{t('finance.company.entries', { count: entries.length })}</span>} />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line bg-surface-2">
-                {['Category', 'Description', 'Payee', 'Amount', 'Status', ''].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                {[
+                  { key: 'category', label: t('finance.company.colCategory') },
+                  { key: 'description', label: t('finance.company.colDescription') },
+                  { key: 'payee', label: t('finance.company.colPayee') },
+                  { key: 'amount', label: t('finance.company.colAmount') },
+                  { key: 'status', label: t('finance.company.colStatus') },
+                  { key: 'actions', label: '' },
+                ].map((h) => (
+                  <th key={h.key} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h.label}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {entries.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">No entries yet — add ads, salaries, transportation, referrals, and other costs.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">{t('finance.company.noEntries')}</td></tr>
               ) : entries.map((e) => (
                 <tr key={e.id} className="hover:bg-surface-2">
-                  <td className="px-4 py-3"><span className="rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs text-slate-300">{CAT_LABEL[e.category]}</span></td>
+                  <td className="px-4 py-3"><span className="rounded-full border border-line-strong bg-surface px-2 py-0.5 text-xs text-slate-300">{t(CAT_KEY[e.category])}</span></td>
                   <td className="px-4 py-3 text-slate-300">{e.description || '—'}</td>
                   <td className="px-4 py-3 text-slate-400">{e.payee || '—'}</td>
                   <td className="px-4 py-3 font-semibold tabular-nums text-white">{fmt(e.amountAed)}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => toggleStatus(e)} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${e.status === 'paid' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
-                      {e.status === 'paid' ? <Check className="h-3 w-3" /> : null}{e.status}
+                      {e.status === 'paid' ? <Check className="h-3 w-3" /> : null}{e.status === 'paid' ? t('finance.status.paid') : t('finance.status.pending')}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-right">
