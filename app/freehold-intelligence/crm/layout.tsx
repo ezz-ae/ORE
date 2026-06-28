@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { crmLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
+import { useT } from '@/lib/i18n/provider'
 
 // CRM sub-pages a broker may access (their own daily work). Everything else
 // (assignment, agents, reports, duplicates, pipeline, activity) is management-only.
@@ -30,27 +31,30 @@ function brokerCanAccess(pathname: string): boolean {
 const NAV_SECTIONS = [
   {
     label: 'Daily work',
+    labelKey: 'crm.nav.dailyWork',
     items: [
-      { label: 'All Leads',  href: '/freehold-intelligence/crm',            exact: true, Icon: List        },
-      { label: 'Inbox',      href: '/freehold-intelligence/crm/inbox',                   Icon: Inbox       },
-      { label: 'Follow-up',  href: '/freehold-intelligence/crm/follow-up',               Icon: Clock       },
-      { label: 'Board',      href: '/freehold-intelligence/crm/board',                   Icon: LayoutGrid  },
+      { label: 'All Leads',  labelKey: 'crm.nav.allLeads',  href: '/freehold-intelligence/crm',            exact: true, Icon: List        },
+      { label: 'Inbox',      labelKey: 'crm.inbox',         href: '/freehold-intelligence/crm/inbox',                   Icon: Inbox       },
+      { label: 'Follow-up',  labelKey: 'crm.followUp',      href: '/freehold-intelligence/crm/follow-up',               Icon: Clock       },
+      { label: 'Board',      labelKey: 'crm.board',         href: '/freehold-intelligence/crm/board',                   Icon: LayoutGrid  },
     ],
   },
   {
     label: 'Pipeline',
+    labelKey: 'crm.nav.pipeline',
     items: [
-      { label: 'Pipeline',   href: '/freehold-intelligence/crm/pipeline',                Icon: TrendingUp      },
-      { label: 'Assignment', href: '/freehold-intelligence/crm/assignment',               Icon: ArrowRightLeft  },
+      { label: 'Pipeline',   labelKey: 'crm.nav.pipeline',   href: '/freehold-intelligence/crm/pipeline',                Icon: TrendingUp      },
+      { label: 'Assignment', labelKey: 'crm.nav.assignment', href: '/freehold-intelligence/crm/assignment',               Icon: ArrowRightLeft  },
     ],
   },
   {
     label: 'Team & Insights',
+    labelKey: 'crm.nav.teamInsights',
     items: [
-      { label: 'Agents',     href: '/freehold-intelligence/crm/agents',                  Icon: UserCircle2 },
-      { label: 'Activity',   href: '/freehold-intelligence/crm/activity',                Icon: Activity    },
-      { label: 'Reports',    href: '/freehold-intelligence/crm/reports',                 Icon: BarChart3   },
-      { label: 'Duplicates', href: '/freehold-intelligence/crm/duplicates',              Icon: Copy        },
+      { label: 'Agents',     labelKey: 'crm.agents',     href: '/freehold-intelligence/crm/agents',                  Icon: UserCircle2 },
+      { label: 'Activity',   labelKey: 'crm.activity',   href: '/freehold-intelligence/crm/activity',                Icon: Activity    },
+      { label: 'Reports',    labelKey: 'crm.reports',    href: '/freehold-intelligence/crm/reports',                 Icon: BarChart3   },
+      { label: 'Duplicates', labelKey: 'crm.duplicates', href: '/freehold-intelligence/crm/duplicates',              Icon: Copy        },
     ],
   },
 ]
@@ -72,6 +76,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const { user } = useSession()
   const pathname = usePathname()
   const router = useRouter()
+  const t = useT()
 
   // Brokers may only reach their own daily-work CRM pages; bounce deep-links to
   // management-only sub-pages back to their leads.
@@ -109,7 +114,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
           className="flex items-center gap-2 shrink-0 text-sm text-slate-400 transition-colors hover:text-slate-100"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Apps</span>
+          <span className="hidden sm:block">{t('crm.apps')}</span>
         </Link>
 
         <div className="h-5 w-px shrink-0 bg-surface-3" />
@@ -118,13 +123,13 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <Users className="h-3.5 w-3.5 text-gold" />
           </div>
-          <span className="text-sm font-semibold text-white">CRM</span>
+          <span className="text-sm font-semibold text-white">{t('crm.crm')}</span>
         </div>
 
         {/* Live pulse chip */}
         <div className="hidden items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-2.5 py-1 sm:flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-          <span className="text-xs text-emerald-300/80">{crmLeads.length} leads live</span>
+          <span className="text-xs text-emerald-300/80">{t('crm.leadsLive', { count: crmLeads.length })}</span>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -133,7 +138,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
             className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:border-gold/30 hover:text-white"
           >
             <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:block">Add Lead</span>
+            <span className="hidden sm:block">{t('crm.addLead')}</span>
           </Link>
         </div>
       </header>
@@ -149,7 +154,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
                 {/* Section label — fades in on hover */}
                 <div className="mb-1.5 h-4 px-2.5">
                   <span className="block whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600 opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150">
-                    {section.label}
+                    {t(section.labelKey)}
                   </span>
                 </div>
                 <div className="space-y-0.5">
@@ -170,7 +175,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
                       >
                         <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
                         <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
-                          {item.label}
+                          {t(item.labelKey)}
                         </span>
                         {badge !== undefined && (
                           <span className={[
@@ -210,7 +215,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
                       active ? 'border-gold text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                     {badge !== undefined && (
                       <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${active ? 'bg-gold/20 text-gold' : 'bg-surface-3 text-slate-500'}`}>
                         {badge}

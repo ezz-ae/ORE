@@ -10,21 +10,22 @@ import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useSession } from '@/lib/freehold/use-session'
 import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
 import type { Deal, DealStatus, FinanceTotals, DealDocumentChecklist } from '@/lib/deals'
+import { useT } from '@/lib/i18n/provider'
 
-const DOC_FIELDS: { key: keyof DealDocumentChecklist; label: string }[] = [
-  { key: 'signedBookingForm', label: 'Signed booking form' },
-  { key: 'passport', label: 'Passport' },
-  { key: 'emiratesId', label: 'Emirates ID' },
-  { key: 'developerReceipts', label: 'Developer receipts' },
-  { key: 'kyc', label: 'KYC' },
+const DOC_FIELDS: { key: keyof DealDocumentChecklist; labelKey: string }[] = [
+  { key: 'signedBookingForm', labelKey: 'mgmt.deals.doc.bookingForm' },
+  { key: 'passport', labelKey: 'mgmt.deals.doc.passport' },
+  { key: 'emiratesId', labelKey: 'mgmt.deals.doc.emiratesId' },
+  { key: 'developerReceipts', labelKey: 'mgmt.deals.doc.developerReceipts' },
+  { key: 'kyc', labelKey: 'mgmt.deals.doc.kyc' },
 ]
 
-const STATUS_BADGE: Record<DealStatus, { label: string; cls: string }> = {
-  pending_step1: { label: 'Awaiting docs/KYC', cls: 'bg-amber-500/15 text-amber-400' },
-  pending_step2: { label: 'Awaiting final approval', cls: 'bg-violet-500/15 text-violet-400' },
-  approved: { label: 'Approved', cls: 'bg-emerald-500/15 text-emerald-400' },
-  rejected: { label: 'Rejected', cls: 'bg-red-500/15 text-red-400' },
-  closed: { label: 'Closed · Paid', cls: 'bg-sky-500/15 text-sky-400' },
+const STATUS_BADGE: Record<DealStatus, { labelKey: string; cls: string }> = {
+  pending_step1: { labelKey: 'mgmt.deals.status.step1', cls: 'bg-amber-500/15 text-amber-400' },
+  pending_step2: { labelKey: 'mgmt.deals.status.step2', cls: 'bg-violet-500/15 text-violet-400' },
+  approved: { labelKey: 'mgmt.deals.status.approved', cls: 'bg-emerald-500/15 text-emerald-400' },
+  rejected: { labelKey: 'mgmt.deals.status.rejected', cls: 'bg-red-500/15 text-red-400' },
+  closed: { labelKey: 'mgmt.deals.status.closed', cls: 'bg-sky-500/15 text-sky-400' },
 }
 
 function fmtAED(n: number) {
@@ -39,6 +40,7 @@ const canVerifyDocs = (r?: string | null) => ['sales_manager', 'admin'].includes
 const canFinalApprove = (r?: string | null) => ['ceo', 'director'].includes(norm(r))
 
 export function DealsClient() {
+  const t = useT()
   const { user } = useSession()
   const role = user?.role
   const [deals, setDeals] = useState<Deal[]>([])
@@ -55,7 +57,7 @@ export function DealsClient() {
       setDeals(Array.isArray(data.deals) ? data.deals : [])
       setTotals(data.totals || null)
     } catch {
-      toast.error('Failed to load deals')
+      toast.error(t('mgmt.deals.failedLoad'))
     } finally {
       setLoading(false)
     }
@@ -76,12 +78,12 @@ export function DealsClient() {
         body: JSON.stringify(values),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to create deal')
-      toast.success('Deal created')
+      if (!res.ok) throw new Error(data?.error || t('mgmt.deals.failedCreate'))
+      toast.success(t('mgmt.deals.created'))
       setShowNew(false)
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create deal')
+      toast.error(err instanceof Error ? err.message : t('mgmt.deals.failedCreate'))
     } finally {
       setBusy(false)
     }
@@ -92,16 +94,16 @@ export function DealsClient() {
       <div className="sticky top-0 z-30 border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-white">Deals Pipeline</h1>
+            <h1 className="text-lg font-semibold text-white">{t('mgmt.deals.title')}</h1>
             <p className="mt-0.5 text-sm text-slate-500">
-              {loading ? 'Loading…' : `${deals.length} deals · ${pending.length} awaiting approval`}
+              {loading ? t('mgmt.deals.loading') : t('mgmt.deals.summary', { count: deals.length, pending: pending.length })}
             </p>
           </div>
           <button
             onClick={() => setShowNew((v) => !v)}
             className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold transition-colors hover:bg-gold/20"
           >
-            {showNew ? 'Cancel' : '+ New Deal'}
+            {showNew ? t('mgmt.deals.cancel') : t('mgmt.deals.newDeal')}
           </button>
         </div>
       </div>
@@ -109,32 +111,32 @@ export function DealsClient() {
       <div className="mx-auto max-w-7xl space-y-6 px-6 pt-6">
         {showNew && (
           <Panel>
-            <PanelHeader title="New Deal" action={<span className="text-xs text-slate-500">Type a client name to autofill from CRM</span>} />
+            <PanelHeader title={t('mgmt.deals.newDealTitle')} action={<span className="text-xs text-slate-500">{t('mgmt.deals.autofillHint')}</span>} />
             <div className="p-5">
-              <DealForm submitLabel="Create deal" onSubmit={createDeal} onCancel={() => setShowNew(false)} busy={busy} />
+              <DealForm submitLabel={t('mgmt.deals.createDeal')} onSubmit={createDeal} onCancel={() => setShowNew(false)} busy={busy} />
             </div>
           </Panel>
         )}
 
         {/* Totals */}
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <StatCard label="Total Sales (approved)" value={fmtAED(totals?.totalSalesAed || 0)} Icon={TrendingUp} />
-          <StatCard label="Gross Commission" value={fmtAED(totals?.totalCommissionAed || 0)} Icon={Briefcase} />
-          <StatCard label="Approved Deals" value={String(totals?.approvedDeals || 0)} Icon={CheckCircle2} />
-          <StatCard label="Awaiting Approval" value={String(totals?.pendingDeals || 0)} Icon={Clock} />
+          <StatCard label={t('mgmt.deals.totalSales')} value={fmtAED(totals?.totalSalesAed || 0)} Icon={TrendingUp} />
+          <StatCard label={t('mgmt.deals.grossCommission')} value={fmtAED(totals?.totalCommissionAed || 0)} Icon={Briefcase} />
+          <StatCard label={t('mgmt.deals.approvedDeals')} value={String(totals?.approvedDeals || 0)} Icon={CheckCircle2} />
+          <StatCard label={t('mgmt.deals.awaitingApproval')} value={String(totals?.pendingDeals || 0)} Icon={Clock} />
         </div>
 
         {/* Approval queue */}
         <Panel>
           <PanelHeader
-            title="Approval Queue"
-            action={<span className="text-xs text-slate-500">2-step: Sales Manager → CEO/Director</span>}
+            title={t('mgmt.deals.approvalQueue')}
+            action={<span className="text-xs text-slate-500">{t('mgmt.deals.twoStepFlow')}</span>}
           />
           <div className="divide-y divide-line">
             {loading ? (
               <div className="flex items-center justify-center py-10 text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
             ) : pending.length === 0 ? (
-              <div className="px-5 py-10 text-center text-sm text-slate-500">No deals awaiting approval.</div>
+              <div className="px-5 py-10 text-center text-sm text-slate-500">{t('mgmt.deals.noPending')}</div>
             ) : (
               pending.map((deal) => (
                 <ApprovalRow key={deal.id} deal={deal} role={role} onChanged={load} />
@@ -145,19 +147,19 @@ export function DealsClient() {
 
         {/* Active deals */}
         <Panel>
-          <PanelHeader title="Active & Closed Deals" action={<span className="text-xs text-slate-500">{active.length} deals</span>} />
+          <PanelHeader title={t('mgmt.deals.activeClosed')} action={<span className="text-xs text-slate-500">{t('mgmt.deals.dealsCount', { count: active.length })}</span>} />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-2">
-                  {['Client', 'Project', 'Developer', 'Agent', 'Value', 'Commission', 'Paid', 'Status'].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                  {['mgmt.deals.col.client', 'mgmt.deals.col.project', 'mgmt.deals.col.developer', 'mgmt.deals.col.agent', 'mgmt.deals.col.value', 'mgmt.deals.col.commission', 'mgmt.deals.col.paid', 'mgmt.deals.col.status'].map((h) => (
+                    <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{t(h)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {active.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">No approved deals yet.</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">{t('mgmt.deals.noApproved')}</td></tr>
                 ) : active.map((deal) => (
                   <tr key={deal.id} className="hover:bg-surface-2">
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-100">{deal.leadName}</td>
@@ -171,7 +173,7 @@ export function DealsClient() {
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums text-gold">{fmtAED(deal.agencyCommissionAed)}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums text-slate-300">{fmtAED(deal.commissionReceivedAed)}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[deal.status].cls}`}>{STATUS_BADGE[deal.status].label}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_BADGE[deal.status].cls}`}>{t(STATUS_BADGE[deal.status].labelKey)}</span>
                     </td>
                   </tr>
                 ))}
@@ -182,13 +184,13 @@ export function DealsClient() {
 
         {rejected.length > 0 && (
           <Panel>
-            <PanelHeader title="Rejected" action={<span className="text-xs text-slate-500">{rejected.length}</span>} />
+            <PanelHeader title={t('mgmt.deals.rejected')} action={<span className="text-xs text-slate-500">{rejected.length}</span>} />
             <div className="divide-y divide-line">
               {rejected.map((deal) => (
                 <div key={deal.id} className="flex items-center justify-between px-5 py-3">
                   <div>
                     <div className="text-sm text-slate-200">{deal.leadName} · {deal.projectName || '—'}</div>
-                    <div className="text-xs text-red-400">{deal.rejectionReason} {deal.rejectedBy ? `· by ${deal.rejectedBy}` : ''}</div>
+                    <div className="text-xs text-red-400">{deal.rejectionReason} {deal.rejectedBy ? t('mgmt.deals.rejectedBy', { name: deal.rejectedBy }) : ''}</div>
                   </div>
                   <div className="text-sm tabular-nums text-slate-500">{fmtAED(deal.propertyValueAed)}</div>
                 </div>
@@ -204,6 +206,7 @@ export function DealsClient() {
 // ─── Approval row ──────────────────────────────────────────────────────────────
 
 function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onChanged: () => void }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [docs, setDocs] = useState<DealDocumentChecklist>(deal.documents)
   const [notes, setNotes] = useState('')
@@ -218,18 +221,18 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
         body: JSON.stringify({ action, ...extra }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Action failed')
-      toast.success('Updated')
+      if (!res.ok) throw new Error(data?.error || t('mgmt.deals.actionFailed'))
+      toast.success(t('mgmt.deals.updated'))
       onChanged()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Action failed')
+      toast.error(err instanceof Error ? err.message : t('mgmt.deals.actionFailed'))
     } finally {
       setBusy(false)
     }
   }
 
   function reject() {
-    const reason = window.prompt('Reason for rejection?')
+    const reason = window.prompt(t('mgmt.deals.rejectPrompt'))
     if (reason === null) return
     act('reject', { reason })
   }
@@ -248,7 +251,7 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-100">{deal.leadName}</span>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[deal.status].cls}`}>{STATUS_BADGE[deal.status].label}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[deal.status].cls}`}>{t(STATUS_BADGE[deal.status].labelKey)}</span>
           </div>
           <p className="truncate text-xs text-slate-500">
             {deal.projectName || '—'}{deal.developerName ? ` · ${deal.developerName}` : ''} · {deal.agentName}
@@ -257,7 +260,7 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
         </div>
         <div className="shrink-0 text-right">
           <div className="text-sm font-semibold tabular-nums text-white">{fmtAED(deal.propertyValueAed)}</div>
-          <div className="text-xs tabular-nums text-gold">{fmtAED(deal.agencyCommissionAed)} comm.</div>
+          <div className="text-xs tabular-nums text-gold">{t('mgmt.deals.commLabel', { amount: fmtAED(deal.agencyCommissionAed) })}</div>
         </div>
       </div>
 
@@ -266,13 +269,13 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
           {/* Commission breakdown */}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
-              ['Property value', deal.propertyValueAed],
-              ['Agency comm.', deal.agencyCommissionAed],
-              ['Referral', deal.referralCommissionAed],
-              ['Net to agency', deal.netCommissionAed],
+              ['mgmt.deals.breakdown.propertyValue', deal.propertyValueAed],
+              ['mgmt.deals.breakdown.agencyComm', deal.agencyCommissionAed],
+              ['mgmt.deals.breakdown.referral', deal.referralCommissionAed],
+              ['mgmt.deals.breakdown.netToAgency', deal.netCommissionAed],
             ].map(([label, value]) => (
               <div key={label as string} className="rounded-lg border border-line bg-surface px-3 py-2">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500">{label as string}</div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-500">{t(label as string)}</div>
                 <div className="mt-0.5 text-sm font-semibold tabular-nums text-white">{fmtAED(value as number)}</div>
               </div>
             ))}
@@ -281,10 +284,10 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
           {/* Step 1 — document checklist */}
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              <FileCheck2 className="h-3.5 w-3.5 text-amber-400" /> Step 1 — Documents & KYC (Sales Manager / Admin)
+              <FileCheck2 className="h-3.5 w-3.5 text-amber-400" /> {t('mgmt.deals.step1Label')}
             </div>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {DOC_FIELDS.map(({ key, label }) => (
+              {DOC_FIELDS.map(({ key, labelKey }) => (
                 <label key={key} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${docs[key] ? 'border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-300' : 'border-line text-slate-400'} ${canActStep1 ? 'cursor-pointer' : 'cursor-default opacity-80'}`}>
                   <input
                     type="checkbox"
@@ -293,12 +296,12 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
                     disabled={!canActStep1}
                     onChange={(e) => setDocs((d) => ({ ...d, [key]: e.target.checked }))}
                   />
-                  {label}
+                  {t(labelKey)}
                 </label>
               ))}
             </div>
             {deal.step1By && (
-              <p className="mt-2 text-xs text-emerald-400">Verified by {deal.step1By}{deal.step1Notes ? ` — ${deal.step1Notes}` : ''}</p>
+              <p className="mt-2 text-xs text-emerald-400">{deal.step1Notes ? t('mgmt.deals.verifiedByNote', { name: deal.step1By, note: deal.step1Notes }) : t('mgmt.deals.verifiedBy', { name: deal.step1By })}</p>
             )}
           </div>
 
@@ -307,7 +310,7 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
             <div className="space-y-2">
               <input
                 className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
-                placeholder="Verification notes (optional)"
+                placeholder={t('mgmt.deals.notesPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -316,13 +319,13 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
                   disabled={busy || !allDocs}
                   onClick={() => act('verify_documents', { documents: docs, notes })}
                   className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20 disabled:opacity-40"
-                  title={allDocs ? '' : 'All documents must be checked'}
+                  title={allDocs ? '' : t('mgmt.deals.allDocsRequired')}
                 >
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileCheck2 className="h-3.5 w-3.5" />}
-                  Verify & send for final approval
+                  {t('mgmt.deals.verifyAndSend')}
                 </button>
                 <button disabled={busy} onClick={reject} className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-40">
-                  <XCircle className="h-3.5 w-3.5" /> Reject
+                  <XCircle className="h-3.5 w-3.5" /> {t('mgmt.deals.reject')}
                 </button>
               </div>
             </div>
@@ -332,25 +335,25 @@ function ApprovalRow({ deal, role, onChanged }: { deal: Deal; role?: string; onC
           {deal.status === 'pending_step2' && (
             <div>
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                <ShieldCheck className="h-3.5 w-3.5 text-violet-400" /> Step 2 — Final approval (CEO / Director)
+                <ShieldCheck className="h-3.5 w-3.5 text-violet-400" /> {t('mgmt.deals.step2Label')}
               </div>
               {canActStep2 ? (
                 <div className="flex gap-2">
                   <button disabled={busy} onClick={() => act('final_approve', { notes })} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20 disabled:opacity-40">
-                    {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Give final approval
+                    {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} {t('mgmt.deals.giveFinalApproval')}
                   </button>
                   <button disabled={busy} onClick={reject} className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-40">
-                    <XCircle className="h-3.5 w-3.5" /> Reject
+                    <XCircle className="h-3.5 w-3.5" /> {t('mgmt.deals.reject')}
                   </button>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">Awaiting CEO / Director sign-off.</p>
+                <p className="text-xs text-slate-500">{t('mgmt.deals.awaitingFinal')}</p>
               )}
             </div>
           )}
 
           {isStep1 && !canActStep1 && (
-            <p className="text-xs text-slate-500">Awaiting Sales Manager / Admin document verification.</p>
+            <p className="text-xs text-slate-500">{t('mgmt.deals.awaitingStep1')}</p>
           )}
         </div>
       )}

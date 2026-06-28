@@ -6,6 +6,7 @@ import {
   TrendingUp, DollarSign, Target, Sparkles, CheckCircle2, Loader2,
 } from 'lucide-react'
 import { StatCard, Section, Panel, PanelHeader } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 interface Analytics {
   totals: { totalSalesAed: number; totalCommissionAed: number; netCommissionAed: number; approvedDeals: number }
@@ -28,10 +29,10 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
   const blob = new Blob([csv], { type: 'text/csv' })
   const url = URL.createObjectURL(blob); const a = document.createElement('a')
   a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-  toast.success(filename + ' downloaded')
 }
 
 export default function ROIPage() {
+  const t = useT()
   const [a, setA] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -56,8 +57,8 @@ export default function ROIPage() {
       <div className="border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-white">ROI & Attribution</h1>
-            <p className="mt-0.5 text-sm text-slate-500">Live return on commission vs marketing spend</p>
+            <h1 className="text-lg font-semibold text-white">{t('mgmt.roi.title')}</h1>
+            <p className="mt-0.5 text-sm text-slate-500">{t('mgmt.roi.subtitle')}</p>
           </div>
           <button
             onClick={() => {
@@ -65,11 +66,12 @@ export default function ROIPage() {
               const rows: (string | number)[][] = [['Source', 'Leads', 'Closed', 'Conversion %']]
               a.leadsBySource.forEach((s) => rows.push([s.source, s.leads, s.closed, s.conversionPct]))
               downloadCsv('attribution-report.csv', rows)
+              toast.success(t('mgmt.roi.csvDownloaded', { filename: 'attribution-report.csv' }))
             }}
             className="rounded-lg border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20 transition-colors disabled:opacity-50"
             disabled={!a}
           >
-            Export Report
+            {t('mgmt.roi.exportReport')}
           </button>
         </div>
       </div>
@@ -78,7 +80,7 @@ export default function ROIPage() {
         {loading ? (
           <div className="flex items-center justify-center py-20 text-slate-500"><Loader2 className="h-6 w-6 animate-spin" /></div>
         ) : !a ? (
-          <div className="py-20 text-center text-sm text-slate-500">No analytics available yet.</div>
+          <div className="py-20 text-center text-sm text-slate-500">{t('mgmt.roi.noAnalytics')}</div>
         ) : (
         <>
           {/* Hero */}
@@ -87,19 +89,19 @@ export default function ROIPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 bg-gold/15 mb-4">
                 <TrendingUp className="h-6 w-6 text-gold" />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">Commission ROI</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1">{t('mgmt.roi.commissionRoi')}</p>
               <p className="text-5xl font-bold text-gold tabular-nums tracking-tight">{overallROI !== null ? `${overallROI}%` : '—'}</p>
               <p className="mt-2 text-sm text-slate-400">
-                {fmtAED(commission)} commission on {fmtAED(adSpend)} ad spend
+                {t('mgmt.roi.heroLine', { commission: fmtAED(commission), adSpend: fmtAED(adSpend) })}
               </p>
-              {overallROI === null && <p className="mt-2 text-xs text-slate-600">Log ad spend in Finance to compute ROI</p>}
+              {overallROI === null && <p className="mt-2 text-xs text-slate-600">{t('mgmt.roi.logAdSpend')}</p>}
             </div>
 
             <div className="xl:col-span-3 grid grid-cols-2 gap-4 md:grid-cols-4">
-              <StatCard label="Total Ad Spend" value={fmtAED(adSpend)} Icon={DollarSign} hint="From finance ledger" />
-              <StatCard label="Gross Commission" value={fmtAED(commission)} Icon={TrendingUp} hint="Approved deals" />
-              <StatCard label="Total Leads" value={a.conversion.totalLeads} Icon={Target} hint={`${a.conversion.conversionPct}% conversion`} />
-              <StatCard label="Closed Deals" value={a.conversion.closedDeals} Icon={CheckCircle2} hint={a.conversion.closedDeals > 0 ? `Avg ${fmtAED(commission / a.conversion.closedDeals)} / deal` : undefined} />
+              <StatCard label={t('mgmt.roi.totalAdSpend')} value={fmtAED(adSpend)} Icon={DollarSign} hint={t('mgmt.roi.fromLedger')} />
+              <StatCard label={t('mgmt.roi.grossCommission')} value={fmtAED(commission)} Icon={TrendingUp} hint={t('mgmt.roi.approvedDeals')} />
+              <StatCard label={t('mgmt.roi.totalLeads')} value={a.conversion.totalLeads} Icon={Target} hint={t('mgmt.roi.conversionHint', { pct: a.conversion.conversionPct })} />
+              <StatCard label={t('mgmt.roi.closedDeals')} value={a.conversion.closedDeals} Icon={CheckCircle2} hint={a.conversion.closedDeals > 0 ? t('mgmt.roi.avgPerDeal', { amount: fmtAED(commission / a.conversion.closedDeals) }) : undefined} />
             </div>
           </div>
 
@@ -110,12 +112,12 @@ export default function ROIPage() {
                 <Sparkles className="h-[18px] w-[18px] text-gold" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white mb-0.5">Attribution insight</p>
+                <p className="text-sm font-semibold text-white mb-0.5">{t('mgmt.roi.attributionInsight')}</p>
                 <p className="text-sm text-slate-300 leading-relaxed">
                   {(() => {
                     const top = [...a.leadsBySource].sort((x, y) => y.conversionPct - x.conversionPct)[0]
                     const vol = [...a.leadsBySource].sort((x, y) => y.leads - x.leads)[0]
-                    return `Your highest-converting source is ${top.source} at ${top.conversionPct}%. ${vol.source} brings the most volume with ${vol.leads} leads. Net commission after referrals & cashback is ${fmtAED(netCommission)}; total operating spend is ${fmtAED(totalExpenses)}.`
+                    return t('mgmt.roi.insightBody', { top: top.source, topPct: top.conversionPct, vol: vol.source, volLeads: vol.leads, net: fmtAED(netCommission), spend: fmtAED(totalExpenses) })
                   })()}
                 </p>
               </div>
@@ -124,20 +126,20 @@ export default function ROIPage() {
 
           {/* Source attribution */}
           <Panel>
-            <PanelHeader title="Lead Source Attribution" action={<span className="text-xs text-slate-500">Real leads, closed deals & conversion per source</span>} />
+            <PanelHeader title={t('mgmt.roi.sourceAttribution')} action={<span className="text-xs text-slate-500">{t('mgmt.roi.sourceAttrHint')}</span>} />
             <div className="p-5 space-y-3">
               {a.leadsBySource.length === 0 ? (
-                <p className="py-6 text-center text-sm text-slate-500">No leads recorded yet.</p>
+                <p className="py-6 text-center text-sm text-slate-500">{t('mgmt.roi.noLeadsRecorded')}</p>
               ) : a.leadsBySource.map((s) => (
                 <div key={s.source} className="rounded-xl border border-line bg-surface-2/40 p-4">
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div>
                       <p className="text-sm font-semibold text-slate-100 capitalize">{s.source}</p>
-                      <p className="text-xs text-slate-500">{s.leads} leads · {s.closed} closed</p>
+                      <p className="text-xs text-slate-500">{t('mgmt.roi.leadsClosedLine', { leads: s.leads, closed: s.closed })}</p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-2xl font-bold tabular-nums text-gold">{s.conversionPct}%</p>
-                      <p className="text-xs text-slate-500">conversion</p>
+                      <p className="text-xs text-slate-500">{t('mgmt.roi.conversion')}</p>
                     </div>
                   </div>
                   <div className="h-2 w-full bg-surface-2 rounded-full overflow-hidden">
@@ -150,19 +152,19 @@ export default function ROIPage() {
 
           {/* Monthly deal performance */}
           <Panel>
-            <PanelHeader title="Monthly Deal Performance" action={<span className="text-xs text-slate-500">Approved/closed deals — last 6 months</span>} />
+            <PanelHeader title={t('mgmt.roi.monthlyPerf')} action={<span className="text-xs text-slate-500">{t('mgmt.roi.monthlyPerfHint')}</span>} />
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line bg-surface-2">
-                    {['Month', 'Deals', 'Sales Value', 'Commission', ''].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
+                    {[['mgmt.roi.col.month', 'm'], ['mgmt.roi.col.deals', 'd'], ['mgmt.roi.col.salesValue', 's'], ['mgmt.roi.col.commission', 'c'], ['', 'e']].map(([h, k]) => (
+                      <th key={k} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h ? t(h) : ''}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {a.monthlyDeals.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">No closed deals in the last 6 months.</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-500">{t('mgmt.roi.noClosed6mo')}</td></tr>
                   ) : a.monthlyDeals.map((m) => (
                     <tr key={m.month} className="hover:bg-surface-2">
                       <td className="px-4 py-3 text-sm font-medium text-slate-200">{m.month}</td>

@@ -5,6 +5,17 @@ import { toast } from 'sonner'
 import { Wallet, Plus, Loader2, Check, Trash2, Banknote } from 'lucide-react'
 import { Section, StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { FINANCE_CATEGORIES, type FinanceCategory, type FinanceEntry, type CompanyFinanceSummary } from '@/lib/finance-shared'
+import { useT } from '@/lib/i18n/provider'
+
+const CAT_KEY: Record<FinanceCategory, string> = {
+  ad_spend: 'finance.cat.ads',
+  commission: 'finance.cat.commission',
+  salary: 'finance.cat.salaries',
+  expense: 'finance.cat.expenses',
+  transportation: 'finance.cat.transportation',
+  referral: 'finance.cat.referrals',
+  other: 'finance.cat.other',
+}
 
 interface Payout {
   id: string
@@ -24,9 +35,8 @@ function fmt(n: number) {
   return `AED ${Math.round(n).toLocaleString()}`
 }
 
-const CAT_LABEL = Object.fromEntries(FINANCE_CATEGORIES.map((c) => [c.key, c.label])) as Record<FinanceCategory, string>
-
 export function CompanyFinance() {
+  const t = useT()
   const [entries, setEntries] = useState<FinanceEntry[]>([])
   const [summary, setSummary] = useState<CompanyFinanceSummary | null>(null)
   const [payouts, setPayouts] = useState<Payout[]>([])
@@ -47,17 +57,17 @@ export function CompanyFinance() {
       setSummary(data.summary || null)
       setPayouts(Array.isArray(data.payouts) ? data.payouts : [])
     } catch {
-      toast.error('Failed to load company finance')
+      toast.error(t('finance.company.loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => { load() }, [load])
 
   async function addEntry() {
     const amount = Number(form.amountAed)
-    if (!Number.isFinite(amount) || amount <= 0) { toast.error('Enter a valid amount'); return }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('finance.company.enterValidAmount')); return }
     setBusy(true)
     try {
       const res = await fetch('/api/freehold/finance/entries', {
@@ -65,13 +75,13 @@ export function CompanyFinance() {
         body: JSON.stringify({ ...form, amountAed: amount }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed')
-      toast.success('Entry added')
+      if (!res.ok) throw new Error(data?.error || t('finance.company.failed'))
+      toast.success(t('finance.company.entryAdded'))
       setForm({ category: 'expense', amountAed: '', payee: '', description: '', status: 'pending' })
       setShowAdd(false)
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed')
+      toast.error(err instanceof Error ? err.message : t('finance.company.failed'))
     } finally { setBusy(false) }
   }
 
@@ -80,12 +90,12 @@ export function CompanyFinance() {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: e.status === 'paid' ? 'pending' : 'paid' }),
     })
-    if (res.ok) load(); else toast.error('Update failed')
+    if (res.ok) load(); else toast.error(t('finance.company.updateFailed'))
   }
 
   async function remove(id: string) {
     const res = await fetch(`/api/freehold/finance/entries/${id}`, { method: 'DELETE' })
-    if (res.ok) load(); else toast.error('Delete failed')
+    if (res.ok) load(); else toast.error(t('finance.company.deleteFailed'))
   }
 
   async function recordPayout(p: Payout) {

@@ -8,19 +8,21 @@ import {
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
+import { useT } from '@/lib/i18n/provider'
 
 const tabs = [
-  { label: 'Overview',       href: '/freehold-intelligence/finance',                exact: true, Icon: LayoutDashboard },
-  { label: 'Invoices',       href: '/freehold-intelligence/finance/invoices',                    Icon: Receipt         },
-  { label: 'Payments',       href: '/freehold-intelligence/finance/payments',                    Icon: CreditCard      },
-  { label: 'Contracts',      href: '/freehold-intelligence/finance/contracts',                   Icon: FileCheck2      },
-  { label: 'Reports',        href: '/freehold-intelligence/finance/reports',                     Icon: BarChart3       },
-  { label: 'Agent Credits',  href: '/freehold-intelligence/finance/credits',                     Icon: Wallet          },
+  { labelKey: 'finance.nav.overview',  href: '/freehold-intelligence/finance',                exact: true, Icon: LayoutDashboard },
+  { labelKey: 'finance.nav.invoices',  href: '/freehold-intelligence/finance/invoices',                    Icon: Receipt         },
+  { labelKey: 'finance.nav.payments',  href: '/freehold-intelligence/finance/payments',                    Icon: CreditCard      },
+  { labelKey: 'finance.nav.contracts', href: '/freehold-intelligence/finance/contracts',                   Icon: FileCheck2      },
+  { labelKey: 'finance.nav.reports',   href: '/freehold-intelligence/finance/reports',                     Icon: BarChart3       },
+  { labelKey: 'finance.nav.credits',   href: '/freehold-intelligence/finance/credits',                     Icon: Wallet          },
 ]
 
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard(MANAGEMENT_ROLES)
   const pathname = usePathname()
+  const t = useT()
 
   if (!ready) return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -43,14 +45,14 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">Apps</span>
+          <span className="hidden sm:block">{t('finance.nav.apps')}</span>
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-400/10">
             <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
           </div>
-          <span className="text-sm font-semibold text-white">Finance</span>
+          <span className="text-sm font-semibold text-white">{t('finance.nav.finance')}</span>
         </div>
       </header>
 
@@ -76,7 +78,7 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
                 >
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-gold' : 'text-slate-500'}`} />
                   <span className="overflow-hidden whitespace-nowrap opacity-0 max-w-0 group-hover/nav:opacity-100 group-hover/nav:max-w-[160px] transition-all duration-150 ml-0 group-hover/nav:ml-2.5">
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </span>
                 </Link>
               )
@@ -100,7 +102,7 @@ export default function FinanceLayout({ children }: { children: React.ReactNode 
                       active ? 'border-emerald-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </Link>
                 )
               })}

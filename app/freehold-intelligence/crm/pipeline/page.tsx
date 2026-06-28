@@ -5,9 +5,19 @@ import { useState, useMemo } from 'react'
 import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useT } from '@/lib/i18n/provider'
 
 // Real pipeline stages (match the lead status taxonomy used across the CRM)
 const STAGE_ORDER = ['New', 'Contacted', 'Qualified', 'Viewing', 'Negotiation', 'Closed']
+
+const STAGE_NAME_KEY: Record<string, string> = {
+  'New':         'crm.stage.new',
+  'Contacted':   'crm.stage.contacted',
+  'Qualified':   'crm.stage.qualified',
+  'Viewing':     'crm.stage.viewing',
+  'Negotiation': 'crm.stage.negotiation',
+  'Closed':      'crm.stage.closed',
+}
 
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string }> = {
   'New':         { tone: 'text-sky-300',    dot: 'bg-sky-400',     dotBg: 'bg-sky-400/20'    },
@@ -31,6 +41,7 @@ function fmtAedShort(n: number): string {
 }
 
 export default function CrmPipelinePage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [activeStage, setActiveStage] = useState<string | null>(null)
 
@@ -53,9 +64,9 @@ export default function CrmPipelinePage() {
       ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-slate-700' }),
       value: fmtAedShort(valueAed),
       valueAed,
-      delta: `${list.length} lead${list.length !== 1 ? 's' : ''}`,
+      delta: `${list.length} ${list.length !== 1 ? t('crm.leadsLower') : t('crm.leadLower')}`,
     }
-  }), [stageCounts])
+  }), [stageCounts, t])
 
   const totalLeads = stages.reduce((s, st) => s + st.count, 0)
   const totalValueAed = stages.reduce((s, st) => s + st.valueAed, 0)
@@ -78,13 +89,15 @@ export default function CrmPipelinePage() {
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#D4AF37]/85">
-            <Users className="h-3.5 w-3.5" /> Pipeline
+            <Users className="h-3.5 w-3.5" /> {t('crm.pipeline')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            Sales pipeline<br/><span className="text-slate-500">by stage.</span>
+            {t('crm.salesPipelineByStage1')}<br/><span className="text-slate-500">{t('crm.salesPipelineByStage2')}</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-400">
-            {totalLeads} active lead{totalLeads !== 1 ? 's' : ''} · {fmtAedShort(totalValueAed)} pipeline (by lead budget) · closed {fmtAedShort(wonValueAed)}.
+            {totalLeads !== 1
+              ? t('crm.pipelineSummary', { count: totalLeads, value: fmtAedShort(totalValueAed), closed: fmtAedShort(wonValueAed) })
+              : t('crm.pipelineSummarySingular', { count: totalLeads, value: fmtAedShort(totalValueAed), closed: fmtAedShort(wonValueAed) })}
           </p>
 
           {/* Pipeline Value strip */}

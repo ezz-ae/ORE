@@ -15,6 +15,7 @@ import { ensureLeadsTable } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 import { getDealByLeadId } from '@/lib/deals'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { getServerT } from '@/lib/i18n/server'
 
 // Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page.
 // Brokers may only read their own leads — pass their brokerId to scope the query.
@@ -61,10 +62,10 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
 import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
 
 function urgencyTone(u: string) {
-  if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     label: 'Critical' }
-  if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-[#F8E7AE]',  dot: 'bg-gold',  label: 'High' }
-  if (u === 'medium')   return { ring: 'ring-sky-400/30',    bg: 'bg-sky-400/10',    text: 'text-sky-200',    dot: 'bg-sky-400',    label: 'Medium' }
-  return                       { ring: 'ring-line-strong',     bg: 'bg-surface-2',  text: 'text-slate-400',  dot: 'bg-slate-500',  label: 'Low' }
+  if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     labelKey: 'crm.urgency.critical' }
+  if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-[#F8E7AE]',  dot: 'bg-gold',  labelKey: 'crm.urgency.high' }
+  if (u === 'medium')   return { ring: 'ring-sky-400/30',    bg: 'bg-sky-400/10',    text: 'text-sky-200',    dot: 'bg-sky-400',    labelKey: 'crm.urgency.medium' }
+  return                       { ring: 'ring-line-strong',     bg: 'bg-surface-2',  text: 'text-slate-400',  dot: 'bg-slate-500',  labelKey: 'crm.urgency.low' }
 }
 
 function scoreBar(n: number) {
@@ -77,6 +78,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const { t, locale } = await getServerT()
   // Scope to the broker's own leads; management/marketing see any lead.
   const cookieStore = await cookies()
   const sessionUser = await verifySession(cookieStore.get(SESSION_COOKIE)?.value)
@@ -87,6 +89,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
 
   // Landing-page attribution: which campaign page produced this lead (live data).
   const landingSlug = lead.landingId && lead.landingId !== 'direct_whatsapp' ? lead.landingId : ''
@@ -119,7 +122,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <Link href="/freehold-intelligence/crm" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> CRM Intelligence
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('crm.crmIntelligence')}
       </Link>
 
       {/* Header */}
@@ -127,7 +130,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <div className="flex flex-wrap items-center gap-3">
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.bg} border-current/20 ${tone.text}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-            {tone.label} urgency
+            {t('crm.urgencyLabel', { label: t(tone.labelKey) })}
           </span>
           <span className="rounded-full border border-line bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400">
             {lead.stage}
@@ -143,7 +146,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {lead.name}
         </h1>
         <p className="mt-3 text-sm text-slate-400">
-          Assigned to <span className="text-slate-300">{lead.assignedAgent}</span> · HubSpot #{lead.hubspotLeadId}
+          {t('crm.assignedToHubspot', { agent: lead.assignedAgent, id: lead.hubspotLeadId })}
         </p>
       </section>
 
@@ -159,7 +162,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <Phone className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Phone</p>
+                <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.phone')}</p>
                 <p className="mt-0.5 text-sm font-medium text-white group-hover:text-gold transition-colors">{lead.phone}</p>
               </div>
             </a>
@@ -168,13 +171,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <Mail className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">Email</p>
+                <p className="text-xs text-slate-500 uppercase tracking-[0.14em]">{t('crm.email')}</p>
                 <p className="mt-0.5 text-sm font-medium text-white group-hover:text-slate-400 transition-colors truncate">{lead.email}</p>
               </div>
             </a>
             <div className="rounded-xl border border-line bg-surface p-4">
               <div className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-[0.14em]">
-                <Target className="h-3 w-3" /> Intent score
+                <Target className="h-3 w-3" /> {t('crm.intentScore')}
               </div>
               <div className="mt-2 flex items-end gap-2">
                 <span className="text-[32px] font-semibold leading-none tabular-nums text-white">{lead.intentScore}</span>
@@ -190,11 +193,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {(lead.duplicateRisk || lead.wrongNumberRisk) && (
             <div className="rounded-xl border border-red-400/20 bg-red-400/[0.05] p-5">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-red-300/80">
-                <AlertTriangle className="h-3.5 w-3.5" /> Risk flags
+                <AlertTriangle className="h-3.5 w-3.5" /> {t('crm.riskFlags')}
               </div>
               <ul className="mt-3 space-y-1.5">
-                {lead.duplicateRisk && <li className="text-sm text-red-200/80">Duplicate risk — another record shares this phone number. Merge before assigning.</li>}
-                {lead.wrongNumberRisk && <li className="text-sm text-red-200/80">Wrong number risk — AI flagged potential contact mismatch.</li>}
+                {lead.duplicateRisk && <li className="text-sm text-red-200/80">{t('crm.duplicateRiskMsg')}</li>}
+                {lead.wrongNumberRisk && <li className="text-sm text-red-200/80">{t('crm.wrongNumberRiskMsg')}</li>}
               </ul>
             </div>
           )}
@@ -202,7 +205,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* AI Summary */}
           <div className="rounded-xl border border-gold/15 bg-gold/[0.04] p-6">
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-gold/80">
-              <Brain className="h-3.5 w-3.5" /> AI intelligence summary
+              <Brain className="h-3.5 w-3.5" /> {t('crm.aiSummaryTitle')}
             </div>
             <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.aiSummary}</p>
           </div>
@@ -210,7 +213,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* Next best action */}
           <div className="rounded-xl border border-emerald-400/15 bg-gold/[0.04] p-6">
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-gold/80">
-              <Zap className="h-3.5 w-3.5" /> Next best action
+              <Zap className="h-3.5 w-3.5" /> {t('crm.nextBestAction')}
             </div>
             <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.nextBestAction}</p>
           </div>
@@ -219,7 +222,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <div className="rounded-xl border border-line bg-surface p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Bell className="h-3.5 w-3.5" /> Suggested message
+                <Bell className="h-3.5 w-3.5" /> {t('crm.suggestedMessage')}
               </div>
               <CopyButton text={lead.suggestedMessage} />
             </div>
@@ -236,13 +239,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Lead metadata */}
           <div className="rounded-xl border border-line bg-surface p-5">
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Lead details</p>
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('crm.leadDetails')}</p>
             <div className="space-y-3">
               {[
-                { label: 'Source',       value: lead.source },
-                { label: 'Stage',        value: lead.stage },
-                { label: 'Agent',        value: lead.assignedAgent },
-                { label: 'Last contact', value: new Date(lead.lastContactAt).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' }) },
+                { label: t('crm.source'),      value: lead.source },
+                { label: t('crm.stage'),       value: lead.stage },
+                { label: t('crm.agent'),       value: lead.assignedAgent },
+                { label: t('crm.lastContact'), value: new Date(lead.lastContactAt).toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-start justify-between gap-3">
                   <span className="text-xs text-slate-500 shrink-0">{label}</span>
@@ -256,7 +259,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {landingAttribution && (
             <div className="rounded-xl border border-gold/15 bg-gold/[0.03] p-5">
               <div className="mb-4 flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-gold/70">
-                <Globe className="h-3 w-3" /> Source landing page
+                <Globe className="h-3 w-3" /> {t('crm.sourceLandingPage')}
               </div>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -264,14 +267,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   <div className="mt-0.5 font-mono text-xs text-slate-500">/lp/{landingAttribution.slug}</div>
                 </div>
                 <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${landingAttribution.isLiveNow ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-line-strong bg-surface-2 text-slate-400'}`}>
-                  {landingAttribution.isLiveNow ? 'Live' : landingAttribution.status}
+                  {landingAttribution.isLiveNow ? t('crm.live') : landingAttribution.status}
                 </span>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2">
                 {[
-                  { label: 'Views', value: landingAttribution.pageViews },
-                  { label: 'Submits', value: landingAttribution.formSubmissions },
-                  { label: 'Leads', value: landingAttribution.leadCount },
+                  { label: t('crm.views'), value: landingAttribution.pageViews },
+                  { label: t('crm.submits'), value: landingAttribution.formSubmissions },
+                  { label: t('crm.leads'), value: landingAttribution.leadCount },
                 ].map((m) => (
                   <div key={m.label} className="rounded-lg border border-line bg-surface-2/50 px-2 py-2 text-center">
                     <div className="text-[10px] uppercase tracking-wide text-slate-500">{m.label}</div>
@@ -281,10 +284,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </div>
               <div className="mt-3 flex items-center gap-3 text-xs">
                 <a href={`/lp/${landingAttribution.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-gold/70 transition hover:text-gold">
-                  View page <ArrowUpRight className="h-2.5 w-2.5" />
+                  {t('crm.viewPage')} <ArrowUpRight className="h-2.5 w-2.5" />
                 </a>
                 <Link href={`/crm/landing-pages/${landingAttribution.slug}`} className="inline-flex items-center gap-1 text-slate-400 transition hover:text-slate-200">
-                  Edit in CRM
+                  {t('crm.editInCrm')}
                 </Link>
               </div>
             </div>
@@ -293,13 +296,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {/* Attribution card */}
           <div className="rounded-xl border border-line bg-surface p-5">
             <div className="mb-4 flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              <BarChart3 className="h-3 w-3" /> Attribution
+              <BarChart3 className="h-3 w-3" /> {t('crm.attribution')}
             </div>
 
             {sourceCampaign ? (
               <div className="space-y-4">
                 <div>
-                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">Campaign</div>
+                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.campaign')}</div>
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-xs font-medium text-slate-300 leading-snug">{sourceCampaign.name}</span>
                     <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${
@@ -311,15 +314,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     </span>
                   </div>
                   <div className="mt-1.5 flex gap-3 text-xs text-slate-500">
-                    <span>AED {sourceCampaign.spendAED.toLocaleString()} spent</span>
+                    <span>{t('crm.spent', { amount: `AED ${sourceCampaign.spendAED.toLocaleString()}` })}</span>
                     <span>·</span>
-                    <span>AED {sourceCampaign.cpl.toFixed(0)} CPL</span>
+                    <span>{t('crm.cpl', { amount: `AED ${sourceCampaign.cpl.toFixed(0)}` })}</span>
                   </div>
                 </div>
 
                 {sourceListing && (
                   <div>
-                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">Property</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.property')}</div>
                     <Link
                       href={`/freehold-intelligence/lead-machine/listings/${sourceListing.id}`}
                       className="group flex items-center justify-between gap-2 text-xs text-gold/65 transition hover:text-gold"
@@ -333,12 +336,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
                 {sourceLanding && (
                   <div>
-                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">Landing page</div>
+                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.landingPage')}</div>
                     <div className="flex items-center gap-2">
                       <Globe className="h-3 w-3 shrink-0 text-slate-500" />
                       <span className="font-mono text-xs text-slate-400">{sourceLanding.landingUrl}</span>
                     </div>
-                    <div className="mt-1 text-xs text-slate-500">{sourceLanding.status} · {sourceLanding.completion}% complete</div>
+                    <div className="mt-1 text-xs text-slate-500">{sourceLanding.status} · {t('crm.complete', { percent: sourceLanding.completion })}</div>
                   </div>
                 )}
 
@@ -346,18 +349,18 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   href="/freehold-intelligence/lead-machine/campaigns/attribution"
                   className="flex items-center gap-1 text-xs text-gold/45 transition hover:text-gold"
                 >
-                  View full attribution <ArrowUpRight className="h-2.5 w-2.5" />
+                  {t('crm.viewFullAttribution')} <ArrowUpRight className="h-2.5 w-2.5" />
                 </Link>
               </div>
             ) : (
               <div className="space-y-3 text-xs text-slate-400">
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-slate-500">Campaign</span>
-                  <span className="text-slate-400">{lead.campaignId === 'organic' ? 'Organic' : lead.campaignId || 'Direct'}</span>
+                  <span className="text-slate-500">{t('crm.campaign')}</span>
+                  <span className="text-slate-400">{lead.campaignId === 'organic' ? t('crm.organic') : lead.campaignId || t('crm.direct')}</span>
                 </div>
                 {lead.landingId && lead.landingId !== 'direct_whatsapp' && (
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">Landing</span>
+                    <span className="text-slate-500">{t('crm.landing')}</span>
                     <span className="font-mono text-xs text-slate-400">{lead.landingId}</span>
                   </div>
                 )}
@@ -367,7 +370,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
           {/* Quick actions */}
           <div className="rounded-xl border border-line bg-surface p-5">
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Actions</p>
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('crm.actions')}</p>
             <QuickActions
               leadId={lead.id}
               leadName={lead.name}
@@ -386,10 +389,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <div className="rounded-xl border border-line bg-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Clock className="h-3 w-3" /> Activity
+                <Clock className="h-3 w-3" /> {t('crm.activity')}
               </div>
               <Link href="/freehold-intelligence/crm/activity" className="text-xs text-gold/50 transition hover:text-gold">
-                All activity
+                {t('crm.allActivity')}
               </Link>
             </div>
             {leadActivity.length > 0 ? (
@@ -403,7 +406,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-slate-300 leading-snug">{event.content}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">{event.actor} · {new Date(event.createdAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{event.actor} · {new Date(event.createdAt).toLocaleDateString(dateLocale, { dateStyle: 'medium' })}</p>
                       </div>
                     </div>
                   )
@@ -414,15 +417,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <div className="flex gap-3 text-sm">
                   <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
                   <div>
-                    <p className="text-slate-300">Lead created via {lead.source}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">{new Date(lead.lastContactAt).toLocaleDateString('en-AE', { dateStyle: 'medium' })}</p>
+                    <p className="text-slate-300">{t('crm.leadCreatedVia', { source: lead.source })}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{new Date(lead.lastContactAt).toLocaleDateString(dateLocale, { dateStyle: 'medium' })}</p>
                   </div>
                 </div>
                 <div className="flex gap-3 text-sm">
                   <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-surface-3" />
                   <div>
-                    <p className="text-slate-400">Assigned to {lead.assignedAgent}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">Auto-assigned</p>
+                    <p className="text-slate-400">{t('crm.assignedTo', { agent: lead.assignedAgent })}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{t('crm.autoAssigned')}</p>
                   </div>
                 </div>
               </div>

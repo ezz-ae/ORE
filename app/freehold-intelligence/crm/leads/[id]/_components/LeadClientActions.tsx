@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Copy, CheckCircle, MessageSquare, BookOpen, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
 import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
+import { useT } from '@/lib/i18n/provider'
 
 interface CopyButtonProps {
   text: string
 }
 
 export function CopyButton({ text }: CopyButtonProps) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
@@ -26,7 +28,7 @@ export function CopyButton({ text }: CopyButtonProps) {
       className="flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
     >
       {copied ? <CheckCircle className="h-3 w-3 text-gold" /> : <Copy className="h-3 w-3" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? t('crm.copied') : t('crm.copy')}
     </button>
   )
 }
@@ -38,6 +40,7 @@ interface SuggestedMessageActionsProps {
 }
 
 export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMessageActionsProps) {
+  const t = useT()
   const [sent, setSent] = useState(false)
 
   return (
@@ -48,7 +51,7 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
         className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-400"
       >
         <MessageSquare className="h-3.5 w-3.5" />
-        Open WhatsApp Chat
+        {t('crm.openWhatsAppChat')}
       </Link>
       {/* External wa.me fallback */}
       <a
@@ -59,14 +62,14 @@ export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMes
         className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-2 text-xs text-emerald-400 transition hover:bg-emerald-500/15"
       >
         <MessageSquare className="h-3.5 w-3.5" />
-        {sent ? 'Opened' : 'wa.me'}
+        {sent ? t('crm.opened') : 'wa.me'}
       </a>
       <Link
         href={`/freehold-intelligence/notebook?lead=${leadId}`}
         className="inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-xs text-slate-400 transition hover:border-gold/30 hover:text-white"
       >
         <BookOpen className="h-3.5 w-3.5" />
-        Notebook
+        {t('crm.notebook')}
       </Link>
     </div>
   )
@@ -89,15 +92,16 @@ interface QuickActionsProps {
 
 type ActionKey = 'hot' | 'reassign' | 'snooze'
 
-const DEAL_STATUS_LABEL: Record<string, string> = {
-  pending_step1: 'Awaiting docs/KYC',
-  pending_step2: 'Awaiting final approval',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  closed: 'Closed · Paid',
+const DEAL_STATUS_LABEL_KEY: Record<string, string> = {
+  pending_step1: 'crm.deal.pendingStep1',
+  pending_step2: 'crm.deal.pendingStep2',
+  approved: 'crm.deal.approved',
+  rejected: 'crm.deal.rejected',
+  closed: 'crm.deal.closedPaid',
 }
 
 export function QuickActions({ leadId, leadName, currentStage, lead, existingDeal }: QuickActionsProps) {
+  const t = useT()
   const router = useRouter()
   const [applied, setApplied] = useState<Set<ActionKey>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
@@ -124,16 +128,16 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
   async function markHot() {
     if (applied.has('hot')) return
     const ok = await patchLead({ priority: 'hot' })
-    if (ok) { setApplied((p) => new Set(p).add('hot')); flashMsg('Marked as Hot'); router.refresh() }
-    else flashMsg('Could not update')
+    if (ok) { setApplied((p) => new Set(p).add('hot')); flashMsg(t('crm.markedAsHot')); router.refresh() }
+    else flashMsg(t('crm.couldNotUpdate'))
   }
 
   async function snooze24h() {
     if (applied.has('snooze')) return
     const until = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     const ok = await patchLead({ snooze_until: until })
-    if (ok) { setApplied((p) => new Set(p).add('snooze')); flashMsg('Snoozed 24h') }
-    else flashMsg('Could not snooze')
+    if (ok) { setApplied((p) => new Set(p).add('snooze')); flashMsg(t('crm.snoozed24h')) }
+    else flashMsg(t('crm.couldNotSnooze'))
   }
 
   async function toggleReassign() {
@@ -152,8 +156,8 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
   async function reassignTo(agentId: string, agentName: string) {
     const ok = await patchLead({ assigned_broker_id: agentId })
     setShowReassign(false)
-    if (ok) { setApplied((p) => new Set(p).add('reassign')); flashMsg(`Reassigned to ${agentName}`); router.refresh() }
-    else flashMsg('Could not reassign')
+    if (ok) { setApplied((p) => new Set(p).add('reassign')); flashMsg(t('crm.reassignedTo', { agent: agentName })); router.refresh() }
+    else flashMsg(t('crm.couldNotReassign'))
   }
 
   const budgetNum = Number(String(lead?.budgetAED ?? '').replace(/[^0-9.]/g, '')) || 0
@@ -168,7 +172,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
             className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
           >
             <Briefcase className="h-3.5 w-3.5" />
-            Deal created · {DEAL_STATUS_LABEL[existingDeal.status] || existingDeal.status}
+            {t('crm.dealCreated', { status: DEAL_STATUS_LABEL_KEY[existingDeal.status] ? t(DEAL_STATUS_LABEL_KEY[existingDeal.status]) : existingDeal.status })}
           </Link>
         ) : (
           <>
@@ -177,7 +181,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
               className="flex w-full items-center gap-2.5 rounded-[12px] border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm font-medium text-gold transition hover:bg-gold/15"
             >
               <Briefcase className="h-3.5 w-3.5" />
-              Convert to Deal
+              {t('crm.convertToDeal')}
             </button>
             {!isClosed && (
               <button
@@ -185,7 +189,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
                 className="flex w-full items-center gap-2.5 rounded-[12px] border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/15"
               >
                 <Trophy className="h-3.5 w-3.5" />
-                Mark as Closed (Won)
+                {t('crm.markAsClosedWon')}
               </button>
             )}
           </>
@@ -198,7 +202,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('hot') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-gold/30 hover:text-[#F8E7AE]'}`}
         >
           {applied.has('hot') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Zap className="h-3.5 w-3.5" />}
-          {applied.has('hot') ? 'Marked as Hot' : 'Move to Hot'}
+          {applied.has('hot') ? t('crm.markedAsHot') : t('crm.moveToHot')}
         </button>
 
         {/* Reassign */}
@@ -208,12 +212,12 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
             className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('reassign') ? 'text-gold/60 border-emerald-400/15' : 'text-slate-400 hover:border-sky-400/30 hover:text-sky-200'}`}
           >
             {applied.has('reassign') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <User className="h-3.5 w-3.5" />}
-            Reassign
+            {t('crm.reassign')}
           </button>
           {showReassign && (
             <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-[12px] border border-line-strong bg-surface shadow-xl">
               {agents.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-slate-500">Loading agents…</div>
+                <div className="px-4 py-3 text-xs text-slate-500">{t('crm.loadingAgents')}</div>
               ) : agents.map((a) => (
                 <button key={a.id} onClick={() => reassignTo(a.id, a.name)} className="block w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-surface-2 hover:text-white">
                   {a.name}
@@ -230,7 +234,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('snooze') ? 'cursor-default border-emerald-400/15 text-gold/60' : 'text-slate-400 hover:border-orange-400/30 hover:text-orange-200'}`}
         >
           {applied.has('snooze') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Bell className="h-3.5 w-3.5" />}
-          {applied.has('snooze') ? 'Snoozed 24h' : 'Snooze 24h'}
+          {applied.has('snooze') ? t('crm.snoozed24h') : t('crm.snooze24h')}
         </button>
 
         <Link
@@ -238,7 +242,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           className="flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm text-slate-400 transition hover:border-line-strong hover:text-white"
         >
           <ArrowUpRight className="h-3.5 w-3.5" />
-          View in pipeline
+          {t('crm.viewInPipeline')}
         </Link>
       </div>
 
@@ -274,6 +278,7 @@ function ConvertToDealModal({
   onClose: () => void
   onDone: () => void
 }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
 
   async function submit(values: DealFormValues) {
@@ -285,7 +290,7 @@ function ConvertToDealModal({
         body: JSON.stringify({ ...values, leadId }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to create deal')
+      if (!res.ok) throw new Error(data?.error || t('crm.failedCreateDeal'))
 
       if (closeLead) {
         await fetch(`/api/freehold/crm/leads/${leadId}`, {
@@ -295,10 +300,10 @@ function ConvertToDealModal({
         }).catch(() => null)
       }
 
-      toast.success(closeLead ? 'Deal created · lead closed (won)' : 'Deal created — sent for approval')
+      toast.success(closeLead ? t('crm.dealCreatedLeadClosed') : t('crm.dealCreatedSentApproval'))
       onDone()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create deal')
+      toast.error(err instanceof Error ? err.message : t('crm.failedCreateDeal'))
       setBusy(false)
     }
   }
@@ -309,12 +314,12 @@ function ConvertToDealModal({
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
             <h2 className="text-base font-semibold text-white">
-              {closeLead ? 'Close Deal (Won)' : 'Convert Lead to Deal'}
+              {closeLead ? t('crm.closeDealWon') : t('crm.convertLeadToDeal')}
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               {closeLead
-                ? 'Capture the deal — it will be sent to management for approval and the lead marked closed.'
-                : 'Capture the deal commercials. Agent deals route through 2-step approval.'}
+                ? t('crm.closeDealDesc')
+                : t('crm.convertDealDesc')}
             </p>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-500 transition hover:bg-surface-2 hover:text-white">
@@ -323,7 +328,7 @@ function ConvertToDealModal({
         </div>
         <div className="p-6">
           <DealForm
-            submitLabel={closeLead ? 'Create deal & close lead' : 'Create deal'}
+            submitLabel={closeLead ? t('crm.createDealCloseLead') : t('crm.createDeal')}
             busy={busy}
             onCancel={onClose}
             enableLeadLookup={false}

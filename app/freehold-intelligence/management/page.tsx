@@ -12,6 +12,7 @@ import {
   Target, Zap, Coins,
 } from 'lucide-react'
 import { StatCard, type StatDelta } from '@/components/freehold/ui'
+import { useI18n } from '@/lib/i18n/provider'
 
 function fmtAedShort(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -40,20 +41,21 @@ const EVENT_COLOR: Record<string, string> = {
 }
 
 const QUICK_NAV = [
-  { href: '/freehold-intelligence/management/events',   label: 'Events Log', icon: Activity,      color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
-  { href: '/freehold-intelligence/management/team',     label: 'Team',       icon: Users,         color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
-  { href: '/freehold-intelligence/management/deals',    label: 'Deals',      icon: Briefcase,     color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
-  { href: '/freehold-intelligence/management/roi',      label: 'ROI',        icon: TrendingUp,    color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
-  { href: '/freehold-intelligence/management/reports',  label: 'Reports',    icon: FileBarChart2, color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
-  { href: '/freehold-intelligence/ads',                 label: 'Ads',        icon: Megaphone,     color: 'text-blue-400 border-blue-400/20 bg-blue-400/10' },
-  { href: '/freehold-intelligence/finance',             label: 'Finance',    icon: DollarSign,    color: 'text-green-400 border-green-400/20 bg-green-400/10' },
-  { href: '/freehold-intelligence/inventory',           label: 'Inventory',  icon: Building2,     color: 'text-slate-300 border-line-strong bg-surface-2' },
-  { href: '/freehold-intelligence/agent/ai',            label: 'AI Chat',    icon: Bot,           color: 'text-gold border-gold/20 bg-gold/10' },
-  { href: '/freehold-intelligence/finance/credits',     label: 'Credits',    icon: Coins,         color: 'text-gold border-gold/20 bg-gold/10' },
+  { href: '/freehold-intelligence/management/events',   labelKey: 'mgmt.quick.events',    icon: Activity,      color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
+  { href: '/freehold-intelligence/management/team',     labelKey: 'mgmt.quick.team',      icon: Users,         color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
+  { href: '/freehold-intelligence/management/deals',    labelKey: 'mgmt.quick.deals',     icon: Briefcase,     color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
+  { href: '/freehold-intelligence/management/roi',      labelKey: 'mgmt.quick.roi',       icon: TrendingUp,    color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
+  { href: '/freehold-intelligence/management/reports',  labelKey: 'mgmt.quick.reports',   icon: FileBarChart2, color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
+  { href: '/freehold-intelligence/ads',                 labelKey: 'mgmt.quick.ads',       icon: Megaphone,     color: 'text-blue-400 border-blue-400/20 bg-blue-400/10' },
+  { href: '/freehold-intelligence/finance',             labelKey: 'mgmt.quick.finance',   icon: DollarSign,    color: 'text-green-400 border-green-400/20 bg-green-400/10' },
+  { href: '/freehold-intelligence/inventory',           labelKey: 'mgmt.quick.inventory', icon: Building2,     color: 'text-slate-300 border-line-strong bg-surface-2' },
+  { href: '/freehold-intelligence/agent/ai',            labelKey: 'mgmt.quick.aiChat',    icon: Bot,           color: 'text-gold border-gold/20 bg-gold/10' },
+  { href: '/freehold-intelligence/finance/credits',     labelKey: 'mgmt.quick.credits',   icon: Coins,         color: 'text-gold border-gold/20 bg-gold/10' },
 ]
 
 export default function ManagementDashboard() {
   const router = useRouter()
+  const { t, locale } = useI18n()
   const [tasks, setTasks]   = useState<DashTask[]>([])
   const [stats, setStats]   = useState<DashboardStats | null>(null)
   const [events, setEvents] = useState<DashEvent[]>([])
@@ -67,9 +69,10 @@ export default function ManagementDashboard() {
   useEffect(() => {
     const now  = new Date()
     const hour = now.getHours()
-    setGreeting(hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening')
-    setDateStr(now.toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dubai' }))
-  }, [])
+    setGreeting(hour < 12 ? t('mgmt.greeting.morning') : hour < 17 ? t('mgmt.greeting.afternoon') : t('mgmt.greeting.evening'))
+    const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+    setDateStr(now.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Dubai' }))
+  }, [t, locale])
 
   // Load real dashboard data.
   useEffect(() => {
@@ -83,19 +86,26 @@ export default function ManagementDashboard() {
         setRecentLeads(d.recentLeads || [])
         const s = d.stats
         if (s) {
-          setAiMessages([{ role: 'assistant', text: `Here is your live briefing:\n\n**${s.newLeadsToday} new lead${s.newLeadsToday === 1 ? '' : 's'} today**${s.newLeadsDelta !== 0 ? ` (${s.newLeadsDelta > 0 ? '+' : ''}${s.newLeadsDelta} vs yesterday)` : ''}. Pipeline value is ${fmtAedShort(s.pipelineValueAed)} across approved deals, with **${s.dealsClosingWeek} deal${s.dealsClosingWeek === 1 ? '' : 's'} closed this week**. ${s.commissionOutstandingAed > 0 ? `Commission outstanding: ${fmtAedShort(s.commissionOutstandingAed)}. ` : ''}${s.openLeads} open lead${s.openLeads === 1 ? '' : 's'} in the pipeline.\n\nWhat would you like to focus on first?` }])
+          const leadsLine = (s.newLeadsToday === 1 ? t('mgmt.briefingLeads', { count: s.newLeadsToday }) : t('mgmt.briefingLeadsPlural', { count: s.newLeadsToday }))
+            + (s.newLeadsDelta !== 0 ? t('mgmt.briefingDelta', { delta: `${s.newLeadsDelta > 0 ? '+' : ''}${s.newLeadsDelta}` }) : '')
+          const dealsText = s.dealsClosingWeek === 1 ? t('mgmt.briefingDeal', { count: s.dealsClosingWeek }) : t('mgmt.briefingDealPlural', { count: s.dealsClosingWeek })
+          const pipelineLine = t('mgmt.briefingPipeline', { value: fmtAedShort(s.pipelineValueAed), deals: dealsText })
+          const commissionLine = s.commissionOutstandingAed > 0 ? t('mgmt.briefingCommission', { amount: fmtAedShort(s.commissionOutstandingAed) }) + ' ' : ''
+          const openLeadsLine = s.openLeads === 1 ? t('mgmt.briefingOpenLeads', { count: s.openLeads }) : t('mgmt.briefingOpenLeadsPlural', { count: s.openLeads })
+          const text = `${t('mgmt.briefingIntro')}\n\n${leadsLine}. ${pipelineLine} ${commissionLine}${openLeadsLine}\n\n${t('mgmt.briefingFocus')}`
+          setAiMessages([{ role: 'assistant', text }])
         }
       })
       .catch(() => {})
-  }, [])
+  }, [t])
 
   const STAT_CARDS: { label: string; value: string; delta?: StatDelta; hint?: string; icon: LucideIcon }[] = stats ? [
-    { label: 'New Leads Today', value: String(stats.newLeadsToday), delta: stats.newLeadsDelta !== 0 ? { value: `${stats.newLeadsDelta > 0 ? '+' : ''}${stats.newLeadsDelta}`, direction: stats.newLeadsDelta >= 0 ? 'up' : 'down' } : undefined, icon: Target },
-    { label: 'Pipeline Value', value: fmtAedShort(stats.pipelineValueAed), hint: 'approved deals', icon: TrendingUp },
-    { label: 'Deals Closed', value: String(stats.dealsClosingWeek), hint: 'this week', icon: Briefcase },
-    { label: 'Open Leads', value: String(stats.openLeads), hint: 'in pipeline', icon: Megaphone },
-    { label: 'Revenue MTD', value: fmtAedShort(stats.revenueMtdAed), hint: 'commission received', icon: DollarSign },
-    { label: 'Team', value: String(stats.teamCount), hint: 'active members', icon: Users },
+    { label: t('mgmt.stat.newLeadsToday'), value: String(stats.newLeadsToday), delta: stats.newLeadsDelta !== 0 ? { value: `${stats.newLeadsDelta > 0 ? '+' : ''}${stats.newLeadsDelta}`, direction: stats.newLeadsDelta >= 0 ? 'up' : 'down' } : undefined, icon: Target },
+    { label: t('mgmt.stat.pipelineValue'), value: fmtAedShort(stats.pipelineValueAed), hint: t('mgmt.stat.pipelineValueHint'), icon: TrendingUp },
+    { label: t('mgmt.stat.dealsClosed'), value: String(stats.dealsClosingWeek), hint: t('mgmt.stat.dealsClosedHint'), icon: Briefcase },
+    { label: t('mgmt.stat.openLeads'), value: String(stats.openLeads), hint: t('mgmt.stat.openLeadsHint'), icon: Megaphone },
+    { label: t('mgmt.stat.revenueMtd'), value: fmtAedShort(stats.revenueMtdAed), hint: t('mgmt.stat.revenueMtdHint'), icon: DollarSign },
+    { label: t('mgmt.stat.team'), value: String(stats.teamCount), hint: t('mgmt.stat.teamHint'), icon: Users },
   ] : []
 
   function toggleTask(id: string) {
@@ -126,10 +136,10 @@ export default function ManagementDashboard() {
       })
       const data = await res.json()
       const answer = data?.data?.answer || data?.answer || data?.message || data?.reply ||
-        'I reviewed the current data. Try one of the suggested prompts.'
+        t('mgmt.ai.fallback')
       setAiMessages(m => [...m, { role: 'assistant', text: answer }])
     } catch {
-      setAiMessages(m => [...m, { role: 'assistant', text: 'I could not reach the server right now. Try again in a moment.' }])
+      setAiMessages(m => [...m, { role: 'assistant', text: t('mgmt.ai.serverError') }])
     } finally {
       setAiPending(false)
     }
@@ -146,7 +156,7 @@ export default function ManagementDashboard() {
           </div>
           <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-400">All systems live</span>
+            <span className="text-xs font-medium text-emerald-400">{t('mgmt.allSystemsLive')}</span>
           </div>
         </div>
       </div>
@@ -181,8 +191,8 @@ export default function ManagementDashboard() {
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
                   <Sparkles className="h-3.5 w-3.5 text-gold" />
                 </div>
-                <span className="text-sm font-semibold text-white">AI Briefing</span>
-                <span className="ml-auto text-xs text-slate-500">Updated 08:00 AM</span>
+                <span className="text-sm font-semibold text-white">{t('mgmt.aiBriefing')}</span>
+                <span className="ml-auto text-xs text-slate-500">{t('mgmt.updatedAt', { time: '08:00 AM' })}</span>
               </div>
 
               <div className="max-h-72 overflow-y-auto px-5 py-4 space-y-3">
@@ -217,7 +227,7 @@ export default function ManagementDashboard() {
                       <Sparkles className="h-3.5 w-3.5" />
                     </div>
                     <div className="max-w-[85%] rounded-xl bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-400">
-                      Thinking…
+                      {t('mgmt.thinking')}
                     </div>
                   </div>
                 )}
@@ -227,7 +237,7 @@ export default function ManagementDashboard() {
                 <input
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
-                  placeholder="Ask about performance, decisions, market…"
+                  placeholder={t('mgmt.askPlaceholder')}
                   className="flex-1 rounded-lg border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:border-gold/40"
                 />
                 <button
@@ -244,9 +254,9 @@ export default function ManagementDashboard() {
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Zap className="h-4 w-4 text-gold" />
-                <span className="text-sm font-semibold text-white">AI Task Planner</span>
+                <span className="text-sm font-semibold text-white">{t('mgmt.aiTaskPlanner')}</span>
                 <span className="ml-auto text-xs text-slate-500">
-                  {tasks.filter(t => !t.done).length} pending
+                  {t('mgmt.pendingCount', { count: tasks.filter(task => !task.done).length })}
                 </span>
               </div>
               <div className="divide-y divide-white/[0.07]">
@@ -274,7 +284,7 @@ export default function ManagementDashboard() {
                       task.priority === 'medium' ? 'bg-amber-500/15 text-amber-400' :
                                                     'bg-surface-3 text-slate-500',
                     ].join(' ')}>
-                      {task.priority}
+                      {t(`mgmt.priority.${task.priority}`)}
                     </span>
                   </div>
                 ))}
@@ -285,14 +295,14 @@ export default function ManagementDashboard() {
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <Mail className="h-4 w-4 text-slate-400" />
-                <span className="text-sm font-semibold text-white">Latest Leads</span>
+                <span className="text-sm font-semibold text-white">{t('mgmt.latestLeads')}</span>
                 <Link href="/freehold-intelligence/crm/leads" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300">
-                  All <ArrowUpRight className="h-3 w-3" />
+                  {t('mgmt.all')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
               <div className="divide-y divide-white/[0.07]">
                 {recentLeads.length === 0 ? (
-                  <div className="px-5 py-8 text-center text-xs text-slate-600">No leads yet.</div>
+                  <div className="px-5 py-8 text-center text-xs text-slate-600">{t('mgmt.noLeadsYet')}</div>
                 ) : recentLeads.map((lead, i) => {
                   const hot = lead.status === 'new' || lead.status === 'contacted'
                   return (
@@ -320,7 +330,7 @@ export default function ManagementDashboard() {
             {/* Quick Navigation */}
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="border-b border-white/[0.07] px-5 py-3.5">
-                <p className="text-sm font-semibold text-white">Quick Access</p>
+                <p className="text-sm font-semibold text-white">{t('mgmt.quickAccess')}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 p-3">
                 {QUICK_NAV.map(item => (
@@ -332,7 +342,7 @@ export default function ManagementDashboard() {
                     <div className={['flex h-8 w-8 items-center justify-center rounded-lg border', item.color].join(' ')}>
                       <item.icon className="h-4 w-4" />
                     </div>
-                    <span className="text-xs font-medium text-slate-300 group-hover:text-white">{item.label}</span>
+                    <span className="text-xs font-medium text-slate-300 group-hover:text-white">{t(item.labelKey)}</span>
                   </Link>
                 ))}
               </div>
@@ -342,14 +352,14 @@ export default function ManagementDashboard() {
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="flex items-center gap-3 border-b border-white/[0.07] px-5 py-3.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-sm font-semibold text-white">Live Events</span>
+                <span className="text-sm font-semibold text-white">{t('mgmt.liveEvents')}</span>
                 <Link href="/freehold-intelligence/management/events" className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors">
-                  All <ArrowUpRight className="h-3 w-3" />
+                  {t('mgmt.all')} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
               <div className="divide-y divide-white/[0.07]">
                 {events.length === 0 ? (
-                  <div className="px-5 py-8 text-center text-xs text-slate-600">No recent activity yet.</div>
+                  <div className="px-5 py-8 text-center text-xs text-slate-600">{t('mgmt.noActivityYet')}</div>
                 ) : events.map((ev, i) => (
                   <div key={i} className="px-5 py-3.5">
                     <div className="flex items-center justify-between gap-2 mb-1">
@@ -368,7 +378,7 @@ export default function ManagementDashboard() {
             {/* WhatsApp Connector */}
             <div className="rounded-xl border border-white/[0.07] bg-surface">
               <div className="border-b border-white/[0.07] px-5 py-3.5">
-                <p className="text-sm font-semibold text-white">WhatsApp Web</p>
+                <p className="text-sm font-semibold text-white">{t('mgmt.whatsappWeb')}</p>
               </div>
               <div className="px-5 py-4">
                 <div className="flex items-center gap-3 mb-4">
@@ -376,8 +386,8 @@ export default function ManagementDashboard() {
                     <MessageSquare className="h-4.5 w-4.5 text-green-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-200">Not connected</p>
-                    <p className="text-xs text-slate-500">Scan QR to sync inbox</p>
+                    <p className="text-sm font-medium text-slate-200">{t('mgmt.notConnected')}</p>
+                    <p className="text-xs text-slate-500">{t('mgmt.scanQr')}</p>
                   </div>
                   <div className="ml-auto">
                     <WifiOff className="h-4 w-4 text-slate-600" />
@@ -386,10 +396,10 @@ export default function ManagementDashboard() {
                 <button
                   onClick={() => router.push('/freehold-intelligence/integrations/whatsapp')}
                   className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] py-2.5 text-sm font-medium text-slate-300 transition hover:border-line-strong hover:bg-surface-2 hover:text-white">
-                  Connect WhatsApp
+                  {t('mgmt.connectWhatsapp')}
                 </button>
                 <p className="mt-2.5 text-center text-xs text-slate-600">
-                  Sync messages, templates & lead responses
+                  {t('mgmt.whatsappHint')}
                 </p>
               </div>
             </div>

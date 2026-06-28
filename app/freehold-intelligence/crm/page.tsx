@@ -13,6 +13,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,21 +32,21 @@ function relTime(iso: string): string {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const TEMP_STYLE: Record<string, { label: string; badge: string }> = {
-  priority: { label: '★ Priority', badge: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25' },
-  hot:      { label: '● Hot',      badge: 'bg-red-400/10 text-red-400 border-red-400/20'         },
-  warm:     { label: '◎ Warm',     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'   },
-  cold:     { label: '○ Cold',     badge: 'bg-slate-800/50 text-slate-500 border-slate-700'      },
+const TEMP_STYLE: Record<string, { labelKey: string; badge: string }> = {
+  priority: { labelKey: 'crm.temp.priority', badge: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25' },
+  hot:      { labelKey: 'crm.temp.hot',      badge: 'bg-red-400/10 text-red-400 border-red-400/20'         },
+  warm:     { labelKey: 'crm.temp.warm',     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'   },
+  cold:     { labelKey: 'crm.temp.cold',     badge: 'bg-slate-800/50 text-slate-500 border-slate-700'      },
 }
 
-const STAGE_CONFIG: Record<PipelineStage, { label: string; dot: string; badge: string }> = {
-  new:         { label: 'New',         dot: 'bg-sky-400',     badge: 'bg-sky-400/10 text-sky-400 border-sky-400/20'             },
-  contacted:   { label: 'Contacted',   dot: 'bg-amber-400',   badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'       },
-  qualified:   { label: 'Qualified',   dot: 'bg-violet-400',  badge: 'bg-violet-400/10 text-violet-400 border-violet-400/20'    },
-  viewing:     { label: 'Viewing',     dot: 'bg-blue-400',    badge: 'bg-blue-400/10 text-blue-400 border-blue-400/20'          },
-  negotiation: { label: 'Negotiation', dot: 'bg-orange-400',  badge: 'bg-orange-400/10 text-orange-400 border-orange-400/20'    },
-  closed:      { label: 'Closed',      dot: 'bg-emerald-400', badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' },
-  lost:        { label: 'Lost',        dot: 'bg-red-400/50',  badge: 'bg-red-400/[0.06] text-red-400/55 border-red-400/[0.12]' },
+const STAGE_CONFIG: Record<PipelineStage, { labelKey: string; dot: string; badge: string }> = {
+  new:         { labelKey: 'crm.stage.new',         dot: 'bg-sky-400',     badge: 'bg-sky-400/10 text-sky-400 border-sky-400/20'             },
+  contacted:   { labelKey: 'crm.stage.contacted',   dot: 'bg-amber-400',   badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'       },
+  qualified:   { labelKey: 'crm.stage.qualified',   dot: 'bg-violet-400',  badge: 'bg-violet-400/10 text-violet-400 border-violet-400/20'    },
+  viewing:     { labelKey: 'crm.stage.viewing',     dot: 'bg-blue-400',    badge: 'bg-blue-400/10 text-blue-400 border-blue-400/20'          },
+  negotiation: { labelKey: 'crm.stage.negotiation', dot: 'bg-orange-400',  badge: 'bg-orange-400/10 text-orange-400 border-orange-400/20'    },
+  closed:      { labelKey: 'crm.stage.closed',      dot: 'bg-emerald-400', badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' },
+  lost:        { labelKey: 'crm.stage.lost',        dot: 'bg-red-400/50',  badge: 'bg-red-400/[0.06] text-red-400/55 border-red-400/[0.12]' },
 }
 
 const STAGES: PipelineStage[] = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed', 'lost']
@@ -69,16 +70,17 @@ function syncDot(status: string) {
   return 'bg-slate-600'
 }
 
-function syncLabel(s: typeof integrationSyncStatuses[0]) {
-  if (s.status === 'synced')        return <span className="text-xs text-slate-500">{s.leadsIn} leads</span>
-  if (s.status === 'not_connected') return <span className="text-xs text-slate-600">Not connected</span>
-  if (s.status === 'syncing')       return <span className="text-xs text-amber-400/70">Syncing…</span>
-  return <span className="text-xs text-red-400/70">Error</span>
+function syncLabel(s: typeof integrationSyncStatuses[0], t: (key: string, vars?: Record<string, string | number>) => string) {
+  if (s.status === 'synced')        return <span className="text-xs text-slate-500">{t('crm.leadsCount', { count: s.leadsIn })}</span>
+  if (s.status === 'not_connected') return <span className="text-xs text-slate-600">{t('crm.notConnected')}</span>
+  if (s.status === 'syncing')       return <span className="text-xs text-amber-400/70">{t('crm.syncing')}</span>
+  return <span className="text-xs text-red-400/70">{t('crm.error')}</span>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeholdCrmPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
@@ -113,12 +115,12 @@ export default function FreeholdCrmPage() {
 
   // ── Tile definitions ──
   const TILES = [
-    { label: 'New Leads',   value: String(newCount),                           sub: 'need first response', color: 'text-sky-400',     border: 'border-sky-400/15',     bg: 'bg-sky-400/[0.06]'     },
-    { label: 'Follow-ups',  value: String(followUpsCount),                     sub: 'urgent or critical',  color: 'text-red-400',     border: 'border-red-400/15',     bg: 'bg-red-400/[0.06]'     },
-    { label: 'Hot',         value: String(hotCount),                           sub: 'hot + priority',      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
-    { label: 'Qualified',   value: String(qualifiedCount),                     sub: 'in qualification',    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
-    { label: 'Pipeline',    value: `AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`, sub: 'active AED est.', color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
-    { label: 'Closed MTD',  value: String(closedCount),                        sub: 'this month',          color: 'text-slate-400',   border: 'border-slate-700',      bg: 'bg-slate-800/50'       },
+    { label: t('crm.tile.newLeads'),   value: String(newCount),                           sub: t('crm.tile.newLeadsSub'), color: 'text-sky-400',     border: 'border-sky-400/15',     bg: 'bg-sky-400/[0.06]'     },
+    { label: t('crm.tile.followUps'),  value: String(followUpsCount),                     sub: t('crm.tile.followUpsSub'),  color: 'text-red-400',     border: 'border-red-400/15',     bg: 'bg-red-400/[0.06]'     },
+    { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
+    { label: t('crm.tile.qualified'),   value: String(qualifiedCount),                     sub: t('crm.tile.qualifiedSub'),    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
+    { label: t('crm.tile.pipeline'),    value: `AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`, sub: t('crm.tile.pipelineSub'), color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
+    { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-slate-700',      bg: 'bg-slate-800/50'       },
   ]
 
   const lastSyncStr = integrationSyncStatuses.find(s => s.lastSyncAt)?.lastSyncAt
@@ -134,16 +136,16 @@ export default function FreeholdCrmPage() {
           {/* Header */}
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <h1 className="text-[17px] font-semibold text-white">CRM Command Centre</h1>
+              <h1 className="text-[17px] font-semibold text-white">{t('crm.commandCentre')}</h1>
               <p className="mt-0.5 text-xs text-slate-500">
-                {leads.length} leads · {STAGES.length} pipeline stages
+                {t('crm.leadsPipelineStages', { leads: leads.length, stages: STAGES.length })}
               </p>
             </div>
             <Link
               href="/freehold-intelligence/crm/board"
               className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
-              Board <ChevronRight className="h-3 w-3" />
+              {t('crm.board')} <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
 
@@ -160,7 +162,7 @@ export default function FreeholdCrmPage() {
 
           {/* ── Pipeline stage funnel ── */}
           <div className="mb-5 rounded-[14px] border border-slate-800 bg-slate-900 p-4">
-            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Pipeline</div>
+            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.pipeline')}</div>
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
               {STAGES.map(stage => {
                 const sc    = STAGE_CONFIG[stage]
@@ -182,7 +184,7 @@ export default function FreeholdCrmPage() {
                       {count}
                     </span>
                     <span className={`text-[9px] whitespace-nowrap font-medium uppercase tracking-wide ${active ? '' : 'text-slate-500'}`}>
-                      {sc.label}
+                      {t(sc.labelKey)}
                     </span>
                   </button>
                 )
@@ -197,7 +199,7 @@ export default function FreeholdCrmPage() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search leads, projects, agents…"
+                placeholder={t('crm.searchLeadsProjectsAgents')}
                 className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
               />
               {query && (
@@ -214,15 +216,15 @@ export default function FreeholdCrmPage() {
                 onClick={() => setStageFilter('all')}
                 className="flex items-center gap-1 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-slate-200"
               >
-                <X className="h-3 w-3" /> Clear
+                <X className="h-3 w-3" /> {t('crm.clear')}
               </button>
             )}
           </div>
 
           <div className="mb-1.5 px-0.5 text-xs text-slate-500">
-            {filtered.length} {filtered.length === 1 ? 'lead' : 'leads'}
-            {stageFilter !== 'all' && ` · ${STAGE_CONFIG[stageFilter].label}`}
-            {query && ` matching "${query}"`}
+            {filtered.length === 1 ? t('crm.countLead', { count: filtered.length }) : t('crm.countLeads', { count: filtered.length })}
+            {stageFilter !== 'all' && ` · ${t(STAGE_CONFIG[stageFilter].labelKey)}`}
+            {query && ` ${t('crm.matching', { query })}`}
           </div>
 
           {/* ── Lead table ── */}
@@ -233,18 +235,18 @@ export default function FreeholdCrmPage() {
               className="hidden items-center gap-4 border-b border-slate-800 px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 lg:grid"
               style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
             >
-              <div>Lead</div>
-              <div>Temperature</div>
-              <div>Stage</div>
-              <div>Project · Budget</div>
-              <div>Agent</div>
-              <div>Last</div>
+              <div>{t('crm.colLead')}</div>
+              <div>{t('crm.colTemperature')}</div>
+              <div>{t('crm.colStage')}</div>
+              <div>{t('crm.colProjectBudget')}</div>
+              <div>{t('crm.colAgent')}</div>
+              <div>{t('crm.colLast')}</div>
               <div />
             </div>
 
             {filtered.length === 0 && (
               <div className="py-12 text-center text-sm text-slate-500">
-                No leads match this filter.
+                {t('crm.noLeadsMatchFilter')}
               </div>
             )}
 
@@ -278,7 +280,7 @@ export default function FreeholdCrmPage() {
                   {/* Temperature */}
                   <div className="hidden lg:block">
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${ts.badge}`}>
-                      {ts.label}
+                      {t(ts.labelKey)}
                     </span>
                   </div>
 
@@ -286,7 +288,7 @@ export default function FreeholdCrmPage() {
                   <div className="hidden lg:block">
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${sc.badge}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
-                      {sc.label}
+                      {t(sc.labelKey)}
                     </span>
                   </div>
 
@@ -309,13 +311,13 @@ export default function FreeholdCrmPage() {
                   {/* Actions */}
                   <div className="ml-auto flex items-center gap-1 lg:ml-0">
                     <button
-                      title="Call"
+                      title={t('crm.call')}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <PhoneCall className="h-3 w-3" />
                     </button>
                     <button
-                      title="WhatsApp"
+                      title={t('crm.whatsapp')}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <MessageCircle className="h-3 w-3" />
@@ -341,12 +343,12 @@ export default function FreeholdCrmPage() {
             {/* Integration sync panel */}
             <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Integrations</div>
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.integrations')}</div>
                 <button
                   onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
                   className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
                 >
-                  <RefreshCw className="h-3 w-3" /> Sync now
+                  <RefreshCw className="h-3 w-3" /> {t('crm.syncNow')}
                 </button>
               </div>
 
@@ -357,21 +359,21 @@ export default function FreeholdCrmPage() {
                       <span className={`h-2 w-2 shrink-0 rounded-full ${syncDot(s.status)}`} />
                       <span className="text-sm text-slate-300">{s.name}</span>
                     </div>
-                    {syncLabel(s)}
+                    {syncLabel(s, t)}
                   </div>
                 ))}
               </div>
 
               {lastSyncStr && mounted && (
                 <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs text-slate-600">
-                  Last sync {relTime(lastSyncStr)} ago · {totalLeadsIn} leads imported
+                  {t('crm.lastSync', { time: relTime(lastSyncStr), count: totalLeadsIn })}
                 </div>
               )}
             </div>
 
             {/* Top by intent */}
             <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
-              <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Top by Intent</div>
+              <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.topByIntent')}</div>
               <div className="space-y-2">
                 {[...leads]
                   .sort((a, b) => b.intentScore - a.intentScore)
@@ -398,12 +400,12 @@ export default function FreeholdCrmPage() {
             {/* AI prompt */}
             <AiPrompt
               skill="crm_advisor"
-              placeholder="Ask about leads, pipeline, follow-ups…"
+              placeholder={t('crm.aiPlaceholderOverview')}
               suggestions={[
-                'Which leads need urgent follow-up?',
-                'Draft a WhatsApp for the hottest lead.',
-                'Who is closest to closing?',
-                'Flag any duplicate or wrong-number risks.',
+                t('crm.aiSuggest.urgentFollowUp'),
+                t('crm.aiSuggest.draftWhatsApp'),
+                t('crm.aiSuggest.closestClosing'),
+                t('crm.aiSuggest.flagDuplicates'),
               ]}
               context={{
                 pipeline: {

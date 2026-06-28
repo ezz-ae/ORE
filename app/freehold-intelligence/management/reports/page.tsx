@@ -8,6 +8,7 @@ import {
   CheckCircle2, TrendingUp, Calendar, Clock, ChevronDown,
   FileText, Users, Megaphone, DollarSign, ArrowUpRight, Zap,
 } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 const TOP_EVENTS = [
   { rank: 1,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Sara Al Mansoori closed Palm Jumeirah Villa deal — AED 4.2M commission AED 63K' },
@@ -38,10 +39,10 @@ const ZERO_SUMMARY: Record<'leads' | 'deals' | 'revenue' | 'spend' | 'cpl' | 'ro
 type ReportStatus = 'ready' | 'generating' | 'scheduled'
 
 const AUTOMATED_REPORTS = [
-  { id: 1, name: 'Weekly Performance Report',   icon: FileBarChart2, desc: 'Leads, deals, revenue & agent activity',   lastGenerated: '02 Jun 2026', schedule: 'Every Monday' },
-  { id: 2, name: 'Monthly Revenue Report',      icon: DollarSign,    desc: 'Full financial breakdown with invoices',    lastGenerated: '01 Jun 2026', schedule: '1st of month' },
-  { id: 3, name: 'Campaign Analysis Report',    icon: Megaphone,     desc: 'Ad spend, ROI, CAC per channel',           lastGenerated: '01 Jun 2026', schedule: 'Every Monday' },
-  { id: 4, name: 'Team Productivity Report',    icon: Users,         desc: 'Agent KPIs, deal activity, response time', lastGenerated: '02 Jun 2026', schedule: 'Every Monday' },
+  { id: 1, nameKey: 'mgmt.reports.rpt.weeklyName',   icon: FileBarChart2, descKey: 'mgmt.reports.rpt.weeklyDesc',   lastGenerated: '02 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
+  { id: 2, nameKey: 'mgmt.reports.rpt.monthlyName',  icon: DollarSign,    descKey: 'mgmt.reports.rpt.monthlyDesc',  lastGenerated: '01 Jun 2026', scheduleKey: 'mgmt.reports.firstOfMonth' },
+  { id: 3, nameKey: 'mgmt.reports.rpt.campaignName', icon: Megaphone,     descKey: 'mgmt.reports.rpt.campaignDesc', lastGenerated: '01 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
+  { id: 4, nameKey: 'mgmt.reports.rpt.teamName',     icon: Users,         descKey: 'mgmt.reports.rpt.teamDesc',     lastGenerated: '02 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
 ]
 
 const AI_INSIGHTS = [
@@ -51,9 +52,9 @@ const AI_INSIGHTS = [
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/5',
     borderColor: 'border-emerald-500/20',
-    title: 'Opportunity: Scale WhatsApp',
-    body: 'WhatsApp is generating 1,200% ROI with only AED 130K spend. Increasing budget by AED 25K/month could generate an additional AED 300K in monthly revenue based on current conversion rates.',
-    action: 'View WhatsApp Analytics',
+    titleKey: 'mgmt.reports.insight.oppTitle',
+    bodyKey: 'mgmt.reports.insight.oppBody',
+    actionKey: 'mgmt.reports.insight.oppAction',
     href: '/freehold-intelligence/analytics',
   },
   {
@@ -62,9 +63,9 @@ const AI_INSIGHTS = [
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/5',
     borderColor: 'border-amber-500/20',
-    title: 'Warning: 4 Stalled Deals',
-    body: 'Four deals worth a combined AED 11.9M have had no activity in 7+ days. Based on historical data, deals inactive for 14+ days have a 68% lower close rate. Immediate agent intervention recommended.',
-    action: 'Review At-Risk Deals',
+    titleKey: 'mgmt.reports.insight.warnTitle',
+    bodyKey: 'mgmt.reports.insight.warnBody',
+    actionKey: 'mgmt.reports.insight.warnAction',
     href: '/freehold-intelligence/management/deals',
   },
   {
@@ -73,22 +74,22 @@ const AI_INSIGHTS = [
     color: 'text-sky-400',
     bgColor: 'bg-sky-500/5',
     borderColor: 'border-sky-500/20',
-    title: 'Success: Best Q2 Revenue',
-    body: "June 2026 is on track to be your best month since the company's founding. Revenue MTD AED 320K with 10 business days remaining. Full-month projection: AED 390K — 30% above Q2 average.",
-    action: 'View Finance Dashboard',
+    titleKey: 'mgmt.reports.insight.successTitle',
+    bodyKey: 'mgmt.reports.insight.successBody',
+    actionKey: 'mgmt.reports.insight.successAction',
     href: '/freehold-intelligence/finance',
   },
 ]
 
-const REPORT_HISTORY: { id: string; type: string; date: string; status: ReportStatus; size: string; generatedBy: string }[] = [
-  { id: 'RPT-2026-088', type: 'Weekly Performance',    date: '02 Jun 2026 09:00', status: 'ready',     size: '2.4 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-087', type: 'Campaign Analysis',     date: '02 Jun 2026 09:00', status: 'ready',     size: '1.8 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-086', type: 'Monthly Revenue',       date: '01 Jun 2026 00:01', status: 'ready',     size: '3.1 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-085', type: 'Team Productivity',     date: '26 May 2026 09:00', status: 'ready',     size: '1.2 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-084', type: 'Weekly Performance',    date: '26 May 2026 09:00', status: 'ready',     size: '2.3 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-083', type: 'Custom ROI Analysis',   date: '24 May 2026 14:32', status: 'ready',     size: '4.7 MB', generatedBy: 'M. Ezz' },
-  { id: 'RPT-2026-082', type: 'Monthly Revenue',       date: '01 May 2026 00:01', status: 'ready',     size: '2.9 MB', generatedBy: 'Automated' },
-  { id: 'RPT-2026-081', type: 'Campaign Analysis',     date: '28 Apr 2026 09:00', status: 'ready',     size: '1.6 MB', generatedBy: 'Automated' },
+const REPORT_HISTORY: { id: string; typeKey: string; date: string; status: ReportStatus; size: string; generatedBy: string | null }[] = [
+  { id: 'RPT-2026-088', typeKey: 'mgmt.reports.histType.weeklyPerf',       date: '02 Jun 2026 09:00', status: 'ready',     size: '2.4 MB', generatedBy: null },
+  { id: 'RPT-2026-087', typeKey: 'mgmt.reports.histType.campaignAnalysis', date: '02 Jun 2026 09:00', status: 'ready',     size: '1.8 MB', generatedBy: null },
+  { id: 'RPT-2026-086', typeKey: 'mgmt.reports.histType.monthlyRevenue',   date: '01 Jun 2026 00:01', status: 'ready',     size: '3.1 MB', generatedBy: null },
+  { id: 'RPT-2026-085', typeKey: 'mgmt.reports.histType.teamProd',         date: '26 May 2026 09:00', status: 'ready',     size: '1.2 MB', generatedBy: null },
+  { id: 'RPT-2026-084', typeKey: 'mgmt.reports.histType.weeklyPerf',       date: '26 May 2026 09:00', status: 'ready',     size: '2.3 MB', generatedBy: null },
+  { id: 'RPT-2026-083', typeKey: 'mgmt.reports.histType.customRoi',        date: '24 May 2026 14:32', status: 'ready',     size: '4.7 MB', generatedBy: 'M. Ezz' },
+  { id: 'RPT-2026-082', typeKey: 'mgmt.reports.histType.monthlyRevenue',   date: '01 May 2026 00:01', status: 'ready',     size: '2.9 MB', generatedBy: null },
+  { id: 'RPT-2026-081', typeKey: 'mgmt.reports.histType.campaignAnalysis', date: '28 Apr 2026 09:00', status: 'ready',     size: '1.6 MB', generatedBy: null },
 ]
 
 const STATUS_STYLES: Record<ReportStatus, string> = {
@@ -97,15 +98,15 @@ const STATUS_STYLES: Record<ReportStatus, string> = {
   scheduled:  'bg-surface-3 text-slate-400',
 }
 
-const REPORT_TYPES = [
-  'Weekly Performance Report',
-  'Monthly Revenue Report',
-  'Campaign ROI Analysis',
-  'Team Productivity Report',
-  'Deal Pipeline Report',
-  'Custom Date Range Report',
-  'Agent Performance Report',
-  'Market Trends Report',
+const REPORT_TYPES: { value: string; labelKey: string }[] = [
+  { value: 'Weekly Performance Report',  labelKey: 'mgmt.reports.type.weekly' },
+  { value: 'Monthly Revenue Report',     labelKey: 'mgmt.reports.type.monthly' },
+  { value: 'Campaign ROI Analysis',      labelKey: 'mgmt.reports.type.campaignRoi' },
+  { value: 'Team Productivity Report',   labelKey: 'mgmt.reports.type.teamProd' },
+  { value: 'Deal Pipeline Report',       labelKey: 'mgmt.reports.type.pipeline' },
+  { value: 'Custom Date Range Report',   labelKey: 'mgmt.reports.type.customRange' },
+  { value: 'Agent Performance Report',   labelKey: 'mgmt.reports.type.agentPerf' },
+  { value: 'Market Trends Report',       labelKey: 'mgmt.reports.type.marketTrends' },
 ]
 
 interface Analytics {
@@ -128,7 +129,8 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
 }
 
 export default function ReportsPage() {
-  const [reportType, setReportType] = useState(REPORT_TYPES[0])
+  const t = useT()
+  const [reportType, setReportType] = useState(REPORT_TYPES[0].value)
   const [dateFrom,   setDateFrom]   = useState('2026-06-01')
   const [dateTo,     setDateTo]     = useState('2026-06-06')
   const [generating, setGenerating] = useState(false)
@@ -181,7 +183,7 @@ export default function ReportsPage() {
       downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}.csv`, buildReportRows())
       setGenerating(false)
       setGenerated(true)
-      toast.success('Report generated & downloaded')
+      toast.success(t('mgmt.reports.generatedToast'))
     }, 300)
   }
 
@@ -191,13 +193,13 @@ export default function ReportsPage() {
       <div className="border-b border-line bg-app/80 px-6 py-5 backdrop-blur-xl sticky top-0 z-30">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-white">Smart Reports</h1>
-            <p className="mt-0.5 text-sm text-slate-500">Executive intelligence · AI-powered insights · June 2026</p>
+            <h1 className="text-lg font-semibold text-white">{t('mgmt.reports.title')}</h1>
+            <p className="mt-0.5 text-sm text-slate-500">{t('mgmt.reports.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-3 py-1">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              <span className="text-xs font-medium text-gold">AI-Powered</span>
+              <span className="text-xs font-medium text-gold">{t('mgmt.reports.aiPowered')}</span>
             </div>
           </div>
         </div>
@@ -212,12 +214,12 @@ export default function ReportsPage() {
               <Sparkles className="h-3.5 w-3.5 text-gold" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white">Top Events This Week</h2>
-              <p className="text-xs text-slate-500">AI-curated — 10 most important things that happened</p>
+              <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.topEvents')}</h2>
+              <p className="text-xs text-slate-500">{t('mgmt.reports.topEventsHint')}</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-slate-500">Updated 6 Jun 2026, 09:00 AM</span>
+              <span className="text-xs text-slate-500">{t('mgmt.reports.updatedAt')}</span>
             </div>
           </div>
           <div className="divide-y divide-line">
@@ -239,17 +241,17 @@ export default function ReportsPage() {
         {/* Weekly Summary Card */}
         <div className="rounded-xl border border-line bg-surface">
           <div className="border-b border-line px-5 py-4">
-            <h2 className="text-sm font-semibold text-white">Weekly Summary</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Week of 2–6 June 2026 · Key metrics at a glance</p>
+            <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.weeklySummary')}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.weeklySummaryHint')}</p>
           </div>
           <div className="grid grid-cols-2 gap-0 divide-y divide-line md:grid-cols-3 md:divide-y-0 xl:grid-cols-6">
             {[
-              { label: 'YTD Leads',       value: summary.leads.value,   icon: TrendingUp },
-              { label: 'Deals Closed',    value: summary.deals.value,   icon: CheckCircle2 },
-              { label: 'Commission YTD',  value: summary.revenue.value, icon: DollarSign },
-              { label: 'Total Ad Spend',  value: summary.spend.value,   icon: Megaphone },
-              { label: 'Cost per Lead',   value: summary.cpl.value,     icon: Users },
-              { label: 'Marketing ROI',   value: summary.roi.value,     icon: ArrowUpRight },
+              { label: t('mgmt.reports.ytdLeads'),      value: summary.leads.value,   icon: TrendingUp },
+              { label: t('mgmt.reports.dealsClosed'),   value: summary.deals.value,   icon: CheckCircle2 },
+              { label: t('mgmt.reports.commissionYtd'), value: summary.revenue.value, icon: DollarSign },
+              { label: t('mgmt.reports.totalAdSpend'),  value: summary.spend.value,   icon: Megaphone },
+              { label: t('mgmt.reports.costPerLead'),   value: summary.cpl.value,     icon: Users },
+              { label: t('mgmt.reports.marketingRoi'),  value: summary.roi.value,     icon: ArrowUpRight },
             ].map((item, idx) => {
               const Icon = item.icon
               return (
@@ -266,7 +268,7 @@ export default function ReportsPage() {
                     <span className="text-xs text-slate-500">{item.label}</span>
                   </div>
                   <p className="text-xl font-bold text-white tabular-nums">{item.value}</p>
-                  <p className="text-xs font-semibold mt-0.5 text-slate-600">live · year to date</p>
+                  <p className="text-xs font-semibold mt-0.5 text-slate-600">{t('mgmt.reports.liveYtd')}</p>
                 </div>
               )
             })}
@@ -278,24 +280,24 @@ export default function ReportsPage() {
           {AI_INSIGHTS.map((insight) => {
             const Icon = insight.icon
             return (
-              <div key={insight.title} className={['rounded-xl border p-5', insight.bgColor, insight.borderColor].join(' ')}>
+              <div key={insight.titleKey} className={['rounded-xl border p-5', insight.bgColor, insight.borderColor].join(' ')}>
                 <div className="flex items-start gap-3 mb-3">
                   <div className={['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface', insight.color].join(' ')}>
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className={['text-sm font-semibold', insight.color].join(' ')}>{insight.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">AI Generated · June 2026</p>
+                    <p className={['text-sm font-semibold', insight.color].join(' ')}>{t(insight.titleKey)}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.aiGenerated')}</p>
                   </div>
                 </div>
-                <p className="text-sm text-slate-300 leading-relaxed mb-4">{insight.body}</p>
+                <p className="text-sm text-slate-300 leading-relaxed mb-4">{t(insight.bodyKey)}</p>
                 <Link
                   href={insight.href}
                   className={[
                   'text-xs font-semibold flex items-center gap-1 transition-opacity hover:opacity-80',
                   insight.color,
                 ].join(' ')}>
-                  {insight.action} <ArrowUpRight className="h-3 w-3" />
+                  {t(insight.actionKey)} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
             )
@@ -307,8 +309,8 @@ export default function ReportsPage() {
           {/* Automated Reports */}
           <div className="xl:col-span-2 rounded-xl border border-line bg-surface">
             <div className="border-b border-line px-5 py-4">
-              <h2 className="text-sm font-semibold text-white">Automated Reports</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Scheduled reports — download or view online</p>
+              <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.automated')}</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.automatedHint')}</p>
             </div>
             <div className="divide-y divide-line">
               {AUTOMATED_REPORTS.map((report) => {
@@ -319,20 +321,20 @@ export default function ReportsPage() {
                       <Icon className="h-4 w-4 text-slate-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-100">{report.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{report.desc}</p>
+                      <p className="text-sm font-medium text-slate-100">{t(report.nameKey)}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t(report.descKey)}</p>
                       <div className="flex items-center gap-3 mt-1.5">
                         <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <Clock className="h-3 w-3" /> {report.schedule}
+                          <Clock className="h-3 w-3" /> {t(report.scheduleKey)}
                         </span>
                         <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <Calendar className="h-3 w-3" /> Last: {report.lastGenerated}
+                          <Calendar className="h-3 w-3" /> {t('mgmt.reports.lastLabel', { date: report.lastGenerated })}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => { downloadCsv(`${report.name.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(`${report.name} downloaded`) }}
+                        onClick={() => { downloadCsv(`${t(report.nameKey).replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(t('mgmt.reports.downloaded', { name: t(report.nameKey) })) }}
                         className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         CSV
@@ -349,14 +351,14 @@ export default function ReportsPage() {
             <div className="border-b border-line px-5 py-4">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-gold" />
-                <h2 className="text-sm font-semibold text-white">Generate New Report</h2>
+                <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.generateNew')}</h2>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">Custom date range · instant generation</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.generateHint')}</p>
             </div>
             <form onSubmit={handleGenerate} className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Report Type
+                  {t('mgmt.reports.reportType')}
                 </label>
                 <div className="relative">
                   <select
@@ -364,8 +366,8 @@ export default function ReportsPage() {
                     onChange={e => setReportType(e.target.value)}
                     className="w-full appearance-none rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/40 pr-8"
                   >
-                    {REPORT_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
+                    {REPORT_TYPES.map(rt => (
+                      <option key={rt.value} value={rt.value}>{t(rt.labelKey)}</option>
                     ))}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
@@ -374,11 +376,11 @@ export default function ReportsPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Date Range
+                  {t('mgmt.reports.dateRange')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-xs text-slate-600 mb-1">From</p>
+                    <p className="text-xs text-slate-600 mb-1">{t('mgmt.reports.from')}</p>
                     <input
                       type="date"
                       value={dateFrom}
@@ -387,7 +389,7 @@ export default function ReportsPage() {
                     />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-600 mb-1">To</p>
+                    <p className="text-xs text-slate-600 mb-1">{t('mgmt.reports.to')}</p>
                     <input
                       type="date"
                       value={dateTo}
@@ -400,7 +402,7 @@ export default function ReportsPage() {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Format
+                  {t('mgmt.reports.format')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {['PDF', 'Excel', 'CSV'].map((fmt) => (
@@ -434,23 +436,23 @@ export default function ReportsPage() {
                 {generating ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-500 border-t-slate-300" />
-                    Generating…
+                    {t('mgmt.reports.generating')}
                   </span>
-                ) : 'Generate Report'}
+                ) : t('mgmt.reports.generate')}
               </button>
 
               {generated && (
                 <div className="flex items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-emerald-400">Report Ready</p>
-                    <p className="text-xs text-slate-500">Your report has been generated successfully</p>
+                    <p className="text-xs font-semibold text-emerald-400">{t('mgmt.reports.reportReady')}</p>
+                    <p className="text-xs text-slate-500">{t('mgmt.reports.reportReadyHint')}</p>
                   </div>
                   <button
-                    onClick={() => { downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success('Report downloaded') }}
+                    onClick={() => { downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(t('mgmt.reports.downloadedToast')) }}
                     className="ml-auto flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
-                    Download
+                    {t('mgmt.reports.download')}
                   </button>
                 </div>
               )}
@@ -462,8 +464,8 @@ export default function ReportsPage() {
         <div className="rounded-xl border border-line bg-surface">
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-white">Report History</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Last {REPORT_HISTORY.length} generated reports</p>
+              <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.history')}</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.historyHint', { count: REPORT_HISTORY.length })}</p>
             </div>
             <FileText className="h-4 w-4 text-slate-500" />
           </div>
@@ -471,8 +473,8 @@ export default function ReportsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface-2">
-                  {['Report ID', 'Report Type', 'Generated', 'Generated By', 'Size', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
+                  {['mgmt.reports.col.reportId', 'mgmt.reports.col.reportType', 'mgmt.reports.col.generated', 'mgmt.reports.col.generatedBy', 'mgmt.reports.col.size', 'mgmt.reports.col.status', 'mgmt.reports.col.actions'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{t(h)}</th>
                   ))}
                 </tr>
               </thead>
@@ -480,19 +482,19 @@ export default function ReportsPage() {
                 {REPORT_HISTORY.map((report) => (
                   <tr key={report.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3 text-xs font-mono text-slate-500">{report.id}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-100 whitespace-nowrap">{report.type}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-100 whitespace-nowrap">{t(report.typeKey)}</td>
                     <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.date}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.generatedBy}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.generatedBy ?? t('mgmt.reports.automatedBy')}</td>
                     <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{report.size}</td>
                     <td className="px-4 py-3">
                       <span className={['rounded-full px-2.5 py-1 text-xs font-medium', STATUS_STYLES[report.status]].join(' ')}>
-                        {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                        {t(`mgmt.reports.status.${report.status}`)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => { downloadCsv(`${report.id}.csv`, buildReportRows()); toast.success(`${report.id} downloaded`) }}
+                          onClick={() => { downloadCsv(`${report.id}.csv`, buildReportRows()); toast.success(t('mgmt.reports.idDownloaded', { id: report.id })) }}
                           className="flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
                           CSV

@@ -22,6 +22,8 @@ export const finance: Record<Locale, Dict> = {
     // ── Status ──
     'finance.status.paid': 'paid',
     'finance.status.pending': 'pending',
+    'finance.status.optPaid': 'Paid',
+    'finance.status.optPending': 'Pending',
 
     // ── Overview (finance-client) ──
     'finance.overview.title': 'Finance & Billing',
@@ -291,6 +293,8 @@ export const finance: Record<Locale, Dict> = {
     // ── Status ──
     'finance.status.paid': 'مدفوع',
     'finance.status.pending': 'قيد الانتظار',
+    'finance.status.optPaid': 'مدفوع',
+    'finance.status.optPending': 'قيد الانتظار',
 
     // ── Overview ──
     'finance.overview.title': 'المالية والفوترة',
@@ -560,6 +564,8 @@ export const finance: Record<Locale, Dict> = {
     // ── Status ──
     'finance.status.paid': 'оплачено',
     'finance.status.pending': 'в ожидании',
+    'finance.status.optPaid': 'Оплачено',
+    'finance.status.optPending': 'В ожидании',
 
     // ── Overview ──
     'finance.overview.title': 'Финансы и биллинг',
