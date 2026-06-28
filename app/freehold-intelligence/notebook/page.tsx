@@ -28,12 +28,12 @@ function statusTone(status: string) {
   return 'text-slate-400 border-line-strong bg-surface-2'
 }
 
-function relativeTime(iso: string) {
+function relativeTime(iso: string, t: (k: string, v?: Record<string, string | number>) => string) {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return t('crm.timeMinAgo', { count: mins })
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return t('crm.timeHrAgo', { count: hrs })
+  return t('crm.timeDayAgo', { count: Math.floor(hrs / 24) })
 }
 
 // ── data ─────────────────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@ export default function NotebookPage() {
                           <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                             <span className="capitalize">{o.type.replace(/_/g, ' ')}</span>
                             <span>·</span>
-                            <span>{relativeTime(o.created_at)}</span>
+                            <span>{relativeTime(o.created_at, t)}</span>
                           </div>
                         </div>
                         <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
@@ -631,7 +631,7 @@ export default function NotebookPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="truncate text-sm font-semibold text-white">{conv.title}</h3>
-                        <span className="shrink-0 text-xs text-slate-500">{relativeTime(conv.updatedAt)}</span>
+                        <span className="shrink-0 text-xs text-slate-500">{relativeTime(conv.updatedAt, t)}</span>
                       </div>
                       <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
                         {lastMsg.role === 'assistant' ? t('nb.aiPrefix') : t('nb.youPrefix')}{lastMsg.content.slice(0, 100)}

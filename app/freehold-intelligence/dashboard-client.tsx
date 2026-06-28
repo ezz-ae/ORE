@@ -31,14 +31,16 @@ const NAV_KEYS: Record<string, string> = {
 type ActivityType = 'lead' | 'warning' | 'success' | 'info'
 type ActivityRow = { time: string; label: string; detail: string; type: ActivityType }
 
-// Static fallback — shown only until live CRM activity loads (or when the
-// activity log is empty, e.g. a fresh workspace).
-const ACTIVITY: ActivityRow[] = [
-  { time: '09:14',     label: 'New lead',         detail: 'Palm Jumeirah — Meta Ads',        type: 'lead'    },
-  { time: '08:52',     label: 'Campaign paused',   detail: 'Off Plan Dubai 2025 — Google',    type: 'warning' },
-  { time: '08:30',     label: 'Landing published', detail: 'JVC Investor · /lp/jvc-investor', type: 'success' },
-  { time: 'Yesterday', label: '88 leads',          detail: 'Dubai Hills Yield — 24h',         type: 'lead'    },
-  { time: 'Yesterday', label: 'Invoice issued',    detail: 'INV-META-0526 · AED 18,420',      type: 'info'    },
+// Static demo fallback — shown only until live CRM activity loads (or when the
+// activity log is empty, e.g. a fresh workspace). Keyed so it localizes; the
+// localized rows are built inside the component (see `fallbackActivity`).
+type ActivityFallback = { time?: string; timeKey?: string; labelKey: string; detailKey: string; type: ActivityType }
+const ACTIVITY_FALLBACK: ActivityFallback[] = [
+  { time: '09:14',          labelKey: 'hub.demo.newLead.l',          detailKey: 'hub.demo.newLead.d',          type: 'lead'    },
+  { time: '08:52',          labelKey: 'hub.demo.campaignPaused.l',   detailKey: 'hub.demo.campaignPaused.d',   type: 'warning' },
+  { time: '08:30',          labelKey: 'hub.demo.landingPublished.l', detailKey: 'hub.demo.landingPublished.d', type: 'success' },
+  { timeKey: 'hub.yesterday', labelKey: 'hub.demo.leads.l',           detailKey: 'hub.demo.leads.d',            type: 'lead'    },
+  { timeKey: 'hub.yesterday', labelKey: 'hub.demo.invoice.l',         detailKey: 'hub.demo.invoice.d',          type: 'info'    },
 ]
 
 // A normalized urgent card — live work tasks and the static demo summary both
@@ -90,7 +92,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const [chatInput, setChatInput]     = useState('')
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
   const [dateStr, setDateStr]         = useState('')
-  const [activity, setActivity]       = useState<ActivityRow[]>(ACTIVITY)
+  const [liveActivity, setLiveActivity] = useState<ActivityRow[] | null>(null)
   const [liveUrgent, setLiveUrgent]   = useState<UrgentCard[] | null>(null)
   const [liveBlocked, setLiveBlocked] = useState<number | null>(null)
   const [livePending, setLivePending] = useState<number | null>(null)
@@ -163,7 +165,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       .then((d) => {
         const rows = d?.activity as Array<{ id: string; activity_type: string; description: string | null; created_at: string; lead_name: string | null }> | undefined
         if (!rows || rows.length === 0) return
-        setActivity(
+        setLiveActivity(
           rows.slice(0, 6).map((a) => ({
             time: relTime(a.created_at),
             label: humanize(a.activity_type),
@@ -185,6 +187,15 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const blockedCount = liveBlocked ?? serverSummary.blockedItems.length
   const pendingCount = livePending ?? serverSummary.pendingApprovals.length
   const hasLive = liveUrgent !== null || liveBlocked !== null || livePending !== null
+
+  // Live CRM activity when present, else the localized demo fallback.
+  const fallbackActivity: ActivityRow[] = ACTIVITY_FALLBACK.map((a) => ({
+    time: a.timeKey ? t(a.timeKey) : (a.time ?? ''),
+    label: t(a.labelKey),
+    detail: t(a.detailKey),
+    type: a.type,
+  }))
+  const activity = liveActivity ?? fallbackActivity
 
   const lowAdReadiness  = inventoryData.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryData.filter((p) => p.landingStatus === 'missing')
