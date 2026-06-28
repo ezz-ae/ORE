@@ -61,7 +61,9 @@ export async function authenticateFromDB(email: string, password: string): Promi
       initials: (u.name ?? u.email).split(' ').map((p: string) => p[0]).slice(0,2).join('').toUpperCase(),
       role,
       home: ROLE_HOME[role] ?? '/freehold-intelligence',
-      ...(role === 'broker' ? { brokerId: `bc_${u.id}` } : {}),
+      // brokerId MUST equal the user id so leads' assigned_broker_id (set to the
+      // user id by inbox/assignment) matches the broker's session for filtering.
+      ...(role === 'broker' ? { brokerId: u.id } : {}),
     }
   } catch {
     return null

@@ -44,9 +44,19 @@ export interface AppDef {
   brokerHide?: boolean
   /** visible ONLY to brokers — e.g. the personal agent workspace */
   brokerOnly?: boolean
+  /** explicit allow-list of roles — single source of truth; when set it takes
+   *  precedence over the flags above and MUST match the section's route guard. */
+  roles?: Role[]
   /** show in the persistent top spine (defaults true) */
   spine?: boolean
 }
+
+// Canonical role lists reused by both nav visibility and route guards.
+export const ALL_ROLES: Role[] = ['broker', 'admin', 'sales_manager', 'director', 'ceo', 'marketing']
+export const NON_BROKER_ROLES: Role[] = ['admin', 'sales_manager', 'director', 'ceo', 'marketing']
+export const MGMT_ROLES: Role[] = ['admin', 'sales_manager', 'director', 'ceo']
+export const STUDIO_ROLES: Role[] = ['admin', 'director', 'ceo', 'marketing']
+export const SETTINGS_ROLES: Role[] = ['admin', 'director', 'ceo']
 
 export const APPS: AppDef[] = [
   {
@@ -77,7 +87,7 @@ export const APPS: AppDef[] = [
     metric: 'AED 31.3K · 73% budget', badge: 1, accent: '#34D399',
     card: 'border-emerald-400/15 hover:border-emerald-400/30',
     icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-    brokerHide: true,
+    roles: MGMT_ROLES,
   },
   {
     id: 'ai-manager', label: 'Web Studio', sub: 'Listings · SEO · Auto-content',
@@ -85,7 +95,7 @@ export const APPS: AppDef[] = [
     metric: 'Content · data quality', badge: 0, accent: '#38BDF8',
     card: 'border-sky-400/15 hover:border-sky-400/30',
     icon: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
-    brokerHide: true,
+    roles: STUDIO_ROLES,
   },
   {
     id: 'analytics', label: 'Analytics', sub: 'Traffic · Conversions · Pages',
@@ -108,7 +118,7 @@ export const APPS: AppDef[] = [
     metric: '8 connected · 2 pending', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
-    brokerHide: true,
+    roles: STUDIO_ROLES,
   },
   {
     id: 'settings', label: 'Settings', sub: 'Team · Roles · Billing',
@@ -116,7 +126,7 @@ export const APPS: AppDef[] = [
     metric: '3 users active', badge: 0, accent: 'rgba(255,255,255,0.4)',
     card: 'border-slate-800 hover:border-white/[0.15]',
     icon: 'text-slate-400 bg-slate-800/40 border-slate-800',
-    brokerHide: true,
+    roles: SETTINGS_ROLES,
   },
   {
     id: 'management', label: 'Management', sub: 'Company-wide reporting · Team · ROI',
@@ -138,14 +148,29 @@ export const APPS: AppDef[] = [
   },
 ]
 
+/** Whether a role may access an app — single source of truth for nav + guards. */
+export function appAllowsRole(a: AppDef, role?: Role): boolean {
+  if (a.roles)          return !!role && a.roles.includes(role)
+  if (a.brokerOnly)     return role === 'broker'
+  if (a.managementOnly) return role ? MANAGEMENT_ROLES.includes(role) : false
+  if (a.brokerHide)     return role !== 'broker'
+  return true
+}
+
+/** Resolve the allow-list of roles for a section id (for route guards). */
+export function rolesForApp(id: string): Role[] {
+  const a = APPS.find((x) => x.id === id)
+  if (!a) return ALL_ROLES
+  if (a.roles)          return a.roles
+  if (a.brokerOnly)     return ['broker']
+  if (a.managementOnly) return MANAGEMENT_ROLES
+  if (a.brokerHide)     return NON_BROKER_ROLES
+  return ALL_ROLES
+}
+
 /** Apps a given role is allowed to see. */
 export function visibleApps(role?: Role): AppDef[] {
-  return APPS.filter((a) => {
-    if (a.brokerOnly)     return role === 'broker'
-    if (a.managementOnly) return role ? MANAGEMENT_ROLES.includes(role) : false
-    if (a.brokerHide)     return role !== 'broker'
-    return true
-  })
+  return APPS.filter((a) => appAllowsRole(a, role))
 }
 
 /** Apps shown in the persistent navigation spine for a role. */

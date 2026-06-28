@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, Megaphone } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
+import { NON_BROKER_ROLES } from '@/lib/freehold/apps'
 
 const tabs = [
   { label: 'Live Overview',  href: '/freehold-intelligence/ads-live',         exact: true },
@@ -14,11 +16,18 @@ const tabs = [
 
 export default function AdsLiveLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const { ready } = useSessionGuard(NON_BROKER_ROLES)
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href
     return pathname === tab.href || pathname.startsWith(tab.href + '/')
   }
+
+  if (!ready) return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+    </div>
+  )
 
   return (
     <div className="flex flex-col min-h-full">
