@@ -7,25 +7,30 @@ import {
   Clock, XCircle, Crown, Shield, User, Trash2, ChevronDown, Loader2,
 } from 'lucide-react'
 
-type Role = 'Owner' | 'Admin' | 'Agent' | 'Viewer'
+// Canonical roles — these map 1:1 to the database, so editing a member's role
+// never silently demotes them (e.g. sales_manager → admin).
+type Role = 'ceo' | 'director' | 'admin' | 'sales_manager' | 'marketing' | 'broker'
 type Status = 'active' | 'invited' | 'suspended'
 
 type TeamMember = {
   id: string
   name: string
   email: string
-  role: Role
+  role: string          // UI bucket from the API (legacy)
+  dbRole: Role          // canonical DB role — source of truth
   status: Status
   joinedAt: string
   lastActive?: string | null
   initials: string
 }
 
-const ROLE_META: Record<Role, { Icon: React.ElementType; color: string; desc: string }> = {
-  Owner:  { Icon: Crown,  color: 'text-gold',        desc: 'Full access + billing' },
-  Admin:  { Icon: Shield, color: 'text-violet-400',  desc: 'Manage team & settings' },
-  Agent:  { Icon: User,   color: 'text-sky-400',     desc: 'Own leads & campaigns' },
-  Viewer: { Icon: User,   color: 'text-slate-400',   desc: 'Read-only access' },
+const ROLE_META: Record<Role, { label: string; Icon: React.ElementType; color: string; desc: string }> = {
+  ceo:           { label: 'CEO',           Icon: Crown,  color: 'text-gold',        desc: 'Full access + billing' },
+  director:      { label: 'Director',      Icon: Crown,  color: 'text-gold/80',     desc: 'Company-wide oversight' },
+  admin:         { label: 'Admin',         Icon: Shield, color: 'text-violet-400',  desc: 'Manage team & settings' },
+  sales_manager: { label: 'Sales Manager', Icon: Shield, color: 'text-sky-300',     desc: 'Approve deals · verify docs' },
+  marketing:     { label: 'Marketing',     Icon: User,   color: 'text-pink-300',    desc: 'Ads · studio · content' },
+  broker:        { label: 'Agent',         Icon: User,   color: 'text-sky-400',     desc: 'Own leads & campaigns' },
 }
 
 const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; color: string }> = {
@@ -34,14 +39,16 @@ const STATUS_META: Record<Status, { label: string; Icon: React.ElementType; colo
   suspended: { label: 'Suspended', Icon: XCircle,     color: 'text-red-400'     },
 }
 
-const ROLES: Role[] = ['Owner', 'Admin', 'Agent', 'Viewer']
+// All assignable roles. CEO is the protected owner role — not assignable from the UI.
+const ROLES: Role[] = ['ceo', 'director', 'admin', 'sales_manager', 'marketing', 'broker']
+const ASSIGNABLE_ROLES: Role[] = ['director', 'admin', 'sales_manager', 'marketing', 'broker']
 
 export default function TeamPage() {
   const [members, setMembers]         = useState<TeamMember[]>([])
   const [loading, setLoading]         = useState(true)
   const [showInvite, setShowInvite]   = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole]   = useState<Role>('Agent')
+  const [inviteRole, setInviteRole]   = useState<Role>('broker')
   const [openMenu, setOpenMenu]       = useState<string | null>(null)
 
   useEffect(() => {
@@ -52,9 +59,6 @@ export default function TeamPage() {
       })
       .finally(() => setLoading(false))
   }, [])
-
-  const uiToDbRole = (role: string): string =>
-    role === 'Owner' ? 'ceo' : role === 'Admin' ? 'admin' : 'broker'
 
   function refetch() {
     fetch('/api/freehold/team', { cache: 'no-store' })
@@ -69,7 +73,7 @@ export default function TeamPage() {
     try {
       const res = await fetch('/api/freehold/team', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: n, email: inviteEmail.trim(), role: uiToDbRole(inviteRole) }),
+        body: JSON.stringify({ name: n, email: inviteEmail.trim(), role: inviteRole }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to invite')
@@ -83,11 +87,11 @@ export default function TeamPage() {
   }
 
   function changeRole(id: string, role: Role) {
-    setMembers((prev) => prev.map((m) => m.id === id ? { ...m, role } : m))
+    setMembers((prev) => prev.map((m) => m.id === id ? { ...m, dbRole: role, role: ROLE_META[role].label } : m))
     setOpenMenu(null)
     fetch(`/api/freehold/team/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: uiToDbRole(role) }),
+      body: JSON.stringify({ role }),
     }).then((r) => { if (r.ok) toast.success('Role updated'); else toast.error('Could not update role') }).catch(() => {})
   }
 
@@ -116,7 +120,7 @@ export default function TeamPage() {
 
   const active  = members.filter((m) => m.status === 'active').length
   const invited = members.filter((m) => m.status === 'invited').length
-  const agents  = members.filter((m) => m.role === 'Agent').length
+  const agents  = members.filter((m) => m.dbRole === 'broker').length
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -156,8 +160,8 @@ export default function TeamPage() {
                 onChange={(e) => setInviteRole(e.target.value as Role)}
                 className="appearance-none rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-gold/40"
               >
-                {ROLES.filter((r) => r !== 'Owner').map((r) => (
-                  <option key={r} value={r}>{r}</option>
+                {ASSIGNABLE_ROLES.map((r) => (
+                  <option key={r} value={r}>{ROLE_META[r].label}</option>
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
@@ -177,13 +181,13 @@ export default function TeamPage() {
       )}
 
       {/* Role descriptions */}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {ROLES.map((role) => {
           const rm = ROLE_META[role]
           return (
             <div key={role} className="rounded-[12px] border border-line bg-surface px-3 py-2.5">
               <rm.Icon className={`h-4 w-4 ${rm.color}`} />
-              <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{role}</div>
+              <div className={`mt-1.5 text-sm font-semibold ${rm.color}`}>{rm.label}</div>
               <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rm.desc}</div>
             </div>
           )
@@ -202,8 +206,9 @@ export default function TeamPage() {
       {!loading && (
         <div className="space-y-2">
           {members.map((member) => {
-            const rm = ROLE_META[member.role]
+            const rm = ROLE_META[member.dbRole] ?? ROLE_META.broker
             const sm = STATUS_META[member.status]
+            const isOwner = member.dbRole === 'ceo'
 
             return (
               <div
@@ -214,8 +219,8 @@ export default function TeamPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                    member.role === 'Owner' ? 'bg-gold/20 text-gold' :
-                    member.role === 'Admin' ? 'bg-violet-400/15 text-violet-300' :
+                    member.dbRole === 'ceo' || member.dbRole === 'director' ? 'bg-gold/20 text-gold' :
+                    member.dbRole === 'admin' ? 'bg-violet-400/15 text-violet-300' :
                     'bg-surface-2 text-slate-400'
                   }`}>
                     {member.initials}
@@ -239,13 +244,13 @@ export default function TeamPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="hidden sm:flex items-center gap-1.5">
                       <rm.Icon className={`h-3.5 w-3.5 ${rm.color}`} />
-                      <span className={`text-xs font-medium ${rm.color}`}>{member.role}</span>
+                      <span className={`text-xs font-medium ${rm.color}`}>{rm.label}</span>
                     </div>
                     <div className={`flex items-center gap-1 text-xs ${sm.color}`}>
                       <sm.Icon className="h-3 w-3" />
                       <span className="hidden sm:block">{sm.label}</span>
                     </div>
-                    {member.role !== 'Owner' && (
+                    {!isOwner && (
                       <div className="relative">
                         <button
                           onClick={() => setOpenMenu(openMenu === member.id ? null : member.id)}
@@ -254,14 +259,14 @@ export default function TeamPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                         {openMenu === member.id && (
-                          <div className="absolute right-0 top-9 z-50 w-44 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
-                            {ROLES.filter((r) => r !== 'Owner' && r !== member.role).map((r) => {
+                          <div className="absolute right-0 top-9 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
+                            {ASSIGNABLE_ROLES.filter((r) => r !== member.dbRole).map((r) => {
                               const RoleIcon = ROLE_META[r].Icon
                               return (
                                 <button key={r} onClick={() => changeRole(member.id, r)}
                                   className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-400 transition hover:bg-surface-2 hover:text-white">
                                   <RoleIcon className={`h-3.5 w-3.5 ${ROLE_META[r].color}`} />
-                                  Set as {r}
+                                  Set as {ROLE_META[r].label}
                                 </button>
                               )
                             })}

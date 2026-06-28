@@ -6,6 +6,7 @@ import {
   PhoneCall, FileText, ArrowLeftRight, Bell, MessageSquare,
   BarChart3, Globe, ArrowUpRight,
 } from 'lucide-react'
+import { cookies } from 'next/headers'
 import { crmLeads, crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
@@ -13,11 +14,16 @@ import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 import { getDealByLeadId } from '@/lib/deals'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 
-// Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page
-async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
+// Tries to fetch live lead from DB; maps it to the CRM shape used by the rest of this page.
+// Brokers may only read their own leads — pass their brokerId to scope the query.
+async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadIntelligence | null> {
   try {
     await ensureLeadsTable()
+    const queryParams: unknown[] = [id]
+    let ownerFilter = ''
+    if (ownerId) { queryParams.push(ownerId); ownerFilter = ' AND assigned_broker_id = $2' }
     const rows = await query<{
       id: string; name: string | null; phone: string | null; email: string | null;
       source: string | null; project_slug: string | null; assigned_broker_id: string | null;
@@ -27,8 +33,8 @@ async function getLiveLead(id: string): Promise<CRMLeadIntelligence | null> {
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code
-       FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
-      [id]
+       FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
+      queryParams
     )
     if (!rows.length) return null
     const r = rows[0]
@@ -71,9 +77,13 @@ export const dynamic = 'force-dynamic'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  // Try DB first, fall back to mock
-  const liveLead = await getLiveLead(id)
-  const lead = liveLead ?? crmLeads.find((l) => l.id === id)
+  // Scope to the broker's own leads; management/marketing see any lead.
+  const cookieStore = await cookies()
+  const sessionUser = await verifySession(cookieStore.get(SESSION_COOKIE)?.value)
+  const ownerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
+  // Try DB first, fall back to mock (mock leads are non-sensitive demo data, brokers excluded)
+  const liveLead = await getLiveLead(id, ownerId)
+  const lead = liveLead ?? (ownerId ? null : crmLeads.find((l) => l.id === id))
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)

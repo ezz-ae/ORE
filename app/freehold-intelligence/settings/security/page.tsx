@@ -98,7 +98,15 @@ export default function SecurityPage() {
     fetch('/api/freehold/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ twoFa: v }),
-    }).catch(() => {})
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error()
+        toast.success(v ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled')
+      })
+      .catch(() => {
+        setTwoFaOn(!v) // revert optimistic toggle on failure
+        toast.error('Could not update two-factor authentication')
+      })
   }
 
   function toggleScope(scope: string) {

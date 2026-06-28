@@ -5,9 +5,11 @@ import { SpacesNav } from '@/components/freehold/spaces-nav'
 import { ExpertChat } from '@/components/freehold/expert-chat'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { BRAND } from '@/lib/freehold/brand'
+import { I18nProvider, useI18n } from '@/lib/i18n/provider'
 
-export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
+function FreeholdShell({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard()   // any signed-in role; landing differs by role
+  const { dir } = useI18n()
 
   if (!ready) {
     return (
@@ -19,6 +21,7 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
 
   return (
     <div
+      dir={dir}
       className="fi-root fixed inset-0 z-[100] flex flex-col bg-app text-slate-100 antialiased"
       style={{ ['--color-gold' as string]: BRAND.accent } as React.CSSProperties}
     >
@@ -55,5 +58,13 @@ export default function FreeholdIntelligenceLayout({ children }: { children: Rea
         }}
       />
     </div>
+  )
+}
+
+export default function FreeholdIntelligenceLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <I18nProvider>
+      <FreeholdShell>{children}</FreeholdShell>
+    </I18nProvider>
   )
 }

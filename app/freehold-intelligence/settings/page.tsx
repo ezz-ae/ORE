@@ -155,7 +155,9 @@ export default function SettingsPage() {
       fetch('/api/freehold/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme }),
-      }).catch(() => {})
+      })
+        .then((r) => { if (!r.ok) throw new Error() })
+        .catch(() => toast.error('Could not save settings — changes may not persist'))
     }, 400)
     return () => clearTimeout(t)
   }, [aiActions, crmFields, thresholds, notifs, theme])
