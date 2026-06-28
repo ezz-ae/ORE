@@ -2,39 +2,50 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Bell, Mail, MessageSquare, Zap } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 type Channel = 'email' | 'whatsapp' | 'in_app'
 
+type Category = 'leads' | 'campaigns' | 'finance' | 'system'
+
 type NotifRule = {
   id: string
-  label: string
-  desc: string
-  category: string
+  labelKey: string
+  descKey: string
+  category: Category
   channels: Record<Channel, boolean>
 }
 
 const INITIAL_RULES: NotifRule[] = [
-  { id: 'n1', category: 'Leads',    label: 'New lead assigned',     desc: 'When a lead is routed to an agent',         channels: { email: true,  whatsapp: true,  in_app: true  } },
-  { id: 'n2', category: 'Leads',    label: 'Lead overdue',          desc: 'No contact after 24h',                      channels: { email: true,  whatsapp: true,  in_app: true  } },
-  { id: 'n3', category: 'Leads',    label: 'Lead stage advanced',   desc: 'Pipeline stage moves forward',               channels: { email: false, whatsapp: false, in_app: true  } },
-  { id: 'n4', category: 'Campaigns',label: 'Campaign paused',       desc: 'Ad account or budget event',                 channels: { email: true,  whatsapp: false, in_app: true  } },
-  { id: 'n5', category: 'Campaigns',label: 'Budget 80% reached',    desc: 'Monthly campaign spend threshold',           channels: { email: true,  whatsapp: true,  in_app: true  } },
-  { id: 'n6', category: 'Campaigns',label: 'New lead from campaign', desc: 'A campaign generates a new conversion',     channels: { email: false, whatsapp: false, in_app: true  } },
-  { id: 'n7', category: 'Finance',  label: 'Invoice issued',        desc: 'New invoice from Meta or Google',            channels: { email: true,  whatsapp: false, in_app: true  } },
-  { id: 'n8', category: 'Finance',  label: 'Commission processed',  desc: 'Agent commission approved or paid',          channels: { email: true,  whatsapp: true,  in_app: true  } },
-  { id: 'n9', category: 'System',   label: 'Data quality alert',    desc: 'Property readiness drops below threshold',   channels: { email: true,  whatsapp: false, in_app: true  } },
-  { id: 'n10',category: 'System',   label: 'Integration error',     desc: 'API sync failure or token expiry',           channels: { email: true,  whatsapp: true,  in_app: true  } },
+  { id: 'n1', category: 'leads',     labelKey: 'settings.notif.n1.label',  descKey: 'settings.notif.n1.desc',  channels: { email: true,  whatsapp: true,  in_app: true  } },
+  { id: 'n2', category: 'leads',     labelKey: 'settings.notif.n2.label',  descKey: 'settings.notif.n2.desc',  channels: { email: true,  whatsapp: true,  in_app: true  } },
+  { id: 'n3', category: 'leads',     labelKey: 'settings.notif.n3.label',  descKey: 'settings.notif.n3.desc',  channels: { email: false, whatsapp: false, in_app: true  } },
+  { id: 'n4', category: 'campaigns', labelKey: 'settings.notif.n4.label',  descKey: 'settings.notif.n4.desc',  channels: { email: true,  whatsapp: false, in_app: true  } },
+  { id: 'n5', category: 'campaigns', labelKey: 'settings.notif.n5.label',  descKey: 'settings.notif.n5.desc',  channels: { email: true,  whatsapp: true,  in_app: true  } },
+  { id: 'n6', category: 'campaigns', labelKey: 'settings.notif.n6.label',  descKey: 'settings.notif.n6.desc',  channels: { email: false, whatsapp: false, in_app: true  } },
+  { id: 'n7', category: 'finance',   labelKey: 'settings.notif.n7.label',  descKey: 'settings.notif.n7.desc',  channels: { email: true,  whatsapp: false, in_app: true  } },
+  { id: 'n8', category: 'finance',   labelKey: 'settings.notif.n8.label',  descKey: 'settings.notif.n8.desc',  channels: { email: true,  whatsapp: true,  in_app: true  } },
+  { id: 'n9', category: 'system',    labelKey: 'settings.notif.n9.label',  descKey: 'settings.notif.n9.desc',  channels: { email: true,  whatsapp: false, in_app: true  } },
+  { id: 'n10',category: 'system',    labelKey: 'settings.notif.n10.label', descKey: 'settings.notif.n10.desc', channels: { email: true,  whatsapp: true,  in_app: true  } },
 ]
 
-const CHANNEL_META: Record<Channel, { Icon: React.ElementType; label: string; color: string }> = {
-  email:    { Icon: Mail,          label: 'Email',    color: 'text-sky-400'     },
-  whatsapp: { Icon: MessageSquare, label: 'WhatsApp', color: 'text-emerald-400' },
-  in_app:   { Icon: Bell,          label: 'In-app',   color: 'text-gold'   },
+const CHANNEL_META: Record<Channel, { Icon: React.ElementType; labelKey: string; color: string }> = {
+  email:    { Icon: Mail,          labelKey: 'settings.notif.channel.email',    color: 'text-sky-400'     },
+  whatsapp: { Icon: MessageSquare, labelKey: 'settings.notif.channel.whatsapp', color: 'text-emerald-400' },
+  in_app:   { Icon: Bell,          labelKey: 'settings.notif.channel.in_app',   color: 'text-gold'   },
+}
+
+const CATEGORY_LABEL_KEY: Record<Category, string> = {
+  leads:     'settings.notif.cat.leads',
+  campaigns: 'settings.notif.cat.campaigns',
+  finance:   'settings.notif.cat.finance',
+  system:    'settings.notif.cat.system',
 }
 
 const CATEGORIES = [...new Set(INITIAL_RULES.map((r) => r.category))]
 
 export default function NotificationsPage() {
+  const t = useT()
   const [rules, setRules] = useState<NotifRule[]>(INITIAL_RULES)
   const loaded = useRef(false)
 
@@ -76,9 +87,9 @@ export default function NotificationsPage() {
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-white">Notifications</h1>
+        <h1 className="text-xl font-semibold text-white">{t('settings.notif.title')}</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Configure when and how the platform notifies you and your team.
+          {t('settings.notif.subtitle')}
         </p>
       </div>
 
@@ -87,7 +98,7 @@ export default function NotificationsPage() {
         {(Object.entries(CHANNEL_META) as [Channel, typeof CHANNEL_META[Channel]][]).map(([key, cm]) => (
           <div key={key} className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5">
             <cm.Icon className={`h-3.5 w-3.5 ${cm.color}`} />
-            <span className={`text-xs font-medium ${cm.color}`}>{cm.label}</span>
+            <span className={`text-xs font-medium ${cm.color}`}>{t(cm.labelKey)}</span>
           </div>
         ))}
       </div>
@@ -95,17 +106,17 @@ export default function NotificationsPage() {
       {/* Rules by category */}
       {CATEGORIES.map((category) => (
         <div key={category} className="mb-6">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{category}</div>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t(CATEGORY_LABEL_KEY[category])}</div>
           <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-5 gap-0 px-5 py-2.5 text-xs text-slate-600">
-              <div className="col-span-2">Event</div>
+              <div className="col-span-2">{t('settings.notif.event')}</div>
               {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => {
                 const cm = CHANNEL_META[ch]
                 return (
                   <div key={ch} className={`flex items-center justify-center gap-1 ${cm.color} font-medium`}>
                     <cm.Icon className="h-3 w-3" />
-                    <span className="hidden sm:block">{cm.label}</span>
+                    <span className="hidden sm:block">{t(cm.labelKey)}</span>
                   </div>
                 )
               })}
@@ -113,8 +124,8 @@ export default function NotificationsPage() {
             {rules.filter((r) => r.category === category).map((rule) => (
               <div key={rule.id} className="grid grid-cols-5 items-center gap-0 px-5 py-3.5">
                 <div className="col-span-2 min-w-0 pr-4">
-                  <div className="text-sm font-medium text-slate-100">{rule.label}</div>
-                  <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{rule.desc}</div>
+                  <div className="text-sm font-medium text-slate-100">{t(rule.labelKey)}</div>
+                  <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{t(rule.descKey)}</div>
                 </div>
                 {(Object.keys(CHANNEL_META) as Channel[]).map((ch) => (
                   <div key={ch} className="flex items-center justify-center">

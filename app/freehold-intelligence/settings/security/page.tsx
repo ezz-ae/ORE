@@ -6,6 +6,7 @@ import {
   Key, Shield, Copy, Eye, EyeOff, CheckCircle,
   Plus, Trash2, AlertCircle, Lock, Smartphone,
 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
 
 type ApiKey = {
   id: string
@@ -35,6 +36,7 @@ const AUDIT_LOG = [
 const ALL_SCOPES = ['leads:read', 'leads:write', 'crm:read', 'crm:write', 'campaigns:read', 'campaigns:write', 'analytics:read', 'finance:read']
 
 export default function SecurityPage() {
+  const { t, locale } = useI18n()
   const [keys, setKeys]       = useState<ApiKey[]>([])
   const [showNew, setShowNew] = useState(false)
   const [newName, setNewName] = useState('')
@@ -77,9 +79,9 @@ export default function SecurityPage() {
       setRevealed(data.id)
       setNewName(''); setNewScopes([]); setShowNew(false)
       loadKeys()
-      toast.success('API key created — copy it now, it won’t be shown again')
+      toast.success(t('settings.security.keyCreated'))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create key')
+      toast.error(err instanceof Error ? err.message : t('settings.security.keyCreateFailed'))
     }
   }
 
@@ -101,11 +103,11 @@ export default function SecurityPage() {
     })
       .then((r) => {
         if (!r.ok) throw new Error()
-        toast.success(v ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled')
+        toast.success(v ? t('settings.security.2fa.enabled') : t('settings.security.2fa.disabled'))
       })
       .catch(() => {
         setTwoFaOn(!v) // revert optimistic toggle on failure
-        toast.error('Could not update two-factor authentication')
+        toast.error(t('settings.security.2fa.error'))
       })
   }
 
@@ -124,7 +126,7 @@ export default function SecurityPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
-      <h1 className="mb-8 text-xl font-semibold text-white">Security</h1>
+      <h1 className="mb-8 text-xl font-semibold text-white">{t('settings.security.title')}</h1>
 
       {/* 2FA */}
       <section className="mb-6 rounded-[18px] border border-line bg-surface p-5">
@@ -134,8 +136,8 @@ export default function SecurityPage() {
               <Smartphone className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">Two-factor authentication</div>
-              <div className="mt-0.5 text-xs text-slate-500">Require 2FA for all team members</div>
+              <div className="text-sm font-semibold text-white">{t('settings.security.2fa.title')}</div>
+              <div className="mt-0.5 text-xs text-slate-500">{t('settings.security.2fa.sub')}</div>
             </div>
           </div>
           <button
@@ -148,7 +150,7 @@ export default function SecurityPage() {
         {!twoFaOn && (
           <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2 text-xs text-amber-400/80">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            Disabling 2FA reduces account security. All active sessions will remain valid.
+            {t('settings.security.2fa.warning')}
           </div>
         )}
       </section>
@@ -156,14 +158,14 @@ export default function SecurityPage() {
       {/* One-time secret reveal */}
       {newSecret && (
         <section className="mb-4 rounded-[14px] border border-emerald-400/25 bg-emerald-400/[0.05] p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Key className="h-4 w-4" /> New API key — copy it now</div>
-          <p className="mt-1 text-xs text-slate-400">This secret is shown once and never again.</p>
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Key className="h-4 w-4" /> {t('settings.security.newKey.title')}</div>
+          <p className="mt-1 text-xs text-slate-400">{t('settings.security.newKey.sub')}</p>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 truncate rounded-lg border border-line bg-surface-2 px-3 py-2 font-mono text-xs text-slate-200">{newSecret}</code>
             <button onClick={() => { copy(newSecret, 'new'); }} className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20">
-              {copied === 'new' ? 'Copied' : 'Copy'}
+              {copied === 'new' ? t('settings.security.copied') : t('settings.security.copy')}
             </button>
-            <button onClick={() => setNewSecret(null)} className="rounded-lg border border-line px-3 py-2 text-xs text-slate-400 hover:text-slate-200">Done</button>
+            <button onClick={() => setNewSecret(null)} className="rounded-lg border border-line px-3 py-2 text-xs text-slate-400 hover:text-slate-200">{t('settings.security.done')}</button>
           </div>
         </section>
       )}
@@ -172,13 +174,13 @@ export default function SecurityPage() {
       <section className="mb-6">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            API keys <span className="ml-1 text-slate-400">{activeKeys} active</span>
+            {t('settings.security.apiKeys')} <span className="ml-1 text-slate-400">{t('settings.security.activeCount', { count: activeKeys })}</span>
           </div>
           <button
             onClick={() => setShowNew((v) => !v)}
             className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-3 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/15"
           >
-            <Plus className="h-3.5 w-3.5" /> New key
+            <Plus className="h-3.5 w-3.5" /> {t('settings.security.newKeyBtn')}
           </button>
         </div>
 
@@ -187,13 +189,13 @@ export default function SecurityPage() {
           <div className="mb-4 rounded-[16px] border border-gold/20 bg-gold/[0.04] p-5 space-y-3">
             <input
               type="text"
-              placeholder="Key name (e.g. Zapier Integration)"
+              placeholder={t('settings.security.keyNamePlaceholder')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40"
             />
             <div>
-              <div className="mb-2 text-xs text-slate-500">Scopes</div>
+              <div className="mb-2 text-xs text-slate-500">{t('settings.security.scopes')}</div>
               <div className="flex flex-wrap gap-1.5">
                 {ALL_SCOPES.map((s) => (
                   <button
@@ -213,11 +215,11 @@ export default function SecurityPage() {
             <div className="flex gap-2">
               <button onClick={createKey}
                 className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-black transition hover:bg-gold/90">
-                <Key className="h-3.5 w-3.5" /> Generate key
+                <Key className="h-3.5 w-3.5" /> {t('settings.security.generateKey')}
               </button>
               <button onClick={() => setShowNew(false)}
                 className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">
-                Cancel
+                {t('settings.security.cancel')}
               </button>
             </div>
           </div>
@@ -234,7 +236,7 @@ export default function SecurityPage() {
                   <div className="flex items-center gap-2">
                     <Key className={`h-3.5 w-3.5 shrink-0 ${k.active ? 'text-gold' : 'text-slate-600'}`} />
                     <span className="text-sm font-semibold text-white">{k.name}</span>
-                    {!k.active && <span className="text-xs text-red-400/70">Revoked</span>}
+                    {!k.active && <span className="text-xs text-red-400/70">{t('settings.security.revoked')}</span>}
                   </div>
                   <div className="mt-1.5 flex items-center gap-2">
                     <code className="rounded bg-surface-2 px-2 py-0.5 text-xs font-mono text-slate-400">
@@ -262,14 +264,14 @@ export default function SecurityPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   {k.lastUsed && (
                     <div className="hidden sm:block text-right">
-                      <div className="text-xs text-slate-600">Last used</div>
-                      <div className="text-xs text-slate-400">{new Date(k.lastUsed).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</div>
+                      <div className="text-xs text-slate-600">{t('settings.security.lastUsed')}</div>
+                      <div className="text-xs text-slate-400">{new Date(k.lastUsed).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}</div>
                     </div>
                   )}
                   {k.active ? (
                     <button onClick={() => revokeKey(k.id)}
                       className="rounded-md border border-line-strong px-2.5 py-1 text-xs text-red-400/70 transition hover:border-red-400/20 hover:text-red-400">
-                      Revoke
+                      {t('settings.security.revoke')}
                     </button>
                   ) : (
                     <button onClick={() => deleteKey(k.id)}
@@ -286,7 +288,7 @@ export default function SecurityPage() {
 
       {/* Audit log */}
       <section>
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Audit log</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.security.auditLog')}</div>
         <div className="rounded-[18px] border border-line bg-surface overflow-hidden">
           <div className="divide-y divide-line">
             {AUDIT_LOG.map((entry, i) => (
