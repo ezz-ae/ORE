@@ -33,7 +33,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
     <div className="flex flex-col min-h-full">
 
       {/* App header */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-chrome/97 px-5 backdrop-blur-xl sm:px-6">
+      <header data-coach="app-ads" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-chrome/97 px-5 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence/ads"
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"

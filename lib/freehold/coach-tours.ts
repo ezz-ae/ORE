@@ -83,9 +83,85 @@ export const TOURS: Record<Role, CoachStep[]> = {
   ],
 }
 
+/**
+ * Per-app contextual tours. These auto-start once the first time a user opens
+ * each app surface (independent of the role welcome), and back the "Take a tour"
+ * button on every app page. Step 1 spotlights the app header
+ * (`data-coach="app-<id>"`, added in each app layout); step 2 is a centred tip
+ * so it always renders even on surfaces without the header anchor.
+ */
+export const APP_TOURS: Record<string, CoachStep[]> = {
+  crm: [
+    { key: 'coach.app.crm.intro', anchor: 'app-crm', placement: 'bottom' },
+    { key: 'coach.app.crm.tip', placement: 'center' },
+  ],
+  ads: [
+    { key: 'coach.app.ads.intro', anchor: 'app-ads', placement: 'bottom' },
+    { key: 'coach.app.ads.tip', placement: 'center' },
+  ],
+  'lead-machine': [
+    { key: 'coach.app.leadMachine.intro', anchor: 'app-lead-machine', placement: 'bottom' },
+    { key: 'coach.app.leadMachine.tip', placement: 'center' },
+  ],
+  inventory: [
+    { key: 'coach.app.inventory.intro', anchor: 'app-inventory', placement: 'bottom' },
+    { key: 'coach.app.inventory.tip', placement: 'center' },
+  ],
+  finance: [
+    { key: 'coach.app.finance.intro', anchor: 'app-finance', placement: 'bottom' },
+    { key: 'coach.app.finance.tip', placement: 'center' },
+  ],
+  'ai-manager': [
+    { key: 'coach.app.studio.intro', anchor: 'app-ai-manager', placement: 'bottom' },
+    { key: 'coach.app.studio.tip', placement: 'center' },
+  ],
+  analytics: [
+    { key: 'coach.app.analytics.intro', anchor: 'app-analytics', placement: 'bottom' },
+    { key: 'coach.app.analytics.tip', placement: 'center' },
+  ],
+  notebook: [
+    { key: 'coach.app.notebook.intro', anchor: 'app-notebook', placement: 'bottom' },
+    { key: 'coach.app.notebook.tip', placement: 'center' },
+  ],
+  integrations: [
+    { key: 'coach.app.integrations.intro', anchor: 'app-integrations', placement: 'bottom' },
+    { key: 'coach.app.integrations.tip', placement: 'center' },
+  ],
+  settings: [
+    { key: 'coach.app.settings.intro', anchor: 'app-settings', placement: 'bottom' },
+    { key: 'coach.app.settings.tip', placement: 'center' },
+  ],
+  management: [
+    { key: 'coach.app.management.intro', anchor: 'app-management', placement: 'bottom' },
+    { key: 'coach.app.management.tip', placement: 'center' },
+  ],
+}
+
+// Some routes share an app's tour (e.g. the live ads dashboard is part of Ads).
+const PATH_ALIAS: Record<string, string> = {
+  'ads-live': 'ads',
+}
+
+/** Resolve the app id whose tour applies to a pathname, or null. */
+export function appIdForPath(pathname: string): string | null {
+  const m = pathname.match(/^\/freehold-intelligence\/([^/?#]+)/)
+  if (!m) return null
+  const id = PATH_ALIAS[m[1]] ?? m[1]
+  return APP_TOURS[id] ? id : null
+}
+
+export function tourForApp(appId: string | null): CoachStep[] {
+  return appId ? (APP_TOURS[appId] ?? []) : []
+}
+
 /** Storage key that records a role's tour has been seen at this version. */
 export function coachSeenKey(role: Role): string {
   return `fh_coach_seen_${role}_${COACH_VERSION}`
+}
+
+/** Storage key that records an app's contextual tour has been seen. */
+export function appCoachSeenKey(appId: string): string {
+  return `fh_coach_app_${appId}_${COACH_VERSION}`
 }
 
 export function tourForRole(role: Role | undefined): CoachStep[] {
