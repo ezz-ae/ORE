@@ -158,7 +158,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
 
       {/* ── Morning Briefing ──────────────────────────────────────────────── */}
-      <section className="mb-8 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.09] via-gold/[0.03] to-transparent">
+      <section data-coach="hub-briefing" className="mb-8 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.09] via-gold/[0.03] to-transparent">
         <div className="p-6 sm:p-7">
 
           {/* Header row */}
@@ -200,7 +200,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           <div className="my-5 border-t border-line" />
 
           {/* AI Chat */}
-          <div>
+          <div data-coach="hub-ai">
             <div className="flex gap-2">
               <input
                 type="text"

@@ -163,6 +163,7 @@ export function ExpertChat() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open Freehold Expert"
+        data-coach="expert-chat"
         className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-line bg-app py-4 transition hover:bg-surface-2 md:flex"
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-gold/15 ring-1 ring-gold/30">
@@ -187,6 +188,7 @@ export function ExpertChat() {
 
       <aside
         style={{ width }}
+        data-coach="expert-chat"
         className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-line bg-app md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}

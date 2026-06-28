@@ -6,6 +6,7 @@ import { ExpertChat } from '@/components/freehold/expert-chat'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { BRAND } from '@/lib/freehold/brand'
 import { I18nProvider, useI18n } from '@/lib/i18n/provider'
+import { CoachProvider } from '@/components/freehold/coach/coach-marks'
 
 function FreeholdShell({ children }: { children: React.ReactNode }) {
   const { ready } = useSessionGuard()   // any signed-in role; landing differs by role
@@ -39,13 +40,15 @@ function FreeholdShell({ children }: { children: React.ReactNode }) {
             radial-gradient(ellipse 50% 25% at 100% 100%, color-mix(in srgb, var(--color-gold) 3%, transparent) 0%, transparent 50%);
         }
       `}</style>
-      <SpacesNav />
-      <div className="flex min-h-0 flex-1">
-        <main className="fi-content min-w-0 flex-1 overflow-y-auto">
-          {children}
-        </main>
-        <ExpertChat />
-      </div>
+      <CoachProvider>
+        <SpacesNav />
+        <div className="flex min-h-0 flex-1">
+          <main className="fi-content min-w-0 flex-1 overflow-y-auto">
+            {children}
+          </main>
+          <ExpertChat />
+        </div>
+      </CoachProvider>
       <Toaster
         theme="dark"
         position="bottom-right"

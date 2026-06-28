@@ -158,7 +158,7 @@ export default function AgentHomePage() {
       )}
 
       {/* App Grid */}
-      <section className="mt-10">
+      <section data-coach="agent-apps" className="mt-10">
         <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{t('agent.myApps')}</div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {APPS.map((app) => {
