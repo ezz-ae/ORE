@@ -7,6 +7,9 @@ import {
   RotateCcw, Phone, Loader2, ExternalLink,
 } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 function fmtPrice(n: number | null): string {
   if (n === null) return 'Competitive Pricing'
@@ -79,7 +82,7 @@ const AI_VARIANTS: Record<string, (p: InventoryProperty) => Partial<LandingConfi
   }),
 }
 
-function PhonePreview({ prop, config }: { prop: InventoryProperty; config: LandingConfig }) {
+function PhonePreview({ prop, config, t }: { prop: InventoryProperty; config: LandingConfig; t: TFn }) {
   return (
     <div className="mx-auto w-[260px] rounded-[36px] border-[5px] border-white/15 bg-surface shadow-2xl overflow-hidden">
       <div className="flex justify-center py-2">
@@ -89,7 +92,7 @@ function PhonePreview({ prop, config }: { prop: InventoryProperty; config: Landi
         <div className="flex items-center justify-between bg-surface px-3 py-2 border-b border-line">
           <span className="text-[7px] font-bold tracking-wide text-gold">FREEHOLD</span>
           <span className="flex items-center gap-0.5 rounded-full border border-gold/20 px-1.5 py-0.5 text-[6px] text-gold">
-            <Phone className="h-2 w-2" /> Call
+            <Phone className="h-2 w-2" /> {t('inv.gen.preview.call')}
           </span>
         </div>
         <div className="px-4 pt-6 pb-4" style={{ background: 'radial-gradient(ellipse 100% 50% at 50% 0%, rgba(212,175,55,0.15) 0%, transparent 60%)' }}>
@@ -121,8 +124,8 @@ function PhonePreview({ prop, config }: { prop: InventoryProperty; config: Landi
           ))}
         </div>
         <div className="mx-4 mb-4 rounded-[12px] border border-gold/15 bg-surface p-3">
-          <div className="text-[8px] font-bold text-white mb-2">Request Exclusive Pricing</div>
-          {(['Full Name', 'Phone / WhatsApp', config.leadFields.email ? 'Email' : null] as (string | null)[]).filter(Boolean).map((f) => (
+          <div className="text-[8px] font-bold text-white mb-2">{t('inv.gen.preview.requestPricing')}</div>
+          {([t('inv.gen.preview.fullName'), t('inv.gen.preview.phoneWhatsapp'), config.leadFields.email ? t('inv.gen.preview.email') : null] as (string | null)[]).filter(Boolean).map((f) => (
             <div key={f!} className="mb-1.5 h-5 rounded-[4px] border border-white/[0.10] bg-surface-2 px-1.5 flex items-center">
               <span className="text-[6px] text-slate-600">{f}…</span>
             </div>
@@ -154,6 +157,7 @@ function SectionPanel({
 }
 
 export function GenerateClient({ prop }: { prop: InventoryProperty }) {
+  const t = useT()
   const [config, setConfig] = useState<LandingConfig>(() => buildConfig(prop))
   const [open, setOpen] = useState<Section>('hero' as Section)
   const [redesigning, setRedesigning] = useState(false)
@@ -217,7 +221,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
     setPublishing(true)
     setPublishError('')
     try {
-      setPublishStep('Creating page…')
+      setPublishStep(t('inv.gen.step.creating'))
       const createRes = await fetch('/api/crm/landing-pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -231,11 +235,11 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
         }),
       })
       const createData = await createRes.json()
-      if (!createRes.ok) throw new Error(createData?.error || 'Failed to create landing page')
+      if (!createRes.ok) throw new Error(createData?.error || t('inv.gen.err.createFailed'))
 
       setPendingAuth(Boolean(createData.pendingPublish))
       const newSlug: string = createData.slug
-      setPublishStep('Generating AI content…')
+      setPublishStep(t('inv.gen.step.generating'))
 
       await fetch('/api/crm/landing-pages/generate', {
         method: 'POST',
@@ -250,7 +254,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
       setPublishedSlug(newSlug)
       setPublishedUrl(`/lp/${newSlug}`)
     } catch (err) {
-      setPublishError(err instanceof Error ? err.message : 'Failed to publish')
+      setPublishError(err instanceof Error ? err.message : t('inv.gen.err.publishFailed'))
     } finally {
       setPublishStep('')
       setPublishing(false)
@@ -265,11 +269,11 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
           href={`/freehold-intelligence/inventory/${prop.id}`}
           className="mb-4 inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-slate-400"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to {prop.name}
+          <ArrowLeft className="h-3.5 w-3.5" /> {t('inv.gen.back', { name: prop.name })}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[20px] font-semibold text-white">Landing Page Editor</h1>
+            <h1 className="text-[20px] font-semibold text-white">{t('inv.gen.editorTitle')}</h1>
             <p className="mt-1 text-xs text-slate-500">{prop.name} · {prop.area} · {prop.developer}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -280,7 +284,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-2 text-xs text-slate-400 transition hover:text-slate-100"
               >
-                <Eye className="h-3.5 w-3.5" /> View Live Page
+                <Eye className="h-3.5 w-3.5" /> {t('inv.gen.viewLivePage')}
               </a>
             )}
             <button
@@ -293,11 +297,11 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
               }`}
             >
               {publishing ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {publishStep || 'Publishing…'}</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {publishStep || t('inv.gen.publishing')}</>
               ) : publishedUrl ? (
-                <><Check className="h-3.5 w-3.5" /> Published</>
+                <><Check className="h-3.5 w-3.5" /> {t('inv.gen.published')}</>
               ) : (
-                <><Globe className="h-3.5 w-3.5" /> Create & Publish</>
+                <><Globe className="h-3.5 w-3.5" /> {t('inv.gen.createPublish')}</>
               )}
             </button>
           </div>
@@ -309,7 +313,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
           <Check className={`h-4 w-4 shrink-0 ${pendingAuth ? 'text-amber-400' : 'text-emerald-400'}`} />
           <div className="flex-1 min-w-0">
             <span className={`text-sm font-medium ${pendingAuth ? 'text-amber-300' : 'text-emerald-300'}`}>
-              {pendingAuth ? 'Submitted for authorization — a manager must approve before it goes live. Preview: ' : 'Landing page is live — '}
+              {pendingAuth ? t('inv.gen.pendingAuth') : t('inv.gen.isLive')}
             </span>
             <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
               className={`font-mono text-xs underline underline-offset-2 ${pendingAuth ? 'text-amber-400/80 hover:text-amber-400' : 'text-emerald-400/80 hover:text-emerald-400'}`}>
@@ -322,19 +326,19 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             className="shrink-0 flex items-center gap-1 rounded-full border border-gold/20 px-3 py-1 text-xs text-gold/70 transition hover:bg-gold/10 disabled:opacity-50"
           >
             {aiGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
-            {aiGenerating ? 'Regenerating…' : 'Regen AI'}
+            {aiGenerating ? t('inv.gen.regenerating') : t('inv.gen.regenAi')}
           </button>
           {publishedSlug && (
             <Link
               href={`/crm/landing-pages/${publishedSlug}`}
               className="shrink-0 flex items-center gap-1 rounded-full border border-white/[0.12] px-3 py-1 text-xs text-slate-400 transition hover:text-slate-200"
             >
-              Edit in CRM
+              {t('inv.gen.editInCrm')}
             </Link>
           )}
           <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
             className="shrink-0 flex items-center gap-1 rounded-full border border-emerald-400/20 px-3 py-1 text-xs text-emerald-400/70 hover:bg-emerald-400/10">
-            Open <ExternalLink className="h-3 w-3" />
+            {t('inv.gen.open')} <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       )}
@@ -351,13 +355,13 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-gold" />
-                <span className="text-sm font-medium text-gold">AI Full Redesign</span>
+                <span className="text-sm font-medium text-gold">{t('inv.gen.aiFullRedesign')}</span>
               </div>
               <button
                 onClick={() => setShowAiBox(!showAiBox)}
                 className="text-xs text-slate-500 hover:text-slate-400 transition"
               >
-                {showAiBox ? 'Use presets ↑' : 'Custom prompt ↓'}
+                {showAiBox ? t('inv.gen.usePresets') : t('inv.gen.customPrompt')}
               </button>
             </div>
             {!showAiBox ? (
@@ -365,7 +369,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
                 {(['investor', 'luxury', 'end_user'] as const).map((v) => (
                   <button key={v} onClick={() => aiRedesign(v)} disabled={redesigning}
                     className="rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1.5 text-xs capitalize text-gold/80 transition hover:bg-gold/15 disabled:opacity-50">
-                    {redesigning ? '…' : v.replace('_', ' ')}
+                    {redesigning ? '…' : t(`inv.gen.preset.${v}`)}
                   </button>
                 ))}
               </div>
@@ -375,7 +379,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCustomAi()}
-                  placeholder="e.g. Make it more luxury focused, target GCC buyers…"
+                  placeholder={t('inv.gen.customAiPlaceholder')}
                   className="flex-1 rounded-[10px] border border-white/[0.10] bg-surface-2 px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-gold/30"
                 />
                 <button onClick={handleCustomAi} disabled={redesigning || !aiPrompt.trim()}
@@ -490,7 +494,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
 
         <div className="hidden lg:block shrink-0 sticky top-6">
           <div className="mb-3 text-center text-xs text-slate-600 uppercase tracking-wider">Live Preview</div>
-          <PhonePreview prop={prop} config={config} />
+          <PhonePreview prop={prop} config={config} t={t} />
           {publishedUrl && (
             <div className="mt-4 text-center">
               <a href={publishedUrl} target="_blank" rel="noopener noreferrer"

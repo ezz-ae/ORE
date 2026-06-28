@@ -241,7 +241,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${landingBadge(prop.landingStatus)}`}>
-              {landingLabel(prop.landingStatus)}
+              {landingLabel(prop.landingStatus, t)}
             </span>
             {prop.landingUrl && (
               <a href={prop.landingUrl} target="_blank" rel="noopener noreferrer"
