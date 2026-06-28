@@ -37,10 +37,17 @@ export async function GET() {
       email: string
       role: string
       ai_access: boolean | null
+      phone: string | null
+      commission_rate: number | null
+      suspended: boolean | null
+      banned: boolean | null
+      ban_reason: string | null
       created_at: string | null
       last_login_at: string | null
     }>(
-      `SELECT id, name, email, role, ai_access,
+      `SELECT id, name, email, role, ai_access, phone, commission_rate,
+              COALESCE(suspended, false) AS suspended,
+              COALESCE(banned, false) AS banned, ban_reason,
               created_at::text,
               last_login_at::text
        FROM freehold_site_users
@@ -61,7 +68,12 @@ export async function GET() {
       email:      r.email,
       role:       DB_ROLE_TO_UI[r.role] ?? 'Agent',
       dbRole:     r.role,
-      status:     'active' as const,
+      status:     (r.banned ? 'banned' : r.suspended ? 'suspended' : 'active') as 'active' | 'suspended' | 'banned',
+      suspended:  r.suspended ?? false,
+      banned:     r.banned ?? false,
+      banReason:  r.ban_reason ?? null,
+      phone:      r.phone ?? null,
+      commissionRate: r.commission_rate ?? null,
       joinedAt:   r.created_at?.slice(0, 10) ?? '',
       lastActive: r.last_login_at?.slice(0, 10) ?? null,
       initials:   initials(r.name ?? r.email),

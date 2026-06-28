@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { StatCard, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { TeamAdmin } from './_team-admin'
 
 interface AgentRow {
   id: string
@@ -98,9 +99,12 @@ export default function TeamPerformancePage() {
 
   if (agents.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-slate-500">
-        <Users className="h-10 w-10 mb-3 opacity-30" />
-        <p className="text-sm">{t('mgmt.team.noBrokers')}</p>
+      <div className="mx-auto max-w-7xl px-6 pt-8 space-y-6">
+        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+          <Users className="h-10 w-10 mb-3 opacity-30" />
+          <p className="text-sm">{t('mgmt.team.noBrokers')}</p>
+        </div>
+        <TeamAdmin />
       </div>
     )
   }
@@ -130,6 +134,8 @@ export default function TeamPerformancePage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pt-6 space-y-6">
+
+        <TeamAdmin />
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {SUMMARY_STATS.map(stat => (

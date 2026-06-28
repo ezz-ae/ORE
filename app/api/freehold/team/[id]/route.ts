@@ -35,6 +35,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.suspended === 'boolean') {
       await query(`UPDATE freehold_site_users SET suspended = $2 WHERE id = $1`, [id, body.suspended])
     }
+    if (typeof body.banned === 'boolean') {
+      // Banning also suspends access; unbanning leaves suspension as-is.
+      await query(
+        `UPDATE freehold_site_users SET banned = $2, ban_reason = $3${body.banned ? ', suspended = true' : ''} WHERE id = $1`,
+        [id, body.banned, body.banned ? String(body.banReason ?? '') : null],
+      )
+    }
+    // Full profile edit (name, email, phone, commission).
+    if (typeof body.name === 'string' && body.name.trim()) {
+      await query(`UPDATE freehold_site_users SET name = $2 WHERE id = $1`, [id, body.name.trim()])
+    }
+    if (typeof body.email === 'string' && body.email.trim()) {
+      const email = body.email.trim().toLowerCase()
+      const clash = await query<{ id: string }>(
+        `SELECT id FROM freehold_site_users WHERE lower(email) = $1 AND id <> $2 LIMIT 1`, [email, id],
+      )
+      if (clash.length) return NextResponse.json({ error: 'Another user already has that email' }, { status: 409 })
+      await query(`UPDATE freehold_site_users SET email = $2 WHERE id = $1`, [id, email])
+    }
+    if (typeof body.phone === 'string') {
+      await query(`UPDATE freehold_site_users SET phone = $2 WHERE id = $1`, [id, body.phone.trim() || null])
+    }
+    if (body.commissionRate !== undefined) {
+      const rate = body.commissionRate === null || body.commissionRate === '' ? null : Number(body.commissionRate)
+      if (rate !== null && (Number.isNaN(rate) || rate < 0 || rate > 100)) {
+        return NextResponse.json({ error: 'Commission must be 0–100' }, { status: 400 })
+      }
+      await query(`UPDATE freehold_site_users SET commission_rate = $2 WHERE id = $1`, [id, rate])
+    }
     return NextResponse.json({ ok: true, id })
   } catch (err) {
     console.error('[team] update failed', err)

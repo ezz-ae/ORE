@@ -2401,6 +2401,8 @@ export async function ensureUsersTable() {
       ADD COLUMN IF NOT EXISTS last_login_at timestamptz,
       ADD COLUMN IF NOT EXISTS ai_access boolean DEFAULT false,
       ADD COLUMN IF NOT EXISTS suspended boolean DEFAULT false,
+      ADD COLUMN IF NOT EXISTS banned boolean DEFAULT false,
+      ADD COLUMN IF NOT EXISTS ban_reason text,
       ADD COLUMN IF NOT EXISTS settings jsonb
   `)
 }
