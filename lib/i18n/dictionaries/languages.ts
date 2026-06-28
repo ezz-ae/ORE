@@ -6,6 +6,9 @@ type Dict = Record<string, string>
 
 export const languages: Record<Locale, Dict> = {
   en: {
+    'settings.tab.languages': 'Languages',
+    'settings.tab.automation': 'Automation',
+    'settings.nav.automation': 'Automation',
     'settings.lang.title': 'Languages',
     'settings.lang.subtitle': 'Platform, writing, and AI languages — and how team input is handled',
     'settings.lang.platform': 'Platform language',
@@ -24,6 +27,9 @@ export const languages: Record<Locale, Dict> = {
     'settings.lang.saveError': 'Could not save language preferences',
   },
   ar: {
+    'settings.tab.languages': 'اللغات',
+    'settings.tab.automation': 'الأتمتة',
+    'settings.nav.automation': 'الأتمتة',
     'settings.lang.title': 'اللغات',
     'settings.lang.subtitle': 'لغات المنصة والكتابة والذكاء الاصطناعي — وكيفية التعامل مع مدخلات الفريق',
     'settings.lang.platform': 'لغة المنصة',
@@ -42,6 +48,9 @@ export const languages: Record<Locale, Dict> = {
     'settings.lang.saveError': 'تعذّر حفظ تفضيلات اللغة',
   },
   ru: {
+    'settings.tab.languages': 'Языки',
+    'settings.tab.automation': 'Автоматизация',
+    'settings.nav.automation': 'Автоматизация',
     'settings.lang.title': 'Языки',
     'settings.lang.subtitle': 'Языки платформы, написания и ИИ — и обработка ввода команды',
     'settings.lang.platform': 'Язык платформы',

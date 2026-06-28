@@ -2,10 +2,13 @@ import Link from 'next/link'
 import { AlertTriangle, CheckCircle2, ArrowUpRight } from 'lucide-react'
 import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
+import { getServerT } from '@/lib/i18n/server'
 
-function QualityBand({ value }: { value: number }) {
+type TFn = (key: string, vars?: Record<string, string | number>) => string
+
+function QualityBand({ value, t }: { value: number; t: TFn }) {
   const color = value >= 80 ? 'bg-gold' : value >= 50 ? 'bg-amber-400' : 'bg-red-400'
-  const label = value >= 80 ? 'Good' : value >= 50 ? 'Needs Work' : 'Poor'
+  const label = value >= 80 ? t('inv.dq.band.good') : value >= 50 ? t('inv.dq.band.needsWork') : t('inv.dq.band.poor')
   const textColor = value >= 80 ? 'text-gold' : value >= 50 ? 'text-amber-400' : 'text-red-400'
   return (
     <div className="flex items-center gap-2">
@@ -19,14 +22,15 @@ function QualityBand({ value }: { value: number }) {
 }
 
 const ISSUE_TYPES = [
-  { key: 'noImages',        label: 'No images',               check: (p: InventoryProperty) => !p.hasImages },
-  { key: 'lowImageCount',   label: 'Fewer than 5 images',     check: (p: InventoryProperty) => p.hasImages && p.imageCount < 5 },
-  { key: 'noLanding',       label: 'No landing page',         check: (p: InventoryProperty) => p.landingStatus === 'missing' },
-  { key: 'lowQuality',      label: 'Data quality < 60',       check: (p: InventoryProperty) => p.dataQuality < 60 },
-  { key: 'noCampaigns',     label: 'No linked campaigns',     check: (p: InventoryProperty) => p.linkedCampaigns === 0 },
+  { key: 'noImages',        labelKey: 'inv.dq.issue.noImages',      check: (p: InventoryProperty) => !p.hasImages },
+  { key: 'lowImageCount',   labelKey: 'inv.dq.issue.lowImageCount', check: (p: InventoryProperty) => p.hasImages && p.imageCount < 5 },
+  { key: 'noLanding',       labelKey: 'inv.dq.issue.noLanding',     check: (p: InventoryProperty) => p.landingStatus === 'missing' },
+  { key: 'lowQuality',      labelKey: 'inv.dq.issue.lowQuality',    check: (p: InventoryProperty) => p.dataQuality < 60 },
+  { key: 'noCampaigns',     labelKey: 'inv.dq.issue.noCampaigns',   check: (p: InventoryProperty) => p.linkedCampaigns === 0 },
 ]
 
 export default async function DataQualityPage() {
+  const { t } = await getServerT()
   const dbProperties = await getInventoryPropertiesFromDB()
   const allProperties = dbProperties.length > 0 ? dbProperties : inventoryProperties
   const sorted = [...allProperties].sort((a, b) => a.dataQuality - b.dataQuality)
@@ -39,17 +43,17 @@ export default async function DataQualityPage() {
   return (
     <div className="p-6 lg:p-8 space-y-7">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Data Quality</h1>
-        <p className="mt-1 text-sm text-slate-400">Completeness and readiness scores across all inventory</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('inv.dq.title')}</h1>
+        <p className="mt-1 text-sm text-slate-400">{t('inv.dq.subtitle')}</p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: 'Avg Quality',  value: `${avgQuality}%`, accent: avgQuality >= 70 ? 'text-gold' : 'text-amber-400' },
-          { label: 'Good (≥80)',   value: goodCount,         accent: 'text-gold' },
-          { label: 'Needs Work',   value: needsCount,        accent: 'text-amber-400' },
-          { label: 'Poor (<50)',   value: poorCount,         accent: poorCount > 0 ? 'text-red-400' : undefined },
+          { label: t('inv.dq.kpi.avgQuality'), value: `${avgQuality}%`, accent: avgQuality >= 70 ? 'text-gold' : 'text-amber-400' },
+          { label: t('inv.dq.kpi.good'),       value: goodCount,         accent: 'text-gold' },
+          { label: t('inv.dq.kpi.needsWork'),  value: needsCount,        accent: 'text-amber-400' },
+          { label: t('inv.dq.kpi.poor'),       value: poorCount,         accent: poorCount > 0 ? 'text-red-400' : undefined },
         ].map(({ label, value, accent }) => (
           <div key={label} className="rounded-2xl border border-line bg-surface-2 p-4">
             <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
@@ -60,7 +64,7 @@ export default async function DataQualityPage() {
 
       {/* Issue summary */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {ISSUE_TYPES.map(({ key, label, check }) => {
+        {ISSUE_TYPES.map(({ key, labelKey, check }) => {
           const affected = sorted.filter(check).length
           return (
             <div key={key} className={`rounded-2xl border px-5 py-4 flex items-center justify-between ${
@@ -75,7 +79,7 @@ export default async function DataQualityPage() {
                   ? <CheckCircle2 className="h-4 w-4 text-gold" />
                   : <AlertTriangle className="h-4 w-4 text-amber-400" />
                 }
-                <span className="text-sm text-slate-300">{label}</span>
+                <span className="text-sm text-slate-300">{t(labelKey)}</span>
               </div>
               <span className={`text-sm font-semibold tabular-nums ${
                 affected === 0 ? 'text-gold' : affected <= 2 ? 'text-amber-400' : 'text-red-400'
@@ -91,8 +95,17 @@ export default async function DataQualityPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line">
-                {['Property', 'Developer', 'Images', 'Landing', 'Campaigns', 'Data Quality', 'Ad Readiness', ''].map((h) => (
-                  <th key={h} className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
+                {[
+                  ['inv.dq.col.property', t('inv.dq.col.property')],
+                  ['inv.dq.col.developer', t('inv.dq.col.developer')],
+                  ['inv.dq.col.images', t('inv.dq.col.images')],
+                  ['inv.dq.col.landing', t('inv.dq.col.landing')],
+                  ['inv.dq.col.campaigns', t('inv.dq.col.campaigns')],
+                  ['inv.dq.col.dataQuality', t('inv.dq.col.dataQuality')],
+                  ['inv.dq.col.adReadiness', t('inv.dq.col.adReadiness')],
+                  ['__blank', ''],
+                ].map(([k, h]) => (
+                  <th key={k} className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -108,14 +121,14 @@ export default async function DataQualityPage() {
                     <span className={p.hasImages ? (p.imageCount >= 5 ? 'text-gold' : 'text-amber-400') : 'text-red-400'}>
                       {p.hasImages ? `${p.imageCount}` : '0'}
                     </span>
-                    <span className="ml-1 text-slate-500">img</span>
+                    <span className="ml-1 text-slate-500">{t('inv.dq.img')}</span>
                   </td>
                   <td className="px-4 py-3.5 text-sm">
                     <span className={
                       p.landingStatus === 'live' ? 'text-gold' :
                       p.landingStatus === 'missing' ? 'text-red-400' : 'text-amber-400'
                     }>
-                      {p.landingStatus === 'live' ? 'Live' : p.landingStatus === 'missing' ? 'Missing' : 'Draft'}
+                      {p.landingStatus === 'live' ? t('inv.landing.live') : p.landingStatus === 'missing' ? t('inv.landing.missing') : t('inv.landing.draft')}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-sm">
@@ -123,12 +136,12 @@ export default async function DataQualityPage() {
                       {p.linkedCampaigns}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5"><QualityBand value={p.dataQuality} /></td>
-                  <td className="px-4 py-3.5"><QualityBand value={p.adReadiness} /></td>
+                  <td className="px-4 py-3.5"><QualityBand value={p.dataQuality} t={t} /></td>
+                  <td className="px-4 py-3.5"><QualityBand value={p.adReadiness} t={t} /></td>
                   <td className="pr-5 pl-4 py-3.5">
                     <Link href={`/freehold-intelligence/inventory/${p.id}`}
                       className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400 transition hover:border-white/20 hover:text-white">
-                      Fix <ArrowUpRight className="h-3 w-3" />
+                      {t('inv.dq.fix')} <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </td>
                 </tr>

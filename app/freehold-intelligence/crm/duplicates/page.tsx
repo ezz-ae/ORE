@@ -4,6 +4,9 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Copy, AlertCircle, CheckCircle2, ArrowUpRight, Phone, Mail, User, GitMerge } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 type DuplicateCluster = {
   id: string
@@ -14,17 +17,17 @@ type DuplicateCluster = {
 }
 
 const CONFIDENCE_CONFIG = {
-  high:   { label: 'High confidence', border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
-  medium: { label: 'Medium confidence', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
-  low:    { label: 'Low confidence', border: 'border-line',      bg: 'bg-surface',          text: 'text-slate-400',   dot: 'bg-slate-500' },
+  high:   { labelKey: 'crm.confidenceHigh',   border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
+  medium: { labelKey: 'crm.confidenceMedium', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
+  low:    { labelKey: 'crm.confidenceLow',    border: 'border-line',      bg: 'bg-surface',          text: 'text-slate-400',   dot: 'bg-slate-500' },
 }
 
-function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPrimary: boolean }) {
+function LeadCard({ lead, isPrimary, t }: { lead: DuplicateCluster['primary']; isPrimary: boolean; t: TFn }) {
   return (
     <div className={`flex-1 rounded-[14px] border p-4 ${isPrimary ? 'border-gold/15 bg-gold/[0.03]' : 'border-line bg-surface-2'}`}>
       <div className="flex items-center justify-between gap-2">
         <span className={`text-xs font-semibold uppercase tracking-wider ${isPrimary ? 'text-gold/70' : 'text-slate-500'}`}>
-          {isPrimary ? 'Primary' : 'Possible duplicate'}
+          {isPrimary ? t('crm.primary') : t('crm.possibleDuplicate')}
         </span>
         <span className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-400">
           {lead.stage}
@@ -44,7 +47,7 @@ function LeadCard({ lead, isPrimary }: { lead: DuplicateCluster['primary']; isPr
       </div>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-xs text-slate-400">{lead.source}</span>
-        <span className="text-sm font-semibold text-slate-300">Score {lead.intentScore}</span>
+        <span className="text-sm font-semibold text-slate-300">{t('crm.scoreLabel', { score: lead.intentScore })}</span>
       </div>
     </div>
   )
@@ -55,6 +58,7 @@ type ConfidenceFilter = 'All' | 'high' | 'medium' | 'low'
 const normPhone = (p: string) => (p || '').replace(/\D/g, '').slice(-9)
 
 export default function CrmDuplicatesPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [resolved, setResolved] = useState<Record<string, 'merged' | 'dismissed'>>({})
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('All')
@@ -84,7 +88,7 @@ export default function CrmDuplicatesPage() {
         clusters.push({
           id: `dup_${key}_${dup.id}`,
           confidence: sameEmail ? 'high' : 'high',
-          matchReason: ['Same phone number', ...(sameEmail ? ['Same email'] : dup.source !== primary.source ? ['Different source'] : [])],
+          matchReason: ['crm.matchSamePhone', ...(sameEmail ? ['crm.matchSameEmail'] : dup.source !== primary.source ? ['crm.matchDifferentSource'] : [])],
           primary: card(primary),
           duplicate: card(dup),
         })
@@ -114,7 +118,7 @@ export default function CrmDuplicatesPage() {
   function handleMerge(id: string, name: string) {
     const cluster = allClusters.find((c) => c.id === id)
     setResolved((prev) => ({ ...prev, [id]: 'merged' }))
-    triggerFlash(`Merged: ${name} — primary record kept`)
+    triggerFlash(t('crm.mergedFlash', { name }))
     // Persist: mark the duplicate record as lost so it leaves the active pipeline.
     if (cluster) {
       fetch(`/api/freehold/crm/leads/${cluster.duplicate.id}`, {
@@ -126,7 +130,7 @@ export default function CrmDuplicatesPage() {
 
   function handleDismiss(id: string) {
     setResolved((prev) => ({ ...prev, [id]: 'dismissed' }))
-    triggerFlash('Marked as not a duplicate')
+    triggerFlash(t('crm.markedNotDuplicate'))
   }
 
   return (
@@ -134,23 +138,23 @@ export default function CrmDuplicatesPage() {
 
       <section>
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <Copy className="h-3.5 w-3.5" /> Duplicates
+          <Copy className="h-3.5 w-3.5" /> {t('crm.duplicates')}
         </div>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-          Duplicate leads<br /><span className="text-slate-400">{visibleClusters.length} cluster{visibleClusters.length !== 1 ? 's' : ''} remaining.</span>
+          {t('crm.duplicateLeads1')}<br /><span className="text-slate-400">{visibleClusters.length !== 1 ? t('crm.clustersRemaining', { count: visibleClusters.length }) : t('crm.clusterRemaining', { count: visibleClusters.length })}</span>
         </h1>
         <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-400">
-          Duplicate leads waste agent time and split the contact history. Merge keeps the primary record and combines timeline, notes, and stage.
+          {t('crm.duplicatesIntro')}
         </p>
       </section>
 
       {/* Stats */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Clusters remaining',  value: visibleClusters.length,  color: 'text-white' },
-          { label: 'High confidence',     value: highConf,                color: 'text-red-300' },
-          { label: 'At-risk leads',       value: atRisk,                  color: 'text-orange-300' },
-          { label: 'Merged this session', value: mergedCount,             color: 'text-gold' },
+          { label: t('crm.statClustersRemaining'), value: visibleClusters.length,  color: 'text-white' },
+          { label: t('crm.statHighConfidence'),    value: highConf,                color: 'text-red-300' },
+          { label: t('crm.statAtRiskLeads'),       value: atRisk,                  color: 'text-orange-300' },
+          { label: t('crm.statMergedSession'),     value: mergedCount,             color: 'text-gold' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-[18px] border border-line bg-surface p-4">
             <div className={`text-[28px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
@@ -164,9 +168,9 @@ export default function CrmDuplicatesPage() {
         <div className="mt-6 flex items-start gap-3 rounded-[18px] border border-red-400/20 bg-red-400/[0.05] p-5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
           <div>
-            <div className="text-sm font-semibold text-white">{highConf} high-confidence duplicate{highConf !== 1 ? 's' : ''} need immediate review</div>
+            <div className="text-sm font-semibold text-white">{highConf !== 1 ? t('crm.highConfNeedReview', { count: highConf }) : t('crm.highConfNeedReviewSingular', { count: highConf })}</div>
             <p className="mt-1 text-xs text-slate-400">
-              These records share a phone number across two different campaign sources. Both records may be receiving follow-up from different agents without either agent knowing.
+              {t('crm.highConfDesc')}
             </p>
           </div>
         </div>
@@ -176,8 +180,8 @@ export default function CrmDuplicatesPage() {
       <section className="mt-12">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div>
-            <div className="text-sm font-medium uppercase tracking-wider text-slate-400">Duplicate clusters</div>
-            <h2 className="mt-1 text-xl font-semibold text-white">Review and resolve</h2>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-400">{t('crm.duplicateClusters')}</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">{t('crm.reviewAndResolve')}</h2>
           </div>
           <div className="ml-auto flex gap-1.5">
             {(['All', 'high', 'medium', 'low'] as ConfidenceFilter[]).map((f) => (
@@ -191,7 +195,7 @@ export default function CrmDuplicatesPage() {
                     : 'border-line text-slate-400 hover:text-slate-300',
                 ].join(' ')}
               >
-                {f}
+                {f === 'All' ? t('crm.all') : f === 'high' ? t('crm.urgency.high') : f === 'medium' ? t('crm.urgency.medium') : t('crm.urgency.low')}
               </button>
             ))}
           </div>
@@ -200,8 +204,8 @@ export default function CrmDuplicatesPage() {
         {visibleClusters.length === 0 ? (
           <div className="rounded-[22px] border border-emerald-400/15 bg-gold/[0.04] py-14 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-gold" />
-            <div className="mt-3 text-sm font-semibold text-white">All clear — no duplicate clusters remaining</div>
-            <div className="mt-1 text-sm text-slate-400">{mergedCount} merged this session.</div>
+            <div className="mt-3 text-sm font-semibold text-white">{t('crm.allClearNoClusters')}</div>
+            <div className="mt-1 text-sm text-slate-400">{t('crm.mergedThisSession', { count: mergedCount })}</div>
           </div>
         ) : (
           <div className="mt-2 space-y-4">
@@ -214,11 +218,11 @@ export default function CrmDuplicatesPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <span className={`h-2 w-2 rounded-full ${conf.dot}`} />
-                      <span className={`text-xs font-semibold ${conf.text}`}>{conf.label}</span>
+                      <span className={`text-xs font-semibold ${conf.text}`}>{t(conf.labelKey)}</span>
                       <span className="text-slate-600">·</span>
                       <div className="flex flex-wrap gap-1.5">
                         {cluster.matchReason.map((r) => (
-                          <span key={r} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-400">{r}</span>
+                          <span key={r} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-400">{t(r)}</span>
                         ))}
                       </div>
                     </div>
@@ -226,11 +230,11 @@ export default function CrmDuplicatesPage() {
 
                   {/* Lead cards */}
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                    <LeadCard lead={cluster.primary} isPrimary={true} />
+                    <LeadCard lead={cluster.primary} isPrimary={true} t={t} />
                     <div className="flex items-center justify-center">
                       <GitMerge className="h-5 w-5 text-slate-600" />
                     </div>
-                    <LeadCard lead={cluster.duplicate} isPrimary={false} />
+                    <LeadCard lead={cluster.duplicate} isPrimary={false} t={t} />
                   </div>
 
                   {/* Actions */}
@@ -239,19 +243,19 @@ export default function CrmDuplicatesPage() {
                       onClick={() => handleMerge(cluster.id, cluster.primary.name)}
                       className="inline-flex items-center gap-1.5 rounded-full border border-gold/20 bg-gold/[0.08] px-4 py-1.5 text-xs font-medium text-gold transition hover:bg-gold/15 active:scale-95"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Merge into primary
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {t('crm.mergeIntoPrimary')}
                     </button>
                     <button
                       onClick={() => handleDismiss(cluster.id)}
                       className="inline-flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-surface-2 hover:text-slate-300 active:scale-95"
                     >
-                      Not a duplicate
+                      {t('crm.notADuplicate')}
                     </button>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${cluster.primary.id}`}
                       className="ml-auto inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
                     >
-                      Open primary <ArrowUpRight className="h-3 w-3" />
+                      {t('crm.openPrimary')} <ArrowUpRight className="h-3 w-3" />
                     </Link>
                   </div>
                 </div>
@@ -269,13 +273,13 @@ export default function CrmDuplicatesPage() {
 
       {/* Resolution guide */}
       <section className="mt-14">
-        <div className="text-sm font-medium uppercase tracking-wider text-slate-400">How it works</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Merge behaviour</h2>
+        <div className="text-sm font-medium uppercase tracking-wider text-slate-400">{t('crm.howItWorks')}</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">{t('crm.mergeBehaviour')}</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
-            { step: '01', title: 'Primary wins', body: 'The primary record keeps its stage, intent score, assigned agent, and source attribution.' },
-            { step: '02', title: 'Timeline merges', body: 'All calls, notes, WhatsApp events, and stage changes from both records are combined into one timeline.' },
-            { step: '03', title: 'Duplicate archived', body: 'The duplicate record is marked as merged and removed from active queues. Nothing is deleted.' },
+            { step: '01', title: t('crm.mergeStep1Title'), body: t('crm.mergeStep1Body') },
+            { step: '02', title: t('crm.mergeStep2Title'), body: t('crm.mergeStep2Body') },
+            { step: '03', title: t('crm.mergeStep3Title'), body: t('crm.mergeStep3Body') },
           ].map((item) => (
             <div key={item.step} className="rounded-[18px] border border-line bg-surface p-5">
               <div className="text-sm font-semibold text-gold/60">{item.step}</div>

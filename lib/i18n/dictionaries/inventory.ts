@@ -252,6 +252,15 @@ const en: Dict = {
   'inv.gen.leadField.email': 'Email',
   'inv.gen.leadField.nationality': 'Nationality',
   'inv.gen.leadField.budget': 'Budget',
+  // phone preview (static chrome)
+  'inv.gen.preview.call': 'Call',
+  'inv.gen.preview.requestPricing': 'Request Exclusive Pricing',
+  'inv.gen.preview.fullName': 'Full Name',
+  'inv.gen.preview.phoneWhatsapp': 'Phone / WhatsApp',
+  'inv.gen.preview.email': 'Email',
+  // generate route property-not-found
+  'inv.gen.notFound': 'Property not found.',
+  'inv.gen.backToInventory': 'Back to Inventory',
 }
 
 const ar: Dict = {
@@ -488,6 +497,13 @@ const ar: Dict = {
   'inv.gen.leadField.email': 'البريد الإلكتروني',
   'inv.gen.leadField.nationality': 'الجنسية',
   'inv.gen.leadField.budget': 'الميزانية',
+  'inv.gen.preview.call': 'اتصال',
+  'inv.gen.preview.requestPricing': 'اطلب الأسعار الحصرية',
+  'inv.gen.preview.fullName': 'الاسم الكامل',
+  'inv.gen.preview.phoneWhatsapp': 'الهاتف / WhatsApp',
+  'inv.gen.preview.email': 'البريد الإلكتروني',
+  'inv.gen.notFound': 'العقار غير موجود.',
+  'inv.gen.backToInventory': 'العودة إلى المخزون',
 }
 
 const ru: Dict = {
@@ -724,6 +740,13 @@ const ru: Dict = {
   'inv.gen.leadField.email': 'Эл. почта',
   'inv.gen.leadField.nationality': 'Гражданство',
   'inv.gen.leadField.budget': 'Бюджет',
+  'inv.gen.preview.call': 'Звонок',
+  'inv.gen.preview.requestPricing': 'Запросить эксклюзивные цены',
+  'inv.gen.preview.fullName': 'Полное имя',
+  'inv.gen.preview.phoneWhatsapp': 'Телефон / WhatsApp',
+  'inv.gen.preview.email': 'Эл. почта',
+  'inv.gen.notFound': 'Объект не найден.',
+  'inv.gen.backToInventory': 'Назад в Каталог',
 }
 
 export const inventory: Record<Locale, Dict> = { en, ar, ru }

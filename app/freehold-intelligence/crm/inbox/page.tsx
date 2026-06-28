@@ -331,7 +331,7 @@ export default function CrmInboxPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-white">{agent.name}</div>
-                          <div className="text-xs text-slate-400">{agent.totalLeads} leads</div>
+                          <div className="text-xs text-slate-400">{t('crm.agentLeadsCount', { count: agent.totalLeads })}</div>
                         </div>
                       </div>
                       <span className="text-sm text-gold">{agent.utilization}%</span>

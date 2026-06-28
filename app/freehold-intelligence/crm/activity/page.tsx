@@ -14,6 +14,9 @@ import {
 } from 'lucide-react'
 import { crmActivityLog, type CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, StatCard, Panel, EmptyState } from '@/components/freehold/ui'
+import { useI18n, useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 // ─── Supplemental static events to enrich the timeline ────────────────────────
 
@@ -138,11 +141,22 @@ const FILTERS: FilterDef[] = [
   { label: 'System',       types: ['system'] },
 ]
 
+const FILTER_LABEL_KEY: Record<FilterLabel, string> = {
+  'All':          'crm.all',
+  'Call':         'crm.filterCall',
+  'Message':      'crm.filterMessage',
+  'Stage Change': 'crm.filterStageChange',
+  'Assignment':   'crm.filterAssignment',
+  'Note':         'crm.filterNote',
+  'Alert':        'crm.filterAlert',
+  'System':       'crm.filterSystem',
+}
+
 // ─── Event config ──────────────────────────────────────────────────────────────
 
 type EventConfig = {
   Icon: typeof PhoneCall
-  label: string
+  labelKey: string
   iconColor: string
   iconBg: string
   badgeColor: string
@@ -151,49 +165,49 @@ type EventConfig = {
 const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
   call: {
     Icon: PhoneCall,
-    label: 'Call',
+    labelKey: 'crm.type.call',
     iconColor: 'text-gold',
     iconBg: 'bg-gold/10 border-gold/20',
     badgeColor: 'border-gold/20 bg-gold/10 text-gold',
   },
   whatsapp: {
     Icon: MessageCircle,
-    label: 'Message',
+    labelKey: 'crm.type.message',
     iconColor: 'text-slate-400',
     iconBg: 'bg-sky-400/10 border-sky-400/20',
     badgeColor: 'border-sky-400/20 bg-sky-400/10 text-slate-400',
   },
   note: {
     Icon: FileText,
-    label: 'Note',
+    labelKey: 'crm.type.note',
     iconColor: 'text-slate-400',
     iconBg: 'bg-surface-2 border-line-strong',
     badgeColor: 'border-line-strong bg-surface-2 text-slate-400',
   },
   stage_change: {
     Icon: ArrowLeftRight,
-    label: 'Stage Change',
+    labelKey: 'crm.type.stageChange',
     iconColor: 'text-gold',
     iconBg: 'bg-gold/10 border-gold/20',
     badgeColor: 'border-gold/20 bg-gold/10 text-gold',
   },
   assignment: {
     Icon: UserCog,
-    label: 'Assignment',
+    labelKey: 'crm.type.assignment',
     iconColor: 'text-slate-400',
     iconBg: 'bg-violet-400/10 border-violet-400/20',
     badgeColor: 'border-violet-400/20 bg-violet-400/10 text-slate-400',
   },
   follow_up: {
     Icon: Bell,
-    label: 'Alert',
+    labelKey: 'crm.type.alert',
     iconColor: 'text-amber-300',
     iconBg: 'bg-amber-400/10 border-amber-400/20',
     badgeColor: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
   },
   system: {
     Icon: Zap,
-    label: 'System',
+    labelKey: 'crm.type.system',
     iconColor: 'text-slate-400',
     iconBg: 'bg-rose-400/10 border-rose-400/20',
     badgeColor: 'border-rose-400/20 bg-rose-400/10 text-slate-400',
@@ -209,26 +223,26 @@ function toDateKey(iso: string): string {
 const TODAY     = new Date().toISOString().slice(0, 10)
 const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
-function dateLabel(key: string): string {
-  if (key === TODAY)     return 'Today'
-  if (key === YESTERDAY) return 'Yesterday'
-  return new Date(key).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+function dateLabel(key: string, t: TFn, dateLocale: string): string {
+  if (key === TODAY)     return t('crm.today')
+  if (key === YESTERDAY) return t('crm.yesterday')
+  return new Date(key).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: TFn): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins  = Math.floor(diff / 60000)
   const hours = Math.floor(mins / 60)
   const days  = Math.floor(hours / 24)
-  if (mins < 1)   return 'just now'
-  if (mins < 60)  return `${mins}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days === 1) return 'yesterday'
-  return `${days}d ago`
+  if (mins < 1)   return t('crm.justNow')
+  if (mins < 60)  return t('crm.timeMinAgo', { count: mins })
+  if (hours < 24) return t('crm.timeHrAgo', { count: hours })
+  if (days === 1) return t('crm.yesterday')
+  return t('crm.timeDayAgo', { count: days })
 }
 
-function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleString('en-GB', {
+function formatTimestamp(iso: string, dateLocale: string): string {
+  return new Date(iso).toLocaleString(dateLocale, {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai',
   })
 }
@@ -236,6 +250,7 @@ function formatTimestamp(iso: string): string {
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function OutcomeChip({ outcome }: { outcome?: string }) {
+  const t = useT()
   if (!outcome) return null
   const map: Record<string, string> = {
     connected:         'border-gold/20 bg-gold/10 text-gold',
@@ -244,17 +259,17 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
     callback_requested:'border-sky-400/20 bg-sky-400/10 text-slate-400',
     not_interested:    'border-rose-400/20 bg-rose-400/10 text-slate-400',
   }
-  const label: Record<string, string> = {
-    connected:          'Connected',
-    no_answer:          'No answer',
-    progressed:         'Progressed',
-    callback_requested: 'Callback requested',
-    not_interested:     'Not interested',
+  const labelKey: Record<string, string> = {
+    connected:          'crm.outcome.connected',
+    no_answer:          'crm.outcome.noAnswer',
+    progressed:         'crm.outcome.progressed',
+    callback_requested: 'crm.outcome.callbackRequested',
+    not_interested:     'crm.outcome.notInterested',
   }
   const cls = map[outcome] ?? 'border-line-strong bg-surface-2 text-slate-400'
   return (
     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {label[outcome] ?? outcome}
+      {labelKey[outcome] ? t(labelKey[outcome]) : outcome}
     </span>
   )
 }
@@ -291,6 +306,8 @@ function EventCard({
   isLast: boolean
   mounted: boolean
 }) {
+  const { t, locale } = useI18n()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-GB'
   const cfg = TYPE_CONFIG[event.type] ?? TYPE_CONFIG.system
   const { Icon } = cfg
 
@@ -311,7 +328,7 @@ function EventCard({
         {/* Top row */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${cfg.badgeColor}`}>
-            {cfg.label}
+            {t(cfg.labelKey)}
           </span>
           <Link
             href={`/freehold-intelligence/crm/leads/${event.leadId}`}
@@ -321,7 +338,7 @@ function EventCard({
           </Link>
           {typeof event.durationMin === 'number' && event.durationMin > 0 && (
             <span className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-xs text-slate-500">
-              {event.durationMin} min
+              {t('crm.minutesMin', { count: event.durationMin })}
             </span>
           )}
           <OutcomeChip outcome={event.outcome} />
@@ -332,11 +349,11 @@ function EventCard({
 
         {/* Footer */}
         <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-slate-500">
-          <span className="font-medium text-slate-400">{event.actor === 'system' ? 'System' : event.actor}</span>
+          <span className="font-medium text-slate-400">{event.actor === 'system' ? t('crm.systemLabel') : event.actor}</span>
           <span>·</span>
-          <span title={formatTimestamp(event.createdAt)}>{mounted ? timeAgo(event.createdAt) : formatTimestamp(event.createdAt)}</span>
+          <span title={formatTimestamp(event.createdAt, dateLocale)}>{mounted ? timeAgo(event.createdAt, t) : formatTimestamp(event.createdAt, dateLocale)}</span>
           <span>·</span>
-          <span>{formatTimestamp(event.createdAt)}</span>
+          <span>{formatTimestamp(event.createdAt, dateLocale)}</span>
         </div>
       </div>
     </div>
@@ -383,6 +400,8 @@ function BreakdownList({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CrmActivityPage() {
+  const { t, locale } = useI18n()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-GB'
   const [activeFilter, setActiveFilter] = useState<FilterLabel>('All')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
   const [mounted, setMounted] = useState(false)
@@ -428,13 +447,13 @@ export default function CrmActivityPage() {
   const byAgent = useMemo(() => {
     const map = new Map<string, number>()
     for (const e of sortedAll) {
-      const key = e.actor === 'system' ? 'System' : e.actor
+      const key = e.actor === 'system' ? t('crm.systemLabel') : e.actor
       map.set(key, (map.get(key) ?? 0) + 1)
     }
     return Array.from(map.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
-  }, [sortedAll])
+  }, [sortedAll, t])
 
   // Sidebar: by type
   const byType = useMemo(() => {
@@ -448,29 +467,29 @@ export default function CrmActivityPage() {
     }
     return Array.from(map.entries())
       .map(([label, count]) => ({
-        label: TYPE_CONFIG[label as CRMActivityEvent['type']]?.label ?? label,
+        label: TYPE_CONFIG[label as CRMActivityEvent['type']]?.labelKey ? t(TYPE_CONFIG[label as CRMActivityEvent['type']].labelKey) : label,
         count,
         color: colorMap[label] ?? '#D4AF37',
       }))
       .sort((a, b) => b.count - a.count)
-  }, [sortedAll])
+  }, [sortedAll, t])
 
   return (
     <div className="min-h-screen bg-surface px-4 pb-16 pt-6 sm:px-6 lg:pt-6">
       <div className="mx-auto max-w-6xl">
 
         <PageHeader
-          eyebrow="CRM"
+          eyebrow={t('crm.crm')}
           Icon={Activity}
-          title="Activity Log"
-          subtitle={`${sortedAll.length} events — every call, message, note and stage change in order.`}
+          title={t('crm.activityLog')}
+          subtitle={t('crm.activitySubtitle', { count: sortedAll.length })}
         />
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard value={stats.total}         label="Total events" />
-          <StatCard value={stats.callsToday}    label="Calls today"    delta={{ value: 'today', direction: 'up' }} />
-          <StatCard value={stats.messagesToday} label="Messages today" hint="via WhatsApp" />
-          <StatCard value={stats.stageChanges}  label="Stage changes"  delta={{ value: 'all time', direction: 'flat' }} />
+          <StatCard value={stats.total}         label={t('crm.statTotalEvents')} />
+          <StatCard value={stats.callsToday}    label={t('crm.statCallsToday')}    delta={{ value: t('crm.statTodayLabel'), direction: 'up' }} />
+          <StatCard value={stats.messagesToday} label={t('crm.statMessagesToday')} hint={t('crm.statViaWhatsApp')} />
+          <StatCard value={stats.stageChanges}  label={t('crm.statStageChanges')}  delta={{ value: t('crm.statAllTime'), direction: 'flat' }} />
         </div>
 
         {/* ── Filter bar ────────────────────────────────────────────────────── */}
@@ -478,7 +497,7 @@ export default function CrmActivityPage() {
           {FILTERS.map((f) => (
             <FilterPill
               key={f.label}
-              label={f.label}
+              label={t(FILTER_LABEL_KEY[f.label])}
               active={activeFilter === f.label}
               onClick={() => setActiveFilter(f.label)}
             />
@@ -493,8 +512,8 @@ export default function CrmActivityPage() {
             {grouped.length === 0 ? (
               <EmptyState
                 Icon={Activity}
-                title="No events match this filter"
-                description="Try selecting a different filter type above."
+                title={t('crm.noEventsMatch')}
+                description={t('crm.noEventsMatchDesc')}
               />
             ) : (
               grouped.map(([dateKey, events]) => (
@@ -502,7 +521,7 @@ export default function CrmActivityPage() {
                   {/* Date group header */}
                   <div className="mb-5 flex items-center gap-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      {dateLabel(dateKey)}
+                      {dateLabel(dateKey, t, dateLocale)}
                     </span>
                     <span className="flex-1 border-t border-line" />
                     <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm text-slate-500">
@@ -530,22 +549,22 @@ export default function CrmActivityPage() {
           <aside className="hidden lg:block">
             <div className="sticky top-8 space-y-6">
               <Panel className="p-6">
-                <BreakdownList title="By agent" items={byAgent} />
+                <BreakdownList title={t('crm.byAgent')} items={byAgent} />
               </Panel>
               <Panel className="p-6">
-                <BreakdownList title="By type" items={byType} />
+                <BreakdownList title={t('crm.byType')} items={byType} />
               </Panel>
               <Panel className="p-6">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Legend</div>
+                <div className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{t('crm.legend')}</div>
                 <div className="space-y-2.5">
                   {(Object.entries(TYPE_CONFIG) as [CRMActivityEvent['type'], EventConfig][]).map(([, cfg]) => {
                     const { Icon } = cfg
                     return (
-                      <div key={cfg.label} className="flex items-center gap-2.5">
+                      <div key={cfg.labelKey} className="flex items-center gap-2.5">
                         <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${cfg.iconBg}`}>
                           <Icon className={`h-3 w-3 ${cfg.iconColor}`} strokeWidth={2} />
                         </div>
-                        <span className="text-xs text-slate-400">{cfg.label}</span>
+                        <span className="text-xs text-slate-400">{t(cfg.labelKey)}</span>
                       </div>
                     )
                   })}

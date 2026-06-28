@@ -5,6 +5,7 @@ import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
 import { crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Section, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 // Static lead-source data (30-day window)
 const LEAD_SOURCES = [
@@ -54,8 +55,15 @@ type DateRange = '7d' | '30d' | '90d' | 'MTD'
 const DATE_RANGES: DateRange[] = ['7d', '30d', '90d', 'MTD']
 type IntentFilter = 'All' | 'High' | 'Medium' | 'Low'
 const INTENT_FILTERS: IntentFilter[] = ['All', 'High', 'Medium', 'Low']
+const INTENT_FILTER_KEY: Record<IntentFilter, string> = {
+  All:    'crm.all',
+  High:   'crm.intentHigh',
+  Medium: 'crm.intentMedium',
+  Low:    'crm.intentLow',
+}
 
 export default function CrmReportsPage() {
+  const t = useT()
   const { leads } = useLiveLeads()
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [intentFilter, setIntentFilter] = useState<IntentFilter>('All')
@@ -124,10 +132,10 @@ export default function CrmReportsPage() {
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
           <PageHeader
-            eyebrow="CRM · Reports"
+            eyebrow={t('crm.reportsEyebrow')}
             Icon={TrendingUp}
-            title="Lead Intelligence"
-            subtitle="Source mix, intent signals, and monthly revenue trend. Live lead stats from Freehold CRM · HubSpot sync pending."
+            title={t('crm.leadIntelligence')}
+            subtitle={t('crm.reportsSubtitle')}
             actions={
               <div className="flex items-center gap-2">
                 {DATE_RANGES.map((r) => (
@@ -149,16 +157,16 @@ export default function CrmReportsPage() {
           />
 
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Active leads"  value={totalLeads}        delta={{ value: `${critical} critical`, direction: critical > 0 ? 'down' : 'flat' }} />
-            <StatCard label="High intent"   value={highIntent}        hint={`${avgIntent} avg score`} delta={{ value: 'high intent', direction: 'up' }} />
-            <StatCard label="Connect rate"  value={`${connectRate}%`} hint={`${connected}/${callsLogged} calls`} delta={{ value: connectRate >= 50 ? 'good' : 'low', direction: connectRate >= 50 ? 'up' : 'down' }} />
-            <StatCard label="Revenue MTD"   value="AED 32M"           delta={{ value: '+16% vs Apr', direction: 'up' }} />
+            <StatCard label={t('crm.statActiveLeads')}  value={totalLeads}        delta={{ value: t('crm.statCriticalCount', { count: critical }), direction: critical > 0 ? 'down' : 'flat' }} />
+            <StatCard label={t('crm.statHighIntent')}   value={highIntent}        hint={t('crm.statAvgScore', { count: avgIntent })} delta={{ value: t('crm.statHighIntentLabel'), direction: 'up' }} />
+            <StatCard label={t('crm.statConnectRate')}  value={`${connectRate}%`} hint={t('crm.statCalls', { connected, total: callsLogged })} delta={{ value: connectRate >= 50 ? t('crm.statGood') : t('crm.statLow'), direction: connectRate >= 50 ? 'up' : 'down' }} />
+            <StatCard label={t('crm.statRevenueMtd')}   value="AED 32M"           delta={{ value: t('crm.statVsApr'), direction: 'up' }} />
           </div>
 
           <Section
             className="mt-10"
-            title="Monthly Lead Activity"
-            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">Live · last 5 months</span>}
+            title={t('crm.monthlyLeadActivity')}
+            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">{t('crm.liveLast5Months')}</span>}
           >
             <Panel className="p-6 sm:p-8">
               <div className="overflow-x-auto">
@@ -190,8 +198,8 @@ export default function CrmReportsPage() {
 
           <Section
             className="mt-10"
-            title="Lead sources"
-            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">Live</span>}
+            title={t('crm.leadSources')}
+            action={<span className="rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">{t('crm.live')}</span>}
           >
             <Panel className="p-6 sm:p-8">
               <div className="space-y-5">
@@ -199,7 +207,7 @@ export default function CrmReportsPage() {
                   <div key={src.source}>
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-slate-300">{src.source}</span>
-                      <span className="text-slate-400">{src.count} lead{src.count !== 1 ? 's' : ''}</span>
+                      <span className="text-slate-400">{src.count !== 1 ? t('crm.countLeads', { count: src.count }) : t('crm.countLead', { count: src.count })}</span>
                     </div>
                     <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
                       <div
@@ -215,7 +223,7 @@ export default function CrmReportsPage() {
 
           <Section
             className="mt-10"
-            title="Intent distribution"
+            title={t('crm.intentDistribution')}
             action={
               <div className="flex flex-wrap items-center gap-2">
                 {INTENT_FILTERS.map((f) => (
@@ -229,7 +237,7 @@ export default function CrmReportsPage() {
                         : 'border border-line-strong text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {f}
+                    {t(INTENT_FILTER_KEY[f])}
                   </button>
                 ))}
                 <select
@@ -237,14 +245,14 @@ export default function CrmReportsPage() {
                   onChange={(e) => setAgentFilter(e.target.value)}
                   className="rounded-full border border-line-strong bg-transparent px-3 py-1 text-xs text-slate-400 outline-none transition hover:border-slate-500 hover:text-slate-200"
                 >
-                  {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-surface">{a === 'All' ? 'All agents' : a}</option>)}
+                  {ALL_AGENTS.map((a) => <option key={a} value={a} className="bg-surface">{a === 'All' ? t('crm.allAgents') : a}</option>)}
                 </select>
               </div>
             }
           >
             <Panel className="p-6 sm:p-8">
               {filteredLeads.length === 0 ? (
-                <EmptyState Icon={Target} title="No leads match these filters" />
+                <EmptyState Icon={Target} title={t('crm.noLeadsMatchFilters')} />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {filteredLeads.map((lead) => (
@@ -271,8 +279,8 @@ export default function CrmReportsPage() {
 
           <Section
             className="mt-10"
-            title="Monthly revenue"
-            action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">Jan – May</span>}
+            title={t('crm.monthlyRevenue')}
+            action={<span className="rounded-full border border-amber-400/20 bg-amber-400/[0.06] px-2 py-0.5 text-xs text-amber-300">{t('crm.janMay')}</span>}
           >
             <Panel className="p-6 sm:p-8">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-5">
@@ -300,41 +308,41 @@ export default function CrmReportsPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
             <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-5">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold">Top channel</div>
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold">{t('crm.topChannel')}</div>
               <div className="mt-3 text-[16px] font-semibold text-white">{sources[0]?.source ?? '—'}</div>
-              <div className="mt-1 text-xs text-slate-400">{sources[0]?.count ?? 0} leads · highest volume</div>
+              <div className="mt-1 text-xs text-slate-400">{t('crm.leadsHighestVolume', { count: sources[0]?.count ?? 0 })}</div>
             </div>
 
             <Panel className="p-5">
-              <PanelHeader title="Cohort watch" icon={<Users className="h-3.5 w-3.5" />} />
-              <div className="mt-3 text-[14px] font-semibold text-white">Golden Visa buyers</div>
+              <PanelHeader title={t('crm.cohortWatch')} icon={<Users className="h-3.5 w-3.5" />} />
+              <div className="mt-3 text-[14px] font-semibold text-white">{t('crm.goldenVisaBuyers')}</div>
               <div className="mt-2 text-xs leading-relaxed text-slate-400">
-                1 lead tagged GV-eligible · AED 2.5M+ budget · at Qualified stage.
+                {t('crm.cohortDesc')}
               </div>
             </Panel>
 
             <Panel className="p-5">
-              <PanelHeader title="Activity this week" />
+              <PanelHeader title={t('crm.activityThisWeek')} />
               <div className="mt-3 space-y-2 text-sm text-slate-300">
                 <div className="flex justify-between">
-                  <span>Calls logged</span>
+                  <span>{t('crm.callsLogged')}</span>
                   <span className="font-semibold text-white">{callsLogged}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Connected</span>
+                  <span>{t('crm.outcome.connected')}</span>
                   <span className="font-semibold text-gold">{connected}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Connect rate</span>
+                  <span>{t('crm.connectRate')}</span>
                   <span className={`font-semibold ${connectRate >= 50 ? 'text-gold' : 'text-orange-300'}`}>{connectRate}%</span>
                 </div>
               </div>
             </Panel>
 
             <Panel className="p-5">
-              <PanelHeader title="Next report" />
-              <div className="mt-3 text-[14px] text-slate-300">Weekly · Mondays 09:00 GST</div>
-              <div className="mt-1 text-xs text-slate-400">Sent to owner + sales leads.</div>
+              <PanelHeader title={t('crm.nextReport')} />
+              <div className="mt-3 text-[14px] text-slate-300">{t('crm.nextReportSchedule')}</div>
+              <div className="mt-1 text-xs text-slate-400">{t('crm.nextReportTo')}</div>
             </Panel>
           </div>
         </aside>

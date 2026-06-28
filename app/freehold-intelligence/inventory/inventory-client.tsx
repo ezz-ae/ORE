@@ -13,6 +13,9 @@ import {
   type AdVerdict,
 } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -38,15 +41,8 @@ function statusBadge(status: PropertyStatus) {
   }
 }
 
-function statusLabel(status: PropertyStatus): string {
-  switch (status) {
-    case 'active': return 'Active'
-    case 'ready': return 'Ready'
-    case 'off_plan': return 'Off Plan'
-    case 'under_construction': return 'Under Construction'
-    case 'sold_out': return 'Sold Out'
-    case 'coming_soon': return 'Coming Soon'
-  }
+function statusLabel(status: PropertyStatus, t: TFn): string {
+  return t(`inv.status.${status}`)
 }
 
 function landingBadge(status: LandingStatus) {
@@ -62,13 +58,8 @@ function landingBadge(status: LandingStatus) {
   }
 }
 
-function landingLabel(status: LandingStatus): string {
-  switch (status) {
-    case 'live': return 'Live'
-    case 'draft': return 'Draft'
-    case 'pending_review': return 'Pending Review'
-    case 'missing': return 'Missing'
-  }
+function landingLabel(status: LandingStatus, t: TFn): string {
+  return t(`inv.landing.${status}`)
 }
 
 function readinessBar(value: number) {
@@ -79,22 +70,22 @@ function readinessBar(value: number) {
 
 type FilterStatus = 'all' | PropertyStatus
 
-const FILTERS: { value: FilterStatus; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'off_plan', label: 'Off Plan' },
-  { value: 'ready', label: 'Ready' },
-  { value: 'under_construction', label: 'Under Construction' },
-  { value: 'coming_soon', label: 'Coming Soon' },
+const FILTERS: { value: FilterStatus; labelKey: string }[] = [
+  { value: 'all', labelKey: 'inv.filter.all' },
+  { value: 'off_plan', labelKey: 'inv.status.off_plan' },
+  { value: 'ready', labelKey: 'inv.status.ready' },
+  { value: 'under_construction', labelKey: 'inv.status.under_construction' },
+  { value: 'coming_soon', labelKey: 'inv.status.coming_soon' },
 ]
 
-const VERDICT_META: Record<AdVerdict, { label: string; cls: string; Icon: typeof Rocket }> = {
-  scale:     { label: 'Scale',     cls: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300', Icon: TrendingUp },
-  launch:    { label: 'Launch',    cls: 'border-gold/25 bg-gold/[0.07] text-[#F8E7AE]',       Icon: Rocket },
-  fix_first: { label: 'Fix first', cls: 'border-amber-400/25 bg-amber-400/[0.06] text-amber-300',        Icon: Wrench },
-  hold:      { label: 'Hold',      cls: 'border-white/[0.1] bg-surface-2 text-slate-400',             Icon: AlertTriangle },
+const VERDICT_META: Record<AdVerdict, { labelKey: string; cls: string; Icon: typeof Rocket }> = {
+  scale:     { labelKey: 'inv.verdict.scale',     cls: 'border-emerald-400/25 bg-emerald-400/[0.07] text-emerald-300', Icon: TrendingUp },
+  launch:    { labelKey: 'inv.verdict.launch',    cls: 'border-gold/25 bg-gold/[0.07] text-[#F8E7AE]',       Icon: Rocket },
+  fix_first: { labelKey: 'inv.verdict.fix_first', cls: 'border-amber-400/25 bg-amber-400/[0.06] text-amber-300',        Icon: Wrench },
+  hold:      { labelKey: 'inv.verdict.hold',      cls: 'border-white/[0.1] bg-surface-2 text-slate-400',             Icon: AlertTriangle },
 }
 
-function CandidateCard({ c }: { c: AdCandidate }) {
+function CandidateCard({ c, t }: { c: AdCandidate; t: TFn }) {
   const m = VERDICT_META[c.verdict]
   return (
     <div className="flex flex-col rounded-[16px] border border-line bg-surface p-4">
@@ -104,14 +95,14 @@ function CandidateCard({ c }: { c: AdCandidate }) {
           <div className="mt-0.5 truncate text-xs text-slate-500">{c.area} · {c.developer}</div>
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${m.cls}`}>
-          <m.Icon className="h-3 w-3" /> {m.label}
+          <m.Icon className="h-3 w-3" /> {t(m.labelKey)}
         </span>
       </div>
 
       <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">
         <span className="font-semibold tabular-nums text-slate-300">{c.score}<span className="text-slate-500">/100</span></span>
-        {c.roi !== null && <span className="text-gold/80">{c.roi.toFixed(1)}% ROI</span>}
-        <span>{c.leads30d} leads</span>
+        {c.roi !== null && <span className="text-gold/80">{t('inv.candidate.roi', { roi: c.roi.toFixed(1) })}</span>}
+        <span>{t('inv.candidate.leads', { count: c.leads30d })}</span>
       </div>
 
       <ul className="mt-3 space-y-1">
@@ -128,6 +119,7 @@ function CandidateCard({ c }: { c: AdCandidate }) {
 }
 
 export default function InventoryClient({ initialProperties }: { initialProperties: InventoryProperty[] }) {
+  const t = useT()
   const stats = getInventoryStats(initialProperties)
   const analysis = getInventoryAnalysis(initialProperties)
   const [filter, setFilter] = useState<FilterStatus>('all')
@@ -151,39 +143,39 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 
       {/* Header */}
       <PageHeader
-        eyebrow="Inventory"
+        eyebrow={t('inv.eyebrow')}
         Icon={LayoutGrid}
-        title="Property Inventory"
-        subtitle="Ad readiness, landing status, and ROI across all tracked properties"
+        title={t('inv.pageTitle')}
+        subtitle={t('inv.pageSubtitle')}
       />
 
       {/* Stats row */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total Properties" value={stats.total} hint="in portfolio" />
-        <StatCard label="Live Landings" value={stats.live} hint="pages published" delta={{ value: 'live', direction: 'up' }} />
-        <StatCard label="Missing Landing" value={stats.missingLanding} hint="need pages built" delta={stats.missingLanding > 0 ? { value: 'action needed', direction: 'down' } : undefined} />
-        <StatCard label="Ad-Ready" value={stats.adReady} hint="cleared for launch" delta={{ value: 'ready to run', direction: 'up' }} />
+        <StatCard label={t('inv.stat.totalProperties')} value={stats.total} hint={t('inv.stat.totalProperties.hint')} />
+        <StatCard label={t('inv.stat.liveLandings')} value={stats.live} hint={t('inv.stat.liveLandings.hint')} delta={{ value: t('inv.stat.liveLandings.delta'), direction: 'up' }} />
+        <StatCard label={t('inv.stat.missingLanding')} value={stats.missingLanding} hint={t('inv.stat.missingLanding.hint')} delta={stats.missingLanding > 0 ? { value: t('inv.stat.missingLanding.delta'), direction: 'down' } : undefined} />
+        <StatCard label={t('inv.stat.adReady')} value={stats.adReady} hint={t('inv.stat.adReady.hint')} delta={{ value: t('inv.stat.adReady.delta'), direction: 'up' }} />
       </div>
 
       {/* ── Ad-readiness analysis ─────────────────────────────────────────── */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-            <Sparkles className="h-3.5 w-3.5" /> Which to advertise
+            <Sparkles className="h-3.5 w-3.5" /> {t('inv.whichToAdvertise')}
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span className="text-emerald-300">{analysis.counts.scale} scale</span>
-            <span className="text-[#F8E7AE]">{analysis.counts.launch} launch</span>
-            <span className="text-amber-300">{analysis.counts.fixFirst} fix first</span>
+            <span className="text-emerald-300">{t('inv.count.scale', { count: analysis.counts.scale })}</span>
+            <span className="text-[#F8E7AE]">{t('inv.count.launch', { count: analysis.counts.launch })}</span>
+            <span className="text-amber-300">{t('inv.count.fixFirst', { count: analysis.counts.fixFirst })}</span>
           </div>
         </div>
         <p className="mt-1.5 text-xs text-slate-500">
-          Ranked by a composite of ad readiness, ROI, lead momentum, data quality and landing status.
+          {t('inv.rankedBy')}
         </p>
 
         {/* Top picks */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {analysis.topPicks.map((c) => <CandidateCard key={c.id} c={c} />)}
+          {analysis.topPicks.map((c) => <CandidateCard key={c.id} c={c} t={t} />)}
         </div>
 
         {/* Fix-first + missed opportunities */}
@@ -192,7 +184,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
             {analysis.fixFirst.length > 0 && (
               <div className="rounded-[16px] border border-amber-400/15 bg-amber-400/[0.03] p-4">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-amber-300/90">
-                  <Wrench className="h-3.5 w-3.5" /> Fix first — high potential, blocked
+                  <Wrench className="h-3.5 w-3.5" /> {t('inv.fixFirstTitle')}
                 </div>
                 <ul className="mt-3 space-y-2">
                   {analysis.fixFirst.map((c) => (
@@ -201,7 +193,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
                         <div className="truncate text-xs font-medium text-slate-300">{c.name}</div>
                         <div className="truncate text-xs text-slate-500">{c.nextAction}</div>
                       </div>
-                      <Link href={`/freehold-intelligence/inventory/${c.id}`} className="shrink-0 text-xs text-gold/70 hover:text-gold">Open</Link>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}`} className="shrink-0 text-xs text-gold/70 hover:text-gold">{t('inv.action.open')}</Link>
                     </li>
                   ))}
                 </ul>
@@ -210,16 +202,16 @@ export default function InventoryClient({ initialProperties }: { initialProperti
             {analysis.missedOpportunities.length > 0 && (
               <div className="rounded-[16px] border border-rose-400/15 bg-rose-400/[0.03] p-4">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-rose-300/90">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Missed — high ROI, no landing page
+                  <AlertTriangle className="h-3.5 w-3.5" /> {t('inv.missedTitle')}
                 </div>
                 <ul className="mt-3 space-y-2">
                   {analysis.missedOpportunities.map((c) => (
                     <li key={c.id} className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-xs font-medium text-slate-300">{c.name}</div>
-                        <div className="truncate text-xs text-slate-500">{c.roi?.toFixed(1)}% ROI · build landing to capture demand</div>
+                        <div className="truncate text-xs text-slate-500">{t('inv.missed.buildLanding', { roi: c.roi?.toFixed(1) ?? '—' })}</div>
                       </div>
-                      <Link href={`/freehold-intelligence/inventory/${c.id}/generate`} className="shrink-0 text-xs text-gold/70 hover:text-gold">Build LP</Link>
+                      <Link href={`/freehold-intelligence/inventory/${c.id}/generate`} className="shrink-0 text-xs text-gold/70 hover:text-gold">{t('inv.action.buildLp')}</Link>
                     </li>
                   ))}
                 </ul>
@@ -245,7 +237,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
                   : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-slate-500',
               ].join(' ')}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           ))}
         </div>
@@ -255,7 +247,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Search name, area, developer…"
+            placeholder={t('inv.search.namePlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-[12px] border border-line bg-surface-2 py-2 pl-8 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-gold/50 focus:outline-none"
@@ -269,23 +261,23 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           <thead>
             <tr className="border-b border-line">
               {[
-                'Name',
-                'Area / Developer',
-                'Status',
-                'Starting Price',
-                'Bedrooms',
-                'ROI %',
-                'Landing',
-                'Data Quality',
-                'Ad Readiness',
-                'Leads 30d',
-                'Actions',
+                'inv.col.name',
+                'inv.col.areaDeveloper',
+                'inv.col.status',
+                'inv.col.startingPrice',
+                'inv.col.bedrooms',
+                'inv.col.roi',
+                'inv.col.landing',
+                'inv.col.dataQuality',
+                'inv.col.adReadiness',
+                'inv.col.leads30d',
+                'inv.col.actions',
               ].map((col) => (
                 <th
                   key={col}
                   className="px-4 py-3 text-left text-xs font-medium uppercase tracking-[0.18em] text-slate-500 first:pl-5 last:pr-5"
                 >
-                  {col}
+                  {t(col)}
                 </th>
               ))}
             </tr>
@@ -296,15 +288,15 @@ export default function InventoryClient({ initialProperties }: { initialProperti
                 <td colSpan={11}>
                   <EmptyState
                     Icon={LayoutGrid}
-                    title="No properties match your filters"
-                    description="Try a different status or clear the search."
+                    title={t('inv.empty.title')}
+                    description={t('inv.empty.description')}
                     className="rounded-none border-x-0 border-b-0"
                   />
                 </td>
               </tr>
             ) : (
               filtered.map((prop) => (
-                <PropertyRow key={prop.id} prop={prop} />
+                <PropertyRow key={prop.id} prop={prop} t={t} />
               ))
             )}
           </tbody>
@@ -312,13 +304,13 @@ export default function InventoryClient({ initialProperties }: { initialProperti
       </div>
 
       <p className="mt-3 text-sm text-slate-500">
-        {filtered.length} of {initialProperties.length} properties · sorted by ad readiness
+        {t('inv.propertiesSorted', { shown: filtered.length, total: initialProperties.length })}
       </p>
     </div>
   )
 }
 
-function PropertyRow({ prop }: { prop: InventoryProperty }) {
+function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
   return (
     <tr className="group transition hover:bg-surface-2">
       {/* Name */}
@@ -336,7 +328,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
       {/* Status */}
       <td className="px-4 py-3.5">
         <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(prop.status)}`}>
-          {statusLabel(prop.status)}
+          {statusLabel(prop.status, t)}
         </span>
       </td>
 
@@ -368,11 +360,11 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
             rel="noopener noreferrer"
             className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium transition hover:opacity-80 ${landingBadge(prop.landingStatus)}`}
           >
-            {landingLabel(prop.landingStatus)} <ArrowUpRight className="h-3 w-3" />
+            {landingLabel(prop.landingStatus, t)} <ArrowUpRight className="h-3 w-3" />
           </a>
         ) : (
           <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${landingBadge(prop.landingStatus)}`}>
-            {landingLabel(prop.landingStatus)}
+            {landingLabel(prop.landingStatus, t)}
           </span>
         )}
       </td>
@@ -419,7 +411,7 @@ function PropertyRow({ prop }: { prop: InventoryProperty }) {
             href={`/freehold-intelligence/inventory/${prop.id}`}
             className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-3 py-1 text-sm text-slate-400 transition hover:border-white/20 hover:text-white"
           >
-            View <ArrowUpRight className="h-3 w-3" />
+            {t('inv.action.view')} <ArrowUpRight className="h-3 w-3" />
           </Link>
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}

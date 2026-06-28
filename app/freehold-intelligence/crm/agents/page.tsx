@@ -5,30 +5,32 @@ import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { crmAgentRoster, type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 const STATUS_CONFIG = {
-  available:    { label: 'Available',    classes: 'bg-gold/10 text-gold border-gold/20' },
-  at_capacity:  { label: 'At capacity',  classes: 'bg-gold/10 text-gold border-gold/25'       },
-  overloaded:   { label: 'Overloaded',   classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
+  available:    { labelKey: 'crm.status.available',  classes: 'bg-gold/10 text-gold border-gold/20' },
+  at_capacity:  { labelKey: 'crm.status.atCapacity', classes: 'bg-gold/10 text-gold border-gold/25'       },
+  overloaded:   { labelKey: 'crm.status.overloaded', classes: 'bg-red-400/10 text-red-300 border-red-400/20'             },
 }
 
 type StatusFilter = 'All' | 'available' | 'at_capacity' | 'overloaded'
-const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: 'All',          label: 'All'          },
-  { key: 'available',    label: 'Available'    },
-  { key: 'at_capacity',  label: 'At capacity'  },
-  { key: 'overloaded',   label: 'Overloaded'   },
+const STATUS_FILTERS: { key: StatusFilter; labelKey: string }[] = [
+  { key: 'All',          labelKey: 'crm.all'               },
+  { key: 'available',    labelKey: 'crm.status.available'  },
+  { key: 'at_capacity',  labelKey: 'crm.status.atCapacity' },
+  { key: 'overloaded',   labelKey: 'crm.status.overloaded' },
 ]
 
 type SortKey = 'leads' | 'utilization' | 'wins' | 'overdue'
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'leads',       label: 'Leads'       },
-  { key: 'utilization', label: 'Utilization' },
-  { key: 'wins',        label: 'Wins'        },
-  { key: 'overdue',     label: 'Overdue'     },
+const SORT_OPTIONS: { key: SortKey; labelKey: string }[] = [
+  { key: 'leads',       labelKey: 'crm.sortLeads'       },
+  { key: 'utilization', labelKey: 'crm.sortUtilization' },
+  { key: 'wins',        labelKey: 'crm.sortWins'        },
+  { key: 'overdue',     labelKey: 'crm.sortOverdue'     },
 ]
 
 export default function CrmAgentsPage() {
+  const t = useT()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
   const [sortBy, setSortBy] = useState<SortKey>('utilization')
   const [contacted, setContacted] = useState<Set<string>>(new Set())
@@ -66,11 +68,11 @@ export default function CrmAgentsPage() {
     if (mode === 'call') {
       if (phone) { window.location.href = `tel:${phone}` }
       else if (agent.email) { window.location.href = `mailto:${agent.email}` }
-      else { setFlash('No contact number on file'); setTimeout(() => setFlash(null), 2500); return }
+      else { setFlash(t('crm.noContactNumber')); setTimeout(() => setFlash(null), 2500); return }
     } else {
       if (phone) { window.open(`https://wa.me/${phone.replace(/^\+/, '')}`, '_blank') }
       else if (agent.email) { window.location.href = `mailto:${agent.email}` }
-      else { setFlash('No contact details on file'); setTimeout(() => setFlash(null), 2500); return }
+      else { setFlash(t('crm.noContactDetails')); setTimeout(() => setFlash(null), 2500); return }
     }
     setContacted((prev) => new Set([...prev, agent.id]))
   }
@@ -80,19 +82,21 @@ export default function CrmAgentsPage() {
       <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-10 xl:grid-cols-[1fr_380px] xl:gap-14">
         <div className="min-w-0">
           <PageHeader
-            eyebrow="CRM"
+            eyebrow={t('crm.crm')}
             Icon={UserCheck}
-            title="Sales team performance"
-            subtitle={`${agents.length} active advisors · ${totalLeads} live leads · ${totalOverdue} overdue follow-up${totalOverdue !== 1 ? 's' : ''}. Watch utilization and time-to-close.`}
+            title={t('crm.salesTeamPerformance')}
+            subtitle={totalOverdue !== 1
+              ? t('crm.agentsSubtitle', { agents: agents.length, leads: totalLeads, overdue: totalOverdue })
+              : t('crm.agentsSubtitleSingular', { agents: agents.length, leads: totalLeads, overdue: totalOverdue })}
           />
 
           {overloaded.length > 0 && (
             <div className="mt-7 flex items-start gap-3 rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               <p className="text-sm text-slate-300">
-                <span className="font-semibold text-white">{overloaded.map((a) => a.name).join(', ')}</span>
-                {' '}
-                {overloaded.length === 1 ? 'is' : 'are'} overloaded. Redistribute before assigning new leads.
+                {overloaded.length === 1
+                  ? t('crm.overloadedWarningOne', { names: overloaded.map((a) => a.name).join(', ') })
+                  : t('crm.overloadedWarningMany', { names: overloaded.map((a) => a.name).join(', ') })}
               </p>
             </div>
           )}
@@ -100,7 +104,7 @@ export default function CrmAgentsPage() {
           {/* Filter + sort controls */}
           <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap gap-1.5">
-              {STATUS_FILTERS.map(({ key, label }) => (
+              {STATUS_FILTERS.map(({ key, labelKey }) => (
                 <button
                   key={key}
                   onClick={() => setStatusFilter(key)}
@@ -111,13 +115,13 @@ export default function CrmAgentsPage() {
                       : 'border border-line-strong text-slate-400 hover:border-slate-500 hover:text-slate-200',
                   ].join(' ')}
                 >
-                  {label}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>Sort:</span>
-              {SORT_OPTIONS.map(({ key, label }) => (
+              <span>{t('crm.sort')}</span>
+              {SORT_OPTIONS.map(({ key, labelKey }) => (
                 <button
                   key={key}
                   onClick={() => setSortBy(key)}
@@ -126,7 +130,7 @@ export default function CrmAgentsPage() {
                     sortBy === key ? 'text-white' : 'text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
-                  {label}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -135,8 +139,8 @@ export default function CrmAgentsPage() {
           {filtered.length === 0 ? (
             <EmptyState
               Icon={UserCheck}
-              title="No agents match this filter"
-              description="Try selecting a different status or clearing the filter."
+              title={t('crm.noAgentsMatch')}
+              description={t('crm.noAgentsMatchDesc')}
               className="mt-6"
             />
           ) : (
@@ -154,10 +158,10 @@ export default function CrmAgentsPage() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2.5">
                             <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
-                            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.classes}`}>{st.label}</span>
+                            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.classes}`}>{t(st.labelKey)}</span>
                             {wasContacted && (
                               <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">
-                                <CheckCircle className="h-3 w-3" /> Contacted
+                                <CheckCircle className="h-3 w-3" /> {t('crm.contacted')}
                               </span>
                             )}
                           </div>
@@ -168,19 +172,19 @@ export default function CrmAgentsPage() {
                       <div className="grid grid-cols-2 gap-5 sm:grid-cols-4 sm:gap-6">
                         <div className="text-center">
                           <div className="text-[22px] font-semibold text-white">{agent.totalLeads}</div>
-                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Leads</div>
+                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{t('crm.colLeads')}</div>
                         </div>
                         <div className="text-center">
                           <div className={`text-[22px] font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-500'}`}>{agent.hotLeads}</div>
-                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Hot</div>
+                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{t('crm.colHot')}</div>
                         </div>
                         <div className="text-center">
                           <div className={`text-[22px] font-semibold ${agent.overdueFollowUps > 0 ? 'text-orange-400' : 'text-slate-500'}`}>{agent.overdueFollowUps}</div>
-                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Overdue</div>
+                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{t('crm.colOverdue')}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-[22px] font-semibold text-gold">{agent.recentWins}</div>
-                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">Wins</div>
+                          <div className="text-xs uppercase tracking-[0.12em] text-slate-500">{t('crm.colWins')}</div>
                         </div>
                       </div>
                     </div>
@@ -188,7 +192,7 @@ export default function CrmAgentsPage() {
                     {/* Utilization bar */}
                     <div className="mt-5 border-t border-line pt-4">
                       <div className="flex items-center justify-between text-sm text-slate-400">
-                        <span>Utilization</span>
+                        <span>{t('crm.utilization')}</span>
                         <span className={agent.utilization >= 90 ? 'text-red-300' : agent.utilization >= 75 ? 'text-gold' : 'text-gold'}>
                           {agent.utilization}%
                         </span>
@@ -204,20 +208,20 @@ export default function CrmAgentsPage() {
                           href="/freehold-intelligence/crm/assignment"
                           className="text-sm text-gold/60 transition hover:text-gold"
                         >
-                          View assignments
+                          {t('crm.viewAssignments')}
                         </Link>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleContact(agent, 'call')}
                             className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
-                            <Phone className="h-3 w-3" /> Call
+                            <Phone className="h-3 w-3" /> {t('crm.call')}
                           </button>
                           <button
                             onClick={() => handleContact(agent, 'message')}
                             className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 text-sm font-medium text-slate-400 transition hover:bg-surface-3 active:scale-95"
                           >
-                            <MessageSquare className="h-3 w-3" /> Message
+                            <MessageSquare className="h-3 w-3" /> {t('crm.message')}
                           </button>
                         </div>
                       </div>
@@ -234,38 +238,38 @@ export default function CrmAgentsPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
             <Panel>
-              <PanelHeader title="Team load" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              <PanelHeader title={t('crm.teamLoad')} icon={<TrendingUp className="h-3.5 w-3.5" />} />
               <div className="p-5">
                 <div className="text-[34px] font-semibold text-white">{totalLeads}</div>
-                <div className="mt-1 text-xs text-slate-400">leads across {agents.length} agents</div>
+                <div className="mt-1 text-xs text-slate-400">{t('crm.leadsAcrossAgents', { count: agents.length })}</div>
               </div>
             </Panel>
 
             {topPerformer && (
               <Panel>
-                <PanelHeader title="Top performer" />
+                <PanelHeader title={t('crm.topPerformer')} />
                 <div className="p-5">
                   <div className="text-[18px] font-semibold text-white">{topPerformer.name}</div>
-                  <div className="mt-1 text-xs text-slate-400">{topPerformer.recentWins} recent wins · {topPerformer.specialty.split(' · ')[0]}</div>
+                  <div className="mt-1 text-xs text-slate-400">{t('crm.recentWins', { count: topPerformer.recentWins, specialty: topPerformer.specialty.split(' · ')[0] })}</div>
                 </div>
               </Panel>
             )}
 
             {overloaded.length > 0 && (
               <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.05] to-transparent p-5">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold">Coaching flag</div>
-                <div className="mt-3 text-[14px] font-semibold text-white">{overloaded[0].name} — overloaded</div>
+                <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold">{t('crm.coachingFlag')}</div>
+                <div className="mt-3 text-[14px] font-semibold text-white">{t('crm.agentOverloaded', { name: overloaded[0].name })}</div>
                 <div className="mt-2 text-xs leading-relaxed text-slate-400">
-                  {overloaded[0].utilization}% utilization · {overloaded[0].overdueFollowUps} overdue. Redistribute before assigning new leads.
+                  {t('crm.coachingDesc', { utilization: overloaded[0].utilization, overdue: overloaded[0].overdueFollowUps })}
                 </div>
               </div>
             )}
 
             <Panel>
-              <PanelHeader title="Avg. time-to-close" />
+              <PanelHeader title={t('crm.avgTimeToClose')} />
               <div className="p-5">
                 <div className="text-[34px] font-semibold text-white">18d</div>
-                <div className="mt-1 text-xs text-slate-400">target: &lt;21 days</div>
+                <div className="mt-1 text-xs text-slate-400">{t('crm.target21days')}</div>
               </div>
             </Panel>
           </div>

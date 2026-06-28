@@ -9,6 +9,9 @@ import {
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { inventoryProperties, type PropertyStatus, type LandingStatus } from '@/src/features/freehold-intelligence/inventory'
+import { getServerT } from '@/lib/i18n/server'
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -28,15 +31,8 @@ function statusBadge(status: PropertyStatus) {
   }
 }
 
-function statusLabel(status: PropertyStatus): string {
-  switch (status) {
-    case 'active': return 'Active'
-    case 'ready': return 'Ready'
-    case 'off_plan': return 'Off Plan'
-    case 'under_construction': return 'Under Construction'
-    case 'sold_out': return 'Sold Out'
-    case 'coming_soon': return 'Coming Soon'
-  }
+function statusLabel(status: PropertyStatus, t: TFn): string {
+  return t(`inv.status.${status}`)
 }
 
 function landingBadge(status: LandingStatus) {
@@ -48,13 +44,8 @@ function landingBadge(status: LandingStatus) {
   }
 }
 
-function landingLabel(status: LandingStatus): string {
-  switch (status) {
-    case 'live': return 'Live'
-    case 'draft': return 'Draft'
-    case 'pending_review': return 'Pending Review'
-    case 'missing': return 'Missing'
-  }
+function landingLabel(status: LandingStatus, t: TFn): string {
+  return t(`inv.landing.${status}`)
 }
 
 function readinessBar(value: number) {
@@ -74,6 +65,7 @@ function DetailRow({ label, value }: { label: string; value: string | number | n
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const { t } = await getServerT()
 
   // Try DB first, fall back to static data
   let prop = await getInventoryPropertyBySlug(id)
@@ -85,12 +77,12 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     return (
       <div className="mx-auto max-w-3xl px-4 pb-16 pt-20 sm:px-6 text-center">
         <div className="text-[48px] font-semibold text-slate-700">404</div>
-        <p className="mt-3 text-[16px] text-slate-400">Property not found.</p>
+        <p className="mt-3 text-[16px] text-slate-400">{t('inv.detail.notFound')}</p>
         <Link
           href="/freehold-intelligence/inventory"
           className="mt-6 inline-flex items-center gap-1.5 text-sm text-gold/70 transition hover:text-gold"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to Inventory
+          <ArrowLeft className="h-3.5 w-3.5" /> {t('inv.detail.back')}
         </Link>
       </div>
     )
@@ -108,14 +100,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         href="/freehold-intelligence/inventory"
         className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> Back to Inventory
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('inv.detail.back')}
       </Link>
 
       {/* Header */}
       <section className="mt-7">
         <div className="flex flex-wrap items-center gap-2">
           <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(prop.status)}`}>
-            {statusLabel(prop.status)}
+            {statusLabel(prop.status, t)}
           </span>
           <span className="text-sm capitalize text-slate-500">{prop.type}</span>
         </div>
@@ -131,7 +123,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
-            <Sparkles className="h-4 w-4" /> Generate Landing Page
+            <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
           </Link>
         </div>
       </section>
@@ -143,28 +135,28 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         <div className="space-y-5">
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Property Details
+              {t('inv.detail.propertyDetails')}
             </p>
-            <DetailRow label="Type" value={prop.type.charAt(0).toUpperCase() + prop.type.slice(1)} />
-            <DetailRow label="Bedrooms" value={prop.bedrooms} />
-            <DetailRow label="Size range" value={prop.sizeRange} />
-            <DetailRow label="Handover year" value={prop.handoverYear ?? null} />
-            <DetailRow label="Payment plan" value={prop.paymentPlan} />
-            <DetailRow label="Total units" value={prop.totalUnits !== null ? String(prop.totalUnits) : null} />
-            <DetailRow label="Available units" value={prop.availableUnits !== null ? String(prop.availableUnits) : null} />
+            <DetailRow label={t('inv.detail.type')} value={prop.type.charAt(0).toUpperCase() + prop.type.slice(1)} />
+            <DetailRow label={t('inv.detail.bedrooms')} value={prop.bedrooms} />
+            <DetailRow label={t('inv.detail.sizeRange')} value={prop.sizeRange} />
+            <DetailRow label={t('inv.detail.handoverYear')} value={prop.handoverYear ?? null} />
+            <DetailRow label={t('inv.detail.paymentPlan')} value={prop.paymentPlan} />
+            <DetailRow label={t('inv.detail.totalUnits')} value={prop.totalUnits !== null ? String(prop.totalUnits) : null} />
+            <DetailRow label={t('inv.detail.availableUnits')} value={prop.availableUnits !== null ? String(prop.availableUnits) : null} />
           </div>
 
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Pricing & Returns
+              {t('inv.detail.pricingReturns')}
             </p>
             <div className="mb-4">
-              <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Price range</div>
+              <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{t('inv.detail.priceRange')}</div>
               <div className="mt-1 text-[22px] font-semibold tabular-nums text-white">{priceRange}</div>
             </div>
             {prop.roi !== null && (
               <div>
-                <div className="text-xs uppercase tracking-[0.14em] text-slate-500">Expected ROI</div>
+                <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{t('inv.detail.expectedRoi')}</div>
                 <div className="mt-1 text-[28px] font-semibold tabular-nums leading-none text-gold">
                   {prop.roi.toFixed(1)}%
                 </div>
@@ -177,13 +169,13 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         <div className="space-y-5">
           <div className="rounded-[20px] border border-line bg-surface-2 p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              Performance (30 days)
+              {t('inv.detail.performance')}
             </p>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Leads',     value: prop.leads30d },
-                { label: 'Views',     value: prop.views30d.toLocaleString() },
-                { label: 'Campaigns', value: prop.linkedCampaigns },
+                { label: t('inv.detail.leads'),     value: prop.leads30d },
+                { label: t('inv.detail.views'),     value: prop.views30d.toLocaleString() },
+                { label: t('inv.detail.campaigns'), value: prop.linkedCampaigns },
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-[14px] border border-line bg-surface-2 p-3">
                   <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</div>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle, Home } from 'lucide-react'
 import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -18,13 +19,14 @@ const LANDING_STYLE: Record<string, string> = {
   pending_review: 'text-sky-400     bg-sky-400/10     border-sky-400/20',
   missing:        'text-red-400     bg-red-400/10     border-red-400/20',
 }
-const LANDING_LABEL: Record<string, string> = {
-  live: 'Live', draft: 'Draft', pending_review: 'Review', missing: 'Missing',
+const LANDING_LABEL_KEY: Record<string, string> = {
+  live: 'inv.landing.live', draft: 'inv.landing.draft', pending_review: 'inv.landing.review', missing: 'inv.landing.missing',
 }
 
 type SortKey = 'leads' | 'price' | 'readiness' | 'roi'
 
 export default function ReadyPage() {
+  const t = useT()
   const [query,  setQuery]  = useState('')
   const [sort,   setSort]   = useState<SortKey>('leads')
   const [area,   setArea]   = useState('All')
@@ -63,19 +65,19 @@ export default function ReadyPage() {
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <PageHeader
-        eyebrow="Inventory"
+        eyebrow={t('inv.eyebrow')}
         Icon={Home}
-        title="Ready Properties"
-        subtitle="Available and move-in-ready inventory"
+        title={t('inv.ready.title')}
+        subtitle={t('inv.ready.subtitle')}
         className="mb-6"
       />
 
       {/* Tiles */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Ready Units" value={props.length} hint="available now" />
-        <StatCard label="Live Pages" value={liveLandings} hint="can run ads" delta={{ value: 'published', direction: 'up' }} />
-        <StatCard label="30d Leads" value={totalLeads} hint="this month" />
-        <StatCard label="Avg Readiness" value={`${avgReadiness}%`} hint="ad-readiness score" />
+        <StatCard label={t('inv.ready.tile.readyUnits')} value={props.length} hint={t('inv.ready.tile.readyUnits.hint')} />
+        <StatCard label={t('inv.ready.tile.livePages')} value={liveLandings} hint={t('inv.ready.tile.livePages.hint')} delta={{ value: t('inv.ready.tile.livePages.delta'), direction: 'up' }} />
+        <StatCard label={t('inv.ready.tile.leads30d')} value={totalLeads} hint={t('inv.ready.tile.leads30d.hint')} />
+        <StatCard label={t('inv.ready.tile.avgReadiness')} value={`${avgReadiness}%`} hint={t('inv.ready.tile.avgReadiness.hint')} />
       </div>
 
       {/* Missing landing alert */}
@@ -84,10 +86,12 @@ export default function ReadyPage() {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400/80" />
           <div>
             <div className="text-sm font-medium text-red-300">
-              {missingLandings} {missingLandings === 1 ? 'property is' : 'properties are'} missing landing pages
+              {missingLandings === 1
+                ? t('inv.ready.missingAlert.one', { count: missingLandings })
+                : t('inv.ready.missingAlert.many', { count: missingLandings })}
             </div>
             <div className="mt-0.5 text-xs text-slate-400">
-              Properties without a landing page cannot run ad campaigns. Generate one below.
+              {t('inv.ready.missingAlert.body')}
             </div>
           </div>
         </div>
@@ -99,7 +103,7 @@ export default function ReadyPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input
             type="text"
-            placeholder="Search by name or developer…"
+            placeholder={t('inv.ready.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
@@ -107,7 +111,7 @@ export default function ReadyPage() {
         </div>
         <select value={area} onChange={(e) => setArea(e.target.value)}
           className="rounded-[10px] border border-line bg-surface px-3 py-2 text-xs text-slate-400 outline-none focus:border-amber-400/30">
-          {areas.map((a) => <option key={a} value={a}>{a}</option>)}
+          {areas.map((a) => <option key={a} value={a}>{a === 'All' ? t('inv.filter.all') : a}</option>)}
         </select>
         <div className="flex items-center gap-1 rounded-[10px] border border-line bg-surface p-1">
           <SlidersHorizontal className="h-3.5 w-3.5 text-slate-500 ml-1" />
@@ -116,7 +120,7 @@ export default function ReadyPage() {
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
                 sort === s ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
-              {s}
+              {t(`inv.sort.${s}`)}
             </button>
           ))}
         </div>
@@ -125,7 +129,7 @@ export default function ReadyPage() {
       {/* Property list */}
       <div className="rounded-[16px] border border-line bg-surface divide-y divide-line overflow-hidden">
         {props.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-slate-500">No ready properties match.</div>
+          <div className="px-5 py-10 text-center text-sm text-slate-500">{t('inv.ready.empty')}</div>
         )}
         {props.map((p) => (
           <div key={p.id} className="px-5 py-4">
@@ -134,7 +138,7 @@ export default function ReadyPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-white truncate">{p.name}</span>
                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${LANDING_STYLE[p.landingStatus]}`}>
-                    {LANDING_LABEL[p.landingStatus] ?? p.landingStatus}
+                    {LANDING_LABEL_KEY[p.landingStatus] ? t(LANDING_LABEL_KEY[p.landingStatus]) : p.landingStatus}
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
@@ -145,7 +149,7 @@ export default function ReadyPage() {
                   <span className="capitalize">{p.type}</span>
                   <span>·</span>
                   <span>{p.bedrooms} BR</span>
-                  {p.roi !== null && <><span>·</span><span className="text-amber-400">{p.roi.toFixed(1)}% ROI</span></>}
+                  {p.roi !== null && <><span>·</span><span className="text-amber-400">{t('inv.candidate.roi', { roi: p.roi.toFixed(1) })}</span></>}
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
@@ -153,8 +157,8 @@ export default function ReadyPage() {
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-red-400/60'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
-                  <span className="text-xs text-slate-500 tabular-nums">{p.adReadiness}% ready</span>
-                  {p.leads30d > 0 && <span className="text-xs text-amber-400/70 ml-1">{p.leads30d} leads</span>}
+                  <span className="text-xs text-slate-500 tabular-nums">{t('inv.ready.pctReady', { pct: p.adReadiness })}</span>
+                  {p.leads30d > 0 && <span className="text-xs text-amber-400/70 ml-1">{t('inv.ready.leads', { count: p.leads30d })}</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -162,7 +166,7 @@ export default function ReadyPage() {
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
-                    View <ArrowUpRight className="h-3 w-3" />
+                    {t('inv.action.view')} <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}
                     className="flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[0.07] px-2.5 py-1 text-xs text-amber-400/80 hover:text-amber-400 transition">

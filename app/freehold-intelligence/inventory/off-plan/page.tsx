@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Search, Calendar, TrendingUp, Building2 } from 'lucide-react'
 import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
+import { useT } from '@/lib/i18n/provider'
 
 function formatPrice(n: number | null): string {
   if (n === null) return '—'
@@ -12,10 +13,10 @@ function formatPrice(n: number | null): string {
   return `AED ${(n / 1_000).toFixed(0)}K`
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  off_plan:           'Off Plan',
-  under_construction: 'Under Construction',
-  coming_soon:        'Coming Soon',
+const STATUS_LABEL_KEY: Record<string, string> = {
+  off_plan:           'inv.status.off_plan',
+  under_construction: 'inv.status.under_construction',
+  coming_soon:        'inv.status.coming_soon',
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -27,6 +28,7 @@ const STATUS_STYLE: Record<string, string> = {
 type SortKey = 'leads' | 'price' | 'handover' | 'readiness'
 
 export default function OffPlanPage() {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [sort,  setSort]  = useState<SortKey>('leads')
   const [year,  setYear]  = useState('All')
@@ -71,24 +73,24 @@ export default function OffPlanPage() {
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
 
       <PageHeader
-        eyebrow="Inventory"
+        eyebrow={t('inv.eyebrow')}
         Icon={Building2}
-        title="Off-Plan Properties"
-        subtitle="Pre-launch and under-construction properties"
+        title={t('inv.offPlan.title')}
+        subtitle={t('inv.offPlan.subtitle')}
         className="mb-6"
       />
 
       {/* Tiles */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Off Plan" value={offPlanCount} hint="pre-launch" />
-        <StatCard label="Under Const." value={underConstCount} hint="being built" />
-        <StatCard label="30d Leads" value={totalLeads} hint="this month" delta={{ value: 'active demand', direction: 'up' }} />
-        <StatCard label="Handover Years" value={Object.keys(handovers).length} hint="distinct years" />
+        <StatCard label={t('inv.offPlan.tile.offPlan')} value={offPlanCount} hint={t('inv.offPlan.tile.offPlan.hint')} />
+        <StatCard label={t('inv.offPlan.tile.underConst')} value={underConstCount} hint={t('inv.offPlan.tile.underConst.hint')} />
+        <StatCard label={t('inv.offPlan.tile.leads30d')} value={totalLeads} hint={t('inv.offPlan.tile.leads30d.hint')} delta={{ value: t('inv.offPlan.tile.leads30d.delta'), direction: 'up' }} />
+        <StatCard label={t('inv.offPlan.tile.handoverYears')} value={Object.keys(handovers).length} hint={t('inv.offPlan.tile.handoverYears.hint')} />
       </div>
 
       {/* Handover timeline chips */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-slate-500">Handover:</span>
+        <span className="text-xs text-slate-500">{t('inv.offPlan.handover')}</span>
         {Object.entries(handovers).sort().map(([yr, count]) => (
           <button key={yr} onClick={() => setYear(year === yr ? 'All' : yr)}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition ${
@@ -102,7 +104,7 @@ export default function OffPlanPage() {
           </button>
         ))}
         {year !== 'All' && (
-          <button onClick={() => setYear('All')} className="text-xs text-slate-500 hover:text-slate-400 transition">clear</button>
+          <button onClick={() => setYear('All')} className="text-xs text-slate-500 hover:text-slate-400 transition">{t('inv.offPlan.clear')}</button>
         )}
       </div>
 
@@ -112,7 +114,7 @@ export default function OffPlanPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input
             type="text"
-            placeholder="Search by name or developer…"
+            placeholder={t('inv.offPlan.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
@@ -124,7 +126,7 @@ export default function OffPlanPage() {
               className={`rounded-[8px] px-2.5 py-1 text-xs font-medium capitalize transition ${
                 sort === s ? 'bg-surface-2 text-white' : 'text-slate-500 hover:text-slate-400'
               }`}>
-              {s}
+              {t(`inv.sort.${s}`)}
             </button>
           ))}
         </div>
@@ -135,8 +137,8 @@ export default function OffPlanPage() {
         {props.length === 0 && (
           <EmptyState
             Icon={Building2}
-            title="No off-plan properties match"
-            description="Try adjusting the handover year or clearing the search."
+            title={t('inv.offPlan.empty.title')}
+            description={t('inv.offPlan.empty.description')}
             className="rounded-none border-none"
           />
         )}
@@ -147,7 +149,7 @@ export default function OffPlanPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-white truncate">{p.name}</span>
                   <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[p.status]}`}>
-                    {STATUS_LABEL[p.status] ?? p.status}
+                    {STATUS_LABEL_KEY[p.status] ? t(STATUS_LABEL_KEY[p.status]) : p.status}
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
@@ -161,7 +163,7 @@ export default function OffPlanPage() {
                     </>
                   )}
                   {p.paymentPlan && <><span>·</span><span>{p.paymentPlan}</span></>}
-                  {p.leads30d > 0 && <><span>·</span><span className="text-amber-400/70">{p.leads30d} leads</span></>}
+                  {p.leads30d > 0 && <><span>·</span><span className="text-amber-400/70">{t('inv.offPlan.leads', { count: p.leads30d })}</span></>}
                 </div>
                 {/* Readiness bar */}
                 <div className="mt-2 flex items-center gap-2">
@@ -169,7 +171,7 @@ export default function OffPlanPage() {
                     <div className={`h-1 rounded-full ${p.adReadiness >= 80 ? 'bg-amber-400' : p.adReadiness >= 60 ? 'bg-amber-400/60' : 'bg-white/20'}`}
                       style={{ width: `${p.adReadiness}%` }} />
                   </div>
-                  <span className="text-xs text-slate-500 tabular-nums">{p.adReadiness}% ad ready</span>
+                  <span className="text-xs text-slate-500 tabular-nums">{t('inv.offPlan.pctAdReady', { pct: p.adReadiness })}</span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -177,7 +179,7 @@ export default function OffPlanPage() {
                 <div className="flex items-center gap-1.5">
                   <Link href={`/freehold-intelligence/inventory/${p.id}`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs text-slate-400 hover:text-slate-100 transition">
-                    View <ArrowUpRight className="h-3 w-3" />
+                    {t('inv.action.view')} <ArrowUpRight className="h-3 w-3" />
                   </Link>
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}
                     className="flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[0.07] px-2.5 py-1 text-xs text-amber-400/80 hover:text-amber-400 transition">
