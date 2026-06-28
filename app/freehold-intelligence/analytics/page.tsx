@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { toast } from 'sonner'
+import { FileText, Loader2, ExternalLink } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { prettySource, STAGE_ORDER, fmtAed } from '@/lib/freehold/analytics-format'
 
@@ -78,6 +80,34 @@ export default function CompanyAnalyticsPage() {
 
   const dash = (v: string) => (live ? v : '—')
 
+  const [reporting, setReporting] = useState(false)
+  const [report, setReport] = useState<{ id: string; title: string; content: string } | null>(null)
+
+  async function generateReport() {
+    setReporting(true)
+    setReport(null)
+    try {
+      const res = await fetch('/api/freehold/analytics/report', { method: 'POST' })
+      const d = await res.json()
+      if (!res.ok || !d?.output) throw new Error(d?.error || 'failed')
+      setReport(d.output)
+      toast.success(t('analytics.report.ready'))
+    } catch {
+      toast.error(t('analytics.report.failed'))
+    } finally {
+      setReporting(false)
+    }
+  }
+
+  function openReport() {
+    if (!report) return
+    const w = window.open('', '_blank')
+    if (w) {
+      w.document.write(`<!doctype html><meta charset="utf-8"><title>${report.title}</title><body style="margin:0;background:#0B131F;color:#e2e8f0;font-family:system-ui,sans-serif;padding:32px;max-width:900px;margin:0 auto">${report.content}</body>`)
+      w.document.close()
+    }
+  }
+
   return (
     <div className="p-6 lg:p-8 space-y-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -85,8 +115,24 @@ export default function CompanyAnalyticsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('analytics.tab.company')}</h1>
           <p className="mt-1 text-sm text-slate-400">{t('analytics.company.sub')}</p>
         </div>
-        <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
-          {t('analytics.last30')}
+        <div className="flex items-center gap-2">
+          {report && (
+            <button onClick={openReport} className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.12] px-3.5 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-white/[0.25]">
+              <ExternalLink className="h-3.5 w-3.5" /> {t('analytics.report.view')}
+            </button>
+          )}
+          <button
+            onClick={generateReport}
+            disabled={reporting}
+            title={t('analytics.report.hint')}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {reporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+            {reporting ? t('analytics.report.generating') : t('analytics.report.generate')}
+          </button>
+          <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-3.5 py-2 text-sm font-medium text-slate-300">
+            {t('analytics.last30')}
+          </div>
         </div>
       </div>
 

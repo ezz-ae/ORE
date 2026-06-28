@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   AlertCircle, CheckCircle2, Activity,
-  ArrowUpRight, X, Globe, ChevronRight, Send, Clock, AlertTriangle,
+  ArrowUpRight, X, Globe, Send, Clock, AlertTriangle,
   Sparkles,
 } from 'lucide-react'
 import { getInventoryStats, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
@@ -17,6 +17,7 @@ import { useSession } from '@/lib/freehold/use-session'
 import { visibleApps } from '@/lib/freehold/apps'
 import { Section, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useI18n } from '@/lib/i18n/provider'
+import { sendToExpert } from '@/lib/freehold/expert-bus'
 
 // app id → nav translation key (labels are shared with the nav spine)
 const NAV_KEYS: Record<string, string> = {
@@ -93,8 +94,6 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   }
   const [greeting, setGreeting]       = useState('')
   const [chatInput, setChatInput]     = useState('')
-  const [chatLoading, setChatLoading] = useState(false)
-  const [chatReply, setChatReply]     = useState<string | null>(null)
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
   const [dateStr, setDateStr]         = useState('')
   const [activity, setActivity]       = useState<ActivityRow[]>(ACTIVITY)
@@ -106,7 +105,6 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const router     = useRouter()
   const { t, locale } = useI18n()
   const localeTag  = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
-  const sessionRef = useRef(`server-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     setDateStr(new Date().toLocaleDateString(localeTag, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Dubai' }))
@@ -211,34 +209,12 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
 
 
 
-  const aiContext = {
-    urgentTasks:        serverSummary.urgentTasks.map(t => ({ title: t.title, body: t.body, priority: t.priority, app: t.app, due: t.due })),
-    blockedItems:       serverSummary.blockedItems.map(t => ({ title: t.title, body: t.body })),
-    crmAlerts:          serverSummary.crmAlerts.map(t => ({ title: t.title, body: t.body })),
-    leadMachineAlerts:  serverSummary.leadMachineAlerts.map(t => ({ title: t.title, body: t.body })),
-    pendingApprovals:   serverSummary.pendingApprovals.map(t => ({ title: t.title, app: t.app })),
-    recommendedActions: serverSummary.recommendedActions.map(t => ({ title: t.title, body: t.body })),
-  }
-
-  async function sendChat(message: string) {
+  // Send a prompt into the single docked Expert conversation, then clear input.
+  function askExpert(message: string) {
     const msg = message.trim()
-    if (!msg || chatLoading) return
+    if (!msg) return
+    sendToExpert(msg)
     setChatInput('')
-    setChatLoading(true)
-    setChatReply(null)
-    try {
-      const res  = await fetch('/api/freehold/server/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ message: msg, sessionId: sessionRef.current, context: aiContext }),
-      })
-      const data = await res.json() as { answer?: string; error?: string }
-      setChatReply(data.answer ?? data.error ?? '(no response)')
-    } catch {
-      setChatReply('Unable to reach the Intelligence Server AI.')
-    } finally {
-      setChatLoading(false)
-    }
   }
 
   return (
@@ -288,74 +264,41 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
           {/* Divider */}
           <div className="my-5 border-t border-line" />
 
-          {/* AI Chat */}
+          {/* AI prompt — routes into the single docked Expert conversation
+              (one conversation for the whole workspace, not a separate chat). */}
           <div data-coach="hub-ai">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendChat(chatInput)}
+                onKeyDown={(e) => { if (e.key === 'Enter') askExpert(chatInput) }}
                 placeholder={t('hub.askPlaceholder')}
                 className="flex-1 rounded-xl border border-white/[0.1] bg-white/[0.05] px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-gold/50 transition-colors"
               />
               <button
                 type="button"
-                onClick={() => sendChat(chatInput)}
-                disabled={chatLoading || !chatInput.trim()}
+                onClick={() => askExpert(chatInput)}
+                disabled={!chatInput.trim()}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold text-ink transition-opacity hover:opacity-85 disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Suggested questions */}
+            {/* Suggested questions — open + send into the Expert */}
             <div className="mt-3 flex flex-wrap gap-2">
               {serverSummary.askableQuestions.slice(0, 4).map((q) => (
                 <button
                   key={q}
                   type="button"
-                  onClick={() => sendChat(q)}
-                  disabled={chatLoading}
-                  className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-white/[0.2] hover:text-slate-200 disabled:opacity-40"
+                  onClick={() => sendToExpert(q)}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-slate-400 transition-colors hover:border-white/[0.2] hover:text-slate-200"
                 >
                   {q}
                 </button>
               ))}
             </div>
-
-            {/* AI response */}
-            {(chatLoading || chatReply) && (
-              <div className="mt-4 rounded-xl border border-gold/20 bg-gold/[0.04] p-4">
-                {chatLoading ? (
-                  <div className="flex items-center gap-3 text-sm text-slate-400">
-                    <span className="flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <span key={i} className="h-1.5 w-1.5 rounded-full bg-gold/60 animate-bounce"
-                          style={{ animationDelay: `${i * 0.15}s` }} />
-                      ))}
-                    </span>
-                    {t('hub.thinking')}
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
-                      {chatReply}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between border-t border-line-strong pt-3">
-                      <Link href="/freehold-intelligence/agent"
-                        className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200 transition-colors">
-                        {t('hub.fullConversation')} <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
-                      <button type="button" onClick={() => setChatReply(null)}
-                        className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
-                        {t('hub.dismiss')}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </section>
