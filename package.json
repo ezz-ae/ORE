@@ -9,7 +9,8 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "i18n": "tsx scripts/i18n-audit.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.101.0",
