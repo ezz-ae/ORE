@@ -7,16 +7,17 @@ import {
 } from 'lucide-react'
 import { agentConnections, agentPipelineLeads, type AgentConnection } from '@/src/features/freehold-intelligence/agent'
 import { useSession } from '@/lib/freehold/use-session'
+import { useI18n } from '@/lib/i18n/provider'
 
 
-const CATEGORY_META: Record<AgentConnection['category'], { label: string; color: string }> = {
-  crm:        { label: 'CRM',        color: 'text-orange-400' },
-  ads:        { label: 'Ads',        color: 'text-blue-400'   },
-  social:     { label: 'Social',     color: 'text-pink-400'   },
-  ai:         { label: 'AI',         color: 'text-violet-400' },
-  portal:     { label: 'Portals',    color: 'text-sky-400'    },
-  automation: { label: 'Automation', color: 'text-amber-400'  },
-  messaging:  { label: 'Messaging',  color: 'text-emerald-400'},
+const CATEGORY_META: Record<AgentConnection['category'], { labelKey: string; color: string }> = {
+  crm:        { labelKey: 'agent.catCrm',        color: 'text-orange-400' },
+  ads:        { labelKey: 'agent.catAds',        color: 'text-blue-400'   },
+  social:     { labelKey: 'agent.catSocial',     color: 'text-pink-400'   },
+  ai:         { labelKey: 'agent.catAi',         color: 'text-violet-400' },
+  portal:     { labelKey: 'agent.catPortals',    color: 'text-sky-400'    },
+  automation: { labelKey: 'agent.catAutomation', color: 'text-amber-400'  },
+  messaging:  { labelKey: 'agent.catMessaging',  color: 'text-emerald-400'},
 }
 
 const criticalLeads = agentPipelineLeads.filter((l) => l.urgency === 'critical').length
@@ -24,15 +25,16 @@ const activeLeads   = agentPipelineLeads.filter((l) => l.pipelineStage !== 'clos
 
 type Route = 'apps' | 'inventory' | 'frontend'
 
-const ROUTES: { id: Route; label: string; Icon: React.ElementType; desc: string; color: string }[] = [
-  { id: 'apps',      label: 'Apps',      Icon: Zap,      desc: 'Your pipeline, wallet, campaigns, and achievements',  color: 'text-gold' },
-  { id: 'inventory', label: 'Inventory', Icon: BookOpen, desc: 'NotebookLM — sources, AI chat, content studio',       color: 'text-violet-400' },
-  { id: 'frontend',  label: 'Listings',  Icon: Globe,    desc: 'PropertyFinder, Bayut, Dubizzle, your landing pages', color: 'text-sky-400'    },
+const ROUTES: { id: Route; labelKey: string; Icon: React.ElementType; descKey: string; color: string }[] = [
+  { id: 'apps',      labelKey: 'agent.routeApps',      Icon: Zap,      descKey: 'agent.routeAppsDesc',      color: 'text-gold' },
+  { id: 'inventory', labelKey: 'agent.routeInventory', Icon: BookOpen, descKey: 'agent.routeInventoryDesc', color: 'text-violet-400' },
+  { id: 'frontend',  labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-sky-400'    },
 ]
 
 
 export default function AgentAIPage() {
   const { user } = useSession()
+  const { t, locale } = useI18n()
   const [connections, setConnections] = useState<AgentConnection[]>(agentConnections)
   const [activeRoute, setActiveRoute] = useState<Route>('apps')
   const [settingUp, setSettingUp]     = useState<string | null>(null)
@@ -81,22 +83,22 @@ export default function AgentAIPage() {
       {/* Header */}
       <section className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">My AI</h1>
+          <h1 className="text-xl font-semibold text-white">{t('agent.myAi')}</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {user?.name ? `${user.name}'s personal agent` : 'Your personal agent'} — {connected} of {connections.length} connections live
+            {user?.name ? t('agent.personalAgentNamed', { name: user.name }) : t('agent.personalAgent')} — {t('agent.connectionsLive', { connected, total: connections.length })}
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2">
           <Sparkles className="h-4 w-4 text-gold" />
-          <span className="text-sm font-medium text-gold">Agent active</span>
+          <span className="text-sm font-medium text-gold">{t('agent.agentActive')}</span>
         </div>
       </section>
 
       {/* Three-route map */}
       <section className="mt-6">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Agent routes</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.agentRoutes')}</div>
         <div className="grid grid-cols-3 gap-3">
-          {ROUTES.map(({ id, label, Icon, desc, color }) => (
+          {ROUTES.map(({ id, labelKey, Icon, descKey, color }) => (
             <button
               key={id}
               onClick={() => setActiveRoute(id)}
@@ -107,10 +109,10 @@ export default function AgentAIPage() {
               }`}
             >
               <Icon className={`h-5 w-5 ${color}`} />
-              <div className={`mt-2 text-sm font-semibold ${activeRoute === id ? 'text-white' : 'text-slate-400'}`}>{label}</div>
-              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{desc}</div>
+              <div className={`mt-2 text-sm font-semibold ${activeRoute === id ? 'text-white' : 'text-slate-400'}`}>{t(labelKey)}</div>
+              <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{t(descKey)}</div>
               {activeRoute === id && (
-                <div className={`mt-2 text-xs font-medium ${color}`}>Active ·</div>
+                <div className={`mt-2 text-xs font-medium ${color}`}>{t('agent.activeDot')}</div>
               )}
             </button>
           ))}
@@ -120,11 +122,11 @@ export default function AgentAIPage() {
       {/* Connections */}
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Connections</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.connections')}</div>
           {needsSetup > 0 && (
             <div className="flex items-center gap-1 text-xs text-amber-400">
               <AlertCircle className="h-3 w-3" />
-              {needsSetup} need setup
+              {t('agent.needSetup', { count: needsSetup })}
             </div>
           )}
         </div>
@@ -134,7 +136,7 @@ export default function AgentAIPage() {
             const cm = CATEGORY_META[cat as AgentConnection['category']]
             return (
               <div key={cat}>
-                <div className={`mb-2 text-xs font-semibold uppercase tracking-wider ${cm.color}`}>{cm.label}</div>
+                <div className={`mb-2 text-xs font-semibold uppercase tracking-wider ${cm.color}`}>{t(cm.labelKey)}</div>
                 <div className="space-y-2">
                   {items.map((conn) => {
                     const isSettingUp = settingUp === conn.id
@@ -152,11 +154,11 @@ export default function AgentAIPage() {
                           <div className="text-sm font-medium text-slate-300">{conn.name}</div>
                           {conn.status === 'connected' && conn.lastSync && (
                             <div className="mt-0.5 text-xs text-slate-500">
-                              Synced {new Date(conn.lastSync).toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' })}
+                              {t('agent.synced', { time: new Date(conn.lastSync).toLocaleTimeString(locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' }) })}
                             </div>
                           )}
                           {conn.status === 'needs_setup' && (
-                            <div className="mt-0.5 text-xs text-amber-400/70">Not connected</div>
+                            <div className="mt-0.5 text-xs text-amber-400/70">{t('agent.notConnected')}</div>
                           )}
                         </div>
                         {conn.status === 'connected' ? (
@@ -167,7 +169,7 @@ export default function AgentAIPage() {
                             disabled={isSettingUp}
                             className="flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-400 transition hover:bg-amber-400/20 disabled:opacity-50"
                           >
-                            {isSettingUp ? 'Connecting…' : 'Connect'}
+                            {isSettingUp ? t('agent.connecting') : t('agent.connect')}
                             {!isSettingUp && <ChevronRight className="h-3 w-3" />}
                           </button>
                         )}
@@ -183,18 +185,18 @@ export default function AgentAIPage() {
 
       {/* Agent knowledge */}
       <section className="mt-8">
-        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Agent knowledge</div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.agentKnowledge')}</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {[
-            { Icon: Users,    label: 'Leads + pipeline',    value: '8 leads tracked',         color: 'text-sky-400'    },
-            { Icon: BookOpen, label: 'Inventory notes',      value: '3 notes · 8 sources',     color: 'text-violet-400' },
-            { Icon: Settings, label: 'Profile & expertise',  value: 'Palm Expert · Gold tier', color: 'text-gold'  },
-          ].map(({ Icon, label, value, color }) => (
-            <div key={label} className="flex items-center gap-3 rounded-[14px] border border-line bg-surface-2 px-4 py-3">
+            { Icon: Users,    labelKey: 'agent.knowledgeLeadsLabel',     valueKey: 'agent.knowledgeLeadsValue',     color: 'text-sky-400'    },
+            { Icon: BookOpen, labelKey: 'agent.knowledgeInventoryLabel', valueKey: 'agent.knowledgeInventoryValue', color: 'text-violet-400' },
+            { Icon: Settings, labelKey: 'agent.knowledgeProfileLabel',   valueKey: 'agent.knowledgeProfileValue',   color: 'text-gold'  },
+          ].map(({ Icon, labelKey, valueKey, color }) => (
+            <div key={labelKey} className="flex items-center gap-3 rounded-[14px] border border-line bg-surface-2 px-4 py-3">
               <Icon className={`h-4 w-4 shrink-0 ${color}`} />
               <div>
-                <div className={`text-sm font-medium ${color}`}>{value}</div>
-                <div className="mt-0.5 text-xs text-slate-500">{label}</div>
+                <div className={`text-sm font-medium ${color}`}>{t(valueKey)}</div>
+                <div className="mt-0.5 text-xs text-slate-500">{t(labelKey)}</div>
               </div>
             </div>
           ))}

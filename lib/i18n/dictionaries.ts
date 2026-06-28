@@ -1,9 +1,16 @@
 import type { Locale } from './config'
+import { crm } from './dictionaries/crm'
+import { agent } from './dictionaries/agent'
+import { finance } from './dictionaries/finance'
+import { management } from './dictionaries/management'
+import { inventory } from './dictionaries/inventory'
+import { settings } from './dictionaries/settings'
 
 /**
  * Core dictionary covering the shell, navigation, common actions, roles and
- * login — the surfaces every role sees on every page. Page-level strings are
- * translated incrementally using the same keys via useT().
+ * login — the surfaces every role sees on every page. Per-surface strings live
+ * in ./dictionaries/<namespace>.ts and are merged in below, so each surface can
+ * be translated independently without touching this file.
  *
  * Keys are dotted (namespace.key). Missing keys fall back to English, then to
  * the key itself, so untranslated strings never render blank.
@@ -254,4 +261,10 @@ const ru: Dict = {
   'hub.dismiss': 'Закрыть',
 }
 
-export const DICTIONARIES: Record<Locale, Dict> = { en, ar, ru }
+// Merge the core dictionary with every per-surface namespace. Later spreads win,
+// but namespaces use distinct key prefixes so there is never a real collision.
+export const DICTIONARIES: Record<Locale, Dict> = {
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru },
+}
