@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listCampaigns, getCampaignInsights } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { demoCampaigns } from '@/lib/meta/demo-data'
 
 export async function GET() {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const campaigns = await listCampaigns()
 

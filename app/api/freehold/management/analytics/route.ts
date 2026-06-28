@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { requireSession } from "@/lib/freehold/api-auth"
+import { MANAGEMENT_ROLES } from "@/lib/freehold/session-types"
 import { query } from "@/lib/db"
 import { getFinanceTotals } from "@/lib/deals"
 import { getCompanyFinanceSummary } from "@/lib/finance"
@@ -12,8 +12,9 @@ const n = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0)
 async function safe<T>(fn: () => Promise<T>, fb: T): Promise<T> { try { return await fn() } catch { return fb } }
 
 export async function GET() {
-  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Company finance + sales aggregates — management roles only.
+  const auth = await requireSession(MANAGEMENT_ROLES)
+  if ('res' in auth) return auth.res
 
   const [totals, finance] = await Promise.all([
     safe(() => getFinanceTotals(), { totalDeals: 0, approvedDeals: 0, pendingDeals: 0, totalSalesAed: 0, totalCommissionAed: 0, netCommissionAed: 0, totalPaidAed: 0, totalOutstandingAed: 0 }),

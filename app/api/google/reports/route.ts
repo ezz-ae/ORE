@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { getReportSummary } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
 import { demoReport } from '@/lib/google/demo-data'
 
 export async function GET(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { searchParams } = new URL(req.url)
   const range = (searchParams.get('range') ?? '30d') as '7d' | '30d' | '90d'
   if (!['7d', '30d', '90d'].includes(range)) {

@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listCampaigns } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
 import { listLocalCampaigns } from '@/lib/google/local-store'
 
 export async function GET() {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const campaigns = await listCampaigns()
     return NextResponse.json({ campaigns })

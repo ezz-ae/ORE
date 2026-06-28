@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { cookies } from 'next/headers'
 import { launchFullCampaign } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
@@ -20,6 +21,8 @@ async function ensureBrokerTable() {
 }
 
 export async function POST(req: NextRequest) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const body = (await req.json()) as LaunchCampaignPayload
 

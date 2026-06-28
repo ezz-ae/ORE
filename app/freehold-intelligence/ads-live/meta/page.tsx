@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
-import { MarketingExpertPanel } from '@/components/google/ads-expert-panel'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 const META_BLUE = '#1877F2'
@@ -302,18 +302,8 @@ export default function MetaAdsPage() {
         </Link>
       </div>
 
-      {/* Marketing Expert Agent */}
-      <MarketingExpertPanel
-        scope="meta-ads"
-        context={{
-          platform: 'Meta Ads',
-          totalCampaigns: campaigns.length,
-          activeCampaigns: campaigns.filter((c) => c.status === 'Active').length,
-          totalSpend: campaigns.reduce((s, c) => s + c.spend, 0),
-          totalLeads: campaigns.reduce((s, c) => s + c.leads, 0),
-          avgCpl: (campaigns.reduce((s, c) => s + c.cpl, 0) / (campaigns.length || 1)).toFixed(0),
-        }}
-      />
+      {/* Ask the single docked Expert — no separate conversation */}
+      <ExpertDepth prompts={['expert.depth.ads.q1', 'expert.depth.ads.q2', 'expert.depth.ads.q3', 'expert.depth.ads.q4']} />
 
     </div>
   )

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, getCampaignInsights, listAdSets, listAds, updateCampaignStatus, deleteCampaign } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { MetaCampaignStatus } from '@/lib/meta/types'
@@ -7,6 +8,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const { id } = await params
     const [campaign, insights, adSets] = await Promise.all([
@@ -42,6 +45,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const { id } = await params
     const body = await req.json()

@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { launchSearchCampaign } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type LaunchGoogleCampaignPayload } from '@/lib/google/types'
 import { createLocalCampaign } from '@/lib/google/local-store'
 
 export async function POST(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const body = await req.json().catch(() => null) as LaunchGoogleCampaignPayload | null
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
 
