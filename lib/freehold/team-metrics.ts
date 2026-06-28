@@ -10,6 +10,7 @@ import { query } from '@/lib/db'
  * fails soft so a missing slice never breaks the caller.
  */
 export type AgentMetric = {
+  id: string
   name: string
   tenureDays: number | null
   totalLeads: number
@@ -66,6 +67,7 @@ export async function gatherTeamMetrics(): Promise<AgentMetric[]> {
     const ax = act.get(a.email)
     const tenureDays = a.created_at ? Math.max(0, Math.round((now - new Date(a.created_at).getTime()) / 86400000)) : null
     return {
+      id: a.id,
       name: a.name,
       tenureDays,
       totalLeads: parseInt(a.total_leads, 10),

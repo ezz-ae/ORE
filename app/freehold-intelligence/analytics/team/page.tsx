@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useT } from '@/lib/i18n/provider'
 import { STAGE_ORDER } from '@/lib/freehold/analytics-format'
 import { ComparisonTable, type CmpColumn, type CmpItem, type CmpPreset } from '@/components/freehold/analytics/comparison-table'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type AgentMetric = {
-  name: string; tenureDays: number | null
+  id: string; name: string; tenureDays: number | null
   totalLeads: number; hotLeads: number; wins30d: number; overdueFollowups: number
   activity30d: number; calls: number; messages: number; notes: number
 }
@@ -125,12 +126,12 @@ export default function TeamAnalyticsPage() {
                     agents.map((ag) => {
                       const u = util(ag.totalLeads)
                       return (
-                        <tr key={ag.name} className="transition hover:bg-slate-800/40">
+                        <tr key={ag.id || ag.name} className="transition hover:bg-slate-800/40">
                           <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
+                            <Link href={`/freehold-intelligence/analytics/team/${ag.id}`} className="group flex items-center gap-2.5">
                               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-200">{initialsOf(ag.name)}</span>
-                              <span className="font-medium text-slate-200">{ag.name}</span>
-                            </div>
+                              <span className="font-medium text-slate-200 transition-colors group-hover:text-gold">{ag.name}</span>
+                            </Link>
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-300">{ag.totalLeads}</td>
                           <td className="px-4 py-3 text-right tabular-nums text-[#D4AF37]">{ag.wins30d}</td>
