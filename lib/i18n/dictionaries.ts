@@ -112,6 +112,13 @@ const en: Dict = {
   'hub.yesterday': 'Yesterday',
   'hub.briefingLive': '{urgent} urgent, {blocked} blocked and {pending} awaiting approval right now.',
   'hub.noUrgent': 'Nothing urgent right now — you\'re ahead.',
+  // Web Studio — Expert depth prompts (route into the single conversation)
+  'studio.ai.title': 'Ask the Expert',
+  'studio.ai.subtitle': 'Plan, fix and audit content with the docked AI',
+  'studio.ai.q1': 'Audit all landing pages for stale or expired data and list what to refresh.',
+  'studio.ai.q2': 'Which listings have low data quality, and how do I fix each one?',
+  'studio.ai.q3': "Plan this week's content and SEO updates.",
+  'studio.ai.q4': 'Review ad readiness across inventory and suggest fixes.',
 }
 
 const ar: Dict = {
@@ -196,6 +203,12 @@ const ar: Dict = {
   'hub.yesterday': 'أمس',
   'hub.briefingLive': '{urgent} عاجلة، و{blocked} محظورة، و{pending} بانتظار الموافقة الآن.',
   'hub.noUrgent': 'لا شيء عاجل الآن — أنت متقدّم على العمل.',
+  'studio.ai.title': 'اسأل الخبير',
+  'studio.ai.subtitle': 'خطّط وأصلح ودقّق المحتوى عبر الذكاء الاصطناعي المثبّت',
+  'studio.ai.q1': 'دقّق جميع صفحات الهبوط بحثاً عن بيانات قديمة أو منتهية واذكر ما يجب تحديثه.',
+  'studio.ai.q2': 'أي القوائم لديها جودة بيانات منخفضة، وكيف أصلح كلاً منها؟',
+  'studio.ai.q3': 'خطّط تحديثات المحتوى وتحسين محركات البحث لهذا الأسبوع.',
+  'studio.ai.q4': 'راجع جاهزية الإعلانات عبر المخزون واقترح إصلاحات.',
 }
 
 const ru: Dict = {
@@ -280,6 +293,12 @@ const ru: Dict = {
   'hub.yesterday': 'Вчера',
   'hub.briefingLive': 'Сейчас: {urgent} срочных, {blocked} заблокировано и {pending} ждут согласования.',
   'hub.noUrgent': 'Сейчас ничего срочного — вы на шаг впереди.',
+  'studio.ai.title': 'Спросите Эксперта',
+  'studio.ai.subtitle': 'Планируйте, исправляйте и проверяйте контент через закреплённый ИИ',
+  'studio.ai.q1': 'Проверьте все лендинги на устаревшие или просроченные данные и перечислите, что обновить.',
+  'studio.ai.q2': 'У каких объявлений низкое качество данных и как исправить каждое?',
+  'studio.ai.q3': 'Спланируйте обновления контента и SEO на эту неделю.',
+  'studio.ai.q4': 'Проверьте готовность к рекламе по объектам и предложите исправления.',
 }
 
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
