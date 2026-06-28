@@ -27,13 +27,34 @@ const NAV_KEYS: Record<string, string> = {
 }
 
 
-const ACTIVITY = [
+type ActivityType = 'lead' | 'warning' | 'success' | 'info'
+type ActivityRow = { time: string; label: string; detail: string; type: ActivityType }
+
+// Static fallback — shown only until live CRM activity loads (or when the
+// activity log is empty, e.g. a fresh workspace).
+const ACTIVITY: ActivityRow[] = [
   { time: '09:14',     label: 'New lead',         detail: 'Palm Jumeirah — Meta Ads',        type: 'lead'    },
   { time: '08:52',     label: 'Campaign paused',   detail: 'Off Plan Dubai 2025 — Google',    type: 'warning' },
   { time: '08:30',     label: 'Landing published', detail: 'JVC Investor · /lp/jvc-investor', type: 'success' },
   { time: 'Yesterday', label: '88 leads',          detail: 'Dubai Hills Yield — 24h',         type: 'lead'    },
   { time: 'Yesterday', label: 'Invoice issued',    detail: 'INV-META-0526 · AED 18,420',      type: 'info'    },
 ]
+
+// A normalized urgent card — live work tasks and the static demo summary both
+// render through this shape.
+type UrgentCard = { id: string; priority: ServerActionCard['priority']; title: string; body: string; meta?: string; due?: string }
+
+// Map a raw CRM activity_type to a humane label + dot colour.
+function activityKind(type: string): ActivityType {
+  const t = type.toLowerCase()
+  if (/(lost|fail|paused|reject|delay|miss)/.test(t)) return 'warning'
+  if (/(deal|close|won|publish|approve|assign|stage|status)/.test(t)) return 'success'
+  if (/(lead|call|whatsapp|email|meeting|viewing)/.test(t)) return 'lead'
+  return 'info'
+}
+function humanize(type: string): string {
+  return type.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 function getGreeting(name: string, t: (k: string) => string) {
   const h = new Date().getHours()
@@ -76,6 +97,10 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   const [chatReply, setChatReply]     = useState<string | null>(null)
   const [dismissed, setDismissed]     = useState<Set<string>>(new Set())
   const [dateStr, setDateStr]         = useState('')
+  const [activity, setActivity]       = useState<ActivityRow[]>(ACTIVITY)
+  const [liveUrgent, setLiveUrgent]   = useState<UrgentCard[] | null>(null)
+  const [liveBlocked, setLiveBlocked] = useState<number | null>(null)
+  const [livePending, setLivePending] = useState<number | null>(null)
   const { user }   = useSession()
   const role       = user?.role
   const router     = useRouter()
@@ -98,7 +123,69 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
     }
   }, [user?.role])
 
+  // ── Live briefing + activity ────────────────────────────────────────────────
+  // Each fetch fails soft: on error or empty result we keep the static demo so
+  // the hub never looks broken on a fresh workspace.
+  useEffect(() => {
+    if (role === 'broker') return  // brokers are redirected away
+
+    const relTime = (iso: string) => {
+      const d = new Date(iso)
+      const now = new Date()
+      const today = now.toDateString()
+      const yest = new Date(now); yest.setDate(now.getDate() - 1)
+      if (d.toDateString() === today) return d.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai' })
+      if (d.toDateString() === yest.toDateString()) return t('hub.yesterday')
+      return d.toLocaleDateString(localeTag, { day: 'numeric', month: 'short', timeZone: 'Asia/Dubai' })
+    }
+
+    fetch('/api/freehold/tasks')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const tasks = d?.tasks as Array<{ id: string; title: string; description?: string; priority: UrgentCard['priority']; status: string; dueDate?: string | null }> | undefined
+        if (!tasks) return
+        const open = tasks.filter((tk) => tk.status !== 'done')
+        setLiveUrgent(
+          open
+            .filter((tk) => tk.priority === 'critical' || tk.priority === 'high')
+            .map((tk) => ({ id: tk.id, priority: tk.priority, title: tk.title, body: tk.description || '', due: tk.dueDate || undefined })),
+        )
+        setLiveBlocked(open.filter((tk) => tk.status === 'blocked').length)
+      })
+      .catch(() => {})
+
+    fetch('/api/freehold/deals?status=pending_step2')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.deals)) setLivePending(d.deals.length) })
+      .catch(() => {})
+
+    fetch('/api/freehold/crm/activity')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const rows = d?.activity as Array<{ id: string; activity_type: string; description: string | null; created_at: string; lead_name: string | null }> | undefined
+        if (!rows || rows.length === 0) return
+        setActivity(
+          rows.slice(0, 6).map((a) => ({
+            time: relTime(a.created_at),
+            label: humanize(a.activity_type),
+            detail: [a.lead_name, a.description].filter(Boolean).join(' — ') || '—',
+            type: activityKind(a.activity_type),
+          })),
+        )
+      })
+      .catch(() => {})
+  }, [role, localeTag, t])
+
   const apps = visibleApps(role)
+
+  // Normalized urgent cards + counts — live work data when present, else the
+  // static demo summary.
+  const urgentCards: UrgentCard[] = liveUrgent ?? serverSummary.urgentTasks.map((tk) => ({
+    id: tk.id, priority: tk.priority, title: tk.title, body: tk.body, meta: tk.app, due: tk.due,
+  }))
+  const blockedCount = liveBlocked ?? serverSummary.blockedItems.length
+  const pendingCount = livePending ?? serverSummary.pendingApprovals.length
+  const hasLive = liveUrgent !== null || liveBlocked !== null || livePending !== null
 
   const lowAdReadiness  = inventoryData.filter((p) => p.adReadiness < 40)
   const missingLandings = inventoryData.filter((p) => p.landingStatus === 'missing')
@@ -176,13 +263,13 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                {serverSummary.urgentTasks.length} {t('hub.urgent').toLowerCase()}
+                {urgentCards.length} {t('hub.urgent').toLowerCase()}
               </span>
               <span className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-400">
-                {serverSummary.blockedItems.length} {t('hub.blocked')}
+                {blockedCount} {t('hub.blocked')}
               </span>
               <span className="flex items-center gap-2 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-sm text-slate-400">
-                {serverSummary.pendingApprovals.length} {t('hub.pending')}
+                {pendingCount} {t('hub.pending')}
               </span>
               <Link href="/" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors">
                 <Globe className="h-3.5 w-3.5" />
@@ -193,7 +280,9 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
 
           {/* Summary text */}
           <p className="mt-5 text-sm leading-relaxed text-slate-300 max-w-2xl">
-            {serverSummary.summaryText}
+            {hasLive
+              ? t('hub.briefingLive', { urgent: urgentCards.length, blocked: blockedCount, pending: pendingCount })
+              : serverSummary.summaryText}
           </p>
 
           {/* Divider */}
@@ -275,33 +364,42 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       <Section
         className="mb-8"
         title={<><AlertTriangle className="inline h-3.5 w-3.5 text-red-400 mr-1.5 -mt-0.5" />{t('hub.urgent')}</>}
-        action={<span className="text-xs text-slate-500">{serverSummary.urgentTasks.length} {t('hub.open')}</span>}
+        action={<span className="text-xs text-slate-500">{urgentCards.length} {t('hub.open')}</span>}
       >
-        <div className="grid gap-3 sm:grid-cols-3">
-          {serverSummary.urgentTasks.map((task) => (
-            <div key={task.id} className={`rounded-xl border p-4 ${urgentCardCls(task.priority)}`}>
-              <div className="flex items-start gap-3">
-                <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${urgentDotCls(task.priority)}`} />
-                <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
-                    {task.title}
-                  </div>
-                  <div className="mt-1 text-sm text-slate-400 leading-snug">{task.body}</div>
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                    <span>{task.app}</span>
-                    {task.due && (
-                      <>
-                        <span>·</span>
-                        <Clock className="h-3 w-3" />
-                        <span>{task.due}</span>
-                      </>
+        {urgentCards.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-4">
+            <CheckCircle2 className="h-4 w-4 text-gold" />
+            <span className="text-sm text-slate-300">{t('hub.noUrgent')}</span>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {urgentCards.map((task) => (
+              <div key={task.id} className={`rounded-xl border p-4 ${urgentCardCls(task.priority)}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${urgentDotCls(task.priority)}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className={`text-sm font-semibold leading-snug ${urgentTitleCls(task.priority)}`}>
+                      {task.title}
+                    </div>
+                    {task.body && <div className="mt-1 text-sm text-slate-400 leading-snug">{task.body}</div>}
+                    {(task.meta || task.due) && (
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                        {task.meta && <span>{task.meta}</span>}
+                        {task.meta && task.due && <span>·</span>}
+                        {task.due && (
+                          <>
+                            <Clock className="h-3 w-3" />
+                            <span>{task.due}</span>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Section>
 
       {/* ── App grid ──────────────────────────────────────────────────────────── */}
@@ -383,7 +481,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
         <Panel>
           <PanelHeader title={t('hub.liveActivity')} icon={<Activity className="h-4 w-4" />} />
           <div className="divide-y divide-white/[0.06]">
-            {ACTIVITY.map((item, i) => (
+            {activity.map((item, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${
                   item.type === 'lead'    ? 'bg-gold' :

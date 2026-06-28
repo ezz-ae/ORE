@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { McpResponseEnvelope } from '@/types/freehold-mcp'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { getSkill } from '@/lib/freehold/ai-skills'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import type { Role as SessionRole } from '@/lib/freehold/session-types'
 import type { Role } from '@/types/freehold-mcp'
 
 export const runtime = 'nodejs'
 
 type ExpertRole = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_agent' | 'data_manager' | 'viewer'
 
+/**
+ * Map the authenticated session role → the MCP/Expert role used for tool
+ * authorization. Derived server-side from the verified session so a client can
+ * never escalate by claiming a higher role in the request body.
+ */
+const SESSION_TO_EXPERT: Record<SessionRole, ExpertRole> = {
+  broker: 'sales_agent',
+  admin: 'admin',
+  sales_manager: 'sales_manager',
+  director: 'admin',
+  ceo: 'owner',
+  marketing: 'marketing',
+}
+
 interface ExpertChatRequest {
   message: string
-  role?: ExpertRole
   sessionId?: string
   /** Current page path, so the Expert knows where the user is. */
   page?: string
@@ -65,7 +81,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as ExpertChatRequest
     const message = body.message?.trim() || ''
-    const role = (body.role || 'owner') as ExpertRole
+    // Derive the role from the verified session — never from the request body.
+    // Unauthenticated callers get the least-privilege 'viewer' role.
+    const sessionUser = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+    const role: ExpertRole = sessionUser ? (SESSION_TO_EXPERT[sessionUser.role] ?? 'viewer') : 'viewer'
     const sessionId = body.sessionId ?? `expert-${crypto.randomUUID()}`
 
     if (!message) {

@@ -50,25 +50,29 @@ To add a step: pick/define an anchor, add a `CoachStep` to the role’s tour in
 
 Writing role tours forced a walk through each role’s landing surface. These are
 the placeholder / not-yet-live spots found on or next to the highlighted
-surfaces — listed so we can decide what to wire to real data next. None block
-the tours; they’re honest stubs.
+surfaces. The first three were wired to live data in the same change; the rest
+are tracked here.
 
-1. **Hub “Live activity” feed — hardcoded.**
-   `app/freehold-intelligence/dashboard-client.tsx` (`ACTIVITY`, ~lines 30-36).
-   The panel is titled *Live activity* but renders a fixed 5-row array. Seen by
-   admin / director / ceo / sales_manager on the home hub.
+1. **Hub “Live activity” feed — ✅ wired to live data.**
+   `app/freehold-intelligence/dashboard-client.tsx` now fetches
+   `/api/freehold/crm/activity` and renders real lead-activity rows (humanized
+   type + relative timestamp), falling back to the static demo only when the
+   activity log is empty.
 
-2. **Hub morning briefing — static demo summary.**
-   `src/features/freehold-intelligence/server-session.ts` (`serverSummary`,
-   ~line 186). Urgent/blocked/pending counts and copy are frozen, with a
-   hardcoded `generatedAt: 2026-05-22`. This is exactly the surface the CEO tour
-   highlights (`hub-briefing`), so it should move to live aggregation.
+2. **Hub morning briefing — ✅ wired to live data.**
+   The urgent-action cards and the urgent / blocked / pending chips now read
+   live work tasks (`/api/freehold/tasks`) and the pending-approval deal queue
+   (`/api/freehold/deals?status=pending_step2`). The summary line switches to a
+   live count sentence (`hub.briefingLive`) when live data is present, and an
+   empty state (`hub.noUrgent`) shows when nothing is urgent. The static
+   `serverSummary` remains the fallback for a fresh workspace.
 
-3. **Freehold Expert sends `role: 'owner'` for everyone.**
-   `components/freehold/expert-chat.tsx` (~line 121) hardcodes
-   `role: 'owner'` in the chat request regardless of the signed-in user. The
-   Expert is highlighted in *every* role tour, so it should pass the real
-   session role for correctly-scoped answers.
+3. **Freehold Expert role — ✅ fixed (and hardened).**
+   `app/api/freehold/expert/chat/route.ts` now derives the MCP role from the
+   verified session (`SESSION_TO_EXPERT` map) instead of trusting a client-sent
+   `role`. The client no longer sends `role: 'owner'`. This both scopes answers
+   correctly per role and closes a privilege-escalation hole (a client could
+   previously claim `owner`).
 
 4. **Analytics — mock display enriched by partial live stats.**
    `app/freehold-intelligence/analytics/page.tsx` (~lines 206-216) renders a

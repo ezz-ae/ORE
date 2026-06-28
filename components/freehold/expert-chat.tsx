@@ -118,7 +118,7 @@ export function ExpertChat() {
       const res = await fetch('/api/freehold/expert/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, role: 'owner', sessionId: sessionId.current, page: pathname }),
+        body: JSON.stringify({ message, sessionId: sessionId.current, page: pathname }),
       })
       const data = await res.json()
       const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: 'I reviewed the system state. Try a suggested prompt.' }]

@@ -108,6 +108,9 @@ const en: Dict = {
   'hub.thinking': 'Thinking…',
   'hub.fullConversation': 'Full conversation',
   'hub.dismiss': 'Dismiss',
+  'hub.yesterday': 'Yesterday',
+  'hub.briefingLive': '{urgent} urgent, {blocked} blocked and {pending} awaiting approval right now.',
+  'hub.noUrgent': 'Nothing urgent right now — you\'re ahead.',
 }
 
 const ar: Dict = {
@@ -189,6 +192,9 @@ const ar: Dict = {
   'hub.thinking': 'جارٍ التفكير…',
   'hub.fullConversation': 'المحادثة الكاملة',
   'hub.dismiss': 'إغلاق',
+  'hub.yesterday': 'أمس',
+  'hub.briefingLive': '{urgent} عاجلة، و{blocked} محظورة، و{pending} بانتظار الموافقة الآن.',
+  'hub.noUrgent': 'لا شيء عاجل الآن — أنت متقدّم على العمل.',
 }
 
 const ru: Dict = {
@@ -270,6 +276,9 @@ const ru: Dict = {
   'hub.thinking': 'Думаю…',
   'hub.fullConversation': 'Полный разговор',
   'hub.dismiss': 'Закрыть',
+  'hub.yesterday': 'Вчера',
+  'hub.briefingLive': 'Сейчас: {urgent} срочных, {blocked} заблокировано и {pending} ждут согласования.',
+  'hub.noUrgent': 'Сейчас ничего срочного — вы на шаг впереди.',
 }
 
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
