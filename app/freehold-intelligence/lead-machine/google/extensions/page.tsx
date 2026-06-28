@@ -17,6 +17,7 @@ import {
   Info,
   FileText,
   Plus,
+  X,
 } from 'lucide-react'
 import type {
   GoogleExtension,
@@ -66,10 +67,17 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ─── Individual extension renders ────────────────────────────────────────────
 
-function SitelinkCard({ ext }: { ext: GoogleSitelinkExtension }) {
+function SitelinkCard({ ext, onRemove, removeLabel }: { ext: GoogleSitelinkExtension; onRemove?: () => void; removeLabel?: string }) {
   return (
     <div className="rounded-[16px] border border-line bg-surface p-4 transition hover:border-[#4285F4]/20">
-      <div className="text-sm font-semibold text-white">{ext.linkText}</div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-sm font-semibold text-white">{ext.linkText}</div>
+        {onRemove && ext.id.startsWith('local-') && (
+          <button onClick={onRemove} title={removeLabel} className="shrink-0 rounded p-0.5 text-slate-600 transition hover:bg-white/[0.06] hover:text-red-400">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       {ext.description1 && (
         <div className="mt-1 text-xs text-slate-400">{ext.description1}</div>
       )}
@@ -85,10 +93,15 @@ function SitelinkCard({ ext }: { ext: GoogleSitelinkExtension }) {
   )
 }
 
-function CalloutCard({ ext }: { ext: GoogleCalloutExtension }) {
+function CalloutCard({ ext, onRemove, removeLabel }: { ext: GoogleCalloutExtension; onRemove?: () => void; removeLabel?: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-slate-400">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-slate-400">
       {ext.calloutText}
+      {onRemove && ext.id.startsWith('local-') && (
+        <button onClick={onRemove} title={removeLabel} className="-mr-1 rounded p-0.5 text-slate-500 transition hover:text-red-400">
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </span>
   )
 }
@@ -151,9 +164,13 @@ function LeadFormCard({ ext }: { ext: Extract<GoogleExtension, { type: 'LEAD_FOR
 function ExtensionGroup({
   type,
   extensions,
+  onRemove,
+  removeLabel,
 }: {
   type: string
   extensions: GoogleExtension[]
+  onRemove?: (id: string) => void
+  removeLabel?: string
 }) {
   const icon  = TYPE_ICON[type]  ?? <Layers className="h-4 w-4 text-slate-500" />
   const label = TYPE_LABEL[type] ?? type
@@ -172,13 +189,13 @@ function ExtensionGroup({
       {type === 'CALLOUT' ? (
         <div className="flex flex-wrap gap-2">
           {(extensions as GoogleCalloutExtension[]).map((ext) => (
-            <CalloutCard key={ext.id} ext={ext} />
+            <CalloutCard key={ext.id} ext={ext} onRemove={onRemove ? () => onRemove(ext.id) : undefined} removeLabel={removeLabel} />
           ))}
         </div>
       ) : type === 'SITELINK' ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {(extensions as GoogleSitelinkExtension[]).map((ext) => (
-            <SitelinkCard key={ext.id} ext={ext} />
+            <SitelinkCard key={ext.id} ext={ext} onRemove={onRemove ? () => onRemove(ext.id) : undefined} removeLabel={removeLabel} />
           ))}
         </div>
       ) : type === 'CALL' ? (
@@ -257,6 +274,16 @@ export default function GoogleExtensionsPage() {
     } catch {
       toast.error(t('lm.google.actions.failed'))
     } finally { setAdding(false) }
+  }
+
+  async function removeExtension(id: string) {
+    try {
+      const res = await fetch(`/api/google/extensions?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
+    }
   }
 
   async function fetchData(quiet = false) {
@@ -461,7 +488,7 @@ export default function GoogleExtensionsPage() {
           {/* ── Extension groups ── */}
           {filteredGroups.length > 0 ? (
             filteredGroups.map(([type, exts]) => (
-              <ExtensionGroup key={type} type={type} extensions={exts} />
+              <ExtensionGroup key={type} type={type} extensions={exts} onRemove={removeExtension} removeLabel={t('common.remove')} />
             ))
           ) : (
             <div className="mt-8 rounded-[24px] border border-line bg-surface px-6 py-12 text-center">

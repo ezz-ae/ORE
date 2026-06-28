@@ -11,6 +11,7 @@ import {
   ChevronUp,
   ArrowUpRight,
   Plus,
+  X,
 } from 'lucide-react'
 import type { GoogleKeyword, NegativeKeyword, GoogleKeywordMatchType } from '@/lib/google/types'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
@@ -115,6 +116,17 @@ export default function GoogleKeywordsPage() {
       toast.error(t('lm.google.actions.failed'))
     } finally {
       setAdding(false)
+    }
+  }
+
+  async function removeKeyword(id: string) {
+    try {
+      const res = await fetch(`/api/google/keywords?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      toast.success(t('lm.google.keywords.removed'))
+      fetchData(true)
+    } catch {
+      toast.error(t('lm.google.actions.failed'))
     }
   }
 
@@ -334,6 +346,15 @@ export default function GoogleKeywordsPage() {
                         }`}
                       />
                       <span className="truncate font-medium text-white">{kw.text}</span>
+                      {kw.id.startsWith('local-') && (
+                        <button
+                          onClick={() => removeKeyword(kw.id)}
+                          title={t('common.remove')}
+                          className="ml-auto shrink-0 rounded p-0.5 text-slate-600 transition hover:bg-white/[0.06] hover:text-red-400"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Match type badge */}
