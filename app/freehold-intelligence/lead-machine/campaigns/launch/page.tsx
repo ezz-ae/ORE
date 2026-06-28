@@ -11,6 +11,7 @@ import {
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { LeadMachineLanding, LeadMachineListing } from '@/src/features/freehold-intelligence/lead-machine'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { defaultConfig, type AutomationStep, type WorkspaceAutomationConfig } from '@/lib/automation/types'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -542,6 +543,16 @@ export default function CampaignLaunchPage() {
   const [generatingId,     setGeneratingId]     = useState<string | null>(null)
   const [newKeyword,       setNewKeyword]       = useState('')
   const [launchError,      setLaunchError]      = useState<string | null>(null)
+  // Workspace automation config — controls which wizard steps the AI prefills.
+  // 'auto'/'assisted' ⇒ AI fills the field; 'manual' ⇒ left blank for the user.
+  const [autoCfg,          setAutoCfg]          = useState<WorkspaceAutomationConfig>(defaultConfig)
+  useEffect(() => {
+    fetch('/api/freehold/automation/config')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.config) setAutoCfg(d.config) })
+      .catch(() => {})
+  }, [])
+  const aiFills = (s: AutomationStep) => autoCfg.steps[s] !== 'manual'
   // Date label for the auto-generated campaign name — computed on the client only
   // to avoid a server/client hydration mismatch from new Date() during render.
   const [dateLabel,        setDateLabel]        = useState('')
@@ -556,11 +567,13 @@ export default function CampaignLaunchPage() {
   function selectProperty(id: string) {
     const listing   = leadMachineListings.find((l) => l.id === id)
     if (!listing) return
-    const strategy  = computeAIStrategy(listing)
-    const budget    = computeAIBudget(strategy)
-    const channel   = computeAIChannel(strategy, budget)
-    const locations = computeAILocations(strategy)
-    const interests = computeAIInterests(strategy)
+    // Each step's values are AI-computed only when that step's mode allows it.
+    const strategy  = aiFills('ad.strategy') ? computeAIStrategy(listing) : state.strategy
+    const budget    = aiFills('ad.budget')   ? computeAIBudget(strategy)  : state.budget
+    const channel   = aiFills('ad.budget')   ? computeAIChannel(strategy, budget) : state.channel
+    const locations = aiFills('ad.audience') ? computeAILocations(strategy) : state.locations
+    const interests = aiFills('ad.audience') ? computeAIInterests(strategy) : state.interests
+    const creative  = aiFills('ad.creative')
     const headlines = generateHeadlines(listing, strategy)
     const bodies    = generateBodyCopy(listing, strategy)
     const landing   = [...leadMachineLandings, ...generatedLandings].find((l) => l.projectId === listing.projectId)
@@ -568,12 +581,12 @@ export default function CampaignLaunchPage() {
     setState((s) => ({
       ...s,
       propertyId: id, strategy, channel, budget, locations, interests,
-      headline: headlines[0], body: bodies[0],
-      googleHeadlines:    generateGoogleHeadlines(listing, strategy),
-      googleDescriptions: generateGoogleDescriptions(listing, strategy),
+      headline: creative ? headlines[0] : '', body: creative ? bodies[0] : '',
+      googleHeadlines:    creative ? generateGoogleHeadlines(listing, strategy) : [],
+      googleDescriptions: creative ? generateGoogleDescriptions(listing, strategy) : [],
       googleDisplayPath:  slugify(listing.projectName),
-      googleKeywords:     generateKeywords(listing, strategy),
-      landingId: landing?.id ?? '',
+      googleKeywords:     creative ? generateKeywords(listing, strategy) : [],
+      landingId: aiFills('ad.landing') ? (landing?.id ?? '') : '',
     }))
   }
 
