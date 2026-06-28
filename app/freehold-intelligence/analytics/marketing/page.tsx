@@ -5,6 +5,7 @@ import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
 import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type Live = { sources: { label: string; count: number }[] } | null
 
@@ -93,6 +94,8 @@ export default function MarketingAnalyticsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('analytics.tab.marketing')}</h1>
         <p className="mt-1 text-sm text-slate-400">{t('analytics.marketing.sub')}</p>
       </div>
+
+      <ExpertDepth prompts={['expert.depth.marketing.q1', 'expert.depth.marketing.q2', 'expert.depth.marketing.q3']} />
 
       {/* Live: lead channels + ad spend */}
       <div className="grid gap-6 lg:grid-cols-2">

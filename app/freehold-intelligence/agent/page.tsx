@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
 import { useI18n } from '@/lib/i18n/provider'
+import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   red:    { icon: 'text-red-400',      card: 'border-red-400/20 hover:border-red-400/35',     badge: 'bg-red-500'       },
@@ -133,6 +134,11 @@ export default function AgentHomePage() {
         </h1>
 
       </section>
+
+      <ExpertDepth
+        prompts={['expert.depth.agent.q1', 'expert.depth.agent.q2', 'expert.depth.agent.q3', 'expert.depth.agent.q4']}
+        className="mt-8"
+      />
 
       {/* Today's Priority — only shown when there are real critical leads */}
       {displayCritical > 0 && (

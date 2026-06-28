@@ -33,7 +33,14 @@ const en: Dict = {
   "expert.depth.analyticsCompany.q3": "Which source drives the best closing rate?",
   "expert.depth.market.q1": "Which areas are heating up right now?",
   "expert.depth.market.q2": "Where should we focus inventory and ads?",
-  "expert.depth.market.q3": "How do our yields compare across areas?"
+  "expert.depth.market.q3": "How do our yields compare across areas?",
+  "expert.depth.marketing.q1": "Which channel brings the best-quality leads?",
+  "expert.depth.marketing.q2": "Where should I shift ad budget for better ROI?",
+  "expert.depth.marketing.q3": "Which country and source convert best?",
+  "expert.depth.agent.q1": "What should I focus on right now?",
+  "expert.depth.agent.q2": "Draft a follow-up for my hottest lead.",
+  "expert.depth.agent.q3": "Which of my leads need attention today?",
+  "expert.depth.agent.q4": "Plan my week to hit target."
 }
 
 const ar: Dict = {
@@ -67,7 +74,14 @@ const ar: Dict = {
   "expert.depth.analyticsCompany.q3": "أيّ مصدر يحقّق أفضل معدّل إغلاق للصفقات؟",
   "expert.depth.market.q1": "ما هي المناطق التي يشهد الطلب عليها ارتفاعًا حاليًا؟",
   "expert.depth.market.q2": "أين ينبغي أن نركّز المعروض والحملات الإعلانية؟",
-  "expert.depth.market.q3": "كيف تتفاوت عوائدنا الإيجارية بين المناطق المختلفة؟"
+  "expert.depth.market.q3": "كيف تتفاوت عوائدنا الإيجارية بين المناطق المختلفة؟",
+  "expert.depth.marketing.q1": "أي قناة تجلب العملاء المحتملين الأعلى جودة؟",
+  "expert.depth.marketing.q2": "أين ينبغي أن أعيد توجيه ميزانية الإعلانات لتحقيق عائد أفضل؟",
+  "expert.depth.marketing.q3": "أي دولة ومصدر يحققان أفضل معدل تحويل؟",
+  "expert.depth.agent.q1": "علام ينبغي أن أركّز الآن؟",
+  "expert.depth.agent.q2": "صُغ رسالة متابعة لأكثر عملائي المحتملين سخونة.",
+  "expert.depth.agent.q3": "أي من عملائي المحتملين يحتاج اهتماماً اليوم؟",
+  "expert.depth.agent.q4": "خطّط أسبوعي لتحقيق الهدف."
 }
 
 const ru: Dict = {
@@ -101,7 +115,14 @@ const ru: Dict = {
   "expert.depth.analyticsCompany.q3": "Какой источник обеспечивает наилучший показатель закрытия сделок?",
   "expert.depth.market.q1": "Какие районы сейчас набирают активность?",
   "expert.depth.market.q2": "На каких районах сосредоточить предложение и рекламу?",
-  "expert.depth.market.q3": "Как сравниваются наши показатели доходности по районам?"
+  "expert.depth.market.q3": "Как сравниваются наши показатели доходности по районам?",
+  "expert.depth.marketing.q1": "Какой канал приносит самых качественных лидов?",
+  "expert.depth.marketing.q2": "Куда перераспределить рекламный бюджет ради лучшего ROI?",
+  "expert.depth.marketing.q3": "Какие страна и источник конвертируют лучше всего?",
+  "expert.depth.agent.q1": "На чём мне стоит сосредоточиться прямо сейчас?",
+  "expert.depth.agent.q2": "Составь напоминание-касание для самого горячего лида.",
+  "expert.depth.agent.q3": "Каким из моих лидов нужно внимание сегодня?",
+  "expert.depth.agent.q4": "Спланируй мою неделю для достижения цели."
 }
 
 export const expertDepth = { en, ar, ru }
