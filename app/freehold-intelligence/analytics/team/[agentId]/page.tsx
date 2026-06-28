@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Users, TrendingUp, Briefcase, Megaphone, Activity } from 'lucide-react'
+import { ArrowLeft, Users, Briefcase, Megaphone, Activity, Sparkles, ArrowUpRight } from 'lucide-react'
 import { useI18n } from '@/lib/i18n/provider'
+import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
 
 type Profile = {
@@ -88,6 +89,23 @@ export default function AgentProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Ask the Expert about this specific agent (one docked conversation) */}
+      <section className="overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/25 bg-gold/10"><Sparkles className="h-4 w-4 text-gold" /></div>
+          <div className="text-sm font-semibold text-white">{t('analytics.agent.askTitle', { name: agent.name })}</div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {['analytics.agent.ask.q1', 'analytics.agent.ask.q2', 'analytics.agent.ask.q3'].map((q) => (
+            <button key={q} type="button" onClick={() => sendToExpert(t(q, { name: agent.name }))}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-3.5 py-1.5 text-sm text-slate-300 transition-colors hover:border-gold/40 hover:text-white">
+              {t(q, { name: agent.name })}
+              <ArrowUpRight className="h-3.5 w-3.5 text-slate-500 transition-colors group-hover:text-gold" />
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* KPI grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
