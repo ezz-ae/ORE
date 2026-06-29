@@ -601,8 +601,8 @@ export default function NotebookPage() {
                             <iframe
                               title={o.title}
                               sandbox=""
-                              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0B131F;padding:12px">${o.content}</body>`}
-                              className="h-64 w-full rounded-lg border border-line bg-[#0B131F]"
+                              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#181613;padding:12px">${o.content}</body>`}
+                              className="h-64 w-full rounded-lg border border-line bg-surface"
                             />
                           ) : (
                             <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-app p-3 text-xs leading-relaxed text-slate-300">{o.content}</pre>

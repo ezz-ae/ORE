@@ -46,7 +46,7 @@ function Tile({ entry, onClose }: { entry: AppEntry; onClose: () => void }) {
     <Link
       href={entry.href}
       onClick={onClose}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-line bg-[#0A0D10] p-5 transition hover:border-gold/30 hover:bg-[#0E1216]"
+      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-line bg-[#100F0D] p-5 transition hover:border-gold/30 hover:bg-[#17150F]"
     >
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${entry.tint} opacity-60 transition group-hover:opacity-90`} />
       <div className="relative">

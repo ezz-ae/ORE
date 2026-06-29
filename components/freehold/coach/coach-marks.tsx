@@ -291,7 +291,7 @@ function CoachOverlay({
       {/* Tooltip card */}
       <div
         ref={cardRef}
-        className="absolute w-[340px] max-w-[92vw] rounded-2xl border border-gold/25 bg-[#0B131F] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.7)]"
+        className="absolute w-[340px] max-w-[92vw] rounded-2xl border border-gold/25 bg-surface p-5 shadow-[0_24px_70px_rgba(0,0,0,0.7)]"
         style={{ top: pos.top, left: pos.left }}
       >
         <div className="mb-2.5 flex items-center justify-between gap-3">

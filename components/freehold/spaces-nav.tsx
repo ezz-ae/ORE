@@ -136,7 +136,7 @@ export function SpacesNav() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-white/[0.12] bg-[#08111C] shadow-[0_24px_60px_rgba(0,0,0,0.75)]">
+          <div className="absolute right-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-white/[0.12] bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.75)]">
             <div className="border-b border-white/[0.07] px-4 py-3">
               <div className="text-sm font-semibold text-white">{user?.name ?? 'Account'}</div>
               <div className="text-xs text-slate-500">{user?.email ?? ''}</div>
