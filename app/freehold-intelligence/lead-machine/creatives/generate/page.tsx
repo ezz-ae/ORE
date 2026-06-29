@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles } from 'lucide-react'
+import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, Building2 } from 'lucide-react'
 import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/lib/meta/types'
 import type { MetaCta } from '@/lib/meta/types'
@@ -60,11 +60,34 @@ export default function GenerateCreativePage() {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [variants, setVariants]   = useState<GeneratedCreativeVariant[]>([])
+  // Real-project override: arriving from AI-Manager / Inventory "Generate Ad
+  // Creatives" (?project=&name=&area=&developer=&price=). The generator is
+  // seed-based, so a live project won't be in leadMachineListings — generate
+  // straight from the params instead of a seed listing.
+  const [override, setOverride] = useState<{ slug: string; name: string; area: string; developer: string; price: number } | null>(null)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const name = p.get('name'); const slug = p.get('project')
+    if (!name && !slug) return
+    setOverride({
+      slug: slug || '',
+      name: name || slug || '',
+      area: p.get('area') || '',
+      developer: p.get('developer') || '',
+      price: Number(p.get('price')) || 0,
+    })
+  }, [])
 
   const listing = leadMachineListings.find((l) => l.id === listingId)
 
   async function generate() {
-    if (!listing) return
+    // Override (real project) takes precedence over the selected seed listing.
+    const ctx = override
+      ? { id: override.slug || override.name, name: override.name, area: override.area, developer: override.developer, price: override.price, paymentPlan: '' }
+      : listing
+        ? { id: listing.id, name: listing.projectName, area: listing.area, developer: listing.developer, price: listing.startingPrice, paymentPlan: listing.paymentPlan }
+        : null
+    if (!ctx) return
     setLoading(true)
     setError(null)
     setVariants([])
@@ -73,12 +96,12 @@ export default function GenerateCreativePage() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          listingId:    listing.id,
-          listingName:  listing.projectName,
-          area:         listing.area,
-          developer:    listing.developer,
-          startingPrice: listing.startingPrice,
-          paymentPlan:  listing.paymentPlan,
+          listingId:    ctx.id,
+          listingName:  ctx.name,
+          area:         ctx.area,
+          developer:    ctx.developer,
+          startingPrice: ctx.price,
+          paymentPlan:  ctx.paymentPlan,
           angle,
           tone,
           cta,
@@ -128,25 +151,39 @@ export default function GenerateCreativePage() {
             <label className="mb-2 block text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
               {t('lm.creatives.generate.label.listing')}
             </label>
-            <div className="relative">
-              <select
-                value={listingId}
-                onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
-              >
-                {leadMachineListings.map((l) => (
-                  <option key={l.id} value={l.id}>{l.projectName}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
-            </div>
-            {listing && (
-              <div className="mt-1.5 text-sm text-slate-500">
-                {listing.area} · {listing.developer}
-                {listing.startingPrice && (
-                  <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
-                )}
+            {override ? (
+              <div className="rounded-[14px] border border-gold/30 bg-gold/[0.05] px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <Building2 className="h-4 w-4 text-gold" /> {override.name}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">
+                  {[override.area, override.developer].filter(Boolean).join(' · ')}
+                  {override.price > 0 && <> · AED {(override.price / 1_000_000).toFixed(1)}M from</>}
+                </div>
               </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <select
+                    value={listingId}
+                    onChange={(e) => setListingId(e.target.value)}
+                    className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
+                  >
+                    {leadMachineListings.map((l) => (
+                      <option key={l.id} value={l.id}>{l.projectName}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+                </div>
+                {listing && (
+                  <div className="mt-1.5 text-sm text-slate-500">
+                    {listing.area} · {listing.developer}
+                    {listing.startingPrice && (
+                      <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
 

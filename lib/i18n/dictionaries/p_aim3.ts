@@ -44,6 +44,7 @@ const en: Dict = {
   // empty / row actions / footer
   'paim.listings.empty': 'No listings match this filter.',
   'paim.listings.improveIdle': 'AI Improve',
+  'paim.listings.adCreatives': 'Ad Creatives',
   'paim.listings.improveBusy': 'Improving…',
   'paim.listings.footer': '{shown} of {total} listings · AI Manager',
   // toasts
@@ -114,6 +115,7 @@ const ar: Dict = {
   'paim.listings.col.actions': 'إجراءات',
   'paim.listings.empty': 'لا توجد قوائم تطابق هذا المرشّح.',
   'paim.listings.improveIdle': 'تحسين بالذكاء الاصطناعي',
+  'paim.listings.adCreatives': 'إعلانات',
   'paim.listings.improveBusy': 'جارٍ التحسين…',
   'paim.listings.footer': '{shown} من {total} قائمة · مدير الذكاء الاصطناعي',
   'paim.listings.toast.updated': 'تم تحديث {name}',
@@ -181,6 +183,7 @@ const ru: Dict = {
   'paim.listings.col.actions': 'Действия',
   'paim.listings.empty': 'Нет объявлений, соответствующих этому фильтру.',
   'paim.listings.improveIdle': 'Улучшить с ИИ',
+  'paim.listings.adCreatives': 'Креативы',
   'paim.listings.improveBusy': 'Улучшение…',
   'paim.listings.footer': '{shown} из {total} объявлений · AI-менеджер',
   'paim.listings.toast.updated': '{name} обновлено',
