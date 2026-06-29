@@ -107,25 +107,44 @@ export async function GET() {
   }
 }
 
-// Create a lead, optionally pre-assigned to a broker. Management only.
+// Create a lead. Brokers may add their OWN direct leads (auto-assigned to
+// themselves); management may add a lead and assign it to any broker.
 export async function POST(req: Request) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!MANAGEMENT.includes(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isManagement = MANAGEMENT.includes(user.role)
+  if (!isManagement && user.role !== 'broker') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const body = await req.json().catch(() => ({})) as {
-    name?: string; phone?: string; email?: string; source?: string; assignedBrokerId?: string
+    name?: string; phone?: string; email?: string; source?: string
+    interest?: string; budgetAed?: number | string; message?: string; assignedBrokerId?: string
   }
   const name = (body.name || '').trim()
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+
+  // A broker can only create a lead for themselves; management chooses the owner.
+  const assignedBrokerId = isManagement
+    ? (body.assignedBrokerId || null)
+    : (user.brokerId ?? user.email)
+
+  const budget = body.budgetAed != null && String(body.budgetAed).trim() !== ''
+    ? Number(String(body.budgetAed).replace(/[^0-9.]/g, '')) || null
+    : null
 
   try {
     await ensureLeadsTable()
     const id = randomUUID()
     await query(
-      `INSERT INTO freehold_site_leads (id, name, phone, email, source, status, assigned_broker_id)
-       VALUES ($1, $2, $3, $4, $5, 'new', $6)`,
-      [id, name, body.phone || null, body.email || null, (body.source || 'manual').trim(), body.assignedBrokerId || null],
+      `INSERT INTO freehold_site_leads
+         (id, name, phone, email, source, status, priority, assigned_broker_id, interest, budget_aed, message)
+       VALUES ($1, $2, $3, $4, $5, 'new', 'warm', $6, $7, $8, $9)`,
+      [
+        id, name, body.phone || null, body.email || null,
+        (body.source || 'Direct').trim(), assignedBrokerId,
+        (body.interest || '').trim() || null, budget, (body.message || '').trim() || null,
+      ],
     )
     return NextResponse.json({ ok: true, id }, { status: 201 })
   } catch (err) {

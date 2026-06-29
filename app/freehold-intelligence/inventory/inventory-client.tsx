@@ -265,7 +265,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 
       {/* Table */}
       <div className="mt-5 overflow-x-auto rounded-[20px] border border-line bg-surface-2">
-        <table className="w-full min-w-[1060px] border-collapse text-sm">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line">
               {[
@@ -273,11 +273,8 @@ export default function InventoryClient({ initialProperties }: { initialProperti
                 'inv.col.areaDeveloper',
                 'inv.col.status',
                 'inv.col.startingPrice',
-                'inv.col.bedrooms',
                 'inv.col.roi',
                 'inv.col.landing',
-                'inv.col.dataQuality',
-                'inv.col.adReadiness',
                 'inv.col.leads30d',
                 'inv.col.actions',
               ].map((col) => (
@@ -293,7 +290,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           <tbody className="divide-y divide-line">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={11}>
+                <td colSpan={8}>
                   <EmptyState
                     Icon={LayoutGrid}
                     title={t('inv.empty.title')}
@@ -345,11 +342,6 @@ function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
         {formatPrice(prop.startingPriceAED)}
       </td>
 
-      {/* Bedrooms */}
-      <td className="px-4 py-3.5 text-slate-400">
-        {prop.bedrooms}
-      </td>
-
       {/* ROI */}
       <td className="px-4 py-3.5 tabular-nums">
         {prop.roi !== null ? (
@@ -375,32 +367,6 @@ function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
             {landingLabel(prop.landingStatus, t)}
           </span>
         )}
-      </td>
-
-      {/* Data quality */}
-      <td className="px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className={`h-full rounded-full ${readinessBar(prop.dataQuality)}`}
-              style={{ width: `${prop.dataQuality}%` }}
-            />
-          </div>
-          <span className="tabular-nums text-sm text-slate-400">{prop.dataQuality}</span>
-        </div>
-      </td>
-
-      {/* Ad readiness */}
-      <td className="px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className={`h-full rounded-full ${readinessBar(prop.adReadiness)}`}
-              style={{ width: `${prop.adReadiness}%` }}
-            />
-          </div>
-          <span className="tabular-nums text-sm text-slate-400">{prop.adReadiness}</span>
-        </div>
       </td>
 
       {/* Leads 30d */}

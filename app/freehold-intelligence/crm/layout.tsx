@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -11,6 +11,7 @@ import {
 import { useSession } from '@/lib/freehold/use-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
+import { AddLeadModal } from './_components/AddLeadModal'
 
 // CRM sub-pages a broker may access (their own daily work). Everything else
 // (assignment, agents, reports, duplicates, pipeline, activity) is management-only.
@@ -67,6 +68,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const t = useT()
 
+  const [addLeadOpen, setAddLeadOpen] = useState(false)
   // Live badge counts derived from real DB leads (no seed/mock).
   const { leads } = useLiveLeads()
   const newLeads      = leads.filter(l => l.pipelineStage === 'new').length
@@ -132,15 +134,17 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/freehold-intelligence/crm/inbox"
+          <button
+            onClick={() => setAddLeadOpen(true)}
             className="flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:border-gold/30 hover:text-white"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:block">{t('crm.addLead')}</span>
-          </Link>
+          </button>
         </div>
       </header>
+
+      <AddLeadModal open={addLeadOpen} onClose={() => setAddLeadOpen(false)} />
 
       {/* ── Body ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-1">
