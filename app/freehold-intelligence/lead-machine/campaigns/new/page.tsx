@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -134,6 +134,29 @@ export default function NewCampaignPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
     setApiError(null)
   }
+
+  // Prefill from a real inventory project when arriving via the Inventory
+  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>). The
+  // builder is seed-based, so a live project won't be in leadMachineListings —
+  // we seed the creative straight from the query params instead.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const project = p.get('project')
+    const name = p.get('name')
+    const price = p.get('price')
+    if (!project && !name) return
+    const displayName = name || project || ''
+    const priceNum = price ? Number(price) : 0
+    setForm((prev) => ({
+      ...prev,
+      campaignName: `${displayName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
+      headline: displayName,
+      primaryText: priceNum > 0
+        ? `${displayName} — starting from AED ${priceNum.toLocaleString()}. Request the investor summary now.`
+        : `${displayName} — request the investor summary now.`,
+      landingUrl: project ? `https://freeholdproperty.ae/off-plan/${project}` : prev.landingUrl,
+    }))
+  }, [])
 
   // ── Listing change pre-populates creative ──────────────────────────────────
   function onListingChange(id: string) {
