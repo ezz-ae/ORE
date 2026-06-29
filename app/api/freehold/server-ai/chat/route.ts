@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { McpResponseEnvelope } from '@/types/freehold-mcp'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { getSkill, isRoleAllowed } from '@/lib/freehold/ai-skills'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import type { Role as SessionRole } from '@/lib/freehold/session-types'
 
 type ServerRole = 'owner' | 'admin' | 'marketing' | 'sales_manager' | 'sales_agent' | 'data_manager' | 'viewer'
 type ServerTopic =
@@ -32,10 +35,19 @@ const ROLE_SCOPES: Record<ServerRole, { label: string; tone: string; allowedTopi
   viewer:        { label: 'Viewer',        tone: 'read-only briefing assistant',    allowedTopics: ['projects', 'campaigns', 'server_status'], deniedTopics: ['sales_team', 'agent_private', 'crm', 'integrations', 'security', 'approvals', 'notebook'] },
 }
 
-const normalizeRole = (body: ServerAiChatRequest, request: NextRequest): ServerRole => {
-  const headerRole = request.headers.get('x-freehold-role') as ServerRole | null
-  const role = body.role || headerRole || (body.userRoles?.[0] as ServerRole | undefined) || 'viewer'
-  return role in ROLE_SCOPES ? role : 'viewer'
+/**
+ * Map the authenticated session role → the server-AI scope role. Derived
+ * server-side from the verified session so a client can never escalate by
+ * passing `role`, `x-freehold-role`, or `userRoles` in the request — those
+ * inputs are now ignored entirely.
+ */
+const SESSION_TO_SERVER: Record<SessionRole, ServerRole> = {
+  broker: 'sales_agent',
+  admin: 'admin',
+  sales_manager: 'sales_manager',
+  director: 'admin',
+  ceo: 'owner',
+  marketing: 'marketing',
 }
 
 const inferTopic = (message: string): ServerTopic => {
@@ -81,9 +93,12 @@ const restrictedReply = (role: ServerRole, topic: ServerTopic) => {
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionUser = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+    if (!sessionUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body     = await request.json() as ServerAiChatRequest
     const message  = body.message || ''
-    const role     = normalizeRole(body, request)
+    const role     = SESSION_TO_SERVER[sessionUser.role] ?? 'viewer'
     const scope    = ROLE_SCOPES[role]
     const sessionId = body.sessionId ?? `sai-${crypto.randomUUID()}`
 
