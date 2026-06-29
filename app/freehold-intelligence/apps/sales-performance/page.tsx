@@ -1,93 +1,65 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, TrendingUp, AlertCircle, Clock, Phone, CheckCircle2, ArrowUpRight } from 'lucide-react'
-import { crmAgentRoster, crmLeads, crmActivityLog, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
+import { ArrowLeft, TrendingUp, Loader2 } from 'lucide-react'
 
-
-const AGENT_METRICS: Record<string, { avgResponseH: number; leadToViewing: number; viewingToOffer: number; revMTD: string }> = {
-  agent_noura:    { avgResponseH: 1.2, leadToViewing: 52, viewingToOffer: 38, revMTD: 'AED 11.2M' },
-  agent_omar:     { avgResponseH: 3.4, leadToViewing: 38, viewingToOffer: 25, revMTD: 'AED 6.1M'  },
-  agent_layla:    { avgResponseH: 2.1, leadToViewing: 44, viewingToOffer: 30, revMTD: 'AED 5.3M'  },
-  agent_ahmad:    { avgResponseH: 0.8, leadToViewing: 55, viewingToOffer: 40, revMTD: 'AED 14.8M' },
-  agent_sara:     { avgResponseH: 1.6, leadToViewing: 50, viewingToOffer: 35, revMTD: 'AED 9.4M'  },
-  agent_rami_t:   { avgResponseH: 5.2, leadToViewing: 28, viewingToOffer: 18, revMTD: 'AED 3.7M'  },
+// Live team metrics from the CRM (same source as Analytics → Team).
+type AgentMetric = {
+  id: string
+  name: string
+  tenureDays: number | null
+  totalLeads: number
+  hotLeads: number
+  wins30d: number
+  overdueFollowups: number
+  activity30d: number
+  calls: number
+  messages: number
+  notes: number
 }
 
-const TEAM_TARGET_RESPONSE = 2.0 // hours
+type SortKey = 'wins' | 'leads' | 'overdue' | 'activity'
 
-type SortKey = 'wins' | 'response' | 'revenue' | 'leads'
-type RiskFilter = 'All' | 'duplicate' | 'wrong_number' | 'critical'
-
-function parseRevenue(rev: string): number {
-  // e.g. 'AED 11.2M' → 11200000
-  const num = parseFloat(rev.replace('AED ', '').replace('M', ''))
-  return num * 1_000_000
-}
+const initialsOf = (name: string) =>
+  name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
 
 export default function SalesPerformancePage() {
-  const agents  = crmAgentRoster
-  const leads   = crmLeads
-  const actLog  = crmActivityLog
-  const fuQueue = crmFollowUpQueue
-
+  const [agents, setAgents] = useState<AgentMetric[]>([])
+  const [loading, setLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('wins')
-  const [riskFilter, setRiskFilter] = useState<RiskFilter>('All')
 
-  // Live computed stats
-  const totalLeads    = leads.length
-  const hotLeads      = leads.filter((l) => l.intentScore >= 85).length
-  const callsTotal    = actLog.filter((e) => e.type === 'call').length
-  const connected     = actLog.filter((e) => e.outcome === 'connected').length
-  const connectRate   = callsTotal > 0 ? Math.round((connected / callsTotal) * 100) : 0
-  const overdueTotal  = fuQueue.reduce((s, f) => s + (f.overdueHours > 0 ? 1 : 0), 0)
-  const riskLeads     = leads.filter((l) => l.duplicateRisk || l.wrongNumberRisk).length
+  useEffect(() => {
+    fetch('/api/freehold/analytics/team')
+      .then((r) => r.json())
+      .then((d) => setAgents(Array.isArray(d.agents) ? d.agents : []))
+      .catch(() => setAgents([]))
+      .finally(() => setLoading(false))
+  }, [])
 
-  // Avg response time vs target
-  const agentIds = agents.map((a) => a.id)
-  const avgResponse = agentIds.reduce((s, id) => s + (AGENT_METRICS[id]?.avgResponseH ?? 0), 0) / agentIds.length
+  const totalLeads    = agents.reduce((s, a) => s + a.totalLeads, 0)
+  const hotLeads      = agents.reduce((s, a) => s + a.hotLeads, 0)
+  const overdueTotal  = agents.reduce((s, a) => s + a.overdueFollowups, 0)
+  const winsTotal     = agents.reduce((s, a) => s + a.wins30d, 0)
+  const activityTotal = agents.reduce((s, a) => s + a.activity30d, 0)
 
-  // Sorted agents
   const sortedAgents = useMemo(() => {
     return [...agents].sort((a, b) => {
       switch (sortKey) {
-        case 'wins':
-          return b.recentWins - a.recentWins
-        case 'response':
-          return (AGENT_METRICS[a.id]?.avgResponseH ?? 99) - (AGENT_METRICS[b.id]?.avgResponseH ?? 99)
-        case 'revenue':
-          return parseRevenue(AGENT_METRICS[b.id]?.revMTD ?? 'AED 0M') - parseRevenue(AGENT_METRICS[a.id]?.revMTD ?? 'AED 0M')
-        case 'leads':
-          return b.totalLeads - a.totalLeads
-        default:
-          return 0
+        case 'wins':     return b.wins30d - a.wins30d
+        case 'leads':    return b.totalLeads - a.totalLeads
+        case 'overdue':  return b.overdueFollowups - a.overdueFollowups
+        case 'activity': return b.activity30d - a.activity30d
+        default:         return 0
       }
     })
   }, [agents, sortKey])
 
-  // Risk-filtered leads
-  const riskLeadsList = useMemo(() => {
-    const base = leads.filter((l) => l.duplicateRisk || l.wrongNumberRisk || l.urgency === 'critical')
-    if (riskFilter === 'All') return base
-    if (riskFilter === 'duplicate')    return base.filter((l) => l.duplicateRisk === true)
-    if (riskFilter === 'wrong_number') return base.filter((l) => l.wrongNumberRisk === true)
-    if (riskFilter === 'critical')     return base.filter((l) => l.urgency === 'critical')
-    return base
-  }, [leads, riskFilter])
-
   const sortPills: { key: SortKey; label: string }[] = [
     { key: 'wins',     label: 'Wins' },
-    { key: 'response', label: 'Response time' },
-    { key: 'revenue',  label: 'Revenue' },
     { key: 'leads',    label: 'Leads' },
-  ]
-
-  const riskPills: { key: RiskFilter; label: string }[] = [
-    { key: 'All',          label: 'All' },
-    { key: 'duplicate',    label: 'Duplicate risk' },
-    { key: 'wrong_number', label: 'Wrong number' },
-    { key: 'critical',     label: 'Critical' },
+    { key: 'overdue',  label: 'Overdue' },
+    { key: 'activity', label: 'Activity' },
   ]
 
   return (
@@ -98,201 +70,110 @@ export default function SalesPerformancePage() {
       </Link>
 
       <section className="mt-7">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
-            <TrendingUp className="h-3.5 w-3.5" /> Sales Performance
-          </div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
+          <TrendingUp className="h-3.5 w-3.5" /> Sales Performance
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          Sales signals<br /><span className="text-slate-500">response, quality, risk.</span>
+          Sales signals<br /><span className="text-slate-500">leads, wins, activity, risk.</span>
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-300">
-          Agent response times, conversion rates, lead quality signals and team risk flags. Call connect rate and overdue queue are live from CRM data.
+          Per-agent leads, hot pipeline, overdue follow-ups, wins and logged activity — live from CRM data.
         </p>
       </section>
 
-      {/* KPI row */}
-      <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {[
-          { label: 'Active leads',    value: totalLeads,           color: 'text-white' },
-          { label: 'High intent',     value: hotLeads,             color: 'text-red-300' },
-          { label: 'Connect rate',    value: `${connectRate}%`,    color: connectRate >= 50 ? 'text-gold' : 'text-orange-300' },
-          { label: 'Overdue FU',      value: overdueTotal,         color: overdueTotal > 0 ? 'text-orange-300' : 'text-gold' },
-          { label: 'Risk flags',      value: riskLeads,            color: riskLeads > 0 ? 'text-red-300' : 'text-gold' },
-          { label: 'Avg. response',   value: `${avgResponse.toFixed(1)}h`, color: avgResponse <= TEAM_TARGET_RESPONSE ? 'text-gold' : 'text-orange-300' },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-[16px] border border-line bg-surface p-4">
-            <div className={`text-[26px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
-            <div className="mt-1.5 text-xs text-slate-500">{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Agent performance table */}
-      <section className="mt-12">
-        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agent ranking</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Performance by advisor</h2>
-
-        {/* Sort controls */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-sm text-slate-500 mr-1">Sort by:</span>
-          {sortPills.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setSortKey(key)}
-              className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
-                sortKey === key
-                  ? 'border-gold/40 bg-gold/10 text-gold'
-                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+      {loading && (
+        <div className="mt-10 flex items-center justify-center py-16 text-slate-500">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> <span className="text-sm">Loading performance…</span>
         </div>
+      )}
 
-        <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-line">
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Leads</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Response</th>
-                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Lead→View</th>
-                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">Wins</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Revenue MTD</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {sortedAgents.map((agent, i) => {
-                const m = AGENT_METRICS[agent.id]
-                const responseOk = m ? m.avgResponseH <= TEAM_TARGET_RESPONSE : true
-                return (
-                  <tr key={agent.id} className={`transition hover:bg-surface-2 ${i === 0 ? 'bg-gold/[0.03]' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
-                          {agent.initials}
-                        </div>
-                        <div>
+      {!loading && agents.length === 0 && (
+        <div className="mt-10 rounded-[22px] border border-line bg-surface py-14 text-center text-sm text-slate-500">
+          No team performance data yet. Figures appear here once the CRM has agents and activity.
+        </div>
+      )}
+
+      {!loading && agents.length > 0 && (
+        <>
+          {/* KPI row — real aggregates */}
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              { label: 'Active leads', value: totalLeads,    color: 'text-white' },
+              { label: 'High intent',  value: hotLeads,      color: hotLeads > 0 ? 'text-red-300' : 'text-white' },
+              { label: 'Overdue FU',   value: overdueTotal,  color: overdueTotal > 0 ? 'text-orange-300' : 'text-gold' },
+              { label: 'Wins · 30d',   value: winsTotal,     color: 'text-gold' },
+              { label: 'Activity·30d', value: activityTotal, color: 'text-white' },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-[16px] border border-line bg-surface p-4">
+                <div className={`text-[26px] font-semibold leading-none ${stat.color}`}>{stat.value}</div>
+                <div className="mt-1.5 text-xs text-slate-500">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Agent ranking */}
+          <section className="mt-12">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agent ranking</div>
+            <h2 className="mt-2 text-xl font-semibold text-white">Performance by advisor</h2>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-sm text-slate-500">Sort by:</span>
+              {sortPills.map(({ key, label }) => (
+                <button key={key} onClick={() => setSortKey(key)}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
+                    sortKey === key ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-line">
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Agent</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Leads</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Hot</th>
+                    <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Overdue</th>
+                    <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">Activity</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Wins · 30d</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {sortedAgents.map((agent, i) => (
+                    <tr key={agent.id} className={`transition hover:bg-surface-2 ${i === 0 ? 'bg-gold/[0.03]' : ''}`}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
+                            {initialsOf(agent.name)}
+                          </div>
                           <div className="flex items-center gap-1.5 font-medium text-slate-100">
                             {agent.name}
-                            {i === 0 && <span className="rounded-full border border-gold/25 bg-gold/10 px-1.5 py-0.5 text-[8px] font-semibold text-gold">TOP</span>}
+                            {i === 0 && sortKey === 'wins' && <span className="rounded-full border border-gold/25 bg-gold/10 px-1.5 py-0.5 text-[8px] font-semibold text-gold">TOP</span>}
                           </div>
-                          <div className="text-sm text-slate-500">{agent.specialty.split(' · ')[0]}</div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-center text-slate-300">{agent.totalLeads}</td>
-                    <td className="px-4 py-4 text-center">
-                      <span className={`font-semibold ${responseOk ? 'text-gold' : 'text-orange-300'}`}>
-                        {m ? `${m.avgResponseH}h` : '—'}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-4 text-center text-slate-400 sm:table-cell">
-                      {m ? `${m.leadToViewing}%` : '—'}
-                    </td>
-                    <td className="hidden px-4 py-4 text-center text-gold md:table-cell">
-                      {agent.recentWins}
-                    </td>
-                    <td className="px-6 py-4 text-right font-semibold text-slate-100">
-                      {m?.revMTD ?? '—'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-sm text-slate-500">Target response time: &lt;{TEAM_TARGET_RESPONSE}h · ranked by {sortKey === 'wins' ? 'wins this month' : sortKey === 'response' ? 'fastest response' : sortKey === 'revenue' ? 'revenue MTD' : 'total leads'}.</p>
-      </section>
-
-      {/* Risk signals */}
-      <section className="mt-14">
-        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Risk signals</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Leads needing attention</h2>
-
-        {/* Risk filter pills */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {riskPills.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setRiskFilter(key)}
-              className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
-                riskFilter === key
-                  ? key === 'All'
-                    ? 'border-gold/40 bg-gold/10 text-gold'
-                    : 'border-red-400/35 bg-red-400/10 text-red-300'
-                  : 'border-line bg-surface-2 text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-5 space-y-2">
-          {riskLeadsList.map((lead) => (
-            <div key={lead.id} className="flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-slate-100">{lead.name}</span>
-                  {lead.duplicateRisk  && <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-2 py-0.5 text-xs text-orange-300">Duplicate risk</span>}
-                  {lead.wrongNumberRisk && <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-xs text-red-300">Wrong number</span>}
-                  {lead.urgency === 'critical' && !lead.duplicateRisk && !lead.wrongNumberRisk && (
-                    <span className="rounded-full border border-red-400/20 bg-red-400/10 px-2 py-0.5 text-xs text-red-300">Critical</span>
-                  )}
-                </div>
-                <div className="mt-0.5 text-xs text-slate-500">{lead.nextBestAction}</div>
-              </div>
-              <Link
-                href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                className="shrink-0 inline-flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
-              >
-                Open <ArrowUpRight className="h-3 w-3" />
-              </Link>
+                      </td>
+                      <td className="px-4 py-4 text-center text-slate-300">{agent.totalLeads}</td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`font-semibold ${agent.hotLeads > 0 ? 'text-red-400' : 'text-slate-600'}`}>{agent.hotLeads}</span>
+                      </td>
+                      <td className="hidden px-4 py-4 text-center sm:table-cell">
+                        <span className={agent.overdueFollowups > 0 ? 'text-orange-300' : 'text-slate-500'}>{agent.overdueFollowups}</span>
+                      </td>
+                      <td className="hidden px-4 py-4 text-center text-slate-400 md:table-cell">{agent.activity30d}</td>
+                      <td className="px-6 py-4 text-right font-semibold text-gold">{agent.wins30d}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-          {riskLeadsList.length === 0 && (
-            <div className="flex items-center gap-2 rounded-[16px] border border-emerald-400/15 bg-gold/[0.03] px-5 py-4 text-sm text-gold">
-              <CheckCircle2 className="h-4 w-4" /> No risk flags active.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Overdue follow-up snapshot */}
-      <section className="mt-14">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Follow-up queue</div>
-            <h2 className="mt-2 text-xl font-semibold text-white">Overdue by agent</h2>
-          </div>
-          <Link href="/freehold-intelligence/crm/follow-up" className="inline-flex items-center gap-1 text-xs text-gold/60 transition hover:text-gold">
-            View all <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <div className="mt-5 space-y-2">
-          {fuQueue.slice(0, 4).map((fu) => (
-            <div key={fu.leadId} className="flex items-center justify-between gap-4 rounded-[16px] border border-line bg-surface px-5 py-4">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-100">{fu.leadName}</div>
-                <div className="mt-0.5 text-xs text-slate-500">
-                  {fu.assignedAgent} · {fu.overdueHours}h overdue · {fu.source}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-sm font-medium ${fu.urgency === 'critical' ? 'text-red-300' : fu.urgency === 'high' ? 'text-orange-300' : 'text-gold'}`}>
-                  {fu.urgency}
-                </span>
-                <Clock className="h-3.5 w-3.5 text-slate-600" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-
+            <p className="mt-2 text-sm text-slate-500">
+              Ranked by {sortKey === 'wins' ? 'wins in the last 30 days' : sortKey === 'leads' ? 'total leads' : sortKey === 'overdue' ? 'overdue follow-ups' : 'logged activity'}.
+            </p>
+          </section>
+        </>
+      )}
     </div>
   )
 }
