@@ -87,6 +87,19 @@ export default function FreeholdCrmPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  // Drill-down support: a deep link from Analytics (e.g. /crm?stage=closed or
+  // /crm?source=meta) lands here pre-filtered. Read once on mount via the raw
+  // querystring to avoid the useSearchParams Suspense bailout.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const stage = params.get('stage')
+    if (stage === 'all' || (stage && (STAGES as string[]).includes(stage))) {
+      setStageFilter(stage as PipelineStage | 'all')
+    }
+    const source = params.get('source')
+    if (source) setQuery(source)
+  }, [])
+
   const isActive = (l: CRMLeadIntelligence) =>
     l.pipelineStage !== 'closed' && l.pipelineStage !== 'lost'
 

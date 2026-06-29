@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
-import { FileText, Loader2, ExternalLink, X } from 'lucide-react'
+import { FileText, Loader2, ExternalLink, X, ArrowUpRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { prettySource, STAGE_ORDER, fmtAed } from '@/lib/freehold/analytics-format'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
@@ -20,9 +21,9 @@ type Totals = {
   totalPaidAed: number; totalOutstandingAed: number
 } | null
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="rounded-xl border border-line bg-white/[0.05] p-5">
+function Kpi({ label, value, sub, href, drillLabel }: { label: string; value: string; sub: string; href?: string; drillLabel?: string }) {
+  const body = (
+    <>
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</div>
         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
@@ -31,9 +32,23 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub: string 
         </span>
       </div>
       <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{value}</div>
-      <div className="mt-1 text-xs text-slate-500">{sub}</div>
-    </div>
+      {href ? (
+        <div className="mt-1 flex items-center gap-1 text-xs text-slate-500 transition-colors group-hover:text-gold">
+          {drillLabel ?? sub}<ArrowUpRight className="h-3 w-3" />
+        </div>
+      ) : (
+        <div className="mt-1 text-xs text-slate-500">{sub}</div>
+      )}
+    </>
   )
+  if (href) {
+    return (
+      <Link href={href} className="group block rounded-xl border border-line bg-white/[0.05] p-5 transition-colors hover:border-gold/40">
+        {body}
+      </Link>
+    )
+  }
+  return <div className="rounded-xl border border-line bg-white/[0.05] p-5">{body}</div>
 }
 
 // Simple single-series sparkline of daily leads.
@@ -141,7 +156,7 @@ export default function CompanyAnalyticsPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label={t('analytics.kpi.totalLeads')} value={dash((live?.leads.total ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.allTime')} />
         <Kpi label={t('analytics.kpi.newLeads')} value={dash((live?.leads.last30d ?? 0).toLocaleString('en-US'))} sub={t('analytics.last30')} />
-        <Kpi label={t('analytics.kpi.conversions')} value={dash((live?.leads.closed ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.closedLeads')} />
+        <Kpi label={t('analytics.kpi.conversions')} value={dash((live?.leads.closed ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.closedLeads')} href="/freehold-intelligence/crm?stage=closed" drillLabel={t('analytics.kpi.viewClosed')} />
         <Kpi label={t('analytics.kpi.closingRate')} value={dash(`${live?.leads.closingRate ?? 0}%`)} sub={t('analytics.kpi.closedOverTotal')} />
         <Kpi label={t('analytics.kpi.salesVolume')} value={totals ? fmtAed(totals.totalSalesAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
         <Kpi label={t('analytics.kpi.commission')} value={totals ? fmtAed(totals.totalCommissionAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
@@ -167,15 +182,21 @@ export default function CompanyAnalyticsPage() {
             {liveSources.length > 0 ? (
               <div className="space-y-2.5">
                 {liveSources.map((src) => (
-                  <div key={src.label}>
+                  <Link
+                    key={src.label}
+                    href={`/freehold-intelligence/crm?source=${encodeURIComponent(src.label)}`}
+                    className="group block rounded-lg -mx-2 px-2 py-1 transition-colors hover:bg-white/[0.04]"
+                  >
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-xs font-medium text-slate-300 truncate">{prettySource(src.label)}</span>
+                      <span className="flex items-center gap-1 text-xs font-medium text-slate-300 truncate transition-colors group-hover:text-gold">
+                        {prettySource(src.label)}<ArrowUpRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </span>
                       <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{src.count.toLocaleString('en-US')}</span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                       <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${(src.count / maxSource) * 100}%` }} />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -190,15 +211,21 @@ export default function CompanyAnalyticsPage() {
           <div className="rounded-xl border border-line bg-white/[0.05] p-5 space-y-4">
             {hasFunnel ? (
               funnel.map((step, i) => (
-                <div key={step.stage}>
+                <Link
+                  key={step.stage}
+                  href={`/freehold-intelligence/crm?stage=${step.stage}`}
+                  className="group block rounded-lg -mx-2 px-2 py-1 transition-colors hover:bg-white/[0.04]"
+                >
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-300">{t(`analytics.stage.${step.stage}`)}</span>
+                    <span className="flex items-center gap-1 text-xs font-medium text-slate-300 transition-colors group-hover:text-gold">
+                      {t(`analytics.stage.${step.stage}`)}<ArrowUpRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                    </span>
                     <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
                   </div>
                   <div className="h-6 w-full overflow-hidden rounded-lg bg-white/[0.05]">
                     <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <p className="py-6 text-center text-sm text-slate-500">{live ? t('analytics.empty.pipeline') : t('analytics.loading')}</p>
