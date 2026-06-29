@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Users, Briefcase, Megaphone, Activity, Sparkles, ArrowUpRight } from 'lucide-react'
+import { ArrowLeft, Users, Briefcase, Megaphone, Activity, Sparkles, ArrowUpRight, Coins, UserPlus, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useI18n } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
@@ -48,6 +49,13 @@ export default function AgentProfilePage() {
   const [data, setData] = useState<Profile>(null)
   const [loaded, setLoaded] = useState(false)
 
+  // Management actions on this broker
+  const [creditAmt, setCreditAmt] = useState(10)
+  const [creditBusy, setCreditBusy] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [unassigned, setUnassigned] = useState<{ id: string; name: string }[] | null>(null)
+  const [assignBusy, setAssignBusy] = useState<string | null>(null)
+
   useEffect(() => {
     if (!agentId) return
     fetch(`/api/freehold/analytics/agent/${agentId}`)
@@ -55,6 +63,41 @@ export default function AgentProfilePage() {
       .then((d) => { setData(d && d.agent ? d : null); setLoaded(true) })
       .catch(() => setLoaded(true))
   }, [agentId])
+
+  async function addCredits() {
+    if (creditAmt <= 0) return
+    setCreditBusy(true)
+    const res = await fetch('/api/freehold/credits/admin/allocate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brokerId: agentId, amount: creditAmt, note: 'Added from broker profile' }),
+    }).catch(() => null)
+    setCreditBusy(false)
+    toast[res && res.ok ? 'success' : 'error'](res && res.ok ? t('analytics.agent.act.creditsAdded', { n: creditAmt }) : t('analytics.agent.act.failed'))
+  }
+
+  async function openAssign() {
+    setAssignOpen((v) => !v)
+    if (unassigned === null) {
+      const d = await fetch('/api/freehold/crm/leads').then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      const all: { id: string; name: string; assignedAgent?: string }[] = d?.leads ?? []
+      setUnassigned(all.filter((l) => !l.assignedAgent).map((l) => ({ id: l.id, name: l.name })))
+    }
+  }
+
+  async function assignLead(leadId: string) {
+    setAssignBusy(leadId)
+    const res = await fetch(`/api/freehold/crm/leads/${leadId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assigned_broker_id: agentId }),
+    }).catch(() => null)
+    setAssignBusy(null)
+    if (res && res.ok) {
+      toast.success(t('analytics.agent.act.leadAssigned'))
+      setUnassigned((u) => (u ? u.filter((x) => x.id !== leadId) : u))
+    } else {
+      toast.error(t('analytics.agent.act.failed'))
+    }
+  }
 
   const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString(localeTag, { day: 'numeric', month: 'short', timeZone: 'Asia/Dubai' }) : '—')
 
@@ -89,6 +132,49 @@ export default function AgentProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Management actions on this broker */}
+      <section className="rounded-2xl border border-line bg-surface-2 p-5">
+        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <Briefcase className="h-3.5 w-3.5" /> {t('analytics.agent.act.title')}
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+            <Coins className="h-4 w-4 text-gold" />
+            <input
+              type="number" min={1} value={creditAmt}
+              onChange={(e) => setCreditAmt(Math.max(1, Number(e.target.value) || 0))}
+              className="w-16 rounded-md border border-line-strong bg-surface-2 px-2 py-1 text-sm text-white outline-none focus:border-gold/40"
+            />
+            <button onClick={addCredits} disabled={creditBusy}
+              className="inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F0CB67] disabled:opacity-60">
+              {creditBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Coins className="h-3 w-3" />} {t('analytics.agent.act.addCredits')}
+            </button>
+          </div>
+          <button onClick={openAssign}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white">
+            <UserPlus className="h-4 w-4 text-gold" /> {t('analytics.agent.act.assignLead')}
+          </button>
+        </div>
+        {assignOpen && (
+          <div className="mt-3 rounded-xl border border-line bg-surface p-3">
+            {unassigned === null ? (
+              <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-3 w-3 animate-spin" /> {t('analytics.loading')}</div>
+            ) : unassigned.length === 0 ? (
+              <div className="text-xs text-slate-500">{t('analytics.agent.act.noUnassigned')}</div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {unassigned.slice(0, 12).map((l) => (
+                  <button key={l.id} onClick={() => assignLead(l.id)} disabled={assignBusy === l.id}
+                    className="inline-flex items-center gap-1 rounded-full border border-line-strong bg-surface-2 px-3 py-1 text-xs text-slate-300 transition hover:border-gold/40 hover:text-white disabled:opacity-50">
+                    {assignBusy === l.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3 text-gold" />} {l.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       {/* Ask the Expert about this specific agent (one docked conversation) */}
       <section className="overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
