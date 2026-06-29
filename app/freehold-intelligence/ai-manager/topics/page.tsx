@@ -138,6 +138,8 @@ export default function TopicsPage() {
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({})
   const [flash, setFlash] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [extraTopics, setExtraTopics] = useState<TopicRow[]>([])
+  const [draftingTitle, setDraftingTitle] = useState<string | null>(null)
 
   function getStatus(topic: TopicRow): TopicStatus {
     return topicStatuses[topic.title] ?? topic.status
@@ -153,20 +155,51 @@ export default function TopicsPage() {
     triggerFlash(`Published: "${topic.title.slice(0, 45)}"`)
   }
 
-  function handleGenerate(topic: TopicRow) {
+  // Draft a real article for a topic via the AI endpoint; only mark it drafted
+  // once the server actually returns content.
+  async function handleGenerate(topic: TopicRow) {
+    setDraftingTitle(topic.title)
+    const res = await fetch('/api/freehold/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Write a publication-ready ${topic.category} article draft (300-400 words) for Freehold Property UAE titled "${topic.title}". Specific to Dubai real estate, no placeholders.`,
+      }),
+    }).catch(() => null)
+    setDraftingTitle(null)
+    if (!res || !res.ok) { triggerFlash('Generation failed — please try again'); return }
     setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Draft' }))
     triggerFlash(`Generated draft: "${topic.title.slice(0, 40)}"`)
   }
 
+  // Ask the AI for a fresh topic idea and add it to the list.
+  async function handleGenerateTopic() {
+    setGenerating(true)
+    const res = await fetch('/api/freehold/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: 'Suggest ONE fresh, specific blog topic title for a Dubai real-estate audience (investors/buyers). Reply with the title only, no quotes, max 12 words.',
+      }),
+    }).catch(() => null)
+    setGenerating(false)
+    if (!res || !res.ok) { triggerFlash('Generation failed — please try again'); return }
+    const data = await res.json().catch(() => null) as { text?: string } | null
+    const title = (data?.text || '').split('\n')[0].replace(/^["'\s]+|["'\s]+$/g, '').slice(0, 90)
+    if (!title) { triggerFlash('Generation failed — please try again'); return }
+    setExtraTopics((prev) => [{ title, category: 'Market News', status: 'Idea', words: 0, seo: 0 }, ...prev])
+    triggerFlash(`New topic idea: "${title.slice(0, 45)}"`)
+  }
+
   const filtered = useMemo(() => {
-    return topics.filter((t) => {
+    return [...extraTopics, ...topics].filter((t) => {
       const status = getStatus(t)
       if (activeFilter !== 'All' && status !== activeFilter) return false
       if (categoryFilter !== 'All' && t.category !== categoryFilter) return false
       return true
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilter, categoryFilter, topicStatuses])
+  }, [activeFilter, categoryFilter, topicStatuses, extraTopics])
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -182,15 +215,7 @@ export default function TopicsPage() {
         </h1>
         <button
           disabled={generating}
-          onClick={() => {
-            setGenerating(true)
-            toast.promise(new Promise(r => setTimeout(r, 2000)), {
-              loading: 'Generating topic ideas with AI…',
-              success: '5 new topics generated',
-              error: 'Generation failed',
-            })
-            setTimeout(() => setGenerating(false), 2000)
-          }}
+          onClick={handleGenerateTopic}
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
@@ -320,11 +345,12 @@ export default function TopicsPage() {
                       <>
                         <button onClick={() => toast.info(`Editing: ${topic.title}`)} className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
                         <button
+                          disabled={draftingTitle === topic.title}
                           onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
-                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20"
+                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
                         >
                           <Sparkles className="h-3 w-3" />
-                          {effectiveStatus === 'Idea' ? 'Generate' : 'Publish'}
+                          {draftingTitle === topic.title ? 'Generating…' : effectiveStatus === 'Idea' ? 'Generate' : 'Publish'}
                         </button>
                       </>
                     )}
