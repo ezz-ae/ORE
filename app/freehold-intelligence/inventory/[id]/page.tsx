@@ -243,12 +243,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${landingBadge(prop.landingStatus)}`}>
               {landingLabel(prop.landingStatus, t)}
             </span>
-            {prop.landingUrl && (
+            {prop.landingUrl && prop.landingStatus === 'live' ? (
               <a href={prop.landingUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold">
                 {prop.landingUrl} <ArrowUpRight className="h-3 w-3" />
               </a>
-            )}
+            ) : prop.landingUrl ? (
+              <span className="text-xs text-slate-500">{prop.landingUrl} · not published yet</span>
+            ) : null}
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-xs">

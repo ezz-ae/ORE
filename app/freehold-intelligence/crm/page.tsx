@@ -41,10 +41,10 @@ const TEMP_STYLE: Record<string, { labelKey: string; badge: string }> = {
 }
 
 const STAGE_CONFIG: Record<PipelineStage, { labelKey: string; dot: string; badge: string }> = {
-  new:         { labelKey: 'crm.stage.new',         dot: 'bg-sky-400',     badge: 'bg-sky-400/10 text-sky-400 border-sky-400/20'             },
+  new:         { labelKey: 'crm.stage.new',         dot: 'bg-gold',     badge: 'bg-gold/10 text-gold border-gold/20'             },
   contacted:   { labelKey: 'crm.stage.contacted',   dot: 'bg-amber-400',   badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'       },
   qualified:   { labelKey: 'crm.stage.qualified',   dot: 'bg-violet-400',  badge: 'bg-violet-400/10 text-violet-400 border-violet-400/20'    },
-  viewing:     { labelKey: 'crm.stage.viewing',     dot: 'bg-blue-400',    badge: 'bg-blue-400/10 text-blue-400 border-blue-400/20'          },
+  viewing:     { labelKey: 'crm.stage.viewing',     dot: 'bg-gold',    badge: 'bg-gold/10 text-gold border-gold/20'          },
   negotiation: { labelKey: 'crm.stage.negotiation', dot: 'bg-orange-400',  badge: 'bg-orange-400/10 text-orange-400 border-orange-400/20'    },
   closed:      { labelKey: 'crm.stage.closed',      dot: 'bg-emerald-400', badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' },
   lost:        { labelKey: 'crm.stage.lost',        dot: 'bg-red-400/50',  badge: 'bg-red-400/[0.06] text-red-400/55 border-red-400/[0.12]' },
@@ -116,7 +116,7 @@ export default function FreeholdCrmPage() {
 
   // ── Tile definitions ──
   const TILES = [
-    { label: t('crm.tile.newLeads'),   value: String(newCount),                           sub: t('crm.tile.newLeadsSub'), color: 'text-sky-400',     border: 'border-sky-400/15',     bg: 'bg-sky-400/[0.06]'     },
+    { label: t('crm.tile.newLeads'),   value: String(newCount),                           sub: t('crm.tile.newLeadsSub'), color: 'text-emerald-400',     border: 'border-emerald-400/15',     bg: 'bg-emerald-400/[0.06]'     },
     { label: t('crm.tile.followUps'),  value: String(followUpsCount),                     sub: t('crm.tile.followUpsSub'),  color: 'text-red-400',     border: 'border-red-400/15',     bg: 'bg-red-400/[0.06]'     },
     { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
     { label: t('crm.tile.qualified'),   value: String(qualifiedCount),                     sub: t('crm.tile.qualifiedSub'),    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },

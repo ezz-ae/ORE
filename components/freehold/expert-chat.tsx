@@ -201,6 +201,10 @@ export function ExpertChat() {
     }
   }
 
+  // The Notebook is its own conversation/notes workspace — don't dock a second
+  // chat there (avoids two chat inputs competing on one page).
+  if (pathname?.startsWith('/freehold-intelligence/notebook')) return null
+
   // ─── Collapsed rail ──
   if (!open) {
     return (
