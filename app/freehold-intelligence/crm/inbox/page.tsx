@@ -2,11 +2,15 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Inbox, Clock, AlertCircle, ArrowUpRight, CheckCircle2 } from 'lucide-react'
-import { crmAgentRoster } from '@/src/features/freehold-intelligence/server-session'
 import type { CRMInboxLead } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { useSession } from '@/lib/freehold/use-session'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+
+// Assigning leads to other agents (and seeing the team roster) is a management
+// action — brokers only work their own inbox.
+const ASSIGN_ROLES = ['admin', 'sales_manager', 'director', 'ceo']
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -40,12 +44,12 @@ const FILTERS: FilterTab[] = ['All', 'Unassigned', 'Assigned', 'Contacted']
 export default function CrmInboxPage() {
   const t = useT()
   const { leads } = useLiveLeads()
+  const { user } = useSession()
+  const canAssign = ASSIGN_ROLES.includes(user?.role ?? '')
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All')
   const [assignments,  setAssignments]  = useState<Record<string, string>>({})
   const [contacted,    setContacted]    = useState<Set<string>>(new Set())
   const [justAssigned, setJustAssigned] = useState<string | null>(null)
-
-  const available = crmAgentRoster.filter((a) => a.status === 'available')
 
   // Real agents (brokers) from the team API — used for actual assignment.
   const [realAgents, setRealAgents] = useState<{ id: string; name: string }[]>([])
@@ -230,17 +234,20 @@ export default function CrmInboxPage() {
                           <p className="mt-2.5 text-sm leading-relaxed text-slate-300">{lead.aiNote}</p>
                         </div>
                         <div className="flex flex-col gap-2 sm:shrink-0">
-                          <div className="flex flex-wrap gap-2">
-                            {(realAgents.length ? realAgents : available).map((agent) => (
-                              <button
-                                key={agent.id}
-                                onClick={() => handleAssign(lead.id, agent.id, agent.name)}
-                                className="inline-flex items-center rounded-full border border-line-strong bg-surface-2 px-3.5 py-2 text-xs text-slate-300 transition hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white active:scale-95"
-                              >
-                                → {agent.name}
-                              </button>
-                            ))}
-                          </div>
+                          {/* Assigning a lead to a broker is a management action. */}
+                          {canAssign && realAgents.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {realAgents.map((agent) => (
+                                <button
+                                  key={agent.id}
+                                  onClick={() => handleAssign(lead.id, agent.id, agent.name)}
+                                  className="inline-flex items-center rounded-full border border-line-strong bg-surface-2 px-3.5 py-2 text-xs text-slate-300 transition hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white active:scale-95"
+                                >
+                                  → {agent.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           <button
                             onClick={() => handleContacted(lead.id)}
                             className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3.5 py-2 text-xs font-medium text-gold transition hover:bg-gold/[0.12] active:scale-95"
@@ -319,27 +326,32 @@ export default function CrmInboxPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-4">
 
-            <Panel>
-              <PanelHeader title={t('crm.availableAgents')} />
-              <div className="p-5">
-                <div className="space-y-3">
-                  {available.map((agent) => (
-                    <div key={agent.id} className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
-                          {agent.initials}
+            {/* Team roster + capacity is management-only; brokers never see other
+                brokers here. Names come from the live team API, not seed data. */}
+            {canAssign && realAgents.length > 0 && (
+              <Panel>
+                <PanelHeader title={t('crm.availableAgents')} />
+                <div className="p-5">
+                  <div className="space-y-3">
+                    {realAgents.map((agent) => {
+                      const count = leads.filter((l) => l.assignedAgent === agent.id).length
+                      const initials = agent.name.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
+                      return (
+                        <div key={agent.id} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 text-sm font-semibold text-gold">
+                              {initials}
+                            </div>
+                            <div className="text-sm font-medium text-white">{agent.name}</div>
+                          </div>
+                          <span className="text-xs text-slate-400">{t('crm.agentLeadsCount', { count })}</span>
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-white">{agent.name}</div>
-                          <div className="text-xs text-slate-400">{t('crm.agentLeadsCount', { count: agent.totalLeads })}</div>
-                        </div>
-                      </div>
-                      <span className="text-sm text-gold">{agent.utilization}%</span>
-                    </div>
-                  ))}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            </Panel>
+              </Panel>
+            )}
 
 
           </div>

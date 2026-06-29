@@ -44,7 +44,7 @@ interface ExpertChatRequest {
  * genuinely system-aware. Each tool fails soft — a missing slice never breaks
  * the chat.
  */
-async function gatherSystemContext(role: Role): Promise<Record<string, unknown>> {
+async function gatherSystemContext(role: Role, brokerId: string | null): Promise<Record<string, unknown>> {
   const safe = async (toolName: string, args?: Record<string, unknown>) => {
     try {
       const res = await executeTool({ toolName, role, args })
@@ -58,21 +58,55 @@ async function gatherSystemContext(role: Role): Promise<Record<string, unknown>>
   // lets the one Expert answer best-performer, ad-budget and retention/flight-risk
   // questions with depth, grounded in live data.
   const canSeeTeam = role === 'owner' || role === 'admin' || role === 'sales_manager'
+  // Infrastructure/ops context (server health, launch blockers, integration
+  // connection status) is only relevant to operators — owner/admin/marketing.
+  // A broker (sales_agent) must NEVER be told to "fix Meta billing" or "connect
+  // HubSpot": their world is leads, follow-ups, viewings and deals. So we feed
+  // brokers their OWN pipeline instead of the company's infrastructure backlog.
+  const isOperator = role === 'owner' || role === 'admin' || role === 'marketing'
+  const isBroker = role === 'sales_agent'
 
-  const [server, blockers, inventory, integrations, leadMachine, team, finance, crm] = await Promise.all([
-    safe('server-summary'),
-    safe('launch-blockers'),
-    safe('inventory-analysis'),
-    safe('integration-summary'),
-    safe('lead-machine-summary'),
+  const [server, blockers, inventory, integrations, leadMachine, team, finance, crm, myPipeline] = await Promise.all([
+    isOperator ? safe('server-summary') : Promise.resolve(null),
+    isOperator ? safe('launch-blockers') : Promise.resolve(null),
+    safe('inventory-analysis'),                       // useful to everyone for property advice
+    isOperator ? safe('integration-summary') : Promise.resolve(null),
+    isOperator ? safe('lead-machine-summary') : Promise.resolve(null),
     canSeeTeam ? gatherTeamMetrics().catch(() => null) : Promise.resolve(null),
     // Finance + CRM pipeline round out the single shared context so the one
     // Expert answers finance/CRM questions with live data — management-gated.
     canSeeTeam ? getFinanceTotals().catch(() => null) : Promise.resolve(null),
     canSeeTeam ? crmPipelineSnapshot().catch(() => null) : Promise.resolve(null),
+    // A broker's own book of business — the only pipeline they should be coached on.
+    isBroker && brokerId ? brokerPipelineSnapshot(brokerId).catch(() => null) : Promise.resolve(null),
   ])
 
-  return { server, launchBlockers: blockers, inventory, integrations, leadMachine, teamPerformance: team, finance, crm }
+  return { server, launchBlockers: blockers, inventory, integrations, leadMachine, teamPerformance: team, finance, crm, myPipeline }
+}
+
+/** A single broker's own pipeline snapshot — scopes the Expert to their work. */
+async function brokerPipelineSnapshot(brokerId: string): Promise<Record<string, number> | null> {
+  try {
+    const [row] = await query<{ total: string; new_count: string; hot: string; viewing: string; overdue: string; closed: string }>(`
+      SELECT COUNT(*)::text AS total,
+        COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
+        COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
+        COUNT(*) FILTER (WHERE status = 'viewing')::text AS viewing,
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue,
+        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed
+      FROM freehold_site_leads WHERE assigned_broker_id = $1`, [brokerId])
+    if (!row) return null
+    return {
+      myLeads: parseInt(row.total, 10),
+      newLeads: parseInt(row.new_count, 10),
+      hotLeads: parseInt(row.hot, 10),
+      viewingsScheduled: parseInt(row.viewing, 10),
+      overdueFollowups: parseInt(row.overdue, 10),
+      closedDeals: parseInt(row.closed, 10),
+    }
+  } catch {
+    return null
+  }
 }
 
 /** Compact CRM pipeline snapshot (counts by stage) for the Expert context. */
@@ -131,7 +165,8 @@ export async function POST(request: NextRequest) {
     }
 
     const skill = getSkill('expert')!
-    const systemContext = await gatherSystemContext(role as Role)
+    const brokerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
+    const systemContext = await gatherSystemContext(role as Role, brokerId)
 
     const fullContext: Record<string, unknown> = {
       currentPage: body.page ?? null,
@@ -140,10 +175,19 @@ export async function POST(request: NextRequest) {
       ...(body.context ?? {}),
     }
 
+    // Role guidance keeps the one Expert in the right lane. A broker must be
+    // coached only on their own sales work — never on company infrastructure,
+    // billing, integrations or other people's books.
+    const roleGuidance = role === 'sales_agent'
+      ? `\n\nYOU ARE ADVISING A BROKER (sales agent). Focus ONLY on their own sales work: their leads in context.myPipeline, follow-ups, viewings, qualifying, and closing deals. Recommend the single highest-leverage next action on THEIR pipeline. NEVER tell them to fix billing, connect integrations, resolve DNS, manage other agents, or touch company infrastructure — those are not their job. If there is no live pipeline data, coach them on prospecting and follow-up discipline.`
+      : role === 'marketing'
+        ? `\n\nYou are advising MARKETING: focus on campaigns, ads, landing pages, content and attribution. Infrastructure/integration fixes are in scope only when they block ad delivery.`
+        : `\n\nYou are advising an OPERATOR (owner/admin/manager): full-system scope is appropriate.`
+
     const raw = await queryServerAgent(message, {
       sessionId,
       context: fullContext,
-      systemPrompt: `${skill.systemPrompt}\n${BLOCK_PROTOCOL}`,
+      systemPrompt: `${skill.systemPrompt}${roleGuidance}\n${BLOCK_PROTOCOL}`,
       responseMimeType: 'application/json',
       maxOutputTokens: 4096,
       temperature: 0.5,

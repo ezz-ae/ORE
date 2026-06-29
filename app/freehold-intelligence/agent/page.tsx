@@ -195,16 +195,6 @@ export default function AgentHomePage() {
         </div>
       </section>
 
-      {/* Switch to manager view */}
-      <div className="mt-8 flex justify-center">
-        <Link
-          href="/freehold-intelligence"
-          className="text-xs text-slate-600 transition hover:text-slate-400"
-        >
-          {t('agent.switchToManager')}
-        </Link>
-      </div>
-
     </div>
   )
 }

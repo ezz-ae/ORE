@@ -30,6 +30,10 @@ export async function GET() {
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const user = await verifySession(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // The team roster is management-only — a broker must never see other brokers'
+  // names/details (no team list, no reassign-to-others). Return an empty roster
+  // rather than 401 so broker-side callers degrade quietly.
+  if (!MANAGEMENT.includes(user.role)) return NextResponse.json({ members: [] })
 
   // Ensure the full team roster exists even before anyone logs in via the server
   // login, so management + assignment always see every member.
