@@ -1,9 +1,9 @@
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 import InventoryClient from './inventory-client'
 
+// Operational system: serve only real inventory from the database. No seed
+// fallback — an empty database renders a clean empty state, never demo data.
 export default async function InventoryPage() {
-  const dbProperties = await getInventoryPropertiesFromDB()
-  const properties = dbProperties.length > 0 ? dbProperties : inventoryProperties
+  const properties = await getInventoryPropertiesFromDB()
   return <InventoryClient initialProperties={properties} />
 }

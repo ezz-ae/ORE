@@ -39,10 +39,10 @@ interface Contract {
 }
 
 const TYPE_COLORS: Record<ContractType, string> = {
-  platform: 'text-blue-400   bg-blue-400/10   border-blue-400/20',
+  platform: 'text-fuchsia-400   bg-fuchsia-400/10   border-fuchsia-400/20',
   data:     'text-violet-400 bg-violet-400/10 border-violet-400/20',
   agency:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
-  legal:    'text-sky-400    bg-sky-400/10    border-sky-400/20',
+  legal:    'text-teal-400    bg-teal-400/10    border-teal-400/20',
   service:  'text-slate-400   bg-surface-2  border-white/10',
 }
 

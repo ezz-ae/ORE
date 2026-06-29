@@ -8,8 +8,8 @@ import {
   LayoutGrid, Clock, TrendingUp,
   Inbox, Activity, BarChart3, Copy, ArrowRightLeft, UserCircle2, List,
 } from 'lucide-react'
-import { crmLeads, crmFollowUpQueue } from '@/src/features/freehold-intelligence/server-session'
 import { useSession } from '@/lib/freehold/use-session'
+import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
 
 // CRM sub-pages a broker may access (their own daily work). Everything else
@@ -59,17 +59,6 @@ const NAV_SECTIONS = [
   },
 ]
 
-// ── Live badges ───────────────────────────────────────────────────────────────
-
-const newLeads      = crmLeads.filter(l => l.pipelineStage === 'new').length
-const criticalCount = crmFollowUpQueue.filter(l => l.urgency === 'critical').length
-
-const BADGES: Record<string, number | undefined> = {
-  '/freehold-intelligence/crm':            crmLeads.length,
-  '/freehold-intelligence/crm/inbox':      newLeads > 0 ? newLeads : undefined,
-  '/freehold-intelligence/crm/follow-up':  criticalCount > 0 ? criticalCount : undefined,
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -77,6 +66,16 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const t = useT()
+
+  // Live badge counts derived from real DB leads (no seed/mock).
+  const { leads } = useLiveLeads()
+  const newLeads      = leads.filter(l => l.pipelineStage === 'new').length
+  const criticalCount = leads.filter(l => l.urgency === 'critical').length
+  const BADGES: Record<string, number | undefined> = {
+    '/freehold-intelligence/crm':            leads.length > 0 ? leads.length : undefined,
+    '/freehold-intelligence/crm/inbox':      newLeads > 0 ? newLeads : undefined,
+    '/freehold-intelligence/crm/follow-up':  criticalCount > 0 ? criticalCount : undefined,
+  }
 
   // Brokers may only reach their own daily-work CRM pages; bounce deep-links to
   // management-only sub-pages back to their leads.
@@ -129,7 +128,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
         {/* Live pulse chip */}
         <div className="hidden items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-2.5 py-1 sm:flex">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-          <span className="text-xs text-emerald-300/80">{t('crm.leadsLive', { count: crmLeads.length })}</span>
+          <span className="text-xs text-emerald-300/80">{t('crm.leadsLive', { count: leads.length })}</span>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

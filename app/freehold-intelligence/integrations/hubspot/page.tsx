@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Users2, TrendingUp, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, Phone, Mail, XCircle, DollarSign, Clock } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 const TOKEN_KEY = 'fh_hubspot_token'
 const BASE      = 'https://api.hubapi.com'
@@ -66,7 +67,7 @@ async function fetchAll(token: string): Promise<HsData> {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  leadIn:              'text-sky-400    bg-sky-400/10    border-sky-400/20',
+  leadIn:              'text-teal-400    bg-teal-400/10    border-teal-400/20',
   attemptingcontact:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
   contractsent:        'text-violet-400 bg-violet-400/10 border-violet-400/20',
   closedwon:           'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
@@ -88,15 +89,18 @@ function fmtAed(amount?: string) {
   return `AED ${Number(amount).toLocaleString()}`
 }
 
-function ago(iso?: string) {
+type TFn = (key: string, vars?: Record<string, string | number>) => string
+
+function ago(iso: string | undefined, t: TFn) {
   if (!iso) return '—'
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
-  if (d === 0) return 'Today'
-  if (d === 1) return 'Yesterday'
-  return `${d}d ago`
+  if (d === 0) return t('pinthub.timeToday')
+  if (d === 1) return t('pinthub.timeYesterday')
+  return t('pinthub.timeDays', { n: d })
 }
 
 export default function HubSpotPage() {
+  const t = useT()
   const [token,   setToken]   = useState('')
   const [show,    setShow]    = useState(false)
   const [phase,   setPhase]   = useState<Phase>('idle')
@@ -110,21 +114,21 @@ export default function HubSpotPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function connect(tok = token) {
-    const t = tok.trim()
-    if (!t) return
+    const tk = tok.trim()
+    if (!tk) return
     setPhase('connecting')
     setLoading(true)
     setErrMsg('')
     try {
-      const d = await fetchAll(t)
-      localStorage.setItem(TOKEN_KEY, t)
+      const d = await fetchAll(tk)
+      localStorage.setItem(TOKEN_KEY, tk)
       setData(d)
       setPhase('connected')
     } catch (err: any) {
       setErrMsg(
-        err.status === 401 ? 'Invalid token — check your HubSpot Private App token.' :
-        err.status === 403 ? 'Token missing required scopes. Enable contacts + deals read.' :
-        err.message || 'Connection failed.',
+        err.status === 401 ? t('pinthub.errInvalid') :
+        err.status === 403 ? t('pinthub.errScopes') :
+        err.message || t('pinthub.errGeneric'),
       )
       setPhase('error')
     } finally {
@@ -155,19 +159,19 @@ export default function HubSpotPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-orange-500/15">
               <Users2 className="h-4 w-4 text-orange-400" />
             </div>
-            <h1 className="text-[20px] font-semibold text-white">HubSpot CRM</h1>
+            <h1 className="text-[20px] font-semibold text-white">{t('pinthub.title')}</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Live contacts and deals from your HubSpot portal</p>
+          <p className="mt-1 text-xs text-slate-500">{t('pinthub.subtitle')}</p>
         </div>
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
-              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> {t('pinthub.refresh')}
             </button>
             <button onClick={disconnect}
               className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-xs text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
-              <XCircle className="h-3 w-3" /> Disconnect
+              <XCircle className="h-3 w-3" /> {t('pinthub.disconnect')}
             </button>
           </div>
         )}
@@ -176,17 +180,23 @@ export default function HubSpotPage() {
       {/* Connect form */}
       {phase !== 'connected' && (
         <div className="mb-6 rounded-[18px] border border-orange-400/15 bg-orange-400/[0.03] p-5">
-          <div className="mb-1 text-sm font-medium text-slate-300">HubSpot Private App Token</div>
+          <div className="mb-1 text-sm font-medium text-slate-300">{t('pinthub.tokenLabel')}</div>
           <div className="mb-3 text-xs text-slate-600">
-            Settings → Integrations → Private Apps → Create app. Enable scopes:{' '}
-            <code className="text-slate-500">crm.objects.contacts.read</code> and{' '}
-            <code className="text-slate-500">crm.objects.deals.read</code>
+            {t('pinthub.tokenHint')
+              .split(/(\{scopeContacts\}|\{scopeDeals\})/)
+              .map((part, i) =>
+                part === '{scopeContacts}'
+                  ? <code key={i} className="text-slate-500">crm.objects.contacts.read</code>
+                  : part === '{scopeDeals}'
+                  ? <code key={i} className="text-slate-500">crm.objects.deals.read</code>
+                  : <span key={i}>{part}</span>,
+              )}
           </div>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
                 type={show ? 'text' : 'password'}
-                placeholder="pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                placeholder={t('pinthub.tokenPlaceholder')}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
@@ -199,7 +209,7 @@ export default function HubSpotPage() {
             </div>
             <button onClick={() => connect()} disabled={!token.trim() || loading}
               className="rounded-[10px] bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-400 disabled:opacity-40">
-              {phase === 'connecting' ? 'Connecting…' : 'Connect'}
+              {phase === 'connecting' ? t('pinthub.connecting') : t('pinthub.connect')}
             </button>
           </div>
           {phase === 'error' && (
@@ -217,17 +227,17 @@ export default function HubSpotPage() {
           {/* Status */}
           <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-sm text-emerald-400/90">Connected to HubSpot</span>
-            <span className="ml-auto text-xs text-slate-600">Token stored in browser only</span>
+            <span className="text-sm text-emerald-400/90">{t('pinthub.connected')}</span>
+            <span className="ml-auto text-xs text-slate-600">{t('pinthub.tokenStored')}</span>
           </div>
 
           {/* Summary tiles */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Contacts',     value: data.contactTotal.toLocaleString(), Icon: Users2,       color: 'text-orange-400'  },
-              { label: 'Deals',        value: data.dealTotal.toLocaleString(),    Icon: TrendingUp,   color: 'text-violet-400'  },
-              { label: 'Active deals', value: data.deals.filter((d) => !['closedwon','closedlost'].includes((d.properties.dealstage ?? '').toLowerCase())).length.toString(), Icon: DollarSign, color: 'text-amber-400' },
-              { label: 'Won',          value: data.deals.filter((d) => (d.properties.dealstage ?? '').toLowerCase() === 'closedwon').length.toString(), Icon: CheckCircle2, color: 'text-emerald-400' },
+              { label: t('pinthub.statContacts'),    value: data.contactTotal.toLocaleString(), Icon: Users2,       color: 'text-orange-400'  },
+              { label: t('pinthub.statDeals'),       value: data.dealTotal.toLocaleString(),    Icon: TrendingUp,   color: 'text-violet-400'  },
+              { label: t('pinthub.statActiveDeals'), value: data.deals.filter((d) => !['closedwon','closedlost'].includes((d.properties.dealstage ?? '').toLowerCase())).length.toString(), Icon: DollarSign, color: 'text-amber-400' },
+              { label: t('pinthub.statWon'),         value: data.deals.filter((d) => (d.properties.dealstage ?? '').toLowerCase() === 'closedwon').length.toString(), Icon: CheckCircle2, color: 'text-emerald-400' },
             ].map(({ label, value, Icon, color }) => (
               <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
@@ -240,13 +250,13 @@ export default function HubSpotPage() {
           {/* Contacts table */}
           <section className="mb-5">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
-              Recent Contacts <span className="text-slate-600 normal-case font-normal">({data.contactTotal.toLocaleString()} total)</span>
+              {t('pinthub.recentContacts')} <span className="text-slate-600 normal-case font-normal">{t('pinthub.total', { n: data.contactTotal.toLocaleString() })}</span>
             </div>
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.contacts.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No contacts found</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pinthub.noContacts')}</div>
                 : data.contacts.map((c) => {
-                    const name = [c.properties.firstname, c.properties.lastname].filter(Boolean).join(' ') || 'Unknown'
+                    const name = [c.properties.firstname, c.properties.lastname].filter(Boolean).join(' ') || t('pinthub.unknown')
                     return (
                       <div key={c.id} className="flex items-center gap-3 px-5 py-3.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-400/10 text-xs font-semibold text-orange-400">
@@ -274,7 +284,7 @@ export default function HubSpotPage() {
                               {stageName(c.properties.lifecyclestage)}
                             </span>
                           )}
-                          <span className="text-[10px] text-slate-600">{ago(c.properties.createdate)}</span>
+                          <span className="text-[10px] text-slate-600">{ago(c.properties.createdate, t)}</span>
                         </div>
                       </div>
                     )
@@ -286,19 +296,19 @@ export default function HubSpotPage() {
           {/* Deals table */}
           <section>
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
-              Recent Deals <span className="text-slate-600 normal-case font-normal">({data.dealTotal.toLocaleString()} total)</span>
+              {t('pinthub.recentDeals')} <span className="text-slate-600 normal-case font-normal">{t('pinthub.total', { n: data.dealTotal.toLocaleString() })}</span>
             </div>
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.deals.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No deals found</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pinthub.noDeals')}</div>
                 : data.deals.map((d) => (
                     <div key={d.id} className="flex items-center gap-4 px-5 py-3.5">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-white truncate">{d.properties.dealname || 'Unnamed deal'}</div>
+                        <div className="text-sm font-medium text-white truncate">{d.properties.dealname || t('pinthub.unnamedDeal')}</div>
                         {d.properties.closedate && (
                           <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-600">
                             <Clock className="h-3 w-3" />
-                            Close {new Date(d.properties.closedate).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {t('pinthub.close', { date: new Date(d.properties.closedate).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', year: 'numeric' }) })}
                           </div>
                         )}
                       </div>

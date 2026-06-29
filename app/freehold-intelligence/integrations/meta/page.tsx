@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useT } from '@/lib/i18n/provider'
 import {
   Eye, EyeOff, Loader2, CheckCircle, XCircle, RefreshCw,
   LogOut, TrendingUp, TrendingDown, Users, DollarSign,
@@ -99,14 +100,16 @@ function leads(insight: Insight | null) {
     .reduce((s, a) => s + parseInt(a.value, 10), 0)
 }
 
-function accountStatusLabel(status: number) {
+type TFn = (key: string, vars?: Record<string, string | number>) => string
+
+function accountStatusLabel(status: number, t: TFn) {
   switch (status) {
-    case 1:  return { label: 'Active',     color: 'text-emerald-400' }
-    case 2:  return { label: 'Disabled',   color: 'text-red-400'     }
-    case 3:  return { label: 'Unsettled',  color: 'text-amber-400'   }
-    case 7:  return { label: 'Pending',    color: 'text-sky-400'     }
-    case 9:  return { label: 'In review',  color: 'text-violet-400'  }
-    default: return { label: `Status ${status}`, color: 'text-slate-400' }
+    case 1:  return { label: t('pintmeta.statusActive'),     color: 'text-emerald-400' }
+    case 2:  return { label: t('pintmeta.statusDisabled'),   color: 'text-red-400'     }
+    case 3:  return { label: t('pintmeta.statusUnsettled'),  color: 'text-amber-400'   }
+    case 7:  return { label: t('pintmeta.statusPending'),    color: 'text-sky-400'     }
+    case 9:  return { label: t('pintmeta.statusInReview'),   color: 'text-violet-400'  }
+    default: return { label: t('pintmeta.statusOther', { n: status }), color: 'text-slate-400' }
   }
 }
 
@@ -177,6 +180,7 @@ const TOKEN_KEY = 'fh_meta_access_token'
 type Phase = 'idle' | 'connecting' | 'connected' | 'error'
 
 export default function MetaIntegrationPage() {
+  const t = useT()
   const [phase, setPhase]       = useState<Phase>('idle')
   const [token, setToken]       = useState('')
   const [showToken, setShowToken] = useState(false)
@@ -197,8 +201,8 @@ export default function MetaIntegrationPage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const connect = useCallback(async (t: string) => {
-    const tok = t.trim()
+  const connect = useCallback(async (rawToken: string) => {
+    const tok = rawToken.trim()
     if (!tok) return
     setPhase('connecting')
     setErrMsg('')
@@ -214,14 +218,14 @@ export default function MetaIntegrationPage() {
     } catch (err: any) {
       setPhase('error')
       if (err.code === 190) {
-        setErrMsg('Token expired or invalid. Generate a new user token from Meta Business Manager.')
+        setErrMsg(t('pintmeta.errTokenExpired'))
       } else if (err.code === 200 || err.code === 10) {
-        setErrMsg('Permission denied. Your token needs ads_management and ads_read scopes.')
+        setErrMsg(t('pintmeta.errPermission'))
       } else {
-        setErrMsg(err.message ?? 'Unknown error from Meta API')
+        setErrMsg(err.message ?? t('pintmeta.errUnknown'))
       }
     }
-  }, [])
+  }, [t])
 
   async function refresh() {
     setSyncing(true)
@@ -282,8 +286,8 @@ export default function MetaIntegrationPage() {
             <span className="text-[20px]">🔵</span>
           </div>
           <div>
-            <h1 className="text-[20px] font-semibold text-white">Meta Business</h1>
-            <p className="text-xs text-slate-500">Connect your ad account to see live campaigns</p>
+            <h1 className="text-[20px] font-semibold text-white">{t('pintmeta.title')}</h1>
+            <p className="text-xs text-slate-500">{t('pintmeta.subtitle')}</p>
           </div>
         </div>
 
@@ -292,7 +296,7 @@ export default function MetaIntegrationPage() {
           <div className="mb-6 flex items-start gap-3 rounded-[14px] border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-red-300">Connection failed</div>
+              <div className="text-sm font-semibold text-red-300">{t('pintmeta.connFailed')}</div>
               <div className="mt-0.5 text-xs text-red-300/70 leading-relaxed">{errMsg}</div>
             </div>
           </div>
@@ -300,7 +304,7 @@ export default function MetaIntegrationPage() {
 
         {/* Token form */}
         <div className="rounded-[20px] border border-line bg-surface p-6">
-          <div className="mb-5 text-sm font-semibold text-white">Access token</div>
+          <div className="mb-5 text-sm font-semibold text-white">{t('pintmeta.accessToken')}</div>
 
           <div className="relative">
             <input
@@ -325,22 +329,22 @@ export default function MetaIntegrationPage() {
             disabled={!token.trim()}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-[12px] bg-gold py-3 text-[14px] font-semibold text-black transition hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Connect Meta account
+            {t('pintmeta.connectBtn')}
           </button>
         </div>
 
         {/* How to get the token */}
         <div className="mt-6 rounded-[18px] border border-line bg-surface-2 p-5">
           <div className="mb-3 text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
-            How to get your token
+            {t('pintmeta.howToTitle')}
           </div>
           <ol className="space-y-2.5">
             {[
-              'Go to Meta Business Manager → Settings → System Users',
-              'Create or select a System User with Admin role',
-              'Click "Generate New Token" → select your Ad Account',
-              'Enable scopes: ads_management, ads_read, leads_retrieval',
-              'Copy the token and paste it above',
+              t('pintmeta.step1'),
+              t('pintmeta.step2'),
+              t('pintmeta.step3'),
+              t('pintmeta.step4'),
+              t('pintmeta.step5'),
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-slate-400">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-slate-400">
@@ -356,13 +360,13 @@ export default function MetaIntegrationPage() {
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-1.5 text-xs text-gold/70 transition hover:text-gold"
           >
-            Open Meta Business Manager <ExternalLink className="h-3 w-3" />
+            {t('pintmeta.openBusinessManager')} <ExternalLink className="h-3 w-3" />
           </a>
         </div>
 
         {/* Permissions required */}
         <div className="mt-4 rounded-[14px] border border-line bg-transparent px-4 py-3.5">
-          <div className="mb-2 text-xs text-slate-500 uppercase tracking-wider">Required scopes</div>
+          <div className="mb-2 text-xs text-slate-500 uppercase tracking-wider">{t('pintmeta.requiredScopes')}</div>
           <div className="flex flex-wrap gap-1.5">
             {['ads_management', 'ads_read', 'leads_retrieval', 'business_management'].map((s) => (
               <span key={s} className="rounded bg-surface-2 px-2 py-0.5 font-mono text-xs text-slate-400">{s}</span>
@@ -378,8 +382,8 @@ export default function MetaIntegrationPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-gold" />
-        <div className="text-[14px] text-slate-400">Connecting to Meta Business API…</div>
-        <div className="text-xs text-slate-500">Fetching ad accounts, campaigns, and insights</div>
+        <div className="text-[14px] text-slate-400">{t('pintmeta.connectingTitle')}</div>
+        <div className="text-xs text-slate-500">{t('pintmeta.connectingSub')}</div>
       </div>
     )
   }
@@ -396,20 +400,20 @@ export default function MetaIntegrationPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-white">Meta Business</span>
+              <span className="text-sm font-semibold text-white">{t('pintmeta.title')}</span>
               <span className="flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Connected
+                {t('pintmeta.connected')}
               </span>
             </div>
-            <div className="text-xs text-slate-500">{user?.name} · {accounts.length} ad account{accounts.length !== 1 ? 's' : ''}</div>
+            <div className="text-xs text-slate-500">{accounts.length !== 1 ? t('pintmeta.accountSummaryMany', { name: user?.name ?? '', n: accounts.length }) : t('pintmeta.accountSummaryOne', { name: user?.name ?? '', n: accounts.length })}</div>
           </div>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
           {syncedAt && (
             <span className="hidden text-xs text-slate-500 sm:block">
-              Synced {syncedAt.toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' })}
+              {t('pintmeta.synced', { time: syncedAt.toLocaleTimeString('en-AE', { hour: '2-digit', minute: '2-digit' }) })}
             </span>
           )}
           <button
@@ -422,7 +426,7 @@ export default function MetaIntegrationPage() {
           <button
             onClick={copyToken}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-slate-500 transition hover:border-line-strong hover:text-slate-300"
-            title="Copy token"
+            title={t('pintmeta.copyToken')}
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
           </button>
@@ -430,7 +434,7 @@ export default function MetaIntegrationPage() {
             onClick={disconnect}
             className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:border-red-400/20 hover:text-red-400"
           >
-            <LogOut className="h-3.5 w-3.5" /> Disconnect
+            <LogOut className="h-3.5 w-3.5" /> {t('pintmeta.disconnect')}
           </button>
         </div>
       </div>
@@ -438,11 +442,11 @@ export default function MetaIntegrationPage() {
       {/* Summary tiles — 30-day totals */}
       <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
-          { label: 'Total spend (30d)',    value: `AED ${fmt(totalSpend, 0)}`,         Icon: DollarSign,    color: 'text-gold'  },
-          { label: 'Impressions (30d)',    value: totalImpressions > 0 ? fmt(totalImpressions) : '—', Icon: Megaphone, color: 'text-blue-400' },
-          { label: 'Clicks (30d)',         value: totalClicks > 0 ? fmt(totalClicks) : '—', Icon: MousePointer, color: 'text-sky-400' },
-          { label: 'Leads (30d)',          value: totalLeads > 0 ? String(totalLeads) : '—', Icon: Users, color: 'text-emerald-400' },
-          { label: 'Blended CPL',          value: blendedCPL > 0 ? `AED ${fmt(blendedCPL, 0)}` : '—', Icon: Zap, color: blendedCPL > 0 && blendedCPL < 200 ? 'text-emerald-400' : 'text-amber-400' },
+          { label: t('pintmeta.tileSpend'),       value: `AED ${fmt(totalSpend, 0)}`,         Icon: DollarSign,    color: 'text-gold'  },
+          { label: t('pintmeta.tileImpressions'), value: totalImpressions > 0 ? fmt(totalImpressions) : '—', Icon: Megaphone, color: 'text-blue-400' },
+          { label: t('pintmeta.tileClicks'),      value: totalClicks > 0 ? fmt(totalClicks) : '—', Icon: MousePointer, color: 'text-sky-400' },
+          { label: t('pintmeta.tileLeads'),       value: totalLeads > 0 ? String(totalLeads) : '—', Icon: Users, color: 'text-emerald-400' },
+          { label: t('pintmeta.tileBlendedCPL'),  value: blendedCPL > 0 ? `AED ${fmt(blendedCPL, 0)}` : '—', Icon: Zap, color: blendedCPL > 0 && blendedCPL < 200 ? 'text-emerald-400' : 'text-amber-400' },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} className="rounded-[16px] border border-line bg-surface px-4 py-3.5">
             <Icon className={`h-4 w-4 ${color}`} />
@@ -464,14 +468,14 @@ export default function MetaIntegrationPage() {
       {/* Ad accounts */}
       {accounts.length === 0 ? (
         <div className="rounded-[18px] border border-line bg-surface px-6 py-12 text-center">
-          <div className="text-sm text-slate-400">No ad accounts found for this token.</div>
-          <div className="mt-1 text-xs text-slate-500">The token may need business_management scope, or no ad accounts are linked.</div>
+          <div className="text-sm text-slate-400">{t('pintmeta.noAccounts')}</div>
+          <div className="mt-1 text-xs text-slate-500">{t('pintmeta.noAccountsHint')}</div>
         </div>
       ) : (
         <div className="space-y-3">
           {accounts.map((account) => {
             const isOpen = expanded.has(account.id)
-            const st = accountStatusLabel(account.account_status)
+            const st = accountStatusLabel(account.account_status, t)
             const activeCampaigns = account.campaigns.filter((c) => c.status === 'ACTIVE').length
             const accountLeads = leads(account.insight)
             const accountSpend = parseFloat(account.amount_spent || '0') / 100
@@ -501,22 +505,22 @@ export default function MetaIntegrationPage() {
                   <div className="hidden sm:flex items-center gap-6">
                     <div className="text-right">
                       <div className="text-[14px] font-semibold text-white tabular-nums">{fmtMoney(account.amount_spent, account.currency)}</div>
-                      <div className="text-[10px] text-slate-500">total spent</div>
+                      <div className="text-[10px] text-slate-500">{t('pintmeta.totalSpent')}</div>
                     </div>
                     <div className="text-right">
                       <div className={`text-[14px] font-semibold tabular-nums ${activeCampaigns > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>{activeCampaigns}</div>
-                      <div className="text-[10px] text-slate-500">active</div>
+                      <div className="text-[10px] text-slate-500">{t('pintmeta.active')}</div>
                     </div>
                     {accountLeads > 0 && (
                       <div className="text-right">
                         <div className="text-[14px] font-semibold text-sky-400 tabular-nums">{accountLeads}</div>
-                        <div className="text-[10px] text-slate-500">leads 30d</div>
+                        <div className="text-[10px] text-slate-500">{t('pintmeta.leads30d')}</div>
                       </div>
                     )}
                     {avgCPL > 0 && (
                       <div className="text-right">
                         <div className="text-[14px] font-semibold text-gold tabular-nums">AED {fmt(avgCPL, 0)}</div>
-                        <div className="text-[10px] text-slate-500">CPL</div>
+                        <div className="text-[10px] text-slate-500">{t('pintmeta.cpl')}</div>
                       </div>
                     )}
                   </div>
@@ -530,18 +534,18 @@ export default function MetaIntegrationPage() {
                 {isOpen && (
                   <div className="border-t border-line">
                     {account.campaigns.length === 0 ? (
-                      <div className="px-6 py-6 text-sm text-slate-400">No campaigns found for this account.</div>
+                      <div className="px-6 py-6 text-sm text-slate-400">{t('pintmeta.noCampaigns')}</div>
                     ) : (
                       <>
                         {/* Table header */}
                         <div className="grid grid-cols-[1fr_80px_80px_80px_80px_80px_80px] items-center gap-3 border-b border-line px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                          <div>Campaign</div>
-                          <div className="text-right">Status</div>
-                          <div className="text-right">Spend</div>
-                          <div className="text-right">Impr.</div>
-                          <div className="text-right">Clicks</div>
-                          <div className="text-right">CTR</div>
-                          <div className="text-right">Leads</div>
+                          <div>{t('pintmeta.colCampaign')}</div>
+                          <div className="text-right">{t('pintmeta.colStatus')}</div>
+                          <div className="text-right">{t('pintmeta.colSpend')}</div>
+                          <div className="text-right">{t('pintmeta.colImpr')}</div>
+                          <div className="text-right">{t('pintmeta.colClicks')}</div>
+                          <div className="text-right">{t('pintmeta.colCTR')}</div>
+                          <div className="text-right">{t('pintmeta.colLeads')}</div>
                         </div>
                         {/* Campaign rows */}
                         <div className="divide-y divide-line">
@@ -589,12 +593,12 @@ export default function MetaIntegrationPage() {
                     {account.insight && (
                       <div className="border-t border-line px-6 py-4">
                         <div className="flex flex-wrap gap-6 text-xs text-slate-400">
-                          <span>30-day account totals:</span>
-                          <span className="text-slate-400">Impr. <strong className="text-slate-100">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
-                          <span className="text-slate-400">Clicks <strong className="text-slate-100">{fmt(parseInt(account.insight.clicks || '0', 10))}</strong></span>
-                          <span className="text-slate-400">Spend <strong className="text-slate-100">{account.currency} {fmt(parseFloat(account.insight.spend || '0'), 0)}</strong></span>
-                          {account.insight.cpm && <span className="text-slate-400">CPM <strong className="text-slate-100">{account.currency} {parseFloat(account.insight.cpm).toFixed(2)}</strong></span>}
-                          {accountLeads > 0 && <span className="text-sky-400">Leads <strong>{accountLeads}</strong></span>}
+                          <span>{t('pintmeta.accountTotals')}</span>
+                          <span className="text-slate-400">{t('pintmeta.imprLabel')} <strong className="text-slate-100">{fmt(parseInt(account.insight.impressions || '0', 10))}</strong></span>
+                          <span className="text-slate-400">{t('pintmeta.clicksLabel')} <strong className="text-slate-100">{fmt(parseInt(account.insight.clicks || '0', 10))}</strong></span>
+                          <span className="text-slate-400">{t('pintmeta.spendLabel')} <strong className="text-slate-100">{account.currency} {fmt(parseFloat(account.insight.spend || '0'), 0)}</strong></span>
+                          {account.insight.cpm && <span className="text-slate-400">{t('pintmeta.cpmLabel')} <strong className="text-slate-100">{account.currency} {parseFloat(account.insight.cpm).toFixed(2)}</strong></span>}
+                          {accountLeads > 0 && <span className="text-sky-400">{t('pintmeta.leadsLabel')} <strong>{accountLeads}</strong></span>}
                         </div>
                       </div>
                     )}
@@ -609,7 +613,7 @@ export default function MetaIntegrationPage() {
       {/* Footer: token management */}
       <div className="mt-8 flex items-center justify-between rounded-[14px] border border-line bg-surface-2 px-5 py-3.5">
         <div className="text-xs text-slate-500">
-          Token stored in browser only · Not sent to any server
+          {t('pintmeta.tokenStored')}
         </div>
         <a
           href="https://business.facebook.com/settings/system-users"
@@ -617,7 +621,7 @@ export default function MetaIntegrationPage() {
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
         >
-          Meta Business Manager <ExternalLink className="h-3 w-3" />
+          {t('pintmeta.businessManager')} <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>

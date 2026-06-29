@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { AlertTriangle, CheckCircle2, ArrowUpRight } from 'lucide-react'
-import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
 import { getServerT } from '@/lib/i18n/server'
 
@@ -31,14 +31,13 @@ const ISSUE_TYPES = [
 
 export default async function DataQualityPage() {
   const { t } = await getServerT()
-  const dbProperties = await getInventoryPropertiesFromDB()
-  const allProperties = dbProperties.length > 0 ? dbProperties : inventoryProperties
-  const sorted = [...allProperties].sort((a, b) => a.dataQuality - b.dataQuality)
+  // Real DB inventory only — no seed fallback.
+  const sorted = [...(await getInventoryPropertiesFromDB())].sort((a, b) => a.dataQuality - b.dataQuality)
 
   const poorCount  = sorted.filter((p) => p.dataQuality < 50).length
   const needsCount = sorted.filter((p) => p.dataQuality >= 50 && p.dataQuality < 80).length
   const goodCount  = sorted.filter((p) => p.dataQuality >= 80).length
-  const avgQuality = Math.round(sorted.reduce((s, p) => s + p.dataQuality, 0) / sorted.length)
+  const avgQuality = sorted.length ? Math.round(sorted.reduce((s, p) => s + p.dataQuality, 0) / sorted.length) : 0
 
   return (
     <div className="p-6 lg:p-8 space-y-7">

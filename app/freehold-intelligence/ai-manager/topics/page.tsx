@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { BookOpen, Plus, Sparkles, Calendar, Check, CheckCircle } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 type TopicStatus = 'Published' | 'Draft' | 'Scheduled' | 'Idea'
 type TopicCategory = 'Market News' | 'Area Guide' | 'Investment' | 'Legal' | 'Lifestyle'
@@ -111,7 +112,7 @@ const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Sched
 const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'Area Guide', 'Investment', 'Legal', 'Lifestyle']
 
 function categoryBadge(cat: TopicCategory) {
-  if (cat === 'Market News') return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
+  if (cat === 'Market News') return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
   if (cat === 'Area Guide')  return 'text-gold bg-gold/10 border-gold/20'
   if (cat === 'Investment')  return 'text-gold bg-gold/10 border-gold/20'
   if (cat === 'Legal')       return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
@@ -120,7 +121,7 @@ function categoryBadge(cat: TopicCategory) {
 
 function statusBadge(status: TopicStatus) {
   if (status === 'Published')  return 'text-gold bg-gold/10 border-gold/20'
-  if (status === 'Scheduled')  return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
+  if (status === 'Scheduled')  return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
   if (status === 'Idea')       return 'text-slate-400 bg-surface-2 border-line-strong'
   return 'text-slate-400 bg-surface-2 border-line-strong'
 }
@@ -133,6 +134,38 @@ function seoColor(score: number) {
 }
 
 export default function TopicsPage() {
+  const t = useT()
+
+  const statusKey: Record<TopicStatus, string> = {
+    Published: 'paim.topics.status.published',
+    Draft: 'paim.topics.status.draft',
+    Scheduled: 'paim.topics.status.scheduled',
+    Idea: 'paim.topics.status.idea',
+  }
+  const categoryKey: Record<TopicCategory, string> = {
+    'Market News': 'paim.topics.cat.marketNews',
+    'Area Guide': 'paim.topics.cat.areaGuide',
+    Investment: 'paim.topics.cat.investment',
+    Legal: 'paim.topics.cat.legal',
+    Lifestyle: 'paim.topics.cat.lifestyle',
+  }
+  const statusFilterKey: Record<TopicStatus | 'All', string> = {
+    All: 'paim.topics.filter.all',
+    Published: 'paim.topics.filter.published',
+    Draft: 'paim.topics.filter.draft',
+    Scheduled: 'paim.topics.filter.scheduled',
+    Idea: 'paim.topics.filter.idea',
+  }
+  const categoryFilterKey: Record<TopicCategory | 'All', string> = {
+    All: 'paim.topics.filter.all',
+    'Market News': 'paim.topics.cat.marketNews',
+    'Area Guide': 'paim.topics.cat.areaGuide',
+    Investment: 'paim.topics.cat.investment',
+    Legal: 'paim.topics.cat.legal',
+    Lifestyle: 'paim.topics.cat.lifestyle',
+  }
+  const colKey = ['paim.topics.col.title', 'paim.topics.col.category', 'paim.topics.col.status', 'paim.topics.col.scheduled', 'paim.topics.col.words', 'paim.topics.col.seo', 'paim.topics.col.actions']
+
   const [activeFilter, setActiveFilter] = useState<TopicStatus | 'All'>('All')
   const [categoryFilter, setCategoryFilter] = useState<TopicCategory | 'All'>('All')
   const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({})
@@ -152,7 +185,7 @@ export default function TopicsPage() {
 
   function handlePublish(topic: TopicRow) {
     setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Published' }))
-    triggerFlash(`Published: "${topic.title.slice(0, 45)}"`)
+    triggerFlash(t('paim.topics.flash.published', { title: topic.title.slice(0, 45) }))
   }
 
   // Draft a real article for a topic via the AI endpoint; only mark it drafted
@@ -167,9 +200,9 @@ export default function TopicsPage() {
       }),
     }).catch(() => null)
     setDraftingTitle(null)
-    if (!res || !res.ok) { triggerFlash('Generation failed — please try again'); return }
+    if (!res || !res.ok) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
     setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Draft' }))
-    triggerFlash(`Generated draft: "${topic.title.slice(0, 40)}"`)
+    triggerFlash(t('paim.topics.flash.generatedDraft', { title: topic.title.slice(0, 40) }))
   }
 
   // Ask the AI for a fresh topic idea and add it to the list.
@@ -183,12 +216,12 @@ export default function TopicsPage() {
       }),
     }).catch(() => null)
     setGenerating(false)
-    if (!res || !res.ok) { triggerFlash('Generation failed — please try again'); return }
+    if (!res || !res.ok) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
     const data = await res.json().catch(() => null) as { text?: string } | null
     const title = (data?.text || '').split('\n')[0].replace(/^["'\s]+|["'\s]+$/g, '').slice(0, 90)
-    if (!title) { triggerFlash('Generation failed — please try again'); return }
+    if (!title) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
     setExtraTopics((prev) => [{ title, category: 'Market News', status: 'Idea', words: 0, seo: 0 }, ...prev])
-    triggerFlash(`New topic idea: "${title.slice(0, 45)}"`)
+    triggerFlash(t('paim.topics.flash.newTopic', { title: title.slice(0, 45) }))
   }
 
   const filtered = useMemo(() => {
@@ -207,11 +240,11 @@ export default function TopicsPage() {
       {/* Header */}
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
         <BookOpen className="h-3.5 w-3.5" />
-        AI Manager · Topics
+        {t('paim.topics.breadcrumb')}
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-          Topics &amp; Content Calendar
+          {t('paim.topics.title')}
         </h1>
         <button
           disabled={generating}
@@ -219,7 +252,7 @@ export default function TopicsPage() {
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
-          {generating ? 'Generating…' : 'Generate Topic'}
+          {generating ? t('paim.topics.generating') : t('paim.topics.generateTopic')}
         </button>
       </div>
 
@@ -235,7 +268,7 @@ export default function TopicsPage() {
                 : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
-            {f}
+            {t(statusFilterKey[f])}
           </button>
         ))}
       </div>
@@ -252,7 +285,7 @@ export default function TopicsPage() {
                 : 'border-line-strong text-slate-500 hover:text-slate-300',
             ].join(' ')}
           >
-            {c}
+            {t(categoryFilterKey[c])}
           </button>
         ))}
       </div>
@@ -260,24 +293,24 @@ export default function TopicsPage() {
       {/* Stats */}
       <div className="mt-4 flex flex-wrap gap-3">
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Total </span>
+          <span className="text-slate-500">{t('paim.topics.stat.total')} </span>
           <span className="font-semibold text-slate-100">{topics.length}</span>
         </div>
         <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Published </span>
-          <span className="font-semibold text-gold">{topics.filter((t) => t.status === 'Published').length}</span>
+          <span className="text-slate-500">{t('paim.topics.stat.published')} </span>
+          <span className="font-semibold text-gold">{topics.filter((row) => row.status === 'Published').length}</span>
         </div>
-        <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Scheduled </span>
-          <span className="font-semibold text-slate-400">{topics.filter((t) => t.status === 'Scheduled').length}</span>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Draft </span>
-          <span className="font-semibold text-slate-400">{topics.filter((t) => t.status === 'Draft').length}</span>
+        <div className="rounded-xl border border-teal-500/20 bg-teal-500/10 px-4 py-2.5 text-sm">
+          <span className="text-slate-500">{t('paim.topics.stat.scheduled')} </span>
+          <span className="font-semibold text-slate-400">{topics.filter((row) => row.status === 'Scheduled').length}</span>
         </div>
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Ideas </span>
-          <span className="font-semibold text-slate-500">{topics.filter((t) => t.status === 'Idea').length}</span>
+          <span className="text-slate-500">{t('paim.topics.stat.draft')} </span>
+          <span className="font-semibold text-slate-400">{topics.filter((row) => row.status === 'Draft').length}</span>
+        </div>
+        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
+          <span className="text-slate-500">{t('paim.topics.stat.ideas')} </span>
+          <span className="font-semibold text-slate-500">{topics.filter((row) => row.status === 'Idea').length}</span>
         </div>
       </div>
 
@@ -286,9 +319,9 @@ export default function TopicsPage() {
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-line">
-              {['Title', 'Category', 'Status', 'Scheduled', 'Words', 'SEO', 'Actions'].map((h) => (
+              {colKey.map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
-                  {h}
+                  {t(h)}
                 </th>
               ))}
             </tr>
@@ -297,7 +330,7 @@ export default function TopicsPage() {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No topics match these filters.
+                  {t('paim.topics.empty')}
                 </td>
               </tr>
             ) : filtered.map((topic, i) => {
@@ -309,14 +342,14 @@ export default function TopicsPage() {
                 </td>
                 <td className="px-4 py-3.5">
                   <span className={`inline-block rounded-full border px-2.5 py-0.5 text-sm font-medium ${categoryBadge(topic.category)}`}>
-                    {topic.category}
+                    {t(categoryKey[topic.category])}
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(effectiveStatus)}`}>
                     {effectiveStatus === 'Published' && <Check className="h-3 w-3" />}
                     {effectiveStatus === 'Scheduled' && <Calendar className="h-3 w-3" />}
-                    {effectiveStatus}
+                    {t(statusKey[effectiveStatus])}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">
@@ -329,7 +362,7 @@ export default function TopicsPage() {
                   {topic.seo > 0 ? (
                     <>
                       <span className={`text-sm font-semibold ${seoColor(topic.seo)}`}>{topic.seo}</span>
-                      <span className="text-xs text-slate-500">/100</span>
+                      <span className="text-xs text-slate-500">{t('paim.topics.seoSuffix')}</span>
                     </>
                   ) : (
                     <span className="text-xs text-slate-500">—</span>
@@ -339,18 +372,18 @@ export default function TopicsPage() {
                   <div className="flex items-center gap-2">
                     {effectiveStatus === 'Published' ? (
                       <span className="flex items-center gap-1 text-sm text-gold">
-                        <CheckCircle className="h-3 w-3" /> Live
+                        <CheckCircle className="h-3 w-3" /> {t('paim.topics.live')}
                       </span>
                     ) : (
                       <>
-                        <button onClick={() => toast.info(`Editing: ${topic.title}`)} className="text-xs text-slate-400 transition hover:text-slate-200">Edit</button>
+                        <button onClick={() => toast.info(t('paim.topics.toast.editing', { title: topic.title }))} className="text-xs text-slate-400 transition hover:text-slate-200">{t('paim.topics.edit')}</button>
                         <button
                           disabled={draftingTitle === topic.title}
                           onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
                           className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
                         >
                           <Sparkles className="h-3 w-3" />
-                          {draftingTitle === topic.title ? 'Generating…' : effectiveStatus === 'Idea' ? 'Generate' : 'Publish'}
+                          {draftingTitle === topic.title ? t('paim.topics.generating') : effectiveStatus === 'Idea' ? t('paim.topics.generate') : t('paim.topics.publish')}
                         </button>
                       </>
                     )}

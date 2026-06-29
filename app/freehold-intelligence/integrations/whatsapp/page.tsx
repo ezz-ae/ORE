@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { MessageSquare, Phone, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, XCircle, Zap, Send, Shield } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 const TOKEN_KEY = 'fh_whatsapp_token'
 const PHONE_KEY = 'fh_whatsapp_phone_id'
@@ -79,14 +80,15 @@ const TMPL_COLOR: Record<string, string> = {
   REJECTED: 'text-red-400     bg-red-400/10     border-red-400/20',
 }
 
-function errMsg(err: any) {
-  if (err.code === 190) return 'Token expired or invalid. Generate a new System User token in Meta Business Manager.'
-  if (err.code === 100) return 'Invalid Phone Number ID. Find it in Meta Business Manager → WhatsApp → Phone Numbers.'
-  if (err.code === 200 || err.code === 10) return 'Token missing whatsapp_business_messaging permission.'
-  return err.message || 'Connection failed.'
+function errKey(err: any): string {
+  if (err.code === 190) return 'pintwa.errTokenExpired'
+  if (err.code === 100) return 'pintwa.errInvalidPhone'
+  if (err.code === 200 || err.code === 10) return 'pintwa.errMissingPerm'
+  return err.message || 'pintwa.errGeneric'
 }
 
 export default function WhatsAppPage() {
+  const t = useT()
   const [token,   setToken]   = useState('')
   const [phoneId, setPhoneId] = useState('')
   const [showTok, setShowTok] = useState(false)
@@ -106,19 +108,19 @@ export default function WhatsAppPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function connect(pid = phoneId, tok = token) {
-    const p = pid.trim(), t = tok.trim()
-    if (!p || !t) return
+    const p = pid.trim(), tk = tok.trim()
+    if (!p || !tk) return
     setPhase('connecting')
     setLoading(true)
     setErr('')
     try {
-      const d = await fetchAll(p, t)
-      localStorage.setItem(TOKEN_KEY, t)
+      const d = await fetchAll(p, tk)
+      localStorage.setItem(TOKEN_KEY, tk)
       localStorage.setItem(PHONE_KEY, p)
       setData(d)
       setPhase('connected')
     } catch (e: any) {
-      setErr(errMsg(e))
+      setErr(t(errKey(e)))
       setPhase('error')
     } finally {
       setLoading(false)
@@ -154,19 +156,19 @@ export default function WhatsAppPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-emerald-400/10">
               <MessageSquare className="h-4 w-4 text-emerald-400" />
             </div>
-            <h1 className="text-[20px] font-semibold text-white">WhatsApp Business</h1>
+            <h1 className="text-[20px] font-semibold text-white">{t('pintwa.title')}</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Live phone number status and message templates</p>
+          <p className="mt-1 text-xs text-slate-500">{t('pintwa.subtitle')}</p>
         </div>
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
-              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> {t('pintwa.refresh')}
             </button>
             <button onClick={disconnect}
               className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-xs text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
-              <XCircle className="h-3 w-3" /> Disconnect
+              <XCircle className="h-3 w-3" /> {t('pintwa.disconnect')}
             </button>
           </div>
         )}
@@ -176,21 +178,21 @@ export default function WhatsAppPage() {
       {phase !== 'connected' && (
         <div className="mb-6 rounded-[18px] border border-emerald-400/15 bg-emerald-400/[0.03] p-5 space-y-3">
           <div>
-            <div className="mb-1 text-sm font-medium text-slate-300">Phone Number ID</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">{t('pintwa.phoneIdLabel')}</div>
             <input
               type="text"
-              placeholder="e.g. 102834961234567"
+              placeholder={t('pintwa.phoneIdPlaceholder')}
               value={phoneId}
               onChange={(e) => setPhoneId(e.target.value)}
               className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-emerald-400/40"
             />
           </div>
           <div>
-            <div className="mb-1 text-sm font-medium text-slate-300">System User Token</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">{t('pintwa.tokenLabel')}</div>
             <div className="relative">
               <input
                 type={showTok ? 'text' : 'password'}
-                placeholder="EAAxxxxxxxxxxxxxxxx…"
+                placeholder={t('pintwa.tokenPlaceholder')}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
@@ -204,7 +206,7 @@ export default function WhatsAppPage() {
           </div>
           <button onClick={() => connect()} disabled={!token.trim() || !phoneId.trim() || loading}
             className="w-full rounded-[10px] bg-emerald-500 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-40">
-            {phase === 'connecting' ? 'Verifying…' : 'Connect WhatsApp'}
+            {phase === 'connecting' ? t('pintwa.verifying') : t('pintwa.connect')}
           </button>
           {phase === 'error' && (
             <div className="flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-xs text-red-400/90">
@@ -213,8 +215,7 @@ export default function WhatsAppPage() {
             </div>
           )}
           <p className="text-xs text-slate-600">
-            Phone Number ID → Meta Business Manager → WhatsApp → Phone Numbers.
-            System User token → Business Settings → Users → System Users → Generate token (scope: whatsapp_business_messaging).
+            {t('pintwa.helpText')}
           </p>
         </div>
       )}
@@ -225,8 +226,8 @@ export default function WhatsAppPage() {
           {/* Status bar */}
           <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-sm text-emerald-400/90">Connected to WhatsApp Business API</span>
-            <span className="ml-auto text-xs text-slate-600">Credentials stored in browser only</span>
+            <span className="text-sm text-emerald-400/90">{t('pintwa.connectedBanner')}</span>
+            <span className="ml-auto text-xs text-slate-600">{t('pintwa.credentialsNote')}</span>
           </div>
 
           {/* Phone number card */}
@@ -247,22 +248,22 @@ export default function WhatsAppPage() {
                 </span>
                 {data.phone.quality_rating && (
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${QUALITY_COLOR[data.phone.quality_rating] ?? 'text-slate-500 bg-surface-2 border-white/10'}`}>
-                    {data.phone.quality_rating} quality
+                    {t('pintwa.qualitySuffix', { rating: data.phone.quality_rating })}
                   </span>
                 )}
               </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-line pt-4">
               <div>
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Throughput</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">{t('pintwa.throughput')}</div>
                 <div className="mt-1 text-sm text-slate-300 capitalize">{data.phone.throughput?.level?.toLowerCase().replace('_', ' ') ?? '—'}</div>
               </div>
               <div>
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Platform</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">{t('pintwa.platform')}</div>
                 <div className="mt-1 text-sm text-slate-300">{data.phone.platform_type ?? 'Cloud API'}</div>
               </div>
               <div>
-                <div className="text-[10px] text-slate-600 uppercase tracking-wider">Name status</div>
+                <div className="text-[10px] text-slate-600 uppercase tracking-wider">{t('pintwa.nameStatus')}</div>
                 <div className="mt-1 text-sm text-slate-300 capitalize">{data.phone.name_status?.toLowerCase().replace('_', ' ') ?? '—'}</div>
               </div>
             </div>
@@ -271,9 +272,9 @@ export default function WhatsAppPage() {
           {/* Template summary tiles */}
           <div className="mb-5 grid grid-cols-3 gap-3">
             {[
-              { label: 'Total templates', value: data.templates.length, Icon: Zap,       color: 'text-slate-400'   },
-              { label: 'Approved',        value: approvedTemplates,     Icon: CheckCircle2, color: 'text-emerald-400' },
-              { label: 'Pending review',  value: pendingTemplates,      Icon: Shield,    color: 'text-amber-400'  },
+              { label: t('pintwa.totalTemplates'), value: data.templates.length, Icon: Zap,       color: 'text-slate-400'   },
+              { label: t('pintwa.approved'),        value: approvedTemplates,     Icon: CheckCircle2, color: 'text-emerald-400' },
+              { label: t('pintwa.pendingReview'),  value: pendingTemplates,      Icon: Shield,    color: 'text-amber-400'  },
             ].map(({ label, value, Icon, color }) => (
               <div key={label} className="rounded-[14px] border border-line bg-surface p-4">
                 <Icon className={`h-4 w-4 ${color}`} />
@@ -285,21 +286,21 @@ export default function WhatsAppPage() {
 
           {/* Templates list */}
           <section>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">Message Templates</div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">{t('pintwa.messageTemplates')}</div>
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.templates.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No templates found</div>
-                : data.templates.map((t) => (
-                    <div key={t.id} className="flex items-center gap-4 px-5 py-3.5">
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pintwa.noTemplates')}</div>
+                : data.templates.map((tmpl) => (
+                    <div key={tmpl.id} className="flex items-center gap-4 px-5 py-3.5">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-surface-2">
                         <Send className="h-3.5 w-3.5 text-emerald-400/60" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-mono text-sm text-slate-100 truncate">{t.name}</div>
-                        <div className="text-xs text-slate-600">{t.language} · {t.category}</div>
+                        <div className="font-mono text-sm text-slate-100 truncate">{tmpl.name}</div>
+                        <div className="text-xs text-slate-600">{tmpl.language} · {tmpl.category}</div>
                       </div>
-                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[t.status] ?? 'text-slate-500 bg-surface-2 border-white/10'}`}>
-                        {t.status}
+                      <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${TMPL_COLOR[tmpl.status] ?? 'text-slate-500 bg-surface-2 border-white/10'}`}>
+                        {tmpl.status}
                       </span>
                     </div>
                   ))

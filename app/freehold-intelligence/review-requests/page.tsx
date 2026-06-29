@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { CheckSquare, AlertCircle, Clock, MessageSquare, CheckCircle2, ArrowUpRight, Sparkles, X, ThumbsUp, ThumbsDown } from 'lucide-react'
 import Link from 'next/link'
+import { useT } from '@/lib/i18n/provider'
 type ReviewType = 'approval' | 'decision' | 'correction' | 'access request' | 'comment'
 type ReviewPriority = 'critical' | 'high' | 'medium' | 'low'
 
@@ -103,17 +104,33 @@ const INITIAL_ITEMS: ReviewItem[] = [
 const PRIORITY_ORDER: Record<ReviewPriority, number> = { critical: 0, high: 1, medium: 2, low: 3 }
 
 function priorityTone(p: ReviewPriority) {
-  if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
-  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', label: 'High' }
-  if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
-  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
+  if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400' }
+  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold' }
+  if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400' }
+  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500' }
+}
+
+const PRIORITY_LABEL_KEY: Record<ReviewPriority, string> = {
+  critical: 'previews.priorityCritical',
+  high: 'previews.priorityHigh',
+  medium: 'previews.priorityMedium',
+  low: 'previews.priorityLow',
+}
+
+const TYPE_LABEL_KEY: Record<FilterType, string> = {
+  'All': 'previews.filterAll',
+  'approval': 'previews.typeApproval',
+  'decision': 'previews.typeDecision',
+  'correction': 'previews.typeCorrection',
+  'access request': 'previews.typeAccessRequest',
+  'comment': 'previews.typeComment',
 }
 
 function typeTone(t: ReviewType) {
   if (t === 'approval')       return 'bg-gold/10 border-gold/20 text-emerald-200'
   if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
   if (t === 'decision')       return 'bg-gold/10 border-gold/20 text-[#F8E7AE]'
-  if (t === 'correction')     return 'bg-sky-400/10 border-sky-400/20 text-sky-200'
+  if (t === 'correction')     return 'bg-teal-400/10 border-teal-400/20 text-teal-200'
   return                              'bg-surface-2 border-line-strong text-slate-400'
 }
 
@@ -130,6 +147,7 @@ const TYPE_FILTERS: FilterType[] = ['All', 'approval', 'decision', 'correction',
 type Resolution = { status: 'approved' | 'rejected' }
 
 export default function ReviewRequestsPage() {
+  const t = useT()
   const [items, setItems]               = useState<ReviewItem[]>(INITIAL_ITEMS)
   const [activeType, setActiveType]     = useState<FilterType>('All')
   const [resolutions, setResolutions]   = useState<Record<string, Resolution>>({})
@@ -205,17 +223,17 @@ export default function ReviewRequestsPage() {
       {/* Header */}
       <section>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
-          <CheckSquare className="h-3.5 w-3.5" /> Reviews
+          <CheckSquare className="h-3.5 w-3.5" /> {t('previews.eyebrow')}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          {stats.total} decisions waiting.
+          {t('previews.headlineDecisions', { n: stats.total })}
           <br />
-          <span className="text-slate-400">{stats.critical} are launch blockers.</span>
+          <span className="text-slate-400">{t('previews.headlineBlockers', { n: stats.critical })}</span>
         </h1>
         <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
-          Comments, approvals, corrections, and access requests — sorted by what blocks launch first.
+          {t('previews.intro')}
           {stats.resolved > 0 && (
-            <span className="ml-2 text-gold/80">{stats.resolved} resolved this session.</span>
+            <span className="ml-2 text-gold/80">{t('previews.resolvedThisSession', { n: stats.resolved })}</span>
           )}
         </p>
       </section>
@@ -224,25 +242,25 @@ export default function ReviewRequestsPage() {
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
-          <p className="text-xs text-red-400/60 mt-1">Blockers</p>
+          <p className="text-xs text-red-400/60 mt-1">{t('previews.statBlockers')}</p>
         </div>
         <div className="rounded-[18px] border border-gold/20 bg-gold/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-gold">{stats.approvals}</p>
-          <p className="text-xs text-gold/60 mt-1">Approvals</p>
+          <p className="text-xs text-gold/60 mt-1">{t('previews.statApprovals')}</p>
         </div>
         <div className="rounded-[18px] border border-line bg-surface p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.total}</p>
-          <p className="text-xs text-slate-500 mt-1">Open</p>
+          <p className="text-xs text-slate-500 mt-1">{t('previews.statOpen')}</p>
         </div>
         <div className="rounded-[18px] border border-emerald-400/15 bg-gold/[0.04] p-4 text-center">
           <p className="text-[26px] font-semibold text-gold/70">{stats.resolved}</p>
-          <p className="text-xs text-gold/40 mt-1">Resolved</p>
+          <p className="text-xs text-gold/40 mt-1">{t('previews.statResolved')}</p>
         </div>
       </section>
 
       {/* Type filter pills */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-400 shrink-0">Filter:</span>
+        <span className="text-sm text-slate-400 shrink-0">{t('previews.filter')}</span>
         {TYPE_FILTERS.map((f) => (
           <button
             key={f}
@@ -253,7 +271,7 @@ export default function ReviewRequestsPage() {
                 : 'border-line bg-surface text-slate-400 hover:text-slate-100 hover:border-line-strong'
             }`}
           >
-            {f}
+            {t(TYPE_LABEL_KEY[f])}
           </button>
         ))}
         {hasFilter && (
@@ -261,18 +279,18 @@ export default function ReviewRequestsPage() {
             onClick={() => setActiveType('All')}
             className="flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-100"
           >
-            <X className="h-3 w-3" /> Clear
+            <X className="h-3 w-3" /> {t('previews.clear')}
           </button>
         )}
       </div>
 
-      <p className="mt-2 text-sm text-slate-500">{filtered.length} of {stats.total} items shown</p>
+      <p className="mt-2 text-sm text-slate-500">{t('previews.itemsShown', { shown: filtered.length, total: stats.total })}</p>
 
       {/* Review items */}
       <section className="mt-4 space-y-4">
         {filtered.length === 0 ? (
           <div className="rounded-[22px] border border-line bg-surface py-14 text-center text-sm text-slate-400">
-            {stats.total === 0 ? 'All items resolved ✓' : 'No items match this filter.'}
+            {stats.total === 0 ? t('previews.allResolved') : t('previews.noMatch')}
           </div>
         ) : (
           filtered.map((item) => {
@@ -283,16 +301,16 @@ export default function ReviewRequestsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                      {tone.label}
+                      {t(PRIORITY_LABEL_KEY[item.priority])}
                     </span>
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium capitalize ${typeTone(item.type)}`}>
                       {typeIcon(item.type)}
-                      {item.type}
+                      {t(TYPE_LABEL_KEY[item.type])}
                     </span>
                   </div>
                   {item.dueDate && (
                     <div className="flex items-center gap-1.5 text-sm text-slate-400">
-                      <Clock className="h-3 w-3" /> Due {item.dueDate}
+                      <Clock className="h-3 w-3" /> {t('previews.due', { date: item.dueDate })}
                     </div>
                   )}
                 </div>
@@ -302,9 +320,9 @@ export default function ReviewRequestsPage() {
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
                   <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                    <span>Project: <span className="text-slate-300">{item.project}</span></span>
-                    <span>Owner: <span className="text-slate-300">{item.owner}</span></span>
-                    {item.linkedTo && <span>Linked: <span className="text-slate-300">{item.linkedTo}</span></span>}
+                    <span>{t('previews.project')} <span className="text-slate-300">{item.project}</span></span>
+                    <span>{t('previews.owner')} <span className="text-slate-300">{item.owner}</span></span>
+                    {item.linkedTo && <span>{t('previews.linked')} <span className="text-slate-300">{item.linkedTo}</span></span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -312,14 +330,14 @@ export default function ReviewRequestsPage() {
                       className="inline-flex items-center gap-1.5 rounded-[10px] border border-gold/20 bg-gold/[0.06] px-3.5 py-1.5 text-xs font-medium text-gold transition hover:border-emerald-400/35 hover:bg-gold/10"
                     >
                       <ThumbsUp className="h-3.5 w-3.5" />
-                      Approve
+                      {t('previews.approve')}
                     </button>
                     <button
                       onClick={() => resolve(item.id, 'rejected')}
                       className="inline-flex items-center gap-1.5 rounded-[10px] border border-red-400/20 bg-red-400/[0.04] px-3.5 py-1.5 text-xs font-medium text-red-300 transition hover:border-red-400/30 hover:bg-red-400/[0.08]"
                     >
                       <ThumbsDown className="h-3.5 w-3.5" />
-                      Reject
+                      {t('previews.reject')}
                     </button>
                   </div>
                 </div>
@@ -329,7 +347,7 @@ export default function ReviewRequestsPage() {
                     href={item.projectHref}
                     className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-gold"
                   >
-                    Open project workspace <ArrowUpRight className="h-3 w-3" />
+                    {t('previews.openWorkspace')} <ArrowUpRight className="h-3 w-3" />
                   </Link>
                 )}
               </div>
@@ -341,25 +359,25 @@ export default function ReviewRequestsPage() {
       {/* Add comment */}
       <section className="mt-8 rounded-[22px] border border-line bg-surface p-6">
         <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <MessageSquare className="h-3.5 w-3.5" /> Add a review comment
+          <MessageSquare className="h-3.5 w-3.5" /> {t('previews.addComment')}
         </div>
         {commentFlash && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm text-gold">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            Comment added to the review queue.
+            {t('previews.commentAdded')}
           </div>
         )}
         <form onSubmit={handleComment} className="space-y-3">
           <input
             value={commentName}
             onChange={(e) => setCommentName(e.target.value)}
-            placeholder="Your name"
+            placeholder={t('previews.namePlaceholder')}
             className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition"
           />
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Add a review comment, decision request, or correction note…"
+            placeholder={t('previews.commentPlaceholder')}
             rows={3}
             className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition resize-none"
           />
@@ -369,7 +387,7 @@ export default function ReviewRequestsPage() {
               className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-white/90 disabled:opacity-50"
               disabled={!commentText.trim()}
             >
-              Add comment
+              {t('previews.addCommentButton')}
             </button>
           </div>
         </form>
@@ -378,10 +396,10 @@ export default function ReviewRequestsPage() {
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-gold/15 bg-gold/[0.03] px-6 py-7">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80 mb-3">
-          <Sparkles className="h-3 w-3" /> AI take
+          <Sparkles className="h-3 w-3" /> {t('previews.aiTake')}
         </div>
         <p className="text-base font-medium leading-[1.65] text-slate-100">
-          Resolve the Meta billing access first — it&apos;s the one item that blocks everything downstream. After that, the Palm landing approval is the next fastest unlock. The Dubai Hills angle approval can happen in parallel.
+          {t('previews.aiTakeBody')}
         </p>
       </section>
 

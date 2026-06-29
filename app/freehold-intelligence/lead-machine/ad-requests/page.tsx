@@ -25,7 +25,7 @@ function statusStyle(status: string) {
 }
 
 function platformStyle(platform: string) {
-  if (platform === 'Meta') return 'text-blue-400 bg-blue-400/10 border-blue-400/20'
+  if (platform === 'Meta') return 'text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/20'
   if (platform === 'Google') return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
   return 'text-slate-400 bg-surface-2 border-white/10'
 }

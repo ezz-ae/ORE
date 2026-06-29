@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, RefreshCw, AlertCircle, Zap } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
+import { useT } from '@/lib/i18n/provider'
 
 const GOOGLE_BLUE = '#4285F4'
 
@@ -24,6 +25,7 @@ function fmtPct(n: number) {
 // ─── SVG sparkline ────────────────────────────────────────────────────────────
 
 function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
+  const t = useT()
   if (!days.length) return null
   const sorted  = [...days].sort((a, b) => a.date.localeCompare(b.date)).slice(-14)
   const W = 560, H = 72, pad = 4
@@ -41,13 +43,13 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface p-5">
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">Daily performance</div>
+        <div className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{t('padsg.dailyPerformance')}</div>
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded" style={{ background: GOOGLE_BLUE }} /> Spend
+            <span className="h-0.5 w-4 rounded" style={{ background: GOOGLE_BLUE }} /> {t('padsg.legendSpend')}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-gold" /> Clicks
+            <span className="h-0.5 w-4 rounded bg-gold" /> {t('padsg.legendClicks')}
           </span>
         </div>
       </div>
@@ -89,6 +91,7 @@ function DailySpendChart({ days }: { days: GoogleReportSummary['byDay'] }) {
 type SortCol = 'costMicros' | 'clicks' | 'conversions' | 'impressions'
 
 export default function GoogleAdsPage() {
+  const t = useT()
   const [campaigns, setCampaigns]   = useState<GoogleCampaign[]>([])
   const [report, setReport]         = useState<GoogleReportSummary | null>(null)
   const [loading, setLoading]       = useState(true)
@@ -113,7 +116,7 @@ export default function GoogleAdsPage() {
       setCampaigns(cData.campaigns ?? [])
       setReport(rData.report ?? null)
     } catch {
-      setError('Network error — could not reach Google Ads API')
+      setError(t('padsg.networkError'))
     } finally {
       setLoading(false); setRefreshing(false)
     }
@@ -168,10 +171,16 @@ export default function GoogleAdsPage() {
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
               <path d="M21.805 10.023H12v3.955h5.63c-.513 2.466-2.694 4.022-5.63 4.022-3.414 0-6.182-2.768-6.182-6.182s2.768-6.182 6.182-6.182c1.533 0 2.926.564 3.99 1.488l2.964-2.964C17.113 2.548 14.659 1.5 12 1.5 6.201 1.5 1.5 6.201 1.5 12S6.201 22.5 12 22.5c5.523 0 10.5-4 10.5-10.5 0-.657-.066-1.298-.195-1.977z" fill={GOOGLE_BLUE} />
             </svg>
-            Google Ads · 30-day
+            {t('padsg.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            {loading ? 'Loading…' : configErr ? 'Not connected.' : `${campaigns.length} campaign${campaigns.length !== 1 ? 's' : ''}.`}
+            {loading
+              ? t('padsg.loading')
+              : configErr
+                ? t('padsg.notConnected')
+                : campaigns.length === 1
+                  ? t('padsg.campaignCountOne', { n: campaigns.length })
+                  : t('padsg.campaignCountMany', { n: campaigns.length })}
           </h1>
         </section>
 
@@ -182,14 +191,14 @@ export default function GoogleAdsPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('padsg.refresh')}
           </button>
           <Link
             href="/freehold-intelligence/lead-machine/google"
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white transition"
             style={{ background: GOOGLE_BLUE }}
           >
-            <Zap className="h-3.5 w-3.5" /> Manage
+            <Zap className="h-3.5 w-3.5" /> {t('padsg.manage')}
           </Link>
         </div>
       </div>
@@ -200,10 +209,10 @@ export default function GoogleAdsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
             <div>
-              <div className="text-sm font-semibold text-white">Google Ads not connected</div>
+              <div className="text-sm font-semibold text-white">{t('padsg.configTitle')}</div>
               <p className="mt-1 text-sm text-slate-400">{error}</p>
               <Link href="/freehold-intelligence/integrations/google" className="mt-3 inline-flex items-center gap-1 text-xs text-[#4285F4]/80 hover:text-[#4285F4]">
-                Set up Google Ads <ArrowUpRight className="h-3 w-3" />
+                {t('padsg.configSetup')} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -221,7 +230,7 @@ export default function GoogleAdsPage() {
       )}
 
       {loading && (
-        <div className="mt-16 text-center text-sm text-slate-500">Loading Google Ads data…</div>
+        <div className="mt-16 text-center text-sm text-slate-500">{t('padsg.loadingData')}</div>
       )}
 
       {!loading && !configErr && (
@@ -229,12 +238,12 @@ export default function GoogleAdsPage() {
           {/* KPI row */}
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
-              { label: 'Spend',       value: fmtMicros(totalSpend),               color: 'text-white'      },
-              { label: 'Impressions', value: totalImpr.toLocaleString(),           color: 'text-slate-300'  },
-              { label: 'Clicks',      value: totalClicks.toLocaleString(),         color: 'text-white'      },
-              { label: 'Conversions', value: Math.round(totalConv).toLocaleString(), color: 'text-gold' },
-              { label: 'Avg CTR',     value: fmtPct(avgCtr),                      color: 'text-slate-300'  },
-              { label: 'Avg CPC',     value: fmtMicros(avgCpc),                   color: 'text-slate-300'  },
+              { label: t('padsg.kpiSpend'),       value: fmtMicros(totalSpend),               color: 'text-white'      },
+              { label: t('padsg.kpiImpressions'), value: totalImpr.toLocaleString(),           color: 'text-slate-300'  },
+              { label: t('padsg.kpiClicks'),      value: totalClicks.toLocaleString(),         color: 'text-white'      },
+              { label: t('padsg.kpiConversions'), value: Math.round(totalConv).toLocaleString(), color: 'text-gold' },
+              { label: t('padsg.kpiAvgCtr'),     value: fmtPct(avgCtr),                      color: 'text-slate-300'  },
+              { label: t('padsg.kpiAvgCpc'),     value: fmtMicros(avgCpc),                   color: 'text-slate-300'  },
             ].map((k) => (
               <div key={k.label} className="rounded-xl border border-line bg-surface-2 p-4">
                 <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{k.label}</div>
@@ -253,19 +262,19 @@ export default function GoogleAdsPage() {
           {/* Campaigns table */}
           {sorted.length > 0 && (
             <section className="mt-10">
-              <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">Campaigns</div>
+              <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{t('padsg.campaigns')}</div>
               <div className="overflow-x-auto">
                 <div className="min-w-[700px] overflow-hidden rounded-xl border border-line bg-surface-2">
                   {/* Header */}
                   <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 border-b border-line px-5 py-3">
                     {[
-                      { label: 'Campaign', col: null },
-                      { label: 'Type',     col: null },
-                      { label: 'Status',   col: null },
-                      { label: 'Spend',    col: 'costMicros'  as SortCol },
-                      { label: 'Impr.',    col: 'impressions' as SortCol },
-                      { label: 'Clicks',   col: 'clicks'      as SortCol },
-                      { label: 'Conv.',    col: 'conversions' as SortCol },
+                      { label: t('padsg.thCampaign'), col: null },
+                      { label: t('padsg.thType'),     col: null },
+                      { label: t('padsg.thStatus'),   col: null },
+                      { label: t('padsg.thSpend'),    col: 'costMicros'  as SortCol },
+                      { label: t('padsg.thImpr'),    col: 'impressions' as SortCol },
+                      { label: t('padsg.thClicks'),   col: 'clicks'      as SortCol },
+                      { label: t('padsg.thConv'),    col: 'conversions' as SortCol },
                       { label: '',         col: null },
                     ].map(({ label, col }) => (
                       <button
@@ -306,7 +315,7 @@ export default function GoogleAdsPage() {
                             ? 'border-gold/20 bg-gold/10 text-gold'
                             : 'border-line-strong bg-surface-2 text-slate-500'
                         }`}>
-                          {c.status === 'ENABLED' ? 'Active' : 'Paused'}
+                          {c.status === 'ENABLED' ? t('padsg.statusActive') : t('padsg.statusPaused')}
                         </span>
                         <span className="text-xs text-slate-300">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.impressions ?? 0).toLocaleString()}</span>
@@ -322,7 +331,7 @@ export default function GoogleAdsPage() {
                               : 'border-gold/20 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]',
                           ].join(' ')}
                         >
-                          {toggling === c.id ? '…' : c.status === 'ENABLED' ? 'Pause' : 'Resume'}
+                          {toggling === c.id ? '…' : c.status === 'ENABLED' ? t('padsg.actionPause') : t('padsg.actionResume')}
                         </button>
                       </div>
                     ))}
@@ -336,16 +345,22 @@ export default function GoogleAdsPage() {
           {searchTerms.length > 0 && (
             <section className="mt-10">
               <div className="mb-4 flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Top search terms</div>
+                <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('padsg.topSearchTerms')}</div>
                 <Link href="/freehold-intelligence/lead-machine/google/reports" className="text-xs text-slate-500 transition hover:text-white">
-                  Full report <ArrowUpRight className="inline h-3 w-3" />
+                  {t('padsg.fullReport')} <ArrowUpRight className="inline h-3 w-3" />
                 </Link>
               </div>
               <div className="overflow-x-auto">
                 <div className="min-w-[540px] overflow-hidden rounded-xl border border-line bg-surface-2">
                   <div className="grid grid-cols-[2fr_90px_70px_70px_90px] gap-4 border-b border-line px-5 py-3">
-                    {['Search Term', 'Impressions', 'Clicks', 'CTR', 'Avg CPC'].map((h) => (
-                      <div key={h} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{h}</div>
+                    {[
+                      { k: 'searchTerm',  label: t('padsg.thSearchTerm') },
+                      { k: 'impressions', label: t('padsg.thImpressions') },
+                      { k: 'clicks',      label: t('padsg.thClicksFull') },
+                      { k: 'ctr',         label: t('padsg.thCtr') },
+                      { k: 'avgCpc',      label: t('padsg.thAvgCpc') },
+                    ].map((h) => (
+                      <div key={h.k} className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{h.label}</div>
                     ))}
                   </div>
                   <div className="divide-y divide-line">
@@ -376,14 +391,14 @@ export default function GoogleAdsPage() {
                   <path d="M21.805 10.023H12v3.955h5.63c-.513 2.466-2.694 4.022-5.63 4.022-3.414 0-6.182-2.768-6.182-6.182s2.768-6.182 6.182-6.182c1.533 0 2.926.564 3.99 1.488l2.964-2.964C17.113 2.548 14.659 1.5 12 1.5 6.201 1.5 1.5 6.201 1.5 12S6.201 22.5 12 22.5c5.523 0 10.5-4 10.5-10.5 0-.657-.066-1.298-.195-1.977z" fill={GOOGLE_BLUE} />
                 </svg>
               </div>
-              <div className="text-lg font-semibold text-white">No Google Ads campaigns yet</div>
-              <p className="mt-2 text-sm text-slate-400">Create your first campaign to start capturing high-intent leads from Google Search.</p>
+              <div className="text-lg font-semibold text-white">{t('padsg.emptyTitle')}</div>
+              <p className="mt-2 text-sm text-slate-400">{t('padsg.emptyBody')}</p>
               <Link
                 href="/freehold-intelligence/lead-machine/google/campaigns/new"
                 className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition"
                 style={{ background: GOOGLE_BLUE }}
               >
-                <Zap className="h-4 w-4" /> Create first campaign
+                <Zap className="h-4 w-4" /> {t('padsg.createFirst')}
               </Link>
             </div>
           )}
@@ -395,7 +410,7 @@ export default function GoogleAdsPage() {
                 href="/freehold-intelligence/lead-machine/google"
                 className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-[#4285F4]/30 hover:text-white"
               >
-                Full Google Ads manager <ArrowUpRight className="h-3.5 w-3.5" style={{ color: GOOGLE_BLUE }} />
+                {t('padsg.fullManager')} <ArrowUpRight className="h-3.5 w-3.5" style={{ color: GOOGLE_BLUE }} />
               </Link>
             </div>
           )}

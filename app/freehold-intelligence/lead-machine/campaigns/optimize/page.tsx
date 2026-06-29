@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Sparkles, TrendingDown, TrendingUp, CheckCircle2,
-  ArrowUpRight, Zap, BarChart3, ChevronRight,
+  ArrowUpRight, Zap, BarChart3, ChevronRight, PlugZap,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { EmptyState } from '@/components/freehold/ui'
+import { useAdsConnected } from '@/lib/freehold/use-ads-connected'
 import { useT } from '@/lib/i18n/provider'
 
 const AVG = financeSummary.avgCpl30d
@@ -87,12 +89,12 @@ const RECO_STYLE: Record<RecoType, { cls: string; dotCls: string }> = {
   Scale:    { cls: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400', dotCls: 'bg-emerald-400' },
   Pause:    { cls: 'border-red-400/25 bg-red-400/10 text-red-400',             dotCls: 'bg-red-400'     },
   Optimise: { cls: 'border-gold/25 bg-gold/10 text-gold',      dotCls: 'bg-gold'  },
-  Test:     { cls: 'border-sky-400/25 bg-sky-400/10 text-sky-300',             dotCls: 'bg-sky-400'     },
+  Test:     { cls: 'border-teal-400/25 bg-teal-400/10 text-teal-300',             dotCls: 'bg-teal-400'     },
 }
 
 function platformLabel(p: 'meta' | 'google') {
   return p === 'meta'
-    ? { label: 'Meta',   cls: 'border-blue-400/25 bg-blue-400/10 text-blue-300'    }
+    ? { label: 'Meta',   cls: 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'    }
     : { label: 'Google', cls: 'border-gold/25 bg-gold/10 text-gold' }
 }
 
@@ -106,6 +108,7 @@ function cplStyle(cpl: number) {
 export default function CampaignOptimizePage() {
   const t = useT()
   const [applied, setApplied] = useState<Set<string>>(new Set())
+  const { connected: adsConnected } = useAdsConnected()
 
   function apply(id: string) {
     setApplied((prev) => new Set([...prev, id]))
@@ -120,6 +123,33 @@ export default function CampaignOptimizePage() {
   const hasApplied      = appliedRecos.length > 0
 
   const sorted = [...financeSummary.topSpendCampaigns].sort((a, b) => a.cpl - b.cpl)
+
+  // No connected ad accounts → honest connect state (no seed optimizer data).
+  if (adsConnected === false) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
+          <Sparkles className="h-3.5 w-3.5" /> {t('lm.optimize.eyebrow')}
+        </div>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">{t('lm.optimize.title')}</h1>
+        <div className="mt-8">
+          <EmptyState
+            Icon={PlugZap}
+            title={t('lm.live.connect.title')}
+            description={t('lm.live.connect.desc')}
+            action={
+              <Link
+                href="/freehold-intelligence/integrations"
+                className="inline-flex items-center gap-2 rounded-xl border border-gold/35 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20"
+              >
+                {t('lm.live.connect.cta')} <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">

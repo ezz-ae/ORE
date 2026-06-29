@@ -77,6 +77,12 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.live.fullAttribution': 'Full attribution report',
     'lm.live.section.cplTrend': 'CPL trend · last 4 weeks',
     'lm.live.cplTrendNote': 'Both platforms trending down — Meta dropped 18.5% over 4 weeks',
+    'lm.live.loading': 'Loading live ad data…',
+    'lm.live.connect.title': 'Connect your ad accounts',
+    'lm.live.connect.desc': 'Live spend, leads and CPL appear here once Meta and Google Ads are connected. No data is shown until your accounts are linked.',
+    'lm.live.connect.cta': 'Go to Integrations',
+    'lm.live.empty.campaigns': 'No campaigns running yet. Launch one from the campaign builder to see it here.',
+    'lm.live.empty.cta': 'Build a campaign',
     'lm.live.adPreview': 'Ad Preview',
 
     // ---- Meta Ads (ads-live/meta/page.tsx) ----
@@ -217,6 +223,12 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.live.fullAttribution': 'تقرير الإسناد الكامل',
     'lm.live.section.cplTrend': 'اتجاه CPL · آخر 4 أسابيع',
     'lm.live.cplTrendNote': 'كلتا المنصتين في اتجاه هبوطي — انخفض Meta بنسبة 18.5% خلال 4 أسابيع',
+    'lm.live.loading': 'جارٍ تحميل بيانات الإعلانات المباشرة…',
+    'lm.live.connect.title': 'اربط حسابات الإعلانات',
+    'lm.live.connect.desc': 'يظهر الإنفاق والعملاء المحتملون وCPL هنا بمجرد ربط حسابي Meta وGoogle Ads. لا تُعرض أي بيانات قبل ربط حساباتك.',
+    'lm.live.connect.cta': 'الذهاب إلى التكاملات',
+    'lm.live.empty.campaigns': 'لا توجد حملات قيد التشغيل بعد. أطلق حملة من منشئ الحملات لتظهر هنا.',
+    'lm.live.empty.cta': 'إنشاء حملة',
     'lm.live.adPreview': 'معاينة الإعلان',
 
     // ---- Meta Ads ----
@@ -357,6 +369,12 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.live.fullAttribution': 'Полный отчёт по атрибуции',
     'lm.live.section.cplTrend': 'Тренд CPL · последние 4 недели',
     'lm.live.cplTrendNote': 'Обе платформы идут вниз — Meta упал на 18,5% за 4 недели',
+    'lm.live.loading': 'Загрузка данных по рекламе…',
+    'lm.live.connect.title': 'Подключите рекламные аккаунты',
+    'lm.live.connect.desc': 'Расход, лиды и CPL появятся здесь после подключения Meta и Google Ads. До привязки аккаунтов данные не показываются.',
+    'lm.live.connect.cta': 'Перейти к интеграциям',
+    'lm.live.empty.campaigns': 'Кампании ещё не запущены. Запустите кампанию в конструкторе, чтобы увидеть её здесь.',
+    'lm.live.empty.cta': 'Создать кампанию',
     'lm.live.adPreview': 'Превью рекламы',
 
     // ---- Meta Ads ----

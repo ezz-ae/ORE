@@ -80,7 +80,7 @@ function statusCfg(status: string) {
     case 'blocked':
     case 'disconnected':
     case 'not_connected':   return { label: 'Not connected', dot: 'bg-red-400',     text: 'text-red-300'    }
-    default:                return { label: 'Pending',       dot: 'bg-sky-400',     text: 'text-sky-200'    }
+    default:                return { label: 'Pending',       dot: 'bg-teal-400',     text: 'text-teal-200'    }
   }
 }
 

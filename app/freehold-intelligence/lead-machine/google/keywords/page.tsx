@@ -33,7 +33,7 @@ function fmtPct(n: number): string {
 
 const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
   BROAD:  'bg-surface-2 text-slate-500 border-line',
-  PHRASE: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
+  PHRASE: 'bg-teal-400/10 text-slate-400 border-teal-400/20',
   EXACT:  'bg-gold/10 text-gold border-gold/20',
 }
 
@@ -45,7 +45,7 @@ const MATCH_LABEL: Record<GoogleKeywordMatchType, string> = {
 
 const INTENT_BADGE: Record<string, string> = {
   high:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
-  medium: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
+  medium: 'bg-teal-400/10 text-slate-400 border-teal-400/20',
   brand:  'bg-violet-400/10 text-slate-400 border-violet-400/20',
 }
 

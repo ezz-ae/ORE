@@ -48,8 +48,8 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-sky-400/25 bg-sky-400/10">
-            <Bot className="h-3.5 w-3.5 text-sky-400" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-teal-400/25 bg-teal-400/10">
+            <Bot className="h-3.5 w-3.5 text-teal-400" />
           </div>
           <span className="text-sm font-semibold text-white">AI Manager</span>
         </div>
@@ -98,7 +98,7 @@ export default function AiManagerLayout({ children }: { children: React.ReactNod
                     href={tab.href}
                     className={[
                       'inline-flex items-center px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                      active ? 'border-sky-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
+                      active ? 'border-teal-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
                     {tab.label}

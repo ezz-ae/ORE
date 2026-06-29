@@ -40,14 +40,14 @@ const TIER_COLOR: Record<string, string> = {
 const LEVEL_COLOR: Record<string, { text: string; bg: string }> = {
   Expert:   { text: 'text-gold',   bg: 'bg-gold/15'   },
   Strong:   { text: 'text-emerald-400', bg: 'bg-emerald-400/12'  },
-  Learning: { text: 'text-sky-400',     bg: 'bg-sky-400/12'      },
+  Learning: { text: 'text-teal-400',     bg: 'bg-teal-400/12'      },
   Untested: { text: 'text-slate-500',   bg: 'bg-surface-2'    },
 }
 
 const STATUS_META: Record<WalletEntry['status'], { icon: ReactNode; textKey: string; color: string }> = {
   paid:       { icon: <CheckCircle className="h-3.5 w-3.5" />, textKey: 'agent.statusPaid',       color: 'text-emerald-400' },
   processing: { icon: <Clock       className="h-3.5 w-3.5" />, textKey: 'agent.statusProcessing', color: 'text-amber-400'   },
-  pending:    { icon: <AlertCircle className="h-3.5 w-3.5" />, textKey: 'agent.statusPending',    color: 'text-sky-400'     },
+  pending:    { icon: <AlertCircle className="h-3.5 w-3.5" />, textKey: 'agent.statusPending',    color: 'text-teal-400'     },
 }
 
 function fmtAED(n: number) {
@@ -108,7 +108,7 @@ function ExpertiseRow({ entry }: { entry: ExpertiseEntry }) {
   const { t } = useI18n()
   const lc = LEVEL_COLOR[entry.level]
   const barW = entry.level === 'Expert' ? 100 : entry.level === 'Strong' ? 65 : entry.level === 'Learning' ? 30 : 5
-  const barColor = entry.level === 'Expert' ? 'bg-gold' : entry.level === 'Strong' ? 'bg-emerald-400' : entry.level === 'Learning' ? 'bg-sky-400' : 'bg-surface-3'
+  const barColor = entry.level === 'Expert' ? 'bg-gold' : entry.level === 'Strong' ? 'bg-emerald-400' : entry.level === 'Learning' ? 'bg-teal-400' : 'bg-surface-3'
 
   return (
     <div className="flex items-center gap-4">
@@ -209,7 +209,7 @@ export default function AgentAccountPage() {
       <section className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { Icon: Zap,       label: t('agent.responseTime'),  value: t('agent.responseTimeValue', { hours: agentProfile.avgResponseH }), color: 'text-gold'  },
-          { Icon: Users,     label: t('agent.viewingRate'),   value: `${agentProfile.leadToViewingPct}%`,   color: 'text-sky-400'    },
+          { Icon: Users,     label: t('agent.viewingRate'),   value: `${agentProfile.leadToViewingPct}%`,   color: 'text-teal-400'    },
           { Icon: TrendingUp,label: t('agent.offerRate'),     value: `${agentProfile.viewingToOfferPct}%`,  color: 'text-violet-400' },
           { Icon: Star,      label: t('agent.winsThisMonth'), value: t('agent.winsValue', { count: agentProfile.wins }),         color: 'text-gold'  },
         ].map(({ Icon, label, value, color }) => (

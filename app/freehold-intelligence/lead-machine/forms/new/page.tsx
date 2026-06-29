@@ -9,46 +9,47 @@ import {
 } from 'lucide-react'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { MetaFormQuestion, MetaFormQuestionType, CreateLeadFormPayload } from '@/lib/meta/types'
+import { useT } from '@/lib/i18n/provider'
 
 type WizardStep = 1 | 2 | 3 | 4
 
-const STANDARD_QUESTIONS: { type: MetaFormQuestionType; label: string; description: string; required?: boolean }[] = [
-  { type: 'FULL_NAME', label: 'Full name',     description: 'Auto-filled by Meta', required: true },
-  { type: 'PHONE',     label: 'Phone number',  description: 'Auto-filled by Meta', required: true },
-  { type: 'EMAIL',     label: 'Email address', description: 'Auto-filled by Meta' },
-  { type: 'CITY',      label: 'City',          description: 'Current city' },
+const STANDARD_QUESTIONS: { type: MetaFormQuestionType; labelKey: string; descriptionKey: string; required?: boolean }[] = [
+  { type: 'FULL_NAME', labelKey: 'pforms.q.fullName', descriptionKey: 'pforms.q.autoFilled', required: true },
+  { type: 'PHONE',     labelKey: 'pforms.q.phone',    descriptionKey: 'pforms.q.autoFilled', required: true },
+  { type: 'EMAIL',     labelKey: 'pforms.q.email',    descriptionKey: 'pforms.q.autoFilled' },
+  { type: 'CITY',      labelKey: 'pforms.q.city',     descriptionKey: 'pforms.q.currentCity' },
 ]
 
-const CUSTOM_PRESETS: { key: string; label: string; options: { value: string; label: string }[] }[] = [
+const CUSTOM_PRESETS: { key: string; labelKey: string; options: { value: string; labelKey: string }[] }[] = [
   {
     key: 'budget_range',
-    label: 'Budget range',
+    labelKey: 'pforms.preset.budget',
     options: [
-      { value: 'under_1m',  label: 'Under AED 1M'  },
-      { value: '1m_2m',     label: 'AED 1M – 2M'   },
-      { value: '2m_3m',     label: 'AED 2M – 3M'   },
-      { value: '3m_5m',     label: 'AED 3M – 5M'   },
-      { value: 'above_5m',  label: 'Above AED 5M'  },
+      { value: 'under_1m',  labelKey: 'pforms.budget.under1m' },
+      { value: '1m_2m',     labelKey: 'pforms.budget.1m2m'    },
+      { value: '2m_3m',     labelKey: 'pforms.budget.2m3m'    },
+      { value: '3m_5m',     labelKey: 'pforms.budget.3m5m'    },
+      { value: 'above_5m',  labelKey: 'pforms.budget.above5m' },
     ],
   },
   {
     key: 'buying_intent',
-    label: 'Buying intent',
+    labelKey: 'pforms.preset.intent',
     options: [
-      { value: 'invest',       label: 'Investment / rental yield' },
-      { value: 'own_use',      label: 'Own use / family home'    },
-      { value: 'golden_visa',  label: 'Golden Visa residency'    },
-      { value: 'comparing',    label: 'Still comparing options'  },
+      { value: 'invest',       labelKey: 'pforms.intent.invest'     },
+      { value: 'own_use',      labelKey: 'pforms.intent.ownUse'     },
+      { value: 'golden_visa',  labelKey: 'pforms.intent.goldenVisa' },
+      { value: 'comparing',    labelKey: 'pforms.intent.comparing'  },
     ],
   },
   {
     key: 'timeline',
-    label: 'Purchase timeline',
+    labelKey: 'pforms.preset.timeline',
     options: [
-      { value: 'immediate',  label: 'Ready to buy now'     },
-      { value: '3_months',   label: 'Within 3 months'      },
-      { value: '6_months',   label: 'Within 6 months'      },
-      { value: 'exploring',  label: 'Just exploring'       },
+      { value: 'immediate',  labelKey: 'pforms.timeline.immediate' },
+      { value: '3_months',   labelKey: 'pforms.timeline.3months'   },
+      { value: '6_months',   labelKey: 'pforms.timeline.6months'   },
+      { value: 'exploring',  labelKey: 'pforms.timeline.exploring' },
     ],
   },
 ]
@@ -67,21 +68,24 @@ interface FormState {
   thankYouBody: string
 }
 
-const DEFAULT: FormState = {
-  listingId: '',
-  formName: '',
-  landingUrl: '',
-  privacyPolicyUrl: 'https://freholdintelligence.com/privacy',
-  selectedStandard: ['FULL_NAME', 'PHONE'],
-  selectedCustom: ['budget_range', 'buying_intent'],
-  thankYouTitle: 'Thank you — we\'ll be in touch shortly.',
-  thankYouBody: 'A senior advisor will contact you within 24 hours to discuss your options.',
+function makeDefault(t: (key: string) => string): FormState {
+  return {
+    listingId: '',
+    formName: '',
+    landingUrl: '',
+    privacyPolicyUrl: 'https://freholdintelligence.com/privacy',
+    selectedStandard: ['FULL_NAME', 'PHONE'],
+    selectedCustom: ['budget_range', 'buying_intent'],
+    thankYouTitle: t('pforms.default.thankYouTitle'),
+    thankYouBody: t('pforms.default.thankYouBody'),
+  }
 }
 
 export default function NewFormPage() {
+  const t       = useT()
   const router  = useRouter()
   const [step, setStep]     = useState<WizardStep>(1)
-  const [form, setForm]     = useState<FormState>(DEFAULT)
+  const [form, setForm]     = useState<FormState>(() => makeDefault(t))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const [created, setCreated] = useState<{ id: string } | null>(null)
@@ -120,7 +124,12 @@ export default function NewFormPage() {
     const standard: MetaFormQuestion[] = form.selectedStandard.map((type) => ({ type }))
     const custom: MetaFormQuestion[] = form.selectedCustom.map((key) => {
       const preset = CUSTOM_PRESETS.find((p) => p.key === key)!
-      return { type: 'CUSTOM', key, label: preset.label, options: preset.options }
+      return {
+        type: 'CUSTOM',
+        key,
+        label: t(preset.labelKey),
+        options: preset.options.map((o) => ({ value: o.value, label: t(o.labelKey) })),
+      }
     })
     return [...standard, ...custom]
   }
@@ -145,10 +154,10 @@ export default function NewFormPage() {
         body:    JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create form')
+      if (!res.ok) throw new Error(data.error ?? t('pforms.error.createFailed'))
       setCreated(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unexpected error')
+      setError(e instanceof Error ? e.message : t('pforms.error.unexpected'))
     } finally {
       setSubmitting(false)
     }
@@ -160,20 +169,20 @@ export default function NewFormPage() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 mb-6">
           <Check className="h-8 w-8 text-gold" />
         </div>
-        <h2 className="text-[28px] font-semibold text-white">Form created.</h2>
-        <p className="mt-3 text-sm text-slate-400">Your lead gen form is live on Meta and ready to attach to campaigns.</p>
+        <h2 className="text-[28px] font-semibold text-white">{t('pforms.created.title')}</h2>
+        <p className="mt-3 text-sm text-slate-400">{t('pforms.created.subtitle')}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/forms/${created.id}`}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
-            View form
+            {t('pforms.created.viewForm')}
           </Link>
           <Link
             href="/freehold-intelligence/lead-machine/forms"
             className="inline-flex items-center gap-2 rounded-full border border-white/[0.1] bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
           >
-            All forms
+            {t('pforms.allForms')}
           </Link>
         </div>
       </div>
@@ -188,15 +197,15 @@ export default function NewFormPage() {
         href="/freehold-intelligence/lead-machine/forms"
         className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white"
       >
-        <ArrowLeft className="h-3.5 w-3.5" /> All forms
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.allForms')}
       </Link>
 
       <div className="mt-7">
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <FileText className="h-3.5 w-3.5" /> New lead form
+          <FileText className="h-3.5 w-3.5" /> {t('pforms.new.eyebrow')}
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-tight text-white">
-          {['Basics', 'Questions', 'Thank you', 'Review'][step - 1]}
+          {[t('pforms.step.basics'), t('pforms.step.questions'), t('pforms.step.thankYou'), t('pforms.step.review')][step - 1]}
         </h1>
       </div>
 
@@ -214,13 +223,13 @@ export default function NewFormPage() {
       {step === 1 && (
         <div className="mt-8 space-y-5">
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Listing</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.listing')}</label>
             <select
               value={form.listingId}
               onChange={(e) => onListingChange(e.target.value)}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
             >
-              <option value="">Select listing…</option>
+              <option value="">{t('pforms.basics.selectListing')}</option>
               {leadMachineListings.map((l) => (
                 <option key={l.id} value={l.id}>{l.projectName}</option>
               ))}
@@ -228,27 +237,27 @@ export default function NewFormPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Form name</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.formName')}</label>
             <input
               value={form.formName}
               onChange={(e) => setForm((p) => ({ ...p, formName: e.target.value }))}
-              placeholder="e.g. Palm Jumeirah — Lead Form"
+              placeholder={t('pforms.basics.formNamePlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Landing page URL</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.landingUrl')}</label>
             <input
               value={form.landingUrl}
               onChange={(e) => setForm((p) => ({ ...p, landingUrl: e.target.value }))}
-              placeholder="https://… (used for thank-you redirect)"
+              placeholder={t('pforms.basics.landingUrlPlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Privacy policy URL</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.privacyUrl')}</label>
             <input
               value={form.privacyPolicyUrl}
               onChange={(e) => setForm((p) => ({ ...p, privacyPolicyUrl: e.target.value }))}
@@ -262,7 +271,7 @@ export default function NewFormPage() {
       {step === 2 && (
         <div className="mt-8 space-y-6">
           <div>
-            <div className="mb-3 text-xs font-medium text-slate-400">Standard fields</div>
+            <div className="mb-3 text-xs font-medium text-slate-400">{t('pforms.questions.standardFields')}</div>
             <div className="space-y-2">
               {STANDARD_QUESTIONS.map((q) => {
                 const required  = ['FULL_NAME', 'PHONE'].includes(q.type)
@@ -281,12 +290,12 @@ export default function NewFormPage() {
                     }
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white">{q.label}</span>
+                        <span className="text-sm font-medium text-white">{t(q.labelKey)}</span>
                         {required && (
-                          <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">Required</span>
+                          <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[9px] font-medium text-gold">{t('pforms.questions.required')}</span>
                         )}
                       </div>
-                      <div className="text-sm text-slate-500">{q.description}</div>
+                      <div className="text-sm text-slate-500">{t(q.descriptionKey)}</div>
                     </div>
                   </button>
                 )
@@ -295,7 +304,7 @@ export default function NewFormPage() {
           </div>
 
           <div>
-            <div className="mb-3 text-xs font-medium text-slate-400">Qualifying questions (custom)</div>
+            <div className="mb-3 text-xs font-medium text-slate-400">{t('pforms.questions.custom')}</div>
             <div className="space-y-2">
               {CUSTOM_PRESETS.map((preset) => {
                 const selected = form.selectedCustom.includes(preset.key)
@@ -312,9 +321,9 @@ export default function NewFormPage() {
                       : <Square className="h-4 w-4 shrink-0 text-slate-600" />
                     }
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-white">{preset.label}</div>
+                      <div className="text-sm font-medium text-white">{t(preset.labelKey)}</div>
                       <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-slate-500">
-                        {preset.options.map((o) => <span key={o.value}>{o.label}</span>)}
+                        {preset.options.map((o) => <span key={o.value}>{t(o.labelKey)}</span>)}
                       </div>
                     </div>
                   </button>
@@ -324,7 +333,7 @@ export default function NewFormPage() {
           </div>
 
           <div className="rounded-[14px] border border-line bg-surface-2 px-4 py-3 text-xs text-slate-500">
-            {buildQuestions().length} questions total — shorter forms convert better. 3–4 questions is optimal for real estate leads.
+            {t('pforms.questions.totalNote', { n: buildQuestions().length })}
           </div>
         </div>
       )}
@@ -332,34 +341,34 @@ export default function NewFormPage() {
       {/* ── Step 3: Thank you page ── */}
       {step === 3 && (
         <div className="mt-8 space-y-5">
-          <p className="text-sm text-slate-400">Shown to the lead immediately after form submission. Keep it warm and action-forward.</p>
+          <p className="text-sm text-slate-400">{t('pforms.thankYou.intro')}</p>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Thank you headline</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.thankYou.headline')}</label>
             <input
               value={form.thankYouTitle}
               onChange={(e) => setForm((p) => ({ ...p, thankYouTitle: e.target.value }))}
-              placeholder="Thank you — we'll be in touch."
+              placeholder={t('pforms.thankYou.headlinePlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-slate-400">Thank you message</label>
+            <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.thankYou.message')}</label>
             <textarea
               value={form.thankYouBody}
               onChange={(e) => setForm((p) => ({ ...p, thankYouBody: e.target.value }))}
               rows={3}
-              placeholder="A senior advisor will contact you within 24 hours…"
+              placeholder={t('pforms.thankYou.messagePlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white placeholder:text-slate-600 outline-none focus:border-gold/40 transition resize-none"
             />
           </div>
 
           {/* Preview */}
           <div className="rounded-[18px] border border-gold/15 bg-gold/[0.03] p-5">
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold/70 mb-3">Preview</div>
-            <div className="text-[17px] font-semibold text-white">{form.thankYouTitle || 'Thank you headline'}</div>
-            <p className="mt-2 text-sm text-slate-400">{form.thankYouBody || 'Thank you message body…'}</p>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-gold/70 mb-3">{t('pforms.thankYou.preview')}</div>
+            <div className="text-[17px] font-semibold text-white">{form.thankYouTitle || t('pforms.thankYou.previewHeadline')}</div>
+            <p className="mt-2 text-sm text-slate-400">{form.thankYouBody || t('pforms.thankYou.previewBody')}</p>
           </div>
         </div>
       )}
@@ -369,26 +378,26 @@ export default function NewFormPage() {
         <div className="mt-8 space-y-4">
           {[
             {
-              title: 'Form details',
+              title: t('pforms.review.formDetails'),
               rows: [
-                ['Name',      form.formName        || '—'],
-                ['Listing',   leadMachineListings.find((l) => l.id === form.listingId)?.projectName ?? '—'],
-                ['Landing URL', form.landingUrl     || '—'],
-                ['Privacy policy', form.privacyPolicyUrl || '—'],
+                [t('pforms.review.name'),      form.formName        || '—'],
+                [t('pforms.review.listing'),   leadMachineListings.find((l) => l.id === form.listingId)?.projectName ?? '—'],
+                [t('pforms.review.landingUrl'), form.landingUrl     || '—'],
+                [t('pforms.review.privacyPolicy'), form.privacyPolicyUrl || '—'],
               ],
             },
             {
-              title: 'Questions',
+              title: t('pforms.review.questions'),
               rows: buildQuestions().map((q, i) => [
                 `${i + 1}. ${q.label ?? q.type}`,
-                q.type === 'CUSTOM' ? `Custom · ${q.options?.length ?? 0} options` : 'Standard (Meta auto-fill)',
+                q.type === 'CUSTOM' ? t('pforms.review.customWithOptions', { n: q.options?.length ?? 0 }) : t('pforms.review.standardAutofill'),
               ]),
             },
             {
-              title: 'Thank you page',
+              title: t('pforms.review.thankYouPage'),
               rows: [
-                ['Headline', form.thankYouTitle || '—'],
-                ['Message',  form.thankYouBody  || '—'],
+                [t('pforms.review.headline'), form.thankYouTitle || '—'],
+                [t('pforms.review.message'),  form.thankYouBody  || '—'],
               ],
             },
           ].map((section) => (
@@ -422,7 +431,7 @@ export default function NewFormPage() {
               onClick={() => setStep((s) => (s - 1) as WizardStep)}
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm text-slate-300 transition hover:text-white"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Back
+              <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.nav.back')}
             </button>
           )
           : <div />
@@ -434,7 +443,7 @@ export default function NewFormPage() {
             disabled={step === 1 && (!form.formName || !form.landingUrl)}
             className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Next <ArrowRight className="h-3.5 w-3.5" />
+            {t('pforms.nav.next')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
         ) : (
           <button
@@ -442,7 +451,7 @@ export default function NewFormPage() {
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
           >
-            {submitting ? 'Creating…' : 'Create form'}
+            {submitting ? t('pforms.nav.creating') : t('pforms.nav.create')}
             {!submitting && <Check className="h-4 w-4" />}
           </button>
         )}

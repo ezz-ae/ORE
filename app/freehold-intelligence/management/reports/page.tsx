@@ -12,7 +12,7 @@ import { useT } from '@/lib/i18n/provider'
 
 const TOP_EVENTS = [
   { rank: 1,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Sara Al Mansoori closed Palm Jumeirah Villa deal — AED 4.2M commission AED 63K' },
-  { rank: 2,  type: 'lead',     icon: TrendingUp,    color: 'text-sky-400 bg-sky-500/15',         text: 'Meta CPL hit all-time low of AED 32 — 68 new leads in 24 hours from Dubai Hills campaign' },
+  { rank: 2,  type: 'lead',     icon: TrendingUp,    color: 'text-teal-400 bg-teal-500/15',         text: 'Meta CPL hit all-time low of AED 32 — 68 new leads in 24 hours from Dubai Hills campaign' },
   { rank: 3,  type: 'finance',  icon: DollarSign,    color: 'text-gold bg-gold/15',    text: 'Monthly revenue target of AED 300K exceeded — current MTD AED 320K (+6.7% above target)' },
   { rank: 4,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Khalid Rashid progressed 2 deals to Contract Review stage — combined value AED 8M' },
   { rank: 5,  type: 'warning',  icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/15',     text: 'Tariq Bin Zayed deal (AED 4.2M) at risk — 12 days without agent follow-up action required' },
@@ -71,9 +71,9 @@ const AI_INSIGHTS = [
   {
     type: 'success',
     icon: CheckCircle2,
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/5',
-    borderColor: 'border-sky-500/20',
+    color: 'text-teal-400',
+    bgColor: 'bg-teal-500/5',
+    borderColor: 'border-teal-500/20',
     titleKey: 'mgmt.reports.insight.successTitle',
     bodyKey: 'mgmt.reports.insight.successBody',
     actionKey: 'mgmt.reports.insight.successAction',

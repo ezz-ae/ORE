@@ -31,7 +31,7 @@ export interface CoachStep {
 }
 
 /** Bump when tour content changes enough to re-show it to returning users. */
-export const COACH_VERSION = 'v3'
+export const COACH_VERSION = 'v4'
 
 const COMMON_TAIL: CoachStep[] = [
   { key: 'coach.common.expert', anchor: 'expert-chat', placement: 'left' },

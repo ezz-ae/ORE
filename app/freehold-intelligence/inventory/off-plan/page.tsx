@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Search, Calendar, TrendingUp, Building2 } from 'lucide-react'
-import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -20,7 +20,7 @@ const STATUS_LABEL_KEY: Record<string, string> = {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  off_plan:           'text-blue-400   bg-blue-400/10   border-blue-400/20',
+  off_plan:           'text-teal-400   bg-teal-400/10   border-teal-400/20',
   under_construction: 'text-amber-400  bg-amber-400/10  border-amber-400/20',
   coming_soon:        'text-slate-500   bg-surface-2  border-white/10',
 }
@@ -32,7 +32,8 @@ export default function OffPlanPage() {
   const [query, setQuery] = useState('')
   const [sort,  setSort]  = useState<SortKey>('leads')
   const [year,  setYear]  = useState('All')
-  const [allProperties, setAllProperties] = useState<InventoryProperty[]>(inventoryProperties)
+  // Real DB inventory only — populated from the API; no seed.
+  const [allProperties, setAllProperties] = useState<InventoryProperty[]>([])
 
   useEffect(() => {
     let cancelled = false

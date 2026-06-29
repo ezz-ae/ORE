@@ -28,14 +28,14 @@ type AppEntry = {
 const operate: AppEntry[] = [
   { href: '/freehold-intelligence/lead-machine', label: 'Lead Machine', blurb: 'Listings, landings, ads, approvals.', icon: Zap,        tint: 'from-gold/30 to-transparent' },
   { href: '/freehold-intelligence/crm',          label: 'CRM',          blurb: 'Refined leads, intent, signals.',  icon: Users,      tint: 'from-emerald-500/25 to-transparent' },
-  { href: '/freehold-intelligence/notebook',     label: 'Notebook',     blurb: 'AI briefs, drafts, exports.',      icon: BookOpen,   tint: 'from-sky-500/25 to-transparent' },
+  { href: '/freehold-intelligence/notebook',     label: 'Notebook',     blurb: 'AI briefs, drafts, exports.',      icon: BookOpen,   tint: 'from-teal-500/25 to-transparent' },
   { href: '/freehold-intelligence/review-requests', label: 'Reviews',   blurb: 'Approvals and review queue.',      icon: CheckSquare,tint: 'from-orange-500/25 to-transparent' },
 ]
 
 const govern: AppEntry[] = [
   { href: '/freehold-intelligence/integrations',  label: 'Integrations', blurb: 'CRM, ads, messaging, tracking.', icon: Inbox,       tint: 'from-violet-500/25 to-transparent' },
   { href: '/freehold-intelligence/milestones',    label: 'Milestones',   blurb: 'Delivery plan and health.',      icon: Flag,        tint: 'from-rose-500/25 to-transparent' },
-  { href: '/freehold-intelligence/server-status', label: 'Server',       blurb: 'Infra, data, deploy health.',    icon: ShieldCheck, tint: 'from-cyan-500/25 to-transparent' },
+  { href: '/freehold-intelligence/server-status', label: 'Server',       blurb: 'Infra, data, deploy health.',    icon: ShieldCheck, tint: 'from-teal-500/25 to-transparent' },
   { href: '/freehold-intelligence/security',      label: 'Security',     blurb: 'Roles, access, audit trail.',    icon: Lock,        tint: 'from-red-500/25 to-transparent' },
   { href: '/freehold-intelligence/settings',      label: 'Settings',     blurb: 'Workspace preferences.',         icon: Settings,    tint: 'from-white/15 to-transparent' },
 ]

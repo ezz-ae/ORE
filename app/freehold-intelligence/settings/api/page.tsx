@@ -17,7 +17,7 @@ const ENDPOINTS = [
 
 const METHOD_COLOR: Record<string, string> = {
   GET:   'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  POST:  'text-blue-400    bg-blue-400/10    border-blue-400/20',
+  POST:  'text-fuchsia-400    bg-fuchsia-400/10    border-fuchsia-400/20',
   PATCH: 'text-amber-400   bg-amber-400/10   border-amber-400/20',
   DELETE:'text-red-400     bg-red-400/10     border-red-400/20',
 }
@@ -56,7 +56,7 @@ export default function ApiPage() {
         {[
           { Icon: Book, labelKey: 'settings.api.quick.fullDocs', color: 'text-violet-400', href: 'https://docs.freeholdproperty.ae' },
           { Icon: Zap,  labelKey: 'settings.api.quick.zapier',   color: 'text-amber-400',  href: 'https://zapier.com/apps/freehold-intelligence' },
-          { Icon: Globe,labelKey: 'settings.api.quick.openapi',  color: 'text-sky-400',    href: '/api/openapi.json' },
+          { Icon: Globe,labelKey: 'settings.api.quick.openapi',  color: 'text-teal-400',    href: '/api/openapi.json' },
         ].map(({ Icon, labelKey, color, href }) => (
           <a key={labelKey} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
             <Icon className={`h-4 w-4 shrink-0 ${color}`} />

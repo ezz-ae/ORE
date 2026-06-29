@@ -281,7 +281,7 @@ export default function GoogleCampaignNewPage() {
               type="text"
               value={form.campaignName}
               onChange={(e) => patch({ campaignName: e.target.value })}
-              placeholder="e.g. Palm Jumeirah Investor — Search"
+              placeholder={t('lm.campaignNamePlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
@@ -325,7 +325,7 @@ export default function GoogleCampaignNewPage() {
               type="url"
               value={form.finalUrl}
               onChange={(e) => patch({ finalUrl: e.target.value })}
-              placeholder="https://your-landing-page.com/property"
+              placeholder={t('lm.landingUrlPlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
@@ -460,7 +460,7 @@ export default function GoogleCampaignNewPage() {
                         <div className="mt-0.5 text-xs text-slate-500">{theme.keywords.length} keywords</div>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-medium ${
-                        theme.intent === 'high' ? 'bg-gold/10 text-[#F8E7AE] border-gold/20' : 'bg-sky-400/10 text-slate-400 border-sky-400/20'
+                        theme.intent === 'high' ? 'bg-gold/10 text-[#F8E7AE] border-gold/20' : 'bg-teal-400/10 text-slate-400 border-teal-400/20'
                       }`}>
                         {theme.intent}
                       </span>

@@ -38,16 +38,16 @@ interface DashLead { name: string; status: string }
 
 const EVENT_COLOR: Record<string, string> = {
   deal: 'text-emerald-400',
-  lead: 'text-sky-400',
+  lead: 'text-teal-400',
 }
 
 const QUICK_NAV = [
-  { href: '/freehold-intelligence/management/events',   labelKey: 'mgmt.quick.events',    icon: Activity,      color: 'text-sky-400 border-sky-400/20 bg-sky-400/10' },
+  { href: '/freehold-intelligence/management/events',   labelKey: 'mgmt.quick.events',    icon: Activity,      color: 'text-teal-400 border-teal-400/20 bg-teal-400/10' },
   { href: '/freehold-intelligence/management/team',     labelKey: 'mgmt.quick.team',      icon: Users,         color: 'text-violet-400 border-violet-400/20 bg-violet-400/10' },
   { href: '/freehold-intelligence/management/deals',    labelKey: 'mgmt.quick.deals',     icon: Briefcase,     color: 'text-emerald-400 border-emerald-400/20 bg-emerald-400/10' },
   { href: '/freehold-intelligence/management/roi',      labelKey: 'mgmt.quick.roi',       icon: TrendingUp,    color: 'text-orange-400 border-orange-400/20 bg-orange-400/10' },
   { href: '/freehold-intelligence/management/reports',  labelKey: 'mgmt.quick.reports',   icon: FileBarChart2, color: 'text-pink-400 border-pink-400/20 bg-pink-400/10' },
-  { href: '/freehold-intelligence/ads',                 labelKey: 'mgmt.quick.ads',       icon: Megaphone,     color: 'text-blue-400 border-blue-400/20 bg-blue-400/10' },
+  { href: '/freehold-intelligence/ads',                 labelKey: 'mgmt.quick.ads',       icon: Megaphone,     color: 'text-fuchsia-400 border-fuchsia-400/20 bg-fuchsia-400/10' },
   { href: '/freehold-intelligence/finance',             labelKey: 'mgmt.quick.finance',   icon: DollarSign,    color: 'text-green-400 border-green-400/20 bg-green-400/10' },
   { href: '/freehold-intelligence/inventory',           labelKey: 'mgmt.quick.inventory', icon: Building2,     color: 'text-slate-300 border-line-strong bg-surface-2' },
   { href: '/freehold-intelligence/agent/ai',            labelKey: 'mgmt.quick.aiChat',    icon: Bot,           color: 'text-gold border-gold/20 bg-gold/10' },

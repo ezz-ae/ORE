@@ -30,7 +30,7 @@ const INITIAL_RULES: NotifRule[] = [
 ]
 
 const CHANNEL_META: Record<Channel, { Icon: React.ElementType; labelKey: string; color: string }> = {
-  email:    { Icon: Mail,          labelKey: 'settings.notif.channel.email',    color: 'text-sky-400'     },
+  email:    { Icon: Mail,          labelKey: 'settings.notif.channel.email',    color: 'text-teal-400'     },
   whatsapp: { Icon: MessageSquare, labelKey: 'settings.notif.channel.whatsapp', color: 'text-emerald-400' },
   in_app:   { Icon: Bell,          labelKey: 'settings.notif.channel.in_app',   color: 'text-gold'   },
 }

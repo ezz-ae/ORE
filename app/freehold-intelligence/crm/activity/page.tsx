@@ -174,8 +174,8 @@ const TYPE_CONFIG: Record<CRMActivityEvent['type'], EventConfig> = {
     Icon: MessageCircle,
     labelKey: 'crm.type.message',
     iconColor: 'text-slate-400',
-    iconBg: 'bg-sky-400/10 border-sky-400/20',
-    badgeColor: 'border-sky-400/20 bg-sky-400/10 text-slate-400',
+    iconBg: 'bg-teal-400/10 border-teal-400/20',
+    badgeColor: 'border-teal-400/20 bg-teal-400/10 text-slate-400',
   },
   note: {
     Icon: FileText,
@@ -256,7 +256,7 @@ function OutcomeChip({ outcome }: { outcome?: string }) {
     connected:         'border-gold/20 bg-gold/10 text-gold',
     no_answer:         'border-line-strong bg-surface-2 text-slate-400',
     progressed:        'border-gold/20 bg-gold/10 text-gold',
-    callback_requested:'border-sky-400/20 bg-sky-400/10 text-slate-400',
+    callback_requested:'border-teal-400/20 bg-teal-400/10 text-slate-400',
     not_interested:    'border-rose-400/20 bg-rose-400/10 text-slate-400',
   }
   const labelKey: Record<string, string> = {

@@ -209,7 +209,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
         <div className="relative">
           <button
             onClick={toggleReassign}
-            className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('reassign') ? 'text-gold/60 border-emerald-400/15' : 'text-slate-400 hover:border-sky-400/30 hover:text-sky-200'}`}
+            className={`flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface-2 px-4 py-2.5 text-sm transition ${applied.has('reassign') ? 'text-gold/60 border-emerald-400/15' : 'text-slate-400 hover:border-teal-400/30 hover:text-teal-200'}`}
           >
             {applied.has('reassign') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <User className="h-3.5 w-3.5" />}
             {t('crm.reassign')}

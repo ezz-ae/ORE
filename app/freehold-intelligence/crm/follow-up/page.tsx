@@ -22,7 +22,7 @@ const SNOOZE_OPTIONS: { labelKey: string; hours: number }[] = [
 function urgencyTone(u: string) {
   if (u === 'critical') return { labelKey: 'crm.urgency.critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300', dot: 'bg-red-400' }
   if (u === 'high')     return { labelKey: 'crm.urgency.high',     badge: 'bg-gold/10 border-gold/25 text-[#F8E7AE]', dot: 'bg-gold' }
-  if (u === 'medium')   return { labelKey: 'crm.urgency.medium',   badge: 'bg-sky-500/10 border-sky-400/25 text-sky-200', dot: 'bg-sky-400' }
+  if (u === 'medium')   return { labelKey: 'crm.urgency.medium',   badge: 'bg-teal-500/10 border-teal-400/25 text-teal-200', dot: 'bg-teal-400' }
   return { labelKey: 'crm.urgency.low', badge: 'bg-surface-2 border-line-strong text-slate-400', dot: 'bg-slate-500' }
 }
 
@@ -53,7 +53,7 @@ const urgencyPillStyle: Record<Urgency, string> = {
   All:      'border-line-strong text-slate-400 hover:border-slate-500 hover:text-slate-200',
   Critical: 'border-red-400/25 text-red-300/70 hover:border-red-400/50 hover:text-red-300',
   High:     'border-gold/25 text-gold/70 hover:border-gold/50 hover:text-gold',
-  Medium:   'border-sky-400/25 text-slate-400 hover:border-sky-400/50 hover:text-sky-200',
+  Medium:   'border-teal-400/25 text-slate-400 hover:border-teal-400/50 hover:text-teal-200',
   Low:      'border-line-strong text-slate-500 hover:border-slate-500 hover:text-slate-300',
 }
 
@@ -61,7 +61,7 @@ const urgencyActiveStyle: Record<Urgency, string> = {
   All:      'border-slate-500 bg-surface-2 text-white',
   Critical: 'border-red-400/40 bg-red-400/10 text-red-300',
   High:     'border-gold/40 bg-gold/10 text-gold',
-  Medium:   'border-sky-400/40 bg-sky-400/10 text-sky-200',
+  Medium:   'border-teal-400/40 bg-teal-400/10 text-teal-200',
   Low:      'border-line-strong bg-surface-2 text-slate-300',
 }
 

@@ -23,7 +23,7 @@ const URGENCY_LABEL_KEY: Record<string, string> = {
 function urgencyBadgeClass(u: string) {
   if (u === 'critical') return 'bg-red-400/10 border-red-400/25 text-red-400'
   if (u === 'high')     return 'bg-gold/10 border-gold/25 text-gold'
-  if (u === 'medium')   return 'bg-sky-500/10 border-sky-400/25 text-slate-300'
+  if (u === 'medium')   return 'bg-teal-500/10 border-teal-400/25 text-slate-300'
   return 'bg-surface-2 border-line-strong text-slate-400'
 }
 
@@ -375,7 +375,7 @@ export default function AssignmentPage() {
                       : key === 'high'
                       ? 'border-gold/40 bg-gold/10 text-gold'
                       : key === 'medium'
-                      ? 'border-sky-400/40 bg-sky-400/10 text-slate-300'
+                      ? 'border-teal-400/40 bg-teal-400/10 text-slate-300'
                       : 'border-line-strong bg-surface-2 text-white'
                     : 'border-line bg-transparent text-slate-400 hover:border-line-strong hover:text-slate-300',
                 ].join(' ')}

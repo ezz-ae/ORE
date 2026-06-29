@@ -3,8 +3,6 @@ import type { NextRequest } from "next/server"
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 
-const marketPublicGuideRoutes = new Set(["areas", "financing", "golden-visa", "regulations", "trends", "why-dubai"])
-
 // Internal command surfaces — pages that must never render for anonymous visitors.
 const internalPagePrefixes = [
   "/freehold-intelligence",
@@ -44,12 +42,13 @@ export async function proxy(request: NextRequest) {
   const { pathname } = url
 
   // ── Market routing ────────────────────────────────────────────────────────
+  // The legacy /market dashboard was removed. Redirect any old /market* link to
+  // the public projects catalogue so inbound bookmarks land on live content
+  // instead of a 404.
   if (pathname === "/market" || pathname.startsWith("/market/")) {
-    const [, , segment] = pathname.split("/")
-    url.pathname = segment && !marketPublicGuideRoutes.has(segment)
-      ? `/freehold-intelligence/apps/market/${segment}`
-      : "/freehold-intelligence/apps/market"
-    return NextResponse.redirect(url, { status: 307 })
+    url.pathname = "/projects"
+    url.search = ""
+    return NextResponse.redirect(url, { status: 308 })
   }
 
   // ── CRM subdomain redirect ─────────────────────────────────────────────────

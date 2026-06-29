@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   BarChart3, Users, Globe, AlertCircle, ChevronRight,
-  TrendingDown, TrendingUp, Zap,
+  TrendingDown, TrendingUp, Zap, PlugZap, ArrowUpRight,
 } from 'lucide-react'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
+import { EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
 type PlatformFilter = 'All' | 'Meta' | 'Google'
@@ -16,13 +17,13 @@ type PlatformFilter = 'All' | 'Meta' | 'Google'
 function urgencyDot(u: string) {
   if (u === 'critical') return 'bg-red-400'
   if (u === 'high')     return 'bg-gold'
-  if (u === 'medium')   return 'bg-sky-400'
+  if (u === 'medium')   return 'bg-teal-400'
   return 'bg-white/30'
 }
 
 function platformStyle(p: string) {
   return p === 'meta'
-    ? { label: 'Meta',   cls: 'border-blue-400/25 bg-blue-400/10 text-blue-300'  }
+    ? { label: 'Meta',   cls: 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'  }
     : { label: 'Google', cls: 'border-gold/25 bg-gold/10 text-gold' }
 }
 
@@ -42,6 +43,22 @@ export default function CampaignAttributionPage() {
   const t = useT()
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('All')
   const { leads: liveLeads } = useLiveLeads()
+
+  // Campaign attribution requires connected ad accounts. A platform counts as
+  // connected only when its API does not return the demo flag. Until then we
+  // show an honest connect state rather than seed campaign performance.
+  const [adsConnected, setAdsConnected] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      fetch('/api/meta/campaigns', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/google/campaigns', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([meta, google]) => {
+      if (cancelled) return
+      setAdsConnected(Boolean((meta && !meta.demo) || (google && !google.demo)))
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const avg = financeSummary.avgCpl30d
   const allCpl = financeSummary.topSpendCampaigns.map((c) => c.cpl)
@@ -81,6 +98,33 @@ export default function CampaignAttributionPage() {
     { labelKey: 'lm.attribution.stat.bestCpl',          value: `AED ${bestCpl.toFixed(0)}`,                       subKey: 'lm.attribution.stat.lowestThisMonth',    highlight: true  },
     { labelKey: 'lm.attribution.stat.avgCpl',           value: `AED ${avg.toFixed(0)}`,                           sub: cplDelta < 0 ? `↓ AED ${Math.abs(cplDelta).toFixed(1)} vs last month` : `↑ AED ${cplDelta.toFixed(1)} vs last month`, highlight: false },
   ]
+
+  // No connected ad accounts → honest connect state (no seed campaign data).
+  if (adsConnected === false) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
+          <BarChart3 className="h-3.5 w-3.5" /> {t('lm.attribution.eyebrow')}
+        </div>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-white">{t('lm.attribution.title')}</h1>
+        <div className="mt-8">
+          <EmptyState
+            Icon={PlugZap}
+            title={t('lm.live.connect.title')}
+            description={t('lm.live.connect.desc')}
+            action={
+              <Link
+                href="/freehold-intelligence/integrations"
+                className="inline-flex items-center gap-2 rounded-xl border border-gold/35 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20"
+              >
+                {t('lm.live.connect.cta')} <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">

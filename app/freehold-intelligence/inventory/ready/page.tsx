@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Sparkles, Search, SlidersHorizontal, AlertTriangle, Home } from 'lucide-react'
-import { inventoryProperties, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -16,7 +16,7 @@ function formatPrice(n: number | null): string {
 const LANDING_STYLE: Record<string, string> = {
   live:           'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   draft:          'text-amber-400   bg-amber-400/10   border-amber-400/20',
-  pending_review: 'text-sky-400     bg-sky-400/10     border-sky-400/20',
+  pending_review: 'text-teal-400    bg-teal-400/10    border-teal-400/20',
   missing:        'text-red-400     bg-red-400/10     border-red-400/20',
 }
 const LANDING_LABEL_KEY: Record<string, string> = {
@@ -30,7 +30,8 @@ export default function ReadyPage() {
   const [query,  setQuery]  = useState('')
   const [sort,   setSort]   = useState<SortKey>('leads')
   const [area,   setArea]   = useState('All')
-  const [allProperties, setAllProperties] = useState<InventoryProperty[]>(inventoryProperties)
+  // Real DB inventory only — populated from the API; no seed.
+  const [allProperties, setAllProperties] = useState<InventoryProperty[]>([])
 
   useEffect(() => {
     let cancelled = false

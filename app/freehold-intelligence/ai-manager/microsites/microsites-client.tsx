@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Globe, Search, Loader2, ExternalLink, ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import type { MicrositeListItem } from '@/lib/microsites'
+import { useT } from '@/lib/i18n/provider'
 
 const STATUS_BADGE: Record<string, string> = {
   published: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
@@ -11,6 +12,7 @@ const STATUS_BADGE: Record<string, string> = {
 }
 
 export function MicrositesClient() {
+  const t = useT()
   const [items, setItems] = useState<MicrositeListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -24,11 +26,11 @@ export function MicrositesClient() {
       const data = await res.json()
       setItems(Array.isArray(data.microsites) ? data.microsites : [])
     } catch {
-      toast.error('Failed to load projects')
+      toast.error(t('paim.micro.toast.loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => { load() }, [load])
 
@@ -49,11 +51,11 @@ export function MicrositesClient() {
         body: JSON.stringify({ projectSlug, ...patch }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Save failed')
-      toast.success('Saved')
+      if (!res.ok) throw new Error(data?.error || t('paim.micro.toast.saveFailed'))
+      toast.success(t('paim.micro.toast.saved'))
       await load()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save failed')
+      toast.error(err instanceof Error ? err.message : t('paim.micro.toast.saveFailed'))
     } finally {
       setBusySlug(null)
     }
@@ -63,16 +65,16 @@ export function MicrositesClient() {
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sky-400/70">
-            <Globe className="h-3.5 w-3.5" /> Web Studio
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-teal-400/70">
+            <Globe className="h-3.5 w-3.5" /> {t('paim.micro.breadcrumb')}
           </div>
-          <h1 className="text-2xl font-semibold text-white">Project Microsites</h1>
+          <h1 className="text-2xl font-semibold text-white">{t('paim.micro.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Generate a full multi-section website for any project — its own URL at <span className="font-mono text-slate-400">/site/&lt;slug&gt;</span>.
+            {t('paim.micro.subtitle', { path: '/site/<slug>' })}
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300">
-          <span className="font-semibold text-white">{liveCount}</span> published
+          <span className="font-semibold text-white">{liveCount}</span> {t('paim.micro.publishedCount')}
         </div>
       </div>
 
@@ -81,8 +83,8 @@ export function MicrositesClient() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search projects…"
-          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-sky-400/40"
+          placeholder={t('paim.micro.searchPlaceholder')}
+          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-teal-400/40"
         />
       </div>
 
@@ -91,7 +93,7 @@ export function MicrositesClient() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-line bg-surface">
           {filtered.length === 0 ? (
-            <div className="px-6 py-12 text-center text-sm text-slate-500">No projects match.</div>
+            <div className="px-6 py-12 text-center text-sm text-slate-500">{t('paim.micro.empty')}</div>
           ) : (
             <div className="divide-y divide-line">
               {filtered.map((item) => {
@@ -115,15 +117,15 @@ export function MicrositesClient() {
                           <button
                             disabled={busy}
                             onClick={() => save(item.projectSlug, { status: 'draft' })}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-400/15 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-teal-300 transition hover:bg-teal-400/15 disabled:opacity-50"
                           >
-                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Generate
+                            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('paim.micro.generate')}
                           </button>
                         ) : (
                           <>
                             {item.slug && (
                               <a href={`/site/${item.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-300 transition hover:text-white">
-                                View <ExternalLink className="h-3 w-3" />
+                                {t('paim.micro.viewAction')} <ExternalLink className="h-3 w-3" />
                               </a>
                             )}
                             <button
@@ -132,7 +134,7 @@ export function MicrositesClient() {
                               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition disabled:opacity-50 ${item.status === 'published' ? 'border border-line-strong text-slate-300 hover:text-white' : 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}`}
                             >
                               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                              {item.status === 'published' ? 'Unpublish' : 'Publish'}
+                              {item.status === 'published' ? t('paim.micro.unpublish') : t('paim.micro.publish')}
                             </button>
                             <button onClick={() => setOpenSlug(open ? null : item.projectSlug)} className="text-slate-500 transition hover:text-slate-300">
                               {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -157,27 +159,28 @@ export function MicrositesClient() {
 }
 
 function MicrositeEditor({ item, busy, onSave }: { item: MicrositeListItem; busy: boolean; onSave: (patch: Record<string, unknown>) => void }) {
+  const t = useT()
   const [headline, setHeadline] = useState('')
   const [summary, setSummary] = useState('')
   const [brochureUrl, setBrochureUrl] = useState('')
 
-  const inputCls = 'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40'
+  const inputCls = 'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400/40'
 
   return (
     <div className="space-y-3 border-t border-line bg-surface-2/30 px-5 py-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Headline override</label>
-          <input className={inputCls} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder={`${item.name} — ${item.area}`} />
+          <label className="mb-1 block text-xs text-slate-500">{t('paim.micro.headlineLabel')}</label>
+          <input className={inputCls} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder={t('paim.micro.headlinePlaceholder', { name: item.name, area: item.area })} />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-slate-500">Brochure URL (PDF)</label>
+          <label className="mb-1 block text-xs text-slate-500">{t('paim.micro.brochureLabel')}</label>
           <input className={inputCls} value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://…/brochure.pdf" />
         </div>
       </div>
       <div>
-        <label className="mb-1 block text-xs text-slate-500">Summary override</label>
-        <textarea className={`${inputCls} min-h-[60px]`} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Short tagline shown in the hero…" />
+        <label className="mb-1 block text-xs text-slate-500">{t('paim.micro.summaryLabel')}</label>
+        <textarea className={`${inputCls} min-h-[60px]`} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={t('paim.micro.summaryPlaceholder')} />
       </div>
       <button
         disabled={busy}
@@ -186,11 +189,11 @@ function MicrositeEditor({ item, busy, onSave }: { item: MicrositeListItem; busy
           ...(summary.trim() ? { summary } : {}),
           ...(brochureUrl.trim() ? { brochureUrl } : {}),
         })}
-        className="inline-flex items-center gap-2 rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-sm font-medium text-sky-300 transition hover:bg-sky-400/15 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-sm font-medium text-teal-300 transition hover:bg-teal-400/15 disabled:opacity-50"
       >
-        {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save details
+        {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {t('paim.micro.saveDetails')}
       </button>
-      <p className="text-xs text-slate-600">Leave a field blank to keep the value derived from the project data.</p>
+      <p className="text-xs text-slate-600">{t('paim.micro.editorHint')}</p>
     </div>
   )
 }

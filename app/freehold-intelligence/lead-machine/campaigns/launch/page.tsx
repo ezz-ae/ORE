@@ -7,11 +7,13 @@ import {
   Sparkles, ChevronRight, ChevronLeft, Check, Zap, Target,
   DollarSign, Users, FileText, Rocket, Edit2, RefreshCw,
   Building2, TrendingUp, Globe, Shield, ArrowLeft,
-  CheckCircle2, AlertCircle, Plus, Search, X,
+  CheckCircle2, AlertCircle, Plus, Search, X, PlugZap, ArrowUpRight,
 } from 'lucide-react'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import type { LeadMachineLanding, LeadMachineListing } from '@/src/features/freehold-intelligence/lead-machine'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
+import { EmptyState } from '@/components/freehold/ui'
+import { useAdsConnected } from '@/lib/freehold/use-ads-connected'
 import { defaultConfig, type AutomationStep, type WorkspaceAutomationConfig } from '@/lib/automation/types'
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -571,6 +573,8 @@ export default function CampaignLaunchPage() {
   useEffect(() => {
     setDateLabel(new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))
   }, [])
+  // A real campaign can only be launched to a connected ad account.
+  const { connected: adsConnected } = useAdsConnected()
 
   function patch<K extends keyof WizardState>(key: K, val: WizardState[K]) {
     setState((s) => ({ ...s, [key]: val }))
@@ -768,6 +772,32 @@ export default function CampaignLaunchPage() {
     } finally {
       setLaunching(false)
     }
+  }
+
+  // ── No connected ad account → honest connect state (cannot launch live) ──────
+  if (adsConnected === false) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
+          <Rocket className="h-3.5 w-3.5" /> {t('lm.launchWizard.title')}
+        </div>
+        <div className="mt-8">
+          <EmptyState
+            Icon={PlugZap}
+            title={t('lm.live.connect.title')}
+            description={t('lm.live.connect.desc')}
+            action={
+              <Link
+                href="/freehold-intelligence/integrations"
+                className="inline-flex items-center gap-2 rounded-xl border border-gold/35 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/20"
+              >
+                {t('lm.live.connect.cta')} <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    )
   }
 
   // ── Launched ─────────────────────────────────────────────────────────────────
@@ -1265,7 +1295,7 @@ export default function CampaignLaunchPage() {
                 </div>
                 <div className="mt-2">
                   <EditableField value={state.headline} onChange={(v) => patch('headline', v)}
-                    rows={1} placeholder="or type a custom headline…" />
+                    rows={1} placeholder={t('lm.customHeadlinePlaceholder')} />
                 </div>
               </div>
               <div>
@@ -1355,7 +1385,7 @@ export default function CampaignLaunchPage() {
                     value={state.googleDisplayPath}
                     onChange={(e) => patch('googleDisplayPath', e.target.value.replace(/\s/g, '-').toLowerCase())}
                     className="min-w-0 flex-1 bg-transparent text-gold/80 focus:outline-none"
-                    placeholder="path"
+                    placeholder={t('lm.pathPlaceholder')}
                   />
                 </div>
               </div>
@@ -1502,7 +1532,7 @@ export default function CampaignLaunchPage() {
               <div className="mb-2 text-xs text-slate-500">{t('lm.launchWizard.s6.orEnterUrl')}</div>
               <input type="text" value={state.landingUrl}
                 onChange={(e) => patch('landingUrl', e.target.value)}
-                placeholder="https://freeholdproperty.ae/…"
+                placeholder={t('lm.landingUrlPlaceholder')}
                 className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:border-gold/30 focus:outline-none" />
             </div>
           </div>
