@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n/provider'
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',    label: 'Critical' }
   if (u === 'high')     return { dot: 'bg-gold',       badge: 'border-gold/20 bg-gold/10 text-[#F8E7AE]',        label: 'High'     }
-  if (u === 'medium')   return { dot: 'bg-sky-400',   badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200',    label: 'Medium'   }
+  if (u === 'medium')   return { dot: 'bg-teal-400',   badge: 'border-teal-400/20 bg-teal-400/10 text-teal-200',    label: 'Medium'   }
   return                       { dot: 'bg-slate-500', badge: 'border-line-strong bg-surface-2 text-slate-400', label: 'Low'      }
 }
 
@@ -25,8 +25,8 @@ function stageStyle(stage: string) {
     Hot:         'text-red-300 border-red-400/20 bg-red-400/10',
     Qualified:   'text-gold border-gold/20 bg-gold/10',
     'Follow-up': 'text-[#F8E7AE] border-gold/20 bg-gold/10',
-    New:         'text-sky-200 border-sky-400/20 bg-sky-400/10',
-    Viewing:     'text-blue-200 border-blue-400/20 bg-blue-400/10',
+    New:         'text-teal-200 border-teal-400/20 bg-teal-400/10',
+    Viewing:     'text-fuchsia-200 border-fuchsia-400/20 bg-fuchsia-400/10',
     Negotiation: 'text-orange-200 border-orange-400/20 bg-orange-400/10',
     Closed:      'text-emerald-300 border-emerald-400/20 bg-emerald-400/10',
     Lost:        'text-slate-500 border-line-strong bg-surface-2',

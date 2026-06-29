@@ -22,7 +22,7 @@ const FILTER_KEY: Record<FilterTab, string> = {
 function urgencyTone(u: string) {
   if (u === 'critical') return { labelKey: 'crm.urgency.critical', badge: 'bg-red-400/10 border-red-400/25 text-red-300',         dot: 'bg-red-400'   }
   if (u === 'high')     return { labelKey: 'crm.urgency.high',     badge: 'bg-gold/10 border-gold/25 text-[#F8E7AE]', dot: 'bg-gold' }
-  if (u === 'medium')   return { labelKey: 'crm.urgency.medium',   badge: 'bg-sky-500/10 border-sky-400/25 text-sky-200',        dot: 'bg-sky-400'   }
+  if (u === 'medium')   return { labelKey: 'crm.urgency.medium',   badge: 'bg-teal-500/10 border-teal-400/25 text-teal-200',        dot: 'bg-teal-400'   }
   return                       { labelKey: 'crm.urgency.low',      badge: 'bg-surface-2 border-line-strong text-slate-400',     dot: 'bg-slate-500' }
 }
 

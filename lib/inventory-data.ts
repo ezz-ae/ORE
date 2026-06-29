@@ -36,11 +36,16 @@ function mapStatus(raw: string | null): PropertyStatus {
   return 'active'
 }
 
-function mapLandingStatus(adReadiness: number, hasLanding: boolean): LandingStatus {
-  if (!hasLanding) return 'missing'
-  if (adReadiness >= 80) return 'live'
-  if (adReadiness >= 55) return 'draft'
-  return 'pending_review'
+// A landing page's real, resolvable identity: its own slug (what /lp/[slug]
+// looks up) plus whether it is published right now. The project slug a page is
+// attached to is NOT what the public route resolves by, so we must carry the
+// page's own slug to build a link that won't 404.
+type LandingInfo = { slug: string; published: boolean }
+
+function mapLandingStatus(landing: LandingInfo | undefined): LandingStatus {
+  if (!landing) return 'missing'
+  // Reflect the real publish state — never infer "live" from a heuristic score.
+  return landing.published ? 'live' : 'pending_review'
 }
 
 function extractPaymentPlan(payload: Record<string, unknown> | null): string | null {
@@ -104,13 +109,14 @@ function bedroomsLabel(unitTypes: string[]): string {
   return `${sorted[0]}–${sorted[sorted.length - 1]}`
 }
 
-function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>, leadCounts: Map<string, number>): InventoryProperty {
+function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInfo>, leadCounts: Map<string, number>): InventoryProperty {
   const score = Number(row.market_score) || 45
   const hasImages = !!row.hero_image
   const unitTypes = extractUnitTypes(row.payload)
   const paymentPlan = extractPaymentPlan(row.payload)
   const leads30d = leadCounts.get(row.slug) || 0
-  const hasLanding = landingSlugs.has(row.slug)
+  const landing = landingMap.get(row.slug)
+  const hasLanding = !!landing
   const handoverYear = extractHandoverYear(row.payload)
 
   // Composite scores
@@ -156,8 +162,11 @@ function mapRowToInventory(row: DBProjectRow, landingSlugs: Set<string>, leadCou
     availableUnits: null,
     sizeRange: '550–1,800 sqft',
     roi: row.rental_yield ? Number(row.rental_yield) : null,
-    landingStatus: mapLandingStatus(adReadiness, hasLanding),
-    landingUrl: hasLanding ? `/lp/${row.slug}` : null,
+    landingStatus: mapLandingStatus(landing),
+    // Only link out when the page is actually published — the public /lp route
+    // resolves by the page's own slug and 404s on drafts. Drafts render as a
+    // non-clickable badge instead of a dead "Live ↗" link.
+    landingUrl: landing?.published ? `/lp/${landing.slug}` : null,
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,
@@ -208,21 +217,54 @@ async function getLeadCounts(): Promise<Map<string, number>> {
 }
 
 /**
- * Returns the set of project slugs that have a landing page.
- * Isolated and guarded: the landing-pages table is created lazily and may not
- * exist on every database, so any failure here yields an empty set rather than
- * breaking the inventory query.
+ * Maps each project slug to its landing page's own slug + live publish state.
+ *
+ * The public /lp/[slug] route resolves by the landing page's OWN slug (not the
+ * project slug it is attached to) and serves only currently-published pages, so
+ * we carry both pieces of truth here. A published page wins over a draft for the
+ * same project. Isolated and guarded: the landing-pages table is created lazily
+ * and may not exist on every database, so any failure yields an empty map
+ * rather than breaking the inventory query.
  */
-async function getLandingSlugs(): Promise<Set<string>> {
+async function getLandingMap(): Promise<Map<string, LandingInfo>> {
   try {
-    const rows = await query<{ project_slug: string | null }>(
-      `SELECT DISTINCT project_slug
+    const rows = await query<{
+      project_slug: string | null
+      slug: string | null
+      status: string | null
+      publish_status: string | null
+      publish_from: string | null
+      publish_to: string | null
+    }>(
+      `SELECT project_slug, slug, status, publish_status, publish_from, publish_to
        FROM freehold_site_project_landing_pages
-       WHERE project_slug IS NOT NULL`,
+       WHERE project_slug IS NOT NULL AND slug IS NOT NULL`,
     )
-    return new Set(rows.map((r) => r.project_slug).filter((s): s is string => Boolean(s)))
+    const now = Date.now()
+    const map = new Map<string, LandingInfo>()
+    for (const r of rows) {
+      const projectSlug = r.project_slug
+      const slug = r.slug
+      if (!projectSlug || !slug) continue
+      const statusOk =
+        ['published', 'active', 'live'].includes(
+          String(r.status ?? r.publish_status ?? '').toLowerCase(),
+        )
+      const from = r.publish_from ? new Date(r.publish_from).getTime() : null
+      const to = r.publish_to ? new Date(r.publish_to).getTime() : null
+      const published =
+        statusOk &&
+        (from === null || now >= from) &&
+        (to === null || now <= to)
+      const existing = map.get(projectSlug)
+      // Prefer a published page over a draft for the same project.
+      if (!existing || (published && !existing.published)) {
+        map.set(projectSlug, { slug, published })
+      }
+    }
+    return map
   } catch {
-    return new Set()
+    return new Map()
   }
 }
 
@@ -234,17 +276,17 @@ async function getLandingSlugs(): Promise<Set<string>> {
  */
 export async function getInventoryPropertiesFromDB(): Promise<InventoryProperty[]> {
   try {
-    const [rows, landingSlugs, leadCounts] = await Promise.all([
+    const [rows, landingMap, leadCounts] = await Promise.all([
       query<DBProjectRow>(
         `SELECT ${SELECT_FIELDS}
          FROM freehold_site_projects p
          ORDER BY COALESCE(p.market_score, 0) DESC NULLS LAST
          LIMIT 500`,
       ),
-      getLandingSlugs(),
+      getLandingMap(),
       getLeadCounts(),
     ])
-    return rows.map((row) => mapRowToInventory(row, landingSlugs, leadCounts))
+    return rows.map((row) => mapRowToInventory(row, landingMap, leadCounts))
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertiesFromDB failed', err)
     return []
@@ -259,7 +301,7 @@ export async function getInventoryPropertyBySlug(
   slug: string,
 ): Promise<InventoryProperty | null> {
   try {
-    const [rows, landingSlugs, leadCounts] = await Promise.all([
+    const [rows, landingMap, leadCounts] = await Promise.all([
       query<DBProjectRow>(
         `SELECT ${SELECT_FIELDS}
          FROM freehold_site_projects p
@@ -267,10 +309,10 @@ export async function getInventoryPropertyBySlug(
          LIMIT 1`,
         [slug],
       ),
-      getLandingSlugs(),
+      getLandingMap(),
       getLeadCounts(),
     ])
-    return rows[0] ? mapRowToInventory(rows[0], landingSlugs, leadCounts) : null
+    return rows[0] ? mapRowToInventory(rows[0], landingMap, leadCounts) : null
   } catch (err) {
     console.error('[inventory-data] getInventoryPropertyBySlug failed', err)
     return null

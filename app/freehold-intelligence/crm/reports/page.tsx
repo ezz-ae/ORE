@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n/provider'
 // Static lead-source data (30-day window)
 const LEAD_SOURCES = [
   { label: 'Meta Ads',        count: 248, bar: 'bg-gold' },
-  { label: 'Google Ads',      count: 167, bar: 'bg-blue-400'    },
+  { label: 'Google Ads',      count: 167, bar: 'bg-fuchsia-400'    },
   { label: 'WhatsApp',        count:  65, bar: 'bg-green-400'   },
   { label: 'Direct/Organic',  count:  41, bar: 'bg-violet-400'  },
   { label: 'Referral',        count:  28, bar: 'bg-amber-400'   },
@@ -44,7 +44,7 @@ const MAX_REV = Math.max(...MONTHLY.map((m) => m.revenue))
 
 const SOURCE_COLORS: Record<string, string> = {
   'Palm investor landing':    'bg-gold',
-  'Market tracker':           'bg-sky-400',
+  'Market tracker':           'bg-teal-400',
   'WhatsApp':                 'bg-gold',
   'Dubai Hills landing':      'bg-violet-400',
   'Golden Visa inquiry form': 'bg-amber-400',

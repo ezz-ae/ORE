@@ -65,7 +65,7 @@ import { CopyButton, SuggestedMessageActions, QuickActions } from './_components
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     labelKey: 'crm.urgency.critical' }
   if (u === 'high')     return { ring: 'ring-gold/35',  bg: 'bg-gold/10',  text: 'text-[#F8E7AE]',  dot: 'bg-gold',  labelKey: 'crm.urgency.high' }
-  if (u === 'medium')   return { ring: 'ring-sky-400/30',    bg: 'bg-sky-400/10',    text: 'text-sky-200',    dot: 'bg-sky-400',    labelKey: 'crm.urgency.medium' }
+  if (u === 'medium')   return { ring: 'ring-teal-400/30',    bg: 'bg-teal-400/10',    text: 'text-teal-200',    dot: 'bg-teal-400',    labelKey: 'crm.urgency.medium' }
   return                       { ring: 'ring-line-strong',     bg: 'bg-surface-2',  text: 'text-slate-400',  dot: 'bg-slate-500',  labelKey: 'crm.urgency.low' }
 }
 
@@ -113,7 +113,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   function activityIcon(type: string) {
     if (type === 'call')         return { Icon: PhoneCall,      color: 'text-gold',   bg: 'bg-gold/10' }
     if (type === 'whatsapp')     return { Icon: MessageSquare,  color: 'text-gold',   bg: 'bg-gold/10' }
-    if (type === 'note')         return { Icon: FileText,       color: 'text-slate-400',   bg: 'bg-sky-400/10' }
+    if (type === 'note')         return { Icon: FileText,       color: 'text-slate-400',   bg: 'bg-teal-400/10' }
     if (type === 'stage_change') return { Icon: ArrowLeftRight, color: 'text-slate-400',   bg: 'bg-violet-400/10' }
     if (type === 'assignment')   return { Icon: User,           color: 'text-slate-400',   bg: 'bg-rose-400/10' }
     if (type === 'follow_up')    return { Icon: Bell,           color: 'text-orange-300',  bg: 'bg-orange-400/10' }
@@ -170,8 +170,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 <p className="mt-0.5 text-sm font-medium text-white group-hover:text-gold transition-colors">{lead.phone}</p>
               </div>
             </a>
-            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-sky-400/25">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/10 text-slate-400">
+            <a href={`mailto:${lead.email}`} className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-teal-400/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-400/10 text-slate-400">
                 <Mail className="h-4 w-4" />
               </div>
               <div>
@@ -311,7 +311,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                     <span className="text-xs font-medium text-slate-300 leading-snug">{sourceCampaign.name}</span>
                     <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${
                       sourceCampaign.platform === 'meta'
-                        ? 'border-blue-400/25 bg-blue-400/10 text-blue-300'
+                        ? 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'
                         : 'border-gold/25 bg-gold/10 text-gold'
                     }`}>
                       {sourceCampaign.platform === 'meta' ? 'Meta' : 'Google'}

@@ -20,10 +20,10 @@ const STAGE_NAME_KEY: Record<string, string> = {
 }
 
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string }> = {
-  'New':         { tone: 'text-sky-300',    dot: 'bg-sky-400',     dotBg: 'bg-sky-400/20'    },
+  'New':         { tone: 'text-teal-300',    dot: 'bg-teal-400',     dotBg: 'bg-teal-400/20'    },
   'Contacted':   { tone: 'text-amber-300',  dot: 'bg-amber-400',   dotBg: 'bg-amber-400/20'  },
   'Qualified':   { tone: 'text-violet-300', dot: 'bg-violet-400',  dotBg: 'bg-violet-400/20' },
-  'Viewing':     { tone: 'text-blue-300',   dot: 'bg-blue-400',    dotBg: 'bg-blue-400/20'   },
+  'Viewing':     { tone: 'text-fuchsia-300',   dot: 'bg-fuchsia-400',    dotBg: 'bg-fuchsia-400/20'   },
   'Negotiation': { tone: 'text-orange-300', dot: 'bg-orange-400',  dotBg: 'bg-orange-400/20' },
   'Closed':      { tone: 'text-[#D4AF37]',  dot: 'bg-[#D4AF37]',   dotBg: 'bg-[#D4AF37]/20'  },
 }

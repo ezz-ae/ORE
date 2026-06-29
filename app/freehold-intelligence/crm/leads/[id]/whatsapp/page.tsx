@@ -82,7 +82,7 @@ function initials(name: string) {
 // ── Status icon ───────────────────────────────────────────────────────────────
 
 function StatusIcon({ status }: { status: WAMessage['status'] }) {
-  if (status === 'read')      return <CheckCheck className="h-3.5 w-3.5 text-sky-400" />
+  if (status === 'read')      return <CheckCheck className="h-3.5 w-3.5 text-teal-400" />
   if (status === 'delivered') return <CheckCheck className="h-3.5 w-3.5 text-slate-500" />
   if (status === 'sent')      return <Check className="h-3.5 w-3.5 text-slate-500" />
   if (status === 'error')     return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
