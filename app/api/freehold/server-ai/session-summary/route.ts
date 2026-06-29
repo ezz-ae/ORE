@@ -1,9 +1,19 @@
 // app/api/freehold/server-ai/session-summary/route.ts
 
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { executeTool } from '@/lib/freehold/mcp/execute-tool';
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge';
+
+// Aggregates owner-level server, integration, and launch-blocker data — restrict
+// to operators. Brokers/marketing must never see infra blockers or billing state.
+const OPERATOR_ROLES = new Set(['admin', 'ceo', 'director']);
 
 export async function GET() {
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!OPERATOR_ROLES.has(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
   const [server, integrations, blockers, leadMachine] = await Promise.all([
     executeTool({ tool: 'server_summary', role: 'owner' }),
     executeTool({ tool: 'integration_summary', role: 'owner' }),

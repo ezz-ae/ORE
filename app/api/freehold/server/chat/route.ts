@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { currentServerUser } from '@/src/features/freehold-intelligence/server-session'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 
 export async function POST(request: Request) {
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await request.json().catch(() => ({})) as {
     message?: string
     sessionId?: string
