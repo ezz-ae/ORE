@@ -127,7 +127,7 @@ export default function FreeholdCrmPage() {
 
   return (
     <div className="px-4 pb-16 pt-5 sm:px-6">
-      <div className="lg:grid lg:grid-cols-[1fr_268px] lg:gap-7 xl:gap-8">
+      <div className="mx-auto max-w-[1280px]">
 
         {/* ══ Main ══ */}
         <div className="min-w-0">
@@ -337,41 +337,6 @@ export default function FreeholdCrmPage() {
           </div>
 
         </div>
-
-        {/* ══ Sidebar ══ */}
-        <aside className="mt-6 hidden lg:mt-0 lg:block">
-          <div className="sticky top-14 space-y-3">
-
-            {/* Integration sync status lives in the Integrations app, not here. */}
-
-            {/* Top by intent */}
-            <div className="rounded-[16px] border border-line bg-surface p-4">
-              <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.topByIntent')}</div>
-              <div className="space-y-2">
-                {[...leads]
-                  .sort((a, b) => b.intentScore - a.intentScore)
-                  .slice(0, 6)
-                  .map(l => (
-                    <div key={l.id} className="flex items-center gap-2.5">
-                      <div className="w-[70px] shrink-0 truncate text-xs text-slate-400">
-                        {l.name.split(' ')[0]}
-                      </div>
-                      <div className="flex-1 overflow-hidden rounded-full bg-surface-2">
-                        <div
-                          className="h-1.5 rounded-full bg-[#D4AF37]"
-                          style={{ width: `${l.intentScore}%` }}
-                        />
-                      </div>
-                      <div className="w-7 text-right text-xs font-medium tabular-nums text-slate-400">
-                        {l.intentScore}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-          </div>
-        </aside>
 
       </div>
     </div>
