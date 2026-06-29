@@ -19,6 +19,24 @@ import {
 import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
 import { PageHeader } from '@/components/freehold/ui'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
+import { useT } from '@/lib/i18n/provider'
+
+// Internal category/status values stay English (used as logic keys); these map
+// them to translated display labels only.
+const CAT_KEY: Record<string, string> = {
+  All: 'integrations.filter.all', CRM: 'integrations.cat.crm', 'Paid Ads': 'integrations.cat.paidAds',
+  Messaging: 'integrations.cat.messaging', Analytics: 'integrations.cat.analytics',
+  Infrastructure: 'integrations.cat.infrastructure', Other: 'integrations.cat.other',
+}
+const STATE_KEY: Record<string, string> = {
+  connected: 'integrations.state.connected', partial: 'integrations.state.partial',
+  needs_access: 'integrations.state.needsAccess', blocked: 'integrations.state.notConnected',
+  disconnected: 'integrations.state.notConnected', not_connected: 'integrations.state.notConnected',
+}
+const PILL_KEY: Record<string, string> = {
+  All: 'integrations.filter.all', connected: 'integrations.filter.connected',
+  partial: 'integrations.filter.partial', not_connected: 'integrations.filter.disconnected',
+}
 
 // Map live API status to the page's expected shape
 function liveToIntegration(l: { id: string; name: string; state: string; note: string }) {
@@ -72,6 +90,7 @@ const mockBlockers     = getLaunchBlockers()
 const mockCritical     = mockBlockers.filter((b: any) => b.severity === 'critical')
 
 export default function IntegrationsPage() {
+  const t = useT()
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
   const [connecting, setConnecting] = useState<string | null>(null)
@@ -135,10 +154,10 @@ export default function IntegrationsPage() {
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
 
       <PageHeader
-        eyebrow="Connections"
+        eyebrow={t('integrations.eyebrow')}
         Icon={Zap}
-        title="Integrations"
-        subtitle={`${connectedCount} of ${integrations.length} external systems connected. Ads and writes stay disabled until critical access is granted.`}
+        title={t('integrations.title')}
+        subtitle={t('integrations.subtitle', { connected: connectedCount, total: integrations.length })}
       />
 
       <ExpertDepth prompts={['expert.depth.integrations.q1', 'expert.depth.integrations.q2', 'expert.depth.integrations.q3']} className="mt-8" />
@@ -182,16 +201,16 @@ export default function IntegrationsPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-medium uppercase tracking-wider text-slate-400">All connections</div>
+            <div className="text-sm font-medium uppercase tracking-wider text-slate-400">{t('integrations.allConnections')}</div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              {totalVisible} of {integrations.length} integrations
+              {t('integrations.countOf', { visible: totalVisible, total: integrations.length })}
             </h2>
           </div>
         </div>
 
         {/* Status pills */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {STATUS_PILLS.map(({ key, label }) => (
+          {STATUS_PILLS.map(({ key }) => (
             <button
               key={key}
               onClick={() => setStatusFilter(key)}
@@ -202,7 +221,7 @@ export default function IntegrationsPage() {
                   : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
-              {label}
+              {t(PILL_KEY[key] ?? 'integrations.filter.all')}
             </button>
           ))}
           <span className="mx-1 self-center text-slate-700">|</span>
@@ -217,7 +236,7 @@ export default function IntegrationsPage() {
                   : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200',
               ].join(' ')}
             >
-              {cat}
+              {t(CAT_KEY[cat] ?? 'integrations.cat.other')}
             </button>
           ))}
         </div>
@@ -227,18 +246,18 @@ export default function IntegrationsPage() {
       <div className="mt-8 grid gap-12">
         {visibleCategories.length === 0 ? (
           <div className="rounded-xl border border-line bg-surface-2 px-6 py-12 text-center">
-            <p className="text-[14px] text-slate-400">No integrations match these filters.</p>
+            <p className="text-[14px] text-slate-400">{t('integrations.empty')}</p>
             <button
               onClick={() => { setStatusFilter('All'); setCategoryFilter('All') }}
               className="mt-3 rounded-full border border-line px-4 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
-              Clear filters
+              {t('integrations.clearFilters')}
             </button>
           </div>
         ) : (
           visibleCategories.map((cat) => (
             <div key={cat}>
-              <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{cat}</div>
+              <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{t(CAT_KEY[cat] ?? 'integrations.cat.other')}</div>
               <div className="grid gap-3">
                 {filteredGrouped[cat].map((integration: any) => {
                   const meta = META[integration.id]
@@ -258,15 +277,15 @@ export default function IntegrationsPage() {
                       </div>
                       <div className={`flex shrink-0 items-center gap-1.5 text-xs ${st.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
-                        {st.label}
+                        {t(STATE_KEY[integration.status] ?? 'integrations.state.pending')}
                       </div>
                       {meta?.href ? (
                         <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
-                          View <ArrowUpRight className="h-3 w-3" />
+                          {t('integrations.view')} <ArrowUpRight className="h-3 w-3" />
                         </Link>
                       ) : connected.includes(integration.id) ? (
                         <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-400 sm:inline-flex">
-                          Connected
+                          {t('integrations.filter.connected')}
                         </span>
                       ) : integration.status !== 'connected' ? (
                         <button
@@ -280,12 +299,12 @@ export default function IntegrationsPage() {
                                 try { localStorage.setItem('fh_connected_integrations', JSON.stringify(next)) } catch {}
                                 return next
                               })
-                              toast.success(integration.name + ' connected')
+                              toast.success(t('integrations.connectedToast', { name: integration.name }))
                             }, 1200)
                           }}
                           className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60 sm:inline-flex"
                         >
-                          {connecting === integration.id ? 'Connecting…' : (<>Connect <ArrowUpRight className="h-3 w-3" /></>)}
+                          {connecting === integration.id ? t('integrations.connecting') : (<>{t('integrations.connect')} <ArrowUpRight className="h-3 w-3" /></>)}
                         </button>
                       ) : null}
                     </div>

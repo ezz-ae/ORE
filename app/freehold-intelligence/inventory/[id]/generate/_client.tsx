@@ -262,7 +262,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
   }
 
   return (
-    <div className="mx-auto max-w-[900px] px-5 pb-20 pt-7 sm:px-8">
+    <div className="mx-auto max-w-[1200px] px-5 pb-20 pt-7 sm:px-8">
 
       <div className="mb-7">
         <Link
@@ -348,8 +348,8 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
         </div>
       )}
 
-      <div className="flex gap-8 items-start">
-        <div className="flex-1 min-w-0 space-y-3">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-4">
 
           <div className="rounded-[16px] border border-gold/20 bg-gold/[0.04] p-4">
             <div className="flex items-center justify-between mb-3">

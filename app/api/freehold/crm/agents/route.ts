@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
+import { seedTeam } from '@/lib/freehold/accounts'
 import type { CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
@@ -11,6 +13,10 @@ export async function GET() {
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const user = await verifySession(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Ensure the full team roster exists even if no one has logged in via the
+  // server login yet — so assignment always lists every agent, not a fallback few.
+  await seedTeam()
 
   try {
     const rows = await query<{
