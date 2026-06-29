@@ -7,6 +7,10 @@ import { toast } from 'sonner'
 import { Copy, CheckCircle, MessageSquare, BookOpen, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
 import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
 import { useT } from '@/lib/i18n/provider'
+import { useSession } from '@/lib/freehold/use-session'
+
+// Reassigning a lead to another broker is a management action.
+const REASSIGN_ROLES = ['admin', 'sales_manager', 'director', 'ceo']
 
 interface CopyButtonProps {
   text: string
@@ -109,6 +113,8 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
 
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
   const [showReassign, setShowReassign] = useState(false)
+  const { user } = useSession()
+  const canReassign = REASSIGN_ROLES.includes(user?.role ?? '')
   const isClosed = currentStage.toLowerCase() === 'closed'
 
   function flashMsg(label: string) {
@@ -205,7 +211,8 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           {applied.has('hot') ? t('crm.markedAsHot') : t('crm.moveToHot')}
         </button>
 
-        {/* Reassign */}
+        {/* Reassign — management only */}
+        {canReassign && (
         <div className="relative">
           <button
             onClick={toggleReassign}
@@ -226,6 +233,7 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
             </div>
           )}
         </div>
+        )}
 
         {/* Snooze */}
         <button
