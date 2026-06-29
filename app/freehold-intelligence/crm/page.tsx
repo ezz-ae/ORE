@@ -12,8 +12,6 @@ import {
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
-import { AiPrompt } from '@/components/freehold/ai-prompt'
-import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -150,7 +148,6 @@ export default function FreeholdCrmPage() {
             </Link>
           </div>
 
-          <ExpertDepth prompts={['expert.depth.crm.q1', 'expert.depth.crm.q2', 'expert.depth.crm.q3', 'expert.depth.crm.q4']} className="mb-5" />
 
           {/* ── 6 Metric tiles ── */}
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -401,33 +398,6 @@ export default function FreeholdCrmPage() {
                   ))}
               </div>
             </div>
-
-            {/* AI prompt */}
-            <AiPrompt
-              skill="crm_advisor"
-              placeholder={t('crm.aiPlaceholderOverview')}
-              suggestions={[
-                t('crm.aiSuggest.urgentFollowUp'),
-                t('crm.aiSuggest.draftWhatsApp'),
-                t('crm.aiSuggest.closestClosing'),
-                t('crm.aiSuggest.flagDuplicates'),
-              ]}
-              context={{
-                pipeline: {
-                  totalLeads: leads.length,
-                  newLeads: newCount,
-                  urgentFollowUps: followUpsCount,
-                  hotLeads: hotCount,
-                  qualified: qualifiedCount,
-                  closedMTD: closedCount,
-                  pipelineValueAED: PIPELINE_VALUE,
-                },
-                topByIntent: [...leads]
-                  .sort((a, b) => b.intentScore - a.intentScore)
-                  .slice(0, 6)
-                  .map(l => ({ name: l.name, stage: l.pipelineStage, temperature: l.temperature, intentScore: l.intentScore, project: l.projectInterest, budget: l.budgetAED })),
-              }}
-            />
 
           </div>
         </aside>

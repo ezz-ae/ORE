@@ -268,16 +268,22 @@ function CoachOverlay({
         onClick={(e) => e.stopPropagation()}
       />
 
-      {/* Spotlight ring — purely visual; the huge box-shadow dims everything else. */}
+      {/* Spotlight — one box-shadow does it all: a strong page dim, a crisp gold
+          ring tight to the element, a soft halo, and an outer glow. (Explicit
+          shadow rings stay pixel-aligned to the rounded rect, unlike `ring-*`.) */}
       {rect && (
         <div
-          className="pointer-events-none absolute rounded-xl ring-2 ring-gold/70 transition-all duration-200"
+          className="pointer-events-none absolute rounded-xl transition-all duration-200"
           style={{
             top: rect.top - PAD,
             left: rect.left - PAD,
             width: rect.width + PAD * 2,
             height: rect.height + PAD * 2,
-            boxShadow: '0 0 0 9999px rgba(2,6,12,0.72)',
+            boxShadow:
+              '0 0 0 9999px rgba(2,6,12,0.82), ' +   // dim everything else
+              '0 0 0 2px rgba(212,175,55,0.95), ' +  // crisp gold ring
+              '0 0 0 6px rgba(212,175,55,0.28), ' +  // soft halo
+              '0 0 28px 6px rgba(212,175,55,0.30)',  // outer glow
           }}
         />
       )}
