@@ -20,9 +20,9 @@ import { cnCommand } from "@/src/lib/freehold-format"
 
 const navItems = [
   { href: "/freehold-intelligence", label: "Control Apps", icon: Gauge },
-  { href: "/freehold-intelligence/apps/market", label: "Market Database", icon: Database },
+  { href: "/freehold-intelligence/inventory", label: "Market Database", icon: Database },
   { href: "/ads-studio", label: "Ads Studio", icon: Megaphone },
-  { href: "/freehold-intelligence/apps/crm", label: "CRM Core", icon: Users },
+  { href: "/freehold-intelligence/crm", label: "CRM Core", icon: Users },
   { href: "/notebook", label: "Market Notebook", icon: BookOpen },
   { href: "/cloud", label: "Market Cloud", icon: Cloud },
   { href: "/agent-network", label: "Agent Network", icon: Network },
