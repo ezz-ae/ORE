@@ -361,7 +361,11 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
       <Section title={t('common.apps')}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {apps.map((app) => {
-            const metric = DYNAMIC_META[app.id]?.metric ?? app.metric
+            // Only show the bottom line when it carries a LIVE metric (e.g.
+            // inventory/analytics/web-studio). The static app.metric just
+            // restated app.sub on most cards, so it's dropped to avoid the
+            // duplicate descriptor under the title.
+            const metric = DYNAMIC_META[app.id]?.metric ?? ''
             const badge  = DYNAMIC_META[app.id]?.badge ?? app.badge
             return (
               <Link
@@ -385,7 +389,7 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
                   <div className="text-sm text-slate-400 font-medium">
                     {metric}
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-slate-600 transition-colors group-hover:text-gold" />
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-600 transition-colors group-hover:text-gold" />
                 </div>
               </Link>
             )

@@ -176,18 +176,11 @@ export default function InventoryClient({ initialProperties }: { initialProperti
             <span className="text-amber-300">{t('inv.count.fixFirst', { count: analysis.counts.fixFirst })}</span>
           </div>
         </div>
-        <p className="mt-1.5 text-xs text-slate-500">
-          {t('inv.rankedBy')}
-        </p>
-
-        {/* Top picks */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {analysis.topPicks.map((c) => <CandidateCard key={c.id} c={c} t={t} />)}
-        </div>
-
-        {/* Fix-first + missed opportunities */}
+        {/* Actionable shortlists only — the full property list lives in the
+            table below, so we don't repeat ranked cards here. These two surface
+            a concrete next action (fix data / build a landing page). */}
         {(analysis.fixFirst.length > 0 || analysis.missedOpportunities.length > 0) && (
-          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {analysis.fixFirst.length > 0 && (
               <div className="rounded-[16px] border border-amber-400/15 bg-amber-400/[0.03] p-4">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-amber-300/90">
