@@ -59,6 +59,9 @@ export default function AgentProfilePage() {
   const [nlName, setNlName] = useState('')
   const [nlPhone, setNlPhone] = useState('')
   const [addBusy, setAddBusy] = useState(false)
+  const [dealOpen, setDealOpen] = useState(false)
+  const [allDeals, setAllDeals] = useState<{ id: string; leadName: string; projectName: string; agentName: string; coAgentName: string }[] | null>(null)
+  const [dealBusy, setDealBusy] = useState<string | null>(null)
 
   useEffect(() => {
     if (!agentId) return
@@ -114,6 +117,32 @@ export default function AgentProfilePage() {
     if (res && res.ok) {
       toast.success(t('analytics.agent.act.leadAdded'))
       setNlName(''); setNlPhone(''); setAddOpen(false)
+    } else {
+      toast.error(t('analytics.agent.act.failed'))
+    }
+  }
+
+  async function openDeals() {
+    setDealOpen((v) => !v)
+    if (allDeals === null) {
+      const d = await fetch('/api/freehold/deals').then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      setAllDeals(Array.isArray(d?.deals) ? d.deals : [])
+    }
+  }
+
+  // Toggle this broker as the co-agent on a deal (uses the existing deal PATCH).
+  async function toggleDeal(deal: { id: string; coAgentName: string }) {
+    if (!data) return
+    const isCo = deal.coAgentName === data.agent.name
+    setDealBusy(deal.id)
+    const res = await fetch(`/api/freehold/deals/${deal.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coAgentName: isCo ? '' : data.agent.name }),
+    }).catch(() => null)
+    setDealBusy(null)
+    if (res && res.ok) {
+      toast.success(isCo ? t('analytics.agent.act.dealRemoved') : t('analytics.agent.act.dealAdded'))
+      setAllDeals((ds) => ds?.map((x) => (x.id === deal.id ? { ...x, coAgentName: isCo ? '' : data.agent.name } : x)) ?? ds)
     } else {
       toast.error(t('analytics.agent.act.failed'))
     }
@@ -179,7 +208,40 @@ export default function AgentProfilePage() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white">
             <UserPlus className="h-4 w-4 text-gold" /> {t('analytics.agent.act.addLead')}
           </button>
+          <button onClick={openDeals}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-slate-300 transition hover:border-gold/30 hover:text-white">
+            <Briefcase className="h-4 w-4 text-gold" /> {t('analytics.agent.act.deals')}
+          </button>
         </div>
+
+        {dealOpen && (
+          <div className="mt-3 rounded-xl border border-line bg-surface p-3">
+            {allDeals === null ? (
+              <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-3 w-3 animate-spin" /> {t('analytics.loading')}</div>
+            ) : allDeals.length === 0 ? (
+              <div className="text-xs text-slate-500">{t('analytics.agent.act.noDeals')}</div>
+            ) : (
+              <div className="space-y-1.5">
+                {allDeals.slice(0, 12).map((d) => {
+                  const isCo = d.coAgentName === (data?.agent.name ?? '')
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-lg border border-line-strong bg-surface-2 px-3 py-2">
+                      <div className="min-w-0 text-xs">
+                        <span className="text-slate-200">{d.leadName}</span>
+                        <span className="text-slate-500"> · {d.projectName || '—'} · {d.agentName}</span>
+                      </div>
+                      <button onClick={() => toggleDeal(d)} disabled={dealBusy === d.id}
+                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition disabled:opacity-50 ${isCo ? 'border border-red-400/30 bg-red-400/10 text-red-300 hover:bg-red-400/15' : 'bg-gold text-ink hover:bg-[#F0CB67]'}`}>
+                        {dealBusy === d.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                        {isCo ? t('analytics.agent.act.removeFromDeal') : t('analytics.agent.act.addToDeal')}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {addOpen && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3">
