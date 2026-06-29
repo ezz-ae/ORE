@@ -22,7 +22,7 @@ type Totals = {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+    <div className="rounded-xl border border-line bg-white/[0.05] p-5">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</div>
         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
@@ -152,7 +152,7 @@ export default function CompanyAnalyticsPage() {
       {/* Daily leads */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.dailyTraffic')}</div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
           {live && live.daily.length > 0
             ? <LeadsSparkline daily={live.daily} />
             : <p className="py-6 text-center text-sm text-slate-500">{live ? t('analytics.empty.leads') : t('analytics.loading')}</p>}
@@ -163,7 +163,7 @@ export default function CompanyAnalyticsPage() {
         {/* Leads by source */}
         <section>
           <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.leadsBySource')}</div>
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-xl border border-line bg-white/[0.05] p-5">
             {liveSources.length > 0 ? (
               <div className="space-y-2.5">
                 {liveSources.map((src) => (
@@ -172,7 +172,7 @@ export default function CompanyAnalyticsPage() {
                       <span className="text-xs font-medium text-slate-300 truncate">{prettySource(src.label)}</span>
                       <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{src.count.toLocaleString('en-US')}</span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                       <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${(src.count / maxSource) * 100}%` }} />
                     </div>
                   </div>
@@ -187,7 +187,7 @@ export default function CompanyAnalyticsPage() {
         {/* Pipeline funnel */}
         <section>
           <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.pipeline')}</div>
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 space-y-4">
+          <div className="rounded-xl border border-line bg-white/[0.05] p-5 space-y-4">
             {hasFunnel ? (
               funnel.map((step, i) => (
                 <div key={step.stage}>
@@ -195,7 +195,7 @@ export default function CompanyAnalyticsPage() {
                     <span className="text-xs font-medium text-slate-300">{t(`analytics.stage.${step.stage}`)}</span>
                     <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
                   </div>
-                  <div className="h-6 w-full overflow-hidden rounded-lg bg-slate-800/50">
+                  <div className="h-6 w-full overflow-hidden rounded-lg bg-white/[0.05]">
                     <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
                   </div>
                 </div>

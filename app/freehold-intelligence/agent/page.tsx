@@ -16,7 +16,7 @@ const ACCENT: Record<string, { icon: string; card: string; badge: string }> = {
   gold:   { icon: 'text-[#D4AF37]',   card: 'border-[#D4AF37]/20 hover:border-[#D4AF37]/35', badge: 'bg-[#D4AF37]'     },
   blue:   { icon: 'text-fuchsia-400',     card: 'border-fuchsia-400/15 hover:border-fuchsia-400/30',   badge: 'bg-fuchsia-500'      },
   violet: { icon: 'text-violet-400',   card: 'border-violet-400/15 hover:border-violet-400/30',badge: 'bg-violet-500'   },
-  gray:   { icon: 'text-slate-400',    card: 'border-slate-700 hover:border-slate-500',        badge: 'bg-slate-500'     },
+  gray:   { icon: 'text-slate-400',    card: 'border-line-strong hover:border-slate-500',        badge: 'bg-slate-500'     },
 }
 
 
@@ -174,14 +174,14 @@ export default function AgentHomePage() {
               <Link
                 key={app.id}
                 href={app.href}
-                className={`group relative flex flex-col rounded-xl border bg-slate-900 p-5 transition ${a.card}`}
+                className={`group relative flex flex-col rounded-xl border bg-surface p-5 transition ${a.card}`}
               >
                 {app.badge > 0 && (
                   <span className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold text-white ${a.badge}`}>
                     {app.badge}
                   </span>
                 )}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-800 bg-slate-800/50 ${a.icon}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] border border-line bg-white/[0.05] ${a.icon}`}>
                   <app.Icon className="h-5 w-5" />
                 </div>
                 <div className="mt-4">

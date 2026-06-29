@@ -14,13 +14,15 @@ export const ROLE_LABELS: Record<Role, string> = {
   marketing:     'Marketing',
 }
 
+// Brand-aligned role tints (no cold blue — brokers are the bulk of the roster,
+// so a blue broker tint made the whole team list read blue).
 export const ROLE_COLORS: Record<Role, string> = {
-  broker:        '#60A5FA',
+  broker:        '#2DD4BF',
   admin:         '#D4AF37',
   sales_manager: '#34D399',
   director:      '#A78BFA',
   ceo:           '#F472B6',
-  marketing:     '#38BDF8',
+  marketing:     '#FB923C',
 }
 
 /**
