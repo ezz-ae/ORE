@@ -230,7 +230,7 @@ export default function AssignmentPage() {
     return () => { cancelled = true }
   }, [])
 
-  const agentRoster: CRMAgentCapacity[] = liveAgents ?? crmAgentRoster
+  const agentRoster: CRMAgentCapacity[] = liveAgents ?? []
 
   // Derive inbox leads from live leads: new stage = unassigned, contacted = assigned
   const inboxLeads: CRMInboxLead[] = useMemo(() => {
