@@ -152,7 +152,7 @@ export function ComparisonTable({
               const on = selItems.length === 0 || selItems.includes(it.id)
               return (
                 <button key={it.id} onClick={() => { setSelItems(toggle(selItems.filter((x) => x !== '__none__'), it.id)); setSaved(false) }}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-sky-400/35 bg-sky-400/10 text-sky-200' : 'border border-line-strong bg-surface text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-teal-400/35 bg-teal-400/10 text-teal-200' : 'border border-line-strong bg-surface text-slate-400 hover:text-slate-200'}`}>
                   {it.label}
                 </button>
               )
