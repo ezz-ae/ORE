@@ -62,6 +62,10 @@ export function getLiveIntegrationStatuses(): LiveIntegrationStatus[] {
   const waKeys = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID']
   const wa = evaluate(waKeys)
 
+  // ── HubSpot CRM (private-app token) ─────────────────────────────────────────
+  const hubKeys = ['HUBSPOT_TOKEN']
+  const hub = evaluate(hubKeys)
+
   // ── AI (Gemini API or Vertex service account) ──────────────────────────────
   const geminiOk = hasAny('GEMINI_API_KEY', 'Gemini_API_KEY', 'google_api_key')
   const vertexOk = has('VERTEX_AI_SERVICE_ACCOUNT_JSON')
@@ -117,6 +121,18 @@ export function getLiveIntegrationStatuses(): LiveIntegrationStatus[] {
         wa.state === 'connected'
           ? 'Live — outbound WhatsApp messages send through the Cloud API.'
           : 'Not configured — messages run in mock mode until credentials are added.',
+    },
+    {
+      id: 'hubspot',
+      name: 'HubSpot CRM',
+      category: 'crm',
+      state: hub.state,
+      requiredKeys: hubKeys,
+      missingKeys: hub.missing,
+      note:
+        hub.state === 'connected'
+          ? 'Live — two-way contact↔lead sync available via the private-app token.'
+          : 'Add HUBSPOT_TOKEN (a HubSpot private-app token) in Vercel to sync contacts and leads.',
     },
     {
       id: 'ai',
