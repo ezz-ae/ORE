@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { clearSessionCookie, destroySession, getSessionUserFromToken, logActivity, SESSION_COOKIE } from "@/lib/auth"
+import { SESSION_COOKIE as FH_SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { cookies } from "next/headers"
 
 export const runtime = "nodejs"
@@ -17,6 +18,8 @@ export async function POST() {
     }
     const response = NextResponse.json({ success: true })
     response.cookies.set(clearSessionCookie())
+    // Unified auth: also clear the platform session so logout signs out fully.
+    response.cookies.set(FH_SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 })
     return response
   } catch (error) {
     console.error("[v0] Logout error:", error)
