@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Bot, Plus, Edit2, Sparkles, Package, Loader2 } from 'lucide-react'
+import { Bot, Plus, Edit2, Sparkles, Package, Loader2, Megaphone } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useT } from '@/lib/i18n/provider'
 
@@ -261,6 +261,12 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                         {improving.includes(prop.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                         {improving.includes(prop.id) ? t('paim.listings.improveBusy') : t('paim.listings.improveIdle')}
                       </button>
+                      <Link
+                        href={`/freehold-intelligence/lead-machine/creatives/generate?project=${encodeURIComponent(prop.slug)}&name=${encodeURIComponent(prop.name)}&area=${encodeURIComponent(prop.area)}&developer=${encodeURIComponent(prop.developer)}&price=${prop.startingPriceAED ?? ''}`}
+                        className="flex items-center gap-1 rounded-lg border border-gold/25 bg-gold/[0.07] px-2.5 py-1 text-sm font-medium text-gold transition hover:bg-gold/[0.14]"
+                      >
+                        <Megaphone className="h-3 w-3" /> {t('paim.listings.adCreatives')}
+                      </Link>
                     </div>
                   </td>
                 </tr>
