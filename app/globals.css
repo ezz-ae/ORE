@@ -96,10 +96,12 @@ html {
    * cohesive, and so it can be re-skinned per customer by changing one line
    * (e.g. --color-gold for a different brokerage's brand colour).
    * ─────────────────────────────────────────────────────────────────────── */
-  --color-app:          #090D16;              /* app canvas / page background  */
-  --color-chrome:       #06090F;              /* nav, headers, sidebars        */
-  --color-surface:      #0D1520;              /* cards & panels                */
-  --color-ink:          #0D1117;              /* deepest surface / on-gold text*/
+  /* Warm-neutral charcoal (not navy) so the gold brand reads true — no cold
+   * blue cast on cards/panels. R ≥ G ≥ B by a whisper for a premium dark. */
+  --color-app:          #0C0B0A;              /* app canvas / page background  */
+  --color-chrome:       #080706;              /* nav, headers, sidebars        */
+  --color-surface:      #181613;              /* cards & panels                */
+  --color-ink:          #121110;              /* deepest surface / on-gold text*/
   --color-surface-2:    rgba(255,255,255,0.06);  /* raised glass / inputs      */
   --color-surface-3:    rgba(255,255,255,0.10);  /* hover / tracks / chips     */
   --color-line:         rgba(255,255,255,0.08);  /* hairline dividers & borders*/
