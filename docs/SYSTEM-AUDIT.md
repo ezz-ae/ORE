@@ -14,9 +14,11 @@
 
 Three classes of gap remain, in priority order:
 
-1. **Under-gated read APIs.** Several `/api/freehold/analytics/*` and `server-ai/*` / `server/*` routes resolve with **Role: none** — they verify a session inconsistently or not at all. This is the highest-priority hardening item before white-label sale, because a buyer's data would be queryable cross-tenant-style by any authenticated user. *(See §6.)*
-2. **Open connectivity loops.** The data exists to close them, but the UI/back-end edges are missing: deal-close doesn't tag the inventory unit sold; analytics KPIs don't drill back into CRM; lead `source` doesn't link to the originating campaign; Notebook "Send to Ads/CRM" is UI-only (clipboard, no POST). *(See §5 and §7.)*
-3. **Structural debt.** Cross-table relationships are implicit string references with **no FK constraints** (orphan risk on user/project deletion); a second, dormant session system (`lib/auth.ts` + `freehold_site_user_sessions`) is dead code that confuses the auth story; and a handful of seed/static surfaces (Notebook threads, Lead-Machine readiness, AI-Manager hub counts, Integrations status) still render mock data. *(See §3 and §7.)*
+1. **Under-gated APIs.** ✅ **Fixed (PR #23).** The genuinely ungated routes were `server-ai/chat` (which trusted a client-supplied `role` — a privilege-escalation hole), `server-ai/session-summary`, `server/chat`, `server/summary`, `notebook/chat`, and `notebook/conversations`. The `analytics/*` routes an earlier draft flagged turned out to be **already gated** (`verifySession` + role check) — see the §6 correction. *(See §6.)*
+2. **Open connectivity loops.** ✅ **Mostly closed (PRs #24–#30).** Shipped: deal→inventory booked-sales, analytics→CRM drill-down, lead-source→campaign, finance→agent commission, inventory→ad-campaign, AI-Manager→ad-creatives, and Notebook→CRM. Still open: Notebook→Ads/WhatsApp/Email (needs target pickers) and Lead-Machine→Finance spend attribution. *(See §5 and §7.)*
+3. **Structural debt.** Cross-table relationships are implicit string references with **no FK constraints** (orphan risk on user/project deletion); the platform runs **two parallel session systems** (`fh_session` and `freehold_site_session`) that both serve live routes and add cognitive load to the auth story; and a handful of seed/static surfaces (Notebook threads, Lead-Machine readiness, AI-Manager hub counts, Integrations status) still render mock data. *(See §3 and §7.)*
+
+> **Correction (post-audit verification).** An earlier draft of this document called `freehold_site_session` / `lib/auth.ts` "dead code." That is **wrong** — verified by tracing imports. `lib/auth.ts` is live: it backs the inherited route trees under `app/api/auth/*`, `app/api/crm/*`, `app/api/leads/*`, `app/api/admin/*`, `app/api/dashboard/*`, and `app/api/ai/*`, several of which the Freehold-Intelligence SPA still calls (e.g. `/api/crm/landing-pages`, `/api/crm/microsites`, `/api/leads/*`). The unified login (`app/api/auth/login/route.ts`) issues **both** cookies — it calls `signSession` for `fh_session` *and* creates the `freehold_site_session`. So the two systems are intentional and coexisting, not redundant. **Do not delete `lib/auth.ts`.** The real Phase-3 task is *consolidation* (a deliberate migration), not removal.
 
 None of these block the working demo the user is testing daily. All of them matter for a white-label buyer who will push real money and real PII through the system.
 
@@ -126,19 +128,21 @@ This role-scoping is correct and addresses the earlier "even AI is levels" defec
 Roles (`lib/freehold/session-types.ts`): `broker | admin | sales_manager | director | ceo | marketing`. `MANAGEMENT_ROLES = [admin, ceo, director, sales_manager]`.
 
 - **Active session:** `fh_session` — HMAC-signed, stateless, edge-compatible (`lib/freehold/auth-edge.ts`). Used by all `/api/freehold/*` routes via `verifySession()`; role enforced with `requireSession(roles)` (`lib/freehold/api-auth.ts`).
-- **Dormant session:** `freehold_site_session` — scrypt, DB-backed in `freehold_site_user_sessions` (`lib/auth.ts`). **Dead code**; not called by any active route. Should be removed to make the auth story unambiguous for a white-label buyer.
+- **Second active session:** `freehold_site_session` — scrypt, DB-backed in `freehold_site_user_sessions` (`lib/auth.ts`). **Live, not dead** (see the Correction in §1): it authenticates the inherited route trees (`app/api/auth/*`, `/api/crm/*`, `/api/leads/*`, `/api/admin/*`, `/api/dashboard/*`, `/api/ai/*`), and the SPA still calls several of them. The unified login issues both cookies. The white-label cleanup is to *consolidate* onto one model via a planned migration — not to delete a live file.
 - **Row-level scoping:** brokers see only their own leads (`assigned_broker_id`) and deals (`agent_id`); management sees all. Finance/tasks/contracts are not row-scoped (all-visible, write gated).
 - **Deal approval:** two-step — step 1 (`sales_manager`/`admin`), step 2 (`ceo`/`director`), recorded in `deals.step1_*`/`step2_*`.
 
-### ⚠️ Under-gated routes (highest priority)
+### Under-gated routes — ✅ resolved (PR #23)
 
-The API audit found these resolving with **Role: none** — no consistent session/role check:
+> **Correction (post-audit verification).** An earlier draft listed the `analytics/*` routes as "Role: none." Reading each handler proved otherwise: they were **already correctly gated** — `analytics/team`, `analytics/market`, `analytics/marketing`, `analytics/report`, `analytics/agent/[id]` all call `verifySession` + a role check, and `analytics/leads` uses `requireSession(MANAGEMENT_ROLES)`. No change was needed there.
 
-- `GET /api/freehold/analytics/team`, `/leads`, `/marketing`, `/market`, `/report`, `/agent/[id]`
-- `POST /api/freehold/server-ai/chat`, `/server/chat`, `/server-ai/session-summary`
-- `GET /api/freehold/notebook/conversations`, `POST /notebook/chat`
+The routes that were **genuinely ungated**, now fixed in PR #23:
 
-By contrast `dashboard/stats` correctly uses `verifySession`, and `admin/reset` correctly requires `['ceo','admin']`. The analytics and server-ai endpoints expose aggregated company data (team metrics, sales volume, source attribution) and should at minimum require a valid session, and the team/agent analytics should require management. **This is the #1 pre-white-label fix.**
+- `POST /server-ai/chat` — **derived the caller's role from the request body** (`body.role`/`x-freehold-role`), defaulting to `viewer`; a client could claim `role: 'owner'`. Now derives the role from the verified session (`SESSION_TO_SERVER`) and ignores client role input.
+- `GET /server-ai/session-summary` — exposed owner-level server/integration/blocker data; now session + operator-only.
+- `POST /server/chat`, `GET /server/summary`, `POST /notebook/chat`, `GET /notebook/conversations` — were public; now require a verified session.
+
+For reference, `dashboard/stats` correctly uses `verifySession`, and `admin/reset` correctly requires `['ceo','admin']`.
 
 ---
 
@@ -151,25 +155,25 @@ The suite is ~75% a closed loop. The full intended loop is:
 Below, each missing edge with the data that already exists to close it.
 
 ### Phase 0 — Security hardening (do first, blocks white-label)
-- **Gate the under-gated routes (§6).** Add `verifySession`/`requireSession(MANAGEMENT_ROLES)` to all `analytics/*`, `server-ai/*`, `server/*`, and `notebook/*` endpoints. Low effort, high impact.
-- **Implement approval execution** for Expert write tools (`mcp/permissions.ts`) instead of the current stub.
-- **Verify session-secret enforcement** in production (no dev-fallback secret).
+- ✅ **Gate the under-gated routes (§6).** Done — PR #23 (`server-ai/*`, `server/*`, `notebook/*`; fixed the `server-ai/chat` role-from-body escalation).
+- **Implement approval execution** for Expert write tools (`mcp/permissions.ts`) instead of the current stub. *(Still open.)*
+- **Verify session-secret enforcement** in production (no dev-fallback secret). *(Deploy/env task.)*
 
-### Phase 1 — Close the money loop (highest product value)
-1. **Deal → Inventory "sold" tag.** On deal close, write `status=sold` + `deal_id` onto the inventory unit; show the linked deal on the inventory detail page, and the linked unit on the deal. *(Data: `deals.project_slug` already exists.)*
-2. **Analytics → CRM drill-down.** Make the conversion/closed KPIs in `analytics/page.tsx` link to `/crm/leads?stage=closed` (and by source). *(Data: analytics already counts closed leads.)*
-3. **Lead source → campaign link.** Make the `source` badge on the lead detail clickable → `/lead-machine/campaigns/{id}` with CPL/funnel/ROI. *(Data: `leads.source` exists; needs a campaign id mapping.)*
-4. **Finance → agent commission breakdown.** Surface "pending commission from closed deals" in the Agent workspace, linked to `/management/deals?agent={id}`. *(Data: `finance_entries.related_deal_id`, `deals.agent_id`.)*
+### Phase 1 — Close the money loop (highest product value) — ✅ COMPLETE
+1. ✅ **Deal → Inventory booked-sales** (PR #24). Inventory is project-level (no per-unit "sold" flag is meaningful), so the detail page shows real approved/closed deals booked against the project — count, sales value, commission — with a management-only drill-down.
+2. ✅ **Analytics → CRM drill-down** (PR #25). Conversions KPI, pipeline-funnel stages, and lead-source rows all deep-link into the filtered CRM (`/crm?stage=…`, `/crm?source=…`).
+3. ✅ **Lead source → campaign link** (PR #27). Built on the UTM data the inbound route already captures (`utm_campaign`/`utm_id`/`utm_source`); lead detail shows the real campaign + Meta/Google badge, linking to marketing analytics (operator/marketing-gated).
+4. ✅ **Finance → agent commission breakdown** (PR #26). Agent workspace shows real Gross/Received/Outstanding commission, scoped to the broker by the deals API.
 
 ### Phase 2 — Close the content/ads loop
-5. **Inventory → "Create Ad Campaign"** button → Lead-Machine listing for that unit. *(Data: `lead-machine/listings` already carries `projectId`.)*
-6. **AI-Manager → "Generate Ad Creatives"** after a listing page is generated → `/lead-machine/creatives/generate?listing={id}`.
-7. **Notebook "Send to CRM/Ads/WhatsApp" backend.** Replace clipboard-only stubs (`notebook/page.tsx` ~lines 796–835) with real POSTs to CRM/creatives/WhatsApp.
-8. **Lead-Machine → Finance attribution.** Show campaign-level spend in Finance ("Top Spenders"). *(Data: `finance_entries` category `ad_spend`.)*
+5. ✅ **Inventory → "Create Ad Campaign"** (PR #28). Gated to operator/marketing; deep-links the real project into the campaign builder via query params (the builder is seed-based, so the project rides in as params, not a fake listing).
+6. ✅ **AI-Manager → "Generate Ad Creatives"** (PR #30). Same bridging pattern into the creative generator.
+7. 🟡 **Notebook distribution.** Notebook → CRM is **done** (PR #29) — opening from a lead (`?lead=`) attaches the output to that lead's timeline via `/api/freehold/crm/activity`. Ads/WhatsApp/Email still need a target picker (which campaign/recipient) — a product decision, not yet built.
+8. **Lead-Machine → Finance attribution.** Show campaign-level spend in Finance ("Top Spenders"). *(Still open — needs a campaign→spend join.)*
 
 ### Phase 3 — Structural / white-label readiness
 9. **Standardize implicit FKs.** Add real FK constraints (or a documented tenant-scoped convention) for `assigned_broker_id`, `agent_id`, `created_by`, `project_slug`, and give `review_comments.item_id` a discriminator + parent. Prevents orphan rows on delete in multi-tenant deployments.
-10. **Remove the dormant session system** (`lib/auth.ts` scrypt path + `freehold_site_user_sessions`) so there is exactly one auth model.
+10. **Consolidate the two session systems** onto one auth model. `lib/auth.ts` (`freehold_site_session`) is **live**, not dead (see §1 Correction), so this is a deliberate migration — port the inherited `app/api/{auth,crm,leads,admin,dashboard,ai}/*` routes to `verifySession`/`fh_session`, then retire the scrypt path and `freehold_site_user_sessions`. Not a delete-the-file task.
 11. **Replace remaining seed surfaces** (Notebook threads, Lead-Machine readiness, AI-Manager hub counts, Integrations status badges) with the live event log once it's wired.
 12. **Wire or drop `freehold_site_lp_analytics`** and link `ai_conversations.lead_id` so AI work attaches to the lead it concerns.
 
@@ -177,13 +181,15 @@ Below, each missing edge with the data that already exists to close it.
 
 ## 8. Loop-Completeness Scorecard
 
+*Updated after the Phase 1–2 work shipped this cycle (PRs #23–#30).*
+
 | Loop | Status | ~Completeness |
 |---|---|---|
-| Ad campaign → Lead → CRM → Deal → Finance | ✅ Mostly works | ~85% (missing UI drill-downs) |
-| Inventory → Landing → Creative → Campaign → Lead → Deal → Commission → Inventory | ⚠️ Partial | ~60% (no Deal→Inventory reverse; AI-Manager→Lead-Machine manual) |
-| Management → Team → Credit allocation → Agent | ✅ Mostly works | ~80% (no pending-commission breakdown) |
+| Ad campaign → Lead → CRM → Deal → Finance | ✅ Works | ~95% (analytics→CRM + source→campaign drill-downs now wired) |
+| Inventory → Landing → Creative → Campaign → Lead → Deal → Commission → Inventory | ✅ Mostly works | ~85% (Deal→Inventory reverse + Inventory/AI-Manager→ads forward edges shipped) |
+| Management → Team → Credit allocation → Agent | ✅ Works | ~90% (agent commission breakdown shipped) |
 | Broker workspace → My leads → My campaigns | ⚠️ Partial | ~70% (campaigns filter unconfirmed) |
-| Notebook research → Output → Distribute | ⚠️ Partial | ~50% (distribution UI-only) |
+| Notebook research → Output → Distribute | 🟡 Partial | ~70% (Notebook→CRM real; Ads/WhatsApp/Email need target pickers) |
 
 ---
 
