@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { CheckSquare, AlertCircle, Clock, CheckCircle2, User, ArrowUpRight, Sparkles, Plus, X } from 'lucide-react'
 import Link from 'next/link'
+import { useT } from '@/lib/i18n/provider'
 type Task = {
   id: string
   priority: 'critical' | 'high' | 'medium' | 'low'
@@ -19,21 +20,37 @@ type Task = {
 }
 
 function priorityTone(p: string) {
-  if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
-  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', label: 'High' }
-  if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400', label: 'Medium' }
-  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
+  if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', labelKey: 'ptasks.priority.critical' }
+  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', labelKey: 'ptasks.priority.high' }
+  if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400', labelKey: 'ptasks.priority.medium' }
+  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', labelKey: 'ptasks.priority.low' }
 }
 
 function statusChip(status: string) {
-  if (status === 'done')        return { text: 'text-gold', icon: <CheckCircle2 className="h-3.5 w-3.5 text-gold" />, label: 'Done' }
-  if (status === 'blocked')     return { text: 'text-red-300', icon: <AlertCircle className="h-3.5 w-3.5 text-red-400" />, label: 'Blocked' }
-  if (status === 'in_progress') return { text: 'text-[#F8E7AE]', icon: <Clock className="h-3.5 w-3.5 text-gold" />, label: 'In Progress' }
-  return                               { text: 'text-slate-400', icon: <Clock className="h-3.5 w-3.5 text-slate-500" />, label: 'Open' }
+  if (status === 'done')        return { text: 'text-gold', icon: <CheckCircle2 className="h-3.5 w-3.5 text-gold" />, labelKey: 'ptasks.status.done' }
+  if (status === 'blocked')     return { text: 'text-red-300', icon: <AlertCircle className="h-3.5 w-3.5 text-red-400" />, labelKey: 'ptasks.status.blocked' }
+  if (status === 'in_progress') return { text: 'text-[#F8E7AE]', icon: <Clock className="h-3.5 w-3.5 text-gold" />, labelKey: 'ptasks.status.inProgress' }
+  return                               { text: 'text-slate-400', icon: <Clock className="h-3.5 w-3.5 text-slate-500" />, labelKey: 'ptasks.status.open' }
 }
 
 const STATUS_OPTIONS = ['All', 'Open', 'In Progress', 'Blocked', 'Done'] as const
 const PRIORITY_OPTIONS = ['All', 'Critical', 'High', 'Medium', 'Low'] as const
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  'All': 'ptasks.status.all',
+  'Open': 'ptasks.status.open',
+  'In Progress': 'ptasks.status.inProgress',
+  'Blocked': 'ptasks.status.blocked',
+  'Done': 'ptasks.status.done',
+}
+
+const PRIORITY_LABEL_KEYS: Record<string, string> = {
+  'All': 'ptasks.priority.all',
+  'Critical': 'ptasks.priority.critical',
+  'High': 'ptasks.priority.high',
+  'Medium': 'ptasks.priority.medium',
+  'Low': 'ptasks.priority.low',
+}
 
 type StatusFilter = typeof STATUS_OPTIONS[number]
 type PriorityFilter = typeof PRIORITY_OPTIONS[number]
@@ -53,6 +70,7 @@ const PRIORITY_MAP: Record<string, Task['priority']> = {
 }
 
 export default function TasksPage() {
+  const t = useT()
   // --- core state ---
   const [tasks, setTasks] = useState<Task[]>([])
   const [statuses, setStatuses] = useState<Record<string, Task['status']>>({})
@@ -179,15 +197,15 @@ export default function TasksPage() {
       {/* Header */}
       <section>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
-          <CheckSquare className="h-3.5 w-3.5" /> Tasks
+          <CheckSquare className="h-3.5 w-3.5" /> {t('ptasks.eyebrow')}
         </div>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          {stats.open} tasks open.
+          {t('ptasks.headline.open', { n: stats.open })}
           <br />
-          <span className="text-slate-400">{stats.dueToday} due today.</span>
+          <span className="text-slate-400">{t('ptasks.headline.due', { n: stats.dueToday })}</span>
         </h1>
         <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
-          Owned, dated and tracked. Created from review comments, blockers and internal decisions. Resolve critical and blocked items first.
+          {t('ptasks.intro')}
         </p>
       </section>
 
@@ -195,19 +213,19 @@ export default function TasksPage() {
       <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-[18px] border border-line bg-surface p-4 text-center">
           <p className="text-[26px] font-semibold text-white">{stats.open}</p>
-          <p className="text-xs text-slate-500 mt-1">Open</p>
+          <p className="text-xs text-slate-500 mt-1">{t('ptasks.stat.open')}</p>
         </div>
         <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
           <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
-          <p className="text-xs text-red-400/60 mt-1">Critical</p>
+          <p className="text-xs text-red-400/60 mt-1">{t('ptasks.stat.critical')}</p>
         </div>
         <div className="rounded-[18px] border border-orange-400/20 bg-orange-400/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-orange-300">{stats.blocked}</p>
-          <p className="text-xs text-orange-400/60 mt-1">Blocked</p>
+          <p className="text-xs text-orange-400/60 mt-1">{t('ptasks.stat.blocked')}</p>
         </div>
         <div className="rounded-[18px] border border-gold/20 bg-gold/[0.05] p-4 text-center">
           <p className="text-[26px] font-semibold text-[#F8E7AE]">{stats.dueToday}</p>
-          <p className="text-xs text-gold/60 mt-1">Due today</p>
+          <p className="text-xs text-gold/60 mt-1">{t('ptasks.stat.dueToday')}</p>
         </div>
       </section>
 
@@ -227,7 +245,7 @@ export default function TasksPage() {
                     : 'border-line bg-surface text-slate-400 hover:border-line-strong hover:text-slate-100'
                 }`}
               >
-                {s}
+                {t(STATUS_LABEL_KEYS[s])}
               </button>
             )
           })}
@@ -249,7 +267,7 @@ export default function TasksPage() {
                     : 'border-line bg-surface text-slate-400 hover:border-line-strong hover:text-slate-100'
                 }`}
               >
-                {p}
+                {t(PRIORITY_LABEL_KEYS[p])}
               </button>
             )
           })}
@@ -261,7 +279,7 @@ export default function TasksPage() {
             onClick={() => { setActiveStatus('All'); setActivePriority('All') }}
             className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-sm text-slate-400 transition hover:border-line-strong hover:text-slate-100"
           >
-            <X className="h-3 w-3" /> Clear
+            <X className="h-3 w-3" /> {t('ptasks.clear')}
           </button>
         )}
       </section>
@@ -270,7 +288,7 @@ export default function TasksPage() {
       <section className="mt-6 space-y-4">
         {filtered.length === 0 && (
           <div className="rounded-[22px] border border-line bg-surface px-6 py-10 text-center text-sm text-slate-400">
-            No tasks match the current filters.
+            {t('ptasks.empty')}
           </div>
         )}
 
@@ -290,7 +308,7 @@ export default function TasksPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                    {tone.label}
+                    {t(tone.labelKey)}
                   </span>
                   <span className="text-sm text-slate-400">{task.app}</span>
                 </div>
@@ -299,7 +317,7 @@ export default function TasksPage() {
                     ? <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
                     : st.icon}
                   <span className={isDone ? 'text-gold' : st.text}>
-                    {isDone ? 'Done' : st.label}
+                    {isDone ? t('ptasks.status.done') : t(st.labelKey)}
                   </span>
                 </div>
               </div>
@@ -332,7 +350,7 @@ export default function TasksPage() {
                     className="inline-flex items-center gap-1.5 rounded-[10px] border border-gold/20 bg-gold/[0.06] px-3.5 py-1.5 text-xs font-medium text-gold transition hover:border-emerald-400/35 hover:bg-gold/10"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Mark done
+                    {t('ptasks.markDone')}
                   </button>
                 )}
               </div>
@@ -343,7 +361,7 @@ export default function TasksPage() {
                   href={task.appHref}
                   className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-gold"
                 >
-                  Open in {task.app} <ArrowUpRight className="h-3 w-3" />
+                  {t('ptasks.openIn', { app: task.app })} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               )}
             </div>
@@ -355,11 +373,11 @@ export default function TasksPage() {
       <section className="mt-8 rounded-[22px] border border-line bg-surface p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <Plus className="h-3.5 w-3.5" /> Create a task
+            <Plus className="h-3.5 w-3.5" /> {t('ptasks.create.title')}
           </div>
           {showSuccess && (
             <span className="flex items-center gap-1.5 text-sm font-medium text-gold">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Task created
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t('ptasks.create.success')}
             </span>
           )}
         </div>
@@ -368,14 +386,14 @@ export default function TasksPage() {
           <input
             value={formTitle}
             onChange={e => setFormTitle(e.target.value)}
-            placeholder="Task title"
+            placeholder={t('ptasks.create.titlePlaceholder')}
             className={inputClass}
             required
           />
           <textarea
             value={formDesc}
             onChange={e => setFormDesc(e.target.value)}
-            placeholder="Describe the task, expected outcome, and what success looks like…"
+            placeholder={t('ptasks.create.descPlaceholder')}
             rows={3}
             className={`${inputClass} resize-none`}
           />
@@ -383,7 +401,7 @@ export default function TasksPage() {
             <input
               value={formAssignee}
               onChange={e => setFormAssignee(e.target.value)}
-              placeholder="Assign to…"
+              placeholder={t('ptasks.create.assigneePlaceholder')}
               className="rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition"
             />
             <select
@@ -391,22 +409,22 @@ export default function TasksPage() {
               onChange={e => setFormPriority(e.target.value as Task['priority'])}
               className="rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-sm text-slate-300 outline-none focus:border-gold/30 transition appearance-none cursor-pointer"
             >
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="critical">{t('ptasks.priority.critical')}</option>
+              <option value="high">{t('ptasks.priority.high')}</option>
+              <option value="medium">{t('ptasks.priority.medium')}</option>
+              <option value="low">{t('ptasks.priority.low')}</option>
             </select>
             <input
               value={formDue}
               onChange={e => setFormDue(e.target.value)}
-              placeholder="Due date"
+              placeholder={t('ptasks.create.duePlaceholder')}
               className="rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition"
             />
             <button
               type="submit"
               className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-white/90"
             >
-              Create task
+              {t('ptasks.create.submit')}
             </button>
           </div>
         </form>
@@ -415,10 +433,10 @@ export default function TasksPage() {
       {/* AI take */}
       <section className="mt-8 rounded-[22px] border border-gold/15 bg-gold/[0.03] px-6 py-7">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80 mb-3">
-          <Sparkles className="h-3 w-3" /> AI take
+          <Sparkles className="h-3 w-3" /> {t('ptasks.ai.title')}
         </div>
         <p className="text-base font-medium leading-[1.65] text-slate-100">
-          The two blocked tasks (Meta billing, auth middleware) have the highest downstream impact. Billing unblocks the entire campaign pipeline. After that, the Palm landing approval and the CRM lead review are both achievable today and unlock agent momentum immediately.
+          {t('ptasks.ai.body')}
         </p>
       </section>
 
