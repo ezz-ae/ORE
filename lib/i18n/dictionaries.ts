@@ -20,6 +20,9 @@ import { integrations } from './dictionaries/integrations'
 import { p_tasks } from './dictionaries/p_tasks'
 import { p_reviews } from './dictionaries/p_reviews'
 import { p_aim1 } from './dictionaries/p_aim1'
+import { p_aim2 } from './dictionaries/p_aim2'
+import { p_aim3 } from './dictionaries/p_aim3'
+import { p_forms } from './dictionaries/p_forms'
 import { p_campaign } from './dictionaries/p_campaign'
 
 /**
@@ -409,7 +412,7 @@ const ru: Dict = {
 // Merge the core dictionary with every per-surface namespace. Later spreads win,
 // but namespaces use distinct key prefixes so there is never a real collision.
 export const DICTIONARIES: Record<Locale, Dict> = {
-  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_campaign.en },
-  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_campaign.ar },
-  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_campaign.ru },
+  en: { ...en, ...crm.en, ...agent.en, ...finance.en, ...management.en, ...inventory.en, ...settings.en, ...languages.en, ...lm_wizard.en, ...lm_ads.en, ...lm_core.en, ...coach.en, ...analytics.en, ...notebook.en, ...expertChat.en, ...expertDepth.en, ...lm_google_actions.en, ...crm_lead_ask.en, ...integrations.en, ...p_tasks.en, ...p_reviews.en, ...p_aim1.en, ...p_aim2.en, ...p_aim3.en, ...p_forms.en, ...p_campaign.en },
+  ar: { ...ar, ...crm.ar, ...agent.ar, ...finance.ar, ...management.ar, ...inventory.ar, ...settings.ar, ...languages.ar, ...lm_wizard.ar, ...lm_ads.ar, ...lm_core.ar, ...coach.ar, ...analytics.ar, ...notebook.ar, ...expertChat.ar, ...expertDepth.ar, ...lm_google_actions.ar, ...crm_lead_ask.ar, ...integrations.ar, ...p_tasks.ar, ...p_reviews.ar, ...p_aim1.ar, ...p_aim2.ar, ...p_aim3.ar, ...p_forms.ar, ...p_campaign.ar },
+  ru: { ...ru, ...crm.ru, ...agent.ru, ...finance.ru, ...management.ru, ...inventory.ru, ...settings.ru, ...languages.ru, ...lm_wizard.ru, ...lm_ads.ru, ...lm_core.ru, ...coach.ru, ...analytics.ru, ...notebook.ru, ...expertChat.ru, ...expertDepth.ru, ...lm_google_actions.ru, ...crm_lead_ask.ru, ...integrations.ru, ...p_tasks.ru, ...p_reviews.ru, ...p_aim1.ru, ...p_aim2.ru, ...p_aim3.ru, ...p_forms.ru, ...p_campaign.ru },
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { FileText, Sparkles, Globe, Check, AlertCircle } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 interface PageRow {
   title: string
@@ -50,6 +51,31 @@ type FilterKey = 'All' | PageRow['type'] | PageRow['status']
 const FILTERS: FilterKey[] = ['All', 'Landing', 'Blog', 'Static', 'Legal', 'Published', 'Review', 'Draft']
 
 export default function WebsitePagesPage() {
+  const t = useT()
+
+  const filterKey: Record<FilterKey, string> = {
+    All: 'paim.pages.filter.all',
+    Landing: 'paim.pages.filter.landing',
+    Blog: 'paim.pages.filter.blog',
+    Static: 'paim.pages.filter.static',
+    Legal: 'paim.pages.filter.legal',
+    Published: 'paim.pages.filter.published',
+    Review: 'paim.pages.filter.review',
+    Draft: 'paim.pages.filter.draft',
+  }
+  const typeKey: Record<PageRow['type'], string> = {
+    Landing: 'paim.pages.type.landing',
+    Blog: 'paim.pages.type.blog',
+    Static: 'paim.pages.type.static',
+    Legal: 'paim.pages.type.legal',
+  }
+  const statusLabelKey: Record<PageRow['status'], string> = {
+    Published: 'paim.pages.status.published',
+    Review: 'paim.pages.status.review',
+    Draft: 'paim.pages.status.draft',
+  }
+  const colKey = ['paim.pages.col.pageTitle', 'paim.pages.col.url', 'paim.pages.col.type', 'paim.pages.col.status', 'paim.pages.col.words', 'paim.pages.col.seo', 'paim.pages.col.lastReview', 'paim.pages.col.actions']
+
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
   const [reviewing, setReviewing] = useState<string | null>(null)
   const [reviewed, setReviewed] = useState<string[]>([])
@@ -61,9 +87,9 @@ export default function WebsitePagesPage() {
   function startReview(slug: string) {
     setReviewing(slug)
     toast.promise(new Promise(r => setTimeout(r, 2000)), {
-      loading: 'AI reviewing page…',
-      success: 'Review complete',
-      error: 'Review failed',
+      loading: t('paim.pages.toast.reviewingOne'),
+      success: t('paim.pages.toast.reviewComplete'),
+      error: t('paim.pages.toast.reviewFailed'),
     })
     setTimeout(() => { setReviewing(null); setReviewed(r => [...r, slug]) }, 2000)
   }
@@ -74,27 +100,27 @@ export default function WebsitePagesPage() {
       {/* Header */}
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
         <FileText className="h-3.5 w-3.5" />
-        AI Manager · Pages
+        {t('paim.pages.breadcrumb')}
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-          Website Pages
+          {t('paim.pages.title')}
         </h1>
         <button
           disabled={reviewing !== null}
           onClick={() => {
             setReviewing('all')
             toast.promise(new Promise(r => setTimeout(r, 2500)), {
-              loading: `Reviewing ${filtered.length} pages…`,
-              success: 'All pages reviewed',
-              error: 'Review failed',
+              loading: t('paim.pages.toast.reviewingN', { n: filtered.length }),
+              success: t('paim.pages.toast.allReviewed'),
+              error: t('paim.pages.toast.reviewFailed'),
             })
             setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.url)) }, 2500)
           }}
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
           <Sparkles className="h-4 w-4" />
-          {reviewing === 'all' ? 'Reviewing…' : 'AI Review All'}
+          {reviewing === 'all' ? t('paim.pages.reviewingAll') : t('paim.pages.reviewAll')}
         </button>
       </div>
 
@@ -110,7 +136,7 @@ export default function WebsitePagesPage() {
                 : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
-            {f}
+            {t(filterKey[f])}
           </button>
         ))}
       </div>
@@ -118,19 +144,19 @@ export default function WebsitePagesPage() {
       {/* Stats */}
       <div className="mt-6 flex flex-wrap gap-3">
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Total </span>
+          <span className="text-slate-500">{t('paim.pages.stat.total')} </span>
           <span className="font-semibold text-slate-100">{websitePages.length}</span>
         </div>
         <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Published </span>
+          <span className="text-slate-500">{t('paim.pages.stat.published')} </span>
           <span className="font-semibold text-gold">{websitePages.filter((p) => p.status === 'Published').length}</span>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Needs Review </span>
+          <span className="text-slate-500">{t('paim.pages.stat.needsReview')} </span>
           <span className="font-semibold text-amber-400">{websitePages.filter((p) => p.status === 'Review').length}</span>
         </div>
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">Draft </span>
+          <span className="text-slate-500">{t('paim.pages.stat.draft')} </span>
           <span className="font-semibold text-slate-400">{websitePages.filter((p) => p.status === 'Draft').length}</span>
         </div>
       </div>
@@ -140,9 +166,9 @@ export default function WebsitePagesPage() {
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-line">
-              {['Page Title', 'URL', 'Type', 'Status', 'Words', 'SEO Score', 'Last AI Review', 'Actions'].map((h) => (
+              {colKey.map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
-                  {h}
+                  {t(h)}
                 </th>
               ))}
             </tr>
@@ -162,25 +188,25 @@ export default function WebsitePagesPage() {
                 <td className="px-4 py-3.5 font-mono text-xs text-slate-400">{page.url}</td>
                 <td className="px-4 py-3.5">
                   <span className={`inline-block rounded-full border px-2.5 py-0.5 text-sm font-medium ${typeBadge(page.type)}`}>
-                    {page.type}
+                    {t(typeKey[page.type])}
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(page.status)}`}>
                     {page.status === 'Published' && <Check className="h-3 w-3" />}
-                    {page.status}
+                    {t(statusLabelKey[page.status])}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-sm text-slate-400">{page.words.toLocaleString()}</td>
                 <td className="px-4 py-3.5">
                   <span className={`text-sm font-semibold ${seoColor(page.seo)}`}>{page.seo}</span>
-                  <span className="text-xs text-slate-500">/100</span>
+                  <span className="text-xs text-slate-500">{t('paim.pages.seoSuffix')}</span>
                 </td>
                 <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
                 <td className="px-4 py-3.5">
                   {reviewed.includes(page.url) ? (
                     <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
-                      <Check className="h-3 w-3" /> Reviewed
+                      <Check className="h-3 w-3" /> {t('paim.pages.reviewed')}
                     </span>
                   ) : (
                     <button
@@ -189,7 +215,7 @@ export default function WebsitePagesPage() {
                       className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
                     >
                       <Sparkles className="h-3 w-3" />
-                      {reviewing === page.url ? 'Reviewing…' : 'AI Review'}
+                      {reviewing === page.url ? t('paim.pages.reviewing') : t('paim.pages.review')}
                     </button>
                   )}
                 </td>

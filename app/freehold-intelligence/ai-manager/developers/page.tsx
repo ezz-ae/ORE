@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Building2, Plus, Sparkles, CheckCircle2, AlertCircle, Search, Globe, RefreshCw, TrendingUp } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 interface DeveloperRow {
   slug:          string
@@ -44,6 +45,18 @@ function initials(name: string) {
 }
 
 export default function DeveloperProfilesPage() {
+  const t = useT()
+  const STATUS_LABEL: Record<DeveloperRow['profileStatus'], string> = {
+    Complete:   t('paim.devs.statusComplete'),
+    Incomplete: t('paim.devs.statusIncomplete'),
+    Draft:      t('paim.devs.statusDraft'),
+  }
+  const FILTER_LABEL: Record<FilterKey, string> = {
+    All:        t('paim.devs.filterAll'),
+    Complete:   t('paim.devs.filterComplete'),
+    Incomplete: t('paim.devs.filterIncomplete'),
+    Draft:      t('paim.devs.filterDraft'),
+  }
   const [developers, setDevelopers] = useState<DeveloperRow[]>([])
   const [loading,    setLoading]    = useState(true)
   const [filter,     setFilter]     = useState<FilterKey>('All')
@@ -86,7 +99,7 @@ export default function DeveloperProfilesPage() {
         const seen = new Set(mapped.map((m) => m.slug))
         setDevelopers([...customDevs.filter((c) => !seen.has(c.slug)), ...mapped])
       })
-      .catch(() => toast.error('Failed to load developer data'))
+      .catch(() => toast.error(t('paim.devs.toastLoadFail')))
       .finally(() => setLoading(false))
   }, [])
 
@@ -107,9 +120,9 @@ export default function DeveloperProfilesPage() {
       if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
       try { await navigator.clipboard.writeText(data.text) } catch { /* optional */ }
       setWritten((p) => [...p, name])
-      toast.success(`AI profile for ${name} generated${data.source === 'gemini' ? ' & copied to clipboard' : ''}`)
+      toast.success(data.source === 'gemini' ? t('paim.devs.toastGeneratedCopied', { name }) : t('paim.devs.toastGenerated', { name }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'AI generation failed')
+      toast.error(err instanceof Error ? err.message : t('paim.devs.toastGenFail'))
     } finally {
       setWriting(null)
     }
@@ -125,21 +138,21 @@ export default function DeveloperProfilesPage() {
 
       <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white">Developer Profiles</h1>
-          <p className="mt-1 text-xs text-slate-500">SEO pages for each developer — drives organic ranking</p>
+          <h1 className="text-xl font-semibold text-white">{t('paim.devs.title')}</h1>
+          <p className="mt-1 text-xs text-slate-500">{t('paim.devs.subtitle')}</p>
         </div>
         <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-3 py-1.5 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
-          <Plus className="h-3.5 w-3.5" /> {showNew ? 'Cancel' : 'Add developer'}
+          <Plus className="h-3.5 w-3.5" /> {showNew ? t('paim.devs.cancel') : t('paim.devs.addDeveloper')}
         </button>
       </div>
 
       <div className="mb-5 grid grid-cols-3 gap-3">
         {[
-          { label: 'Complete',  value: loading ? '…' : `${complete}/${developers.length}`, Icon: CheckCircle2, color: 'text-emerald-400' },
-          { label: 'Avg SEO',   value: loading ? '…' : avgSeo,                             Icon: TrendingUp,   color: 'text-teal-400'     },
-          { label: '30d Leads', value: loading ? '…' : totalLeads,                         Icon: Globe,        color: 'text-gold'   },
-        ].map(({ label, value, Icon, color }) => (
-          <div key={label} className="rounded-xl border border-line bg-surface p-4">
+          { id: 'complete', label: t('paim.devs.statComplete'),  value: loading ? '…' : `${complete}/${developers.length}`, Icon: CheckCircle2, color: 'text-emerald-400' },
+          { id: 'avgSeo',   label: t('paim.devs.statAvgSeo'),   value: loading ? '…' : avgSeo,                             Icon: TrendingUp,   color: 'text-teal-400'     },
+          { id: 'leads',    label: t('paim.devs.statLeads'), value: loading ? '…' : totalLeads,                         Icon: Globe,        color: 'text-gold'   },
+        ].map(({ id, label, value, Icon, color }) => (
+          <div key={id} className="rounded-xl border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
             <div className="mt-2 text-xl font-semibold text-white">{value}</div>
             <div className="mt-0.5 text-xs text-slate-500">{label}</div>
@@ -149,8 +162,8 @@ export default function DeveloperProfilesPage() {
 
       {showNew && (
         <div className="mb-5 rounded-xl border border-teal-400/20 bg-teal-400/[0.03] p-4 space-y-3">
-          <div className="text-sm font-semibold text-white">New developer profile</div>
-          <input autoFocus placeholder="Developer name (e.g. Emaar Properties)" value={newName}
+          <div className="text-sm font-semibold text-white">{t('paim.devs.newDevTitle')}</div>
+          <input autoFocus placeholder={t('paim.devs.newDevPlaceholder')} value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400/40" />
           <div className="flex gap-2">
@@ -165,13 +178,13 @@ export default function DeveloperProfilesPage() {
                 const data = await res.json()
                 if (!res.ok) throw new Error(data?.error || 'Failed')
                 setDevelopers((prev) => [{ slug: data.item.slug, name: data.item.name, initials: initials(data.item.name), color: AVATAR_COLORS[0], listings: 0, profileStatus: 'Draft', seo: 20, leads30d: 0 }, ...prev])
-                setShowNew(false); setNewName(''); toast.success('Developer profile created')
-              } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to create') }
+                setShowNew(false); setNewName(''); toast.success(t('paim.devs.toastCreated'))
+              } catch (err) { toast.error(err instanceof Error ? err.message : t('paim.devs.toastCreateFail')) }
             }}
               className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
-              Create profile
+              {t('paim.devs.createProfile')}
             </button>
-            <button onClick={() => setShowNew(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">Cancel</button>
+            <button onClick={() => setShowNew(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">{t('paim.devs.cancel')}</button>
           </div>
         </div>
       )}
@@ -180,9 +193,9 @@ export default function DeveloperProfilesPage() {
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-400/15 bg-amber-400/[0.03] px-4 py-3.5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400/70" />
           <div>
-            <div className="text-sm font-medium text-amber-300/90">{incomplete} profiles incomplete</div>
+            <div className="text-sm font-medium text-amber-300/90">{t('paim.devs.incompleteWarn', { n: incomplete })}</div>
             <div className="mt-0.5 text-xs text-slate-500">
-              Incomplete profiles reduce Google ranking. Use AI Write to complete them.
+              {t('paim.devs.incompleteHint')}
             </div>
           </div>
         </div>
@@ -191,7 +204,7 @@ export default function DeveloperProfilesPage() {
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
-          <input type="text" placeholder="Search developers…" value={search}
+          <input type="text" placeholder={t('paim.devs.searchPlaceholder')} value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-teal-400/30" />
         </div>
@@ -199,7 +212,7 @@ export default function DeveloperProfilesPage() {
           {(['All', 'Complete', 'Incomplete', 'Draft'] as FilterKey[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${filter === f ? 'bg-surface-3 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
-              {f}
+              {FILTER_LABEL[f]}
             </button>
           ))}
         </div>
@@ -207,10 +220,10 @@ export default function DeveloperProfilesPage() {
 
       <div className="space-y-2">
         {loading && (
-          <div className="rounded-xl border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">Loading from Neon…</div>
+          <div className="rounded-xl border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">{t('paim.devs.loading')}</div>
         )}
         {!loading && filtered.length === 0 && (
-          <div className="rounded-xl border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">No developers match.</div>
+          <div className="rounded-xl border border-line bg-surface px-5 py-10 text-center text-sm text-slate-500">{t('paim.devs.emptyFilter')}</div>
         )}
 
         {filtered.map((d) => {
@@ -229,13 +242,13 @@ export default function DeveloperProfilesPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-slate-300">{d.name}</span>
                     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[d.profileStatus]}`}>
-                      {d.profileStatus}
+                      {STATUS_LABEL[d.profileStatus]}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-slate-500">
-                    <span>{d.listings} listings</span>
+                    <span>{t('paim.devs.listingsSuffix', { n: d.listings })}</span>
                     <span>·</span>
-                    <span>SEO {d.seo}</span>
+                    <span>{t('paim.devs.seoLabel', { n: d.seo })}</span>
                   </div>
                 </div>
               </button>
@@ -248,11 +261,11 @@ export default function DeveloperProfilesPage() {
                         isWritten ? 'border-emerald-400/25 text-emerald-400' : 'border-teal-400/25 bg-teal-400/[0.06] text-teal-400 hover:bg-teal-400/15'
                       } disabled:opacity-50`}>
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}
+                      {isWriting ? t('paim.devs.writing') : isWritten ? t('paim.devs.contentReady') : t('paim.devs.aiComplete')}
                     </button>
                     <a href={`/developers/${d.slug}`} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition">
-                      <Globe className="h-3 w-3" /> Preview
+                      <Globe className="h-3 w-3" /> {t('paim.devs.preview')}
                     </a>
                   </div>
                 </div>
@@ -263,7 +276,7 @@ export default function DeveloperProfilesPage() {
       </div>
 
       <p className="mt-3 text-center text-xs text-slate-500">
-        {developers.length} developers loaded from Neon
+        {t('paim.devs.footer', { n: developers.length })}
       </p>
     </div>
   )

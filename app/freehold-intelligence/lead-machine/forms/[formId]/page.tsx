@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 interface FormQuestion { type: string; label: string; id: string }
 
@@ -28,6 +29,7 @@ function getField(lead: FormLead, name: string): string {
 }
 
 export default function FormDetailPage({ params }: { params: Promise<{ formId: string }> }) {
+  const t = useT()
   const [formId, setFormId]   = useState<string | null>(null)
   const [form, setForm]       = useState<LeadForm | null>(null)
   const [leads, setLeads]     = useState<FormLead[]>([])
@@ -50,13 +52,13 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       const formData  = await formRes.json()
       const leadsData = await leadsRes.json()
 
-      if (!formRes.ok)  throw new Error(formData.error  ?? 'Failed to load form')
-      if (!leadsRes.ok) throw new Error(leadsData.error ?? 'Failed to load leads')
+      if (!formRes.ok)  throw new Error(formData.error  ?? t('pforms.detail.loadFailed'))
+      if (!leadsRes.ok) throw new Error(leadsData.error ?? t('pforms.detail.loadLeadsFailed'))
 
       setForm(formData.form)
       setLeads(leadsData.leads ?? [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unexpected error')
+      setError(e instanceof Error ? e.message : t('pforms.error.unexpected'))
     } finally {
       setLoading(false)
     }
@@ -102,7 +104,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 text-center">
-        <div className="text-sm text-slate-400">Loading form…</div>
+        <div className="text-sm text-slate-400">{t('pforms.detail.loading')}</div>
       </div>
     )
   }
@@ -111,12 +113,12 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
     return (
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
         <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
-          <ArrowLeft className="h-3.5 w-3.5" /> All forms
+          <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.allForms')}
         </Link>
         <div className="mt-8 flex items-start gap-3 rounded-[20px] border border-red-400/20 bg-red-400/[0.05] p-5">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
           <div>
-            <div className="text-sm font-semibold text-white">Failed to load form</div>
+            <div className="text-sm font-semibold text-white">{t('pforms.detail.loadFailed')}</div>
             <p className="mt-1 text-sm text-slate-300">{error}</p>
           </div>
         </div>
@@ -132,19 +134,19 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/forms" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
-        <ArrowLeft className="h-3.5 w-3.5" /> All forms
+        <ArrowLeft className="h-3.5 w-3.5" /> {t('pforms.allForms')}
       </Link>
 
       {/* Header */}
       <section className="mt-7">
         <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
-          <FileText className="h-3.5 w-3.5" /> Lead Form
+          <FileText className="h-3.5 w-3.5" /> {t('pforms.detail.eyebrow')}
         </div>
         <h1 className="mt-3 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">
           {form.name}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          Created {new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' })}
+          {t('pforms.detail.created', { date: new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' }) })}
           {' · '}
           <span className={statusColor}>{form.status}</span>
         </p>
@@ -153,10 +155,10 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       {/* Stats */}
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total leads',   value: form.leads_count ?? 0,        color: 'text-gold' },
-          { label: 'Questions',     value: form.questions?.length ?? '—', color: 'text-white'     },
-          { label: 'Status',        value: form.status,                   color: statusColor      },
-          { label: 'Synced leads',  value: leads.length,                  color: 'text-white'     },
+          { label: t('pforms.stat.totalLeads'),  value: form.leads_count ?? 0,        color: 'text-gold' },
+          { label: t('pforms.stat.questions'),   value: form.questions?.length ?? '—', color: 'text-white'     },
+          { label: t('pforms.stat.status'),      value: form.status,                   color: statusColor      },
+          { label: t('pforms.stat.syncedLeads'), value: leads.length,                  color: 'text-white'     },
         ].map((s) => (
           <div key={s.label} className="rounded-[18px] border border-line bg-surface p-4 text-center">
             <div className={`text-[22px] font-semibold leading-none ${s.color}`}>{s.value}</div>
@@ -171,8 +173,8 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         <div className="min-w-0">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Lead submissions</div>
-              <h2 className="mt-1 text-lg font-semibold text-white">{leads.length} synced</h2>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.leads.title')}</div>
+              <h2 className="mt-1 text-lg font-semibold text-white">{t('pforms.leads.synced', { n: leads.length })}</h2>
             </div>
             <div className="flex gap-2">
               <button
@@ -181,14 +183,14 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                 className="inline-flex items-center gap-1.5 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white disabled:opacity-40"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loadingLeads ? 'animate-spin' : ''}`} />
-                Refresh
+                {t('pforms.leads.refresh')}
               </button>
               {leads.length > 0 && (
                 <button
                   onClick={exportCsv}
                   className="inline-flex items-center gap-1.5 rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white"
                 >
-                  <Download className="h-3.5 w-3.5" /> Export CSV
+                  <Download className="h-3.5 w-3.5" /> {t('pforms.leads.exportCsv')}
                 </button>
               )}
             </div>
@@ -197,8 +199,8 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           {leads.length === 0 ? (
             <div className="rounded-[22px] border border-line bg-surface px-6 py-12 text-center">
               <Users className="mx-auto h-8 w-8 text-slate-700 mb-3" />
-              <div className="text-sm text-slate-400">No leads synced yet</div>
-              <p className="mt-1 text-xs text-slate-500">Attach this form to a campaign to start capturing leads.</p>
+              <div className="text-sm text-slate-400">{t('pforms.leads.emptyTitle')}</div>
+              <p className="mt-1 text-xs text-slate-500">{t('pforms.leads.emptyBody')}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-[22px] border border-line bg-surface">
@@ -223,7 +225,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                         <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-slate-400">
                           {phone !== '—' && <span>{phone}</span>}
                           {email !== '—' && <span>{email}</span>}
-                          {lead.ad_id && <span className="font-mono text-xs">Ad: {lead.ad_id.slice(0, 8)}</span>}
+                          {lead.ad_id && <span className="font-mono text-xs">{t('pforms.leads.ad', { id: lead.ad_id.slice(0, 8) })}</span>}
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-slate-500">
                           {lead.field_data
@@ -249,7 +251,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           {/* Questions */}
           {form.questions && form.questions.length > 0 && (
             <div className="rounded-[20px] border border-line bg-surface p-5">
-              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Questions</div>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.sidebar.questions')}</div>
               <div className="space-y-2">
                 {form.questions.map((q, i) => (
                   <div key={q.id} className="flex items-center gap-2.5 text-xs">
@@ -265,7 +267,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
           {/* Landing URL */}
           {form.follow_up_action_url && (
             <div className="rounded-[20px] border border-line bg-surface p-5">
-              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Landing page</div>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.sidebar.landingPage')}</div>
               <a
                 href={form.follow_up_action_url}
                 target="_blank"
@@ -279,9 +281,9 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
 
           {/* Form ID */}
           <div className="rounded-[20px] border border-line bg-surface p-5">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Form ID</div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pforms.sidebar.formId')}</div>
             <code className="text-xs text-slate-400 break-all">{form.id}</code>
-            <p className="mt-2 text-xs text-slate-500">Use this ID when attaching the form to a campaign ad set.</p>
+            <p className="mt-2 text-xs text-slate-500">{t('pforms.sidebar.formIdNote')}</p>
           </div>
         </aside>
       </div>

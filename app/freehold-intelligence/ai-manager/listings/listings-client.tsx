@@ -5,12 +5,28 @@ import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Bot, Plus, Edit2, Sparkles, Package, Loader2 } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { useT } from '@/lib/i18n/provider'
 
 type ListingStatus = 'Published' | 'Draft' | 'Needs Review'
 type FilterKey = 'All' | ListingStatus | 'Off Plan' | 'Ready'
 type Content = { status: ListingStatus; seo: number; words: number }
 
 const FILTERS: FilterKey[] = ['All', 'Published', 'Draft', 'Needs Review', 'Off Plan', 'Ready']
+
+const FILTER_KEY: Record<FilterKey, string> = {
+  'All': 'paim.listings.filter.All',
+  'Published': 'paim.listings.filter.Published',
+  'Draft': 'paim.listings.filter.Draft',
+  'Needs Review': 'paim.listings.filter.NeedsReview',
+  'Off Plan': 'paim.listings.filter.OffPlan',
+  'Ready': 'paim.listings.filter.Ready',
+}
+
+const STATUS_KEY: Record<ListingStatus, string> = {
+  'Published': 'paim.listings.status.Published',
+  'Draft': 'paim.listings.status.Draft',
+  'Needs Review': 'paim.listings.status.NeedsReview',
+}
 
 const seedContent: Record<string, Content> = {
   prop_sobha_007:  { status: 'Published',    seo: 95, words: 2400 },
@@ -36,6 +52,7 @@ function seoColor(score: number) {
 }
 
 export default function ListingsClient({ initialProperties }: { initialProperties: InventoryProperty[] }) {
+  const t = useT()
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
   const [processing, setProcessing] = useState<string | null>(null)
   const [improving, setImproving] = useState<string[]>([])
@@ -85,8 +102,8 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
     setImproving((p) => [...p, prop.id])
     const ok = await improveOne(prop)
     setImproving((p) => p.filter((x) => x !== prop.id))
-    if (ok) toast.success(`${prop.name} updated`)
-    else toast.error(`Could not update ${prop.name}`)
+    if (ok) toast.success(t('paim.listings.toast.updated', { name: prop.name }))
+    else toast.error(t('paim.listings.toast.updateFailed', { name: prop.name }))
   }
 
   // Bulk: run the real AI rewrite across the visible listings.
@@ -98,14 +115,14 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
       if (await improveOne(prop)) ok++
     }
     setProcessing(null)
-    if (ok) toast.success(`${label}: ${ok} listing${ok === 1 ? '' : 's'} updated`)
-    else toast.error(`${label} failed`)
+    if (ok) toast.success(t('paim.listings.toast.bulkOk', { label, n: ok }))
+    else toast.error(t('paim.listings.toast.bulkFailed', { label }))
   }
 
   const bulkActions = [
-    { kind: 'meta',    idle: 'Refresh Meta Descriptions', busy: 'Refreshing…',   label: 'Meta descriptions' },
-    { kind: 'seo',     idle: 'Improve All SEO',           busy: 'Improving…',     label: 'SEO copy' },
-    { kind: 'summary', idle: 'Regenerate Summaries',      busy: 'Regenerating…',  label: 'Summaries' },
+    { kind: 'meta',    idle: t('paim.listings.bulk.metaIdle'),    busy: t('paim.listings.bulk.metaBusy'),    label: t('paim.listings.bulk.metaLabel') },
+    { kind: 'seo',     idle: t('paim.listings.bulk.seoIdle'),     busy: t('paim.listings.bulk.seoBusy'),     label: t('paim.listings.bulk.seoLabel') },
+    { kind: 'summary', idle: t('paim.listings.bulk.summaryIdle'), busy: t('paim.listings.bulk.summaryBusy'), label: t('paim.listings.bulk.summaryLabel') },
   ]
 
   return (
@@ -114,22 +131,22 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
       {/* Header */}
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
         <Bot className="h-3.5 w-3.5" />
-        AI Manager · Listings
+        {t('paim.listings.breadcrumb')}
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Listings</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('paim.listings.title')}</h1>
           <div className="mt-2 flex flex-wrap gap-3">
             <span className="rounded-xl border border-gold/20 bg-gold/10 px-3 py-1 text-xs">
-              <span className="text-slate-500">Published </span>
+              <span className="text-slate-500">{t('paim.listings.published')} </span>
               <span className="font-semibold text-gold">{counts.Published}</span>
             </span>
             <span className="rounded-xl border border-line bg-surface-2 px-3 py-1 text-xs">
-              <span className="text-slate-500">Draft </span>
+              <span className="text-slate-500">{t('paim.listings.draft')} </span>
               <span className="font-semibold text-slate-400">{counts.Draft}</span>
             </span>
             <span className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs">
-              <span className="text-slate-500">Needs Review </span>
+              <span className="text-slate-500">{t('paim.listings.needsReview')} </span>
               <span className="font-semibold text-slate-400">{counts['Needs Review']}</span>
             </span>
           </div>
@@ -139,7 +156,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20"
         >
           <Plus className="h-4 w-4" />
-          New Listing
+          {t('paim.listings.newListing')}
         </Link>
       </div>
 
@@ -170,7 +187,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                 : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
             }`}
           >
-            {f}
+            {t(FILTER_KEY[f])}
           </button>
         ))}
       </div>
@@ -180,9 +197,19 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-line">
-              {['Name', 'Area', 'Property Status', 'Content Status', 'SEO Score', 'Words', 'Images', 'Last Updated', 'Actions'].map((h) => (
+              {[
+                'paim.listings.col.name',
+                'paim.listings.col.area',
+                'paim.listings.col.propertyStatus',
+                'paim.listings.col.contentStatus',
+                'paim.listings.col.seoScore',
+                'paim.listings.col.words',
+                'paim.listings.col.images',
+                'paim.listings.col.lastUpdated',
+                'paim.listings.col.actions',
+              ].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
-                  {h}
+                  {t(h)}
                 </th>
               ))}
             </tr>
@@ -191,7 +218,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
             {listings.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-12 text-center text-sm text-slate-500">
-                  No listings match this filter.
+                  {t('paim.listings.empty')}
                 </td>
               </tr>
             ) : (
@@ -211,7 +238,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                   </td>
                   <td className="px-4 py-3.5">
                     <span className={`inline-block rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(content.status)}`}>
-                      {content.status}
+                      {t(STATUS_KEY[content.status])}
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
@@ -232,7 +259,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                         className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-50"
                       >
                         {improving.includes(prop.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                        {improving.includes(prop.id) ? 'Improving…' : 'AI Improve'}
+                        {improving.includes(prop.id) ? t('paim.listings.improveBusy') : t('paim.listings.improveIdle')}
                       </button>
                     </div>
                   </td>
@@ -244,7 +271,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
       </div>
 
       <p className="mt-3 text-sm text-slate-500">
-        {listings.length} of {initialProperties.length} listings · AI Manager
+        {t('paim.listings.footer', { shown: listings.length, total: initialProperties.length })}
       </p>
     </div>
   )
