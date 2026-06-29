@@ -3,6 +3,7 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto"
 import { promisify } from "node:util"
 import { query } from "@/lib/db"
 import { ensureUsersTable, type UserProfileRecord } from "@/lib/data"
+import { verifySession as verifyPlatformSession, SESSION_COOKIE as PLATFORM_SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 
 const scryptAsync = promisify(scrypt)
 
@@ -228,13 +229,52 @@ const parseCookieHeader = (header: string | null | undefined, name: string) => {
   return undefined
 }
 
+/**
+ * Map a verified platform (`fh_session`) user onto the CRM SessionUser shape.
+ * Prefers the real freehold_site_users row (by email); otherwise synthesises a
+ * minimal record so platform-authenticated callers are recognised by CRM routes.
+ */
+async function mapPlatformUser(p: { email: string; name?: string; role?: string; brokerId?: string }): Promise<SessionUser | null> {
+  const email = (p.email || "").trim().toLowerCase()
+  if (!email) return null
+  try {
+    await ensureAuthTables()
+    const rows = await query<SessionUser>(
+      `SELECT id, name, email, role, org_title, phone, commission_rate, language, ai_tone, ai_verbosity, notifications
+       FROM freehold_site_users WHERE lower(email) = $1 LIMIT 1`,
+      [email],
+    )
+    if (rows[0]) return rows[0]
+  } catch { /* fall through to synthesised record */ }
+  return {
+    id: p.brokerId || email,
+    name: p.name || email,
+    email,
+    role: p.role || "broker",
+    org_title: null,
+  }
+}
+
 export async function getSessionUser() {
   const cookieStore = await cookies()
   const headerStore = await headers()
   const token =
     cookieStore.get(SESSION_COOKIE)?.value ??
     parseCookieHeader(headerStore.get("cookie"), SESSION_COOKIE)
-  return getSessionUserFromToken(token)
+  const user = await getSessionUserFromToken(token)
+  if (user) return user
+
+  // Unified auth: a single sign-in works everywhere. If there's no CRM session,
+  // accept a valid platform session (fh_session) too. Purely additive — it can
+  // never reject a previously-valid CRM session, so there is no lockout risk.
+  try {
+    const fhToken =
+      cookieStore.get(PLATFORM_SESSION_COOKIE)?.value ??
+      parseCookieHeader(headerStore.get("cookie"), PLATFORM_SESSION_COOKIE)
+    const platform = await verifyPlatformSession(fhToken)
+    if (platform?.email) return await mapPlatformUser(platform)
+  } catch { /* ignore — unauthenticated */ }
+  return null
 }
 
 const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN?.trim() || (process.env.NODE_ENV === "production" ? ".freeholdproperty.ae" : undefined)
