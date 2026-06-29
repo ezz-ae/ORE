@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
 import { upsertUserProfile, getUserProfileByEmail } from '@/lib/data'
+import { seedTeam } from '@/lib/freehold/accounts'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,10 @@ export async function GET() {
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const user = await verifySession(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Ensure the full team roster exists even before anyone logs in via the server
+  // login, so management + assignment always see every member.
+  await seedTeam()
 
   try {
     const rows = await query<{
