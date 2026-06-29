@@ -39,12 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/about',
     '/contact',
     '/chat',
-    '/market',
-    '/market/why-dubai',
-    '/market/areas',
-    '/market/golden-visa',
-    '/market/financing',
-    '/market/regulations',
+    '/services',
     '/tools',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
