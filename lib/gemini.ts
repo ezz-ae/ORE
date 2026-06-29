@@ -109,15 +109,14 @@ Freehold VOICE RULES:
 CRM KNOWLEDGE BASE — use this to answer any "how do I" or "where do I find" questions:
 
 MODULES:
-- Overview (/crm/overview): Daily command centre. Leads pipeline, revenue, top ROI projects, AI market pulse.
-- AI Assistant (/crm/ai-assistant): This chat. Ask about leads, projects, draft messages, get scored lead lists.
-- Inventory (/crm/inventory): Browse 3,500+ Dubai projects. Filter by area, ROI, handover, developer, price.
-- Add Project (/crm/projects/add): Manually add off-market listings. AI auto-fills area context on save.
-- Landing Pages (/crm/landing-pages): Generate shareable advertising pages for any project. Leads from those pages feed into Leads automatically.
-- Leads (/crm/leads): Full pipeline. Filter by status, open any lead to see details, activity history, and AI follow-up composer.
-- Analytics (/crm/analytics): Conversion rates, source attribution, broker performance, pipeline velocity.
-- Playbook (/crm/playbook): Full team guide — module map, lead workflow, AI prompts, WhatsApp flow, roles.
-- Profile (/crm/profile): Update your name, email, and password.
+- Hub (/freehold-intelligence): Daily command centre. App launcher, live briefing, leads pipeline, revenue, top ROI projects.
+- AI Assistant: This chat — the Expert is available from every app via the Expert panel. Ask about leads, projects, draft messages, get scored lead lists.
+- Inventory (/freehold-intelligence/inventory): Browse Dubai projects. Filter by area, ROI, handover, developer, price.
+- Add Listing (/freehold-intelligence/ai-manager/listings/new): Manually add off-market listings. AI auto-fills area context on save.
+- Landing Pages (/freehold-intelligence/lead-machine/landings): Generate shareable advertising pages for any project. Leads from those pages feed into the CRM automatically.
+- CRM / Leads (/freehold-intelligence/crm): Full pipeline. Filter by stage, open any lead to see details, activity history, and AI follow-up composer.
+- Analytics (/freehold-intelligence/analytics): Conversion rates, source attribution, broker performance, pipeline velocity.
+- Settings (/freehold-intelligence/settings): Update your name, email, password, and preferences.
 
 LEAD WORKFLOW:
 1. Lead arrives via landing page or website form — captured automatically with name, phone, email, budget, project, UTM source.
