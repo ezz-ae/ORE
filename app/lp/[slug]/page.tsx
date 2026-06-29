@@ -438,7 +438,6 @@ function RoiSection({ d, page }: { d: Record<string, unknown>; page: LandingPage
   const annual = price > 0 && yield_ > 0 ? price * (yield_ / 100) : null
   const monthly = annual ? annual / 12 : null
   const fiveYr = annual ? annual * 5 : null
-  const capitalGain = price > 0 ? price * 0.35 : null // assume 35% capital appreciation in 5yr
 
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
@@ -470,20 +469,6 @@ function RoiSection({ d, page }: { d: Record<string, unknown>; page: LandingPage
           ))}
         </div>
 
-        {capitalGain && (
-          <div className="mt-4 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-6 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-emerald-400/70" />
-                <div>
-                  <div className="text-[13px] font-semibold text-white/70">Estimated 5-Year Capital Appreciation</div>
-                  <div className="text-[12px] text-white/35">Based on Dubai Hills historical growth of ~7% p.a.</div>
-                </div>
-              </div>
-              <div className="text-[20px] font-bold text-emerald-400">+{fmtAed(capitalGain)}</div>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   )
@@ -498,19 +483,9 @@ function LocationSection({ d, page }: { d: Record<string, unknown>; page: Landin
   const area = pick(d, 'area') || page.project?.area || 'Dubai'
   const title = pick(d, 'title') || `Life in ${area}`
   const subtitle = pick(d, 'subtitle')
-  const distances = pickArr(d, 'distances', 'landmarks').map(toObj)
+  // Only render real, project-specific distances — no generic default landmarks.
+  const dList = pickArr(d, 'distances', 'landmarks').map(toObj)
   const highlights = pickArr(d, 'highlights').map(toStr).filter(Boolean)
-
-  const defaultDistances: Record<string, unknown>[] = [
-    { icon: 'car', label: 'Dubai Mall', time: '15 min', value: '13 km' },
-    { icon: 'plane', label: 'DXB Airport', time: '30 min', value: '28 km' },
-    { icon: 'mall', label: 'Mall of Emirates', time: '12 min', value: '10 km' },
-    { icon: 'school', label: 'International Schools', time: '5 min', value: 'In community' },
-    { icon: 'park', label: 'Dubai Hills Park', time: '3 min', value: 'Walk' },
-    { icon: 'gym', label: 'Golf Club', time: '8 min', value: '6 km' },
-  ]
-
-  const dList = distances.length ? distances : defaultDistances
 
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
@@ -677,28 +652,32 @@ function AmenitiesSection({ d }: { d: Record<string, unknown> }) {
 }
 
 function DeveloperSection({ d }: { d: Record<string, unknown> }) {
-  const name = pick(d, 'name', 'developer') || 'Emaar Properties'
+  // Use the real developer name only — never default to a brand we can't verify.
+  const name = pick(d, 'name', 'developer')
   const desc = pick(d, 'description', 'about')
-  const stats = pickArr(d, 'stats').map(toObj)
-  const defaultStats = [{ label: 'Projects Delivered', value: '80+' }, { label: 'Years in Market', value: '25+' }, { label: 'Properties Sold', value: '85,000+' }]
+  // Only show track-record stats that were actually provided (no invented figures).
+  const stats = pickArr(d, 'stats').map(toObj).filter((s) => toStr(s.value) && toStr(s.label))
+  if (!name) return null
 
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Developer</div>
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_320px]">
+        <div className={`grid grid-cols-1 gap-10 ${stats.length ? 'lg:grid-cols-[1fr_320px]' : ''}`}>
           <div>
             <h2 className="mb-4 text-[34px] font-bold text-white">Built by {name}</h2>
-            <p className="text-[15px] text-white/50 leading-relaxed">{desc || `${name} is one of the UAE's most trusted and celebrated developers, with a track record of delivering iconic projects that define Dubai's skyline. Every development is backed by uncompromising build quality, transparent sales processes, and a commitment to buyer experience that has earned thousands of loyal investors globally.`}</p>
+            {desc && <p className="text-[15px] text-white/50 leading-relaxed">{desc}</p>}
           </div>
-          <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
-            {(stats.length ? stats : defaultStats).map(({ label, value }, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 text-center lg:text-left">
-                <div className="text-[28px] font-bold text-[#D4AF37]">{toStr(value)}</div>
-                <div className="mt-1 text-[12px] text-white/40">{toStr(label)}</div>
-              </div>
-            ))}
-          </div>
+          {stats.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
+              {stats.map(({ label, value }, i) => (
+                <div key={i} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-5 text-center lg:text-left">
+                  <div className="text-[28px] font-bold text-[#D4AF37]">{toStr(value)}</div>
+                  <div className="mt-1 text-[12px] text-white/40">{toStr(label)}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -707,13 +686,10 @@ function DeveloperSection({ d }: { d: Record<string, unknown> }) {
 
 function SocialProofSection({ d }: { d: Record<string, unknown> }) {
   const testimonials = pickArr(d, 'testimonials', 'items').map(toObj)
-  const defaults = [
-    { quote: "Freehold guided me through my first Dubai off-plan investment with full transparency on yield projections and payment timelines. The process was seamless and the team's market knowledge is exceptional.", name: 'James K.', role: 'UK investor · Dubai Hills, 2BR', rating: 5 },
-    { quote: "I compared six agencies before choosing Freehold. Their analysis of ROI vs capital gains was the most honest I received. My property has already appreciated 18% since purchase.", name: 'Priya S.', role: 'Singapore-based buyer · 3BR Portfolio', rating: 5 },
-    { quote: "As a GCC buyer looking for Golden Visa-eligible properties, Freehold filtered exactly the right options for my budget. Quick, professional, and genuinely knowledgeable.", name: 'Khalid A.', role: 'Saudi Arabia · Family Home Purchase', rating: 5 },
-  ]
-
-  const list = testimonials.length ? testimonials : defaults
+  // Never fabricate reviews — only render real testimonials when present.
+  const list = testimonials.filter((t) => toStr(t.quote))
+  if (!list.length) return null
+  const avg = (list.reduce((s, t) => s + (Number(t.rating) || 5), 0) / list.length).toFixed(1)
 
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
@@ -723,7 +699,7 @@ function SocialProofSection({ d }: { d: Record<string, unknown> }) {
           <h2 className="text-[34px] font-bold text-white">Investor Experiences</h2>
           <div className="hidden items-center gap-1 sm:flex">
             {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />)}
-            <span className="ml-2 text-[13px] text-white/40">5.0 average</span>
+            <span className="ml-2 text-[13px] text-white/40">{avg} average</span>
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

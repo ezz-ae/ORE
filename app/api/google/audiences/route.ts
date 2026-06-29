@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listAudiences } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleAudience, type GoogleAudienceType } from '@/lib/google/types'
 import { demoAudiences } from '@/lib/google/demo-data'
@@ -8,6 +9,8 @@ const KIND = 'audience'
 const TYPES: GoogleAudienceType[] = ['CUSTOMER_MATCH', 'IN_MARKET', 'AFFINITY', 'REMARKETING', 'SIMILAR_AUDIENCE', 'COMBINED']
 
 export async function GET() {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const audiences = await listAudiences()
     return NextResponse.json({ audiences })
@@ -24,6 +27,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const body = await req.json().catch(() => null) as { name?: string; type?: GoogleAudienceType; description?: string } | null
   const name = body?.name?.trim()
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
@@ -43,6 +48,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })

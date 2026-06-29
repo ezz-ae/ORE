@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listKeywords, listNegativeKeywords } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleKeyword, type GoogleKeywordMatchType } from '@/lib/google/types'
 import { demoKeywords, demoNegativeKeywords } from '@/lib/google/demo-data'
@@ -7,6 +8,8 @@ import { listLocalEntities, createLocalEntity, removeLocalEntity, localId } from
 const KIND = 'keyword'
 
 export async function GET(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const { searchParams } = new URL(req.url)
     const campaignId = searchParams.get('campaignId') ?? undefined
@@ -34,6 +37,8 @@ export async function GET(req: Request) {
 // Add a keyword. (Local persistence — the Google Ads mutation client isn't wired
 // yet; when it is, this branches on configuration like the campaign routes.)
 export async function POST(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const body = await req.json().catch(() => null) as { text?: string; matchType?: GoogleKeywordMatchType; campaignId?: string } | null
   const text = body?.text?.trim()
   if (!text) return NextResponse.json({ error: 'text is required' }, { status: 400 })
@@ -55,6 +60,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })

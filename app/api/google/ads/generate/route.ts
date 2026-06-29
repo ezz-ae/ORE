@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import type { GenerateRsaPayload, GeneratedRsaVariant } from '@/lib/google/types'
 
 function fmtPrice(n: number | null): string {
@@ -229,6 +230,8 @@ Return ONLY JSON, no markdown:
 }
 
 export async function POST(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const body = await req.json() as GenerateRsaPayload
     if (!body.listingName || !body.angle || !body.tone) {

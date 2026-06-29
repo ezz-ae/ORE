@@ -125,6 +125,7 @@ const actions = [
 export default function InsightsPage() {
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated]   = useState(false)
+  const [report, setReport]         = useState<string | null>(null)
   const [liveLeads30d, setLiveLeads30d]   = useState<number | null>(null)
   const [liveSpend30d, setLiveSpend30d]   = useState<number | null>(null)
 
@@ -174,14 +175,25 @@ export default function InsightsPage() {
     },
   ]
 
-  function handleGenerate() {
+  // Generate a real executive report from the live KPIs via the AI endpoint.
+  async function handleGenerate() {
     if (generating) return
     setGenerating(true)
     setGenerated(false)
-    setTimeout(() => {
-      setGenerating(false)
-      setGenerated(true)
-    }, 1500)
+    const spend = liveSpend30d ?? financeSummary.totalSpend30d
+    const leads = liveLeads30d ?? financeSummary.totalLeads30d
+    const res = await fetch('/api/freehold/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Write a concise executive insight report (4-5 bullet points) for a Dubai real-estate operation. Last-30-day data: ad spend AED ${spend}, leads ${leads}, ad-ready properties ${stats.adReady}/${stats.total}, live landing pages ${stats.live}, missing landing pages ${stats.missingLanding}. Give specific, actionable recommendations grounded in these numbers.`,
+      }),
+    }).catch(() => null)
+    setGenerating(false)
+    if (!res || !res.ok) { setReport('Generation failed — please try again.'); setGenerated(true); return }
+    const data = await res.json().catch(() => null) as { text?: string } | null
+    setReport(data?.text?.trim() || 'No content returned.')
+    setGenerated(true)
   }
 
   return (
@@ -222,10 +234,13 @@ export default function InsightsPage() {
         </button>
       </div>
 
-      {generated && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-gold">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          Report generated — insights refreshed from latest data.
+      {generated && report && (
+        <div className="mt-4 rounded-xl border border-gold/20 bg-gold/[0.06] px-5 py-4">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gold">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            AI report — generated from your latest data
+          </div>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-300">{report}</p>
         </div>
       )}
 

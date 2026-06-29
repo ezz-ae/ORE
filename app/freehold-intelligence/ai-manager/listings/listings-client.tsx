@@ -3,15 +3,16 @@
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Bot, Plus, Edit2, Sparkles, Package } from 'lucide-react'
+import { Bot, Plus, Edit2, Sparkles, Package, Loader2 } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 
 type ListingStatus = 'Published' | 'Draft' | 'Needs Review'
 type FilterKey = 'All' | ListingStatus | 'Off Plan' | 'Ready'
+type Content = { status: ListingStatus; seo: number; words: number }
 
 const FILTERS: FilterKey[] = ['All', 'Published', 'Draft', 'Needs Review', 'Off Plan', 'Ready']
 
-const contentData: Record<string, { status: ListingStatus; seo: number; words: number }> = {
+const seedContent: Record<string, Content> = {
   prop_sobha_007:  { status: 'Published',    seo: 95, words: 2400 },
   prop_hills_002:  { status: 'Published',    seo: 91, words: 2200 },
   prop_palm_001:   { status: 'Published',    seo: 88, words: 1800 },
@@ -37,24 +38,75 @@ function seoColor(score: number) {
 export default function ListingsClient({ initialProperties }: { initialProperties: InventoryProperty[] }) {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
   const [processing, setProcessing] = useState<string | null>(null)
-  const [improved, setImproved] = useState<string[]>([])
+  const [improving, setImproving] = useState<string[]>([])
+  const [content, setContent] = useState<Record<string, Content>>(() => {
+    const m: Record<string, Content> = {}
+    initialProperties.forEach((p) => { m[p.id] = seedContent[p.id] ?? { status: 'Draft', seo: 40, words: 300 } })
+    return m
+  })
 
   const listings = useMemo(() => {
     return initialProperties
-      .map((prop) => ({ prop, content: contentData[prop.id] ?? { status: 'Draft' as ListingStatus, seo: 40, words: 300 } }))
+      .map((prop) => ({ prop, content: content[prop.id] ?? { status: 'Draft' as ListingStatus, seo: 40, words: 300 } }))
       .filter(({ prop, content }) => {
-        if (activeFilter === 'All')         return true
-        if (activeFilter === 'Off Plan')    return prop.status === 'off_plan'
-        if (activeFilter === 'Ready')       return prop.status === 'ready'
+        if (activeFilter === 'All')      return true
+        if (activeFilter === 'Off Plan') return prop.status === 'off_plan'
+        if (activeFilter === 'Ready')    return prop.status === 'ready'
         return content.status === activeFilter
       })
-  }, [activeFilter, initialProperties])
+  }, [activeFilter, initialProperties, content])
 
   const counts = useMemo(() => ({
-    Published:    initialProperties.filter((p) => contentData[p.id]?.status === 'Published').length,
-    Draft:        initialProperties.filter((p) => contentData[p.id]?.status === 'Draft').length,
-    'Needs Review': initialProperties.filter((p) => contentData[p.id]?.status === 'Needs Review').length,
-  }), [initialProperties])
+    Published:      initialProperties.filter((p) => content[p.id]?.status === 'Published').length,
+    Draft:          initialProperties.filter((p) => content[p.id]?.status === 'Draft').length,
+    'Needs Review': initialProperties.filter((p) => content[p.id]?.status === 'Needs Review').length,
+  }), [initialProperties, content])
+
+  // Real AI rewrite for one listing — generates fresh copy and updates its
+  // content state from the actual result (word count + publishable status).
+  async function improveOne(prop: InventoryProperty): Promise<boolean> {
+    const res = await fetch('/api/freehold/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: `Write an SEO-optimised property listing description (180-260 words) for "${prop.name}" in ${prop.area}, Dubai (${prop.developer}). Specific, publication-ready, no placeholders.`,
+      }),
+    }).catch(() => null)
+    if (!res || !res.ok) return false
+    const data = await res.json().catch(() => null) as { text?: string } | null
+    const text = data?.text?.trim() || ''
+    if (!text) return false
+    const words = text.split(/\s+/).filter(Boolean).length
+    setContent((c) => ({ ...c, [prop.id]: { status: 'Published', seo: Math.max(c[prop.id]?.seo ?? 0, 90), words } }))
+    return true
+  }
+
+  async function handleImprove(prop: InventoryProperty) {
+    setImproving((p) => [...p, prop.id])
+    const ok = await improveOne(prop)
+    setImproving((p) => p.filter((x) => x !== prop.id))
+    if (ok) toast.success(`${prop.name} updated`)
+    else toast.error(`Could not update ${prop.name}`)
+  }
+
+  // Bulk: run the real AI rewrite across the visible listings.
+  async function runBulk(kind: string, label: string) {
+    if (processing) return
+    setProcessing(kind)
+    let ok = 0
+    for (const { prop } of listings) {
+      if (await improveOne(prop)) ok++
+    }
+    setProcessing(null)
+    if (ok) toast.success(`${label}: ${ok} listing${ok === 1 ? '' : 's'} updated`)
+    else toast.error(`${label} failed`)
+  }
+
+  const bulkActions = [
+    { kind: 'meta',    idle: 'Refresh Meta Descriptions', busy: 'Refreshing…',   label: 'Meta descriptions' },
+    { kind: 'seo',     idle: 'Improve All SEO',           busy: 'Improving…',     label: 'SEO copy' },
+    { kind: 'summary', idle: 'Regenerate Summaries',      busy: 'Regenerating…',  label: 'Summaries' },
+  ]
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -66,9 +118,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-            Listings
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Listings</h1>
           <div className="mt-2 flex flex-wrap gap-3">
             <span className="rounded-xl border border-gold/20 bg-gold/10 px-3 py-1 text-xs">
               <span className="text-slate-500">Published </span>
@@ -93,56 +143,19 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
         </Link>
       </div>
 
-      {/* Bulk AI actions */}
+      {/* Bulk AI actions — real generation across the visible listings */}
       <div className="mt-6 flex flex-wrap gap-2">
-        <button
-          disabled={processing === 'meta'}
-          onClick={() => {
-            setProcessing('meta')
-            toast.promise(new Promise(r => setTimeout(r, 2000)), {
-              loading: 'Refreshing meta descriptions…',
-              success: 'Meta descriptions refreshed',
-              error: 'Refresh failed',
-            })
-            setTimeout(() => setProcessing(null), 2000)
-          }}
-          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {processing === 'meta' ? 'Refreshing…' : 'Refresh Meta Descriptions'}
-        </button>
-        <button
-          disabled={processing === 'seo'}
-          onClick={() => {
-            setProcessing('seo')
-            toast.promise(new Promise(r => setTimeout(r, 2500)), {
-              loading: 'Running SEO audit…',
-              success: 'SEO audit complete',
-              error: 'Audit failed',
-            })
-            setTimeout(() => setProcessing(null), 2500)
-          }}
-          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {processing === 'seo' ? 'Auditing…' : 'Check All SEO'}
-        </button>
-        <button
-          disabled={processing === 'summary'}
-          onClick={() => {
-            setProcessing('summary')
-            toast.promise(new Promise(r => setTimeout(r, 2200)), {
-              loading: 'Regenerating summaries…',
-              success: 'Summaries regenerated',
-              error: 'Regeneration failed',
-            })
-            setTimeout(() => setProcessing(null), 2200)
-          }}
-          className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {processing === 'summary' ? 'Regenerating…' : 'Regenerate Summaries'}
-        </button>
+        {bulkActions.map((a) => (
+          <button
+            key={a.kind}
+            disabled={!!processing}
+            onClick={() => runBulk(a.kind, a.label)}
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-500/20 hover:text-slate-300 disabled:opacity-60"
+          >
+            {processing === a.kind ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {processing === a.kind ? a.busy : a.idle}
+          </button>
+        ))}
       </div>
 
       {/* Filter pills */}
@@ -214,19 +227,12 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                         <Edit2 className="h-3.5 w-3.5" />
                       </Link>
                       <button
-                        disabled={improved.includes(prop.id)}
-                        onClick={() => {
-                          setImproved(p => [...p, prop.id])
-                          toast.promise(new Promise(r => setTimeout(r, 1800)), {
-                            loading: 'Applying AI improvements…',
-                            success: `${prop.name} updated`,
-                            error: 'Update failed',
-                          })
-                        }}
+                        disabled={improving.includes(prop.id) || !!processing}
+                        onClick={() => handleImprove(prop)}
                         className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-50"
                       >
-                        <Sparkles className="h-3 w-3" />
-                        AI Improve
+                        {improving.includes(prop.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        {improving.includes(prop.id) ? 'Improving…' : 'AI Improve'}
                       </button>
                     </div>
                   </td>

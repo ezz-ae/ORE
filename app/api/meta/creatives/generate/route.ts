@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import type { GenerateCreativePayload, GeneratedCreativeVariant, MetaCta } from '@/lib/meta/types'
 
 function fmtPrice(n: number | null) {
@@ -141,6 +142,8 @@ Return ONLY JSON, no markdown:
 }
 
 export async function POST(req: NextRequest) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const body = (await req.json()) as GenerateCreativePayload
 

@@ -72,9 +72,17 @@ export default function AgentCreditsPage() {
     })
   }
 
-  function applyAdjustment(id: string) {
+  async function applyAdjustment(id: string) {
     const delta = adjustments[id] ?? 0
-    if (delta === 0) return
+    if (delta <= 0) return
+    // Persist a real credit allocation to the ledger; only reflect it in the
+    // UI once the server confirms — never fake success.
+    const res = await fetch('/api/freehold/credits/admin/allocate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brokerId: id, amount: delta, note: 'Bonus credits (Finance)' }),
+    }).catch(() => null)
+    if (!res || !res.ok) return
     setAgents((prev) =>
       prev.map((a) =>
         a.id === id ? { ...a, quota: a.quota + delta } : a,

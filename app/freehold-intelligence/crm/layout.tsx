@@ -108,7 +108,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-full">
 
       {/* ── App header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-6">
+      <header data-coach="app-crm" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence"
           className="flex items-center gap-2 shrink-0 text-sm text-slate-400 transition-colors hover:text-slate-100"

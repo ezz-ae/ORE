@@ -64,7 +64,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     <div className="flex flex-col min-h-full">
 
       {/* App header */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-6">
+      <header data-coach="app-settings" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-6">
         <Link
           href="/freehold-intelligence"
           className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 shrink-0"

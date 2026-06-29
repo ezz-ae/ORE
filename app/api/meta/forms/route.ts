@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listLeadForms, createLeadForm, MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { CreateLeadFormPayload } from '@/lib/meta/types'
 import { demoForms } from '@/lib/meta/demo-data'
 
 export async function GET() {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const forms = await listLeadForms()
     return NextResponse.json({ forms })
@@ -18,6 +21,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const body = (await req.json()) as CreateLeadFormPayload
 

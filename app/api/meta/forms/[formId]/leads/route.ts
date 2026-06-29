@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { randomUUID } from 'node:crypto'
 import { getFormLeads, MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { MetaFormLead } from '@/lib/meta/types'
@@ -70,6 +71,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ formId: string }> },
 ) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const { formId } = await params
     const leads = await getFormLeads(formId)

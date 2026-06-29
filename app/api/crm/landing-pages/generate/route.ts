@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { inventoryProperties } from "@/src/features/freehold-intelligence/inventory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -33,7 +34,6 @@ const SECTION_POOLS: Record<AudienceType, string[]> = {
     "units",
     "developer-profile",
     "location",
-    "social-proof",
     "why-dubai",
     "download-brochure",
     "ai-concierge",
@@ -220,12 +220,7 @@ Target audience: ${audience}
   "type": "developer-profile",
   "data": {
     "name": "${project.developerName || "Developer"}",
-    "description": "<2 sentences about why this developer is trusted in Dubai>",
-    "stats": [
-      {"label": "Projects Delivered", "value": "<estimate>"},
-      {"label": "Years in Market", "value": "<estimate>"},
-      {"label": "UAE Properties", "value": "<estimate>"}
-    ]
+    "description": "<2 sentences about why this developer is trusted in Dubai — qualitative only, do NOT invent numeric track-record stats>"
   }
 }`,
     "social-proof": `{
@@ -358,7 +353,26 @@ export async function POST(req: NextRequest) {
       [projectSlug.toLowerCase()],
     )
 
-    const row = rows[0]
+    let row = rows[0]
+    // Fall back to the static inventory seed for curated/seed-only projects.
+    if (!row) {
+      const seed = inventoryProperties.find(
+        (p) => p.slug.toLowerCase() === projectSlug.toLowerCase(),
+      )
+      if (seed) {
+        row = {
+          slug: seed.slug,
+          name: seed.name,
+          area: seed.area,
+          developer_name: seed.developer,
+          hero_image: null,
+          price_from_aed: seed.startingPriceAED,
+          price_to_aed: seed.maxPriceAED,
+          rental_yield: seed.roi,
+          payload: null,
+        }
+      }
+    }
     if (!row) return NextResponse.json({ error: "Project not found" }, { status: 404 })
 
     const payload = row.payload && typeof row.payload === "object" ? row.payload : {}

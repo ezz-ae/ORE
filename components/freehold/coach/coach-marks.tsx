@@ -18,10 +18,12 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useI18n } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
 import {
-  tourForRole, coachSeenKey, type CoachStep, type Placement,
+  tourForRole, tourForApp, appIdForPath, coachSeenKey, appCoachSeenKey,
+  type CoachStep, type Placement,
 } from '@/lib/freehold/coach-tours'
 
 interface CoachCtx {
@@ -45,33 +47,58 @@ function firstName(name?: string): string {
 export function CoachProvider({ children }: { children: React.ReactNode }) {
   const { ready, user } = useSession()
   const role = user?.role
-  const steps = tourForRole(role)
+  const pathname = usePathname() ?? ''
+  const appId = appIdForPath(pathname)
+
   const [active, setActive] = useState(false)
   const [index, setIndex] = useState(0)
+  const [steps, setSteps] = useState<CoachStep[]>([])
+  const seenKeyRef = useRef<string | null>(null)
 
-  const start = useCallback(() => {
-    if (steps.length === 0) return
+  // The tour the "Take a tour" button replays on the current surface: the
+  // app's contextual tour when on an app, otherwise the role welcome.
+  const contextualSteps = appId ? tourForApp(appId) : tourForRole(role)
+
+  const startTour = useCallback((s: CoachStep[], seenKey: string | null) => {
+    if (s.length === 0) return
+    seenKeyRef.current = seenKey
+    setSteps(s)
     setIndex(0)
     setActive(true)
-  }, [steps.length])
+  }, [])
 
-  // Auto-start once per role per tour version.
+  const start = useCallback(() => {
+    if (appId) startTour(tourForApp(appId), appCoachSeenKey(appId))
+    else if (role) startTour(tourForRole(role), coachSeenKey(role))
+  }, [appId, role, startTour])
+
+  // Auto-start: the role welcome the first time (anywhere), then each app's
+  // contextual tour the first time that app is opened. One tour per page load.
   useEffect(() => {
-    if (!ready || !role || steps.length === 0) return
-    let seen = false
-    try { seen = !!localStorage.getItem(coachSeenKey(role)) } catch {}
-    if (seen) return
-    const id = setTimeout(() => { setIndex(0); setActive(true) }, 900)
-    return () => clearTimeout(id)
-  }, [ready, role, steps.length])
+    if (!ready || !role || active) return
+    const seen = (k: string) => { try { return !!localStorage.getItem(k) } catch { return true } }
+
+    const roleSteps = tourForRole(role)
+    if (roleSteps.length && !seen(coachSeenKey(role))) {
+      const id = setTimeout(() => startTour(roleSteps, coachSeenKey(role)), 900)
+      return () => clearTimeout(id)
+    }
+    if (appId) {
+      const appSteps = tourForApp(appId)
+      if (appSteps.length && !seen(appCoachSeenKey(appId))) {
+        const id = setTimeout(() => startTour(appSteps, appCoachSeenKey(appId)), 900)
+        return () => clearTimeout(id)
+      }
+    }
+  }, [ready, role, appId, active, startTour])
 
   const finish = useCallback(() => {
     setActive(false)
-    if (role) { try { localStorage.setItem(coachSeenKey(role), '1') } catch {} }
-  }, [role])
+    if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
+  }, [])
 
   return (
-    <Ctx.Provider value={{ start, available: steps.length > 0 }}>
+    <Ctx.Provider value={{ start, available: contextualSteps.length > 0 }}>
       {children}
       {active && role && (
         <CoachOverlay

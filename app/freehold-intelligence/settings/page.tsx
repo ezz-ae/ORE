@@ -135,6 +135,9 @@ export default function SettingsPage() {
   const [thresholds,  setThresholds]  = useState<LmThreshold[]>(INITIAL_THRESHOLDS)
   const [notifs,      setNotifs]      = useState(NOTIFICATION_SETTINGS)
   const [theme,       setTheme]       = useState('Dark (current)')
+  const [brand,       setBrand]       = useState<Record<string, string>>(
+    () => Object.fromEntries(BRAND_SETTINGS.map((s) => [s.labelKey, s.value])),
+  )
   const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
   const loaded = useRef(false)
   const t = useT()
@@ -150,6 +153,7 @@ export default function SettingsPage() {
         if (s?.thresholds) setThresholds(s.thresholds)
         if (s?.notifs) setNotifs(s.notifs)
         if (typeof s?.theme === 'string') setTheme(s.theme)
+        if (s?.brand && typeof s.brand === 'object') setBrand((prev) => ({ ...prev, ...s.brand }))
       })
       .catch(() => {})
       .finally(() => { loaded.current = true })
@@ -161,13 +165,13 @@ export default function SettingsPage() {
     const timer = setTimeout(() => {
       fetch('/api/freehold/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme }),
+        body: JSON.stringify({ aiActions, crmFields, thresholds, notifs, theme, brand }),
       })
         .then((r) => { if (!r.ok) throw new Error() })
         .catch(() => toast.error(t('settings.general.saveError')))
     }, 400)
     return () => clearTimeout(timer)
-  }, [aiActions, crmFields, thresholds, notifs, theme, t])
+  }, [aiActions, crmFields, thresholds, notifs, theme, brand, t])
 
   const unmappedCount = crmFields.filter((f) => !f.mapped).length
 
@@ -383,7 +387,8 @@ export default function SettingsPage() {
                   <label className="block text-xs font-medium text-slate-500 mb-2">{t(s.labelKey)}</label>
                   <input
                     type="text"
-                    defaultValue={s.value}
+                    value={brand[s.labelKey] ?? s.value}
+                    onChange={(e) => setBrand((b) => ({ ...b, [s.labelKey]: e.target.value }))}
                     className="w-full rounded-xl border border-line-strong bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/35 focus:outline-none"
                   />
                 </div>

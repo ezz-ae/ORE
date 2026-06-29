@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { listExtensions } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleExtension } from '@/lib/google/types'
 import { demoExtensions } from '@/lib/google/demo-data'
@@ -7,6 +8,8 @@ import { listLocalEntities, createLocalEntity, removeLocalEntity, localId } from
 const KIND = 'extension'
 
 export async function GET() {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   try {
     const extensions = await listExtensions()
     return NextResponse.json({ extensions })
@@ -24,6 +27,8 @@ export async function GET() {
 
 // Create a SITELINK (link text + URL) or CALLOUT (text only) extension.
 export async function POST(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const body = await req.json().catch(() => null) as { type?: string; text?: string; finalUrl?: string } | null
   const text = body?.text?.trim()
   if (!text) return NextResponse.json({ error: 'text is required' }, { status: 400 })
@@ -44,6 +49,8 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })

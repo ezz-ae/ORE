@@ -40,7 +40,7 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
     <div className="flex flex-col min-h-full">
 
       {/* App header */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-chrome/97 px-5 backdrop-blur-xl sm:px-6">
+      <header data-coach="app-management" className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-4 border-b border-white/[0.07] bg-chrome/97 px-5 backdrop-blur-xl sm:px-6">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <BarChart3 className="h-3.5 w-3.5 text-gold" />

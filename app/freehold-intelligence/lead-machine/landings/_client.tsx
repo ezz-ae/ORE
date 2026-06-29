@@ -51,14 +51,25 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   const draft   = properties.filter((p) => p.landingStatus === 'draft').length
   const pending = properties.filter((p) => p.landingStatus === 'pending_review').length
 
-  // Generate one landing page via the real generator; returns true on success.
+  // Create one landing page. Step 1 persists a page from live project data
+  // (always works, even without an AI key); step 2 best-effort enriches the
+  // copy with AI using the new slug. Returns true once the page is persisted.
   async function generateFor(p: InventoryProperty): Promise<boolean> {
-    const res = await fetch('/api/crm/landing-pages/generate', {
+    const res = await fetch('/api/crm/landing-pages', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectSlug: p.slug, audience: 'investor' }),
+      body: JSON.stringify({ projectSlug: p.slug }),
     }).catch(() => null)
     if (!res || !res.ok) return false
-    setProperties((prev) => prev.map((x) => x.id === p.id ? { ...x, landingStatus: 'pending_review', landingUrl: `/lp/${p.slug}` } : x))
+    const data = await res.json().catch(() => null) as { slug?: string } | null
+    const slug = data?.slug || p.slug
+
+    // Best-effort: upgrade the persisted page with AI-written sections.
+    fetch('/api/crm/landing-pages/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectSlug: p.slug, slug, audience: 'investor' }),
+    }).catch(() => {})
+
+    setProperties((prev) => prev.map((x) => x.id === p.id ? { ...x, landingStatus: 'draft', landingUrl: `/lp/${slug}` } : x))
     return true
   }
 

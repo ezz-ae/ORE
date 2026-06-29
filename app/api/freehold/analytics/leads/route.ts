@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { requireSession } from '@/lib/freehold/api-auth'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { query } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(SESSION_COOKIE)?.value
-  const user = await verifySession(token)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Company-wide lead analytics — management roles only (brokers excluded).
+  const auth = await requireSession(MANAGEMENT_ROLES)
+  if ('res' in auth) return auth.res
 
   try {
     const [leadStats, sourceStats, stageStats, recentActivity] = await Promise.all([

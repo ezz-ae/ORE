@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { AdsConversationSidebar } from '@/components/google/ads-conversation-sidebar'
 import { AdsContextProvider } from '@/lib/google/ads-context'
 import { useT } from '@/lib/i18n/provider'
 
@@ -54,13 +53,10 @@ export default function GoogleAdsLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      {/* Two-column: scrollable main content + sticky conversation sidebar */}
-      <div className="flex flex-1 min-h-0">
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          {children}
-        </main>
-        <AdsConversationSidebar />
-      </div>
+      {/* Single docked Expert handles AI here — no separate ads chat. */}
+      <main className="flex-1 min-w-0 overflow-y-auto">
+        {children}
+      </main>
     </div>
     </AdsContextProvider>
   )

@@ -10,7 +10,9 @@ import { getMarketStats } from '@/lib/market-stats'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const ALLOWED = new Set(['admin', 'ceo', 'director'])
+// Company report covers finance + team metrics; sales managers own team
+// reporting and have finance access, so they may generate it too.
+const ALLOWED = new Set(['admin', 'ceo', 'director', 'sales_manager'])
 
 let ensured: Promise<void> | null = null
 const ensureOnce = async () => {

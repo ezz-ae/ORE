@@ -313,18 +313,20 @@ export default function FreeholdCrmPage() {
 
                   {/* Actions */}
                   <div className="ml-auto flex items-center gap-1 lg:ml-0">
-                    <button
+                    <a
+                      href={`tel:${lead.phone}`}
                       title={t('crm.call')}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <PhoneCall className="h-3 w-3" />
-                    </button>
-                    <button
+                    </a>
+                    <Link
+                      href={`/freehold-intelligence/crm/leads/${lead.id}/whatsapp`}
                       title={t('crm.whatsapp')}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <MessageCircle className="h-3 w-3" />
-                    </button>
+                    </Link>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${lead.id}`}
                       className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"

@@ -94,8 +94,8 @@ export function ComparisonTable({
   }
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-800/50">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 p-5">
+    <section className="rounded-xl border border-line bg-surface">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-5">
         <div>
           <h3 className="text-sm font-semibold text-white">{t(titleKey)}</h3>
           <p className="mt-0.5 text-xs text-slate-400">{t('analytics.cmp.subtitle')}</p>
@@ -132,7 +132,7 @@ export function ComparisonTable({
               const on = selCols.includes(c.key)
               return (
                 <button key={c.key} onClick={() => { setSelCols(toggle(selCols, c.key)); setSaved(false) }}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-gold/35 bg-gold/10 text-gold' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-gold/35 bg-gold/10 text-gold' : 'border border-line-strong bg-surface text-slate-400 hover:text-slate-200'}`}>
                   {t(c.labelKey)}
                 </button>
               )
@@ -152,7 +152,7 @@ export function ComparisonTable({
               const on = selItems.length === 0 || selItems.includes(it.id)
               return (
                 <button key={it.id} onClick={() => { setSelItems(toggle(selItems.filter((x) => x !== '__none__'), it.id)); setSaved(false) }}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-sky-400/35 bg-sky-400/10 text-sky-200' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${on ? 'border border-sky-400/35 bg-sky-400/10 text-sky-200' : 'border border-line-strong bg-surface text-slate-400 hover:text-slate-200'}`}>
                   {it.label}
                 </button>
               )
@@ -164,10 +164,10 @@ export function ComparisonTable({
         {cols.length === 0 || effectiveItems.length === 0 ? (
           <p className="py-8 text-center text-sm text-slate-500">{loading ? t('analytics.loading') : t('analytics.cmp.empty')}</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-800">
+          <div className="overflow-x-auto rounded-lg border border-line">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-800/40">
+                <tr className="border-b border-line bg-surface-2">
                   <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.cmp.metric')}</th>
                   {effectiveItems.map((it) => (
                     <th key={it.id} className="px-3 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-300 whitespace-nowrap">{it.label}</th>
@@ -175,12 +175,12 @@ export function ComparisonTable({
                   <th className="px-3 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.cmp.average')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-line">
                 {rows.map((r) => (
-                  <tr key={r.col.key} className="hover:bg-slate-800/30">
+                  <tr key={r.col.key} className="hover:bg-surface-2">
                     <td className="px-3 py-2.5 font-medium text-slate-300 whitespace-nowrap">{t(r.col.labelKey)}</td>
                     {r.cells.map((c) => (
-                      <td key={c.id} className={`px-3 py-2.5 text-right tabular-nums ${c.id === r.bestId ? 'font-semibold text-[#D4AF37]' : 'text-slate-300'}`}>
+                      <td key={c.id} className={`px-3 py-2.5 text-right tabular-nums ${c.id === r.bestId ? 'font-semibold text-gold' : 'text-slate-300'}`}>
                         {r.col.fmt ? r.col.fmt(c.v) : intl(c.v)}
                       </td>
                     ))}

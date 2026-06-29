@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requireSession } from '@/lib/freehold/api-auth'
 import { getCampaign, updateCampaignStatus } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
 import { getLocalCampaign, updateLocalCampaignStatus } from '@/lib/google/local-store'
@@ -7,6 +8,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { id } = await params
   try {
     const campaign = await getCampaign(id)
@@ -29,6 +32,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const __auth = await requireSession()
+  if ('res' in __auth) return __auth.res
   const { id } = await params
   const body = await req.json().catch(() => ({})) as { status?: 'ENABLED' | 'PAUSED' }
   const { status } = body
