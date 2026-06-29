@@ -71,7 +71,7 @@ export async function GET() {
         id: r.id,
         name: r.name,
         initials,
-        role: r.role === 'broker' ? 'Sales Advisor' : r.role,
+        role: r.role === 'broker' ? 'Broker' : r.role,
         totalLeads: total,
         hotLeads: parseInt(r.hot_leads, 10),
         overdueFollowUps: parseInt(r.overdue_followups, 10),
