@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Tag,
   TrendingUp,
+  Megaphone,
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
@@ -88,6 +89,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   // Recent-deal drill-down carries agent + client names, so it is management-only;
   // the aggregate booked/value/commission numbers are project-level and shown to all.
   const isManagement = !!sessionUser && MANAGEMENT_ROLES.includes(sessionUser.role)
+  // Ad-campaign launch is an operator/marketing capability — brokers don't see it.
+  const canLaunchAds = !!sessionUser && ([...MANAGEMENT_ROLES, 'marketing'] as string[]).includes(sessionUser.role)
 
   if (!prop) {
     return (
@@ -134,13 +137,21 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           {prop.area} · <span className="text-slate-300">{prop.developer}</span>
         </p>
 
-        <div className="mt-5">
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <Link
             href={`/freehold-intelligence/inventory/${prop.id}/generate`}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
           </Link>
+          {canLaunchAds && (
+            <Link
+              href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(prop.id)}&name=${encodeURIComponent(prop.name)}&price=${prop.startingPriceAED ?? ''}`}
+              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-5 py-2.5 text-sm font-semibold text-gold transition hover:bg-gold/[0.14]"
+            >
+              <Megaphone className="h-4 w-4" /> {t('inv.detail.createAdCampaign')}
+            </Link>
+          )}
         </div>
       </section>
 
