@@ -3,83 +3,78 @@
 import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, Bot, TrendingDown, AlertTriangle, TrendingUp, MessageCircle, Gauge, Home, BarChart3, CheckCircle2 } from 'lucide-react'
 import { getInventoryStats, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { useT } from '@/lib/i18n/provider'
 
 // ─── insight types ─────────────────────────────────────────────────────────────
 type Priority = 'Critical' | 'High' | 'Opportunity' | 'Info'
 
 interface Insight {
   icon: React.ElementType
-  title: string
-  detail: string
+  titleKey: string
+  detailKey: string
   priority: Priority
-  time: string
+  timeKey: string
 }
 
 const insights: Insight[] = [
   {
     icon: TrendingDown,
-    title: 'CPL dropped 17% month-over-month',
-    detail:
-      'Cost per lead fell from AED 91.3 to AED 75.4. Golden Visa targeting driving cheaper GCC leads. Recommend increasing Google budget by 20%.',
+    titleKey: 'pins.insight.cpl.title',
+    detailKey: 'pins.insight.cpl.detail',
     priority: 'Opportunity',
-    time: '2 hours ago',
+    timeKey: 'pins.time.2h',
   },
   {
     icon: AlertTriangle,
-    title: 'Marina Luxury Residences: 0 leads, adReadiness 12%',
-    detail:
-      'No landing page, no images, no campaigns. Complete setup required before any ad spend.',
+    titleKey: 'pins.insight.marina.title',
+    detailKey: 'pins.insight.marina.detail',
     priority: 'Critical',
-    time: '3 hours ago',
+    timeKey: 'pins.time.3h',
   },
   {
     icon: TrendingUp,
-    title: 'JVC Apartments ROI 8.1% — highest in portfolio',
-    detail:
-      'Highest yielding property generates only 56 leads/month vs Palm Jumeirah at 94. ROI story undertold in current ad copy.',
+    titleKey: 'pins.insight.jvc.title',
+    detailKey: 'pins.insight.jvc.detail',
     priority: 'Opportunity',
-    time: '5 hours ago',
+    timeKey: 'pins.time.5h',
   },
   {
     icon: MessageCircle,
-    title: 'WhatsApp referrals convert at 7.1%',
-    detail:
-      'WhatsApp referral traffic converts at 7.1% — 2.5x better than Google Ads (3.7%) and 2x Meta (3.4%). Consider a WhatsApp-first campaign strategy.',
+    titleKey: 'pins.insight.whatsapp.title',
+    detailKey: 'pins.insight.whatsapp.detail',
     priority: 'High',
-    time: '6 hours ago',
+    timeKey: 'pins.time.6h',
   },
   {
     icon: Gauge,
-    title: 'Budget utilization optimal at 72%',
-    detail:
-      'Meta at 73.7%, Google at 71.5%. Headroom exists for scale. Recommend testing Sobha Hartland and Creek Harbour before end of month.',
+    titleKey: 'pins.insight.budget.title',
+    detailKey: 'pins.insight.budget.detail',
     priority: 'Info',
-    time: '8 hours ago',
+    timeKey: 'pins.time.8h',
   },
   {
     icon: Home,
-    title: '3 properties missing landing pages',
-    detail:
-      'Marina Luxury Residences, Creek Harbour Tower, and RAK Waterfront have no live landing pages. Combined potential: 14 available units. Estimated 30 additional leads/month if live.',
+    titleKey: 'pins.insight.landing.title',
+    detailKey: 'pins.insight.landing.detail',
     priority: 'High',
-    time: '12 hours ago',
+    timeKey: 'pins.time.12h',
   },
 ]
 
-const priorityConfig: Record<Priority, { label: string; className: string }> = {
-  Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
-  High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
-  Opportunity: { label: 'Opportunity', className: 'bg-gold/10 border border-emerald-500/25 text-gold' },
-  Info:        { label: 'Info',        className: 'bg-teal-500/10 border border-teal-500/25 text-slate-400' },
+const priorityConfig: Record<Priority, { labelKey: string; className: string }> = {
+  Critical:    { labelKey: 'pins.priority.Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
+  High:        { labelKey: 'pins.priority.High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
+  Opportunity: { labelKey: 'pins.priority.Opportunity', className: 'bg-gold/10 border border-emerald-500/25 text-gold' },
+  Info:        { labelKey: 'pins.priority.Info',        className: 'bg-teal-500/10 border border-teal-500/25 text-slate-400' },
 }
 
 // ─── content performance table ─────────────────────────────────────────────────
 const contentRows = [
-  { section: 'Property Listings',  items: 8,  published: 4, avgSeo: 81, status: 'Good' },
-  { section: 'Area Guides',        items: 12, published: 7, avgSeo: 75, status: 'Needs work' },
-  { section: 'Developer Profiles', items: 10, published: 6, avgSeo: 74, status: 'Needs work' },
-  { section: 'Website Pages',      items: 10, published: 7, avgSeo: 70, status: 'Review' },
-  { section: 'Blog Topics',        items: 12, published: 3, avgSeo: 77, status: 'Good' },
+  { sectionKey: 'pins.content.listings',   items: 8,  published: 4, avgSeo: 81, status: 'Good',       statusKey: 'pins.status.good' },
+  { sectionKey: 'pins.content.areas',      items: 12, published: 7, avgSeo: 75, status: 'Needs work', statusKey: 'pins.status.needsWork' },
+  { sectionKey: 'pins.content.developers', items: 10, published: 6, avgSeo: 74, status: 'Needs work', statusKey: 'pins.status.needsWork' },
+  { sectionKey: 'pins.content.pages',      items: 10, published: 7, avgSeo: 70, status: 'Review',     statusKey: 'pins.status.review' },
+  { sectionKey: 'pins.content.blog',       items: 12, published: 3, avgSeo: 77, status: 'Good',       statusKey: 'pins.status.good' },
 ]
 
 function seoColor(score: number) {
@@ -98,26 +93,24 @@ function statusBadge(status: string) {
 const actions = [
   {
     n: 1,
-    title: 'Launch Creek Harbour campaign',
-    detail:
-      'Set up landing page (readiness 35%), link 1 Meta + 1 Google campaign. Est. 20 leads/month.',
+    titleKey: 'pins.action.creek.title',
+    detailKey: 'pins.action.creek.detail',
   },
   {
     n: 2,
-    title: 'Fix Marina property data',
-    detail:
-      'Upload images, write description, set ad-readiness. Currently blocking AED 4.8M inventory from any campaign.',
+    titleKey: 'pins.action.marina.title',
+    detailKey: 'pins.action.marina.detail',
   },
   {
     n: 3,
-    title: 'Scale JVC budget',
-    detail:
-      'Increase JVC Investor campaign budget from AED 200/day to AED 350/day. ROI 8.1% makes this the highest yield play.',
+    titleKey: 'pins.action.jvc.title',
+    detailKey: 'pins.action.jvc.detail',
   },
 ]
 
 // ─── page ──────────────────────────────────────────────────────────────────────
 export default function InsightsPage() {
+  const t = useT()
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated]   = useState(false)
   const [report, setReport]         = useState<string | null>(null)
@@ -151,34 +144,34 @@ export default function InsightsPage() {
 
   const kpiCards = [
     {
-      label: 'Total Ad Spend (30d)',
+      label: t('pins.kpi.spend.label'),
       value: liveSpend30d != null ? `AED ${liveSpend30d.toLocaleString()}` : '—',
-      sub: 'Combined Meta + Google',
+      sub: t('pins.kpi.spend.sub'),
     },
     {
-      label: 'Avg Cost Per Lead',
+      label: t('pins.kpi.cpl.label'),
       value: liveCpl != null ? `AED ${liveCpl.toLocaleString()}` : '—',
-      sub: 'Spend ÷ leads (30d)',
+      sub: t('pins.kpi.cpl.sub'),
     },
     {
-      label: 'Total Leads (30d)',
+      label: t('pins.kpi.leads.label'),
       value: liveLeads30d != null ? liveLeads30d.toLocaleString() : '—',
-      sub: 'Across all campaigns',
+      sub: t('pins.kpi.leads.sub'),
     },
     {
-      label: 'Site Visitors (30d)',
+      label: t('pins.kpi.visitors.label'),
       value: stats.totalViews30d > 0 ? stats.totalViews30d.toLocaleString() : '—',
-      sub: 'Landing-page views',
+      sub: t('pins.kpi.visitors.sub'),
     },
     {
-      label: 'Ad-Ready Properties',
+      label: t('pins.kpi.adReady.label'),
       value: `${stats.adReady} / ${stats.total}`,
-      sub: 'Readiness score ≥ 70%',
+      sub: t('pins.kpi.adReady.sub'),
     },
     {
-      label: 'Live Landing Pages',
+      label: t('pins.kpi.landing.label'),
       value: String(stats.live),
-      sub: `${stats.missingLanding} missing`,
+      sub: t('pins.kpi.landing.sub', { n: stats.missingLanding }),
     },
   ]
 
@@ -197,9 +190,9 @@ export default function InsightsPage() {
       }),
     }).catch(() => null)
     setGenerating(false)
-    if (!res || !res.ok) { setReport('Generation failed — please try again.'); setGenerated(true); return }
+    if (!res || !res.ok) { setReport(t('pins.genFailed')); setGenerated(true); return }
     const data = await res.json().catch(() => null) as { text?: string } | null
-    setReport(data?.text?.trim() || 'No content returned.')
+    setReport(data?.text?.trim() || t('pins.noContent'))
     setGenerated(true)
   }
 
@@ -209,16 +202,16 @@ export default function InsightsPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-slate-400">
         <Bot className="h-3.5 w-3.5" />
-        AI Manager · Insights
+        {t('pins.eyebrow')}
       </div>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-            AI System Insights
+            {t('pins.title')}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-slate-400">
-            Machine-generated analysis across inventory, ad spend, site traffic, and lead performance
+            {t('pins.subtitle')}
           </p>
         </div>
 
@@ -230,12 +223,12 @@ export default function InsightsPage() {
           {generating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating…
+              {t('pins.generating')}
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              {generated ? 'Report Ready' : 'Generate Report'}
+              {generated ? t('pins.reportReady') : t('pins.generateReport')}
             </>
           )}
         </button>
@@ -245,7 +238,7 @@ export default function InsightsPage() {
         <div className="mt-4 rounded-xl border border-gold/20 bg-gold/[0.06] px-5 py-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gold">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            AI report — generated from your latest data
+            {t('pins.reportBanner')}
           </div>
           <p className="whitespace-pre-line text-sm leading-relaxed text-slate-300">{report}</p>
         </div>
@@ -255,7 +248,7 @@ export default function InsightsPage() {
       <section className="mt-10">
         <div className="flex items-center gap-2 mb-5">
           <BarChart3 className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">System Snapshot</h2>
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">{t('pins.section.snapshot')}</h2>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -280,7 +273,7 @@ export default function InsightsPage() {
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
           <Sparkles className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">AI Insights Feed</h2>
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">{t('pins.section.feed')}</h2>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -289,7 +282,7 @@ export default function InsightsPage() {
             const badge  = priorityConfig[insight.priority]
             return (
               <div
-                key={insight.title}
+                key={insight.titleKey}
                 className="rounded-2xl border border-line bg-surface-2 p-5"
               >
                 <div className="flex items-start gap-4">
@@ -300,13 +293,13 @@ export default function InsightsPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-100">{insight.title}</span>
+                      <span className="text-sm font-semibold text-slate-100">{t(insight.titleKey)}</span>
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider ${badge.className}`}>
-                        {badge.label}
+                        {t(badge.labelKey)}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{insight.detail}</p>
-                    <p className="mt-2 text-sm text-slate-500">{insight.time}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{t(insight.detailKey)}</p>
+                    <p className="mt-2 text-sm text-slate-500">{t(insight.timeKey)}</p>
                   </div>
 
                   {/* contextual insight icon */}
@@ -324,19 +317,25 @@ export default function InsightsPage() {
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
           <BarChart3 className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Content Performance by Section</h2>
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">{t('pins.section.content')}</h2>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line">
-                {['Section', 'Items', 'Published', 'Avg SEO', 'Status'].map((h) => (
+                {[
+                  { key: 'section', label: t('pins.th.section') },
+                  { key: 'items', label: t('pins.th.items') },
+                  { key: 'published', label: t('pins.th.published') },
+                  { key: 'avgSeo', label: t('pins.th.avgSeo') },
+                  { key: 'status', label: t('pins.th.status') },
+                ].map((h) => (
                   <th
-                    key={h}
+                    key={h.key}
                     className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-widest text-slate-500"
                   >
-                    {h}
+                    {h.label}
                   </th>
                 ))}
               </tr>
@@ -344,13 +343,13 @@ export default function InsightsPage() {
             <tbody>
               {contentRows.map((row, i) => (
                 <tr
-                  key={row.section}
+                  key={row.sectionKey}
                   className={[
                     'transition hover:bg-surface-2',
                     i !== contentRows.length - 1 ? 'border-b border-line' : '',
                   ].join(' ')}
                 >
-                  <td className="px-5 py-4 font-medium text-slate-300">{row.section}</td>
+                  <td className="px-5 py-4 font-medium text-slate-300">{t(row.sectionKey)}</td>
                   <td className="px-5 py-4 text-slate-400">{row.items}</td>
                   <td className="px-5 py-4 text-slate-400">{row.published}</td>
                   <td className={`px-5 py-4 font-semibold ${seoColor(row.avgSeo)}`}>
@@ -358,7 +357,7 @@ export default function InsightsPage() {
                   </td>
                   <td className="px-5 py-4">
                     <span className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${statusBadge(row.status)}`}>
-                      {row.status}
+                      {t(row.statusKey)}
                     </span>
                   </td>
                 </tr>
@@ -372,7 +371,7 @@ export default function InsightsPage() {
       <section className="mt-12">
         <div className="flex items-center gap-2 mb-5">
           <CheckCircle2 className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">Recommended Actions</h2>
+          <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">{t('pins.section.actions')}</h2>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -386,8 +385,8 @@ export default function InsightsPage() {
                 {action.n}
               </div>
               <div>
-                <div className="text-sm font-semibold text-slate-100">{action.title}</div>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{action.detail}</p>
+                <div className="text-sm font-semibold text-slate-100">{t(action.titleKey)}</div>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{t(action.detailKey)}</p>
               </div>
             </div>
           ))}

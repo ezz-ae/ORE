@@ -3,26 +3,27 @@
 import { useState, useMemo } from 'react'
 import { Lock, ShieldAlert, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import { currentServerUser, getRoleScope, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { useT } from '@/lib/i18n/provider'
 
 const HARDENING_CHECKLIST = [
-  { label: 'Private shell isolation',       done: true,  note: 'Intelligence routes separated from public routes.' },
-  { label: 'Role-aware AI scope',           done: true,  note: 'AI answers filtered by role — out-of-scope queries silently suppressed.' },
-  { label: 'MCP tool gating',              done: true,  note: '9 tools registered; execution requires role validation.' },
-  { label: 'Audit event logging',           done: true,  note: 'Actor-tagged action log for critical write operations.' },
-  { label: 'Production auth middleware',    done: false, note: 'Route protection still requires final NextAuth/JWT wiring.' },
-  { label: 'Session expiry + refresh',      done: false, note: 'Not yet enforced in private shell session model.' },
-  { label: 'RBAC database enforcement',     done: false, note: 'Role gates active in UI; database-level RBAC not yet live.' },
-  { label: 'Rate limiting on AI endpoints', done: false, note: 'No request throttling on AI routes in current V1.' },
+  { key: 'isolation',      done: true },
+  { key: 'aiScope',        done: true },
+  { key: 'mcpGating',      done: true },
+  { key: 'auditLog',       done: true },
+  { key: 'authMiddleware', done: false },
+  { key: 'sessionExpiry',  done: false },
+  { key: 'rbacDb',         done: false },
+  { key: 'rateLimit',      done: false },
 ]
 
 const ROLE_MATRIX = [
-  { role: 'Owner',         canView: true,  canEdit: true,  canApprove: true,  canAdmin: true,  scope: 'All modules' },
-  { role: 'Admin',         canView: true,  canEdit: true,  canApprove: true,  canAdmin: true,  scope: 'Operations, users, tasks' },
-  { role: 'Marketing',     canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Ads, landings, campaigns' },
-  { role: 'Sales Manager', canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Leads, CRM, team, follow-ups' },
-  { role: 'Sales Agent',   canView: true,  canEdit: false, canApprove: false, canAdmin: false, scope: 'Assigned leads only' },
-  { role: 'Data Manager',  canView: true,  canEdit: true,  canApprove: false, canAdmin: false, scope: 'Projects, fields, readiness' },
-  { role: 'Viewer',        canView: true,  canEdit: false, canApprove: false, canAdmin: false, scope: 'Read-only, approved content' },
+  { role: 'Owner',         key: 'owner',        canView: true,  canEdit: true,  canApprove: true,  canAdmin: true  },
+  { role: 'Admin',         key: 'admin',        canView: true,  canEdit: true,  canApprove: true,  canAdmin: true  },
+  { role: 'Marketing',     key: 'marketing',    canView: true,  canEdit: true,  canApprove: false, canAdmin: false },
+  { role: 'Sales Manager', key: 'salesManager', canView: true,  canEdit: true,  canApprove: false, canAdmin: false },
+  { role: 'Sales Agent',   key: 'salesAgent',   canView: true,  canEdit: false, canApprove: false, canAdmin: false },
+  { role: 'Data Manager',  key: 'dataManager',  canView: true,  canEdit: true,  canApprove: false, canAdmin: false },
+  { role: 'Viewer',        key: 'viewer',       canView: true,  canEdit: false, canApprove: false, canAdmin: false },
 ]
 
 const scope = getRoleScope(currentServerUser.role)
@@ -41,6 +42,7 @@ function Check({ ok }: { ok: boolean }) {
 }
 
 export default function SecurityPage() {
+  const t = useT()
   const done  = HARDENING_CHECKLIST.filter((i) => i.done).length
   const total = HARDENING_CHECKLIST.length
   const pct   = Math.round((done / total) * 100)
@@ -64,21 +66,21 @@ export default function SecurityPage() {
 
       <section>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
-          <Lock className="h-3.5 w-3.5" /> Security
+          <Lock className="h-3.5 w-3.5" /> {t('psec.eyebrow')}
         </div>
         <h1 className="mt-5 text-[40px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[52px]">
-          Access model<br />
-          <span className="text-slate-400">and hardening status.</span>
+          {t('psec.headline.l1')}<br />
+          <span className="text-slate-400">{t('psec.headline.l2')}</span>
         </h1>
         <p className="mt-7 max-w-2xl text-lg leading-[1.6] text-slate-300">
-          {done} of {total} hardening steps complete. Production auth middleware is the critical remaining item before wider exposure.
+          {t('psec.intro', { done, total })}
         </p>
       </section>
 
       {/* Progress bar */}
       <section className="mt-10 rounded-[22px] border border-line bg-surface p-6">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Security readiness</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.readiness')}</div>
           <span className="text-sm font-semibold text-white">{pct}%</span>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
@@ -88,9 +90,9 @@ export default function SecurityPage() {
           />
         </div>
         <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-          <CheckCircle2 className="h-3 w-3 text-gold" /> {done} complete
+          <CheckCircle2 className="h-3 w-3 text-gold" /> {t('psec.complete', { n: done })}
           <span className="mx-1">·</span>
-          <AlertCircle className="h-3 w-3 text-red-400" /> {total - done} pending
+          <AlertCircle className="h-3 w-3 text-red-400" /> {t('psec.pending', { n: total - done })}
         </div>
       </section>
 
@@ -98,8 +100,8 @@ export default function SecurityPage() {
       <section className="mt-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Hardening checklist</div>
-            <h2 className="mt-1 text-xl font-semibold text-white">Production readiness</h2>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.checklist.eyebrow')}</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">{t('psec.checklist.title')}</h2>
           </div>
           <div className="flex items-center gap-2">
             {(['All', 'Done', 'Pending'] as ChecklistFilter[]).map((f) => (
@@ -113,7 +115,7 @@ export default function SecurityPage() {
                     : 'border-line bg-surface text-slate-400 hover:text-slate-100',
                 ].join(' ')}
               >
-                {f}
+                {t(`psec.filter.${f.toLowerCase()}`)}
               </button>
             ))}
           </div>
@@ -121,7 +123,7 @@ export default function SecurityPage() {
         <div className="mt-5 space-y-2">
           {filteredChecklist.map((item) => (
             <div
-              key={item.label}
+              key={item.key}
               className={`flex items-start gap-4 rounded-[18px] border p-5 ${
                 item.done
                   ? 'border-emerald-400/10 bg-gold/[0.03]'
@@ -133,17 +135,17 @@ export default function SecurityPage() {
                 : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
               }
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-white">{item.label}</div>
-                <p className="mt-0.5 text-xs text-slate-400">{item.note}</p>
+                <div className="text-sm font-semibold text-white">{t(`psec.item.${item.key}.label`)}</div>
+                <p className="mt-0.5 text-xs text-slate-400">{t(`psec.item.${item.key}.note`)}</p>
               </div>
               <span className={`shrink-0 text-sm font-medium ${item.done ? 'text-gold' : 'text-red-300'}`}>
-                {item.done ? 'Done' : 'Pending'}
+                {item.done ? t('psec.status.done') : t('psec.status.pending')}
               </span>
             </div>
           ))}
           {filteredChecklist.length === 0 && (
             <div className="rounded-[18px] border border-line px-5 py-10 text-center text-sm text-slate-400">
-              No items match this filter.
+              {t('psec.checklist.empty')}
             </div>
           )}
         </div>
@@ -151,18 +153,18 @@ export default function SecurityPage() {
 
       {/* Role matrix */}
       <section className="mt-14">
-        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Access model</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">Role permission matrix</h2>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.access.eyebrow')}</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">{t('psec.matrix.title')}</h2>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line">
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Role</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">View</th>
-                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Edit</th>
-                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">Approve</th>
-                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">Admin</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Scope</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.col.role')}</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.col.view')}</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">{t('psec.col.edit')}</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">{t('psec.col.approve')}</th>
+                <th className="hidden px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">{t('psec.col.admin')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.col.scope')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -173,9 +175,9 @@ export default function SecurityPage() {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-100">{row.role}</span>
+                      <span className="font-medium text-slate-100">{t(`psec.role.${row.key}`)}</span>
                       {row.role.toLowerCase().replace(' ', '_') === currentServerUser.role && (
-                        <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">You</span>
+                        <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">{t('psec.you')}</span>
                       )}
                     </div>
                   </td>
@@ -183,7 +185,7 @@ export default function SecurityPage() {
                   <td className="hidden px-4 py-4 text-center sm:table-cell"><div className="flex justify-center"><Check ok={row.canEdit} /></div></td>
                   <td className="hidden px-4 py-4 text-center md:table-cell"><div className="flex justify-center"><Check ok={row.canApprove} /></div></td>
                   <td className="hidden px-4 py-4 text-center lg:table-cell"><div className="flex justify-center"><Check ok={row.canAdmin} /></div></td>
-                  <td className="px-6 py-4 text-xs text-slate-400">{row.scope}</td>
+                  <td className="px-6 py-4 text-xs text-slate-400">{t(`psec.scope.${row.key}`)}</td>
                 </tr>
               ))}
             </tbody>
@@ -193,8 +195,8 @@ export default function SecurityPage() {
 
       {/* Current session scope */}
       <section className="mt-14">
-        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Current session</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">AI scope — {currentServerUser.role.replace('_', ' ')}</h2>
+        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.session.eyebrow')}</div>
+        <h2 className="mt-2 text-xl font-semibold text-white">{t('psec.session.title', { role: currentServerUser.role.replace('_', ' ') })}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {scope.map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-gold/[0.05] px-3.5 py-1.5 text-xs text-gold/80">
@@ -208,29 +210,29 @@ export default function SecurityPage() {
       <section className="mt-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">Audit trail</div>
-            <h2 className="mt-1 text-xl font-semibold text-white">Recent actor-tagged events</h2>
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.audit.eyebrow')}</div>
+            <h2 className="mt-1 text-xl font-semibold text-white">{t('psec.audit.title')}</h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {(['All', ...allEventTypes] as string[]).map((t) => (
+            {(['All', ...allEventTypes] as string[]).map((type) => (
               <button
-                key={t}
-                onClick={() => setAuditTypeFilter(t)}
+                key={type}
+                onClick={() => setAuditTypeFilter(type)}
                 className={[
                   'rounded-full border px-3 py-1 text-sm font-medium transition',
-                  auditTypeFilter === t
+                  auditTypeFilter === type
                     ? 'border-gold/40 bg-gold/10 text-gold'
                     : 'border-line bg-surface text-slate-400 hover:text-slate-100',
                 ].join(' ')}
               >
-                {t === 'All' ? 'All' : t.replace(/_/g, ' ')}
+                {type === 'All' ? t('psec.filter.all') : type.replace(/_/g, ' ')}
               </button>
             ))}
           </div>
         </div>
         <div className="mt-5 overflow-hidden rounded-[22px] border border-line bg-surface">
           {filteredAudit.length === 0 ? (
-            <div className="px-6 py-10 text-center text-sm text-slate-400">No audit events match this filter.</div>
+            <div className="px-6 py-10 text-center text-sm text-slate-400">{t('psec.audit.empty')}</div>
           ) : (
             <ul className="divide-y divide-line">
               {filteredAudit.map((event) => (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Github, GitBranch, GitPullRequest, GitCommit, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, XCircle, Circle, Star, AlertTriangle, ExternalLink } from 'lucide-react'
+import { useT } from '@/lib/i18n/provider'
 
 const TOKEN_KEY = 'fh_github_token'
 const REPO_KEY  = 'fh_github_repo'
@@ -53,23 +54,26 @@ async function fetchAll(token: string, repo: string): Promise<GhData> {
   }
 }
 
-function timeAgo(iso: string) {
+type TFn = (key: string, vars?: Record<string, string | number>) => string
+
+function timeAgo(iso: string, t: TFn) {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m ago`
+  if (m < 1) return t('pintgh.timeJustNow')
+  if (m < 60) return t('pintgh.timeMinutes', { n: m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
+  if (h < 24) return t('pintgh.timeHours', { n: h })
+  return t('pintgh.timeDays', { n: Math.floor(h / 24) })
 }
 
-function errText(err: any) {
-  if (err.status === 401) return 'Bad credentials. Check your GitHub Personal Access Token.'
-  if (err.status === 404) return 'Repository not found or token lacks access.'
-  if (err.status === 403) return 'Rate limit hit or token missing required permissions.'
-  return err.message || 'Connection failed.'
+function errText(err: any, t: TFn) {
+  if (err.status === 401) return t('pintgh.errBadCreds')
+  if (err.status === 404) return t('pintgh.errNotFound')
+  if (err.status === 403) return t('pintgh.errRateLimit')
+  return err.message || t('pintgh.errGeneric')
 }
 
 export default function GitHubPage() {
+  const t = useT()
   const [token,   setToken]   = useState('')
   const [repo,    setRepo]    = useState('')
   const [showTok, setShowTok] = useState(false)
@@ -90,19 +94,19 @@ export default function GitHubPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function connect(tok = token, rep = repo) {
-    const t = tok.trim(), r = rep.trim()
-    if (!t || !r) return
+    const tk = tok.trim(), r = rep.trim()
+    if (!tk || !r) return
     setPhase('connecting')
     setLoading(true)
     setErr('')
     try {
-      const d = await fetchAll(t, r)
-      localStorage.setItem(TOKEN_KEY, t)
+      const d = await fetchAll(tk, r)
+      localStorage.setItem(TOKEN_KEY, tk)
       localStorage.setItem(REPO_KEY, r)
       setData(d)
       setPhase('connected')
     } catch (e: any) {
-      setErr(errText(e))
+      setErr(errText(e, t))
       setPhase('error')
     } finally {
       setLoading(false)
@@ -126,9 +130,9 @@ export default function GitHubPage() {
   }
 
   const tabs = [
-    { id: 'commits' as const, label: 'Commits',      count: data?.commits.length ?? 0 },
-    { id: 'prs'     as const, label: 'Pull Requests', count: data?.prs.length ?? 0     },
-    { id: 'issues'  as const, label: 'Issues',        count: data?.issues.length ?? 0  },
+    { id: 'commits' as const, label: t('pintgh.tabCommits'), count: data?.commits.length ?? 0 },
+    { id: 'prs'     as const, label: t('pintgh.tabPrs'),     count: data?.prs.length ?? 0     },
+    { id: 'issues'  as const, label: t('pintgh.tabIssues'),  count: data?.issues.length ?? 0  },
   ]
 
   return (
@@ -143,17 +147,17 @@ export default function GitHubPage() {
             </div>
             <h1 className="text-[20px] font-semibold text-white">GitHub</h1>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Live repository activity, pull requests and issues</p>
+          <p className="mt-1 text-xs text-slate-500">{t('pintgh.subtitle')}</p>
         </div>
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={refresh} disabled={loading}
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
-              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> {t('pintgh.refresh')}
             </button>
             <button onClick={disconnect}
               className="flex items-center gap-1.5 rounded-full border border-red-400/20 px-3 py-1.5 text-xs text-red-400/70 transition hover:border-red-400/40 hover:text-red-400">
-              <XCircle className="h-3 w-3" /> Disconnect
+              <XCircle className="h-3 w-3" /> {t('pintgh.disconnect')}
             </button>
           </div>
         )}
@@ -163,21 +167,21 @@ export default function GitHubPage() {
       {phase !== 'connected' && (
         <div className="mb-6 rounded-[18px] border border-line bg-surface-2 p-5 space-y-3">
           <div>
-            <div className="mb-1 text-sm font-medium text-slate-300">Repository</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">{t('pintgh.repository')}</div>
             <input
               type="text"
-              placeholder="owner/repository-name"
+              placeholder={t('pintgh.repoPlaceholder')}
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
               className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
             />
           </div>
           <div>
-            <div className="mb-1 text-sm font-medium text-slate-300">Personal Access Token</div>
+            <div className="mb-1 text-sm font-medium text-slate-300">{t('pintgh.token')}</div>
             <div className="relative">
               <input
                 type={showTok ? 'text' : 'password'}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                placeholder={t('pintgh.tokenPlaceholder')}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
@@ -191,7 +195,7 @@ export default function GitHubPage() {
           </div>
           <button onClick={() => connect()} disabled={!token.trim() || !repo.trim() || loading}
             className="w-full rounded-[10px] bg-white/[0.10] py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.15] disabled:opacity-40">
-            {phase === 'connecting' ? 'Connecting…' : 'Connect GitHub'}
+            {phase === 'connecting' ? t('pintgh.connecting') : t('pintgh.connect')}
           </button>
           {phase === 'error' && (
             <div className="flex items-start gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-xs text-red-400/90">
@@ -200,7 +204,9 @@ export default function GitHubPage() {
             </div>
           )}
           <p className="text-xs text-slate-600">
-            GitHub → Settings → Developer settings → Personal access tokens (classic). Scopes needed: <code className="text-slate-500">repo</code>.
+            {t('pintgh.tokenHint').split('{scope}').flatMap((part, i) =>
+              i === 0 ? [part] : [<code key={i} className="text-slate-500">repo</code>, part],
+            )}
           </p>
         </div>
       )}
@@ -211,8 +217,8 @@ export default function GitHubPage() {
           {/* Status */}
           <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-sm text-emerald-400/90">Connected as {data.user.login}</span>
-            <span className="ml-auto text-xs text-slate-600">Token stored in browser only</span>
+            <span className="text-sm text-emerald-400/90">{t('pintgh.connectedAs', { login: data.user.login })}</span>
+            <span className="ml-auto text-xs text-slate-600">{t('pintgh.tokenStored')}</span>
           </div>
 
           {/* Repo card */}
@@ -223,7 +229,7 @@ export default function GitHubPage() {
                   <Github className="h-4 w-4 text-slate-500 shrink-0" />
                   <span className="font-mono text-[14px] font-semibold text-white truncate">{data.repo.full_name}</span>
                   {data.repo.private && (
-                    <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-slate-500">Private</span>
+                    <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-slate-500">{t('pintgh.private')}</span>
                   )}
                 </div>
                 {data.repo.description && (
@@ -237,10 +243,10 @@ export default function GitHubPage() {
             </div>
             <div className="mt-4 grid grid-cols-4 gap-3 border-t border-line pt-4">
               {[
-                { label: 'Branch',     value: data.repo.default_branch,              Icon: GitBranch,     color: 'text-teal-400'    },
-                { label: 'Stars',      value: data.repo.stargazers_count.toString(),  Icon: Star,          color: 'text-amber-400'  },
-                { label: 'Open issues',value: data.repo.open_issues_count.toString(), Icon: Circle,        color: 'text-orange-400' },
-                { label: 'Language',   value: data.repo.language || '—',              Icon: CheckCircle2,  color: 'text-violet-400' },
+                { label: t('pintgh.statBranch'),     value: data.repo.default_branch,              Icon: GitBranch,     color: 'text-teal-400'    },
+                { label: t('pintgh.statStars'),      value: data.repo.stargazers_count.toString(),  Icon: Star,          color: 'text-amber-400'  },
+                { label: t('pintgh.statOpenIssues'), value: data.repo.open_issues_count.toString(), Icon: Circle,        color: 'text-orange-400' },
+                { label: t('pintgh.statLanguage'),   value: data.repo.language || '—',              Icon: CheckCircle2,  color: 'text-violet-400' },
               ].map(({ label, value, Icon, color }) => (
                 <div key={label}>
                   <div className="text-[10px] text-slate-600 uppercase tracking-wider">{label}</div>
@@ -272,7 +278,7 @@ export default function GitHubPage() {
           {tab === 'commits' && (
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.commits.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No commits</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pintgh.noCommits')}</div>
                 : data.commits.map((c) => (
                     <a key={c.sha} href={c.html_url} target="_blank" rel="noopener noreferrer"
                       className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
@@ -284,7 +290,7 @@ export default function GitHubPage() {
                           <span>·</span>
                           <span>{c.commit.author.name}</span>
                           <span>·</span>
-                          <span>{timeAgo(c.commit.author.date)}</span>
+                          <span>{timeAgo(c.commit.author.date, t)}</span>
                         </div>
                       </div>
                       <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-slate-600" />
@@ -298,7 +304,7 @@ export default function GitHubPage() {
           {tab === 'prs' && (
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.prs.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No open pull requests</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pintgh.noPrs')}</div>
                 : data.prs.map((pr) => (
                     <a key={pr.number} href={pr.html_url} target="_blank" rel="noopener noreferrer"
                       className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
@@ -310,8 +316,8 @@ export default function GitHubPage() {
                           <span>·</span>
                           <span>{pr.user.login}</span>
                           <span>·</span>
-                          <span>{timeAgo(pr.created_at)}</span>
-                          {pr.draft && <span className="text-slate-600">[draft]</span>}
+                          <span>{timeAgo(pr.created_at, t)}</span>
+                          {pr.draft && <span className="text-slate-600">[{t('pintgh.draft')}]</span>}
                         </div>
                       </div>
                       <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-slate-600" />
@@ -325,7 +331,7 @@ export default function GitHubPage() {
           {tab === 'issues' && (
             <div className="rounded-[16px] border border-line bg-surface divide-y divide-white/[0.04] overflow-hidden">
               {data.issues.length === 0
-                ? <div className="px-5 py-8 text-center text-sm text-slate-600">No open issues</div>
+                ? <div className="px-5 py-8 text-center text-sm text-slate-600">{t('pintgh.noIssues')}</div>
                 : data.issues.map((issue) => (
                     <a key={issue.number} href={issue.html_url} target="_blank" rel="noopener noreferrer"
                       className="flex items-start gap-3 px-5 py-3.5 transition hover:bg-surface-2">
@@ -333,7 +339,7 @@ export default function GitHubPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-slate-100 truncate">{issue.title}</div>
                         <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs text-slate-600">#{issue.number} · {timeAgo(issue.created_at)}</span>
+                          <span className="text-xs text-slate-600">#{issue.number} · {timeAgo(issue.created_at, t)}</span>
                           {issue.labels.slice(0, 3).map((l) => (
                             <span key={l.name}
                               className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
