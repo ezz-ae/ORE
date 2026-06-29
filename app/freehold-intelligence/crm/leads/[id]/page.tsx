@@ -31,9 +31,11 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       status: string | null; priority: string | null; budget_aed: number | null;
       interest: string | null; message: string | null; created_at: string;
       landing_slug: string | null; lead_code: string | null;
+      utm_source: string | null; utm_campaign: string | null; utm_id: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
-              status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code
+              status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
+              utm_source, utm_campaign, utm_id
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -45,7 +47,7 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       id: r.id, hubspotLeadId: '', name: r.name ?? 'Unknown',
       phone: r.phone ?? '', email: r.email ?? '', source: r.source ?? 'direct',
       landingId: r.landing_slug ?? (r.source?.startsWith('lp:') ? r.source.slice(3) : ''),
-      campaignId: '', stage: stage.charAt(0).toUpperCase() + stage.slice(1),
+      campaignId: r.utm_campaign || r.utm_id || '', stage: stage.charAt(0).toUpperCase() + stage.slice(1),
       pipelineStage: stage, temperature,
       budgetAED: r.budget_aed ? `AED ${r.budget_aed.toLocaleString()}` : 'Unknown',
       projectInterest: r.interest ?? r.project_slug ?? 'General enquiry',
@@ -106,6 +108,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const sourceCampaign = ((): { name: string; platform: 'meta' | 'google'; spendAED: number; cpl: number } | null => null)()
   const sourceLanding  = leadMachineLandings.find((l) => l.id === lead.landingId) ?? null
   const sourceListing = ((): { id: string; projectName: string; area: string; developer: string } | null => null)()
+
+  // Real campaign attribution from the lead's captured UTM data (no seed). The
+  // platform is inferred from the source string; the campaign drill-down links to
+  // marketing analytics, which is operator/marketing-gated — so brokers see the
+  // campaign name as plain text, management/marketing get the clickable link.
+  const realCampaign = lead.campaignId && lead.campaignId !== 'organic' ? lead.campaignId : ''
+  const campaignPlatform: 'meta' | 'google' | null =
+    /face|meta|insta|fb/i.test(lead.source) ? 'meta' : /google|adwords|gads|ppc/i.test(lead.source) ? 'google' : null
+  const canSeeMarketing = !!sessionUser && ['admin', 'ceo', 'director', 'sales_manager', 'marketing'].includes(sessionUser.role)
 
   function activityIcon(type: string) {
     if (type === 'call')         return { Icon: PhoneCall,      color: 'text-gold',   bg: 'bg-gold/10' }
@@ -357,7 +368,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <div className="space-y-3 text-xs text-slate-400">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-slate-500">{t('crm.campaign')}</span>
-                  <span className="text-slate-400">{lead.campaignId === 'organic' ? t('crm.organic') : lead.campaignId || t('crm.direct')}</span>
+                  <span className="flex items-center gap-1.5 text-right">
+                    {campaignPlatform && realCampaign && (
+                      <span className={`shrink-0 rounded-full border px-1.5 py-px text-[10px] font-medium ${
+                        campaignPlatform === 'meta'
+                          ? 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'
+                          : 'border-gold/25 bg-gold/10 text-gold'
+                      }`}>
+                        {campaignPlatform === 'meta' ? 'Meta' : 'Google'}
+                      </span>
+                    )}
+                    {realCampaign && canSeeMarketing ? (
+                      <Link href="/freehold-intelligence/analytics/marketing" className="group inline-flex items-center gap-1 text-gold/65 transition hover:text-gold">
+                        {realCampaign}<ArrowUpRight className="h-2.5 w-2.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </Link>
+                    ) : (
+                      <span className="text-slate-400">{lead.campaignId === 'organic' ? t('crm.organic') : realCampaign || t('crm.direct')}</span>
+                    )}
+                  </span>
                 </div>
                 {lead.landingId && lead.landingId !== 'direct_whatsapp' && (
                   <div className="flex items-start justify-between gap-3">
