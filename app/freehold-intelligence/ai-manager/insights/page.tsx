@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Sparkles, Loader2, Bot, TrendingDown, AlertTriangle, TrendingUp, MessageCircle, Gauge, Home, BarChart3, CheckCircle2 } from 'lucide-react'
-import { getInventoryStats } from '@/src/features/freehold-intelligence/inventory'
-import { financeSummary } from '@/src/features/freehold-intelligence/finance'
-import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
-
-// ─── derived values ────────────────────────────────────────────────────────────
-const stats = getInventoryStats()
+import { getInventoryStats, type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 
 // ─── insight types ─────────────────────────────────────────────────────────────
 type Priority = 'Critical' | 'High' | 'Opportunity' | 'Info'
@@ -128,6 +123,9 @@ export default function InsightsPage() {
   const [report, setReport]         = useState<string | null>(null)
   const [liveLeads30d, setLiveLeads30d]   = useState<number | null>(null)
   const [liveSpend30d, setLiveSpend30d]   = useState<number | null>(null)
+  // Live inventory drives the readiness/landing KPIs (no seed catalog).
+  const [properties, setProperties]       = useState<InventoryProperty[]>([])
+  const stats = getInventoryStats(properties)
 
   useEffect(() => {
     let cancelled = false
@@ -139,29 +137,38 @@ export default function InsightsPage() {
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (!cancelled && d?.last30dSpendAED != null) setLiveSpend30d(d.last30dSpendAED) })
       .catch(() => {})
+    fetch('/api/freehold/inventory')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && Array.isArray(d?.properties)) setProperties(d.properties) })
+      .catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  // Live cost-per-lead from real spend ÷ real leads (no seed benchmark).
+  const liveCpl = liveSpend30d != null && liveLeads30d != null && liveLeads30d > 0
+    ? Math.round(liveSpend30d / liveLeads30d)
+    : null
 
   const kpiCards = [
     {
       label: 'Total Ad Spend (30d)',
-      value: `AED ${(liveSpend30d ?? financeSummary.totalSpend30d).toLocaleString()}`,
+      value: liveSpend30d != null ? `AED ${liveSpend30d.toLocaleString()}` : '—',
       sub: 'Combined Meta + Google',
     },
     {
       label: 'Avg Cost Per Lead',
-      value: `AED ${financeSummary.avgCpl30d}`,
-      sub: 'Down 17% vs last month',
+      value: liveCpl != null ? `AED ${liveCpl.toLocaleString()}` : '—',
+      sub: 'Spend ÷ leads (30d)',
     },
     {
       label: 'Total Leads (30d)',
-      value: (liveLeads30d ?? financeSummary.totalLeads30d).toLocaleString(),
+      value: liveLeads30d != null ? liveLeads30d.toLocaleString() : '—',
       sub: 'Across all campaigns',
     },
     {
       label: 'Site Visitors (30d)',
-      value: siteAnalytics.totalUniqueSessions.toLocaleString(),
-      sub: 'Unique sessions',
+      value: stats.totalViews30d > 0 ? stats.totalViews30d.toLocaleString() : '—',
+      sub: 'Landing-page views',
     },
     {
       label: 'Ad-Ready Properties',
@@ -180,8 +187,8 @@ export default function InsightsPage() {
     if (generating) return
     setGenerating(true)
     setGenerated(false)
-    const spend = liveSpend30d ?? financeSummary.totalSpend30d
-    const leads = liveLeads30d ?? financeSummary.totalLeads30d
+    const spend = liveSpend30d ?? 0
+    const leads = liveLeads30d ?? 0
     const res = await fetch('/api/freehold/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

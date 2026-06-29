@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { cookies } from 'next/headers'
 import { crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
-import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
@@ -101,12 +100,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // Activity timeline is populated from real lead events only (no seed log).
   const leadActivity: typeof crmActivityLog = []
 
-  // Resolve attribution
-  const sourceCampaign = financeSummary.topSpendCampaigns.find((c) => c.campaignId === lead.campaignId) ?? null
+  // Resolve attribution. Campaign attribution comes from live landing data
+  // (landingAttribution above) and the lead's own fields; no seed campaign
+  // benchmark is consulted, so these stay null and the live fallback renders.
+  const sourceCampaign = ((): { name: string; platform: 'meta' | 'google'; spendAED: number; cpl: number } | null => null)()
   const sourceLanding  = leadMachineLandings.find((l) => l.id === lead.landingId) ?? null
-  const sourceListing  = sourceCampaign?.projectId
-    ? leadMachineListings.find((l) => l.projectId === sourceCampaign.projectId) ?? null
-    : null
+  const sourceListing = ((): { id: string; projectName: string; area: string; developer: string } | null => null)()
 
   function activityIcon(type: string) {
     if (type === 'call')         return { Icon: PhoneCall,      color: 'text-gold',   bg: 'bg-gold/10' }
