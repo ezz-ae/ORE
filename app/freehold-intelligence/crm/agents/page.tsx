@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { UserCheck, Phone, MessageSquare, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
-import { crmAgentRoster, type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
+import { type CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -46,11 +46,11 @@ export default function CrmAgentsPage() {
     return () => { cancelled = true }
   }, [])
 
-  const agents = liveAgents ?? crmAgentRoster
+  const agents = liveAgents ?? []
   const totalLeads   = agents.reduce((s, a) => s + a.totalLeads, 0)
   const totalOverdue = agents.reduce((s, a) => s + a.overdueFollowUps, 0)
   const overloaded   = agents.filter((a) => a.status === 'overloaded')
-  const topPerformer = useMemo(() => [...agents].sort((a, b) => b.recentWins - a.recentWins)[0], [])
+  const topPerformer = useMemo(() => [...agents].sort((a, b) => b.recentWins - a.recentWins)[0], [liveAgents]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const base = statusFilter === 'All' ? agents : agents.filter((a) => a.status === statusFilter)
@@ -61,7 +61,7 @@ export default function CrmAgentsPage() {
       if (sortBy === 'overdue')     return b.overdueFollowUps - a.overdueFollowUps
       return 0
     })
-  }, [statusFilter, sortBy])
+  }, [statusFilter, sortBy, liveAgents]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleContact(agent: { id: string; name: string; email?: string; phone?: string }, mode: 'call' | 'message') {
     const phone = (agent.phone || '').replace(/[^0-9+]/g, '')
@@ -157,7 +157,12 @@ export default function CrmAgentsPage() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2.5">
-                            <h3 className="text-[18px] font-semibold text-white">{agent.name}</h3>
+                            <Link
+                              href={`/freehold-intelligence/analytics/team/${agent.id}`}
+                              className="text-[18px] font-semibold text-white underline-offset-4 hover:text-gold hover:underline"
+                            >
+                              {agent.name}
+                            </Link>
                             <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${st.classes}`}>{t(st.labelKey)}</span>
                             {wasContacted && (
                               <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-2 py-0.5 text-xs text-gold">

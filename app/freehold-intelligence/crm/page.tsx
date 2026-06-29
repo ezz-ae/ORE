@@ -342,36 +342,7 @@ export default function FreeholdCrmPage() {
         <aside className="mt-6 hidden lg:mt-0 lg:block">
           <div className="sticky top-14 space-y-3">
 
-            {/* Integration sync panel */}
-            <div className="rounded-[16px] border border-line bg-surface p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.integrations')}</div>
-                <button
-                  onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
-                  className="flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300"
-                >
-                  <RefreshCw className="h-3 w-3" /> {t('crm.syncNow')}
-                </button>
-              </div>
-
-              <div className="space-y-2.5">
-                {integrationSyncStatuses.map(s => (
-                  <div key={s.id} className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${syncDot(s.status)}`} />
-                      <span className="text-sm text-slate-300">{s.name}</span>
-                    </div>
-                    {syncLabel(s, t)}
-                  </div>
-                ))}
-              </div>
-
-              {lastSyncStr && mounted && (
-                <div className="mt-3 border-t border-line pt-2.5 text-xs text-slate-600">
-                  {t('crm.lastSync', { time: relTime(lastSyncStr), count: totalLeadsIn })}
-                </div>
-              )}
-            </div>
+            {/* Integration sync status lives in the Integrations app, not here. */}
 
             {/* Top by intent */}
             <div className="rounded-[16px] border border-line bg-surface p-4">
