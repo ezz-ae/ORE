@@ -59,13 +59,25 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   // app's contextual tour when on an app, otherwise the role welcome.
   const contextualSteps = appId ? tourForApp(appId) : tourForRole(role)
 
+  // "Smart" filter: keep centred steps (welcome/tip/done) and only those
+  // anchored steps whose highlight target is actually on the page right now.
+  // This stops the tour from explaining things the user can't see.
+  const visibleSteps = useCallback((s: CoachStep[]): CoachStep[] => {
+    if (typeof document === 'undefined') return s
+    return s.filter((step) => {
+      if (!step.anchor || step.placement === 'center') return true
+      return !!document.querySelector(`[data-coach="${step.anchor}"]`)
+    })
+  }, [])
+
   const startTour = useCallback((s: CoachStep[], seenKey: string | null) => {
-    if (s.length === 0) return
+    const filtered = visibleSteps(s)
+    if (filtered.length === 0) return
     seenKeyRef.current = seenKey
-    setSteps(s)
+    setSteps(filtered)
     setIndex(0)
     setActive(true)
-  }, [])
+  }, [visibleSteps])
 
   const start = useCallback(() => {
     if (appId) startTour(tourForApp(appId), appCoachSeenKey(appId))
