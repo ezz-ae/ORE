@@ -1,9 +1,8 @@
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 import ProjectsClient from './projects-client'
 
+// Real DB inventory only — no seed fallback.
 export default async function ProjectsPage() {
-  const dbProperties = await getInventoryPropertiesFromDB()
-  const properties = dbProperties.length > 0 ? dbProperties : inventoryProperties
+  const properties = await getInventoryPropertiesFromDB()
   return <ProjectsClient initialProperties={properties} />
 }

@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
 import { GenerateClient } from './_client'
 
@@ -8,11 +7,8 @@ export default async function GenerateLandingPage({ params }: { params: Promise<
   const { id } = await params
   const { t } = await getServerT()
 
-  // Try DB first (covers all real projects), then fall back to static data
-  let prop = await getInventoryPropertyBySlug(id)
-  if (!prop) {
-    prop = inventoryProperties.find((p) => p.id === id || p.slug === id) ?? null
-  }
+  // Real DB inventory only — no seed fallback.
+  const prop = await getInventoryPropertyBySlug(id)
 
   if (!prop) {
     return (

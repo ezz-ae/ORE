@@ -30,7 +30,7 @@ function statusBadge(status: PropertyStatus) {
     case 'ready':
       return 'bg-gold/10 text-gold border-gold/20'
     case 'off_plan':
-      return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
+      return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'under_construction':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'sold_out':
@@ -53,7 +53,7 @@ function landingBadge(status: LandingStatus) {
     case 'draft':
       return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'pending_review':
-      return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
+      return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'missing':
       return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
   }
@@ -163,7 +163,8 @@ export default function InventoryClient({ initialProperties }: { initialProperti
         <StatCard label={t('inv.stat.adReady')} value={stats.adReady} hint={t('inv.stat.adReady.hint')} delta={{ value: t('inv.stat.adReady.delta'), direction: 'up' }} />
       </div>
 
-      {/* ── Ad-readiness analysis ─────────────────────────────────────────── */}
+      {/* ── Ad-readiness analysis (only when there is real inventory) ──────── */}
+      {initialProperties.length > 0 && (
       <section className="mt-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/85">
@@ -227,6 +228,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
         )}
 
       </section>
+      )}
 
       {/* Controls */}
       <div className="mt-10 flex flex-wrap items-center gap-3">

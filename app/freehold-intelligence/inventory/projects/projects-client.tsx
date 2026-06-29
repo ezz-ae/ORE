@@ -13,11 +13,11 @@ function formatPrice(n: number | null): string {
 }
 
 const DEV_COLORS: Record<string, string> = {
-  Emaar:          'bg-sky-400/15 text-sky-300',
+  Emaar:          'bg-teal-400/15 text-teal-300',
   Nakheel:        'bg-emerald-400/15 text-emerald-300',
   DAMAC:          'bg-amber-400/15 text-amber-300',
   'Sobha Realty': 'bg-violet-400/15 text-violet-300',
-  Meraas:         'bg-cyan-400/15 text-cyan-300',
+  Meraas:         'bg-teal-400/15 text-teal-300',
   Ellington:      'bg-pink-400/15 text-pink-300',
   Binghatti:      'bg-rose-400/15 text-rose-300',
   Azizi:          'bg-orange-400/15 text-orange-300',

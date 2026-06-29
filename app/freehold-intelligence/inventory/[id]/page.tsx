@@ -8,7 +8,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
-import { inventoryProperties, type PropertyStatus, type LandingStatus } from '@/src/features/freehold-intelligence/inventory'
+import { type PropertyStatus, type LandingStatus } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
@@ -23,7 +23,7 @@ function statusBadge(status: PropertyStatus) {
   switch (status) {
     case 'active':
     case 'ready':      return 'bg-gold/10 text-gold border-gold/20'
-    case 'off_plan':   return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
+    case 'off_plan':   return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'under_construction': return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
     case 'sold_out':   return 'bg-red-400/10 text-red-300 border-red-400/20'
     case 'coming_soon': return 'bg-violet-400/10 text-slate-400 border-violet-400/20'
@@ -39,7 +39,7 @@ function landingBadge(status: LandingStatus) {
   switch (status) {
     case 'live':           return 'bg-gold/10 text-gold border-gold/20'
     case 'draft':          return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
-    case 'pending_review': return 'bg-blue-400/10 text-blue-300 border-blue-400/20'
+    case 'pending_review': return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
     case 'missing':        return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
   }
 }
@@ -67,11 +67,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const { id } = await params
   const { t } = await getServerT()
 
-  // Try DB first, fall back to static data
-  let prop = await getInventoryPropertyBySlug(id)
-  if (!prop) {
-    prop = inventoryProperties.find((p) => p.id === id || p.slug === id) ?? null
-  }
+  // Real DB inventory only — no seed fallback.
+  const prop = await getInventoryPropertyBySlug(id)
 
   if (!prop) {
     return (

@@ -7,7 +7,7 @@ import {
   BarChart3, Globe, ArrowUpRight,
 } from 'lucide-react'
 import { cookies } from 'next/headers'
-import { crmLeads, crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
+import { crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
 import { financeSummary } from '@/src/features/freehold-intelligence/finance'
 import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
 import { query } from '@/lib/db'
@@ -84,9 +84,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const cookieStore = await cookies()
   const sessionUser = await verifySession(cookieStore.get(SESSION_COOKIE)?.value)
   const ownerId = sessionUser?.role === 'broker' ? (sessionUser.brokerId ?? sessionUser.email) : null
-  // Try DB first, fall back to mock (mock leads are non-sensitive demo data, brokers excluded)
-  const liveLead = await getLiveLead(id, ownerId)
-  const lead = liveLead ?? (ownerId ? null : crmLeads.find((l) => l.id === id))
+  // Real DB leads only — no seed/mock fallback.
+  const lead = await getLiveLead(id, ownerId)
   if (!lead) notFound()
 
   const tone = urgencyTone(lead.urgency)
@@ -99,9 +98,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // A lead can be converted to a deal only once.
   const existingDeal = await getDealByLeadId(lead.id)
 
-  const leadActivity = crmActivityLog
-    .filter((e) => e.leadId === id)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  // Activity timeline is populated from real lead events only (no seed log).
+  const leadActivity: typeof crmActivityLog = []
 
   // Resolve attribution
   const sourceCampaign = financeSummary.topSpendCampaigns.find((c) => c.campaignId === lead.campaignId) ?? null

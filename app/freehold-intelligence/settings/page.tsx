@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { PageHeader, buttonClass } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { useSession } from '@/lib/freehold/use-session'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -138,9 +139,35 @@ export default function SettingsPage() {
   const [brand,       setBrand]       = useState<Record<string, string>>(
     () => Object.fromEntries(BRAND_SETTINGS.map((s) => [s.labelKey, s.value])),
   )
-  const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand'>('ai')
+  const [activeTab,   setActiveTab]   = useState<'ai' | 'crm' | 'thresholds' | 'notifications' | 'brand' | 'operations'>('ai')
   const loaded = useRef(false)
   const t = useT()
+  const { user } = useSession()
+  const canReset = user?.role === 'ceo' || user?.role === 'admin'
+
+  // Operational reset (go-live).
+  const [resetScope, setResetScope] = useState<'leads' | 'all-demo'>('leads')
+  const [resetting, setResetting] = useState(false)
+
+  async function runReset() {
+    if (!window.confirm(t('settings.ops.reset.confirm'))) return
+    setResetting(true)
+    try {
+      const r = await fetch('/api/freehold/admin/reset', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'RESET', scope: resetScope }),
+      })
+      if (r.status === 403) { toast.error(t('settings.ops.reset.forbidden')); return }
+      if (!r.ok) throw new Error()
+      const d = await r.json()
+      const count = Object.values(d?.cleared ?? {}).reduce<number>((s, v) => s + (typeof v === 'number' ? v : 0), 0)
+      toast.success(t('settings.ops.reset.done', { count }))
+    } catch {
+      toast.error(t('settings.ops.reset.error'))
+    } finally {
+      setResetting(false)
+    }
+  }
 
   // Load saved workspace settings.
   useEffect(() => {
@@ -197,6 +224,7 @@ export default function SettingsPage() {
     { id: 'thresholds'    as const, label: t('settings.general.tab.thresholds'),    icon: Sliders   },
     { id: 'notifications' as const, label: t('settings.general.tab.notifications'), icon: Bell      },
     { id: 'brand'         as const, label: t('settings.general.tab.brand'),         icon: Globe     },
+    ...(canReset ? [{ id: 'operations' as const, label: t('settings.general.tab.operations'), icon: Database }] : []),
   ]
 
   return (
@@ -435,6 +463,52 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Operations (go-live reset) ── */}
+        {activeTab === 'operations' && canReset && (
+          <section>
+            <SectionHead
+              icon={AlertCircle}
+              accent="text-red-400"
+              title={t('settings.ops.head.title')}
+              sub={t('settings.ops.head.sub')}
+            />
+            <div className="rounded-2xl border border-red-400/25 bg-red-400/[0.04] p-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-red-300">
+                <Shield className="h-4 w-4" />
+                {t('settings.ops.reset.title')}
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">{t('settings.ops.reset.desc')}</p>
+
+              <div className="mt-5 space-y-2">
+                {([
+                  { id: 'leads' as const,    label: t('settings.ops.reset.scopeLeads') },
+                  { id: 'all-demo' as const, label: t('settings.ops.reset.scopeAll') },
+                ]).map((opt) => (
+                  <label key={opt.id} className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="resetScope"
+                      checked={resetScope === opt.id}
+                      onChange={() => setResetScope(opt.id)}
+                      className="mt-0.5 accent-red-400"
+                    />
+                    <span className="text-sm text-slate-200">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={runReset}
+                disabled={resetting}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl border border-red-400/40 bg-red-400/10 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-400/20 disabled:opacity-50"
+              >
+                <AlertCircle className="h-4 w-4" />
+                {resetting ? t('settings.ops.reset.working') : t('settings.ops.reset.button')}
+              </button>
             </div>
           </section>
         )}
