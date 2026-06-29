@@ -34,7 +34,6 @@ const SECTION_POOLS: Record<AudienceType, string[]> = {
     "units",
     "developer-profile",
     "location",
-    "social-proof",
     "why-dubai",
     "download-brochure",
     "ai-concierge",
@@ -221,12 +220,7 @@ Target audience: ${audience}
   "type": "developer-profile",
   "data": {
     "name": "${project.developerName || "Developer"}",
-    "description": "<2 sentences about why this developer is trusted in Dubai>",
-    "stats": [
-      {"label": "Projects Delivered", "value": "<estimate>"},
-      {"label": "Years in Market", "value": "<estimate>"},
-      {"label": "UAE Properties", "value": "<estimate>"}
-    ]
+    "description": "<2 sentences about why this developer is trusted in Dubai — qualitative only, do NOT invent numeric track-record stats>"
   }
 }`,
     "social-proof": `{
