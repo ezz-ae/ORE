@@ -338,7 +338,7 @@ export default function NewCampaignPage() {
                 className={inputCls()}
                 value={form.campaignName}
                 onChange={(e) => update('campaignName', e.target.value)}
-                placeholder="e.g. Palm Jumeirah — Lead Gen Q2"
+                placeholder={t('lm.campaignNamePlaceholder')}
               />
             </div>
           </div>
@@ -489,7 +489,7 @@ export default function NewCampaignPage() {
                 className={`${inputCls(!form.primaryText)} resize-none`}
                 value={form.primaryText}
                 onChange={(e) => update('primaryText', e.target.value)}
-                placeholder="The investor pitch — 2–3 sentences that lead with the strongest signal."
+                placeholder={t('lm.primaryTextPlaceholder')}
               />
               <p className="mt-1 text-sm text-slate-500">
                 {t('lm.newCampaign.s3.charCount', { n: String(form.primaryText.length) })}
@@ -502,7 +502,7 @@ export default function NewCampaignPage() {
                 className={inputCls(!form.headline)}
                 value={form.headline}
                 onChange={(e) => update('headline', e.target.value)}
-                placeholder="e.g. Palm Jumeirah — AED 3.2M, 5.8% yield"
+                placeholder={t('lm.headlinePlaceholder')}
               />
             </div>
 
@@ -512,7 +512,7 @@ export default function NewCampaignPage() {
                 className={inputCls()}
                 value={form.description}
                 onChange={(e) => update('description', e.target.value)}
-                placeholder="e.g. Request the investor summary now."
+                placeholder={t('lm.descriptionPlaceholder')}
               />
             </div>
 
@@ -522,7 +522,7 @@ export default function NewCampaignPage() {
                 className={inputCls(!form.landingUrl)}
                 value={form.landingUrl}
                 onChange={(e) => update('landingUrl', e.target.value)}
-                placeholder="https://freeholdproperty.ae/…"
+                placeholder={t('lm.landingUrlPlaceholder')}
               />
             </div>
 
@@ -532,7 +532,7 @@ export default function NewCampaignPage() {
                 className={inputCls()}
                 value={form.imageUrl}
                 onChange={(e) => update('imageUrl', e.target.value)}
-                placeholder="https://cdn.freeholdproperty.ae/images/…"
+                placeholder={t('lm.imageUrlPlaceholder')}
               />
             </div>
 

@@ -281,7 +281,7 @@ export default function GoogleCampaignNewPage() {
               type="text"
               value={form.campaignName}
               onChange={(e) => patch({ campaignName: e.target.value })}
-              placeholder="e.g. Palm Jumeirah Investor — Search"
+              placeholder={t('lm.campaignNamePlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>
@@ -325,7 +325,7 @@ export default function GoogleCampaignNewPage() {
               type="url"
               value={form.finalUrl}
               onChange={(e) => patch({ finalUrl: e.target.value })}
-              placeholder="https://your-landing-page.com/property"
+              placeholder={t('lm.landingUrlPlaceholder')}
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-sm text-white placeholder-white/20 focus:border-[#4285F4]/40 focus:outline-none"
             />
           </div>

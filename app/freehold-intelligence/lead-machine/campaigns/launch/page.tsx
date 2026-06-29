@@ -1295,7 +1295,7 @@ export default function CampaignLaunchPage() {
                 </div>
                 <div className="mt-2">
                   <EditableField value={state.headline} onChange={(v) => patch('headline', v)}
-                    rows={1} placeholder="or type a custom headline…" />
+                    rows={1} placeholder={t('lm.customHeadlinePlaceholder')} />
                 </div>
               </div>
               <div>
@@ -1385,7 +1385,7 @@ export default function CampaignLaunchPage() {
                     value={state.googleDisplayPath}
                     onChange={(e) => patch('googleDisplayPath', e.target.value.replace(/\s/g, '-').toLowerCase())}
                     className="min-w-0 flex-1 bg-transparent text-gold/80 focus:outline-none"
-                    placeholder="path"
+                    placeholder={t('lm.pathPlaceholder')}
                   />
                 </div>
               </div>
@@ -1532,7 +1532,7 @@ export default function CampaignLaunchPage() {
               <div className="mb-2 text-xs text-slate-500">{t('lm.launchWizard.s6.orEnterUrl')}</div>
               <input type="text" value={state.landingUrl}
                 onChange={(e) => patch('landingUrl', e.target.value)}
-                placeholder="https://freeholdproperty.ae/…"
+                placeholder={t('lm.landingUrlPlaceholder')}
                 className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-300 placeholder:text-slate-600 focus:border-gold/30 focus:outline-none" />
             </div>
           </div>
