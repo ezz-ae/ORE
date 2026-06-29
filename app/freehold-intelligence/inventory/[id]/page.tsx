@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -6,10 +7,21 @@ import {
   Globe,
   Image as ImageIcon,
   Tag,
+  TrendingUp,
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
+import { getProjectDealActivity } from '@/lib/deals'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { type PropertyStatus, type LandingStatus } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
+
+function fmtAed(n: number): string {
+  if (!n || n <= 0) return 'AED 0'
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
+}
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
 
@@ -68,7 +80,14 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const { t } = await getServerT()
 
   // Real DB inventory only — no seed fallback.
-  const prop = await getInventoryPropertyBySlug(id)
+  const [prop, sales, sessionUser] = await Promise.all([
+    getInventoryPropertyBySlug(id),
+    getProjectDealActivity(id),
+    verifySession((await cookies()).get(SESSION_COOKIE)?.value),
+  ])
+  // Recent-deal drill-down carries agent + client names, so it is management-only;
+  // the aggregate booked/value/commission numbers are project-level and shown to all.
+  const isManagement = !!sessionUser && MANAGEMENT_ROLES.includes(sessionUser.role)
 
   if (!prop) {
     return (
@@ -213,6 +232,59 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </div>
         </div>
       </div>
+
+      {/* Sales booked — the deal → inventory reverse edge (real approved/closed deals) */}
+      <section className="mt-8">
+        <div className="rounded-[20px] border border-line bg-surface-2 p-5">
+          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+            <TrendingUp className="h-3.5 w-3.5" /> {t('inv.detail.sales.title')}
+          </div>
+
+          {sales.dealsBooked === 0 ? (
+            <p className="text-sm text-slate-500">{t('inv.detail.sales.empty')}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: t('inv.detail.sales.booked'), value: String(sales.dealsBooked) },
+                  { label: t('inv.detail.sales.value'), value: fmtAed(sales.salesValueAed) },
+                  { label: t('inv.detail.sales.commission'), value: fmtAed(sales.commissionAed) },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-[14px] border border-line bg-surface-2 p-3">
+                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</div>
+                    <div className="mt-1.5 text-[22px] font-semibold tabular-nums text-gold">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {isManagement && (
+                <div className="mt-5">
+                  <div className="mb-2 text-xs uppercase tracking-[0.14em] text-slate-500">{t('inv.detail.sales.recent')}</div>
+                  <div className="divide-y divide-line">
+                    {sales.recent.map((d) => (
+                      <div key={d.id} className="flex items-center justify-between gap-4 py-2.5">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm text-slate-200">{d.leadName || '—'}</div>
+                          <div className="truncate text-xs text-slate-500">{d.agentName || '—'}</div>
+                        </div>
+                        <div className="shrink-0 text-right text-sm tabular-nums text-slate-300">
+                          {fmtAed(d.propertyValueAed)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    href="/freehold-intelligence/management/deals"
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold"
+                  >
+                    {t('inv.detail.sales.viewAll')} <ArrowUpRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
 
       {/* Tags */}
       {prop.tags.length > 0 && (

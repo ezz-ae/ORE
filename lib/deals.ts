@@ -614,6 +614,76 @@ export async function recordDealPayment(id: string, amountAed: number): Promise<
   return rows[0] ? mapRow(rows[0]) : null
 }
 
+export interface ProjectDealActivity {
+  /** Confirmed deals (approved or closed) booked against this project. */
+  dealsBooked: number
+  /** Sum of property values for those deals — the project's booked sales value. */
+  salesValueAed: number
+  /** Sum of agency commission earned on those deals. */
+  commissionAed: number
+  /** A few of the most recent confirmed deals, for a drill-down list. */
+  recent: Array<{
+    id: string
+    leadName: string
+    agentName: string
+    propertyValueAed: number
+    status: DealStatus
+    createdAt: string | null
+  }>
+}
+
+const EMPTY_PROJECT_ACTIVITY: ProjectDealActivity = {
+  dealsBooked: 0,
+  salesValueAed: 0,
+  commissionAed: 0,
+  recent: [],
+}
+
+/**
+ * Closed-loop reverse edge: real deals booked against an inventory project.
+ * Inventory here is project-level (a deal links by project_slug), so this is the
+ * honest "deal → inventory" signal — booked sales + commission per project,
+ * not a per-unit sold flag. Only approved/closed deals count as booked.
+ */
+export async function getProjectDealActivity(projectSlug: string): Promise<ProjectDealActivity> {
+  if (!projectSlug) return EMPTY_PROJECT_ACTIVITY
+  try {
+    await ensureDealsSchemaOnce()
+    const [totals] = await query<Record<string, unknown>>(
+      `SELECT
+         COUNT(*)::int AS deals_booked,
+         COALESCE(SUM(property_value_aed), 0) AS sales_value,
+         COALESCE(SUM(agency_commission_aed), 0) AS commission
+       FROM freehold_site_deals
+       WHERE project_slug = $1 AND status IN ('approved', 'closed')`,
+      [projectSlug],
+    )
+    const recentRows = await query<DealRow>(
+      `SELECT id, lead_name, agent_name, property_value_aed, status, created_at::text
+       FROM freehold_site_deals
+       WHERE project_slug = $1 AND status IN ('approved', 'closed')
+       ORDER BY created_at DESC NULLS LAST LIMIT 5`,
+      [projectSlug],
+    )
+    return {
+      dealsBooked: num(totals?.deals_booked),
+      salesValueAed: num(totals?.sales_value),
+      commissionAed: num(totals?.commission),
+      recent: recentRows.map((r) => ({
+        id: str(r.id),
+        leadName: str(r.lead_name),
+        agentName: str(r.agent_name),
+        propertyValueAed: num(r.property_value_aed),
+        status: (str(r.status) || "approved") as DealStatus,
+        createdAt: strOrNull(r.created_at),
+      })),
+    }
+  } catch (error) {
+    console.error("[deals] getProjectDealActivity failed", error)
+    return EMPTY_PROJECT_ACTIVITY
+  }
+}
+
 /** Aggregated finance totals across approved + closed deals. */
 export async function getFinanceTotals(options: { agentId?: string } = {}): Promise<FinanceTotals> {
   try {
