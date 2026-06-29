@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const MANAGEMENT = ['admin', 'ceo', 'director', 'sales_manager']
 
 interface DbLead {
   id: string
@@ -101,5 +104,32 @@ export async function GET() {
   } catch (err) {
     console.error('[crm/leads] query failed', err)
     return NextResponse.json({ leads: [], source: 'error' }, { status: 500 })
+  }
+}
+
+// Create a lead, optionally pre-assigned to a broker. Management only.
+export async function POST(req: Request) {
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!MANAGEMENT.includes(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const body = await req.json().catch(() => ({})) as {
+    name?: string; phone?: string; email?: string; source?: string; assignedBrokerId?: string
+  }
+  const name = (body.name || '').trim()
+  if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+
+  try {
+    await ensureLeadsTable()
+    const id = randomUUID()
+    await query(
+      `INSERT INTO freehold_site_leads (id, name, phone, email, source, status, assigned_broker_id)
+       VALUES ($1, $2, $3, $4, $5, 'new', $6)`,
+      [id, name, body.phone || null, body.email || null, (body.source || 'manual').trim(), body.assignedBrokerId || null],
+    )
+    return NextResponse.json({ ok: true, id }, { status: 201 })
+  } catch (err) {
+    console.error('[crm/leads] create failed', err)
+    return NextResponse.json({ error: 'Create failed' }, { status: 500 })
   }
 }
