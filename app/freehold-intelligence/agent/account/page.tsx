@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, type ReactNode } from 'react'
+import Link from 'next/link'
 import {
   Star, Lock, TrendingUp, Zap, Users, MapPin, Wallet,
-  CheckCircle, Clock, AlertCircle,
+  CheckCircle, Clock, AlertCircle, ArrowUpRight,
 } from 'lucide-react'
 import {
   agentProfile, agentWallet, agentAchievements, agentLeadPool, agentExpertise,
@@ -136,6 +137,9 @@ export default function AgentAccountPage() {
   const { user } = useSession()
   const [liveBalance, setLiveBalance] = useState<LiveBalance | null>(null)
   const [liveLedger, setLiveLedger] = useState<LiveLedgerEntry[] | null>(null)
+  // Real commission earned from this broker's own approved/closed deals — the
+  // finance → agent edge. The deals API scopes totals to the broker server-side.
+  const [commission, setCommission] = useState<{ gross: number; received: number; outstanding: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -146,6 +150,18 @@ export default function AgentAccountPage() {
     fetch('/api/freehold/credits/ledger')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (!cancelled && Array.isArray(d?.ledger)) setLiveLedger(d.ledger) })
+      .catch(() => {})
+    fetch('/api/freehold/deals?totals=1')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!cancelled && d?.totals) {
+          setCommission({
+            gross: d.totals.totalCommissionAed ?? 0,
+            received: d.totals.totalPaidAed ?? 0,
+            outstanding: d.totals.totalOutstandingAed ?? 0,
+          })
+        }
+      })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
@@ -220,6 +236,31 @@ export default function AgentAccountPage() {
           </div>
         ))}
       </section>
+
+      {/* Commissions from deals — real, scoped to this broker */}
+      {commission && commission.gross > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.commissions.title')}</div>
+            <Link href="/freehold-intelligence/crm?stage=closed" className="group flex items-center gap-1 text-xs text-gold/70 transition-colors hover:text-gold">
+              {t('agent.commissions.viewClosed')}<ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: t('agent.commissions.gross'), value: fmtAED(commission.gross), color: 'text-white' },
+              { label: t('agent.commissions.received'), value: fmtAED(commission.received), color: 'text-emerald-400' },
+              { label: t('agent.commissions.outstanding'), value: fmtAED(commission.outstanding), color: 'text-gold' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="rounded-[16px] border border-line bg-surface p-4">
+                <div className="text-xs text-slate-500">{label}</div>
+                <div className={`mt-1 text-lg font-semibold tabular-nums ${color}`}>{value}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 text-xs text-slate-500">{t('agent.commissions.sub')}</div>
+        </section>
+      )}
 
       {/* Wallet */}
       <section className="mt-8">
