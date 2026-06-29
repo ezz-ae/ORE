@@ -246,12 +246,20 @@ async function getLandingMap(): Promise<Map<string, LandingInfo>> {
       const projectSlug = r.project_slug
       const slug = r.slug
       if (!projectSlug || !slug) continue
-      const statusOk =
-        ['published', 'active', 'live'].includes(
-          String(r.status ?? r.publish_status ?? '').toLowerCase(),
-        )
-      const from = r.publish_from ? new Date(r.publish_from).getTime() : null
-      const to = r.publish_to ? new Date(r.publish_to).getTime() : null
+      // Mirror lib/landing-pages.ts isPublishedNow: take the first NON-EMPTY of
+      // status / publish_status (an empty-string status must fall through, not
+      // count as present), so inventory's "live" matches what /lp actually serves.
+      const rawStatus =
+        [r.status, r.publish_status]
+          .map((s) => (typeof s === 'string' ? s.trim() : ''))
+          .find((s) => s.length > 0) ?? ''
+      const statusOk = ['published', 'active', 'live'].includes(rawStatus.toLowerCase())
+      // Guard malformed dates: an unparseable bound is treated as "no bound"
+      // (NaN), never as "window closed", matching toDate()'s null behaviour.
+      const fromMs = r.publish_from ? new Date(r.publish_from).getTime() : NaN
+      const toMs = r.publish_to ? new Date(r.publish_to).getTime() : NaN
+      const from = Number.isNaN(fromMs) ? null : fromMs
+      const to = Number.isNaN(toMs) ? null : toMs
       const published =
         statusOk &&
         (from === null || now >= from) &&

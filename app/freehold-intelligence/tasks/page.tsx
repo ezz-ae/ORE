@@ -81,16 +81,16 @@ export default function TasksPage() {
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
         if (!d?.tasks) return
-        setTasks(d.tasks.map((t: Record<string, unknown>): Task => ({
-          id: String(t.id),
-          priority: (t.priority as Task['priority']) || 'medium',
-          status: (t.status as Task['status']) || 'open',
-          title: String(t.title || ''),
-          description: String(t.description || ''),
-          owner: String(t.assignee || '—'),
-          assignee: String(t.assignee || '—'),
+        setTasks(d.tasks.map((row: Record<string, unknown>): Task => ({
+          id: String(row.id),
+          priority: (row.priority as Task['priority']) || 'medium',
+          status: (row.status as Task['status']) || 'open',
+          title: String(row.title || ''),
+          description: String(row.description || ''),
+          owner: String(row.assignee || '—'),
+          assignee: String(row.assignee || '—'),
           app: 'Tasks',
-          dueDate: t.dueDate ? String(t.dueDate) : undefined,
+          dueDate: row.dueDate ? String(row.dueDate) : undefined,
         })))
       })
       .catch(() => {})
@@ -176,11 +176,11 @@ export default function TasksPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.task) throw new Error(data?.error || 'Failed')
-      const t = data.task
+      const created = data.task
       setTasks(prev => [{
-        id: String(t.id), priority: t.priority || 'medium', status: t.status || 'open',
-        title: t.title, description: t.description || '', owner: t.assignee || '—',
-        assignee: t.assignee || '—', app: 'Tasks', dueDate: t.dueDate || undefined,
+        id: String(created.id), priority: created.priority || 'medium', status: created.status || 'open',
+        title: created.title, description: created.description || '', owner: created.assignee || '—',
+        assignee: created.assignee || '—', app: 'Tasks', dueDate: created.dueDate || undefined,
       }, ...prev])
       setFormTitle(''); setFormDesc(''); setFormAssignee(''); setFormPriority('medium'); setFormDue('')
       setShowSuccess(true)
