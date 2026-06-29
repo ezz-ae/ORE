@@ -25,7 +25,7 @@ const STATUS_BADGE: Record<DealStatus, { labelKey: string; cls: string }> = {
   pending_step2: { labelKey: 'mgmt.deals.status.step2', cls: 'bg-violet-500/15 text-violet-400' },
   approved: { labelKey: 'mgmt.deals.status.approved', cls: 'bg-emerald-500/15 text-emerald-400' },
   rejected: { labelKey: 'mgmt.deals.status.rejected', cls: 'bg-red-500/15 text-red-400' },
-  closed: { labelKey: 'mgmt.deals.status.closed', cls: 'bg-sky-500/15 text-sky-400' },
+  closed: { labelKey: 'mgmt.deals.status.closed', cls: 'bg-teal-500/15 text-teal-400' },
 }
 
 function fmtAED(n: number) {

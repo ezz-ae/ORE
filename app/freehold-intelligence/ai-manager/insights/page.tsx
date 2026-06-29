@@ -70,7 +70,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
   Critical:    { label: 'Critical',    className: 'bg-red-500/10 border border-red-500/25 text-red-400' },
   High:        { label: 'High',        className: 'bg-amber-500/10 border border-amber-500/25 text-amber-400' },
   Opportunity: { label: 'Opportunity', className: 'bg-gold/10 border border-emerald-500/25 text-gold' },
-  Info:        { label: 'Info',        className: 'bg-sky-500/10 border border-sky-500/25 text-slate-400' },
+  Info:        { label: 'Info',        className: 'bg-teal-500/10 border border-teal-500/25 text-slate-400' },
 }
 
 // ─── content performance table ─────────────────────────────────────────────────

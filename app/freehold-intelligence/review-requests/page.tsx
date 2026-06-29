@@ -105,7 +105,7 @@ const PRIORITY_ORDER: Record<ReviewPriority, number> = { critical: 0, high: 1, m
 function priorityTone(p: ReviewPriority) {
   if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400', label: 'Critical' }
   if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold', label: 'High' }
-  if (p === 'medium')   return { ring: 'border-sky-400/20', bg: 'bg-sky-400/[0.04]', text: 'text-sky-200', dot: 'bg-sky-400', label: 'Medium' }
+  if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400', label: 'Medium' }
   return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500', label: 'Low' }
 }
 
@@ -113,7 +113,7 @@ function typeTone(t: ReviewType) {
   if (t === 'approval')       return 'bg-gold/10 border-gold/20 text-emerald-200'
   if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
   if (t === 'decision')       return 'bg-gold/10 border-gold/20 text-[#F8E7AE]'
-  if (t === 'correction')     return 'bg-sky-400/10 border-sky-400/20 text-sky-200'
+  if (t === 'correction')     return 'bg-teal-400/10 border-teal-400/20 text-teal-200'
   return                              'bg-surface-2 border-line-strong text-slate-400'
 }
 

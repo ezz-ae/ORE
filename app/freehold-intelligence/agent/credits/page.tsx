@@ -35,7 +35,7 @@ const INITIAL_ADS: BrokerAd[] = [
 ]
 
 const PERF = [
-  { Icon: Users,      labelKey: 'agent.perfLeads',       value: `${me.leads}`,                       color: 'text-sky-400'     },
+  { Icon: Users,      labelKey: 'agent.perfLeads',       value: `${me.leads}`,                       color: 'text-teal-400'     },
   { Icon: Trophy,     labelKey: 'agent.perfDeals',       value: `${me.deals}`,                       color: 'text-gold'   },
   { Icon: Target,     labelKey: 'agent.perfClosingRate', value: `${me.closingRate.toFixed(1)}%`,     color: 'text-violet-400'  },
   { Icon: TrendingUp, labelKey: 'agent.perfRoi',         value: `${me.roi.toFixed(1)}×`,             color: me.roi >= 5 ? 'text-emerald-400' : 'text-amber-400' },

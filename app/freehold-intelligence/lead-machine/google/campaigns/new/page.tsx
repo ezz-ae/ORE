@@ -460,7 +460,7 @@ export default function GoogleCampaignNewPage() {
                         <div className="mt-0.5 text-xs text-slate-500">{theme.keywords.length} keywords</div>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-medium ${
-                        theme.intent === 'high' ? 'bg-gold/10 text-[#F8E7AE] border-gold/20' : 'bg-sky-400/10 text-slate-400 border-sky-400/20'
+                        theme.intent === 'high' ? 'bg-gold/10 text-[#F8E7AE] border-gold/20' : 'bg-teal-400/10 text-slate-400 border-teal-400/20'
                       }`}>
                         {theme.intent}
                       </span>

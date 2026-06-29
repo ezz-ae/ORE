@@ -53,7 +53,7 @@ const AD_STRENGTH_COLOR: Record<GoogleAdStrength, string> = {
 
 const MATCH_BADGE: Record<GoogleKeywordMatchType, string> = {
   BROAD:  'bg-surface-2 text-slate-500 border-line',
-  PHRASE: 'bg-sky-400/10 text-slate-400 border-sky-400/20',
+  PHRASE: 'bg-teal-400/10 text-slate-400 border-teal-400/20',
   EXACT:  'bg-gold/10 text-gold border-gold/20',
 }
 

@@ -19,7 +19,7 @@ interface EventItem {
 }
 
 const SEVERITY_STYLES = {
-  info:    { dot: 'bg-sky-400',     text: 'text-sky-400',     bg: 'border-sky-500/20 bg-sky-500/10'       },
+  info:    { dot: 'bg-teal-400',     text: 'text-teal-400',     bg: 'border-teal-500/20 bg-teal-500/10'       },
   success: { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'border-emerald-500/20 bg-emerald-500/10' },
   warning: { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'border-amber-500/20 bg-amber-500/10'   },
 }

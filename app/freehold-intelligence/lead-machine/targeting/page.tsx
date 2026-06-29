@@ -10,7 +10,7 @@ import { useT } from '@/lib/i18n/provider'
 const USE_CASE_BADGE: Record<TargetingUseCase, { color: string; badge: string }> = {
   investor:       { color: 'text-gold',        badge: 'border-gold/25 bg-gold/10 text-[#F8E7AE]'   },
   end_user:       { color: 'text-gold',        badge: 'border-gold/20 bg-gold/10 text-gold'         },
-  golden_visa:    { color: 'text-slate-400',   badge: 'border-sky-400/20 bg-sky-400/10 text-sky-200' },
+  golden_visa:    { color: 'text-slate-400',   badge: 'border-teal-400/20 bg-teal-400/10 text-teal-200' },
   secondary:      { color: 'text-slate-400',   badge: 'border-violet-400/20 bg-violet-400/10 text-slate-400' },
   international:  { color: 'text-slate-400',   badge: 'border-rose-400/20 bg-rose-400/10 text-rose-200' },
   custom:         { color: 'text-slate-400',   badge: 'border-white/10 bg-surface-2 text-slate-400' },

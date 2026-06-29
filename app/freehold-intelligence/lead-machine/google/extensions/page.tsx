@@ -95,7 +95,7 @@ function SitelinkCard({ ext, onRemove, removeLabel }: { ext: GoogleSitelinkExten
 
 function CalloutCard({ ext, onRemove, removeLabel }: { ext: GoogleCalloutExtension; onRemove?: () => void; removeLabel?: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/20 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-slate-400">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/20 bg-teal-400/[0.07] px-3 py-1.5 text-xs font-medium text-slate-400">
       {ext.calloutText}
       {onRemove && ext.id.startsWith('local-') && (
         <button onClick={onRemove} title={removeLabel} className="-mr-1 rounded p-0.5 text-slate-500 transition hover:text-red-400">

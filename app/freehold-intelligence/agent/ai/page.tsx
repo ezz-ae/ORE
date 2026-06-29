@@ -12,10 +12,10 @@ import { useI18n } from '@/lib/i18n/provider'
 
 const CATEGORY_META: Record<AgentConnection['category'], { labelKey: string; color: string }> = {
   crm:        { labelKey: 'agent.catCrm',        color: 'text-orange-400' },
-  ads:        { labelKey: 'agent.catAds',        color: 'text-blue-400'   },
+  ads:        { labelKey: 'agent.catAds',        color: 'text-fuchsia-400'   },
   social:     { labelKey: 'agent.catSocial',     color: 'text-pink-400'   },
   ai:         { labelKey: 'agent.catAi',         color: 'text-violet-400' },
-  portal:     { labelKey: 'agent.catPortals',    color: 'text-sky-400'    },
+  portal:     { labelKey: 'agent.catPortals',    color: 'text-teal-400'    },
   automation: { labelKey: 'agent.catAutomation', color: 'text-amber-400'  },
   messaging:  { labelKey: 'agent.catMessaging',  color: 'text-emerald-400'},
 }
@@ -28,7 +28,7 @@ type Route = 'apps' | 'inventory' | 'frontend'
 const ROUTES: { id: Route; labelKey: string; Icon: React.ElementType; descKey: string; color: string }[] = [
   { id: 'apps',      labelKey: 'agent.routeApps',      Icon: Zap,      descKey: 'agent.routeAppsDesc',      color: 'text-gold' },
   { id: 'inventory', labelKey: 'agent.routeInventory', Icon: BookOpen, descKey: 'agent.routeInventoryDesc', color: 'text-violet-400' },
-  { id: 'frontend',  labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-sky-400'    },
+  { id: 'frontend',  labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-teal-400'    },
 ]
 
 
@@ -188,7 +188,7 @@ export default function AgentAIPage() {
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.agentKnowledge')}</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {[
-            { Icon: Users,    labelKey: 'agent.knowledgeLeadsLabel',     valueKey: 'agent.knowledgeLeadsValue',     color: 'text-sky-400'    },
+            { Icon: Users,    labelKey: 'agent.knowledgeLeadsLabel',     valueKey: 'agent.knowledgeLeadsValue',     color: 'text-teal-400'    },
             { Icon: BookOpen, labelKey: 'agent.knowledgeInventoryLabel', valueKey: 'agent.knowledgeInventoryValue', color: 'text-violet-400' },
             { Icon: Settings, labelKey: 'agent.knowledgeProfileLabel',   valueKey: 'agent.knowledgeProfileValue',   color: 'text-gold'  },
           ].map(({ Icon, labelKey, valueKey, color }) => (

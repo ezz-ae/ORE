@@ -27,7 +27,7 @@ const STATUS_PILLS: { key: StatusFilter; labelKey: string }[] = [
 function severityTone(s: string) {
   if (s === 'critical') return { ring: 'border-red-400/25',      bg: 'bg-red-400/[0.06]',      text: 'text-red-300',      dot: 'bg-red-400',    labelKey: 'lm.requirements.severity.critical', active: 'border-red-400/40 bg-red-400/15 text-red-300' }
   if (s === 'high')     return { ring: 'border-gold/25',    bg: 'bg-gold/[0.05]',   text: 'text-[#F8E7AE]',    dot: 'bg-gold', labelKey: 'lm.requirements.severity.high',     active: 'border-gold/40 bg-gold/15 text-[#F8E7AE]' }
-  if (s === 'medium')   return { ring: 'border-sky-400/20',      bg: 'bg-sky-400/[0.05]',      text: 'text-sky-200',      dot: 'bg-sky-400',   labelKey: 'lm.requirements.severity.medium',   active: 'border-sky-400/40 bg-sky-400/15 text-sky-200' }
+  if (s === 'medium')   return { ring: 'border-teal-400/20',      bg: 'bg-teal-400/[0.05]',      text: 'text-teal-200',      dot: 'bg-teal-400',   labelKey: 'lm.requirements.severity.medium',   active: 'border-teal-400/40 bg-teal-400/15 text-teal-200' }
   return                       { ring: 'border-line',    bg: 'bg-surface',           text: 'text-slate-400',     dot: 'bg-white/30',  labelKey: 'lm.requirements.severity.low',      active: 'border-white/20 bg-surface-2 text-slate-300' }
 }
 

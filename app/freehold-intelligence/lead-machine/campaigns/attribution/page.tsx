@@ -17,13 +17,13 @@ type PlatformFilter = 'All' | 'Meta' | 'Google'
 function urgencyDot(u: string) {
   if (u === 'critical') return 'bg-red-400'
   if (u === 'high')     return 'bg-gold'
-  if (u === 'medium')   return 'bg-sky-400'
+  if (u === 'medium')   return 'bg-teal-400'
   return 'bg-white/30'
 }
 
 function platformStyle(p: string) {
   return p === 'meta'
-    ? { label: 'Meta',   cls: 'border-blue-400/25 bg-blue-400/10 text-blue-300'  }
+    ? { label: 'Meta',   cls: 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'  }
     : { label: 'Google', cls: 'border-gold/25 bg-gold/10 text-gold' }
 }
 

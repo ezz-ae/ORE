@@ -28,7 +28,7 @@ const websitePages: PageRow[] = [
 ]
 
 function typeBadge(type: PageRow['type']) {
-  if (type === 'Landing') return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
+  if (type === 'Landing') return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
   if (type === 'Blog')    return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
   if (type === 'Legal')   return 'text-slate-400 bg-surface-2 border-line-strong'
   return 'text-amber-400 bg-amber-500/10 border-amber-500/20'

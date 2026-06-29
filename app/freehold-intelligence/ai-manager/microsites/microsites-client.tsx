@@ -63,7 +63,7 @@ export function MicrositesClient() {
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sky-400/70">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-teal-400/70">
             <Globe className="h-3.5 w-3.5" /> Web Studio
           </div>
           <h1 className="text-2xl font-semibold text-white">Project Microsites</h1>
@@ -82,7 +82,7 @@ export function MicrositesClient() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search projects…"
-          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-sky-400/40"
+          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-teal-400/40"
         />
       </div>
 
@@ -115,7 +115,7 @@ export function MicrositesClient() {
                           <button
                             disabled={busy}
                             onClick={() => save(item.projectSlug, { status: 'draft' })}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-sky-300 transition hover:bg-sky-400/15 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-3.5 py-1.5 text-xs font-medium text-teal-300 transition hover:bg-teal-400/15 disabled:opacity-50"
                           >
                             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Generate
                           </button>
@@ -161,7 +161,7 @@ function MicrositeEditor({ item, busy, onSave }: { item: MicrositeListItem; busy
   const [summary, setSummary] = useState('')
   const [brochureUrl, setBrochureUrl] = useState('')
 
-  const inputCls = 'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40'
+  const inputCls = 'w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400/40'
 
   return (
     <div className="space-y-3 border-t border-line bg-surface-2/30 px-5 py-4">
@@ -186,7 +186,7 @@ function MicrositeEditor({ item, busy, onSave }: { item: MicrositeListItem; busy
           ...(summary.trim() ? { summary } : {}),
           ...(brochureUrl.trim() ? { brochureUrl } : {}),
         })}
-        className="inline-flex items-center gap-2 rounded-lg border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-sm font-medium text-sky-300 transition hover:bg-sky-400/15 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-sm font-medium text-teal-300 transition hover:bg-teal-400/15 disabled:opacity-50"
       >
         {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save details
       </button>

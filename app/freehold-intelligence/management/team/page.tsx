@@ -111,7 +111,7 @@ export default function TeamPerformancePage() {
   }
 
   const SUMMARY_STATS = [
-    { label: t('mgmt.team.totalBrokers'),  value: String(agents.length),   sub: t('mgmt.team.totalBrokersHint'),  icon: Users,        color: 'text-sky-400'     },
+    { label: t('mgmt.team.totalBrokers'),  value: String(agents.length),   sub: t('mgmt.team.totalBrokersHint'),  icon: Users,        color: 'text-teal-400'     },
     { label: t('mgmt.team.leadsAssigned'), value: String(totalAssigned),   sub: t('mgmt.team.leadsAssignedHint'), icon: Activity,    color: 'text-violet-400'  },
     { label: t('mgmt.team.dealsClosed'),   value: String(totalClosed),     sub: t('mgmt.team.dealsClosedHint'),   icon: CheckCircle2, color: 'text-emerald-400' },
     { label: t('mgmt.team.topPerformer'),  value: topAgent?.name.split(' ')[0] ?? '—', sub: t('mgmt.team.topPerformerHint', { count: topAgent?.leadsClosed ?? 0 }), icon: Star, color: 'text-gold' },

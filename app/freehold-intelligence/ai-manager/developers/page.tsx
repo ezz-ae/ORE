@@ -24,7 +24,7 @@ const STATUS_STYLE: Record<DeveloperRow['profileStatus'], string> = {
 }
 
 const AVATAR_COLORS = [
-  'bg-sky-500/20 text-sky-300', 'bg-emerald-500/20 text-emerald-300',
+  'bg-teal-500/20 text-teal-300', 'bg-emerald-500/20 text-emerald-300',
   'bg-amber-500/20 text-amber-300', 'bg-violet-500/20 text-violet-300',
   'bg-cyan-500/20 text-cyan-300', 'bg-pink-500/20 text-pink-300',
   'bg-rose-500/20 text-rose-300', 'bg-orange-500/20 text-orange-300',
@@ -128,7 +128,7 @@ export default function DeveloperProfilesPage() {
           <h1 className="text-xl font-semibold text-white">Developer Profiles</h1>
           <p className="mt-1 text-xs text-slate-500">SEO pages for each developer — drives organic ranking</p>
         </div>
-        <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-3 py-1.5 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
           <Plus className="h-3.5 w-3.5" /> {showNew ? 'Cancel' : 'Add developer'}
         </button>
       </div>
@@ -136,7 +136,7 @@ export default function DeveloperProfilesPage() {
       <div className="mb-5 grid grid-cols-3 gap-3">
         {[
           { label: 'Complete',  value: loading ? '…' : `${complete}/${developers.length}`, Icon: CheckCircle2, color: 'text-emerald-400' },
-          { label: 'Avg SEO',   value: loading ? '…' : avgSeo,                             Icon: TrendingUp,   color: 'text-sky-400'     },
+          { label: 'Avg SEO',   value: loading ? '…' : avgSeo,                             Icon: TrendingUp,   color: 'text-teal-400'     },
           { label: '30d Leads', value: loading ? '…' : totalLeads,                         Icon: Globe,        color: 'text-gold'   },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} className="rounded-xl border border-line bg-surface p-4">
@@ -148,11 +148,11 @@ export default function DeveloperProfilesPage() {
       </div>
 
       {showNew && (
-        <div className="mb-5 rounded-xl border border-sky-400/20 bg-sky-400/[0.03] p-4 space-y-3">
+        <div className="mb-5 rounded-xl border border-teal-400/20 bg-teal-400/[0.03] p-4 space-y-3">
           <div className="text-sm font-semibold text-white">New developer profile</div>
           <input autoFocus placeholder="Developer name (e.g. Emaar Properties)" value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40" />
+            className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400/40" />
           <div className="flex gap-2">
             <button onClick={async () => {
               const name = newName.trim()
@@ -168,7 +168,7 @@ export default function DeveloperProfilesPage() {
                 setShowNew(false); setNewName(''); toast.success('Developer profile created')
               } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to create') }
             }}
-              className="rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+              className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
               Create profile
             </button>
             <button onClick={() => setShowNew(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">Cancel</button>
@@ -193,7 +193,7 @@ export default function DeveloperProfilesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input type="text" placeholder="Search developers…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30" />
+            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-teal-400/30" />
         </div>
         <div className="flex gap-1 rounded-lg border border-line bg-surface p-1">
           {(['All', 'Complete', 'Incomplete', 'Draft'] as FilterKey[]).map((f) => (
@@ -245,7 +245,7 @@ export default function DeveloperProfilesPage() {
                   <div className="flex items-center gap-2">
                     <button onClick={() => aiWrite(d.name)} disabled={isWriting}
                       className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                        isWritten ? 'border-emerald-400/25 text-emerald-400' : 'border-sky-400/25 bg-sky-400/[0.06] text-sky-400 hover:bg-sky-400/15'
+                        isWritten ? 'border-emerald-400/25 text-emerald-400' : 'border-teal-400/25 bg-teal-400/[0.06] text-teal-400 hover:bg-teal-400/15'
                       } disabled:opacity-50`}>
                       {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {isWriting ? 'Writing…' : isWritten ? 'Content ready' : 'AI Complete profile'}

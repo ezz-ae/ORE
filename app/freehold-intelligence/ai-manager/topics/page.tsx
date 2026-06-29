@@ -111,7 +111,7 @@ const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Sched
 const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'Area Guide', 'Investment', 'Legal', 'Lifestyle']
 
 function categoryBadge(cat: TopicCategory) {
-  if (cat === 'Market News') return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
+  if (cat === 'Market News') return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
   if (cat === 'Area Guide')  return 'text-gold bg-gold/10 border-gold/20'
   if (cat === 'Investment')  return 'text-gold bg-gold/10 border-gold/20'
   if (cat === 'Legal')       return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
@@ -120,7 +120,7 @@ function categoryBadge(cat: TopicCategory) {
 
 function statusBadge(status: TopicStatus) {
   if (status === 'Published')  return 'text-gold bg-gold/10 border-gold/20'
-  if (status === 'Scheduled')  return 'text-slate-400 bg-sky-500/10 border-sky-500/20'
+  if (status === 'Scheduled')  return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
   if (status === 'Idea')       return 'text-slate-400 bg-surface-2 border-line-strong'
   return 'text-slate-400 bg-surface-2 border-line-strong'
 }
@@ -267,7 +267,7 @@ export default function TopicsPage() {
           <span className="text-slate-500">Published </span>
           <span className="font-semibold text-gold">{topics.filter((t) => t.status === 'Published').length}</span>
         </div>
-        <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm">
+        <div className="rounded-xl border border-teal-500/20 bg-teal-500/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">Scheduled </span>
           <span className="font-semibold text-slate-400">{topics.filter((t) => t.status === 'Scheduled').length}</span>
         </div>

@@ -89,12 +89,12 @@ const RECO_STYLE: Record<RecoType, { cls: string; dotCls: string }> = {
   Scale:    { cls: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-400', dotCls: 'bg-emerald-400' },
   Pause:    { cls: 'border-red-400/25 bg-red-400/10 text-red-400',             dotCls: 'bg-red-400'     },
   Optimise: { cls: 'border-gold/25 bg-gold/10 text-gold',      dotCls: 'bg-gold'  },
-  Test:     { cls: 'border-sky-400/25 bg-sky-400/10 text-sky-300',             dotCls: 'bg-sky-400'     },
+  Test:     { cls: 'border-teal-400/25 bg-teal-400/10 text-teal-300',             dotCls: 'bg-teal-400'     },
 }
 
 function platformLabel(p: 'meta' | 'google') {
   return p === 'meta'
-    ? { label: 'Meta',   cls: 'border-blue-400/25 bg-blue-400/10 text-blue-300'    }
+    ? { label: 'Meta',   cls: 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'    }
     : { label: 'Google', cls: 'border-gold/25 bg-gold/10 text-gold' }
 }
 

@@ -35,7 +35,7 @@ function fmtSize(n: number): string {
 
 const TYPE_BADGE: Record<GoogleAudienceType, string> = {
   CUSTOMER_MATCH:   'bg-gold/10 text-[#F8E7AE] border-gold/20',
-  IN_MARKET:        'bg-sky-400/10 text-slate-400 border-sky-400/20',
+  IN_MARKET:        'bg-teal-400/10 text-slate-400 border-teal-400/20',
   AFFINITY:         'bg-violet-400/10 text-slate-400 border-violet-400/20',
   REMARKETING:      'bg-gold/10 text-gold border-gold/20',
   SIMILAR_AUDIENCE: 'bg-rose-400/10 text-slate-400 border-rose-400/20',
@@ -431,7 +431,7 @@ export default function GoogleAudiencesPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border border-sky-400/20 bg-sky-400/10 px-2 py-0.5 text-xs font-medium text-slate-400">
+                      <span className="inline-flex items-center rounded-full border border-teal-400/20 bg-teal-400/10 px-2 py-0.5 text-xs font-medium text-slate-400">
                         In-Market
                       </span>
                     </div>

@@ -29,9 +29,9 @@ const ROLE_META: Record<Role, { labelKey: string; Icon: React.ElementType; color
   ceo:           { labelKey: 'settings.role.ceo.label',           Icon: Crown,  color: 'text-gold',        descKey: 'settings.role.ceo.desc' },
   director:      { labelKey: 'settings.role.director.label',      Icon: Crown,  color: 'text-gold/80',     descKey: 'settings.role.director.desc' },
   admin:         { labelKey: 'settings.role.admin.label',         Icon: Shield, color: 'text-violet-400',  descKey: 'settings.role.admin.desc' },
-  sales_manager: { labelKey: 'settings.role.sales_manager.label', Icon: Shield, color: 'text-sky-300',     descKey: 'settings.role.sales_manager.desc' },
+  sales_manager: { labelKey: 'settings.role.sales_manager.label', Icon: Shield, color: 'text-teal-300',     descKey: 'settings.role.sales_manager.desc' },
   marketing:     { labelKey: 'settings.role.marketing.label',     Icon: User,   color: 'text-pink-300',    descKey: 'settings.role.marketing.desc' },
-  broker:        { labelKey: 'settings.role.broker.label',        Icon: User,   color: 'text-sky-400',     descKey: 'settings.role.broker.desc' },
+  broker:        { labelKey: 'settings.role.broker.label',        Icon: User,   color: 'text-teal-400',     descKey: 'settings.role.broker.desc' },
 }
 
 const STATUS_META: Record<Status, { labelKey: string; Icon: React.ElementType; color: string }> = {

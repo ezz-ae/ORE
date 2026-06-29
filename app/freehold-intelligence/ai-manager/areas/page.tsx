@@ -23,13 +23,13 @@ const STATUS_STYLE: Record<AreaRow['status'], string> = {
 }
 
 function seoBar(score: number) {
-  const color = score >= 80 ? 'bg-sky-400' : score >= 60 ? 'bg-amber-400' : 'bg-red-400'
+  const color = score >= 80 ? 'bg-teal-400' : score >= 60 ? 'bg-amber-400' : 'bg-red-400'
   return (
     <div className="flex items-center gap-2">
       <div className="h-1 w-14 rounded-full bg-surface-3">
         <div className={`h-1 rounded-full ${color}`} style={{ width: `${score}%` }} />
       </div>
-      <span className={`text-xs tabular-nums ${score >= 80 ? 'text-sky-400' : score >= 60 ? 'text-amber-400' : 'text-red-400/80'}`}>{score}</span>
+      <span className={`text-xs tabular-nums ${score >= 80 ? 'text-teal-400' : score >= 60 ? 'text-amber-400' : 'text-red-400/80'}`}>{score}</span>
     </div>
   )
 }
@@ -123,17 +123,17 @@ export default function AreaGuidesPage() {
           <h1 className="text-xl font-semibold text-white">Area Guides</h1>
           <p className="mt-1 text-xs text-slate-500">SEO-optimised location pages for each area you serve</p>
         </div>
-        <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-3 py-1.5 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+        <button onClick={() => setShowNew((v) => !v)} className="flex items-center gap-1.5 rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-3 py-1.5 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
           <Plus className="h-3.5 w-3.5" /> {showNew ? 'Cancel' : 'New area'}
         </button>
       </div>
 
       {showNew && (
-        <div className="mb-5 rounded-xl border border-sky-400/20 bg-sky-400/[0.03] p-4 space-y-3">
+        <div className="mb-5 rounded-xl border border-teal-400/20 bg-teal-400/[0.03] p-4 space-y-3">
           <div className="text-sm font-semibold text-white">New area guide</div>
           <input autoFocus placeholder="Area name (e.g. Dubai Marina)" value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-sky-400/40" />
+            className="w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-teal-400/40" />
           <div className="flex gap-2">
             <button onClick={async () => {
               const name = newName.trim()
@@ -149,7 +149,7 @@ export default function AreaGuidesPage() {
                 setShowNew(false); setNewName(''); toast.success('Area guide created')
               } catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to create') }
             }}
-              className="rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-4 py-2 text-xs font-medium text-sky-400 transition hover:bg-sky-400/15">
+              className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
               Create
             </button>
             <button onClick={() => setShowNew(false)} className="rounded-full border border-line-strong px-4 py-2 text-xs text-slate-400 transition hover:text-slate-100">Cancel</button>
@@ -160,7 +160,7 @@ export default function AreaGuidesPage() {
       <div className="mb-5 grid grid-cols-3 gap-3">
         {[
           { label: 'Published', value: loading ? '…' : published, sub: `${areas.length} total`, Icon: Globe,      color: 'text-emerald-400' },
-          { label: 'Avg SEO',   value: loading ? '…' : avgSeo,    sub: '/ 100 score',           Icon: TrendingUp,  color: 'text-sky-400'     },
+          { label: 'Avg SEO',   value: loading ? '…' : avgSeo,    sub: '/ 100 score',           Icon: TrendingUp,  color: 'text-teal-400'     },
           { label: '30d Leads', value: loading ? '…' : totalLeads, sub: 'from area pages',      Icon: FileText,    color: 'text-gold'   },
         ].map(({ label, value, sub, Icon, color }) => (
           <div key={label} className="rounded-xl border border-line bg-surface p-4">
@@ -176,7 +176,7 @@ export default function AreaGuidesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input type="text" placeholder="Search areas…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-sky-400/30" />
+            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-teal-400/30" />
         </div>
         <div className="flex gap-1 rounded-lg border border-line bg-surface p-1">
           {(['All', 'Published', 'Draft', 'Missing'] as FilterKey[]).map((f) => (
@@ -210,7 +210,7 @@ export default function AreaGuidesPage() {
             <div key={a.slug} className="grid grid-cols-[1fr,auto,auto,auto] items-center gap-4 px-5 py-3.5">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 shrink-0 text-sky-400/50" />
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-teal-400/50" />
                   <span className="text-sm font-medium text-slate-300 truncate">{a.name}</span>
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500 pl-5">
@@ -224,7 +224,7 @@ export default function AreaGuidesPage() {
               <div className="flex items-center gap-1.5 justify-center">
                 <button onClick={() => aiWrite(a.name)} disabled={isWriting}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                    isWritten ? 'border-emerald-400/20 text-emerald-400' : 'border-sky-400/20 bg-sky-400/[0.06] text-sky-400/80 hover:bg-sky-400/15'
+                    isWritten ? 'border-emerald-400/20 text-emerald-400' : 'border-teal-400/20 bg-teal-400/[0.06] text-teal-400/80 hover:bg-teal-400/15'
                   } disabled:opacity-50`}>
                   {isWriting ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                   {isWriting ? 'Writing…' : isWritten ? 'Done' : 'AI Write'}

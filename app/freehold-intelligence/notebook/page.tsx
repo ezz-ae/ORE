@@ -24,7 +24,7 @@ function outputTypeIcon(type: string, className = 'h-3.5 w-3.5') {
 function statusTone(status: string) {
   if (status === 'approved') return 'text-gold border-gold/20 bg-gold/10'
   if (status === 'sent_for_review') return 'text-[#F8E7AE] border-gold/20 bg-gold/10'
-  if (status === 'saved') return 'text-sky-200 border-sky-400/20 bg-sky-400/10'
+  if (status === 'saved') return 'text-teal-200 border-teal-400/20 bg-teal-400/10'
   return 'text-slate-400 border-line-strong bg-surface-2'
 }
 

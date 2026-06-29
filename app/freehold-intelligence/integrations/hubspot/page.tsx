@@ -66,7 +66,7 @@ async function fetchAll(token: string): Promise<HsData> {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  leadIn:              'text-sky-400    bg-sky-400/10    border-sky-400/20',
+  leadIn:              'text-teal-400    bg-teal-400/10    border-teal-400/20',
   attemptingcontact:   'text-amber-400  bg-amber-400/10  border-amber-400/20',
   contractsent:        'text-violet-400 bg-violet-400/10 border-violet-400/20',
   closedwon:           'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',

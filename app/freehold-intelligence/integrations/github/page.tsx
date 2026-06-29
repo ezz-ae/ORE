@@ -237,7 +237,7 @@ export default function GitHubPage() {
             </div>
             <div className="mt-4 grid grid-cols-4 gap-3 border-t border-line pt-4">
               {[
-                { label: 'Branch',     value: data.repo.default_branch,              Icon: GitBranch,     color: 'text-sky-400'    },
+                { label: 'Branch',     value: data.repo.default_branch,              Icon: GitBranch,     color: 'text-teal-400'    },
                 { label: 'Stars',      value: data.repo.stargazers_count.toString(),  Icon: Star,          color: 'text-amber-400'  },
                 { label: 'Open issues',value: data.repo.open_issues_count.toString(), Icon: Circle,        color: 'text-orange-400' },
                 { label: 'Language',   value: data.repo.language || '—',              Icon: CheckCircle2,  color: 'text-violet-400' },

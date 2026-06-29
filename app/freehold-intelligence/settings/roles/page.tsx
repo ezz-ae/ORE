@@ -63,7 +63,7 @@ const PERM_MATRIX: PermGroup[] = [
 const ROLES: { id: Role; Icon: React.ElementType; color: string; labelKey: string; descKey: string }[] = [
   { id: 'Owner',  Icon: Crown,  color: 'text-gold',       labelKey: 'settings.roles.owner',  descKey: 'settings.roles.owner.desc' },
   { id: 'Admin',  Icon: Shield, color: 'text-violet-400', labelKey: 'settings.roles.admin',  descKey: 'settings.roles.admin.desc' },
-  { id: 'Agent',  Icon: User,   color: 'text-sky-400',    labelKey: 'settings.roles.agent',  descKey: 'settings.roles.agent.desc' },
+  { id: 'Agent',  Icon: User,   color: 'text-teal-400',    labelKey: 'settings.roles.agent',  descKey: 'settings.roles.agent.desc' },
   { id: 'Viewer', Icon: User,   color: 'text-slate-400',  labelKey: 'settings.roles.viewer', descKey: 'settings.roles.viewer.desc' },
 ]
 
