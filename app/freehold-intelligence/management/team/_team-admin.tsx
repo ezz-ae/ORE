@@ -25,7 +25,7 @@ interface Member {
 
 const ROLE_LABEL: Record<Role, string> = {
   ceo: 'CEO', director: 'Director', admin: 'Admin',
-  sales_manager: 'Sales Manager', marketing: 'Marketing', broker: 'Agent',
+  sales_manager: 'Sales Manager', marketing: 'Marketing', broker: 'Broker',
 }
 const ASSIGNABLE: Role[] = ['director', 'admin', 'sales_manager', 'marketing', 'broker']
 

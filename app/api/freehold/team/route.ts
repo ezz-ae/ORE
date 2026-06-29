@@ -17,8 +17,8 @@ const DB_ROLE_TO_UI: Record<string, string> = {
   director:      'Admin',
   admin:         'Admin',
   sales_manager: 'Admin',
-  marketing:     'Agent',
-  broker:        'Agent',
+  marketing:     'Marketing',
+  broker:        'Broker',
 }
 
 function initials(name: string) {
@@ -71,7 +71,7 @@ export async function GET() {
       id:         r.id,
       name:       r.name ?? r.email.split('@')[0],
       email:      r.email,
-      role:       DB_ROLE_TO_UI[r.role] ?? 'Agent',
+      role:       DB_ROLE_TO_UI[r.role] ?? 'Broker',
       dbRole:     r.role,
       status:     (r.banned ? 'banned' : r.suspended ? 'suspended' : 'active') as 'active' | 'suspended' | 'banned',
       suspended:  r.suspended ?? false,
