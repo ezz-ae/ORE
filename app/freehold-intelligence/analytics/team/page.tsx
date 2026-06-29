@@ -109,11 +109,11 @@ export default function TeamAnalyticsPage() {
         {/* Agent leaderboard */}
         <section>
           <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.leaderboard')}</div>
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+          <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800">
+                  <tr className="border-b border-line">
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.agent')}</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.leads')}</th>
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.wins')}</th>
@@ -121,15 +121,15 @@ export default function TeamAnalyticsPage() {
                     <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.load')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-white/[0.08]">
                   {agents && agents.length > 0 ? (
                     agents.map((ag) => {
                       const u = util(ag.totalLeads)
                       return (
-                        <tr key={ag.id || ag.name} className="transition hover:bg-slate-800/40">
+                        <tr key={ag.id || ag.name} className="transition hover:bg-white/[0.04]">
                           <td className="px-4 py-3">
                             <Link href={`/freehold-intelligence/analytics/team/${ag.id}`} className="group flex items-center gap-2.5">
-                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-200">{initialsOf(ag.name)}</span>
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-xs font-bold text-slate-200">{initialsOf(ag.name)}</span>
                               <span className="font-medium text-slate-200 transition-colors group-hover:text-gold">{ag.name}</span>
                             </Link>
                           </td>
@@ -138,7 +138,7 @@ export default function TeamAnalyticsPage() {
                           <td className="px-4 py-3 text-right tabular-nums text-slate-300">{ag.overdueFollowups}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-2">
-                              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-slate-700">
+                              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.08]">
                                 <div className={`h-full rounded-full ${loadColor(u)}`} style={{ width: `${Math.min(100, u)}%` }} />
                               </div>
                               <span className="w-9 text-right text-xs tabular-nums text-slate-400">{u}%</span>
@@ -163,7 +163,7 @@ export default function TeamAnalyticsPage() {
         {/* Team pipeline */}
         <section>
           <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.teamPipeline')}</div>
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5 space-y-4">
+          <div className="rounded-xl border border-line bg-white/[0.05] p-5 space-y-4">
             {hasFunnel ? (
               funnel.map((step, i) => (
                 <div key={step.stage}>
@@ -171,7 +171,7 @@ export default function TeamAnalyticsPage() {
                     <span className="text-xs font-medium text-slate-300">{t(`analytics.stage.${step.stage}`)}</span>
                     <span className="text-xs font-semibold tabular-nums text-slate-100">{step.count.toLocaleString('en-US')}</span>
                   </div>
-                  <div className="h-6 w-full overflow-hidden rounded-lg bg-slate-800/50">
+                  <div className="h-6 w-full overflow-hidden rounded-lg bg-white/[0.05]">
                     <div className={`h-full rounded-lg transition-all ${i === funnel.length - 1 ? 'bg-[#D4AF37]/70' : 'bg-white/[0.12]'}`} style={{ width: `${Math.round((step.count / funnelMax) * 100)}%` }} />
                   </div>
                 </div>

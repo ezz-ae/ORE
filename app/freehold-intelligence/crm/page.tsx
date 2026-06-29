@@ -35,7 +35,7 @@ const TEMP_STYLE: Record<string, { labelKey: string; badge: string }> = {
   priority: { labelKey: 'crm.temp.priority', badge: 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/25' },
   hot:      { labelKey: 'crm.temp.hot',      badge: 'bg-red-400/10 text-red-400 border-red-400/20'         },
   warm:     { labelKey: 'crm.temp.warm',     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20'   },
-  cold:     { labelKey: 'crm.temp.cold',     badge: 'bg-slate-800/50 text-slate-500 border-slate-700'      },
+  cold:     { labelKey: 'crm.temp.cold',     badge: 'bg-white/[0.05] text-slate-500 border-line-strong'      },
 }
 
 const STAGE_CONFIG: Record<PipelineStage, { labelKey: string; dot: string; badge: string }> = {
@@ -119,7 +119,7 @@ export default function FreeholdCrmPage() {
     { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
     { label: t('crm.tile.qualified'),   value: String(qualifiedCount),                     sub: t('crm.tile.qualifiedSub'),    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
     { label: t('crm.tile.pipeline'),    value: `AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`, sub: t('crm.tile.pipelineSub'), color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
-    { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-slate-700',      bg: 'bg-slate-800/50'       },
+    { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-line-strong',      bg: 'bg-white/[0.05]'       },
   ]
 
   const lastSyncStr = integrationSyncStatuses.find(s => s.lastSyncAt)?.lastSyncAt
@@ -142,7 +142,7 @@ export default function FreeholdCrmPage() {
             </div>
             <Link
               href="/freehold-intelligence/crm/board"
-              className="flex items-center gap-1.5 rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
+              className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
             >
               {t('crm.board')} <ChevronRight className="h-3 w-3" />
             </Link>
@@ -161,7 +161,7 @@ export default function FreeholdCrmPage() {
           </div>
 
           {/* ── Pipeline stage funnel ── */}
-          <div className="mb-5 rounded-[14px] border border-slate-800 bg-slate-900 p-4">
+          <div className="mb-5 rounded-[14px] border border-line bg-surface p-4">
             <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.pipeline')}</div>
             <div className="flex gap-1.5 overflow-x-auto pb-0.5">
               {STAGES.map(stage => {
@@ -176,7 +176,7 @@ export default function FreeholdCrmPage() {
                       'flex min-w-[66px] flex-1 flex-col items-center gap-1.5 rounded-[10px] border px-2 py-2.5 transition',
                       active
                         ? `${sc.badge} border-current`
-                        : 'border-slate-800 bg-slate-800/30 hover:bg-slate-800',
+                        : 'border-line bg-white/[0.03] hover:bg-surface-2',
                     ].join(' ')}
                   >
                     <span className={`h-2 w-2 rounded-full ${sc.dot}`} />
@@ -200,7 +200,7 @@ export default function FreeholdCrmPage() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder={t('crm.searchLeadsProjectsAgents')}
-                className="w-full rounded-[10px] border border-slate-800 bg-slate-900 py-2 pl-8 pr-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
+                className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
               />
               {query && (
                 <button
@@ -214,7 +214,7 @@ export default function FreeholdCrmPage() {
             {stageFilter !== 'all' && (
               <button
                 onClick={() => setStageFilter('all')}
-                className="flex items-center gap-1 rounded-[10px] border border-slate-800 bg-slate-800/50 px-3 py-2 text-xs text-slate-400 transition hover:text-slate-200"
+                className="flex items-center gap-1 rounded-[10px] border border-line bg-white/[0.05] px-3 py-2 text-xs text-slate-400 transition hover:text-slate-200"
               >
                 <X className="h-3 w-3" /> {t('crm.clear')}
               </button>
@@ -228,11 +228,11 @@ export default function FreeholdCrmPage() {
           </div>
 
           {/* ── Lead table ── */}
-          <div className="overflow-hidden rounded-[16px] border border-slate-800 bg-slate-900">
+          <div className="overflow-hidden rounded-[16px] border border-line bg-surface">
 
             {/* Desktop header row */}
             <div
-              className="hidden items-center gap-4 border-b border-slate-800 px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 lg:grid"
+              className="hidden items-center gap-4 border-b border-line px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-slate-500 lg:grid"
               style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
             >
               <div>{t('crm.colLead')}</div>
@@ -256,12 +256,12 @@ export default function FreeholdCrmPage() {
               return (
                 <div
                   key={lead.id}
-                  className="flex items-center gap-3 border-b border-slate-800 px-4 py-3 transition last:border-0 hover:bg-slate-800/50 lg:grid lg:gap-4"
+                  className="flex items-center gap-3 border-b border-line px-4 py-3 transition last:border-0 hover:bg-white/[0.05] lg:grid lg:gap-4"
                   style={{ gridTemplateColumns: '1fr 118px 130px 1fr 72px 68px 56px' }}
                 >
                   {/* Avatar + name */}
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-slate-800 text-[10px] font-bold text-slate-400">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-surface-2 text-[10px] font-bold text-slate-400">
                       {initials(lead.name)}
                     </div>
                     <div className="min-w-0">
@@ -313,20 +313,20 @@ export default function FreeholdCrmPage() {
                     <a
                       href={`tel:${lead.phone}`}
                       title={t('crm.call')}
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-line text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <PhoneCall className="h-3 w-3" />
                     </a>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${lead.id}/whatsapp`}
                       title={t('crm.whatsapp')}
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-line text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <MessageCircle className="h-3 w-3" />
                     </Link>
                     <Link
                       href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-slate-800 text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
+                      className="flex h-7 w-7 items-center justify-center rounded-[7px] border border-line text-slate-600 transition hover:border-slate-600 hover:text-slate-400"
                     >
                       <ArrowUpRight className="h-3 w-3" />
                     </Link>
@@ -343,7 +343,7 @@ export default function FreeholdCrmPage() {
           <div className="sticky top-14 space-y-3">
 
             {/* Integration sync panel */}
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+            <div className="rounded-[16px] border border-line bg-surface p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.integrations')}</div>
                 <button
@@ -367,14 +367,14 @@ export default function FreeholdCrmPage() {
               </div>
 
               {lastSyncStr && mounted && (
-                <div className="mt-3 border-t border-slate-800 pt-2.5 text-xs text-slate-600">
+                <div className="mt-3 border-t border-line pt-2.5 text-xs text-slate-600">
                   {t('crm.lastSync', { time: relTime(lastSyncStr), count: totalLeadsIn })}
                 </div>
               )}
             </div>
 
             {/* Top by intent */}
-            <div className="rounded-[16px] border border-slate-800 bg-slate-900 p-4">
+            <div className="rounded-[16px] border border-line bg-surface p-4">
               <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">{t('crm.topByIntent')}</div>
               <div className="space-y-2">
                 {[...leads]
@@ -385,7 +385,7 @@ export default function FreeholdCrmPage() {
                       <div className="w-[70px] shrink-0 truncate text-xs text-slate-400">
                         {l.name.split(' ')[0]}
                       </div>
-                      <div className="flex-1 overflow-hidden rounded-full bg-slate-800">
+                      <div className="flex-1 overflow-hidden rounded-full bg-surface-2">
                         <div
                           className="h-1.5 rounded-full bg-[#D4AF37]"
                           style={{ width: `${l.intentScore}%` }}

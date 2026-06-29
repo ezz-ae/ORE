@@ -16,7 +16,7 @@ type MarketStats = {
 
 function MetricCard({ Icon, label, value }: { Icon: typeof Building2; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+    <div className="rounded-xl border border-line bg-white/[0.05] p-5">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</div>
         <Icon className="h-4 w-4 text-violet-400/70" />
@@ -68,20 +68,20 @@ export default function MarketAnalyticsPage() {
       {/* Top areas by coverage (live) */}
       <section>
         <div className="mb-4 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.topAreas')}</div>
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+        <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.area')}</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.price')}</th>
                   <th className="px-5 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.yield')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-white/[0.08]">
                 {stats && stats.topAreas.length > 0 ? (
                   stats.topAreas.map((area) => (
-                    <tr key={area.name} className="transition hover:bg-slate-800/40">
+                    <tr key={area.name} className="transition hover:bg-white/[0.04]">
                       <td className="px-5 py-4 font-medium text-slate-300">{area.name}</td>
                       <td className="px-5 py-4 text-right tabular-nums text-slate-300">
                         {area.pricePerSqft != null ? `AED ${area.pricePerSqft.toLocaleString('en-US')}` : '—'}

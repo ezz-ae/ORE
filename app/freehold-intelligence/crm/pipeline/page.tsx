@@ -61,7 +61,7 @@ export default function CrmPipelinePage() {
       name,
       leads: list,
       count: list.length,
-      ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-slate-700' }),
+      ...(STAGE_CONFIG[name] ?? { tone: 'text-slate-400', dot: 'bg-slate-500', dotBg: 'bg-white/[0.08]' }),
       value: fmtAedShort(valueAed),
       valueAed,
       delta: `${list.length} ${list.length !== 1 ? t('crm.leadsLower') : t('crm.leadLower')}`,
@@ -105,7 +105,7 @@ export default function CrmPipelinePage() {
             {stages.map((item) => (
               <div
                 key={item.name}
-                className="rounded-2xl border border-slate-800 bg-slate-800/50 p-4"
+                className="rounded-2xl border border-line bg-white/[0.05] p-4"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${item.dot}`} />
@@ -133,7 +133,7 @@ export default function CrmPipelinePage() {
                     'rounded-xl border p-5 text-left transition',
                     isSelected
                       ? 'border-[#D4AF37]/40 bg-[#D4AF37]/[0.06]'
-                      : 'border-slate-800 bg-slate-900 hover:border-slate-700',
+                      : 'border-line bg-surface hover:border-line-strong',
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export default function CrmPipelinePage() {
                   <Link
                     key={lead.id}
                     href={`/freehold-intelligence/crm/leads/${lead.id}`}
-                    className="group rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:border-[#D4AF37]/25"
+                    className="group rounded-xl border border-line bg-surface p-5 transition hover:border-[#D4AF37]/25"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -184,7 +184,7 @@ export default function CrmPipelinePage() {
                         {lead.intentScore}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-3 text-sm text-slate-400">
+                    <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-sm text-slate-400">
                       <span>{t('crm.agentLabel')}<span className="text-slate-300">{lead.assignedAgent}</span></span>
                       <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     </div>
@@ -209,7 +209,7 @@ export default function CrmPipelinePage() {
         {/* Sidebar */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <TrendingUp className="h-3 w-3" /> {t('crm.conversionRate')}
               </div>
@@ -217,7 +217,7 @@ export default function CrmPipelinePage() {
               <div className="mt-1 text-xs text-[#D4AF37]">{t('crm.vsLastMonth')}</div>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Clock className="h-3 w-3" /> {t('crm.avgTimeToClose')}
               </div>

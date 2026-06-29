@@ -106,7 +106,7 @@ export default function MarketingAnalyticsPage() {
               <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
             </span>
           </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="rounded-xl border border-line bg-white/[0.05] p-5">
             {channels.length > 0 ? (
               <div className="space-y-2.5">
                 {channels.map((c) => (
@@ -115,7 +115,7 @@ export default function MarketingAnalyticsPage() {
                       <span className="text-xs font-medium text-slate-300 truncate">{prettySource(c.label)}</span>
                       <span className="ml-3 shrink-0 text-xs tabular-nums text-slate-400">{c.count.toLocaleString('en-US')}</span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                       <div className="h-full rounded-full bg-[#D4AF37]" style={{ width: `${(c.count / maxChannel) * 100}%` }} />
                     </div>
                   </div>
@@ -135,12 +135,12 @@ export default function MarketingAnalyticsPage() {
             </span>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+            <div className="rounded-xl border border-line bg-white/[0.05] p-5">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.adSpend')}</div>
               <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{spend ? fmtAed(spend.total) : '—'}</div>
               <div className="mt-1 text-xs text-slate-500">{t('analytics.kpi.allTime')}</div>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+            <div className="rounded-xl border border-line bg-white/[0.05] p-5">
               <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.spend30d')}</div>
               <div className="mt-3 text-2xl font-semibold tabular-nums text-[#D4AF37]">{spend ? fmtAed(spend.last30) : '—'}</div>
               <div className="mt-1 text-xs text-slate-500">{t('analytics.last30')}</div>
@@ -162,7 +162,7 @@ export default function MarketingAnalyticsPage() {
             <div className="flex items-center gap-1">
               {DIMS.map((d) => (
                 <button key={d.id} onClick={() => setDim(d.id)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${dim === d.id ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${dim === d.id ? 'border border-[#D4AF37]/35 bg-[#D4AF37]/10 text-[#D4AF37]' : 'border border-line-strong bg-white/[0.05] text-slate-400 hover:text-slate-200'}`}>
                   {t(d.labelKey)}
                 </button>
               ))}
@@ -170,18 +170,18 @@ export default function MarketingAnalyticsPage() {
             <div className="flex items-center gap-1">
               {PERIODS.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${period === p ? 'border border-violet-400/35 bg-violet-400/10 text-violet-300' : 'border border-slate-700 bg-slate-800/50 text-slate-400 hover:text-slate-200'}`}>
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${period === p ? 'border border-violet-400/35 bg-violet-400/10 text-violet-300' : 'border border-line-strong bg-white/[0.05] text-slate-400 hover:text-slate-200'}`}>
                   {t(`analytics.period.${p}`)}
                 </button>
               ))}
             </div>
           </div>
         </div>
-        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+        <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{dim === 'country' ? t('analytics.th.country') : dim === 'agent' ? t('analytics.th.agent') : t('analytics.th.source')}</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.leads')}</th>
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.conversions')}</th>
@@ -191,10 +191,10 @@ export default function MarketingAnalyticsPage() {
                   <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.mk.avgBudget')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-white/[0.08]">
                 {rows && rows.length > 0 ? (
                   rows.map((r) => (
-                    <tr key={r.key} className="transition hover:bg-slate-800/40">
+                    <tr key={r.key} className="transition hover:bg-white/[0.04]">
                       <td className="px-4 py-3 font-medium text-slate-200">{dim === 'source' ? prettySource(r.label) : r.label}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-300">{r.leads.toLocaleString('en-US')}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-[#D4AF37]">{r.closed.toLocaleString('en-US')}</td>
@@ -228,15 +228,15 @@ export default function MarketingAnalyticsPage() {
 
       {/* Sample KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
           <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.pageViews')}</div><SampleTag label={t('analytics.sample')} /></div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{a.totalPageViews.toLocaleString('en-US')}</div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
           <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.uniqueVisitors')}</div><SampleTag label={t('analytics.sample')} /></div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{a.totalUniqueSessions.toLocaleString('en-US')}</div>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
           <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.avgSession')}</div><SampleTag label={t('analytics.sample')} /></div>
           <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{formatDuration(a.avgSessionDuration)}</div>
         </div>
@@ -245,7 +245,7 @@ export default function MarketingAnalyticsPage() {
       {/* Sample daily traffic */}
       <section>
         <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.dailyTraffic')} <SampleTag label={t('analytics.sample')} /></div>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
           <SparklineChart daily={a.daily} />
           <div className="mt-3 flex items-center gap-5">
             <div className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-white/60" /><span className="text-xs text-slate-400">{t('analytics.kpi.pageViews')}</span></div>
@@ -258,18 +258,18 @@ export default function MarketingAnalyticsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section>
           <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.topPages')} <SampleTag label={t('analytics.sample')} /></div>
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+          <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
+                <tr className="border-b border-line">
                   <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.page')}</th>
                   <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.views')}</th>
                   <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.bounce')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-white/[0.08]">
                 {a.topPages.slice(0, 6).map((p) => (
-                  <tr key={p.path} className="transition hover:bg-slate-800/40">
+                  <tr key={p.path} className="transition hover:bg-white/[0.04]">
                     <td className="px-5 py-3">
                       <div className="font-medium text-slate-300">{p.title}</div>
                       <div className="mt-0.5 font-mono text-xs text-slate-500">{p.path}</div>
@@ -289,12 +289,12 @@ export default function MarketingAnalyticsPage() {
             {a.devices.map((d) => {
               const pct = Math.round((d.sessions / totalDeviceSessions) * 100)
               return (
-                <div key={d.device} className="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
+                <div key={d.device} className="rounded-xl border border-line bg-white/[0.05] p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium uppercase tracking-wider text-slate-400 capitalize">{d.device}</span>
                     <span className="text-xs font-semibold text-slate-300">{pct}%</span>
                   </div>
-                  <div className="mt-2 h-1.5 w-full rounded-full bg-slate-700">
+                  <div className="mt-2 h-1.5 w-full rounded-full bg-white/[0.08]">
                     <div className="h-full rounded-full bg-violet-500" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
