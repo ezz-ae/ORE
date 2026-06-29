@@ -135,6 +135,13 @@ export default function NotebookPage() {
   const [genInput, setGenInput] = useState('')
   const [genResult, setGenResult] = useState('')
   const [genLoading, setGenLoading] = useState(false)
+  // Lead context: when the Notebook is opened from a CRM lead (?lead=<id>),
+  // "Send to CRM" attaches the output to that lead's timeline (a real edge).
+  const [leadCtx, setLeadCtx] = useState<string | null>(null)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('lead')
+    if (id) setLeadCtx(id)
+  }, [])
 
   async function runGenerate() {
     const type = GENERATE_TYPES.find((g) => g.key === activeGenerate)
@@ -811,20 +818,45 @@ export default function NotebookPage() {
                   </button>
                 ))}
               </div>
+              {activeSendDest === 'crm' && (
+                <p className="mt-2 text-xs text-slate-500">
+                  {leadCtx ? t('nb.crmAttachHint') : t('nb.crmNoLeadHint')}
+                </p>
+              )}
               {activeSendDest && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const output = allOutputs.find(o => o.id === activeSendOutput)
                     const dest = SEND_DESTINATIONS.find(d => d.key === activeSendDest)
                     const destLabel = dest ? t(dest.labelKey) : t('nb.destinationFallback')
-                    const text = `${output?.title ?? t('nb.notebookOutput')} (${output?.type ?? 'note'})`
+                    const title = output?.title ?? t('nb.notebookOutput')
+                    const fullText = `${title}\n\n${output?.content ?? ''}`.trim()
+
+                    // Real edge: attach the output to the originating lead's CRM timeline.
+                    if (activeSendDest === 'crm') {
+                      if (!leadCtx) { toast.error(t('nb.crmNoLeadHint')); return }
+                      try {
+                        const res = await fetch('/api/freehold/crm/activity', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ leadId: leadCtx, activityType: 'note', description: `[Notebook] ${fullText}` }),
+                        })
+                        if (!res.ok) throw new Error('failed')
+                        toast.success(t('nb.sentTo', { label: destLabel }))
+                        setActiveSendDest(null); setActiveSendOutput(null)
+                      } catch {
+                        toast.error(t('nb.sendFailed'))
+                      }
+                      return
+                    }
+
                     if (activeSendDest === 'download') {
-                      const blob = new Blob([text], { type: 'text/plain' })
+                      const blob = new Blob([fullText], { type: 'text/plain' })
                       const url = URL.createObjectURL(blob); const a = document.createElement('a')
                       a.href = url; a.download = `${(output?.title ?? 'output').replace(/\s+/g, '-').toLowerCase()}.txt`
                       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
                     } else {
-                      navigator.clipboard.writeText(text).catch(() => {})
+                      navigator.clipboard.writeText(fullText).catch(() => {})
                     }
                     toast.success(t('nb.sentTo', { label: destLabel }))
                     setActiveSendDest(null); setActiveSendOutput(null)
