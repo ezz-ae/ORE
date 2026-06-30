@@ -566,7 +566,7 @@ export const crm: Record<Locale, Dict> = {
     'crm.stage.viewing': 'معاينة',
     'crm.stage.negotiation': 'التفاوض',
     'crm.stage.closed': 'مغلق',
-    'crm.stage.lost': 'مفقود',
+    'crm.stage.lost': 'خاسر',
     'crm.stage.followUp': 'المتابعة',
     'crm.temp.priority': '★ أولوية',
     'crm.temp.hot': '● ساخن',

@@ -80,12 +80,12 @@ const en: Dict = {
 
 const ar: Dict = {
   // --- Listings ---
-  'paim.listings.breadcrumb': 'مدير الذكاء الاصطناعي · القوائم',
-  'paim.listings.title': 'القوائم',
+  'paim.listings.breadcrumb': 'مدير الذكاء الاصطناعي · العقارات',
+  'paim.listings.title': 'العقارات',
   'paim.listings.published': 'منشورة',
   'paim.listings.draft': 'مسودة',
   'paim.listings.needsReview': 'بحاجة لمراجعة',
-  'paim.listings.newListing': 'قائمة جديدة',
+  'paim.listings.newListing': 'عقار جديد',
   'paim.listings.bulk.metaIdle': 'تحديث أوصاف ميتا',
   'paim.listings.bulk.metaBusy': 'جارٍ التحديث…',
   'paim.listings.bulk.metaLabel': 'أوصاف ميتا',
@@ -113,14 +113,14 @@ const ar: Dict = {
   'paim.listings.col.images': 'الصور',
   'paim.listings.col.lastUpdated': 'آخر تحديث',
   'paim.listings.col.actions': 'إجراءات',
-  'paim.listings.empty': 'لا توجد قوائم تطابق هذا المرشّح.',
+  'paim.listings.empty': 'لا توجد عقارات تطابق هذا المرشّح.',
   'paim.listings.improveIdle': 'تحسين بالذكاء الاصطناعي',
   'paim.listings.adCreatives': 'إعلانات',
   'paim.listings.improveBusy': 'جارٍ التحسين…',
-  'paim.listings.footer': '{shown} من {total} قائمة · مدير الذكاء الاصطناعي',
+  'paim.listings.footer': '{shown} من {total} عقار · مدير الذكاء الاصطناعي',
   'paim.listings.toast.updated': 'تم تحديث {name}',
   'paim.listings.toast.updateFailed': 'تعذّر تحديث {name}',
-  'paim.listings.toast.bulkOk': '{label}: تم تحديث {n} قائمة',
+  'paim.listings.toast.bulkOk': '{label}: تم تحديث {n} عقار',
   'paim.listings.toast.bulkFailed': 'فشل {label}',
 
   // --- Microsites ---

@@ -191,7 +191,7 @@ const ar: Dict = {
   'psec.audit.empty': 'لا توجد أحداث تدقيق مطابقة لهذا الفلتر.',
 
   // ── New Listing page ───────────────────────────────────────────
-  'plistnew.back': 'العودة إلى القوائم',
+  'plistnew.back': 'العودة إلى العقارات',
   'plistnew.eyebrow': 'مدير الذكاء الاصطناعي · قائمة جديدة',
   'plistnew.title': 'إنشاء قائمة جديدة',
   'plistnew.step1.title': 'تفاصيل العقار',

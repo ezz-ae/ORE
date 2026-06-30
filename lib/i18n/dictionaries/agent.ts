@@ -206,7 +206,7 @@ export const agent: Record<Locale, Dict> = {
     'agent.routeAppsDesc': 'مسار مبيعاتك ومحفظتك وحملاتك وإنجازاتك',
     'agent.routeInventory': 'المخزون',
     'agent.routeInventoryDesc': 'NotebookLM — المصادر ومحادثة الذكاء الاصطناعي واستوديو المحتوى',
-    'agent.routeListings': 'القوائم',
+    'agent.routeListings': 'العقارات',
     'agent.routeListingsDesc': 'PropertyFinder وBayut وDubizzle وصفحاتك المقصودة',
     'agent.activeDot': 'نشط ·',
     'agent.connections': 'الاتصالات',
