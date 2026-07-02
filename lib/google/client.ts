@@ -15,21 +15,62 @@ import {
 
 // ─── Credentials ─────────────────────────────────────────────────────────────
 
-function creds() {
+import { getStoredCreds } from '@/lib/freehold/integration-credentials'
+
+export interface GoogleStoredCreds {
+  developerToken: string
+  clientId: string
+  clientSecret: string
+  refreshToken: string
+  customerId: string
+  loginCustomerId?: string | null
+}
+
+export interface ResolvedGoogleCreds extends GoogleStoredCreds {
+  loginCustomerId: string
+}
+
+/**
+ * Resolve Google Ads credentials env-first, then from the in-app connection
+ * stored in `freehold_site_integration_credentials` (provider = 'google').
+ * Env vars always win. Throws GoogleConfigError when neither is complete.
+ */
+async function creds(): Promise<ResolvedGoogleCreds> {
   const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN
   const clientId       = process.env.GOOGLE_ADS_CLIENT_ID
   const clientSecret   = process.env.GOOGLE_ADS_CLIENT_SECRET
   const refreshToken   = process.env.GOOGLE_ADS_REFRESH_TOKEN
   const customerId     = process.env.GOOGLE_ADS_CUSTOMER_ID
 
-  if (!developerToken || !clientId || !clientSecret || !refreshToken || !customerId) {
-    throw new GoogleConfigError(
-      'Google Ads credentials are not configured. Set GOOGLE_ADS_DEVELOPER_TOKEN, ' +
-      'GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_REFRESH_TOKEN, ' +
-      'and GOOGLE_ADS_CUSTOMER_ID in environment variables.',
-    )
+  if (developerToken && clientId && clientSecret && refreshToken && customerId) {
+    return {
+      developerToken, clientId, clientSecret, refreshToken, customerId,
+      loginCustomerId: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || customerId,
+    }
   }
-  return { developerToken, clientId, clientSecret, refreshToken, customerId }
+
+  const stored = await getStoredCreds<GoogleStoredCreds>('google').catch(() => null)
+  if (stored?.developerToken && stored.clientId && stored.clientSecret && stored.refreshToken && stored.customerId) {
+    return {
+      developerToken: stored.developerToken,
+      clientId: stored.clientId,
+      clientSecret: stored.clientSecret,
+      refreshToken: stored.refreshToken,
+      customerId: stored.customerId,
+      loginCustomerId: stored.loginCustomerId || stored.customerId,
+    }
+  }
+
+  throw new GoogleConfigError(
+    'Google Ads credentials are not configured. Set GOOGLE_ADS_DEVELOPER_TOKEN, ' +
+    'GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_REFRESH_TOKEN, ' +
+    'and GOOGLE_ADS_CUSTOMER_ID — or connect in Integrations → Google Ads.',
+  )
+}
+
+/** True when Google Ads is usable via env OR an in-app connection. */
+export async function googleConfiguredAsync(): Promise<boolean> {
+  try { await creds(); return true } catch { return false }
 }
 
 // ─── OAuth token refresh ──────────────────────────────────────────────────────
@@ -56,7 +97,7 @@ async function getAccessToken(clientId: string, clientSecret: string, refreshTok
 // ─── GAQL query helper ────────────────────────────────────────────────────────
 
 async function gaqlQuery<T>(gaql: string): Promise<T[]> {
-  const { developerToken, clientId, clientSecret, refreshToken, customerId } = creds()
+  const { developerToken, clientId, clientSecret, refreshToken, customerId, loginCustomerId } = await creds()
   const accessToken = await getAccessToken(clientId, clientSecret, refreshToken)
 
   const res = await fetch(
@@ -67,7 +108,7 @@ async function gaqlQuery<T>(gaql: string): Promise<T[]> {
         Authorization:        `Bearer ${accessToken}`,
         'developer-token':    developerToken,
         'Content-Type':       'application/json',
-        'login-customer-id':  process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ?? customerId,
+        'login-customer-id':  loginCustomerId,
       },
       body: JSON.stringify({ query: gaql }),
     },
@@ -91,7 +132,7 @@ async function gaqlQuery<T>(gaql: string): Promise<T[]> {
 // ─── Resource mutate helper ───────────────────────────────────────────────────
 
 async function mutate(operations: unknown[]): Promise<unknown> {
-  const { developerToken, clientId, clientSecret, refreshToken, customerId } = creds()
+  const { developerToken, clientId, clientSecret, refreshToken, customerId, loginCustomerId } = await creds()
   const accessToken = await getAccessToken(clientId, clientSecret, refreshToken)
 
   const res = await fetch(
@@ -102,7 +143,7 @@ async function mutate(operations: unknown[]): Promise<unknown> {
         Authorization:       `Bearer ${accessToken}`,
         'developer-token':   developerToken,
         'Content-Type':      'application/json',
-        'login-customer-id': process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ?? customerId,
+        'login-customer-id': loginCustomerId,
       },
       body: JSON.stringify({ mutateOperations: operations }),
     },
@@ -210,7 +251,7 @@ export async function updateCampaignStatus(
   campaignId: string,
   status: 'ENABLED' | 'PAUSED',
 ): Promise<void> {
-  const { customerId } = creds()
+  const { customerId } = await creds()
   await mutate([{
     campaignOperation: {
       update: {
@@ -566,7 +607,7 @@ export async function getReportSummary(dateRange: '7d' | '30d' | '90d'): Promise
 // ─── Launch campaign ──────────────────────────────────────────────────────────
 
 export async function launchSearchCampaign(p: LaunchGoogleCampaignPayload): Promise<{ campaignId: string }> {
-  const { customerId } = creds()
+  const { customerId } = await creds()
   const budgetMicros   = Math.round(p.dailyBudgetAED * 1_000_000)
   const tempBudgetKey  = 'budget~1'
   const tempCampaignKey = 'campaign~1'
