@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap } from 'lucide-react'
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
+import { DemoNotice } from '@/components/freehold/demo-badge'
 import { listCampaigns, getCampaignInsights, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { demoCampaigns } from '@/lib/meta/demo-data'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
@@ -151,6 +152,11 @@ export default async function CampaignsPage() {
           <StatCard label={t('lm.campaigns.stat.totalSpend')}  value={fmtSpend(String(totalSpend))} hint={t('lm.campaigns.stat.allTime')} />
           <StatCard label={t('lm.campaigns.stat.totalLeads')}  value={totalLeads}                   delta={totalLeads > 0 ? { value: t('lm.campaigns.stat.generated'), direction: 'up' } : undefined} />
         </div>
+      )}
+
+      {/* Demo data must never read as real spend/leads. */}
+      {isConfigError && campaigns.length > 0 && (
+        <DemoNotice badge={t('lm.demo.badge')} note={t('lm.demo.note')} />
       )}
 
       {campaigns.length > 0 && <CampaignList campaigns={campaigns} />}

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import type { GoogleCampaign, GoogleCampaignType } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
+import { DemoNotice } from '@/components/freehold/demo-badge'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ interface CampaignsResponse {
   campaigns?: GoogleCampaign[]
   error?: string
   type?: string
+  demo?: boolean
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ export default function GoogleCampaignsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError]           = useState<string | null>(null)
   const [configErr, setConfigErr]   = useState(false)
+  const [demoMode, setDemoMode]     = useState(false)
   const [filter, setFilter]         = useState<GoogleCampaignType | 'ALL'>('ALL')
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
@@ -104,6 +107,7 @@ export default function GoogleCampaignsPage() {
         setError(data.error)
         return
       }
+      setDemoMode(data.demo === true)
       setCampaigns(data.campaigns ?? [])
     } catch {
       setError('Network error — could not reach Google Ads API')
@@ -171,7 +175,9 @@ export default function GoogleCampaignsPage() {
                 ? '…'
                 : configErr
                   ? 'not connected.'
-                  : `${campaigns.length} total.`}
+                  : demoMode
+                    ? 'not connected — demo data.'
+                    : `${campaigns.length} total.`}
             </span>
           </h1>
         </section>
@@ -294,6 +300,11 @@ export default function GoogleCampaignsPage() {
               )
             })}
           </div>
+
+          {/* Demo data must never read as real spend/conversions. */}
+          {demoMode && filtered.length > 0 && (
+            <DemoNotice badge={t('lm.demo.badge')} note={t('lm.demo.note')} />
+          )}
 
           {/* ── Campaign list ──────────────────────────────────────────────── */}
           {filtered.length > 0 && (
