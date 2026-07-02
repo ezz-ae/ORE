@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { query } from '@/lib/db'
 import { ensureLeadActivityTable } from '@/lib/data'
+import { notifyBrokerOfAssignedLead } from '@/lib/transactional-email'
 import { listEnabledRulesForTrigger, markRuleRan, getWorkspaceConfig } from './db'
 import { pickAgentForLead, type LeadForDistribution } from './distribution'
 import {
@@ -98,6 +99,7 @@ async function runAction(action: Action, ctx: LeadContext, workspaceId: string):
       await query(`UPDATE freehold_site_leads SET assigned_broker_id = $1, updated_at = now() WHERE id = $2`, [action.brokerId, ctx.id])
       ctx.assigned_broker_id = action.brokerId
       await logLeadActivity(ctx.id, 'assignment', `Auto-assigned to ${action.brokerId} by rule`)
+      await notifyBrokerOfAssignedLead(action.brokerId, ctx.id).catch(() => {})
       return { action: 'assign_to_agent', detail: action.brokerId }
     }
     case 'assign_round_robin':
@@ -113,6 +115,7 @@ async function runAction(action: Action, ctx: LeadContext, workspaceId: string):
       await query(`UPDATE freehold_site_leads SET assigned_broker_id = $1, updated_at = now() WHERE id = $2`, [broker, ctx.id])
       ctx.assigned_broker_id = broker
       await logLeadActivity(ctx.id, 'assignment', `Auto-assigned to ${broker} (${strategy}) by rule`)
+      await notifyBrokerOfAssignedLead(broker, ctx.id).catch(() => {})
       return { action: action.type, detail: broker }
     }
     case 'set_priority': {
@@ -221,6 +224,7 @@ export async function handleNewLead(leadId: string, workspaceId = DEFAULT_WORKSP
         await query(`UPDATE freehold_site_leads SET assigned_broker_id = $1, updated_at = now() WHERE id = $2`, [broker, ctx.id])
         ctx.assigned_broker_id = broker
         await logLeadActivity(ctx.id, 'assignment', `Auto-distributed to ${broker} (${cfg.distribution.strategy})`)
+        await notifyBrokerOfAssignedLead(broker, ctx.id).catch(() => {})
       }
     }
 

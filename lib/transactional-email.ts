@@ -92,6 +92,82 @@ Freehold Real Estate`
   return { sent: true as const }
 }
 
+export async function sendLeadAssignedEmail(
+  to: string,
+  brokerName: string,
+  lead: { id: string; name?: string | null; phone?: string | null; interest?: string | null; source?: string | null },
+) {
+  if (!resendApiKey || !to) return { sent: false, reason: "missing-config" as const }
+  const leadUrl = `${baseUrl}/freehold-intelligence/crm/leads/${lead.id}`
+  const who = lead.name?.trim() || "A new lead"
+  const lines = [
+    lead.phone ? `Phone: ${lead.phone}` : "",
+    lead.interest ? `Interest: ${lead.interest}` : "",
+    lead.source ? `Source: ${lead.source}` : "",
+  ].filter(Boolean)
+  const text = `${brokerName ? `Hi ${brokerName},` : "Hi,"}
+
+${who} has been assigned to you.
+${lines.join("\n")}
+
+Open the lead: ${leadUrl}
+
+Respond fast — speed-to-lead wins deals.
+Freehold`
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>${brokerName ? `Hi ${brokerName},` : "Hi,"}</p>
+      <p><strong>${who}</strong> has been assigned to you.</p>
+      ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
+      <p><a href="${leadUrl}">Open the lead →</a></p>
+      <p style="color:#6b7280">Respond fast — speed-to-lead wins deals.</p>
+      <p>Freehold</p>
+    </div>`
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: fromEmail, to: [to], subject: `New lead assigned: ${who}`, text, html }),
+  })
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "")
+    console.error("[email] lead-assigned error", payload)
+    return { sent: false, reason: "provider-error" as const }
+  }
+  return { sent: true as const }
+}
+
+/**
+ * Resolve a broker (assigned_broker_id may be a user id, email, or slug) and
+ * email them that a lead is now theirs. Best-effort; never throws.
+ */
+export async function notifyBrokerOfAssignedLead(brokerId: string, leadId: string) {
+  if (!brokerId || !leadId) return { sent: false as const }
+  try {
+    const brokerRows = await query<{ name: string | null; email: string | null }>(
+      `SELECT name, email FROM freehold_site_users WHERE id::text = $1 OR lower(email) = lower($1) LIMIT 1`,
+      [brokerId],
+    ).catch(() => [])
+    const to = brokerRows[0]?.email
+    if (!to) return { sent: false as const, reason: "no-broker-email" }
+    const leadRows = await query<{ name: string | null; phone: string | null; interest: string | null; project_slug: string | null; source: string | null }>(
+      `SELECT name, phone, interest, project_slug, source FROM freehold_site_leads WHERE id = $1 LIMIT 1`,
+      [leadId],
+    ).catch(() => [])
+    const lead = leadRows[0]
+    if (!lead) return { sent: false as const }
+    return await sendLeadAssignedEmail(to, brokerRows[0]?.name ?? "", {
+      id: leadId,
+      name: lead.name,
+      phone: lead.phone,
+      interest: lead.interest ?? lead.project_slug,
+      source: lead.source,
+    })
+  } catch (err) {
+    console.error("[notify] broker assignment failed", err)
+    return { sent: false as const }
+  }
+}
+
 export async function sendLeadAcknowledgementEmail(input: LeadAckEmailInput) {
   if (!resendApiKey || !input.to) {
     return { sent: false, reason: "missing-config" as const }
