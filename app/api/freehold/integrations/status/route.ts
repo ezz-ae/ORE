@@ -21,6 +21,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
-  const summary = getIntegrationStatusSummary()
+  const summary = await getIntegrationStatusSummary()
   return NextResponse.json(summary)
 }

@@ -8,6 +8,8 @@
  * returned — only booleans and which env keys are missing.
  */
 
+import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
+
 export type IntegrationState = 'connected' | 'partial' | 'disconnected'
 
 export interface LiveIntegrationStatus {
@@ -42,11 +44,21 @@ function evaluate(
   return { state: 'disconnected', missing }
 }
 
-export function getLiveIntegrationStatuses(): LiveIntegrationStatus[] {
+export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatus[]> {
   // ── Meta Ads ──────────────────────────────────────────────────────────────
   const metaKeys = ['META_ACCESS_TOKEN', 'META_AD_ACCOUNT_ID', 'META_PAGE_ID']
-  const meta = evaluate(metaKeys)
+  let meta = evaluate(metaKeys)
   const metaPixel = has('META_PIXEL_ID')
+  // A connection saved through Integrations → Meta Ads (stored server-side)
+  // counts as connected even when env vars are unset.
+  let metaSource: 'env' | 'db' | null = meta.state === 'connected' ? 'env' : null
+  if (meta.state !== 'connected') {
+    const stored = await getStoredMetaCreds().catch(() => null)
+    if (stored?.accessToken && stored?.adAccountId && stored?.pageId) {
+      meta = { state: 'connected', missing: [] }
+      metaSource = 'db'
+    }
+  }
 
   // ── Google Ads ──────────────────────────────────────────────────────────────
   const googleKeys = [
@@ -93,10 +105,9 @@ export function getLiveIntegrationStatuses(): LiveIntegrationStatus[] {
       missingKeys: meta.missing,
       note:
         meta.state === 'connected'
-          ? metaPixel
-            ? 'Live — campaigns can launch and pixel tracking is configured.'
-            : 'Live — campaigns can launch. Add META_PIXEL_ID for conversion tracking.'
-          : `Add ${meta.missing.join(', ')} in Vercel to launch live campaigns.`,
+          ? (metaSource === 'db' ? 'Live (connected in-app) — campaigns can launch. ' : 'Live — campaigns can launch. ') +
+            (metaPixel ? 'Pixel tracking is configured.' : 'Add META_PIXEL_ID for conversion tracking.')
+          : `Add ${meta.missing.join(', ')} in Vercel, or connect in Integrations → Meta Ads, to launch live campaigns.`,
     },
     {
       id: 'google-ads',
@@ -176,8 +187,8 @@ export function getLiveIntegrationStatuses(): LiveIntegrationStatus[] {
 }
 
 /** Compact summary for dashboards: counts by state. */
-export function getIntegrationStatusSummary() {
-  const all = getLiveIntegrationStatuses()
+export async function getIntegrationStatusSummary() {
+  const all = await getLiveIntegrationStatuses()
   return {
     total: all.length,
     connected: all.filter((i) => i.state === 'connected').length,

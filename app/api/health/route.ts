@@ -19,7 +19,7 @@ export async function GET() {
     db = true
   } catch { db = false }
 
-  const integrations = getLiveIntegrationStatuses().map((i) => ({
+  const integrations = (await getLiveIntegrationStatuses()).map((i) => ({
     id: i.id,
     name: i.name,
     state: i.state, // 'connected' | 'partial' | 'disconnected'
