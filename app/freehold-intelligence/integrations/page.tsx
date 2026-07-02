@@ -16,7 +16,7 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations'
+import { getAllIntegrations } from '@/lib/freehold/mcp/mock-integrations'
 import { PageHeader } from '@/components/freehold/ui'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
@@ -86,8 +86,6 @@ function statusCfg(status: string) {
 
 // Mock fallback data (module-level, kept as initial state)
 const mockIntegrations = getAllIntegrations()
-const mockBlockers     = getLaunchBlockers()
-const mockCritical     = mockBlockers.filter((b: any) => b.severity === 'critical')
 
 export default function IntegrationsPage() {
   const t = useT()
@@ -104,10 +102,10 @@ export default function IntegrationsPage() {
     } catch {}
   }, [])
 
-  // Live data — fetched on mount; falls back to mock when unavailable
+  // Live data — fetched on mount; falls back to mock catalog only until the
+  // real status arrives (or if the API is unreachable).
   const [integrations, setIntegrations] = useState<any[]>(mockIntegrations)
-  // Blockers come from mock; API doesn't yet expose them
-  const critical = mockCritical
+  const [isLive, setIsLive] = useState(false)
 
   useEffect(() => {
     fetch('/api/freehold/integrations/status')
@@ -115,10 +113,22 @@ export default function IntegrationsPage() {
       .then(d => {
         if (d?.statuses?.length > 0) {
           setIntegrations(d.statuses.map(liveToIntegration))
+          setIsLive(true)
         }
       })
       .catch(() => {})
   }, [])
+
+  // Critical blockers are derived from the LIVE status — the platform-critical
+  // integrations (database, AI, session security) that aren't fully connected.
+  // Before the live status loads we show none rather than the old mock list.
+  const CRITICAL_IDS = new Set(['neon', 'ai', 'session'])
+  const critical = useMemo(() => {
+    if (!isLive) return [] as any[]
+    return integrations
+      .filter((i: any) => CRITICAL_IDS.has(i.id) && i.status !== 'connected')
+      .map((i: any) => ({ id: i.id, integrationId: i.id, title: i.name, description: i.description }))
+  }, [integrations, isLive])
 
   const connectedCount = integrations.filter((i: any) => i.status === 'connected').length
 
