@@ -1,54 +1,80 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowUpRight, Copy, ChevronDown } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Copy, ChevronDown } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { BRAND } from '@/lib/freehold/brand'
 
-type PropertyKey = 'lm.preview.prop.palm' | 'lm.preview.prop.hills' | 'lm.preview.prop.jvc' | 'lm.preview.prop.sobha'
-type Property = 'Palm Jumeirah' | 'Dubai Hills' | 'JVC Investor' | 'Sobha Hartland'
 type AdFormat = 'Meta Feed' | 'Meta Story' | 'Google Search' | 'Google Display'
 
 const META_BLUE = '#1877F2'
 const GOOGLE_BLUE = '#4285F4'
 
-const properties: Property[] = ['Palm Jumeirah', 'Dubai Hills', 'JVC Investor', 'Sobha Hartland']
-
 const formats: AdFormat[] = ['Meta Feed', 'Meta Story', 'Google Search', 'Google Display']
 
-const adCopyByProperty: Record<Property, { headline: string; description: string; url: string }> = {
-  'Palm Jumeirah': {
-    headline: 'Palm Jumeirah Apartments from AED 2.8M',
-    description: 'Beachfront residences with panoramic sea views. 100% foreign ownership. Golden Visa eligible. Register interest today.',
-    url: 'freeholdproperty.ae/palm-jumeirah',
-  },
-  'Dubai Hills': {
-    headline: 'Dubai Hills Estate — High Yield Investments',
-    description: 'Premium golf-course apartments offering 7–9% net yield. Off-plan from AED 1.2M. Limited units available.',
-    url: 'freeholdproperty.ae/dubai-hills',
-  },
-  'JVC Investor': {
-    headline: 'JVC Apartments — Starting AED 650K',
-    description: 'Affordable luxury in Jumeirah Village Circle. 8% projected ROI. Handover Q4 2025. 0% agent fees.',
-    url: 'freeholdproperty.ae/jvc-investor',
-  },
-  'Sobha Hartland': {
-    headline: 'Sobha Hartland II Villas & Mansions',
-    description: 'Waterfront living at Mohammed Bin Rashid City. Ultra-luxury 4–6 bed villas from AED 5.2M. Book a private tour.',
-    url: 'freeholdproperty.ae/sobha-hartland',
-  },
+// Brand-driven page identity for the ad chrome (no hardcoded brokerage name).
+const PAGE_NAME = BRAND.legalName
+const PAGE_INITIALS = BRAND.legalName.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+
+/** A real inventory project, mapped from /api/freehold/inventory. */
+interface Project {
+  slug: string
+  name: string
+  area: string
+  developer: string
+  price: number | null
+  image: string | null
 }
 
-function MetaFeedPreview({ property, headline, description }: { property: Property; headline: string; description: string }) {
+function fmtPrice(n: number | null): string {
+  if (!n || n <= 0) return ''
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `AED ${Math.round(n / 1_000)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
+}
+
+/** Build default ad copy from a project's real fields. */
+function defaultCopy(p: Project): { headline: string; description: string; url: string } {
+  const price = fmtPrice(p.price)
+  const headline = price ? `${p.name} — from ${price}` : p.name
+  const where = [p.area && `in ${p.area}`, p.developer && `by ${p.developer}`].filter(Boolean).join(' ')
+  const description =
+    `${p.name}${where ? ` ${where}` : ''}. 100% freehold ownership, Golden Visa eligible. ` +
+    `Register your interest today.`
+  const url = `${BRAND.domain}/${p.slug}`
+  return { headline, description, url }
+}
+
+/** Real project image, or a tasteful branded fallback labelled with the name. */
+function AdImage({ image, name, className }: { image: string | null; name: string; className?: string }) {
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt={name} className={`h-full w-full object-cover ${className ?? ''}`} />
+  }
+  return (
+    <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-ink via-ink to-[#1a1f2e] ${className ?? ''}`}>
+      <div className="text-center">
+        <div className="mx-auto mb-1 h-10 w-10 rounded-xl bg-gold/20 flex items-center justify-center">
+          <svg className="h-5 w-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4-4 4 4 4-6 4 6" />
+            <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5} />
+          </svg>
+        </div>
+        <span className="text-xs text-slate-400">{name}</span>
+      </div>
+    </div>
+  )
+}
+
+function MetaFeedPreview({ name, image, headline, description }: { name: string; image: string | null; headline: string; description: string }) {
   return (
     <div className="mx-auto w-full max-w-[380px] overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
-      {/* Page row */}
       <div className="flex items-center gap-2.5 bg-white px-4 py-3">
         <div className="h-8 w-8 rounded-full bg-[#1877F2] flex items-center justify-center">
-          <span className="text-sm font-bold text-white">FP</span>
+          <span className="text-sm font-bold text-white">{PAGE_INITIALS}</span>
         </div>
         <div>
-          <div className="text-xs font-semibold text-gray-900">Freehold Property Dubai</div>
+          <div className="text-xs font-semibold text-gray-900">{PAGE_NAME}</div>
           <div className="flex items-center gap-1 text-xs text-gray-400">
             Sponsored ·
             <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8z"/><path d="M8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"/></svg>
@@ -60,71 +86,38 @@ function MetaFeedPreview({ property, headline, description }: { property: Proper
           </svg>
         </div>
       </div>
-      {/* Headline copy */}
       <div className="bg-white px-4 pb-2 text-sm text-gray-800">{headline}</div>
-      {/* Image placeholder */}
-      <div className="flex h-52 items-center justify-center bg-gradient-to-br from-ink via-ink to-[#1a1f2e]">
-        <div className="text-center">
-          <div className="mx-auto mb-1 h-10 w-10 rounded-xl bg-gold/20 flex items-center justify-center">
-            <svg className="h-5 w-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4-4 4 4 4-6 4 6" />
-              <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5}/>
-            </svg>
-          </div>
-          <span className="text-sm text-slate-400">{property} · Image</span>
-        </div>
-      </div>
-      {/* Ad footer */}
+      <div className="h-52"><AdImage image={image} name={name} /></div>
       <div className="flex items-center justify-between bg-gray-50 px-4 py-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-gray-400">freeholdproperty.ae</div>
+          <div className="text-xs uppercase tracking-wide text-gray-400">{BRAND.domain}</div>
           <div className="text-xs font-bold text-gray-900 leading-tight">{headline.slice(0, 40)}{headline.length > 40 ? '…' : ''}</div>
           <div className="text-xs text-gray-500 leading-tight mt-0.5">{description.slice(0, 60)}…</div>
         </div>
-        <button className="ml-3 shrink-0 rounded-md bg-[#1877F2] px-3 py-1.5 text-sm font-semibold text-white">
-          Learn More
-        </button>
+        <button className="ml-3 shrink-0 rounded-md bg-[#1877F2] px-3 py-1.5 text-sm font-semibold text-white">Learn More</button>
       </div>
     </div>
   )
 }
 
-function MetaStoryPreview({ property, headline, description }: { property: Property; headline: string; description: string }) {
+function MetaStoryPreview({ name, image, headline, description }: { name: string; image: string | null; headline: string; description: string }) {
   return (
     <div className="mx-auto w-full max-w-[240px] overflow-hidden rounded-2xl border border-white/10 shadow-2xl" style={{ aspectRatio: '9/16', position: 'relative' }}>
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-ink via-ink to-[#1a1f2e]" />
-      {/* Image placeholder icon */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-2 h-14 w-14 rounded-2xl bg-gold/15 flex items-center justify-center">
-            <svg className="h-7 w-7 text-gold/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4-4 4 4 4-6 4 6" />
-              <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5}/>
-            </svg>
-          </div>
-          <span className="text-xs text-slate-500">{property}</span>
-        </div>
-      </div>
-      {/* Top bar */}
+      <div className="absolute inset-0"><AdImage image={image} name={name} /></div>
       <div className="absolute left-0 right-0 top-0 flex items-center gap-2 px-3 pt-3">
         <div className="h-5 w-5 rounded-full bg-[#1877F2] flex items-center justify-center">
-          <span className="text-[7px] font-bold text-white">FP</span>
+          <span className="text-[7px] font-bold text-white">{PAGE_INITIALS}</span>
         </div>
-        <span className="text-xs font-semibold text-white">Freehold Property Dubai</span>
-        <span className="ml-0.5 text-[9px] text-slate-400">· Sponsored</span>
+        <span className="text-xs font-semibold text-white drop-shadow">{PAGE_NAME}</span>
+        <span className="ml-0.5 text-[9px] text-slate-200 drop-shadow">· Sponsored</span>
       </div>
-      {/* Progress bar */}
       <div className="absolute left-3 right-3 top-10 h-0.5 rounded-full bg-white/20">
         <div className="h-full w-3/5 rounded-full bg-white/70" />
       </div>
-      {/* Overlay copy */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-8 pt-6">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent px-4 pb-8 pt-6">
         <div className="text-sm font-bold leading-tight text-white">{headline}</div>
-        <div className="mt-1.5 text-xs leading-relaxed text-slate-300">{description.slice(0, 70)}…</div>
-        <button className="mt-3 w-full rounded-xl bg-white py-2 text-sm font-bold text-gray-900">
-          Learn More
-        </button>
+        <div className="mt-1.5 text-xs leading-relaxed text-slate-200">{description.slice(0, 70)}…</div>
+        <button className="mt-3 w-full rounded-xl bg-white py-2 text-sm font-bold text-gray-900">Learn More</button>
       </div>
     </div>
   )
@@ -133,30 +126,24 @@ function MetaStoryPreview({ property, headline, description }: { property: Prope
 function GoogleSearchPreview({ headline, description, url }: { headline: string; description: string; url: string }) {
   const parts = headline.split('|').map((s) => s.trim()).filter(Boolean)
   const h1 = parts[0] ?? headline.slice(0, 30)
-  const h2 = parts[1] ?? 'Freehold Property Dubai'
+  const h2 = parts[1] ?? PAGE_NAME
   const h3 = parts[2] ?? 'Enquire Today'
 
   return (
     <div className="mx-auto w-full max-w-[540px] rounded-2xl border border-line bg-surface-2 p-6">
-      {/* Search bar mock */}
       <div className="mb-5 flex items-center gap-2 rounded-full border border-line bg-surface-2 px-4 py-2.5">
         <svg className="h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
         </svg>
         <span className="text-xs text-slate-500">buy apartment dubai</span>
       </div>
-      {/* Ad card */}
       <div className="rounded-xl border border-line bg-surface-2 p-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="rounded border border-[#4285F4]/40 px-1.5 py-0.5 text-[9px] font-semibold text-[#4285F4] tracking-wide">Ad</span>
           <span className="text-sm text-slate-400">{url}</span>
         </div>
         <div className="text-[16px] font-medium leading-snug" style={{ color: GOOGLE_BLUE }}>
-          {h1}
-          <span className="text-slate-600 mx-1.5">|</span>
-          {h2}
-          <span className="text-slate-600 mx-1.5">|</span>
-          {h3}
+          {h1}<span className="text-slate-600 mx-1.5">|</span>{h2}<span className="text-slate-600 mx-1.5">|</span>{h3}
         </div>
         <div className="mt-2 text-xs leading-relaxed text-slate-400">
           {description.slice(0, 90)}{description.length > 90 ? '…' : ''}
@@ -169,33 +156,18 @@ function GoogleSearchPreview({ headline, description, url }: { headline: string;
   )
 }
 
-function GoogleDisplayPreview({ property, headline, description }: { property: Property; headline: string; description: string }) {
+function GoogleDisplayPreview({ name, image, headline, description }: { name: string; image: string | null; headline: string; description: string }) {
   return (
     <div className="mx-auto w-full max-w-[480px] overflow-hidden rounded-2xl border border-line shadow-2xl" style={{ aspectRatio: '1.91/1' }}>
       <div className="flex h-full">
-        {/* Image placeholder */}
-        <div className="w-1/2 flex items-center justify-center bg-gradient-to-br from-ink via-ink to-[#1a1f2e]">
-          <div className="text-center">
-            <div className="mx-auto mb-1 h-10 w-10 rounded-xl bg-gold/15 flex items-center justify-center">
-              <svg className="h-5 w-5 text-gold/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4-4 4 4 4-6 4 6" />
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.5}/>
-              </svg>
-            </div>
-            <span className="text-[9px] text-slate-500">{property}</span>
-          </div>
-        </div>
-        {/* Copy side */}
+        <div className="w-1/2"><AdImage image={image} name={name} /></div>
         <div className="w-1/2 flex flex-col justify-between bg-white p-4">
           <div>
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1">freeholdproperty.ae</div>
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-1">{BRAND.domain}</div>
             <div className="text-sm font-bold leading-snug text-gray-900">{headline.slice(0, 50)}{headline.length > 50 ? '…' : ''}</div>
             <div className="mt-1.5 text-xs leading-relaxed text-gray-500">{description.slice(0, 80)}…</div>
           </div>
-          <button
-            className="mt-3 w-full rounded-lg py-1.5 text-sm font-bold text-white"
-            style={{ backgroundColor: GOOGLE_BLUE }}
-          >
+          <button className="mt-3 w-full rounded-lg py-1.5 text-sm font-bold text-white" style={{ backgroundColor: GOOGLE_BLUE }}>
             Learn More
           </button>
         </div>
@@ -206,23 +178,47 @@ function GoogleDisplayPreview({ property, headline, description }: { property: P
 
 export default function AdPreviewPage() {
   const t = useT()
-  const [property, setProperty] = useState<Property>('Palm Jumeirah')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [project, setProject] = useState<Project | null>(null)
   const [format, setFormat] = useState<AdFormat>('Meta Feed')
   const [showDropdown, setShowDropdown] = useState(false)
+  const [headline, setHeadline] = useState('')
+  const [description, setDescription] = useState('')
 
-  const copy = adCopyByProperty[property]
-  const [headline, setHeadline] = useState(copy.headline)
-  const [description, setDescription] = useState(copy.description)
+  // Load real inventory projects and default to the first one.
+  useEffect(() => {
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const list: Project[] = (d?.properties || [])
+          .map((p: Record<string, unknown>) => ({
+            slug: String(p.slug || ''),
+            name: String(p.name || ''),
+            area: String(p.area || ''),
+            developer: String(p.developer || ''),
+            price: typeof p.startingPriceAED === 'number' ? p.startingPriceAED : null,
+            image: (p.heroImage as string) || null,
+          }))
+          .filter((p: Project) => p.name)
+        setProjects(list)
+        if (list.length) applyProject(list[0])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
-  const handlePropertyChange = (p: Property) => {
-    setProperty(p)
-    setShowDropdown(false)
-    const c = adCopyByProperty[p]
+  function applyProject(p: Project) {
+    setProject(p)
+    const c = defaultCopy(p)
     setHeadline(c.headline)
     setDescription(c.description)
+    setShowDropdown(false)
   }
 
-  const isMetaFormat = format === 'Meta Feed' || format === 'Meta Story'
+  const url = useMemo(() => (project ? defaultCopy(project).url : BRAND.domain), [project])
+  const image = project?.image ?? null
+  const name = project?.name ?? ''
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -245,27 +241,28 @@ export default function AdPreviewPage() {
 
       {/* Controls row */}
       <div className="mt-8 flex flex-wrap items-center gap-4">
-
-        {/* Property dropdown */}
+        {/* Real project picker */}
         <div className="relative">
           <button
             onClick={() => setShowDropdown((v) => !v)}
-            className="flex min-w-[200px] items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/10 hover:bg-surface-2"
+            disabled={projects.length === 0}
+            className="flex min-w-[220px] max-w-[320px] items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/10 disabled:opacity-50"
           >
-            {property}
-            <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+            <span className="truncate">
+              {loading ? t('common.loading') : project ? project.name : t('lm.preview.noProjects')}
+            </span>
+            <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
-          {showDropdown && (
-            <div className="absolute left-0 top-full z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-line bg-ink shadow-xl">
-              {properties.map((p) => (
+          {showDropdown && projects.length > 0 && (
+            <div className="absolute left-0 top-full z-20 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl border border-line bg-ink shadow-xl">
+              {projects.map((p) => (
                 <button
-                  key={p}
-                  onClick={() => handlePropertyChange(p)}
-                  className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-surface-2 ${
-                    property === p ? 'text-gold' : 'text-slate-300'
-                  }`}
+                  key={p.slug}
+                  onClick={() => applyProject(p)}
+                  className={`block w-full px-4 py-2.5 text-left text-sm transition hover:bg-surface-2 ${project?.slug === p.slug ? 'text-gold' : 'text-slate-300'}`}
                 >
-                  {p}
+                  <div className="truncate">{p.name}</div>
+                  <div className="truncate text-xs text-slate-500">{[p.area, fmtPrice(p.price)].filter(Boolean).join(' · ')}</div>
                 </button>
               ))}
             </div>
@@ -283,11 +280,7 @@ export default function AdPreviewPage() {
                 key={f}
                 onClick={() => setFormat(f)}
                 className="rounded-[10px] px-4 py-2 text-xs font-semibold transition"
-                style={
-                  isActive
-                    ? { backgroundColor: accentColor, color: '#ffffff' }
-                    : { color: 'rgba(255,255,255,0.45)' }
-                }
+                style={isActive ? { backgroundColor: accentColor, color: '#ffffff' } : { color: 'rgba(255,255,255,0.45)' }}
               >
                 {f}
               </button>
@@ -298,17 +291,15 @@ export default function AdPreviewPage() {
 
       {/* Preview area */}
       <div className="mt-8 min-h-[360px] flex items-center justify-center rounded-2xl border border-line bg-surface-2 py-10 px-4">
-        {format === 'Meta Feed' && (
-          <MetaFeedPreview property={property} headline={headline} description={description} />
-        )}
-        {format === 'Meta Story' && (
-          <MetaStoryPreview property={property} headline={headline} description={description} />
-        )}
-        {format === 'Google Search' && (
-          <GoogleSearchPreview headline={headline} description={description} url={copy.url} />
-        )}
-        {format === 'Google Display' && (
-          <GoogleDisplayPreview property={property} headline={headline} description={description} />
+        {projects.length === 0 && !loading ? (
+          <p className="max-w-sm text-center text-sm text-slate-500">{t('lm.preview.emptyInventory')}</p>
+        ) : (
+          <>
+            {format === 'Meta Feed' && <MetaFeedPreview name={name} image={image} headline={headline} description={description} />}
+            {format === 'Meta Story' && <MetaStoryPreview name={name} image={image} headline={headline} description={description} />}
+            {format === 'Google Search' && <GoogleSearchPreview headline={headline} description={description} url={url} />}
+            {format === 'Google Display' && <GoogleDisplayPreview name={name} image={image} headline={headline} description={description} />}
+          </>
         )}
       </div>
 
@@ -325,9 +316,7 @@ export default function AdPreviewPage() {
               className="w-full rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 transition"
               placeholder={t('lm.preview.headlinePlaceholder')}
             />
-            <div className="mt-1 flex justify-end text-xs text-slate-500">
-              {t('lm.preview.chars', { count: String(headline.length) })}
-            </div>
+            <div className="mt-1 flex justify-end text-xs text-slate-500">{t('lm.preview.chars', { count: String(headline.length) })}</div>
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-slate-400">{t('lm.preview.description')}</label>
@@ -338,9 +327,7 @@ export default function AdPreviewPage() {
               className="w-full resize-none rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 transition"
               placeholder={t('lm.preview.descriptionPlaceholder')}
             />
-            <div className="mt-1 flex justify-end text-xs text-slate-500">
-              {t('lm.preview.chars', { count: String(description.length) })}
-            </div>
+            <div className="mt-1 flex justify-end text-xs text-slate-500">{t('lm.preview.chars', { count: String(description.length) })}</div>
           </div>
         </div>
       </section>
@@ -348,20 +335,14 @@ export default function AdPreviewPage() {
       {/* Copy buttons */}
       <div className="mt-6 flex flex-wrap gap-3">
         <button
-          onClick={() => {
-            const text = `[Meta Ad — ${property}]\nHeadline: ${headline}\nDescription: ${description}`
-            navigator.clipboard.writeText(text).catch(() => {})
-          }}
+          onClick={() => navigator.clipboard.writeText(`[Meta Ad — ${name}]\nHeadline: ${headline}\nDescription: ${description}`).catch(() => {})}
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-[#1877F2]/30 hover:text-white"
         >
           <Copy className="h-3.5 w-3.5" style={{ color: META_BLUE }} />
           {t('lm.preview.copyForMeta')}
         </button>
         <button
-          onClick={() => {
-            const text = `[Google Ad — ${property}]\nHeadline: ${headline}\nDescription: ${description}`
-            navigator.clipboard.writeText(text).catch(() => {})
-          }}
+          onClick={() => navigator.clipboard.writeText(`[Google Ad — ${name}]\nHeadline: ${headline}\nDescription: ${description}`).catch(() => {})}
           className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-[#4285F4]/30 hover:text-white"
         >
           <Copy className="h-3.5 w-3.5" style={{ color: GOOGLE_BLUE }} />

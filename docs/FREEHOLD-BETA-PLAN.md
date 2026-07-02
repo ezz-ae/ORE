@@ -33,7 +33,7 @@
 
 | # | Surface | Effort | Status |
 |---|---|---|---|
-| C1 | **ads-live preview** (`ads-live/preview`) — hardcoded copy/images for 4 properties → real ad-account data | M | ⬜ |
+| C1 | **ads-live preview** (`ads-live/preview`) — hardcoded copy/images for 4 properties → real ad-account data | M | ✅ now loads real inventory projects (real name/area/price/hero image), brand-driven copy + page identity, empty state; editable before copy-out |
 | C2 | **Integrations page** mock catalog + hardcoded "critical blockers" + static "AI take" → live status | M | ✅ catalog live from `/integrations/status`; **critical blockers now derived from live status** (db/AI/session), not the mock list; mock kept only as pre-fetch fallback |
 | C3 | `lib/freehold/mcp/mock-integrations.ts` + `execute-tool` `{mock:true}` fallbacks → real connection registry | M | ✅ MCP integration-summary + launch-blockers now derive from live env/DB status (no mock); mock-integrations kept only as the integrations page pre-fetch fallback + dormant `[integrationId]` scaffolding (D1) |
 | C4 | OAuth `start` route fake authorize URL + **no callback** → real per-provider OAuth (see F1) | L | ⬜ |
