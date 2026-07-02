@@ -192,6 +192,52 @@ export default function MetaIntegrationPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [copied, setCopied]     = useState(false)
 
+  // ── Server-side launch activation ────────────────────────────────────────
+  // The browser connection above only READS data. Campaign launches run on the
+  // server, which needs the token + a chosen ad account + a Facebook Page
+  // saved server-side. Without this, launches fall back to demo mode.
+  const [serverConn, setServerConn] = useState<{ configured: boolean; source: string | null; adAccountId?: string; pageId?: string } | null>(null)
+  const [fbPages, setFbPages]       = useState<{ id: string; name: string }[]>([])
+  const [selAccount, setSelAccount] = useState('')
+  const [selPage, setSelPage]       = useState('')
+  const [activating, setActivating] = useState(false)
+  const [activateMsg, setActivateMsg] = useState('')
+
+  useEffect(() => {
+    if (phase !== 'connected') return
+    fetch('/api/freehold/integrations/meta/credentials')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setServerConn(d) })
+      .catch(() => {})
+    const saved = localStorage.getItem(TOKEN_KEY) ?? token
+    if (saved) {
+      graph<{ data: { id: string; name: string }[] }>('/me/accounts', saved, { fields: 'id,name', limit: '50' })
+        .then((d) => setFbPages(d.data ?? []))
+        .catch(() => setFbPages([]))
+    }
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function activateLaunch() {
+    const saved = localStorage.getItem(TOKEN_KEY) ?? token
+    if (!saved || !selAccount || !selPage) return
+    setActivating(true); setActivateMsg('')
+    try {
+      const res = await fetch('/api/freehold/integrations/meta/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: saved, adAccountId: selAccount, pageId: selPage }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error ?? 'Activation failed')
+      setServerConn({ configured: true, source: 'db', adAccountId: d.adAccountId, pageId: selPage })
+      setActivateMsg('')
+    } catch (err: any) {
+      setActivateMsg(err.message ?? 'Activation failed')
+    } finally {
+      setActivating(false)
+    }
+  }
+
   // Restore saved token on mount
   useEffect(() => {
     const saved = localStorage.getItem(TOKEN_KEY)
@@ -438,6 +484,49 @@ export default function MetaIntegrationPage() {
           </button>
         </div>
       </div>
+
+      {/* Launch activation — connects this browser session to server-side launches */}
+      {serverConn && !serverConn.configured && (
+        <section className="mb-6 rounded-[18px] border border-amber-400/25 bg-amber-400/[0.05] p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-white">{t('pintmeta.activateTitle')}</div>
+              <p className="mt-1 text-xs text-slate-400 leading-relaxed">{t('pintmeta.activateBody')}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                <select value={selAccount} onChange={(e) => setSelAccount(e.target.value)}
+                  className="rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/50">
+                  <option value="">{t('pintmeta.pickAccount')}</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name} (act_{a.account_id})</option>
+                  ))}
+                </select>
+                <select value={selPage} onChange={(e) => setSelPage(e.target.value)}
+                  className="rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/50">
+                  <option value="">{fbPages.length ? t('pintmeta.pickPage') : t('pintmeta.noPages')}</option>
+                  {fbPages.map((pg) => (
+                    <option key={pg.id} value={pg.id}>{pg.name}</option>
+                  ))}
+                </select>
+                <button onClick={activateLaunch} disabled={!selAccount || !selPage || activating}
+                  className="flex items-center justify-center gap-2 rounded-[10px] bg-gold px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:cursor-not-allowed disabled:opacity-40">
+                  {activating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                  {t('pintmeta.activateBtn')}
+                </button>
+              </div>
+              {activateMsg && <div className="mt-2 text-xs text-red-400">{activateMsg}</div>}
+            </div>
+          </div>
+        </section>
+      )}
+      {serverConn?.configured && (
+        <section className="mb-6 flex flex-wrap items-center gap-2 rounded-[14px] border border-emerald-400/20 bg-emerald-400/[0.05] px-4 py-3">
+          <CheckCircle className="h-4 w-4 text-emerald-400" />
+          <span className="text-sm text-emerald-300 font-medium">{t('pintmeta.launchActive')}</span>
+          <span className="font-mono text-xs text-slate-400">{serverConn.adAccountId}</span>
+          <span className="text-xs text-slate-500">· {serverConn.source === 'env' ? t('pintmeta.srcEnv') : t('pintmeta.srcDb')}</span>
+        </section>
+      )}
 
       {/* Summary tiles — 30-day totals */}
       <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
