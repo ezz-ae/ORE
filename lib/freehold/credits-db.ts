@@ -136,7 +136,7 @@ export async function deductCreditsForCampaign(
   campaignId: string,
   campaignName: string,
   credits: number
-): Promise<{ ok: boolean; newBalance?: number }> {
+): Promise<{ ok: boolean; newBalance?: number; reason?: 'insufficient'; balance?: number }> {
   try {
     await ensureCreditsSchema()
     // Ensure account exists
@@ -145,6 +145,13 @@ export async function deductCreditsForCampaign(
       VALUES ($1, 'Starter', 0)
       ON CONFLICT (broker_id) DO NOTHING
     `, [brokerId])
+    // Fail closed on money: never let a spend drive the balance negative. Balance
+    // is the ledger-derived view (allocation + refund + adjustment - spend).
+    const current = await getCreditBalance(brokerId)
+    const bal = current?.balance ?? 0
+    if (credits > 0 && bal < credits) {
+      return { ok: false, reason: 'insufficient', balance: bal }
+    }
     // Record spend in ledger
     await query(`
       INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
@@ -158,6 +165,27 @@ export async function deductCreditsForCampaign(
     `, [brokerId, campaignId, campaignName, credits])
     const balance = await getCreditBalance(brokerId)
     return { ok: true, newBalance: balance?.balance }
+  } catch {
+    return { ok: false }
+  }
+}
+
+/** Return credits to a broker — reverses a deduction when a campaign launch
+ *  fails after the spend was recorded. */
+export async function refundCredits(
+  brokerId: string,
+  campaignId: string,
+  credits: number,
+  note = 'Refund: campaign launch failed'
+): Promise<{ ok: boolean }> {
+  if (!brokerId || credits <= 0) return { ok: true }
+  try {
+    await ensureCreditsSchema()
+    await query(`
+      INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
+      VALUES ($1, 'refund', $2, $3, $4)
+    `, [brokerId, credits, note, JSON.stringify({ campaign_id: campaignId })])
+    return { ok: true }
   } catch {
     return { ok: false }
   }
