@@ -10,7 +10,14 @@ const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
 function getSecret(): string {
-  return process.env.FH_SESSION_SECRET || 'dev-insecure-secret-change-me-in-prod'
+  const secret = process.env.FH_SESSION_SECRET
+  if (secret) return secret
+  // Fail closed in production: an unset secret would sign every session with a
+  // public constant, letting anyone forge a ceo session.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FH_SESSION_SECRET is not set — refusing to sign/verify sessions with an insecure default in production.')
+  }
+  return 'dev-insecure-secret-change-me-in-prod'
 }
 
 function b64urlEncode(bytes: Uint8Array): string {

@@ -41,10 +41,39 @@ const PUBLIC_API_PREFIXES = [
   "/api/cron/",                 // CRON_SECRET-gated in handler
 ]
 
+// Roles allowed to spend ad budget / read lead-form PII (marketing + management).
+const ADS_ROLES = new Set<string>([...MANAGEMENT_ROLES, "marketing"])
+
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
   const { pathname } = url
+
+  // ── Fail-closed session auth for every /api route (public allowlist only) ──
+  // MUST run before any host-based short-circuit below (e.g. the crm. subdomain
+  // branch) so no Host header can skip the check. New routes are private by
+  // default; secret/signature-gated machine endpoints verify their own secret.
+  if (pathname.startsWith("/api/")) {
+    const isPublic =
+      PUBLIC_API_EXACT.has(pathname) ||
+      PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    if (!isPublic) {
+      const token = request.cookies.get(SESSION_COOKIE)?.value
+      const user = await verifySession(token)
+      if (!user) {
+        return NextResponse.json({ error: "Authentication required." }, { status: 401 })
+      }
+      // Ad spend + lead PII: launching/editing campaigns (any write to
+      // /api/meta|google/*) and reading Meta lead-form data must be gated to
+      // marketing + management. Brokers keep GET access (view their campaigns).
+      const adsScope = pathname.startsWith("/api/meta/") || pathname.startsWith("/api/google/")
+      const isWrite = !["GET", "HEAD", "OPTIONS"].includes(request.method)
+      const isLeadPII = pathname.startsWith("/api/meta/forms/")
+      if (adsScope && (isWrite || isLeadPII) && !ADS_ROLES.has(user.role)) {
+        return NextResponse.json({ error: "Insufficient role for ad operations." }, { status: 403 })
+      }
+    }
+  }
 
   // ── Market routing ────────────────────────────────────────────────────────
   // The legacy /market dashboard was removed. Redirect any old /market* link to
@@ -69,20 +98,6 @@ export async function proxy(request: NextRequest) {
       url.pathname = `/crm${pathname}`
     }
     return NextResponse.redirect(url, { status: 308 })
-  }
-
-  // ── Fail-closed session auth for every /api route (public allowlist only) ──
-  if (pathname.startsWith("/api/")) {
-    const isPublic =
-      PUBLIC_API_EXACT.has(pathname) ||
-      PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-    if (!isPublic) {
-      const token = request.cookies.get(SESSION_COOKIE)?.value
-      const user = await verifySession(token)
-      if (!user) {
-        return NextResponse.json({ error: "Authentication required." }, { status: 401 })
-      }
-    }
   }
 
   // ── Session auth for internal pages ────────────────────────────────────────
