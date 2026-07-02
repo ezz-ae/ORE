@@ -96,6 +96,9 @@ export default function WhatsAppPage() {
   const [data,    setData]    = useState<WaData | null>(null)
   const [err,     setErr]     = useState('')
   const [loading, setLoading] = useState(false)
+  // Whether the connection is saved server-side (so outbound sends actually work,
+  // not just the browser-side dashboard view).
+  const [serverActive, setServerActive] = useState(false)
 
   useEffect(() => {
     const savedTok   = localStorage.getItem(TOKEN_KEY)
@@ -119,6 +122,15 @@ export default function WhatsAppPage() {
       localStorage.setItem(PHONE_KEY, p)
       setData(d)
       setPhase('connected')
+      // Save server-side so the CRM can actually send WhatsApp messages
+      // (the dashboard above is browser-only). Best-effort; validated by the API.
+      fetch('/api/freehold/integrations/whatsapp/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: tk, phoneNumberId: p }),
+      })
+        .then((r) => setServerActive(r.ok))
+        .catch(() => setServerActive(false))
     } catch (e: any) {
       setErr(t(errKey(e)))
       setPhase('error')
@@ -130,11 +142,13 @@ export default function WhatsAppPage() {
   function disconnect() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(PHONE_KEY)
+    fetch('/api/freehold/integrations/whatsapp/credentials', { method: 'DELETE' }).catch(() => {})
     setToken('')
     setPhoneId('')
     setData(null)
     setPhase('idle')
     setErr('')
+    setServerActive(false)
   }
 
   async function refresh() {
@@ -224,10 +238,19 @@ export default function WhatsAppPage() {
       {phase === 'connected' && data && (
         <>
           {/* Status bar */}
-          <div className="mb-5 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
+          <div className="mb-2 flex items-center gap-2 rounded-[12px] border border-emerald-400/15 bg-emerald-400/[0.04] px-4 py-2.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
             <span className="text-sm text-emerald-400/90">{t('pintwa.connectedBanner')}</span>
             <span className="ml-auto text-xs text-slate-600">{t('pintwa.credentialsNote')}</span>
+          </div>
+          {/* Server-side send activation — the CRM can only send when this is on. */}
+          <div className={`mb-5 flex items-center gap-2 rounded-[12px] border px-4 py-2.5 ${serverActive ? 'border-emerald-400/15 bg-emerald-400/[0.04]' : 'border-amber-400/25 bg-amber-400/[0.05]'}`}>
+            {serverActive
+              ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              : <span className="h-3.5 w-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />}
+            <span className={`text-sm ${serverActive ? 'text-emerald-400/90' : 'text-amber-300'}`}>
+              {serverActive ? t('pintwa.sendActive') : t('pintwa.sendActivating')}
+            </span>
           </div>
 
           {/* Phone number card */}
