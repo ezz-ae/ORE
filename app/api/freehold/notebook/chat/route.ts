@@ -19,7 +19,9 @@ export async function POST(request: Request) {
   if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 })
 
   const conversationId = body.conversationId ?? `notebook-${crypto.randomUUID()}`
-  const role = body.role ?? 'owner'
+  // Cosmetic only (echoed in the envelope, never used for authorization).
+  // Default to least privilege — avoid the pre-P0 'owner' default pattern.
+  const role = body.role ?? 'viewer'
 
   const systemPrompt = `You are the Freehold Notebook AI — a private research and drafting assistant for the Freehold team.
 

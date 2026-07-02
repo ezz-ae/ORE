@@ -30,6 +30,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await ensureUsersTable()
     if (typeof body.role === 'string') {
       if (!VALID_ROLES.includes(body.role)) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+      // Role changes are privileged: only CEO/Admin may reassign roles, nobody
+      // may change their own role (no self-escalation), and only a CEO may grant
+      // or alter a CEO account.
+      const actor = auth.user
+      const [target] = await query<{ role: string; email: string }>(
+        `SELECT role, email FROM freehold_site_users WHERE id = $1 LIMIT 1`, [id],
+      )
+      const actorRole = String(actor.role)
+      if (!['ceo', 'admin'].includes(actorRole)) {
+        return NextResponse.json({ error: 'Only CEO or Admin can change roles' }, { status: 403 })
+      }
+      if (target?.email && target.email.toLowerCase() === String(actor.email).toLowerCase()) {
+        return NextResponse.json({ error: 'You cannot change your own role' }, { status: 403 })
+      }
+      if ((body.role === 'ceo' || target?.role === 'ceo') && actorRole !== 'ceo') {
+        return NextResponse.json({ error: 'Only a CEO can grant or change a CEO account' }, { status: 403 })
+      }
       await query(`UPDATE freehold_site_users SET role = $2 WHERE id = $1`, [id, body.role])
     }
     if (typeof body.suspended === 'boolean') {
@@ -76,6 +93,21 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (auth.error) return auth.error
   const { id } = await params
   try {
+    const actor = auth.user
+    const [target] = await query<{ role: string; email: string }>(
+      `SELECT role, email FROM freehold_site_users WHERE id = $1 LIMIT 1`, [id],
+    )
+    // Deleting accounts is CEO/Admin-only; you can't delete yourself, and only a
+    // CEO can remove a CEO account.
+    if (!['ceo', 'admin'].includes(String(actor.role))) {
+      return NextResponse.json({ error: 'Only CEO or Admin can remove members' }, { status: 403 })
+    }
+    if (target?.email && target.email.toLowerCase() === String(actor.email).toLowerCase()) {
+      return NextResponse.json({ error: 'You cannot remove your own account' }, { status: 403 })
+    }
+    if (target?.role === 'ceo' && String(actor.role) !== 'ceo') {
+      return NextResponse.json({ error: 'Only a CEO can remove a CEO account' }, { status: 403 })
+    }
     await query(`DELETE FROM freehold_site_users WHERE id = $1`, [id])
     return NextResponse.json({ ok: true })
   } catch (err) {
