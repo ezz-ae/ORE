@@ -24,7 +24,7 @@
 | B2 | Google Ads connect: env→DB (5 keys + OAuth) + Activate panel | M | ✅ client `creds()` env→DB, validated `/credentials` endpoint (OAuth refresh + trial GAQL), in-app connect persists server-side, status folds in DB creds |
 | B3 | Enable **GitHub Actions** so CI runs (workflow correct; jobs never reach a runner) | S | 🧱 |
 | B4 | Set Vercel env: `FH_SESSION_SECRET`, `RESEND_API_KEY`, `CRON_SECRET`, `WHATSAPP_APP_SECRET`, `GEMINI_API_KEY` | S | 🧱 |
-| B5 | Expert write-tool **approval executor** (`mcp/permissions.ts` is a stub) | M | ⬜ |
+| B5 | Expert write-tool **approval executor** (`mcp/permissions.ts` is a stub) | M | ⏸ deprioritised — the external-write MCP tools (meta-launch, whatsapp-send, …) are registered but **never invoked** (the Expert only calls read tools), so the path is dormant, not a live risk. Auto-executing money/message writes from the AI needs explicit sign-off before building. |
 | B6 | CPL-breach email (needs live Meta spend) | S | 🔬 |
 | B7 | Tests: auth-matrix (401s), credit-ledger reconciliation, copy-rules scan | M | ⬜ |
 | B8 | Rate limiting → shared store (currently per-instance in-memory) | M | ⬜ |
@@ -85,7 +85,7 @@
 | F2 | Consolidate the two session systems (`fh_session` + `freehold_site_session`) onto one | M | ⬜ |
 | F3 | Normalize `assigned_broker_id`/`agent_id` to canonical user IDs → then add safe FK constraints | M | ⬜ |
 | F4 | Tenant/tier-gating middleware (server-side) for the white-label | L | ⬜ |
-| F5 | Column encryption for stored integration credentials | S | ⬜ |
+| F5 | Column encryption for stored integration credentials | S | ✅ AES-256-GCM at rest (`lib/freehold/secure-store.ts`); Meta/Google/HubSpot/WhatsApp tokens encrypted, transparent decrypt, legacy plaintext rows auto-re-encrypt on next write; key from `FH_CREDENTIALS_KEY`→`FH_SESSION_SECRET` |
 
 ## G. Docs & organization (the "real attention to detail" ask)
 

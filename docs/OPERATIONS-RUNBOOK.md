@@ -67,6 +67,7 @@ These can be set as env vars **or** connected in-app (§3). Env wins.
 |---|---|
 | `ADMIN_SETUP_KEY` / `CRM_ADMIN_SETUP_KEY` | Guards one-time setup + admin purge endpoints |
 | `SESSION_COOKIE_DOMAIN` | Set when serving the app on a custom domain |
+| `FH_CREDENTIALS_KEY` | Optional. Key used to encrypt stored integration tokens at rest (AES-256-GCM). Falls back to `FH_SESSION_SECRET` if unset. Rotating it makes previously stored in-app connections unreadable — reconnect them after a rotation. |
 
 ---
 
