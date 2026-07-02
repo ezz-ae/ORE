@@ -121,6 +121,50 @@ html {
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+ * LIGHT MODE (client-requested) — light sky gradient background, white cards,
+ * gray text, black headings. Activated by `.theme-light` on <html> (account
+ * menu toggle). Token-based surfaces (bg-surface / bg-app / border-line …)
+ * flip automatically; the override block remaps the hardcoded text-white /
+ * text-slate-* utilities the app was built with dark-first.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.theme-light {
+  --color-app:          #eef4fb;                 /* soft sky (behind the body gradient) */
+  --color-chrome:       #ffffff;                 /* nav / headers */
+  --color-surface:      #ffffff;                 /* cards & panels */
+  --color-ink:          #0f172a;                 /* headings / deepest ink */
+  --color-surface-2:    #f1f5f9;                 /* inputs / raised */
+  --color-surface-3:    #e2e8f0;                 /* hover / tracks / chips */
+  --color-line:         #e2e8f0;                 /* hairline dividers */
+  --color-line-strong:  #cbd5e1;                 /* control borders */
+}
+.theme-light body {
+  background: linear-gradient(180deg, #e7f0fb 0%, #eff5fc 40%, #f8fbff 100%);
+  background-attachment: fixed;
+}
+/* Remap the hardcoded dark-first text utilities to the gray/black scale. */
+.theme-light .text-white        { color: #0f172a; }
+.theme-light .text-slate-100    { color: #1e293b; }
+.theme-light .text-slate-200    { color: #1e293b; }
+.theme-light .text-slate-300    { color: #334155; }
+.theme-light .text-slate-400    { color: #64748b; }
+.theme-light .text-slate-500    { color: #64748b; }
+.theme-light .text-slate-600    { color: #94a3b8; }
+.theme-light .text-slate-700    { color: #cbd5e1; }
+.theme-light .placeholder\:text-slate-500::placeholder { color: #94a3b8; }
+/* Glass cards / borders authored as white-alpha now sit on a light ground. */
+.theme-light .bg-white\/\[0\.05\],
+.theme-light .bg-white\/\[0\.04\],
+.theme-light .bg-white\/\[0\.06\],
+.theme-light .bg-white\/\[0\.03\]   { background-color: #ffffff; }
+.theme-light .border-white\/\[0\.07\],
+.theme-light .border-white\/\[0\.08\],
+.theme-light .border-white\/\[0\.12\],
+.theme-light .border-white\/10      { border-color: #e2e8f0; }
+.theme-light .hover\:bg-white\/\[0\.06\]:hover,
+.theme-light .hover\:bg-surface-2:hover { background-color: #f1f5f9; }
+/* Keep the gold brand + status colors as-is (they read fine on white). */
+
 /* Custom utilities for Freehold */
 @layer utilities {
   .gold-gradient {

@@ -44,6 +44,25 @@ function firstName(name?: string): string {
   return n ? n.split(/\s+/)[0] : ''
 }
 
+// --- Session-scoped "stop nagging" cap -------------------------------------
+// After the user skips two auto-started tours in one browser session, we stop
+// auto-opening tours for the rest of that session. sessionStorage clears when
+// the tab/session ends, so a fresh visit starts clean.
+const SKIP_KEY = 'fh-coach-skips'
+const SKIP_CAP = 2
+
+function autoTourSuppressed(): boolean {
+  if (typeof window === 'undefined') return false
+  try { return Number(window.sessionStorage.getItem(SKIP_KEY)) >= SKIP_CAP } catch { return false }
+}
+
+function noteAutoTourSkip(): void {
+  try {
+    const n = Number(window.sessionStorage.getItem(SKIP_KEY)) || 0
+    window.sessionStorage.setItem(SKIP_KEY, String(n + 1))
+  } catch { /* ignore */ }
+}
+
 export function CoachProvider({ children }: { children: React.ReactNode }) {
   const { ready, user } = useSession()
   const role = user?.role
@@ -54,6 +73,8 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   const [index, setIndex] = useState(0)
   const [steps, setSteps] = useState<CoachStep[]>([])
   const seenKeyRef = useRef<string | null>(null)
+  // Whether the currently-active tour was auto-started (vs. replayed on demand).
+  const autoStartedRef = useRef(false)
 
   // The tour the "Take a tour" button replays on the current surface: the
   // app's contextual tour when on an app, otherwise the role welcome.
@@ -70,10 +91,11 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  const startTour = useCallback((s: CoachStep[], seenKey: string | null) => {
+  const startTour = useCallback((s: CoachStep[], seenKey: string | null, auto = false) => {
     const filtered = visibleSteps(s)
     if (filtered.length === 0) return
     seenKeyRef.current = seenKey
+    autoStartedRef.current = auto
     setSteps(filtered)
     setIndex(0)
     setActive(true)
@@ -86,25 +108,37 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
 
   // Auto-start: the role welcome the first time (anywhere), then each app's
   // contextual tour the first time that app is opened. One tour per page load.
+  // If the user has skipped auto-tours twice this session, stop offering them —
+  // a quieter experience; the "Take a tour" button still replays on demand.
   useEffect(() => {
     if (!ready || !role || active) return
+    if (autoTourSuppressed()) return
     const seen = (k: string) => { try { return !!localStorage.getItem(k) } catch { return true } }
 
     const roleSteps = tourForRole(role)
     if (roleSteps.length && !seen(coachSeenKey(role))) {
-      const id = setTimeout(() => startTour(roleSteps, coachSeenKey(role)), 900)
+      const id = setTimeout(() => startTour(roleSteps, coachSeenKey(role), true), 900)
       return () => clearTimeout(id)
     }
     if (appId) {
       const appSteps = tourForApp(appId)
       if (appSteps.length && !seen(appCoachSeenKey(appId))) {
-        const id = setTimeout(() => startTour(appSteps, appCoachSeenKey(appId)), 900)
+        const id = setTimeout(() => startTour(appSteps, appCoachSeenKey(appId), true), 900)
         return () => clearTimeout(id)
       }
     }
   }, [ready, role, appId, active, startTour])
 
+  // Close via skip / dismiss. Marks the tour seen (so it won't reappear next
+  // session) and, when it was auto-started, counts toward the session skip cap.
   const finish = useCallback(() => {
+    setActive(false)
+    if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
+    if (autoStartedRef.current) noteAutoTourSkip()
+  }, [])
+
+  // Reaching the end is a completion, not a skip — mark seen, no skip count.
+  const complete = useCallback(() => {
     setActive(false)
     if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
   }, [])
@@ -118,6 +152,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
           index={index}
           onIndex={setIndex}
           onClose={finish}
+          onComplete={complete}
           userName={firstName(user?.name)}
         />
       )}
@@ -187,12 +222,13 @@ function sameRect(a: DOMRect | null, b: DOMRect | null) {
 }
 
 function CoachOverlay({
-  steps, index, onIndex, onClose, userName,
+  steps, index, onIndex, onClose, onComplete, userName,
 }: {
   steps: CoachStep[]
   index: number
   onIndex: (i: number) => void
   onClose: () => void
+  onComplete: () => void
   userName: string
 }) {
   const { t, dir } = useI18n()
@@ -245,12 +281,12 @@ function CoachOverlay({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') { e.preventDefault(); onClose() }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); isLast ? onClose() : onIndex(index + 1) }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); isLast ? onComplete() : onIndex(index + 1) }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); if (!isFirst) onIndex(index - 1) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [index, isFirst, isLast, onClose, onIndex])
+  }, [index, isFirst, isLast, onClose, onComplete, onIndex])
 
   if (!portalReady || !step) return null
 
@@ -343,7 +379,7 @@ function CoachOverlay({
               </button>
             )}
             <button
-              onClick={() => (isLast ? onClose() : onIndex(index + 1))}
+              onClick={() => (isLast ? onComplete() : onIndex(index + 1))}
               className="inline-flex items-center gap-1 rounded-lg bg-gold px-3.5 py-1.5 text-sm font-semibold text-[#06080A] transition-opacity hover:opacity-90"
             >
               {isLast ? t('coach.ui.done') : t('coach.ui.next')}
