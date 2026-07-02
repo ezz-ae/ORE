@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
 import { sendMessage, getSessionState } from '@/lib/whatsapp/session'
-import { sendText, isConfigured as cloudConfigured } from '@/lib/whatsapp/client'
+import { sendText, isConfiguredAsync } from '@/lib/whatsapp/client'
 
 // POST /api/whatsapp/send  { to: "+971...", body: "Hello" }
 //
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing to or body' }, { status: 400 })
     }
 
-    if (cloudConfigured()) {
+    if (await isConfiguredAsync()) {
       const result = await sendText({ to, body })
       if (result.status !== 'sent') {
         return NextResponse.json({ error: result.error ?? 'Send failed', status: result.status }, { status: 502 })

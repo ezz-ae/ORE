@@ -1,17 +1,30 @@
 // WhatsApp Business Cloud API client (Meta Graph API v18)
 
+import { getStoredCreds, type WhatsAppStoredCreds } from '@/lib/freehold/integration-credentials'
+
 const BASE = 'https://graph.facebook.com/v18.0'
 
-function token() {
-  return process.env.WHATSAPP_ACCESS_TOKEN ?? ''
+// Resolve Cloud API config env-first, then a connection saved through
+// Integrations → WhatsApp. Returns null when neither is present.
+async function resolveCloud(): Promise<{ token: string; phoneNumberId: string } | null> {
+  const envTok = process.env.WHATSAPP_ACCESS_TOKEN
+  const envPid = process.env.WHATSAPP_PHONE_NUMBER_ID
+  if (envTok && envPid) return { token: envTok, phoneNumberId: envPid }
+  const stored = await getStoredCreds<WhatsAppStoredCreds>('whatsapp').catch(() => null)
+  if (stored?.accessToken && stored?.phoneNumberId) {
+    return { token: stored.accessToken, phoneNumberId: stored.phoneNumberId }
+  }
+  return null
 }
 
-function phoneNumberId() {
-  return process.env.WHATSAPP_PHONE_NUMBER_ID ?? ''
-}
-
+/** Sync env-only check (fast path). Prefer isConfiguredAsync for the DB fallback. */
 export function isConfigured(): boolean {
   return !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID)
+}
+
+/** True when env OR an in-app connection can send through the Cloud API. */
+export async function isConfiguredAsync(): Promise<boolean> {
+  return (await resolveCloud()) !== null
 }
 
 export interface WATextMessage {
@@ -36,14 +49,15 @@ export interface WASendResult {
 
 // Send a plain text message
 export async function sendText(msg: WATextMessage): Promise<WASendResult> {
-  if (!isConfigured()) {
+  const cfg = await resolveCloud()
+  if (!cfg) {
     return { messageId: null, status: 'mock', error: 'WhatsApp Cloud API not configured — message NOT delivered' }
   }
   try {
-    const res = await fetch(`${BASE}/${phoneNumberId()}/messages`, {
+    const res = await fetch(`${BASE}/${cfg.phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${cfg.token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -64,14 +78,15 @@ export async function sendText(msg: WATextMessage): Promise<WASendResult> {
 
 // Send a template message (approved Meta templates)
 export async function sendTemplate(msg: WATemplateMessage): Promise<WASendResult> {
-  if (!isConfigured()) {
+  const cfg = await resolveCloud()
+  if (!cfg) {
     return { messageId: null, status: 'mock', error: 'WhatsApp Cloud API not configured — message NOT delivered' }
   }
   try {
-    const res = await fetch(`${BASE}/${phoneNumberId()}/messages`, {
+    const res = await fetch(`${BASE}/${cfg.phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${cfg.token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -95,11 +110,12 @@ export async function sendTemplate(msg: WATemplateMessage): Promise<WASendResult
 
 // Mark a message as read
 export async function markRead(messageId: string): Promise<void> {
-  if (!isConfigured()) return
-  await fetch(`${BASE}/${phoneNumberId()}/messages`, {
+  const cfg = await resolveCloud()
+  if (!cfg) return
+  await fetch(`${BASE}/${cfg.phoneNumberId}/messages`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token()}`,
+      Authorization: `Bearer ${cfg.token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

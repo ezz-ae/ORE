@@ -66,3 +66,42 @@ export async function clearStoredMetaCreds(): Promise<void> {
   await query(`DELETE FROM freehold_site_integration_credentials WHERE provider = 'meta'`)
   cache = { value: null, at: Date.now() }
 }
+
+// ── Generic provider store (whatsapp, hubspot, google, …) ────────────────────
+const providerCache = new Map<string, { value: Record<string, unknown> | null; at: number }>()
+
+export async function getStoredCreds<T = Record<string, unknown>>(provider: string): Promise<T | null> {
+  const c = providerCache.get(provider)
+  if (c && Date.now() - c.at < CACHE_MS) return c.value as T | null
+  try {
+    await ensureTable()
+    const rows = await query<{ credentials: Record<string, unknown> }>(
+      `SELECT credentials FROM freehold_site_integration_credentials WHERE provider = $1 LIMIT 1`,
+      [provider],
+    )
+    const value = rows[0]?.credentials ?? null
+    providerCache.set(provider, { value, at: Date.now() })
+    return value as T | null
+  } catch {
+    return (providerCache.get(provider)?.value ?? null) as T | null
+  }
+}
+
+export async function setStoredCreds(provider: string, creds: Record<string, unknown>, updatedBy: string): Promise<void> {
+  await ensureTable()
+  await query(
+    `INSERT INTO freehold_site_integration_credentials (provider, credentials, updated_by, updated_at)
+     VALUES ($1, $2::jsonb, $3, now())
+     ON CONFLICT (provider) DO UPDATE SET credentials = $2::jsonb, updated_by = $3, updated_at = now()`,
+    [provider, JSON.stringify(creds), updatedBy],
+  )
+  providerCache.set(provider, { value: creds, at: Date.now() })
+}
+
+export async function clearStoredCreds(provider: string): Promise<void> {
+  await ensureTable()
+  await query(`DELETE FROM freehold_site_integration_credentials WHERE provider = $1`, [provider])
+  providerCache.set(provider, { value: null, at: Date.now() })
+}
+
+export interface WhatsAppStoredCreds { accessToken: string; phoneNumberId: string }

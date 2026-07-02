@@ -8,7 +8,7 @@
  * returned — only booleans and which env keys are missing.
  */
 
-import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
+import { getStoredMetaCreds, getStoredCreds, type WhatsAppStoredCreds } from '@/lib/freehold/integration-credentials'
 
 export type IntegrationState = 'connected' | 'partial' | 'disconnected'
 
@@ -72,7 +72,12 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
 
   // ── WhatsApp ──────────────────────────────────────────────────────────────
   const waKeys = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID']
-  const wa = evaluate(waKeys)
+  let wa = evaluate(waKeys)
+  let waSource: 'env' | 'db' | null = wa.state === 'connected' ? 'env' : null
+  if (wa.state !== 'connected') {
+    const stored = await getStoredCreds<WhatsAppStoredCreds>('whatsapp').catch(() => null)
+    if (stored?.accessToken && stored?.phoneNumberId) { wa = { state: 'connected', missing: [] }; waSource = 'db' }
+  }
 
   // ── HubSpot CRM (private-app token) ─────────────────────────────────────────
   const hubKeys = ['HUBSPOT_TOKEN']
@@ -130,8 +135,8 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
       missingKeys: wa.missing,
       note:
         wa.state === 'connected'
-          ? 'Live — outbound WhatsApp messages send through the Cloud API.'
-          : 'Not configured — messages run in mock mode until credentials are added.',
+          ? (waSource === 'db' ? 'Live (connected in-app) — ' : 'Live — ') + 'outbound WhatsApp messages send through the Cloud API.'
+          : 'Not configured — connect in Integrations → WhatsApp or set env keys; messages run in mock mode until then.',
     },
     {
       id: 'hubspot',
