@@ -6,6 +6,7 @@ import { getSkill } from '@/lib/freehold/ai-skills'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
@@ -161,6 +162,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'Ask me anything about the business.' }] }, generatedAt },
         { status: 400 },
+      )
+    }
+
+    // Cap AI usage per user (per-IP-ish for anon) so a runaway loop can't drain credits.
+    const rl = await checkRateLimit(`expert-chat:${sessionUser?.email ?? 'anon'}`, { limit: 40, windowSec: 60 })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'You’re sending requests too quickly — give me a few seconds.' }] }, retryAfterSec: rl.retryAfterSec, generatedAt },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
       )
     }
 

@@ -27,7 +27,7 @@
 | B5 | Expert write-tool **approval executor** (`mcp/permissions.ts` is a stub) | M | ⏸ deprioritised — the external-write MCP tools (meta-launch, whatsapp-send, …) are registered but **never invoked** (the Expert only calls read tools), so the path is dormant, not a live risk. Auto-executing money/message writes from the AI needs explicit sign-off before building. |
 | B6 | CPL-breach email (needs live Meta spend) | S | 🔬 |
 | B7 | Tests: auth-matrix (401s), credit-ledger reconciliation, copy-rules scan | M | ⬜ |
-| B8 | Rate limiting → shared store (currently per-instance in-memory) | M | ⬜ |
+| B8 | Rate limiting → shared store (currently per-instance in-memory) | M | ✅ there was actually **no** throttling; added a shared Postgres fixed-window limiter (`lib/freehold/rate-limit.ts`, fail-open) on the AI chat routes (expert + notebook, 40/60s per user → 429 + Retry-After) so a runaway loop can't drain credits |
 
 ## C. Placeholders / mockups to REPLACE (no fake data in beta)
 
