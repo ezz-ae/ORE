@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { appendTurn } from '@/lib/freehold/notebook-conversations'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,8 +36,10 @@ Rules:
 
   try {
     const answer = await queryServerAgent(message, { systemPrompt })
+    // Persist the turn so the thread is real and reloadable (best-effort).
+    const savedId = await appendTurn(conversationId, user.email, message, answer)
     return NextResponse.json({
-      conversationId,
+      conversationId: savedId,
       role,
       prompt: message,
       answer,

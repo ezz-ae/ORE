@@ -37,7 +37,7 @@
 | C2 | **Integrations page** mock catalog + hardcoded "critical blockers" + static "AI take" → live status | M | ✅ catalog live from `/integrations/status`; **critical blockers now derived from live status** (db/AI/session), not the mock list; mock kept only as pre-fetch fallback |
 | C3 | `lib/freehold/mcp/mock-integrations.ts` + `execute-tool` `{mock:true}` fallbacks → real connection registry | M | ✅ MCP integration-summary + launch-blockers now derive from live env/DB status (no mock); mock-integrations kept only as the integrations page pre-fetch fallback + dormant `[integrationId]` scaffolding (D1) |
 | C4 | OAuth `start` route fake authorize URL + **no callback** → real per-provider OAuth (see F1) | L | ⬜ |
-| C5 | Notebook seed threads (`notebookConversations`) → live persisted threads | M | ⬜ |
+| C5 | Notebook seed threads (`notebookConversations`) → live persisted threads | M | ✅ real `freehold_site_notebook_conversations` store; chat persists each turn; list + detail page load real per-user threads (mgmt sees team's); demo seed no longer served anywhere |
 | C6 | Lead-Machine seed listings/readiness → live inventory-derived | M | ⬜ |
 | C7 | AI-Manager hub static content counts → live event log | S | ⬜ |
 | C8 | `lib/gemini.ts` legacy content/paths audit (stale `/crm/*` fixed already) | S | 🟡 |

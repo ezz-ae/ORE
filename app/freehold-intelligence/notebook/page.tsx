@@ -9,7 +9,6 @@ import {
   Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
   BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper,
 } from 'lucide-react'
-import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
 import { useT } from '@/lib/i18n/provider'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -38,8 +37,14 @@ function relativeTime(iso: string, t: (k: string, v?: Record<string, string | nu
 
 // ── data ─────────────────────────────────────────────────────────────────────
 
-const allOutputs = notebookConversations.flatMap(c => c.savedOutputs)
-const pinnedOutputs = allOutputs.filter(o => o.pinned)
+// Demo saved-outputs previews are gone — the notebook shows only real,
+// DB-persisted outputs (dbOutputs) and real conversation threads.
+type DemoOutput = {
+  id: string; type: string; title: string; content: string; pinned: boolean
+  tags: string[]; status: string; conversationId: string
+}
+const allOutputs: DemoOutput[] = []
+const pinnedOutputs: DemoOutput[] = []
 
 type CenterTab = 'chat' | 'saved' | 'pinned'
 
@@ -116,6 +121,16 @@ export default function NotebookPage() {
       .catch(() => {})
   }, [])
 
+  // Real, persisted conversation threads (per-user; management sees the team's).
+  type ConvSummary = { id: string; title: string; messages: { role: 'user' | 'assistant'; content: string }[]; updatedAt: string; savedOutputs: unknown[] }
+  const [conversations, setConversations] = useState<ConvSummary[]>([])
+  useEffect(() => {
+    fetch('/api/freehold/notebook/conversations')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.conversations)) setConversations(d.conversations) })
+      .catch(() => {})
+  }, [])
+
   // center panel
   const [centerTab, setCenterTab] = useState<CenterTab>('chat')
   const [chatInput, setChatInput] = useState('')
@@ -185,13 +200,13 @@ export default function NotebookPage() {
   // filtered conversations
   const filteredConvs = useMemo(() => {
     const q = convQuery.trim().toLowerCase()
-    const base = [...notebookConversations].reverse()
+    const base = conversations // API returns most-recent-first
     if (!q) return base
     return base.filter(c =>
       c.title.toLowerCase().includes(q) ||
       c.messages.some(m => m.content.toLowerCase().includes(q))
     )
-  }, [convQuery])
+  }, [convQuery, conversations])
 
   // chat send
   async function sendChat(text?: string) {
@@ -302,7 +317,7 @@ export default function NotebookPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-medium text-slate-100">{t('nb.allConversations')}</span>
-                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{notebookConversations.length}</span>
+                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{conversations.length}</span>
                 </div>
                 <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.allNotebookThreads')}</p>
               </div>
@@ -312,7 +327,7 @@ export default function NotebookPage() {
           {/* Individual conversations (when all_conversations is checked) */}
           {checkedSources.all_conversations && (
             <div className="ml-6 space-y-0.5 pb-1">
-              {notebookConversations.map(conv => (
+              {filteredConvs.map(conv => (
                 <Link
                   key={conv.id}
                   href={`/freehold-intelligence/notebook/${conv.id}`}
