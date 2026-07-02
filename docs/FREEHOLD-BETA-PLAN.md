@@ -20,7 +20,7 @@
 
 | # | Item | Effort | Status |
 |---|---|---|---|
-| B1 | HubSpot connect: env→DB creds + validated save + Activate panel (store ready) | S | ⬜ |
+| B1 | HubSpot connect: env→DB creds + validated save + Activate panel (store ready) | S | ✅ client env→DB, validated `/credentials` endpoint, in-app connect now persists server-side so two-way sync works |
 | B2 | Google Ads connect: env→DB (5 keys + OAuth) + Activate panel | M | ⬜ |
 | B3 | Enable **GitHub Actions** so CI runs (workflow correct; jobs never reach a runner) | S | 🧱 |
 | B4 | Set Vercel env: `FH_SESSION_SECRET`, `RESEND_API_KEY`, `CRON_SECRET`, `WHATSAPP_APP_SECRET`, `GEMINI_API_KEY` | S | 🧱 |

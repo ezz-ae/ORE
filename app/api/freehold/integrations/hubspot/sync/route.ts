@@ -4,7 +4,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import { query } from '@/lib/db'
 import {
-  hubspotConfigured, upsertContact, listRecentContacts,
+  hubspotConfiguredAsync, upsertContact, listRecentContacts,
   HubspotConfigError, HubspotApiError,
 } from '@/lib/hubspot/client'
 
@@ -21,9 +21,9 @@ export async function POST(req: Request) {
   const auth = await requireSession(MANAGEMENT_ROLES)
   if ('res' in auth) return auth.res
 
-  if (!hubspotConfigured()) {
+  if (!(await hubspotConfiguredAsync())) {
     return NextResponse.json(
-      { error: 'HubSpot not connected', configured: false, hint: 'Set HUBSPOT_TOKEN in the environment.' },
+      { error: 'HubSpot not connected', configured: false, hint: 'Connect HubSpot in Integrations → HubSpot, or set HUBSPOT_TOKEN.' },
       { status: 409 },
     )
   }
