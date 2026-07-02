@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable } from "@/lib/data"
 import { getSessionUser, isAdminRole, logActivity } from "@/lib/auth"
+import { notifyBrokerOfAssignedLead } from "@/lib/transactional-email"
 
 export async function POST(req: Request) {
   try {
@@ -37,6 +38,9 @@ export async function POST(req: Request) {
     )
 
     await logActivity("lead_assigned", user.id, { leadId, brokerId })
+
+    // Notify the broker their lead is waiting (best-effort; never blocks assign).
+    await notifyBrokerOfAssignedLead(String(brokerId), String(leadId)).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (error) {
