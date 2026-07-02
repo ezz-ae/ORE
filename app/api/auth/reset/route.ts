@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { hashPassword, logActivity, updatePasswordFromReset } from "@/lib/auth"
+import { sendPasswordChangedEmail } from "@/lib/transactional-email"
 
 export const runtime = "nodejs"
 
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
     }
 
     await logActivity("password_reset_completed", user.id, { email: user.email })
+
+    // Security notification — best-effort, never blocks the reset.
+    if (user.email) await sendPasswordChangedEmail(user.email).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (error) {

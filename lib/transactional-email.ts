@@ -92,6 +92,70 @@ Freehold Real Estate`
   return { sent: true as const }
 }
 
+export async function sendPasswordChangedEmail(to: string) {
+  if (!resendApiKey || !to) return { sent: false, reason: "missing-config" as const }
+  const text = `Your Freehold password was just changed.
+
+If this was you, no action is needed. If you did not do this, reset your password immediately at ${baseUrl}/crm/login and contact your administrator.
+
+Freehold Real Estate`
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>Your <strong>Freehold</strong> password was just changed.</p>
+      <p>If this was you, no action is needed. If you did not do this, <a href="${baseUrl}/crm/login">reset your password immediately</a> and contact your administrator.</p>
+      <p>Freehold Real Estate</p>
+    </div>`
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: fromEmail, to: [to], subject: "Your Freehold password was changed", text, html }),
+  })
+  if (!response.ok) {
+    console.error("[email] password-changed error", await response.text().catch(() => ""))
+    return { sent: false, reason: "provider-error" as const }
+  }
+  return { sent: true as const }
+}
+
+/** Warn a broker that their ad-credit balance is nearly exhausted. */
+export async function notifyBrokerLowCredits(brokerId: string, balance: number) {
+  if (!brokerId) return { sent: false as const }
+  try {
+    const rows = await query<{ name: string | null; email: string | null }>(
+      `SELECT name, email FROM freehold_site_users WHERE id::text = $1 OR lower(email) = lower($1) LIMIT 1`,
+      [brokerId],
+    ).catch(() => [])
+    const to = rows[0]?.email
+    if (!to) return { sent: false as const, reason: "no-broker-email" }
+    if (!resendApiKey) return { sent: false as const, reason: "missing-config" }
+    const url = `${baseUrl}/freehold-intelligence/agent/credits`
+    const text = `Hi ${rows[0]?.name ?? ""},
+
+Your ad-credit balance is down to ${balance} credit${balance === 1 ? "" : "s"}. Campaign launches will be refused once it runs out.
+
+Top up or request an allocation: ${url}
+
+Freehold`
+    const html = `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+        <p>Hi ${rows[0]?.name ?? ""},</p>
+        <p>Your ad-credit balance is down to <strong>${balance}</strong> credit${balance === 1 ? "" : "s"}. Campaign launches will be refused once it runs out.</p>
+        <p><a href="${url}">Top up or request an allocation →</a></p>
+        <p>Freehold</p>
+      </div>`
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: fromEmail, to: [to], subject: `Low ad credits: ${balance} left`, text, html }),
+    })
+    if (!response.ok) return { sent: false as const, reason: "provider-error" }
+    return { sent: true as const }
+  } catch (err) {
+    console.error("[notify] low-credits failed", err)
+    return { sent: false as const }
+  }
+}
+
 export async function sendLeadAssignedEmail(
   to: string,
   brokerName: string,
