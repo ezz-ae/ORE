@@ -4,6 +4,7 @@ import { listLeadForms, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { demoForms } from '@/lib/meta/demo-data'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
+import { DemoNotice } from '@/components/freehold/demo-badge'
 
 interface FormsResponse {
   forms: MetaLeadForm[]
@@ -109,6 +110,11 @@ export default async function FormsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Demo data must never read as real forms/leads. */}
+      {isConfigError && forms.length > 0 && (
+        <DemoNotice badge={t('lm.demo.badge')} note={t('lm.demo.note')} />
       )}
 
       {/* Forms list */}

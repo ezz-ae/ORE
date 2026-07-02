@@ -5,6 +5,8 @@ type Dict = Record<string, string>
 
 export const lm_core: Record<Locale, Dict> = {
   en: {
+    'lm.demo.badge': 'Demo data',
+    'lm.demo.note': 'Sample numbers shown until the ad account is connected — nothing here is real spend or real leads.',
     // ── Google Ads — used keys that were RU-only (parity fix) ──
     'lm.google.overview.noData': 'No data for this period',
     'lm.google.overview.stat.conversions': 'Conversions',
@@ -701,6 +703,8 @@ export const lm_core: Record<Locale, Dict> = {
   },
 
   ar: {
+    'lm.demo.badge': 'بيانات تجريبية',
+    'lm.demo.note': 'أرقام تجريبية تُعرض حتى يتم ربط حساب الإعلانات — لا شيء هنا إنفاق أو عملاء حقيقيون.',
     // ── Google Ads — used keys that were RU-only (parity fix) ──
     'lm.google.overview.noData': 'لا توجد بيانات لهذه الفترة',
     'lm.google.overview.stat.conversions': 'التحويلات',
@@ -1397,6 +1401,8 @@ export const lm_core: Record<Locale, Dict> = {
   },
 
   ru: {
+    'lm.demo.badge': 'Демо-данные',
+    'lm.demo.note': 'Показаны примерные цифры, пока рекламный аккаунт не подключён — здесь нет реальных расходов или лидов.',
     // ── Hub ──
     'lm.hub.eyebrow': 'Лидогенератор',
     'lm.hub.titleReady': '{n} объектов готовы к запуску',
