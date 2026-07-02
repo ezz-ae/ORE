@@ -13,6 +13,15 @@ export interface ChangeEntry {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    version: 4,
+    date: '2026-07-02',
+    title: 'See exactly where every commission goes',
+    items: [
+      { title: 'Full commission breakdown', body: 'Deals now capture the complete waterfall — agency commission, referral, cashback, expenses, growth fund, broker payout and company net. Enter each on the deal and watch the split update live.' },
+      { title: 'Company breakdown on Finance', body: 'The Finance overview rolls the whole book up: referral, cashback, expenses, growth, broker payouts and what the company keeps — across all approved deals.' },
+    ],
+  },
+  {
     version: 3,
     date: '2026-07-02',
     title: 'Personalise your workspace',

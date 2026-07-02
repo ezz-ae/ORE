@@ -66,6 +66,14 @@ export interface Deal {
   cashbackPct: number
   cashbackAed: number
   netCommissionAed: number
+  // Full commission waterfall (D11): net − expenses − growth = distributable,
+  // split into the brokers' payout and the company's retained net.
+  expensesAed: number
+  growthPct: number
+  growthAed: number
+  brokerCommissionPct: number
+  brokerCommissionAed: number
+  companyNetAed: number
   commissionReceivedAed: number
   commissionOutstandingAed: number
   paymentStatus: CommissionPaymentStatus
@@ -103,6 +111,11 @@ export interface DealInput {
   referralCommissionAed?: number
   cashbackPct?: number
   cashbackAed?: number
+  expensesAed?: number
+  growthPct?: number
+  growthAed?: number
+  brokerCommissionPct?: number
+  brokerCommissionAed?: number
   coAgentName?: string
   agentSharePct?: number
   notes?: string
@@ -117,6 +130,14 @@ export interface FinanceTotals {
   netCommissionAed: number
   totalPaidAed: number
   totalOutstandingAed: number
+  // Commission-waterfall roll-ups (D11). Optional so existing fallback literals
+  // stay valid; getFinanceTotals always populates them.
+  totalReferralAed?: number
+  totalCashbackAed?: number
+  totalExpensesAed?: number
+  totalGrowthAed?: number
+  totalBrokerPayoutAed?: number
+  totalCompanyNetAed?: number
 }
 
 // ─── Approval role helpers ───────────────────────────────────────────────────
@@ -154,7 +175,24 @@ const resolveAmount = (pct: number, amount: number, base: number): number => {
   return 0
 }
 
-/** Compute the commission breakdown for a deal from its raw inputs. */
+/**
+ * Compute the full commission waterfall for a deal from its raw inputs.
+ *
+ * Waterfall (D11 — every line is either entered explicitly or a pure
+ * subtraction; no company/broker split rate is assumed):
+ *   agency (gross)
+ *     − referral       (paid out to a referrer)
+ *     − cashback       (given back to the client)
+ *   = net
+ *     − expenses       (deal-specific costs: marketing, admin, gifts…)
+ *     − growth         (company growth fund allocation; % of net or an amount)
+ *   = distributable
+ *     − broker payout  (the agents' commission; % of distributable or an amount)
+ *   = company net      (what the company retains)
+ *
+ * All the new lines default to 0, so a deal with only the classic fields yields
+ * exactly the previous numbers (companyNet == net, broker == 0).
+ */
 export function computeCommission(input: {
   propertyValueAed: number
   agencyCommissionPct: number
@@ -163,6 +201,11 @@ export function computeCommission(input: {
   referralCommissionAed: number
   cashbackPct: number
   cashbackAed: number
+  expensesAed?: number
+  growthPct?: number
+  growthAed?: number
+  brokerCommissionPct?: number
+  brokerCommissionAed?: number
 }) {
   const propertyValueAed = num(input.propertyValueAed)
   const agencyCommissionPct = num(input.agencyCommissionPct)
@@ -172,6 +215,15 @@ export function computeCommission(input: {
   const cashbackPct = num(input.cashbackPct)
   const cashbackAed = resolveAmount(cashbackPct, num(input.cashbackAed), propertyValueAed)
   const netCommissionAed = Math.max(0, agencyCommissionAed - referralCommissionAed - cashbackAed)
+
+  const expensesAed = num(input.expensesAed)
+  const growthPct = num(input.growthPct)
+  const growthAed = resolveAmount(growthPct, num(input.growthAed), netCommissionAed)
+  const distributableAed = Math.max(0, netCommissionAed - expensesAed - growthAed)
+  const brokerCommissionPct = num(input.brokerCommissionPct)
+  const brokerCommissionAed = resolveAmount(brokerCommissionPct, num(input.brokerCommissionAed), distributableAed)
+  const companyNetAed = Math.max(0, distributableAed - brokerCommissionAed)
+
   return {
     propertyValueAed,
     agencyCommissionPct,
@@ -181,6 +233,12 @@ export function computeCommission(input: {
     cashbackPct,
     cashbackAed,
     netCommissionAed,
+    expensesAed,
+    growthPct,
+    growthAed,
+    brokerCommissionPct,
+    brokerCommissionAed,
+    companyNetAed,
   }
 }
 
@@ -211,6 +269,12 @@ const ensureDealsSchema = async () => {
       cashback_pct numeric DEFAULT 0,
       cashback_aed numeric DEFAULT 0,
       net_commission_aed numeric DEFAULT 0,
+      expenses_aed numeric DEFAULT 0,
+      growth_pct numeric DEFAULT 0,
+      growth_aed numeric DEFAULT 0,
+      broker_commission_pct numeric DEFAULT 0,
+      broker_commission_aed numeric DEFAULT 0,
+      company_net_aed numeric DEFAULT 0,
       commission_received_aed numeric DEFAULT 0,
       payment_status text DEFAULT 'unpaid',
       status text DEFAULT 'pending_step1',
@@ -240,6 +304,9 @@ const ensureDealsSchema = async () => {
     ["agency_commission_aed", "numeric DEFAULT 0"], ["referral_commission_pct", "numeric DEFAULT 0"],
     ["referral_commission_aed", "numeric DEFAULT 0"], ["cashback_pct", "numeric DEFAULT 0"],
     ["cashback_aed", "numeric DEFAULT 0"], ["net_commission_aed", "numeric DEFAULT 0"],
+    ["expenses_aed", "numeric DEFAULT 0"], ["growth_pct", "numeric DEFAULT 0"],
+    ["growth_aed", "numeric DEFAULT 0"], ["broker_commission_pct", "numeric DEFAULT 0"],
+    ["broker_commission_aed", "numeric DEFAULT 0"], ["company_net_aed", "numeric DEFAULT 0"],
     ["commission_received_aed", "numeric DEFAULT 0"], ["payment_status", "text DEFAULT 'unpaid'"],
     ["status", "text DEFAULT 'pending_step1'"], ["documents", "jsonb DEFAULT '{}'::jsonb"],
     ["step1_by", "text"], ["step1_at", "timestamptz"], ["step1_notes", "text"],
@@ -312,6 +379,12 @@ const mapRow = (row: DealRow): Deal => {
     cashbackPct: num(row.cashback_pct),
     cashbackAed: num(row.cashback_aed),
     netCommissionAed: num(row.net_commission_aed),
+    expensesAed: num(row.expenses_aed),
+    growthPct: num(row.growth_pct),
+    growthAed: num(row.growth_aed),
+    brokerCommissionPct: num(row.broker_commission_pct),
+    brokerCommissionAed: num(row.broker_commission_aed),
+    companyNetAed: num(row.company_net_aed),
     commissionReceivedAed,
     commissionOutstandingAed: Math.max(0, agencyCommissionAed - commissionReceivedAed),
     paymentStatus: (str(row.payment_status) || "unpaid") as CommissionPaymentStatus,
@@ -337,6 +410,7 @@ const SELECT = `
   id, lead_id, lead_name, client_phone, client_email, project_slug, project_name, developer_name,
   agent_id, agent_name, co_agent_name, agent_share_pct, property_value_aed, agency_commission_pct, agency_commission_aed,
   referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
+  expenses_aed, growth_pct, growth_aed, broker_commission_pct, broker_commission_aed, company_net_aed,
   commission_received_aed, payment_status, status, documents,
   step1_by, step1_at::text, step1_notes, step2_by, step2_at::text, step2_notes,
   rejected_by, rejected_at::text, rejection_reason, notes, created_by,
@@ -438,9 +512,11 @@ export async function createDeal(
       agent_id, agent_name, co_agent_name, agent_share_pct,
       property_value_aed, agency_commission_pct, agency_commission_aed,
       referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
+      expenses_aed, growth_pct, growth_aed, broker_commission_pct, broker_commission_aed, company_net_aed,
       status, notes, created_by, created_at, updated_at
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, now(), now()
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+      $21, $22, $23, $24, $25, $26, $27, $28, $29, now(), now()
     ) RETURNING ${SELECT}`,
     [
       id,
@@ -463,6 +539,12 @@ export async function createDeal(
       commission.cashbackPct,
       commission.cashbackAed,
       commission.netCommissionAed,
+      commission.expensesAed,
+      commission.growthPct,
+      commission.growthAed,
+      commission.brokerCommissionPct,
+      commission.brokerCommissionAed,
+      commission.companyNetAed,
       status,
       input.notes || "",
       creator.id,
@@ -485,6 +567,11 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
     referralCommissionAed: input.referralCommissionAed ?? 0,
     cashbackPct: input.cashbackPct ?? existing.cashbackPct,
     cashbackAed: input.cashbackAed ?? 0,
+    expensesAed: input.expensesAed ?? existing.expensesAed,
+    growthPct: input.growthPct ?? existing.growthPct,
+    growthAed: input.growthAed ?? 0,
+    brokerCommissionPct: input.brokerCommissionPct ?? existing.brokerCommissionPct,
+    brokerCommissionAed: input.brokerCommissionAed ?? 0,
   })
 
   const rows = await query<DealRow>(
@@ -506,6 +593,12 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       notes = COALESCE($16, notes),
       co_agent_name = COALESCE($17, co_agent_name),
       agent_share_pct = COALESCE($18, agent_share_pct),
+      expenses_aed = $19,
+      growth_pct = $20,
+      growth_aed = $21,
+      broker_commission_pct = $22,
+      broker_commission_aed = $23,
+      company_net_aed = $24,
       updated_at = now()
      WHERE id = $1 RETURNING ${SELECT}`,
     [
@@ -527,6 +620,12 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       input.notes ?? null,
       input.coAgentName ?? null,
       input.agentSharePct ?? null,
+      commission.expensesAed,
+      commission.growthPct,
+      commission.growthAed,
+      commission.brokerCommissionPct,
+      commission.brokerCommissionAed,
+      commission.companyNetAed,
     ],
   )
   return rows[0] ? mapRow(rows[0]) : null
@@ -702,7 +801,13 @@ export async function getFinanceTotals(options: { agentId?: string } = {}): Prom
          COALESCE(SUM(property_value_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_sales,
          COALESCE(SUM(agency_commission_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_commission,
          COALESCE(SUM(net_commission_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS net_commission,
-         COALESCE(SUM(commission_received_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_paid
+         COALESCE(SUM(commission_received_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_paid,
+         COALESCE(SUM(referral_commission_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_referral,
+         COALESCE(SUM(cashback_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_cashback,
+         COALESCE(SUM(expenses_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_expenses,
+         COALESCE(SUM(growth_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_growth,
+         COALESCE(SUM(broker_commission_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_broker,
+         COALESCE(SUM(company_net_aed) FILTER (WHERE status IN ('approved', 'closed')), 0) AS total_company_net
        FROM freehold_site_deals
        WHERE 1=1 ${agentFilter}`,
       params,
@@ -719,12 +824,20 @@ export async function getFinanceTotals(options: { agentId?: string } = {}): Prom
       netCommissionAed: num(r.net_commission),
       totalPaidAed: totalPaid,
       totalOutstandingAed: Math.max(0, totalCommission - totalPaid),
+      totalReferralAed: num(r.total_referral),
+      totalCashbackAed: num(r.total_cashback),
+      totalExpensesAed: num(r.total_expenses),
+      totalGrowthAed: num(r.total_growth),
+      totalBrokerPayoutAed: num(r.total_broker),
+      totalCompanyNetAed: num(r.total_company_net),
     }
   } catch (error) {
     console.error("[deals] getFinanceTotals failed", error)
     return {
       totalDeals: 0, approvedDeals: 0, pendingDeals: 0, totalSalesAed: 0,
       totalCommissionAed: 0, netCommissionAed: 0, totalPaidAed: 0, totalOutstandingAed: 0,
+      totalReferralAed: 0, totalCashbackAed: 0, totalExpensesAed: 0, totalGrowthAed: 0,
+      totalBrokerPayoutAed: 0, totalCompanyNetAed: 0,
     }
   }
 }

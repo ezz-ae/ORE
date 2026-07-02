@@ -18,6 +18,11 @@ export interface DealFormValues {
   referralCommissionAed: number
   cashbackPct: number
   cashbackAed: number
+  expensesAed: number
+  growthPct: number
+  growthAed: number
+  brokerCommissionPct: number
+  brokerCommissionAed: number
   coAgentName: string
   agentSharePct: number
   notes: string
@@ -38,6 +43,11 @@ const EMPTY: DealFormValues = {
   referralCommissionAed: 0,
   cashbackPct: 0,
   cashbackAed: 0,
+  expensesAed: 0,
+  growthPct: 0,
+  growthAed: 0,
+  brokerCommissionPct: 0,
+  brokerCommissionAed: 0,
   coAgentName: '',
   agentSharePct: 100,
   notes: '',
@@ -104,7 +114,14 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
     const referral = resolveAmount(v.referralCommissionPct, v.referralCommissionAed, agency)
     const cashback = resolveAmount(v.cashbackPct, v.cashbackAed, base)
     const net = Math.max(0, agency - referral - cashback)
-    return { agency, referral, cashback, net }
+    // Full waterfall (D11): net − expenses − growth = distributable, split into
+    // the brokers' payout and the company's retained net.
+    const expenses = v.expensesAed > 0 ? v.expensesAed : 0
+    const growth = resolveAmount(v.growthPct, v.growthAed, net)
+    const distributable = Math.max(0, net - expenses - growth)
+    const broker = resolveAmount(v.brokerCommissionPct, v.brokerCommissionAed, distributable)
+    const companyNet = Math.max(0, distributable - broker)
+    return { agency, referral, cashback, net, expenses, growth, broker, companyNet }
   }, [v])
 
   // ── CRM lead autocomplete ──────────────────────────────────────────────────
@@ -373,15 +390,37 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
               <input type="number" min={0} className={inputCls} value={v.cashbackAed || ''} onChange={(e) => set('cashbackAed', Number(e.target.value) || 0)} placeholder="AED" />
             </div>
           </div>
+          <div>
+            <label className={labelCls}>Expenses <span className="text-slate-600">(deal costs, AED)</span></label>
+            <input type="number" min={0} className={inputCls} value={v.expensesAed || ''} onChange={(e) => set('expensesAed', Number(e.target.value) || 0)} placeholder="marketing, admin, gifts…" />
+          </div>
+          <div>
+            <label className={labelCls}>Growth fund % <span className="text-slate-600">or amount (of net)</span></label>
+            <div className="flex gap-2">
+              <input type="number" min={0} step={0.1} className={inputCls} value={v.growthPct || ''} onChange={(e) => set('growthPct', Number(e.target.value) || 0)} placeholder="%" />
+              <input type="number" min={0} className={inputCls} value={v.growthAed || ''} onChange={(e) => set('growthAed', Number(e.target.value) || 0)} placeholder="AED" />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Broker payout % <span className="text-slate-600">or amount (of distributable)</span></label>
+            <div className="flex gap-2">
+              <input type="number" min={0} step={0.1} className={inputCls} value={v.brokerCommissionPct || ''} onChange={(e) => set('brokerCommissionPct', Number(e.target.value) || 0)} placeholder="%" />
+              <input type="number" min={0} className={inputCls} value={v.brokerCommissionAed || ''} onChange={(e) => set('brokerCommissionAed', Number(e.target.value) || 0)} placeholder="AED" />
+            </div>
+          </div>
         </div>
 
-        {/* Live breakdown */}
+        {/* Live commission waterfall */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            { label: 'Agency commission', value: breakdown.agency, tone: 'text-white' },
+            { label: 'Agency (gross)', value: breakdown.agency, tone: 'text-white' },
             { label: 'Referral', value: breakdown.referral, tone: 'text-slate-300' },
             { label: 'Cashback', value: breakdown.cashback, tone: 'text-slate-300' },
-            { label: 'Net to agency', value: breakdown.net, tone: 'text-gold' },
+            { label: 'Net commission', value: breakdown.net, tone: 'text-white' },
+            { label: 'Expenses', value: breakdown.expenses, tone: 'text-slate-300' },
+            { label: 'Growth fund', value: breakdown.growth, tone: 'text-slate-300' },
+            { label: 'Broker payout', value: breakdown.broker, tone: 'text-sky-300' },
+            { label: 'Company net', value: breakdown.companyNet, tone: 'text-gold' },
           ].map((b) => (
             <div key={b.label} className="rounded-lg border border-line bg-surface px-3 py-2">
               <div className="text-[10px] uppercase tracking-wide text-slate-500">{b.label}</div>

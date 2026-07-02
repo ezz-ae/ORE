@@ -15,6 +15,14 @@ shipped. Routine bug fixes and internal plumbing are intentionally excluded
 
 ---
 
+## v4 — 2026-07-02 · See exactly where every commission goes
+- **Full commission breakdown** — deals now capture the complete waterfall:
+  agency commission, referral, cashback, expenses, growth fund, broker payout
+  and company net. Enter each on the deal and the split updates live.
+- **Company breakdown on Finance** — the Finance overview rolls the whole book
+  up: referral, cashback, expenses, growth, broker payouts and what the company
+  keeps, across all approved deals.
+
 ## v3 — 2026-07-02 · Personalise your workspace
 - **Light mode** — switch between the dark and light look from the account menu
   (top-right), next to Language. Light mode uses a soft sky-gradient background

@@ -56,7 +56,7 @@
 | D8 | **Landing pages: advertise-from-builder** + redesign/edit with variety of **content holders/templates** | M | 2 | closes builder→ads loop |
 | D9 | **Team chat** — all members, media sharing | M | 3 | |
 | D10 | **Phone-unhide → unclaimed → auto-reassign by urgency** — unhiding a number = claimed event; unclaimed (even if assigned) auto-reassigns by lead urgency | M | 2 | genuinely novel CRM edge |
-| D11 | **Finance commission breakdown** — growth / net / broker / referral / cashback / expenses per deal | M | 2 | extend existing deals commission model |
+| D11 | **Finance commission breakdown** — growth / net / broker / referral / cashback / expenses per deal | M | 2 | ✅ full waterfall on the deal form (live) + company roll-up on Finance; additive schema, rates entered by management (no assumed split) |
 
 ## E. Roadmap — my additions (real-estate-critical, mostly from the expansion doc)
 
