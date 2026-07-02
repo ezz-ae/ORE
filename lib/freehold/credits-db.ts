@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import { notifyBrokerLowCredits } from '@/lib/transactional-email'
 
 export interface CreditBalance {
   broker_id: string
@@ -164,6 +165,11 @@ export async function deductCreditsForCampaign(
       ON CONFLICT DO NOTHING
     `, [brokerId, campaignId, campaignName, credits])
     const balance = await getCreditBalance(brokerId)
+    // Low-balance warning (threshold 20) — best-effort, never blocks the spend.
+    const remaining = balance?.balance ?? 0
+    if (remaining > 0 && remaining <= 20) {
+      await notifyBrokerLowCredits(brokerId, remaining).catch(() => {})
+    }
     return { ok: true, newBalance: balance?.balance }
   } catch {
     return { ok: false }
