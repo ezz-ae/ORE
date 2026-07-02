@@ -6,8 +6,10 @@ const __dirname = path.dirname(__filename)
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Type errors must fail the build (CI also runs `tsc --noEmit`). Previously
+  // ignored, which let type regressions ship silently.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   // Baileys + its native deps (sharp, pino, thread-stream) must not be bundled
   serverExternalPackages: [
