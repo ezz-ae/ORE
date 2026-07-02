@@ -14,27 +14,32 @@ const internalPagePrefixes = [
   "/settings",
 ]
 
-// Internal API groups — operational endpoints (ads, messaging, intelligence,
-// CRM, finance) that must only be callable with a valid Freehold session.
-const internalApiPrefixes = [
-  "/api/google/",
-  "/api/meta/",
-  "/api/whatsapp/",
-  "/api/freehold/",
-  "/api/freehold-intelligence/",
-  "/api/ai/generate-ad",
-  "/api/ai/recommend-followup",
-  "/api/ai/summarize-lead",
-  "/api/ai/ask-notebook",
-  "/api/ai/upload-brochure",
+// FAIL-CLOSED API auth. Every /api/* route requires a valid Freehold session
+// EXCEPT the explicit public allowlist below — new routes are private by
+// default, the only safe direction for a system that will soon hold real ad
+// budgets and lead PII. Secret/signature-gated machine endpoints (cron,
+// bootstrap, webhook) are allowlisted here and verify their own secret in-handler.
+const PUBLIC_API_EXACT = new Set([
+  "/api/health",
+  "/api/markets",
+  "/api/intelligence-block",
+  "/api/embed",
+  "/api/lp-analytics",          // anonymous landing-page analytics ingestion
+  "/api/leads",                 // public landing-page lead capture (POST)
+  "/api/auth/login",
+  "/api/auth/request-reset",
+  "/api/auth/reset",
+  "/api/auth/bootstrap-admin",  // setup-key-gated in handler
+  "/api/server/login",
+  "/api/server/logout",
+  "/api/whatsapp/webhook",      // Meta HMAC-signature-gated in handler
+])
+const PUBLIC_API_PREFIXES = [
+  "/api/freehold/public/",      // public catalogue (projects, areas, developers, search)
+  "/api/market-score/",         // public market pulse
+  "/api/pdf/",                  // public brochure download + lead capture
+  "/api/cron/",                 // CRON_SECRET-gated in handler
 ]
-
-// Endpoints under the internal prefixes that intentionally serve the public
-// site (anonymous visitors) and must stay open.
-const publicApiPrefixes = ["/api/freehold/public/"]
-
-// Inbound webhooks authenticate via their own signatures, not session cookies.
-const webhookPaths = new Set(["/api/whatsapp/webhook"])
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
@@ -66,16 +71,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, { status: 308 })
   }
 
-  // ── Session auth for internal APIs ─────────────────────────────────────────
-  const isInternalApi =
-    internalApiPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(prefix)) &&
-    !publicApiPrefixes.some((prefix) => pathname.startsWith(prefix)) &&
-    !webhookPaths.has(pathname)
-  if (isInternalApi) {
-    const token = request.cookies.get(SESSION_COOKIE)?.value
-    const user = await verifySession(token)
-    if (!user) {
-      return NextResponse.json({ error: "Authentication required." }, { status: 401 })
+  // ── Fail-closed session auth for every /api route (public allowlist only) ──
+  if (pathname.startsWith("/api/")) {
+    const isPublic =
+      PUBLIC_API_EXACT.has(pathname) ||
+      PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    if (!isPublic) {
+      const token = request.cookies.get(SESSION_COOKIE)?.value
+      const user = await verifySession(token)
+      if (!user) {
+        return NextResponse.json({ error: "Authentication required." }, { status: 401 })
+      }
     }
   }
 
