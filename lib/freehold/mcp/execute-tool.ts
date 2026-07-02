@@ -31,7 +31,10 @@ function normalizeArgs(request: ToolCallRequest): Record<string, any> {
 
 export async function executeTool(request: ToolCallRequest): Promise<McpResponseEnvelope<any>> {
   const requestId = crypto.randomUUID();
-  const userRoles = request.userRoles?.length ? request.userRoles : [request.role || 'owner'];
+  // Fail closed: roles must be supplied explicitly by the authenticated caller
+  // (the route derives them from the verified session). Never assume 'owner' —
+  // an empty role set denies every gated tool via userHasRole below.
+  const userRoles: Role[] = request.userRoles?.length ? request.userRoles : [];
   const requestedToolName = normalizeToolName(request);
   const args = normalizeArgs(request);
   const tool = getToolById(requestedToolName);
