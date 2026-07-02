@@ -61,6 +61,37 @@ const formatAed = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value)
 
+export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  if (!resendApiKey || !to) {
+    return { sent: false, reason: "missing-config" as const }
+  }
+  const text = `We received a request to reset your Freehold password.
+
+Reset it here (valid for 1 hour): ${resetUrl}
+
+If you didn't request this, you can safely ignore this email.
+
+Freehold Real Estate`
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p>We received a request to reset your <strong>Freehold</strong> password.</p>
+      <p><a href="${resetUrl}">Reset your password</a> — this link is valid for 1 hour.</p>
+      <p>If you didn't request this, you can safely ignore this email.</p>
+      <p>Freehold Real Estate</p>
+    </div>`
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: fromEmail, to: [to], subject: "Reset your Freehold password", text, html }),
+  })
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "")
+    console.error("[email] reset error", payload)
+    return { sent: false, reason: "provider-error" as const }
+  }
+  return { sent: true as const }
+}
+
 export async function sendLeadAcknowledgementEmail(input: LeadAckEmailInput) {
   if (!resendApiKey || !input.to) {
     return { sent: false, reason: "missing-config" as const }
