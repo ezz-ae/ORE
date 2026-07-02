@@ -28,14 +28,16 @@ export interface WATemplateMessage {
 
 export interface WASendResult {
   messageId: string | null
-  status: 'sent' | 'failed'
+  // 'mock' = Cloud API not configured; NOTHING was delivered. Callers must
+  // never treat mock as sent (the old fake-'sent' silently dropped messages).
+  status: 'sent' | 'failed' | 'mock'
   error?: string
 }
 
 // Send a plain text message
 export async function sendText(msg: WATextMessage): Promise<WASendResult> {
   if (!isConfigured()) {
-    return { messageId: `mock_${Date.now()}`, status: 'sent' }
+    return { messageId: null, status: 'mock', error: 'WhatsApp Cloud API not configured — message NOT delivered' }
   }
   try {
     const res = await fetch(`${BASE}/${phoneNumberId()}/messages`, {
@@ -63,7 +65,7 @@ export async function sendText(msg: WATextMessage): Promise<WASendResult> {
 // Send a template message (approved Meta templates)
 export async function sendTemplate(msg: WATemplateMessage): Promise<WASendResult> {
   if (!isConfigured()) {
-    return { messageId: `mock_${Date.now()}`, status: 'sent' }
+    return { messageId: null, status: 'mock', error: 'WhatsApp Cloud API not configured — message NOT delivered' }
   }
   try {
     const res = await fetch(`${BASE}/${phoneNumberId()}/messages`, {
