@@ -15,6 +15,13 @@ shipped. Routine bug fixes and internal plumbing are intentionally excluded
 
 ---
 
+## v5 — 2026-07-02 · Your own shareable bio link
+- **Agent bio link + QR** — My Workspace → Bio Link builds a public page
+  (`/a/<your-handle>`) with your contact buttons and featured projects. Share
+  the link or QR code in your Instagram / WhatsApp bio.
+- **Leads land in your CRM** — form submissions on your bio page create a lead
+  assigned to you automatically (source "Bio Link"), rate-limited against spam.
+
 ## v4 — 2026-07-02 · See exactly where every commission goes
 - **Full commission breakdown** — deals now capture the complete waterfall:
   agency commission, referral, cashback, expenses, growth fund, broker payout

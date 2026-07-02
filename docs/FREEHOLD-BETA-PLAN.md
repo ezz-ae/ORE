@@ -49,7 +49,7 @@
 | D1 | **Universal connections hub** — connect to almost anything (connector framework + webhooks + Zapier/Make bridge) | XL | 3 | build on the new credential store + integrations hub |
 | D2 | **AI Control Room** — connect any company, deploy any model, create internal agents (automation), train AI | XL | 4 | extends MCP + automation engine; model-agnostic |
 | D3 | **Portals** — push/pull/review/rewrite/extract listings on **Bayut, Property Finder, Dubizzle** | L | 2 | **depends on Trakheesi permits (E1)** — hard requirement |
-| D4 | **Agent bio-link + QR** — `name.company.com`: selected projects, offers, direct chat, contact, lead capture, analytics | M | 2 | Leadbylead signup magnet |
+| D4 | **Agent bio-link + QR** — `name.company.com`: selected projects, offers, direct chat, contact, lead capture, analytics | M | 2 | ✅ public page at `/a/<handle>` (contact buttons + featured projects + lead capture → CRM assigned to the agent, rate-limited), in-workspace editor with copy-link + QR. Subdomain (`name.company.com`) is a DNS/wildcard follow-up on top of the path route |
 | D5 | **Webmail integration** — Gmail/IMAP: AI reads/writes/summarizes in-system | M | 3 | integrate, don't build a mail server |
 | D6 | **WhatsApp per-agent number** (not just one business account) — register each agent's number on Cloud API | M | 3 | ban-trap warning: never automate a personal number |
 | D7 | **Creative suite** — upload/edit video + image, create designs, full control in-app | L | 3 | embed a creative SDK, don't build Canva |

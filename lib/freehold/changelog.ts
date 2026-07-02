@@ -13,6 +13,15 @@ export interface ChangeEntry {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    version: 5,
+    date: '2026-07-02',
+    title: 'Your own shareable bio link',
+    items: [
+      { title: 'Agent bio link + QR', body: 'Open My Workspace → Bio Link to build a public page with your photo, contact buttons and featured projects. Share the link or QR in your Instagram/WhatsApp bio.' },
+      { title: 'Leads land in your CRM', body: 'When someone fills in the form on your bio page, the lead is created and assigned to you automatically — no copy-paste.' },
+    ],
+  },
+  {
     version: 4,
     date: '2026-07-02',
     title: 'See exactly where every commission goes',
