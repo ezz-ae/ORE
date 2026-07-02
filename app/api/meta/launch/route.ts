@@ -5,7 +5,7 @@ import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { createLocalCampaign } from '@/lib/meta/local-store'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
-import { deductCreditsForCampaign } from '@/lib/freehold/credits-db'
+import { deductCreditsForCampaign, getCreditBalance } from '@/lib/freehold/credits-db'
 
 async function ensureBrokerTable() {
   await query(
@@ -46,8 +46,23 @@ export async function POST(req: NextRequest) {
     ? (sessionUser.brokerId ?? sessionUser.email)
     : undefined
 
-  // Persist broker attribution + deduct launch credits. Best-effort: a failure
-  // here never blocks the campaign (it already exists in Meta or the local store).
+  const creditsToSpend = brokerId ? Math.round((body.dailyBudgetAED ?? 100) / 10) : 0
+
+  // Fail closed on money: a broker cannot launch a campaign they can't fund.
+  // Checked server-side before any launch so the balance is authoritative.
+  if (brokerId && creditsToSpend > 0) {
+    const bal = await getCreditBalance(brokerId)
+    if ((bal?.balance ?? 0) < creditsToSpend) {
+      return NextResponse.json(
+        { error: 'Insufficient credits to launch this campaign.', balance: bal?.balance ?? 0, required: creditsToSpend },
+        { status: 402 },
+      )
+    }
+  }
+
+  // Persist broker attribution + deduct launch credits. Attribution is
+  // best-effort; the credit deduction is guarded (deductCreditsForCampaign
+  // refuses to drive the balance negative) so spend always reconciles.
   async function recordBrokerSpend(campaignId: string) {
     if (!brokerId) return
     try {
@@ -58,8 +73,10 @@ export async function POST(req: NextRequest) {
          ON CONFLICT (campaign_id) DO NOTHING`,
         [campaignId, brokerId, body.campaignName],
       )
-      const creditsToSpend = Math.round((body.dailyBudgetAED ?? 100) / 10)
-      await deductCreditsForCampaign(brokerId, campaignId, body.campaignName, creditsToSpend)
+      const deduction = await deductCreditsForCampaign(brokerId, campaignId, body.campaignName, creditsToSpend)
+      if (!deduction.ok) {
+        console.error('[meta/launch] credit deduction failed after launch', { campaignId, brokerId, reason: deduction.reason })
+      }
     } catch {
       // Non-fatal — attribution/credits logging failed.
     }
