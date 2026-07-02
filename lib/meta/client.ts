@@ -3,6 +3,7 @@
  * All calls are server-side only — token is never exposed to the browser.
  */
 
+import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
 import type {
   MetaCampaign,
   MetaAdSet,
@@ -43,11 +44,24 @@ export class MetaConfigError extends Error {
   }
 }
 
-function creds() {
-  const token   = process.env.META_ACCESS_TOKEN
-  const rawId   = process.env.META_AD_ACCOUNT_ID
-  const pageId  = process.env.META_PAGE_ID
-  const pixelId = process.env.META_PIXEL_ID
+// Credentials resolve env-first (ops override), then the DB-stored connection
+// made through Integrations → Meta Ads in the UI. Async because the DB path
+// may be consulted; every caller is already async.
+async function creds() {
+  let token   = process.env.META_ACCESS_TOKEN
+  let rawId   = process.env.META_AD_ACCOUNT_ID
+  let pageId  = process.env.META_PAGE_ID
+  let pixelId: string | null | undefined = process.env.META_PIXEL_ID
+
+  if (!token || !rawId || !pageId) {
+    const stored = await getStoredMetaCreds()
+    if (stored) {
+      token  = token  || stored.accessToken
+      rawId  = rawId  || stored.adAccountId
+      pageId = pageId || stored.pageId
+      pixelId = pixelId || stored.pixelId || undefined
+    }
+  }
 
   if (!token)  throw new MetaConfigError('META_ACCESS_TOKEN')
   if (!rawId)  throw new MetaConfigError('META_AD_ACCOUNT_ID')
@@ -62,7 +76,7 @@ async function apiFetch<T>(
   options?: RequestInit,
   params?: Record<string, string>,
 ): Promise<T> {
-  const { token } = creds()
+  const { token } = await creds()
   const url = new URL(`${API_BASE}${path}`)
   url.searchParams.set('access_token', token)
   if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
@@ -84,7 +98,7 @@ async function apiFetch<T>(
 }
 
 async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
-  const { token } = creds()
+  const { token } = await creds()
   const url = new URL(`${API_BASE}${path}`)
   url.searchParams.set('access_token', token)
 
@@ -105,7 +119,7 @@ async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<
 // ─── Campaigns ───────────────────────────────────────────────────────────────
 
 export async function listCampaigns(): Promise<MetaCampaign[]> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
   const res = await apiFetch<{ data: MetaCampaign[] }>(`/${adAccountId}/campaigns`, undefined, {
     fields: 'id,name,status,objective,daily_budget,created_time,start_time,stop_time',
     limit: '100',
@@ -163,7 +177,7 @@ export async function createAdSet(params: {
   targeting: CampaignTargeting
   status: 'ACTIVE' | 'PAUSED'
 }): Promise<{ id: string }> {
-  const { adAccountId, pixelId } = creds()
+  const { adAccountId, pixelId } = await creds()
   const optimizationGoal = objectiveToOptimizationGoal(params.objective)
 
   const targetingSpec: Record<string, unknown> = {
@@ -207,7 +221,7 @@ export async function createAdCreative(params: {
   name: string
   creative: CampaignCreative
 }): Promise<{ id: string }> {
-  const { adAccountId, pageId } = creds()
+  const { adAccountId, pageId } = await creds()
 
   const linkData: Record<string, unknown> = {
     link:        params.creative.landingUrl,
@@ -233,7 +247,7 @@ export async function createAd(params: {
   creativeId: string
   status:     'ACTIVE' | 'PAUSED'
 }): Promise<{ id: string }> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
   return apiPost(`/${adAccountId}/ads`, {
     name:     params.name,
     adset_id: params.adSetId,
@@ -252,7 +266,7 @@ export async function listAds(adSetId: string): Promise<MetaAd[]> {
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
 export async function listLeadForms(): Promise<MetaLeadForm[]> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
   const res = await apiFetch<{ data: MetaLeadForm[] }>(`/${adAccountId}/leadgen_forms`, undefined, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
     limit:  '50',
@@ -267,7 +281,7 @@ export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
 }
 
 export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ id: string }> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
   const questions = payload.questions.map((q) => ({
     type:    q.type,
     ...(q.label   ? { label:   q.label   } : {}),
@@ -339,7 +353,7 @@ export async function getAdSet(adSetId: string): Promise<MetaAdSet> {
 // ─── Creative Library ─────────────────────────────────────────────────────────
 
 export async function listAdCreatives(): Promise<MetaAdCreativeDetail[]> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
   const res = await apiFetch<{ data: MetaAdCreativeDetail[] }>(`/${adAccountId}/adcreatives`, undefined, {
     fields: 'id,name,status,body,title,object_story_spec',
     limit:  '50',
@@ -358,7 +372,7 @@ export async function launchFullCampaign(params: {
   creative:     CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
 }): Promise<LaunchCampaignResult> {
-  const { adAccountId } = creds()
+  const { adAccountId } = await creds()
 
   // 1 — Campaign
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
