@@ -30,11 +30,27 @@ system day to day.)
   automatically.
 - Set your default interface and AI language in **Settings → Languages**.
 
+### Appearance (light / dark)
+- Open the **account menu** (top-right) → **Appearance** to switch between
+  **Dark** and **Light**. Light mode uses a soft sky-gradient background with
+  white cards and charts — easier on the eyes in bright offices.
+- Your choice is remembered on this device and applied instantly (no reload,
+  no flash on the next visit).
+
+### What's new
+- The **account menu → What's new** opens a panel listing the newest features
+  and options — a gold dot appears when there's something you haven't seen yet.
+- When we ship a new feature, the panel pops up **once** so you don't miss it.
+  It only ever lists features and improvements — never routine fixes.
+
 ### Guided tours (coach marks)
 - The first time you open the platform — and the first time you open each app —
   a short guided tour highlights the key controls on that screen.
 - Replay any tour anytime from the **account menu → "Take a tour."** Tours only
   point at things actually on your screen, so they stay short and relevant.
+- Not in the mood? Skip two tours and we'll stop opening them automatically for
+  the rest of your session — the **Take a tour** button is always there when you
+  want one.
 
 ### The AI Expert (everywhere)
 - The gold **Expert** button is docked on every screen (keyboard: ⌘J / Ctrl-J).

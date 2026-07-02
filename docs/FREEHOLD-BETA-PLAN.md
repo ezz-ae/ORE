@@ -14,7 +14,7 @@
 | A1 | **Light mode** — light sky gradient bg, white charts, gray (dark+light) + black text; toggle in the account menu beside Languages + Tour; persisted per user | M | ✅ |
 | A2 | **Tour: skip-twice = stop** — if a user skips the tour twice, don't reshow it that session (less intrusive) | S | ✅ |
 | A3 | **What's-new** — a changelog panel openable from the account menu **and** a one-time popup on an affected page when a **feature/option** ships (never for fixes). Client-facing, dismissible, per-version | M | ✅ |
-| A4 | **First trial campaign** — with Meta connected in-app (done): verify launch end-to-end, one real (PAUSED) campaign, confirm lead-form → CRM round-trip | S | 🔬 |
+| A4 | **First trial campaign** — with Meta connected in-app (done): verify launch end-to-end, one real (PAUSED) campaign, confirm lead-form → CRM round-trip | S | 🔬 runbook ready: `docs/CAMPAIGN-LAUNCH-RUNBOOK.md` — needs client Meta token |
 
 ## B. Beta blockers / remaining from the audit
 
@@ -91,9 +91,9 @@
 
 | # | Item | Status |
 |---|---|---|
-| G1 | **System manual** — per-role user guide (CEO/manager/broker/marketing), every app + option, EN/AR | ⬜ |
-| G2 | Admin/ops runbook — env vars, integration setup, cron, backups | ⬜ |
-| G3 | **CHANGELOG.md** — the source for the What's-new panel (A3) | ⬜ |
+| G1 | **System manual** — per-role user guide (CEO/manager/broker/marketing), every app + option, EN/AR | 🟡 `docs/USER-GUIDE.md` (updated w/ light mode, what's-new, quieter tours); in-app help page pending |
+| G2 | Admin/ops runbook — env vars, integration setup, cron, backups | ✅ `docs/OPERATIONS-RUNBOOK.md` |
+| G3 | **CHANGELOG.md** — the source for the What's-new panel (A3) | ✅ `CHANGELOG.md` (mirrors `changelog.ts`) |
 | G4 | API/route reference (extend `route-auth-matrix.md`) | 🟡 |
 | G5 | Code organization pass — dead-code sweep, consistent lib structure, remove dormant `lib/auth.ts` after F2 | ⬜ |
 | G6 | Data dictionary — every `freehold_site_*` table, columns, implicit FKs | ⬜ |
