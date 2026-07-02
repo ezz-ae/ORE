@@ -11,9 +11,9 @@
 
 | # | Item | Effort | Status |
 |---|---|---|---|
-| A1 | **Light mode** — light sky gradient bg, white charts, gray (dark+light) + black text; toggle in the account menu beside Languages + Tour; persisted per user | M | ⬜ |
-| A2 | **Tour: skip-twice = stop** — if a user skips the tour twice, don't reshow it that session (less intrusive) | S | ⬜ |
-| A3 | **What's-new** — a changelog panel openable from the account menu **and** a one-time popup on an affected page when a **feature/option** ships (never for fixes). Client-facing, dismissible, per-version | M | ⬜ |
+| A1 | **Light mode** — light sky gradient bg, white charts, gray (dark+light) + black text; toggle in the account menu beside Languages + Tour; persisted per user | M | ✅ |
+| A2 | **Tour: skip-twice = stop** — if a user skips the tour twice, don't reshow it that session (less intrusive) | S | ✅ |
+| A3 | **What's-new** — a changelog panel openable from the account menu **and** a one-time popup on an affected page when a **feature/option** ships (never for fixes). Client-facing, dismissible, per-version | M | ✅ |
 | A4 | **First trial campaign** — with Meta connected in-app (done): verify launch end-to-end, one real (PAUSED) campaign, confirm lead-form → CRM round-trip | S | 🔬 |
 
 ## B. Beta blockers / remaining from the audit
