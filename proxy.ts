@@ -44,6 +44,38 @@ const PUBLIC_API_PREFIXES = [
 // Roles allowed to spend ad budget / read lead-form PII (marketing + management).
 const ADS_ROLES = new Set<string>([...MANAGEMENT_ROLES, "marketing"])
 
+// ── LLM cost guard ────────────────────────────────────────────────────────────
+// Best-effort sliding-window rate limit for AI-backed endpoints (each request
+// costs real Gemini/Vertex money). Per-instance in-memory — serverless
+// instances each keep their own window, so this is a cost/abuse damper, not a
+// hard quota; a shared store (e.g. Upstash) can replace it later.
+const AI_PREFIXES = [
+  "/api/ai/",
+  "/api/chat",
+  "/api/freehold/ai/",
+  "/api/freehold/chat",
+  "/api/freehold/expert/",
+  "/api/freehold/server-ai/",
+  "/api/freehold/notebook/chat",
+  "/api/freehold/lead-machine/ai",
+]
+const AI_LIMIT = 30 // requests per window per caller
+const AI_WINDOW_MS = 60_000
+const aiHits = new Map<string, number[]>()
+
+function aiRateLimited(key: string): boolean {
+  const now = Date.now()
+  const hits = (aiHits.get(key) ?? []).filter((t) => now - t < AI_WINDOW_MS)
+  if (hits.length >= AI_LIMIT) { aiHits.set(key, hits); return true }
+  hits.push(now)
+  aiHits.set(key, hits)
+  // Opportunistic prune so the map can't grow unbounded.
+  if (aiHits.size > 5000) {
+    for (const [k, v] of aiHits) if (v.every((t) => now - t >= AI_WINDOW_MS)) aiHits.delete(k)
+  }
+  return false
+}
+
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone()
   const hostname = request.headers.get("host") || ""
@@ -71,6 +103,18 @@ export async function proxy(request: NextRequest) {
       const isLeadPII = pathname.startsWith("/api/meta/forms/")
       if (adsScope && (isWrite || isLeadPII) && !ADS_ROLES.has(user.role)) {
         return NextResponse.json({ error: "Insufficient role for ad operations." }, { status: 403 })
+      }
+
+      // LLM-backed endpoints: throttle per caller (session token, else IP).
+      const isAi = AI_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
+      if (isAi) {
+        const caller = token ?? request.headers.get("x-forwarded-for") ?? "anon"
+        if (aiRateLimited(caller)) {
+          return NextResponse.json(
+            { error: "Too many AI requests — try again in a minute." },
+            { status: 429, headers: { "Retry-After": "60" } },
+          )
+        }
       }
     }
   }
