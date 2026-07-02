@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHmac, timingSafeEqual } from 'node:crypto'
 import { parseWebhook, markRead, type IncomingMessage } from '@/lib/whatsapp/client'
 import { query } from '@/lib/db'
 import { ensureLeadActivityTable, ensureLeadsTable } from '@/lib/data'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? 'freehold_verify_token'
+const APP_SECRET = (process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET ?? '').trim()
+
+// Verify Meta's X-Hub-Signature-256 HMAC over the RAW body. Returns true when
+// valid (or, before a secret is configured outside production, skips the check
+// so local setup isn't blocked). In production an unset secret is refused.
+function verifyMetaSignature(raw: string, header: string | null): 'ok' | 'invalid' | 'unconfigured' {
+  if (!APP_SECRET) return process.env.NODE_ENV === 'production' ? 'invalid' : 'unconfigured'
+  if (!header) return 'invalid'
+  const expected = 'sha256=' + createHmac('sha256', APP_SECRET).update(raw).digest('hex')
+  const a = Buffer.from(header)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return 'invalid'
+  return timingSafeEqual(a, b) ? 'ok' : 'invalid'
+}
 
 // Meta webhook verification handshake
 export async function GET(req: Request) {
@@ -83,7 +97,13 @@ async function storeIncomingMessage(msg: IncomingMessage) {
 // Receive incoming WhatsApp messages
 export async function POST(req: Request) {
   try {
-    const payload = await req.json()
+    const raw = await req.text()
+    const verdict = verifyMetaSignature(raw, req.headers.get('x-hub-signature-256'))
+    if (verdict === 'invalid') {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+
+    const payload = JSON.parse(raw)
     const messages = parseWebhook(payload)
 
     for (const msg of messages) {
