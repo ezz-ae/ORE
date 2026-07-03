@@ -133,36 +133,99 @@ html {
   --color-chrome:       #ffffff;                 /* nav / headers */
   --color-surface:      #ffffff;                 /* cards & panels */
   --color-ink:          #0f172a;                 /* headings / deepest ink */
-  --color-surface-2:    #f1f5f9;                 /* inputs / raised */
-  --color-surface-3:    #e2e8f0;                 /* hover / tracks / chips */
-  --color-line:         #e2e8f0;                 /* hairline dividers */
+  --color-surface-2:    #f4f7fb;                 /* inputs / raised */
+  --color-surface-3:    #e6ecf3;                 /* hover / tracks / chips */
+  --color-line:         #e3e9f0;                 /* hairline dividers */
   --color-line-strong:  #cbd5e1;                 /* control borders */
 }
+/* A calm sky wash that resolves to clean white where the content sits, so
+   cards and charts read crisply instead of floating on flat pale blue. */
 .theme-light body {
-  background: linear-gradient(180deg, #e7f0fb 0%, #eff5fc 40%, #f8fbff 100%);
+  background: linear-gradient(180deg, #e8f1fc 0%, #f2f7fd 42%, #ffffff 100%);
   background-attachment: fixed;
+  color: #0f172a;
 }
-/* Remap the hardcoded dark-first text utilities to the gray/black scale. */
+
+/* ── Text: dark-first utilities → gray/black scale ──────────────────────── */
 .theme-light .text-white        { color: #0f172a; }
 .theme-light .text-slate-100    { color: #1e293b; }
 .theme-light .text-slate-200    { color: #1e293b; }
 .theme-light .text-slate-300    { color: #334155; }
-.theme-light .text-slate-400    { color: #64748b; }
+.theme-light .text-slate-400    { color: #5b6b7f; }
 .theme-light .text-slate-500    { color: #64748b; }
 .theme-light .text-slate-600    { color: #94a3b8; }
-.theme-light .text-slate-700    { color: #cbd5e1; }
-.theme-light .placeholder\:text-slate-500::placeholder { color: #94a3b8; }
-/* Glass cards / borders authored as white-alpha now sit on a light ground. */
-.theme-light .bg-white\/\[0\.05\],
+.theme-light .text-slate-700    { color: #b6c0cd; }
+.theme-light .text-slate-800    { color: #0f172a; }
+.theme-light .text-slate-900    { color: #0b1220; }
+.theme-light .placeholder\:text-slate-500::placeholder,
+.theme-light .placeholder-slate-500::placeholder { color: #94a3b8; }
+
+/* ── Surfaces: white-alpha "glass" → solid white on the light ground ────── */
+.theme-light .bg-white\/\[0\.02\],
+.theme-light .bg-white\/\[0\.025\],
+.theme-light .bg-white\/\[0\.03\],
 .theme-light .bg-white\/\[0\.04\],
+.theme-light .bg-white\/\[0\.05\],
 .theme-light .bg-white\/\[0\.06\],
-.theme-light .bg-white\/\[0\.03\]   { background-color: #ffffff; }
+.theme-light .bg-white\/\[0\.07\],
+.theme-light .bg-white\/\[0\.08\],
+.theme-light .bg-white\/\[0\.1\],
+.theme-light .bg-white\/\[0\.10\],
+.theme-light .bg-white\/\[0\.12\],
+.theme-light .bg-white\/\[0\.15\],
+.theme-light .bg-white\/5,
+.theme-light .bg-white\/10      { background-color: #ffffff; }
+
+/* ── Dark structural surfaces (menus, cards, panels) → white ───────────── *
+ * Critical: these stayed dark while their text was flipped to dark, making
+ * dropdowns and cards unreadable. Flip the backgrounds too.                 */
+.theme-light .bg-ink,
+.theme-light .bg-\[\#0f172a\],
+.theme-light .bg-\[\#0A1F17\],
+.theme-light .bg-\[\#0A0D16\],
+.theme-light .bg-\[\#0A0D10\],
+.theme-light .bg-\[\#0B131F\],
+.theme-light .bg-\[\#06070C\],
+.theme-light .bg-\[\#06080A\]   { background-color: #ffffff; color: #0f172a; }
+
+/* ── Design-token utilities ────────────────────────────────────────────── *
+ * These compiled to STATIC dark hex at build time (e.g. .bg-surface:#181613),
+ * so redefining the CSS vars can't reach them — each must be overridden here.
+ * They are the primary card / nav / panel colors across the whole app.       */
+.theme-light .bg-app          { background-color: transparent; }   /* reveal the body sky gradient */
+.theme-light .bg-chrome       { background-color: #ffffff; }       /* nav + headers */
+.theme-light .bg-surface      { background-color: #ffffff; }       /* cards + panels */
+.theme-light .bg-surface-2    { background-color: #f4f7fb; }       /* inputs + raised */
+.theme-light .bg-surface-3    { background-color: #e6ecf3; }       /* chips + tracks */
+.theme-light .hover\:bg-surface-3:hover { background-color: #e6ecf3; }
+.theme-light .border-line     { border-color: #e3e9f0; }
+.theme-light .border-line-strong { border-color: #cbd5e1; }
+.theme-light .divide-line > :not([hidden]) ~ :not([hidden]) { border-color: #e3e9f0; }
+
+/* ── Borders: white-alpha hairlines → visible light dividers ───────────── */
+.theme-light .border-white\/\[0\.05\],
+.theme-light .border-white\/\[0\.06\],
 .theme-light .border-white\/\[0\.07\],
 .theme-light .border-white\/\[0\.08\],
+.theme-light .border-white\/\[0\.1\],
+.theme-light .border-white\/\[0\.10\],
 .theme-light .border-white\/\[0\.12\],
-.theme-light .border-white\/10      { border-color: #e2e8f0; }
+.theme-light .border-white\/5,
+.theme-light .border-white\/10      { border-color: #e3e9f0; }
+.theme-light .border-white\/\[0\.15\],
+.theme-light .border-white\/15,
+.theme-light .border-white\/20,
+.theme-light .border-white\/25      { border-color: #cbd5e1; }
+
+/* ── Hovers ────────────────────────────────────────────────────────────── */
+.theme-light .hover\:bg-white\/\[0\.03\]:hover,
+.theme-light .hover\:bg-white\/\[0\.04\]:hover,
 .theme-light .hover\:bg-white\/\[0\.06\]:hover,
-.theme-light .hover\:bg-surface-2:hover { background-color: #f1f5f9; }
+.theme-light .hover\:bg-white\/\[0\.08\]:hover,
+.theme-light .hover\:bg-surface-2:hover { background-color: #eef2f7; }
+
+/* Lighten the heavy dark drop-shadows the dark theme uses on popovers. */
+.theme-light [class*="shadow-"] { --tw-shadow-color: rgba(15, 23, 42, 0.12); }
 /* Keep the gold brand + status colors as-is (they read fine on white). */
 
 /* Custom utilities for Freehold */
