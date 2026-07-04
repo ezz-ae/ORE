@@ -50,23 +50,7 @@ const ensureSchema = async () => {
       updated_at timestamptz DEFAULT now()
     )
   `)
-  // Seed a realistic starter set once so the page isn't empty on first run.
-  const existing = await query<{ c: number }>(`SELECT COUNT(*)::int AS c FROM freehold_site_contracts`)
-  if ((existing[0]?.c || 0) === 0) {
-    const seed: Array<[string, ContractType, string, string, string, string, boolean, string]> = [
-      ["Meta Business Agreement", "platform", "Meta Platforms Inc.", "AED 25,000 / mo", "2025-01-01", "2026-12-31", true, "Covers all Meta ad products with monthly invoicing."],
-      ["Google Ads Terms of Service", "platform", "Google LLC", "AED 18,000 / mo", "2025-01-01", "2026-12-31", true, "Performance Max + Search campaigns."],
-      ["DLD Data Feed License", "data", "Dubai Land Department", "AED 12,000 / yr", "2025-03-01", "2027-02-28", false, "Property transaction data; annual renewal."],
-      ["Legal Advisory — Real Estate", "legal", "Al Tamimi & Company", "AED 5,000 / mo", "2026-01-01", "2026-12-31", true, ""],
-    ]
-    for (const [name, type, cp, value, sd, ed, ar, notes] of seed) {
-      await query(
-        `INSERT INTO freehold_site_contracts (id, name, type, counterparty, value, start_date, end_date, status, auto_renew, notes, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6::date, $7::date, 'active', $8, $9, now(), now())`,
-        [`ctr_${randomUUID()}`, name, type, cp, value, sd, ed, ar, notes],
-      )
-    }
-  }
+  // No demo seed — contracts start empty and are added by the client for real.
 }
 const ensureSchemaOnce = async () => {
   if (!ensurePromise) ensurePromise = ensureSchema().catch((e) => { ensurePromise = null; throw e })
