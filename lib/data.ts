@@ -1527,6 +1527,20 @@ export async function ensureLeadsTable() {
       ADD COLUMN IF NOT EXISTS blocked boolean DEFAULT false
   `)
 
+  // Lead status vocabulary must match the CRM pipeline the UI actually offers
+  // (new → contacted → qualified → viewing → negotiation → closed, + lost).
+  // A stray, narrower seed constraint (gc_leads_status_check) rejected
+  // viewing/negotiation/closed, so dragging a lead to those stages 500'd.
+  // Replace it with a permissive check that allows the real vocabulary
+  // ('converted' kept for backward-compatibility with older data). Best-effort.
+  try {
+    await query(`ALTER TABLE freehold_site_leads DROP CONSTRAINT IF EXISTS gc_leads_status_check`)
+    await query(`ALTER TABLE freehold_site_leads DROP CONSTRAINT IF EXISTS freehold_leads_status_check`)
+    await query(`ALTER TABLE freehold_site_leads ADD CONSTRAINT freehold_leads_status_check
+      CHECK (status IS NULL OR status IN
+        ('new','contacted','qualified','viewing','negotiation','converted','closed','lost'))`)
+  } catch { /* older/partial schema — never block lead ops on this */ }
+
   // Sequential lead code / serial number (e.g. FH-0001). A sequence-backed
   // default backfills existing rows on add and assigns new rows automatically;
   // lead_code is a generated column so it always stays in sync. Best-effort —

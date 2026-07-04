@@ -28,7 +28,7 @@ async function leadSummary() {
   const [row] = await query<{ total: string; last_30d: string; closed: string; new_count: string }>(`
     SELECT COUNT(*)::text AS total,
       COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS last_30d,
-      COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+      COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed,
       COUNT(*) FILTER (WHERE status = 'new')::text AS new_count
     FROM freehold_site_leads`).catch(() => [])
   const sources = await query<{ source: string; count: string }>(`

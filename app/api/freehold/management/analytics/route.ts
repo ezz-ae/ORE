@@ -41,7 +41,7 @@ export async function GET() {
   const leadsBySource = await safe(() => query<{ source: string; c: number; closed: number }>(
     `SELECT COALESCE(NULLIF(source,''),'direct') AS source,
             COUNT(*)::int AS c,
-            COUNT(*) FILTER (WHERE status = 'closed')::int AS closed
+            COUNT(*) FILTER (WHERE status IN ('closed','converted'))::int AS closed
      FROM freehold_site_leads GROUP BY 1 ORDER BY c DESC LIMIT 8`), [])
 
   // Totals for conversion math.

@@ -40,7 +40,7 @@ export async function GET(req: Request) {
         `SELECT COALESCE(u.id::text, 'unassigned') AS key,
                 COALESCE(u.name, 'Unassigned') AS label,
                 COUNT(*)::text AS leads,
-                COUNT(*) FILTER (WHERE l.status = 'closed')::text AS closed,
+                COUNT(*) FILTER (WHERE l.status IN ('closed','converted'))::text AS closed,
                 COUNT(*) FILTER (WHERE l.priority IN ('hot','priority'))::text AS hot,
                 AVG(l.budget_aed)::text AS avg_budget,
                 ${SCORE_SQL}::text AS score
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
       rows = await query(
         `SELECT ${col} AS key, ${col} AS label,
                 COUNT(*)::text AS leads,
-                COUNT(*) FILTER (WHERE l.status = 'closed')::text AS closed,
+                COUNT(*) FILTER (WHERE l.status IN ('closed','converted'))::text AS closed,
                 COUNT(*) FILTER (WHERE l.priority IN ('hot','priority'))::text AS hot,
                 AVG(l.budget_aed)::text AS avg_budget,
                 ${SCORE_SQL}::text AS score

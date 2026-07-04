@@ -47,7 +47,7 @@ async function loadRoster(pool: string[]): Promise<AgentLoad[]> {
 
   const loads = await query<{ broker: string; open_leads: string; today: string }>(
     `SELECT assigned_broker_id AS broker,
-            COUNT(*) FILTER (WHERE status NOT IN ('closed','lost'))::text AS open_leads,
+            COUNT(*) FILTER (WHERE status NOT IN ('closed','converted','lost'))::text AS open_leads,
             COUNT(*) FILTER (WHERE created_at > now() - interval '24 hours')::text AS today
      FROM freehold_site_leads
      WHERE assigned_broker_id = ANY($1)

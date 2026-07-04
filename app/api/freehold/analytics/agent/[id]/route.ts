@@ -37,9 +37,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     query<{ total: string; new_count: string; closed: string; hot: string; overdue: string }>(
       `SELECT COUNT(*)::text AS total,
         COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
-        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+        COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed,
         COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
-        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','converted','lost'))::text AS overdue
        FROM freehold_site_leads WHERE assigned_broker_id = ANY($1)`, [brokerKeys]).catch(() => []),
     query<Record<string, unknown>>(
       `SELECT id, name, status, priority, COALESCE(source,'direct') AS source, budget_aed, created_at::text
