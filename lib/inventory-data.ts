@@ -155,6 +155,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     status: mapStatus(row.status),
     startingPriceAED: row.price_from_aed ? Number(row.price_from_aed) : null,
     maxPriceAED: row.price_to_aed ? Number(row.price_to_aed) : null,
+    heroImage: row.hero_image || null,
     handoverYear,
     paymentPlan,
     bedrooms: bedroomsLabel(unitTypes),

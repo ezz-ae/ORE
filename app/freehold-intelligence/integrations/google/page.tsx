@@ -69,6 +69,8 @@ export default function GoogleAdsPage() {
   const [shows,  setShows]  = useState<Record<keyof Creds, boolean>>({ devToken: false, clientId: false, clientSec: false, refresh: false, customerId: false })
   const [phase,  setPhase]  = useState<Phase>('idle')
   const [copied, setCopied] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [errMsg, setErrMsg] = useState('')
 
   useEffect(() => {
     const loaded: Creds = { ...EMPTY }
@@ -80,17 +82,49 @@ export default function GoogleAdsPage() {
     if (any) { setCreds(loaded); setPhase('saved') }
   }, [])
 
-  function save() {
+  async function save() {
     const allFilled = Object.values(creds).every((v) => v.trim())
-    if (!allFilled) { setPhase('error'); return }
-    Object.entries(KEYS).forEach(([k, lk]) => localStorage.setItem(lk, (creds as any)[k].trim()))
-    setPhase('saved')
+    if (!allFilled) { setErrMsg(''); setPhase('error'); return }
+    setSaving(true)
+    setErrMsg('')
+    try {
+      // Validate + store server-side so campaigns actually launch from the
+      // backend — not just this browser. The endpoint checks the credentials
+      // against Google (OAuth refresh + a trivial query) before saving.
+      const res = await fetch('/api/freehold/integrations/google/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          developerToken: creds.devToken.trim(),
+          clientId:       creds.clientId.trim(),
+          clientSecret:   creds.clientSec.trim(),
+          refreshToken:   creds.refresh.trim(),
+          customerId:     creds.customerId.trim(),
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setErrMsg(data?.error || t('pintg.allRequired'))
+        setPhase('error')
+        return
+      }
+      Object.entries(KEYS).forEach(([k, lk]) => localStorage.setItem(lk, (creds as any)[k].trim()))
+      setPhase('saved')
+    } catch {
+      setErrMsg(t('pintg.saveFailed'))
+      setPhase('error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function clear() {
     Object.values(KEYS).forEach((lk) => localStorage.removeItem(lk))
     setCreds(EMPTY)
     setPhase('idle')
+    setErrMsg('')
+    // Remove the server-side connection so backend launches stop too.
+    fetch('/api/freehold/integrations/google/credentials', { method: 'DELETE' }).catch(() => {})
   }
 
   function toggleShow(key: keyof Creds) {
@@ -175,14 +209,14 @@ export default function GoogleAdsPage() {
       {phase === 'error' && (
         <div className="mb-4 flex items-center gap-2 rounded-[10px] border border-red-400/20 bg-red-400/[0.05] px-3 py-2.5 text-xs text-red-400/90">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-          {t('pintg.allRequired')}
+          {errMsg || t('pintg.allRequired')}
         </div>
       )}
 
       {phase !== 'saved' && (
-        <button onClick={save}
-          className="w-full rounded-[12px] bg-blue-500 py-3 text-[14px] font-semibold text-white transition hover:bg-blue-400">
-          {t('pintg.save')}
+        <button onClick={save} disabled={saving}
+          className="w-full rounded-[12px] bg-blue-500 py-3 text-[14px] font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50">
+          {saving ? t('pintg.saving') : t('pintg.save')}
         </button>
       )}
 

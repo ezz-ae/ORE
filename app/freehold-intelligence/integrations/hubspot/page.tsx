@@ -107,6 +107,7 @@ export default function HubSpotPage() {
   const [data,    setData]    = useState<HsData | null>(null)
   const [errMsg,  setErrMsg]  = useState('')
   const [loading, setLoading] = useState(false)
+  const [serverSynced, setServerSynced] = useState<boolean | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem(TOKEN_KEY)
@@ -124,6 +125,14 @@ export default function HubSpotPage() {
       localStorage.setItem(TOKEN_KEY, tk)
       setData(d)
       setPhase('connected')
+      // Persist server-side so the two-way sync (Integrations → HubSpot → Sync)
+      // works from the backend, not just this browser tab. Best-effort: the
+      // dashboard above already works client-side even if this fails.
+      fetch('/api/freehold/integrations/hubspot/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: tk }),
+      }).then((r) => setServerSynced(r.ok)).catch(() => setServerSynced(false))
     } catch (err: any) {
       setErrMsg(
         err.status === 401 ? t('pinthub.errInvalid') :
@@ -142,6 +151,9 @@ export default function HubSpotPage() {
     setData(null)
     setPhase('idle')
     setErrMsg('')
+    setServerSynced(null)
+    // Remove the server-side connection so backend sync stops too.
+    fetch('/api/freehold/integrations/hubspot/credentials', { method: 'DELETE' }).catch(() => {})
   }
 
   async function refresh() {
@@ -165,6 +177,15 @@ export default function HubSpotPage() {
         </div>
         {phase === 'connected' && (
           <div className="flex items-center gap-2 shrink-0">
+            {serverSynced !== null && (
+              <span
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs ${serverSynced ? 'border-emerald-400/20 text-emerald-400/80' : 'border-amber-400/20 text-amber-400/80'}`}
+                title={serverSynced ? t('pinthub.syncOn') : t('pinthub.syncOff')}
+              >
+                {serverSynced ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                {serverSynced ? t('pinthub.syncOn') : t('pinthub.syncOff')}
+              </span>
+            )}
             <button onClick={refresh} disabled={loading}
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs text-slate-500 transition hover:text-slate-300 disabled:opacity-40">
               <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> {t('pinthub.refresh')}

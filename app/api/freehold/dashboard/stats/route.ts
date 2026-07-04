@@ -37,7 +37,7 @@ export async function GET() {
   const team = await safe(() => query<{ c: number }>(
     `SELECT COUNT(*)::int AS c FROM freehold_site_users WHERE COALESCE(suspended, false) = false`), [{ c: 0 }])
   const openLeads = await safe(() => query<{ c: number }>(
-    `SELECT COUNT(*)::int AS c FROM freehold_site_leads WHERE COALESCE(status,'new') NOT IN ('closed','lost')`), [{ c: 0 }])
+    `SELECT COUNT(*)::int AS c FROM freehold_site_leads WHERE COALESCE(status,'new') NOT IN ('closed','converted','lost')`), [{ c: 0 }])
 
   const today = n(leadsToday[0]?.c)
   const yesterday = n(leadsYesterday[0]?.c)

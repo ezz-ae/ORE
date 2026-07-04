@@ -28,18 +28,22 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
   const email = agent.email || ''
   const name = agent.name || ''
+  // A broker's records may be keyed by users.id (brokerId defaults to user.id at
+  // login) or, historically, by email. Match both so the profile shows the full
+  // picture regardless of how a given row was assigned.
+  const brokerKeys = [id, email].filter(Boolean)
 
   const [leadStats, leads, activity, deals, adSpend, campaigns] = await Promise.all([
     query<{ total: string; new_count: string; closed: string; hot: string; overdue: string }>(
       `SELECT COUNT(*)::text AS total,
         COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
-        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+        COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed,
         COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
-        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue
-       FROM freehold_site_leads WHERE assigned_broker_id = $1`, [id]).catch(() => []),
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','converted','lost'))::text AS overdue
+       FROM freehold_site_leads WHERE assigned_broker_id = ANY($1)`, [brokerKeys]).catch(() => []),
     query<Record<string, unknown>>(
       `SELECT id, name, status, priority, COALESCE(source,'direct') AS source, budget_aed, created_at::text
-       FROM freehold_site_leads WHERE assigned_broker_id = $1 ORDER BY created_at DESC LIMIT 50`, [id]).catch(() => []),
+       FROM freehold_site_leads WHERE assigned_broker_id = ANY($1) ORDER BY created_at DESC LIMIT 50`, [brokerKeys]).catch(() => []),
     query<Record<string, unknown>>(
       `SELECT a.activity_type, a.description, a.created_at::text, l.name AS lead_name
        FROM freehold_site_lead_activity a LEFT JOIN freehold_site_leads l ON l.id = a.lead_id

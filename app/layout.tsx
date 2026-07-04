@@ -149,6 +149,14 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply the persisted Freehold light/dark mode before paint (no flash). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('fh-theme')==='light')document.documentElement.classList.add('theme-light')}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${playfair.variable} ${geistMono.variable} bg-background font-sans antialiased`}>
         <script
           type="application/ld+json"

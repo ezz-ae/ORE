@@ -1,18 +1,24 @@
 /**
  * HubSpot CRM client (private-app token).
  *
- * Auth: a HubSpot private-app token in HUBSPOT_TOKEN (scopes
- * crm.objects.contacts.read + write). No OAuth/app-review needed — ideal for
- * syncing a single company's own HubSpot.
+ * Auth: a HubSpot private-app token (scopes crm.objects.contacts.read + write).
+ * No OAuth/app-review needed — ideal for syncing a single company's own HubSpot.
+ * Resolved env-first (`HUBSPOT_TOKEN`) then the in-app connection stored in
+ * `freehold_site_integration_credentials` (provider = 'hubspot'), so connecting
+ * HubSpot in the UI actually powers server-side sync.
  *
- * Fail-soft: when the token is absent every call throws HubspotConfigError so
+ * Fail-soft: when no token is present every call throws HubspotConfigError so
  * callers can degrade gracefully (the CRM keeps working on its own DB).
  */
+import { getStoredCreds } from '@/lib/freehold/integration-credentials'
+
 const BASE = 'https://api.hubapi.com'
+
+export interface HubspotStoredCreds { token: string }
 
 export class HubspotConfigError extends Error {
   constructor() {
-    super('HUBSPOT_TOKEN not configured')
+    super('HubSpot not connected')
     this.name = 'HubspotConfigError'
   }
 }
@@ -25,21 +31,32 @@ export class HubspotApiError extends Error {
   }
 }
 
+/** Env-only check (synchronous). Prefer hubspotConfiguredAsync for full state. */
 export function hubspotConfigured(): boolean {
   return !!process.env.HUBSPOT_TOKEN
 }
 
-function token(): string {
-  const t = process.env.HUBSPOT_TOKEN
-  if (!t) throw new HubspotConfigError()
-  return t
+/** True when HubSpot is usable via env OR an in-app connection. */
+export async function hubspotConfiguredAsync(): Promise<boolean> {
+  if (process.env.HUBSPOT_TOKEN) return true
+  const stored = await getStoredCreds<HubspotStoredCreds>('hubspot')
+  return !!stored?.token
+}
+
+/** Resolve the active token: env wins, then the stored in-app connection. */
+async function token(): Promise<string> {
+  const envToken = process.env.HUBSPOT_TOKEN
+  if (envToken) return envToken
+  const stored = await getStoredCreds<HubspotStoredCreds>('hubspot')
+  if (stored?.token) return stored.token
+  throw new HubspotConfigError()
 }
 
 async function hs<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token()}`,
+      Authorization: `Bearer ${await token()}`,
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },

@@ -6,6 +6,7 @@ import { getSkill } from '@/lib/freehold/ai-skills'
 import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
@@ -92,8 +93,8 @@ async function brokerPipelineSnapshot(brokerId: string): Promise<Record<string, 
         COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
         COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
         COUNT(*) FILTER (WHERE status = 'viewing')::text AS viewing,
-        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue,
-        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','converted','lost'))::text AS overdue,
+        COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed
       FROM freehold_site_leads WHERE assigned_broker_id = $1`, [brokerId])
     if (!row) return null
     return {
@@ -115,9 +116,9 @@ async function crmPipelineSnapshot(): Promise<Record<string, number> | null> {
     const [row] = await query<{ total: string; new_count: string; closed: string; hot: string; overdue: string }>(`
       SELECT COUNT(*)::text AS total,
         COUNT(*) FILTER (WHERE status = 'new')::text AS new_count,
-        COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+        COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed,
         COUNT(*) FILTER (WHERE priority IN ('hot','priority'))::text AS hot,
-        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','lost'))::text AS overdue
+        COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours' AND status NOT IN ('closed','converted','lost'))::text AS overdue
       FROM freehold_site_leads`)
     if (!row) return null
     return {
@@ -161,6 +162,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'Ask me anything about the business.' }] }, generatedAt },
         { status: 400 },
+      )
+    }
+
+    // Cap AI usage per user (per-IP-ish for anon) so a runaway loop can't drain credits.
+    const rl = await checkRateLimit(`expert-chat:${sessionUser?.email ?? 'anon'}`, { limit: 40, windowSec: 60 })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { layer: 'expert', status: 'error', data: { blocks: [{ type: 'text', content: 'You’re sending requests too quickly — give me a few seconds.' }] }, retryAfterSec: rl.retryAfterSec, generatedAt },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
       )
     }
 

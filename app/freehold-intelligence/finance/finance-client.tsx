@@ -12,6 +12,12 @@ interface DealTotals {
   totalPaidAed: number
   totalOutstandingAed: number
   approvedDeals: number
+  totalReferralAed?: number
+  totalCashbackAed?: number
+  totalExpensesAed?: number
+  totalGrowthAed?: number
+  totalBrokerPayoutAed?: number
+  totalCompanyNetAed?: number
 }
 
 interface RealSpend {
@@ -66,6 +72,23 @@ export default function FinanceClient({ dealTotals, realSpend }: FinanceClientPr
             <StatCard label={t('finance.overview.totalCommission')} value={fmtCompact(dealTotals.totalCommissionAed)} hint={t('finance.overview.totalCommissionHint')} />
             <StatCard label={t('finance.overview.totalPaid')} value={fmtCompact(dealTotals.totalPaidAed)} hint={t('finance.overview.totalPaidHint')} />
             <StatCard label={t('finance.overview.outstanding')} value={fmtCompact(dealTotals.totalOutstandingAed)} hint={t('finance.overview.outstandingHint')} delta={dealTotals.totalOutstandingAed > 0 ? { value: t('finance.overview.awaiting'), direction: 'down' } : undefined} />
+          </div>
+        </Section>
+      )}
+
+      {/* ── Commission breakdown (deal-backed, real) ── */}
+      {dealTotals && (dealTotals.totalCommissionAed > 0) && (
+        <Section title={t('finance.overview.commissionBreakdown')} description={t('finance.overview.commissionBreakdownDesc')}>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <StatCard label={t('finance.overview.brkReferral')} value={fmtCompact(dealTotals.totalReferralAed ?? 0)} />
+            <StatCard label={t('finance.overview.brkCashback')} value={fmtCompact(dealTotals.totalCashbackAed ?? 0)} />
+            <StatCard label={t('finance.overview.brkNet')} value={fmtCompact(dealTotals.netCommissionAed)} />
+            <StatCard label={t('finance.overview.brkExpenses')} value={fmtCompact(dealTotals.totalExpensesAed ?? 0)} />
+            <StatCard label={t('finance.overview.brkGrowth')} value={fmtCompact(dealTotals.totalGrowthAed ?? 0)} />
+            <StatCard label={t('finance.overview.brkBroker')} value={fmtCompact(dealTotals.totalBrokerPayoutAed ?? 0)} />
+          </div>
+          <div className="mt-4">
+            <StatCard label={t('finance.overview.brkCompanyNet')} value={fmtCompact(dealTotals.totalCompanyNetAed ?? 0)} hint={t('finance.overview.brkCompanyNetHint')} />
           </div>
         </Section>
       )}

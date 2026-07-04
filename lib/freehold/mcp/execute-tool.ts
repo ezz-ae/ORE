@@ -3,7 +3,7 @@
 import { McpResponseEnvelope, Role } from '@/types/freehold-mcp';
 import { getToolById } from '@/lib/freehold/mcp/registry';
 import { userHasRole, isActionApproved } from '@/lib/freehold/mcp/permissions';
-import { getAllIntegrations, getLaunchBlockers } from '@/lib/freehold/mcp/mock-integrations';
+import { getLiveIntegrationStatuses } from '@/lib/freehold/integration-status';
 import { getInventoryAnalysis } from '@/src/features/freehold-intelligence/inventory';
 import { query } from '@/lib/db';
 
@@ -202,19 +202,35 @@ async function getServerSummary() {
   return { health: 'fallback', publicData: { totalProjects: 0 }, privateServer: { openTasks: 0 } };
 }
 
+// Integrations critical to the platform running at all — a disconnected one is
+// a launch blocker; the ad/messaging/CRM integrations are optional until used.
+const CRITICAL_INTEGRATION_IDS = new Set(['neon', 'ai', 'session']);
+
 async function getIntegrationSummary() {
-  const rows = await query<any>('SELECT * FROM freehold_integration_connections ORDER BY category, name');
+  // Prefer an explicit connection registry if the deployment populates one…
+  const rows = await query<any>('SELECT * FROM freehold_integration_connections ORDER BY category, name').catch(() => [] as any[]);
   if (rows.length) {
     const connectedCount = rows.filter(row => row.status === 'connected').length;
     const blockedCount = rows.filter(row => ['needs_access', 'not_connected', 'blocked'].includes(row.status)).length;
     return { fallbackStatus: 'live', total: rows.length, connectedCount, blockedCount, integrations: rows };
   }
-  const integrations = getAllIntegrations();
-  return { fallbackStatus: 'mock', total: integrations.length, connectedCount: integrations.filter(i => i.status === 'connected').length, blockedCount: integrations.filter(i => i.status !== 'connected').length, integrations };
+  // …otherwise derive from the REAL runtime status (env + in-app connections),
+  // the same source the Integrations page uses. No mock data.
+  const live = await getLiveIntegrationStatuses();
+  const integrations = live.map(i => ({
+    id: i.id, name: i.name, category: i.category, status: i.state, description: i.note,
+  }));
+  return {
+    fallbackStatus: 'live',
+    total: integrations.length,
+    connectedCount: integrations.filter(i => i.status === 'connected').length,
+    blockedCount: integrations.filter(i => i.status !== 'connected').length,
+    integrations,
+  };
 }
 
 async function getLaunchBlockerSummary() {
-  const rows = await query<any>("SELECT * FROM freehold_integration_requirements WHERE status NOT IN ('done', 'closed', 'resolved') ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, due_date NULLS LAST");
+  const rows = await query<any>("SELECT * FROM freehold_integration_requirements WHERE status NOT IN ('done', 'closed', 'resolved') ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END, due_date NULLS LAST").catch(() => [] as any[]);
   if (rows.length) {
     return {
       fallbackStatus: 'live',
@@ -224,8 +240,28 @@ async function getLaunchBlockerSummary() {
       canLaunch: rows.filter(row => row.severity === 'critical').length === 0,
     };
   }
-  const blockers = getLaunchBlockers();
-  return { fallbackStatus: 'mock', blockers, criticalCount: blockers.filter(b => b.severity === 'critical').length, warningCount: blockers.filter(b => b.severity === 'warning').length, canLaunch: blockers.filter(b => b.severity === 'critical').length === 0 };
+  // Derive blockers from the real runtime status: any integration that isn't
+  // fully connected. Platform-critical ones (db / AI / session) are 'critical'.
+  const live = await getLiveIntegrationStatuses();
+  const blockers = live
+    .filter(i => i.state !== 'connected')
+    .map(i => ({
+      id: i.id,
+      integrationId: i.id,
+      title: i.name,
+      message: i.note,
+      description: i.note,
+      nextAction: i.note,
+      severity: CRITICAL_INTEGRATION_IDS.has(i.id) ? 'critical' : 'warning',
+    }));
+  const criticalCount = blockers.filter(b => b.severity === 'critical').length;
+  return {
+    fallbackStatus: 'live',
+    blockers,
+    criticalCount,
+    warningCount: blockers.length - criticalCount,
+    canLaunch: criticalCount === 0,
+  };
 }
 
 async function getProjectData(args: Record<string, any>) {

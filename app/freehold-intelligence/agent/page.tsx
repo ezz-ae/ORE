@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Users, Wallet, Megaphone, BookOpen, Sparkles,
-  Settings, ChevronRight, Coins,
+  Settings, ChevronRight, Coins, Link2,
 } from 'lucide-react'
 import { useSession } from '@/lib/freehold/use-session'
 import { useI18n } from '@/lib/i18n/provider'
@@ -100,6 +100,16 @@ export default function AgentHomePage() {
       badge:   0,
       accent:  'violet',
       sub:     t('agent.research'),
+    },
+    {
+      id:      'bio',
+      label:   t('agent.bioLink'),
+      Icon:    Link2,
+      href:    '/freehold-intelligence/agent/bio',
+      metric:  t('agent.bioLinkMetric'),
+      badge:   0,
+      accent:  'sky',
+      sub:     t('agent.bioLinkSub'),
     },
     {
       id:      'ai',

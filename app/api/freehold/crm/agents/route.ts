@@ -45,10 +45,10 @@ export async function GET() {
          SELECT
            COUNT(*)                                                             AS total_leads,
            COUNT(*) FILTER (WHERE priority = 'hot')                            AS hot_leads,
-           COUNT(*) FILTER (WHERE status = 'closed'
+           COUNT(*) FILTER (WHERE status IN ('closed','converted')
                               AND updated_at > now() - INTERVAL '30 days')     AS recent_wins,
            COUNT(*) FILTER (WHERE last_contact_at < now() - INTERVAL '72 hours'
-                              AND status NOT IN ('closed','lost'))              AS overdue_followups
+                              AND status NOT IN ('closed','converted','lost'))          AS overdue_followups
          FROM freehold_site_leads
          WHERE assigned_broker_id = u.id::text
        ) l ON TRUE

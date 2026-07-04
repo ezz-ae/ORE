@@ -12,7 +12,9 @@ import { ROLE_LABELS, ROLE_COLORS } from '@/lib/freehold/session-types'
 import { useT } from '@/lib/i18n/provider'
 import { LanguageSwitcher } from '@/components/freehold/language-switcher'
 import { useCoach } from '@/components/freehold/coach/coach-marks'
-import { Compass } from 'lucide-react'
+import { Compass, Sun, Moon } from 'lucide-react'
+import { useThemeMode } from '@/lib/freehold/use-theme-mode'
+import { WhatsNew, WhatsNewMenuButton } from '@/components/freehold/whats-new'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -31,6 +33,7 @@ export function SpacesNav() {
   const role     = user?.role
   const t        = useT()
   const coach    = useCoach()
+  const theme    = useThemeMode()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -163,6 +166,26 @@ export function SpacesNav() {
               <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('common.language')}</div>
               <LanguageSwitcher variant="inline" />
             </div>
+            {/* Appearance (light / dark) */}
+            <div className="border-t border-white/[0.07] px-4 py-3">
+              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('theme.appearance')}</div>
+              <div className="flex gap-1.5 rounded-lg bg-white/[0.04] p-1">
+                <button
+                  onClick={() => theme.setMode('dark')}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'dark' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <Moon className="h-3.5 w-3.5" /> {t('theme.dark')}
+                </button>
+                <button
+                  onClick={() => theme.setMode('light')}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'light' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <Sun className="h-3.5 w-3.5" /> {t('theme.light')}
+                </button>
+              </div>
+            </div>
+            {/* What's new */}
+            <WhatsNewMenuButton onClick={() => setMenuOpen(false)} />
             {coach.available && (
               <button
                 onClick={() => { setMenuOpen(false); coach.start() }}
@@ -182,6 +205,9 @@ export function SpacesNav() {
           </div>
         )}
       </div>
+
+      {/* What's-new panel — auto-opens once per new feature version, then on demand */}
+      <WhatsNew />
 
     </div>
   )

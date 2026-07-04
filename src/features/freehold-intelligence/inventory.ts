@@ -26,6 +26,7 @@ export interface InventoryProperty {
   status: PropertyStatus
   startingPriceAED: number | null
   maxPriceAED: number | null
+  heroImage?: string | null
   handoverYear: number | null
   paymentPlan: string | null
   bedrooms: string
