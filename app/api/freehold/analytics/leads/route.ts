@@ -17,7 +17,7 @@ export async function GET() {
           COUNT(*)::text AS total,
           COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::text AS last_30d,
           COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::text AS last_7d,
-          COUNT(*) FILTER (WHERE status = 'closed')::text AS closed,
+          COUNT(*) FILTER (WHERE status IN ('closed','converted'))::text AS closed,
           COUNT(*) FILTER (WHERE status = 'new')::text AS new_count
         FROM freehold_site_leads
       `),

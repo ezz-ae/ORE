@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
+import { appendTurn } from '@/lib/freehold/notebook-conversations'
+import { checkRateLimit } from '@/lib/freehold/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -9,6 +11,15 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: Request) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Cap AI usage per user so a runaway loop can't drain credits.
+  const rl = await checkRateLimit(`notebook-chat:${user.email}`, { limit: 40, windowSec: 60 })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests — please slow down for a moment.', retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+    )
+  }
 
   const body = await request.json().catch(() => ({})) as {
     message?: string
@@ -35,8 +46,10 @@ Rules:
 
   try {
     const answer = await queryServerAgent(message, { systemPrompt })
+    // Persist the turn so the thread is real and reloadable (best-effort).
+    const savedId = await appendTurn(conversationId, user.email, message, answer)
     return NextResponse.json({
-      conversationId,
+      conversationId: savedId,
       role,
       prompt: message,
       answer,

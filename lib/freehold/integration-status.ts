@@ -9,6 +9,7 @@
  */
 
 import { getStoredMetaCreds, getStoredCreds, type WhatsAppStoredCreds } from '@/lib/freehold/integration-credentials'
+import type { GoogleStoredCreds } from '@/lib/google/client'
 
 export type IntegrationState = 'connected' | 'partial' | 'disconnected'
 
@@ -68,7 +69,16 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
     'GOOGLE_ADS_REFRESH_TOKEN',
     'GOOGLE_ADS_CUSTOMER_ID',
   ]
-  const google = evaluate(googleKeys)
+  let google = evaluate(googleKeys)
+  // A connection saved through Integrations → Google Ads counts as connected.
+  let googleSource: 'env' | 'db' | null = google.state === 'connected' ? 'env' : null
+  if (google.state !== 'connected') {
+    const stored = await getStoredCreds<GoogleStoredCreds>('google').catch(() => null)
+    if (stored?.developerToken && stored.clientId && stored.clientSecret && stored.refreshToken && stored.customerId) {
+      google = { state: 'connected', missing: [] }
+      googleSource = 'db'
+    }
+  }
 
   // ── WhatsApp ──────────────────────────────────────────────────────────────
   const waKeys = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID']
@@ -123,8 +133,8 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
       missingKeys: google.missing,
       note:
         google.state === 'connected'
-          ? 'Live — Google Ads API reachable with OAuth refresh token.'
-          : `Add ${google.missing.join(', ')} in Vercel to enable Google Ads.`,
+          ? (googleSource === 'db' ? 'Live (connected in-app) — ' : 'Live — ') + 'Google Ads API reachable with OAuth refresh token.'
+          : `Add ${google.missing.join(', ')} in Vercel, or connect in Integrations → Google Ads, to enable Google Ads.`,
     },
     {
       id: 'whatsapp',

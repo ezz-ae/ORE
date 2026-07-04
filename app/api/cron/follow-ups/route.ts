@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const overdue = await query<OverdueLeadRow>(
       `SELECT id, name, phone, status, source, assigned_broker_id, last_contact_at, created_at
        FROM freehold_site_leads
-       WHERE COALESCE(status, 'new') NOT IN ('closed', 'lost')
+       WHERE COALESCE(status, 'new') NOT IN ('closed', 'converted', 'lost')
          AND COALESCE(last_contact_at, created_at) < now() - interval '48 hours'
          AND (snooze_until IS NULL OR snooze_until < now())
        ORDER BY COALESCE(last_contact_at, created_at) ASC

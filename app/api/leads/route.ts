@@ -31,7 +31,7 @@ async function findExistingLead(phone: string, email: string): Promise<ExistingL
   if (!digits && !normalizedEmail) return null
   const rows = await query<ExistingLeadRow>(
     `SELECT id, status FROM freehold_site_leads
-     WHERE status NOT IN ('closed', 'lost')
+     WHERE status NOT IN ('closed', 'converted', 'lost')
        AND (
          ($1 <> '' AND RIGHT(regexp_replace(phone, '\\D', '', 'g'), 9) = $1)
          OR ($2 <> '' AND LOWER(email) = $2)

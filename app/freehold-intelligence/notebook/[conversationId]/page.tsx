@@ -1,17 +1,19 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Pin, BookOpen, Sparkles } from 'lucide-react'
-import { notebookConversations } from '@/src/features/freehold-intelligence/server-session'
+import { getConversation } from '@/lib/freehold/notebook-conversations'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getServerT } from '@/lib/i18n/server'
 
-export async function generateStaticParams() {
-  return notebookConversations.map((c) => ({ conversationId: c.id }))
-}
+export const dynamic = 'force-dynamic'
 
 export default async function NotebookConversationPage({ params }: { params: Promise<{ conversationId: string }> }) {
   const { conversationId } = await params
   const { t } = await getServerT()
-  const conversation = notebookConversations.find((c) => c.id === conversationId)
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user) notFound()
+  const conversation = await getConversation(conversationId, user.email, user.role)
   if (!conversation) notFound()
 
   return (
