@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listLeadForms, createLeadForm, MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import type { CreateLeadFormPayload } from '@/lib/meta/types'
-import { demoForms } from '@/lib/meta/demo-data'
 
 export async function GET() {
   const __auth = await requireSession()
@@ -12,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ forms })
   } catch (err) {
     if (err instanceof MetaConfigError)
-      return NextResponse.json({ forms: demoForms, demo: true })
+      return NextResponse.json({ forms: [], demo: true })
     if (err instanceof MetaApiError)
       return NextResponse.json({ error: err.message, code: err.code, type: err.type }, { status: 400 })
     const message = err instanceof Error ? err.message : 'Unexpected error'

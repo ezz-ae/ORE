@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listResponsiveSearchAds } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
-import { demoAds } from '@/lib/google/demo-data'
 
 export async function GET(req: Request) {
   const __auth = await requireSession()
@@ -14,7 +13,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ads })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      return NextResponse.json({ ads: demoAds, demo: true })
+      return NextResponse.json({ ads: [], demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })

@@ -12,7 +12,7 @@
  * still behaves, just without persistence.
  */
 import { query } from '@/lib/db'
-import { demoCampaigns, type MetaCampaignWithInsights } from '@/lib/meta/demo-data'
+import type { MetaCampaignWithInsights } from '@/lib/meta/demo-data'
 import type { LaunchCampaignPayload, MetaCampaignStatus } from '@/lib/meta/types'
 
 let ensured: Promise<void> | null = null
@@ -27,14 +27,8 @@ async function ensure(): Promise<void> {
           created_by  text,
           created_at  timestamptz NOT NULL DEFAULT now()
         )`)
-      // Seed demo campaigns once so the unconfigured view is interactive.
-      for (const c of demoCampaigns) {
-        await query(
-          `INSERT INTO freehold_site_meta_campaigns (id, status, data, created_at)
-           VALUES ($1, $2, $3, now() - INTERVAL '7 days') ON CONFLICT (id) DO NOTHING`,
-          [c.id, c.status, JSON.stringify(c)],
-        )
-      }
+      // No demo seed — the unconfigured view is empty until Meta Ads is
+      // connected (or the user creates a campaign in the in-app sandbox).
     })().catch((e) => { ensured = null; throw e })
   }
   await ensured
@@ -53,7 +47,7 @@ export async function listLocalCampaigns(): Promise<MetaCampaignWithInsights[]> 
     )
     return rows.map(withStatus)
   } catch {
-    return demoCampaigns
+    return []
   }
 }
 
@@ -65,7 +59,7 @@ export async function getLocalCampaign(id: string): Promise<MetaCampaignWithInsi
     )
     return row ? withStatus(row) : null
   } catch {
-    return demoCampaigns.find((c) => c.id === id) ?? null
+    return null
   }
 }
 

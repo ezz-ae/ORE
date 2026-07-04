@@ -11,7 +11,6 @@
  * still behaves, just without persistence.
  */
 import { query } from '@/lib/db'
-import { demoCampaigns } from '@/lib/google/demo-data'
 import type { GoogleCampaign, LaunchGoogleCampaignPayload } from '@/lib/google/types'
 
 const M = 1_000_000
@@ -28,14 +27,8 @@ async function ensure(): Promise<void> {
           created_by  text,
           created_at  timestamptz NOT NULL DEFAULT now()
         )`)
-      // Seed demo campaigns once so the unconfigured view is interactive.
-      for (const c of demoCampaigns) {
-        await query(
-          `INSERT INTO freehold_site_google_campaigns (id, status, data, created_at)
-           VALUES ($1, $2, $3, now() - INTERVAL '7 days') ON CONFLICT (id) DO NOTHING`,
-          [c.id, c.status, JSON.stringify(c)],
-        )
-      }
+      // No demo seed — the unconfigured view is empty until Google Ads is
+      // connected (or the user creates a campaign in the in-app sandbox).
     })().catch((e) => { ensured = null; throw e })
   }
   await ensured
@@ -54,7 +47,7 @@ export async function listLocalCampaigns(): Promise<GoogleCampaign[]> {
     )
     return rows.map(withStatus)
   } catch {
-    return demoCampaigns
+    return []
   }
 }
 
@@ -66,7 +59,7 @@ export async function getLocalCampaign(id: string): Promise<GoogleCampaign | nul
     )
     return row ? withStatus(row) : null
   } catch {
-    return demoCampaigns.find((c) => c.id === id) ?? null
+    return null
   }
 }
 

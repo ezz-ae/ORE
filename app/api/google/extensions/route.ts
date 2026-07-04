@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listExtensions } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleExtension } from '@/lib/google/types'
-import { demoExtensions } from '@/lib/google/demo-data'
 import { listLocalEntities, createLocalEntity, removeLocalEntity, localId } from '@/lib/google/local-store'
 
 const KIND = 'extension'
@@ -16,7 +15,7 @@ export async function GET() {
   } catch (e) {
     if (e instanceof GoogleConfigError) {
       const local = await listLocalEntities<GoogleExtension>(KIND)
-      return NextResponse.json({ extensions: [...local, ...demoExtensions], demo: true })
+      return NextResponse.json({ extensions: local, demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })

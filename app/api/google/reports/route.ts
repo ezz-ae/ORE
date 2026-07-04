@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { getReportSummary } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError } from '@/lib/google/types'
-import { demoReport } from '@/lib/google/demo-data'
+import { emptyReport } from '@/lib/google/demo-data'
 
 export async function GET(req: Request) {
   const __auth = await requireSession()
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ report })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      return NextResponse.json({ report: demoReport(range), demo: true })
+      return NextResponse.json({ report: emptyReport(range), demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })
