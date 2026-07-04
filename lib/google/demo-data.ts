@@ -534,3 +534,22 @@ export function demoReport(range: '7d' | '30d' | '90d'): GoogleReportSummary {
     ],
   }
 }
+
+/** A truthful empty report (all zeros) for the not-connected state — shows the
+ *  real "no data yet, connect Google Ads" experience instead of fake numbers. */
+export function emptyReport(range: '7d' | '30d' | '90d'): GoogleReportSummary {
+  return {
+    dateRange: range,
+    totalImpressions: 0,
+    totalClicks: 0,
+    totalCostMicros: 0,
+    totalConversions: 0,
+    avgCtr: 0,
+    avgCpcMicros: 0,
+    byDay: [],
+    byDevice: [],
+    byCampaign: [],
+    searchTerms: [],
+    auctionInsights: [],
+  }
+}

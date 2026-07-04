@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { listKeywords, listNegativeKeywords } from '@/lib/google/client'
 import { GoogleConfigError, GoogleApiError, type GoogleKeyword, type GoogleKeywordMatchType } from '@/lib/google/types'
-import { demoKeywords, demoNegativeKeywords } from '@/lib/google/demo-data'
 import { listLocalEntities, createLocalEntity, removeLocalEntity, localId } from '@/lib/google/local-store'
 
 const KIND = 'keyword'
@@ -23,9 +22,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ keywords, negatives })
   } catch (e) {
     if (e instanceof GoogleConfigError) {
-      // Not connected → merge locally-added keywords ahead of the demo set.
+      // Not connected → only the user's own locally-created keywords (no demo).
       const local = await listLocalEntities<GoogleKeyword>(KIND)
-      return NextResponse.json({ keywords: [...local, ...demoKeywords], negatives: demoNegativeKeywords, demo: true })
+      return NextResponse.json({ keywords: local, negatives: [], demo: true })
     }
     if (e instanceof GoogleApiError) {
       return NextResponse.json({ error: e.message }, { status: e.status })
