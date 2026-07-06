@@ -50,6 +50,7 @@ interface WizardState {
   landingUrl:    string
   cta:           MetaCta
   imageUrl:      string
+  imageHash:     string
   // Step 4
   launchStatus:  'ACTIVE' | 'PAUSED'
 }
@@ -127,8 +128,10 @@ export default function NewCampaignPage() {
       : 'https://freeholdproperty.ae',
     cta:          'LEARN_MORE',
     imageUrl:     defaultListing?.imageUrl ?? '',
+    imageHash:    '',
     launchStatus: 'PAUSED',
   })
+  const [uploadingImg, setUploadingImg] = useState(false)
 
   function update<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -170,7 +173,32 @@ export default function NewCampaignPage() {
       headline:     listing.projectName,
       landingUrl:   `https://freeholdproperty.ae/off-plan/${listing.projectId}`,
       imageUrl:     listing.imageUrl,
+      imageHash:    '',   // fall back to the listing photo unless a new file is uploaded
     }))
+  }
+
+  // Upload a chosen file to the connected Meta ad account → image_hash.
+  async function onUploadImage(file: File | null) {
+    if (!file) return
+    setUploadingImg(true); setApiError(null)
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
+      setForm((prev) => ({ ...prev, imageHash: d.hash, imageUrl: d.url || prev.imageUrl }))
+    } catch {
+      setApiError('Could not read the image file')
+    } finally {
+      setUploadingImg(false)
+    }
   }
 
   // ── Launch ─────────────────────────────────────────────────────────────────
@@ -202,6 +230,7 @@ export default function NewCampaignPage() {
         landingUrl:  form.landingUrl,
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
+        imageHash:   form.imageHash || undefined,
       },
       launchStatus: form.launchStatus,
     }
@@ -554,9 +583,24 @@ export default function NewCampaignPage() {
               <input
                 className={inputCls()}
                 value={form.imageUrl}
-                onChange={(e) => update('imageUrl', e.target.value)}
+                onChange={(e) => { update('imageUrl', e.target.value); update('imageHash', '') }}
                 placeholder={t('lm.imageUrlPlaceholder')}
               />
+              {/* Upload your own ad image → Meta ad account (image_hash) */}
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
+                  {uploadingImg ? 'Uploading…' : 'Upload image'}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingImg}
+                    onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
+                </label>
+                {form.imageHash
+                  ? <span className="text-xs text-emerald-400">✓ Uploaded to Meta — this image will be used</span>
+                  : <span className="text-xs text-slate-500">or paste an image URL above (defaults to the listing photo)</span>}
+                {form.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
+                )}
+              </div>
             </div>
 
             <div>
