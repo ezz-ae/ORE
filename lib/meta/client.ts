@@ -231,7 +231,11 @@ export async function createAdCreative(params: {
     call_to_action: { type: params.creative.cta },
   }
 
-  if (params.creative.imageUrl) {
+  // Prefer an uploaded image (image_hash) — Meta's native, most reliable path.
+  // Fall back to an external picture URL (e.g. the listing's hero photo).
+  if (params.creative.imageHash) {
+    linkData.image_hash = params.creative.imageHash
+  } else if (params.creative.imageUrl) {
     linkData.picture = params.creative.imageUrl
   }
 
@@ -239,6 +243,25 @@ export async function createAdCreative(params: {
     name:               params.name,
     object_story_spec:  { page_id: pageId, link_data: linkData },
   })
+}
+
+/**
+ * Upload an image to the connected Meta ad account and return its hash + URL.
+ * The client sends raw base64 (no data-URL prefix). Used so agents can upload
+ * their own ad media instead of only using a listing's hero photo.
+ */
+export async function uploadAdImage(base64: string): Promise<{ hash: string; url: string }> {
+  const { adAccountId, token } = await creds()
+  const res = await fetch(`${API_BASE}/${adAccountId}/adimages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ bytes: base64, access_token: token }),
+  })
+  const json = (await res.json()) as { images?: Record<string, { hash: string; url: string }>; error?: { message: string; code: number; type: string; fbtrace_id?: string } }
+  if (json.error) throw new MetaApiError(json.error.message, json.error.code, json.error.type, json.error.fbtrace_id)
+  const first = Object.values(json.images ?? {})[0]
+  if (!first?.hash) throw new MetaApiError('Meta did not return an image hash', 0, 'upload')
+  return { hash: first.hash, url: first.url }
 }
 
 export async function createAd(params: {

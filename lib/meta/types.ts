@@ -108,7 +108,10 @@ export interface CampaignCreative {
   description: string
   landingUrl: string
   cta: MetaCta
+  /** External image URL (fallback) — used only when imageHash is absent. */
   imageUrl?: string
+  /** Meta ad-account image hash from an uploaded file (preferred). */
+  imageHash?: string
 }
 
 export interface LaunchCampaignPayload {
