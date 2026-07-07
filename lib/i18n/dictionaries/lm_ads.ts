@@ -123,6 +123,15 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.budgetPerDay': 'AED {amount}/day',
     'lm.meta.createCampaign': 'Create Campaign',
     'lm.meta.viewCreatives': 'View Creatives',
+    'lm.meta.checking': 'Checking connection…',
+    'lm.meta.connectCta': 'Connect Meta Ads',
+    'lm.meta.notConnectedTitle': 'Meta Ads is not connected',
+    'lm.meta.notConnectedBody': 'This screen shows your real ad account — spend, campaigns and leads — once Meta Ads is connected. Campaigns created in-app before connecting are kept as drafts below.',
+    'lm.meta.pageLabel': 'Facebook Page',
+    'lm.meta.loading': 'Loading campaigns…',
+    'lm.meta.noCampaigns': 'No campaigns yet.',
+    'lm.live.badgeLive': 'Live',
+    'lm.live.badgeOffline': 'Not connected',
 
     // ---- Ad Preview (ads-live/preview/page.tsx) ----
     'lm.preview.eyebrow': 'Ad Preview',
@@ -271,6 +280,15 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.budgetPerDay': 'AED {amount}/يوم',
     'lm.meta.createCampaign': 'إنشاء حملة',
     'lm.meta.viewCreatives': 'عرض التصاميم الإعلانية',
+    'lm.meta.checking': 'جارٍ التحقق من الاتصال…',
+    'lm.meta.connectCta': 'ربط إعلانات Meta',
+    'lm.meta.notConnectedTitle': 'إعلانات Meta غير متصلة',
+    'lm.meta.notConnectedBody': 'تعرض هذه الشاشة حسابك الإعلاني الحقيقي — الإنفاق والحملات والعملاء المحتملين — بمجرد ربط إعلانات Meta. الحملات المُنشأة داخل النظام قبل الربط تبقى محفوظة كمسودات أدناه.',
+    'lm.meta.pageLabel': 'صفحة فيسبوك',
+    'lm.meta.loading': 'جارٍ تحميل الحملات…',
+    'lm.meta.noCampaigns': 'لا توجد حملات بعد.',
+    'lm.live.badgeLive': 'مباشر',
+    'lm.live.badgeOffline': 'غير متصل',
 
     // ---- Ad Preview ----
     'lm.preview.eyebrow': 'معاينة الإعلان',
@@ -419,6 +437,15 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.budgetPerDay': 'AED {amount}/день',
     'lm.meta.createCampaign': 'Создать кампанию',
     'lm.meta.viewCreatives': 'Посмотреть креативы',
+    'lm.meta.checking': 'Проверка подключения…',
+    'lm.meta.connectCta': 'Подключить Meta Ads',
+    'lm.meta.notConnectedTitle': 'Meta Ads не подключён',
+    'lm.meta.notConnectedBody': 'После подключения Meta Ads этот экран показывает ваш реальный рекламный кабинет — расходы, кампании и лиды. Кампании, созданные в системе до подключения, сохраняются ниже как черновики.',
+    'lm.meta.pageLabel': 'Страница Facebook',
+    'lm.meta.loading': 'Загрузка кампаний…',
+    'lm.meta.noCampaigns': 'Кампаний пока нет.',
+    'lm.live.badgeLive': 'В эфире',
+    'lm.live.badgeOffline': 'Не подключено',
 
     // ---- Ad Preview ----
     'lm.preview.eyebrow': 'Превью рекламы',

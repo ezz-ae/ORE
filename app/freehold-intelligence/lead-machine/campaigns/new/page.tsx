@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
@@ -146,20 +147,35 @@ export default function NewCampaignPage() {
     setApiError(null)
   }
 
-  // Everything the user types is saved: restore the last draft on mount, and
-  // persist the form on every change. Cleared after a successful launch.
+  // Everything the user types is saved: restore the last draft on mount
+  // (this device first, then the ACCOUNT — so a draft started on the laptop
+  // resumes on the phone), and persist every change locally + to the account.
+  // Cleared everywhere after a successful launch.
   const DRAFT_KEY = 'fh-campaign-draft'
+  const draftRestored = useRef(false)
   useEffect(() => {
+    let restoredLocally = false
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
         const draft = JSON.parse(raw) as Partial<WizardState>
         setForm((prev) => ({ ...prev, ...draft }))
+        restoredLocally = true
       }
     } catch { /* ignore corrupt drafts */ }
+    loadAccountMemory().then((m) => {
+      const acctDraft = m.campaignDraft
+      if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
+        setForm((prev) => ({ ...prev, ...(acctDraft as Partial<WizardState>) }))
+      }
+      draftRestored.current = true
+    })
   }, [])
   useEffect(() => {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)) } catch { /* full/blocked storage */ }
+    // Account save waits for restore so a pristine form never clobbers a
+    // draft the account already holds.
+    if (draftRestored.current) saveAccountMemoryDebounced('campaignDraft', form, 1500)
   }, [form])
 
   // Load real inventory for the project picker.
@@ -303,6 +319,7 @@ export default function NewCampaignPage() {
 
       setLaunched({ campaignId: data.campaignId, status: data.status })
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+      saveAccountMemory({ campaignDraft: null }) // launched — clear the draft everywhere
     } catch {
       setApiError('Network error. Please try again.')
     } finally {

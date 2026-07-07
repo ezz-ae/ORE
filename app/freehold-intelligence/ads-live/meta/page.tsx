@@ -1,18 +1,25 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp, Loader2, PlugZap } from 'lucide-react'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
+import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
 
 const META_BLUE = '#1877F2'
 
-interface MetaCampaign {
+// One truthful source: /api/meta/campaigns. When the company ad account is
+// connected it returns the REAL campaigns + insights; when it isn't, it
+// returns in-app sandbox campaigns flagged `demo: true` — and this page then
+// says "Not connected" (never a fake Connected badge).
+
+interface Row {
+  id: string
   name: string
-  status: 'Active' | 'Paused'
-  dailyBudget: number
+  active: boolean
+  dailyBudget: number // AED
   spend: number
   impressions: number
   clicks: number
@@ -20,57 +27,35 @@ interface MetaCampaign {
   cpl: number
 }
 
-const campaigns: MetaCampaign[] = [
-  {
-    name: 'Palm Jumeirah Investor | Meta',
-    status: 'Active',
-    dailyBudget: 500,
-    spend: 7820,
-    impressions: 148200,
-    clicks: 3210,
-    leads: 94,
-    cpl: 83.2,
-  },
-  {
-    name: 'Dubai Hills Yield | Meta',
-    status: 'Active',
-    dailyBudget: 350,
-    spend: 6140,
-    impressions: 124800,
-    clicks: 2740,
-    leads: 88,
-    cpl: 69.8,
-  },
-  {
-    name: 'Golden Visa Buyers | Meta',
-    status: 'Active',
-    dailyBudget: 250,
-    spend: 4460,
-    impressions: 89400,
-    clicks: 1960,
-    leads: 66,
-    cpl: 67.6,
-  },
-  {
-    name: 'JVC Investor | Meta',
-    status: 'Paused',
-    dailyBudget: 200,
-    spend: 0,
-    impressions: 0,
-    clicks: 0,
-    leads: 0,
-    cpl: 0,
-  },
-]
+function leadsFrom(insights: MetaInsights | null | undefined): number {
+  if (!insights?.actions) return 0
+  return insights.actions
+    .filter((a) => a.action_type.includes('lead'))
+    .reduce((sum, a) => sum + (Number(a.value) || 0), 0)
+}
 
-const adSets = [
-  { nameKey: 'lm.meta.adSet.uaeHomebuyers',      budgetAmount: '450', status: 'Active',  audience: '2.1M' },
-  { nameKey: 'lm.meta.adSet.gccInvestors',        budgetAmount: '280', status: 'Active',  audience: '840K' },
-  { nameKey: 'lm.meta.adSet.expatProfessionals',  budgetAmount: '170', status: 'Paused', audience: '1.4M' },
-]
+function toRow(c: MetaCampaign & { insights?: MetaInsights | null }): Row {
+  const spend = Number(c.insights?.spend) || 0
+  const impressions = Number(c.insights?.impressions) || 0
+  const clicks = Number(c.insights?.clicks) || 0
+  const leads = leadsFrom(c.insights)
+  return {
+    id: c.id,
+    name: c.name,
+    active: c.status === 'ACTIVE',
+    dailyBudget: c.daily_budget ? Math.round(Number(c.daily_budget) / 100) : 0,
+    spend,
+    impressions,
+    clicks,
+    leads,
+    cpl: leads > 0 ? Math.round((spend / leads) * 10) / 10 : 0,
+  }
+}
 
 type StatusFilter = 'All' | 'Active' | 'Paused'
 type SortCol = 'spend' | 'leads' | 'cpl' | 'impressions'
+
+const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
 
 export default function MetaAdsPage() {
   const t = useT()
@@ -78,13 +63,52 @@ export default function MetaAdsPage() {
   const [sortCol, setSortCol] = useState<SortCol>('leads')
   const [sortAsc, setSortAsc] = useState(false)
 
+  const [loading, setLoading] = useState(true)
+  const [connected, setConnected] = useState(false)
+  const [rows, setRows] = useState<Row[]>([])
+  const [account, setAccount] = useState<{ adAccountId: string; pageId: string } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/meta/campaigns', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        setConnected(!d.demo && Array.isArray(d.campaigns))
+        if (Array.isArray(d.campaigns)) setRows(d.campaigns.map(toRow))
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
+    // Real ad-account identifiers for the card (management/marketing only —
+    // fails soft to the generic label for other roles).
+    fetch('/api/freehold/integrations/meta/credentials')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.configured) setAccount({ adAccountId: d.adAccountId, pageId: d.pageId })
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const totals = useMemo(() => {
+    const spend = rows.reduce((s, r) => s + r.spend, 0)
+    const impressions = rows.reduce((s, r) => s + r.impressions, 0)
+    const clicks = rows.reduce((s, r) => s + r.clicks, 0)
+    const leads = rows.reduce((s, r) => s + r.leads, 0)
+    return {
+      spend, impressions, clicks, leads,
+      cpl: leads > 0 ? Math.round((spend / leads) * 10) / 10 : 0,
+      ctr: impressions > 0 ? Math.round((clicks / impressions) * 1000) / 10 : 0,
+    }
+  }, [rows])
+
   const visibleCampaigns = useMemo(() => {
-    const filtered = statusFilter === 'All' ? campaigns : campaigns.filter((c) => c.status === statusFilter)
+    const filtered = statusFilter === 'All' ? rows : rows.filter((c) => (statusFilter === 'Active' ? c.active : !c.active))
     return [...filtered].sort((a, b) => {
       const diff = a[sortCol] - b[sortCol]
       return sortAsc ? diff : -diff
     })
-  }, [statusFilter, sortCol, sortAsc])
+  }, [rows, statusFilter, sortCol, sortAsc])
 
   function handleSort(col: SortCol) {
     if (sortCol === col) setSortAsc((v) => !v)
@@ -107,49 +131,83 @@ export default function MetaAdsPage() {
             {t('lm.meta.eyebrow')}
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
-            {t('lm.meta.title')}<br />
-            <span className="text-slate-500">{t('lm.meta.subtitle')}</span>
+            {t('lm.meta.title')}
           </h1>
         </section>
 
         <div className="mt-7 flex flex-col items-end gap-2 sm:mt-10">
-          {/* Connected badge */}
-          <span className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-1.5 text-sm font-medium text-gold">
-            <CheckCircle2 className="h-3 w-3" />
-            {t('lm.meta.connected')}
-          </span>
-          {/* Manage external link */}
-          <button onClick={() => { window.open('https://business.facebook.com/adsmanager', '_blank'); toast.info(t('lm.meta.openingManager')) }} className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
-            {t('lm.meta.manageInMeta')} <ArrowUpRight className="h-3 w-3" />
-          </button>
+          {/* Connection badge — REAL status, same truth as the Integrations page */}
+          {loading ? (
+            <span className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-slate-400">
+              <Loader2 className="h-3 w-3 animate-spin" /> {t('lm.meta.checking')}
+            </span>
+          ) : connected ? (
+            <span className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-1.5 text-sm font-medium text-gold">
+              <CheckCircle2 className="h-3 w-3" />
+              {t('lm.meta.connected')}
+            </span>
+          ) : (
+            <Link
+              href="/freehold-intelligence/integrations/meta"
+              className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface-2 px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:border-gold/40 hover:text-white"
+            >
+              <PlugZap className="h-3.5 w-3.5 text-gold" />
+              {t('lm.meta.connectCta')}
+            </Link>
+          )}
+          {connected && (
+            <button onClick={() => { window.open('https://business.facebook.com/adsmanager', '_blank'); toast.info(t('lm.meta.openingManager')) }} className="inline-flex items-center gap-1 text-xs text-slate-500 transition hover:text-slate-300">
+              {t('lm.meta.manageInMeta')} <ArrowUpRight className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Account status */}
-      <div className="mt-6 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 px-5 py-4">
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-          style={{ backgroundColor: `${META_BLUE}18`, border: `1px solid ${META_BLUE}30` }}
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill={META_BLUE}>
-            <path d="M12 2.04c-5.5 0-9.96 4.46-9.96 9.96 0 4.41 2.87 8.16 6.84 9.49v-6.71H6.9v-2.78h1.98V9.84c0-1.95 1.17-3.03 2.94-3.03.85 0 1.74.15 1.74.15v1.92h-.98c-.97 0-1.27.6-1.27 1.21v1.46h2.16l-.34 2.78h-1.82V21.5c3.97-1.33 6.84-5.08 6.84-9.5 0-5.5-4.46-9.96-9.96-9.96z" />
-          </svg>
+      {/* Account status — only shown when the ad account is really connected */}
+      {connected && (
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 px-5 py-4">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${META_BLUE}18`, border: `1px solid ${META_BLUE}30` }}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill={META_BLUE}>
+              <path d="M12 2.04c-5.5 0-9.96 4.46-9.96 9.96 0 4.41 2.87 8.16 6.84 9.49v-6.71H6.9v-2.78h1.98V9.84c0-1.95 1.17-3.03 2.94-3.03.85 0 1.74.15 1.74.15v1.92h-.98c-.97 0-1.27.6-1.27 1.21v1.46h2.16l-.34 2.78h-1.82V21.5c3.97-1.33 6.84-5.08 6.84-9.5 0-5.5-4.46-9.96-9.96-9.96z" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-white">
+              {account ? account.adAccountId : t('lm.meta.accountDesc')}
+            </div>
+            {account && (
+              <div className="text-sm text-slate-400">{t('lm.meta.pageLabel')} {account.pageId}</div>
+            )}
+          </div>
         </div>
-        <div>
-          <div className="text-sm font-semibold text-white">{t('lm.meta.accountName')}</div>
-          <div className="text-sm text-slate-400">{t('lm.meta.accountDesc')}</div>
-        </div>
-      </div>
+      )}
 
-      {/* KPI row */}
+      {/* Not connected — say so plainly and route to the connect flow */}
+      {!loading && !connected && (
+        <div className="mt-6 rounded-2xl border border-line bg-surface-2 px-5 py-5">
+          <div className="text-sm font-semibold text-white">{t('lm.meta.notConnectedTitle')}</div>
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-400">{t('lm.meta.notConnectedBody')}</p>
+          <Link
+            href="/freehold-intelligence/integrations/meta"
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90"
+          >
+            <PlugZap className="h-4 w-4" /> {t('lm.meta.connectCta')}
+          </Link>
+        </div>
+      )}
+
+      {/* KPI row — computed from the live campaign insights */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: t('lm.meta.kpi.spend'),       value: 'AED 18,420' },
-          { label: t('lm.meta.kpi.reach'),        value: '142,000' },
-          { label: t('lm.meta.kpi.impressions'),  value: '380,000' },
-          { label: t('lm.meta.kpi.leads'),        value: '248',       color: 'text-gold' },
-          { label: t('lm.meta.kpi.cpl'),          value: 'AED 74.3' },
-          { label: t('lm.meta.kpi.ctr'),          value: '2.1%' },
+          { label: t('lm.meta.kpi.spend'),       value: totals.spend > 0 ? fmtAED(totals.spend) : '—' },
+          { label: t('lm.meta.col.clicks'),       value: totals.clicks > 0 ? totals.clicks.toLocaleString() : '—' },
+          { label: t('lm.meta.kpi.impressions'),  value: totals.impressions > 0 ? totals.impressions.toLocaleString() : '—' },
+          { label: t('lm.meta.kpi.leads'),        value: totals.leads > 0 ? String(totals.leads) : '—', color: totals.leads > 0 ? 'text-gold' : undefined },
+          { label: t('lm.meta.kpi.cpl'),          value: totals.cpl > 0 ? fmtAED(totals.cpl) : '—' },
+          { label: t('lm.meta.kpi.ctr'),          value: totals.ctr > 0 ? `${totals.ctr}%` : '—' },
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-line bg-surface-2 p-4">
             <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{k.label}</div>
@@ -179,6 +237,18 @@ export default function MetaAdsPage() {
             ))}
           </div>
         </div>
+        {loading ? (
+          <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-6 text-sm text-slate-400">
+            <Loader2 className="h-4 w-4 animate-spin" /> {t('lm.meta.loading')}
+          </div>
+        ) : visibleCampaigns.length === 0 ? (
+          <div className="rounded-2xl border border-line bg-surface-2 px-5 py-6 text-sm text-slate-400">
+            {t('lm.meta.noCampaigns')}{' '}
+            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className="font-semibold text-gold hover:opacity-80">
+              {t('lm.meta.createCampaign')}
+            </Link>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <div className="min-w-[700px] overflow-hidden rounded-2xl border border-line bg-surface-2">
             {/* Table header */}
@@ -213,29 +283,23 @@ export default function MetaAdsPage() {
             <div className="divide-y divide-line">
               {visibleCampaigns.map((c) => (
                 <div
-                  key={c.name}
+                  key={c.id}
                   className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'Active' ? 'bg-gold' : 'bg-gold'}`} />
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
                     <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                   </div>
                   <div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        c.status === 'Active'
-                          ? 'border border-gold/20 bg-gold/10 text-gold'
-                          : 'border border-gold/20 bg-gold/10 text-gold'
-                      }`}
-                    >
-                      {c.status === 'Active' ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
+                    <span className="rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
+                      {c.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
                     </span>
                   </div>
                   <div className="text-xs text-slate-300">
                     {c.dailyBudget > 0 ? `AED ${c.dailyBudget}/d` : '—'}
                   </div>
                   <div className="text-xs text-slate-300">
-                    {c.spend > 0 ? `AED ${c.spend.toLocaleString()}` : '—'}
+                    {c.spend > 0 ? fmtAED(c.spend) : '—'}
                   </div>
                   <div className="text-xs text-slate-400">
                     {c.impressions > 0 ? c.impressions.toLocaleString() : '—'}
@@ -254,36 +318,7 @@ export default function MetaAdsPage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Ad sets */}
-      <section className="mt-10">
-        <div className="mb-4 text-xs font-medium uppercase tracking-wider text-slate-400">{t('lm.meta.section.adSets')}</div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {adSets.map((s) => (
-            <div
-              key={s.nameKey}
-              className="rounded-2xl border border-line bg-surface-2 p-5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-slate-100">{t(s.nameKey)}</span>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    s.status === 'Active'
-                      ? 'border border-gold/20 bg-gold/10 text-gold'
-                      : 'border border-gold/20 bg-gold/10 text-gold'
-                  }`}
-                >
-                  {s.status === 'Active' ? t('lm.meta.status.active') : t('lm.meta.status.paused')}
-                </span>
-              </div>
-              <div className="mt-3 space-y-1.5 text-xs text-slate-400">
-                <div>{t('lm.meta.adSet.budget')} <span className="text-slate-300">{t('lm.meta.budgetPerDay', { amount: s.budgetAmount })}</span></div>
-                <div>{t('lm.meta.adSet.audienceSize')} <span className="text-slate-300">{s.audience}</span></div>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
       </section>
 
       {/* Quick actions */}

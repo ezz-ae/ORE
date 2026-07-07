@@ -26,6 +26,7 @@ import {
   type CoachStep, type Placement,
 } from '@/lib/freehold/coach-tours'
 import { getHowTo } from '@/lib/freehold/howto'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 
 interface CoachCtx {
   /** launch the tour for the signed-in role from step 0 */
@@ -64,6 +65,16 @@ function noteAutoTourSkip(): void {
     const n = Number(window.sessionStorage.getItem(SKIP_KEY)) || 0
     window.sessionStorage.setItem(SKIP_KEY, String(n + 1))
   } catch { /* ignore */ }
+}
+
+// A finished/skipped tour is remembered by the ACCOUNT, not just this browser —
+// on a new device the coach won't restart tours the user already completed.
+function recordTourSeen(key: string): void {
+  try { localStorage.setItem(key, '1') } catch { /* ignore */ }
+  loadAccountMemory().then((m) => {
+    const seen = { ...((m.coachSeen as Record<string, 1>) ?? {}), [key]: 1 as const }
+    saveAccountMemory({ coachSeen: seen })
+  })
 }
 
 export function CoachProvider({ children }: { children: React.ReactNode }) {
@@ -113,12 +124,30 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
     else if (role) startTour(tourForRole(role), coachSeenKey(role))
   }, [appId, role, startTour])
 
+  // Hydrate tour progress from ACCOUNT memory before any auto-start decision:
+  // tours completed on another device are mirrored into localStorage first, so
+  // a returning user is never re-toured just because the browser is new.
+  const [memReady, setMemReady] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    loadAccountMemory().then((m) => {
+      const seen = m.coachSeen as Record<string, unknown> | undefined
+      if (seen) {
+        for (const k of Object.keys(seen)) {
+          if (seen[k]) { try { localStorage.setItem(k, '1') } catch { /* ignore */ } }
+        }
+      }
+      if (!cancelled) setMemReady(true)
+    })
+    return () => { cancelled = true }
+  }, [])
+
   // Auto-start: the role welcome the first time (anywhere), then each app's
   // contextual tour the first time that app is opened. One tour per page load.
   // If the user has skipped auto-tours twice this session, stop offering them —
   // a quieter experience; the "Take a tour" button still replays on demand.
   useEffect(() => {
-    if (!ready || !role || active) return
+    if (!ready || !memReady || !role || active) return
     if (autoTourSuppressed()) return
     const seen = (k: string) => { try { return !!localStorage.getItem(k) } catch { return true } }
 
@@ -134,7 +163,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
         return () => clearTimeout(id)
       }
     }
-  }, [ready, role, appId, active, startTour])
+  }, [ready, memReady, role, appId, active, startTour])
 
   // Close via skip / dismiss. Marks the tour seen (so it won't reappear next
   // session) and, when it was auto-started, counts toward the session skip cap.
@@ -146,7 +175,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
       try { sessionStorage.removeItem(HOWTO_SS) } catch {}
       return
     }
-    if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
+    if (seenKeyRef.current) recordTourSeen(seenKeyRef.current)
     if (autoStartedRef.current) noteAutoTourSkip()
   }, [])
 
@@ -168,7 +197,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
       return
     }
     setActive(false)
-    if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
+    if (seenKeyRef.current) recordTourSeen(seenKeyRef.current)
   }, [router])
 
   // ── Task walkthroughs ("How do I…") — cross-page guided flows ─────────────

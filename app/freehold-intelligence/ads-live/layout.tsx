@@ -1,10 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, Megaphone } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { NON_BROKER_ROLES } from '@/lib/freehold/apps'
+import { useT } from '@/lib/i18n/provider'
 
 const tabs = [
   { label: 'Live Overview',  href: '/freehold-intelligence/ads-live',         exact: true },
@@ -15,8 +17,26 @@ const tabs = [
 ]
 
 export default function AdsLiveLayout({ children }: { children: React.ReactNode }) {
+  const t = useT()
   const pathname = usePathname()
   const { ready } = useSessionGuard(NON_BROKER_ROLES)
+
+  // The green light means LIVE — a real connected ad platform, verified
+  // against the same source of truth as the Integrations page. Never shown
+  // when nothing is connected: null = checking, false = not connected.
+  const [live, setLive] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/integrations/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const ads = (d?.statuses ?? []).filter((s: { id: string }) => s.id === 'meta-ads' || s.id === 'google-ads')
+        setLive(ads.some((s: { state: string }) => s.state === 'connected'))
+      })
+      .catch(() => { if (!cancelled) setLive(false) })
+    return () => { cancelled = true }
+  }, [])
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href
@@ -49,10 +69,21 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
           <span className="text-sm font-semibold text-white">Ads <span className="text-slate-500 font-normal">· Live</span></span>
         </div>
         <div className="ml-auto">
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)] animate-pulse" />
-            Live
-          </div>
+          {live === true && (
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)] animate-pulse" />
+              {t('lm.live.badgeLive')}
+            </div>
+          )}
+          {live === false && (
+            <Link
+              href="/freehold-intelligence/integrations"
+              className="flex items-center gap-2 text-sm text-slate-400 transition hover:text-slate-200"
+            >
+              <span className="h-2 w-2 rounded-full bg-slate-500" />
+              {t('lm.live.badgeOffline')}
+            </Link>
+          )}
         </div>
       </header>
 

@@ -3,14 +3,11 @@
 import { useEffect } from 'react'
 import { useI18n } from '@/lib/i18n/provider'
 import { getStoredThemeMode, useThemeMode, type ThemeMode } from '@/lib/freehold/use-theme-mode'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 
 /** Fire-and-forget save of an account preference (theme, locale). */
 export function saveUserPref(patch: Record<string, string>) {
-  fetch('/api/freehold/prefs', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  }).catch(() => {})
+  saveAccountMemory(patch)
 }
 
 /**
@@ -25,11 +22,10 @@ export function PrefsSync() {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/freehold/prefs')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (cancelled || !d?.prefs) return
-        const saved = d.prefs as { theme?: ThemeMode; locale?: string }
+    loadAccountMemory()
+      .then((m) => {
+        if (cancelled) return
+        const saved = m as { theme?: ThemeMode; locale?: string }
         if (saved.theme && saved.theme !== getStoredThemeMode()) theme.setMode(saved.theme)
         if (saved.locale && saved.locale !== locale) setLocale(saved.locale as never)
       })
