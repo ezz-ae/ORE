@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_term text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_content text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS utm_id text`)
+    await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS campaign_id text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS referrer text`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS device jsonb`)
     await query(`ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS geo_country text`)
@@ -115,12 +116,12 @@ export async function POST(req: NextRequest) {
       `INSERT INTO freehold_site_leads (
         id, name, phone, email, source, project_slug, landing_slug, interest, message, budget, status,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id,
-        referrer, device, geo_country, geo_region, geo_city, created_at, updated_at
+        referrer, device, geo_country, geo_region, geo_city, campaign_id, created_at, updated_at
       )
       VALUES (
         $1, $2, $3, NULLIF($4, ''), $5, NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), NULLIF($9, ''), NULLIF($10, ''), 'new',
         NULLIF($11, ''), NULLIF($12, ''), NULLIF($13, ''), NULLIF($14, ''), NULLIF($15, ''), NULLIF($16, ''),
-        NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), now(), now()
+        NULLIF($17, ''), $18::jsonb, NULLIF($19, ''), NULLIF($20, ''), NULLIF($21, ''), NULLIF($13, ''), now(), now()
       )`,
       [
         leadId,
