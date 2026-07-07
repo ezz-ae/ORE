@@ -65,6 +65,23 @@ export default function GenerateCreativePage() {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [variants, setVariants]   = useState<GeneratedCreativeVariant[]>([])
+  const [savedIds, setSavedIds]   = useState<Set<string>>(new Set())
+
+  // Save a generated creative to the Library (AI Suite → Library → Creatives).
+  async function saveToLibrary(v: GeneratedCreativeVariant) {
+    try {
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'creative',
+          title: `${listing?.name ?? override?.name ?? 'Creative'} — ${v.headline}`.slice(0, 180),
+          content: `Headline: ${v.headline}\n\nPrimary text:\n${v.primaryText}\n\nDescription: ${v.description}\nCTA: ${v.cta}`,
+        }),
+      })
+      if (!res.ok) throw new Error('save failed')
+      setSavedIds((prev) => new Set([...prev, v.id]))
+    } catch { /* toast-free: the button state simply doesn't flip */ }
+  }
   // Real-project override: arriving with ?project=&name=&area=&price= from a
   // project page pre-fills the generator without waiting for the picker.
   const [override, setOverride] = useState<{ slug: string; name: string; area: string; developer: string; price: number } | null>(null)
@@ -327,8 +344,16 @@ export default function GenerateCreativePage() {
                     <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-600">
                       {t('lm.creatives.generate.variantNum', { n: String(i + 1) })}
                     </span>
-                    <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-slate-500">
-                      {v.cta.replace(/_/g, ' ')}
+                    <span className="flex items-center gap-2">
+                      <button
+                        onClick={() => saveToLibrary(v)}
+                        className="rounded-full border border-gold/25 bg-gold/[0.06] px-2.5 py-0.5 text-xs font-medium text-gold transition hover:bg-gold/[0.14]"
+                      >
+                        {savedIds.has(v.id) ? t('lm.creatives.generate.savedLib') : t('lm.creatives.generate.saveLib')}
+                      </button>
+                      <span className="rounded-full border border-line px-2.5 py-0.5 text-xs text-slate-500">
+                        {v.cta.replace(/_/g, ' ')}
+                      </span>
                     </span>
                   </div>
 

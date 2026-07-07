@@ -318,6 +318,8 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Optimize page ──
     'lm.optimize.eyebrow': 'AI Budget Optimizer',
+    'lm.creatives.generate.saveLib': 'Save to Library',
+    'lm.creatives.generate.savedLib': 'Saved ✓',
     'lm.optimize.title': 'Budget optimizer',
     'lm.optimize.noData': 'No campaigns with spend yet — the ranking appears once real campaigns run.',
     'lm.optimize.shiftReco': 'Shift budget from "{from}" (AED {fromCpl}/lead) toward "{to}" (AED {toCpl}/lead) — the same spend buys more leads.',
@@ -1049,6 +1051,8 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Optimize ──
     'lm.optimize.eyebrow': 'محسّن الميزانية بالذكاء الاصطناعي',
+    'lm.creatives.generate.saveLib': 'حفظ في المكتبة',
+    'lm.creatives.generate.savedLib': 'حُفظ ✓',
     'lm.optimize.title': 'محسّن الميزانية',
     'lm.optimize.noData': 'لا حملات بإنفاق بعد — يظهر الترتيب عند تشغيل حملات حقيقية.',
     'lm.optimize.shiftReco': 'انقل الميزانية من «{from}» ({fromCpl} درهم/عميل) إلى «{to}» ({toCpl} درهم/عميل) — نفس الإنفاق يجلب عملاء أكثر.',
@@ -1744,6 +1748,8 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Optimize ──
     'lm.optimize.eyebrow': 'ИИ-оптимизатор',
+    'lm.creatives.generate.saveLib': 'В Библиотеку',
+    'lm.creatives.generate.savedLib': 'Сохранено ✓',
     'lm.optimize.title': 'Оптимизатор бюджета',
     'lm.optimize.noData': 'Кампаний с расходами пока нет — рейтинг появится после реальных запусков.',
     'lm.optimize.shiftReco': 'Перенесите бюджет из «{from}» (AED {fromCpl}/лид) в «{to}» (AED {toCpl}/лид) — те же деньги дадут больше лидов.',
