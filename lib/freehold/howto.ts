@@ -2,6 +2,9 @@
 // across pages, step by step (e.g. "Run a Meta lead campaign": connect → pick
 // a project → creative → budget → launch → watch it live). The coach engine
 // persists progress in sessionStorage so the tour survives page navigation.
+//
+// Every flow ends ON the page where the user does the real thing — the coach
+// guides, the user creates. Flows are the "A" behind the Help centre's Q&A.
 
 export interface HowToStep {
   /** i18n key prefix — `${key}.title` and `${key}.body` must exist. */
@@ -16,22 +19,170 @@ export interface HowToFlow {
   id: string
   /** i18n key for the flow's name (shown in Help). */
   titleKey: string
+  /** Which department of the Help centre this flow belongs to. */
+  section: 'ads' | 'crm' | 'inventory' | 'finance' | 'team' | 'analytics' | 'account' | 'broker'
+  /** Restrict to these roles (undefined = everyone the pages allow). */
+  roles?: string[]
   steps: HowToStep[]
 }
 
+const FI = '/freehold-intelligence'
+
 export const HOWTOS: HowToFlow[] = [
+  // ── Ads / Lead Machine ─────────────────────────────────────────────────────
   {
     id: 'meta-ad',
     titleKey: 'howto.metaAd.name',
+    section: 'ads',
     steps: [
-      { key: 'howto.metaAd.s1', href: '/freehold-intelligence/integrations/meta' },
-      { key: 'howto.metaAd.s2', href: '/freehold-intelligence/lead-machine/campaigns/new', anchor: 'wiz-listing' },
-      { key: 'howto.metaAd.s3', href: '/freehold-intelligence/lead-machine/campaigns/new', anchor: 'wiz-creative' },
-      { key: 'howto.metaAd.s4', href: '/freehold-intelligence/lead-machine/campaigns/new', anchor: 'wiz-budget' },
-      { key: 'howto.metaAd.s5', href: '/freehold-intelligence/lead-machine/campaigns/new', anchor: 'wiz-launch' },
-      { key: 'howto.metaAd.s6', href: '/freehold-intelligence/ads-live' },
+      { key: 'howto.metaAd.s1', href: `${FI}/integrations/meta` },
+      { key: 'howto.metaAd.s2', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-listing' },
+      { key: 'howto.metaAd.s3', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-creative' },
+      { key: 'howto.metaAd.s4', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-budget' },
+      { key: 'howto.metaAd.s5', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-launch' },
+      { key: 'howto.metaAd.s6', href: `${FI}/ads-live` },
+    ],
+  },
+  {
+    id: 'landing-page',
+    titleKey: 'howto.landing.name',
+    section: 'ads',
+    steps: [
+      { key: 'howto.landing.s1', href: `${FI}/lead-machine/landings`, anchor: 'lm-landing-create' },
+      { key: 'howto.landing.s2', href: `${FI}/lead-machine/landings` },
+    ],
+  },
+  {
+    id: 'google-ad',
+    titleKey: 'howto.googleAd.name',
+    section: 'ads',
+    steps: [
+      { key: 'howto.googleAd.s1', href: `${FI}/integrations/google` },
+      { key: 'howto.googleAd.s2', href: `${FI}/lead-machine/google/campaigns/new` },
+    ],
+  },
+  {
+    id: 'ai-creative',
+    titleKey: 'howto.aiCreative.name',
+    section: 'ads',
+    steps: [
+      { key: 'howto.aiCreative.s1', href: `${FI}/lead-machine/creatives/generate` },
+      { key: 'howto.aiCreative.s2', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-creative' },
+    ],
+  },
+
+  // ── CRM ───────────────────────────────────────────────────────────────────
+  {
+    id: 'add-lead',
+    titleKey: 'howto.addLead.name',
+    section: 'crm',
+    steps: [
+      { key: 'howto.addLead.s1', href: `${FI}/crm/leads` },
+      { key: 'howto.addLead.s2', href: `${FI}/crm/leads` },
+    ],
+  },
+  {
+    id: 'follow-up',
+    titleKey: 'howto.followUp.name',
+    section: 'crm',
+    steps: [
+      { key: 'howto.followUp.s1', href: `${FI}/crm/follow-up` },
+      { key: 'howto.followUp.s2', href: `${FI}/crm/leads` },
+    ],
+  },
+  {
+    id: 'assign-lead',
+    titleKey: 'howto.assignLead.name',
+    section: 'crm',
+    roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'],
+    steps: [
+      { key: 'howto.assignLead.s1', href: `${FI}/crm/inbox` },
+      { key: 'howto.assignLead.s2', href: `${FI}/crm/assignment` },
+    ],
+  },
+  {
+    id: 'close-deal',
+    titleKey: 'howto.closeDeal.name',
+    section: 'crm',
+    steps: [
+      { key: 'howto.closeDeal.s1', href: `${FI}/crm/board` },
+      { key: 'howto.closeDeal.s2', href: `${FI}/management/deals` },
+    ],
+  },
+
+  // ── Inventory ─────────────────────────────────────────────────────────────
+  {
+    id: 'advertise-project',
+    titleKey: 'howto.advertise.name',
+    section: 'inventory',
+    steps: [
+      { key: 'howto.advertise.s1', href: `${FI}/inventory/projects` },
+      { key: 'howto.advertise.s2', href: `${FI}/lead-machine/campaigns/new`, anchor: 'wiz-listing' },
+    ],
+  },
+
+  // ── Finance ───────────────────────────────────────────────────────────────
+  {
+    id: 'commission',
+    titleKey: 'howto.commission.name',
+    section: 'finance',
+    roles: ['admin', 'ceo', 'director', 'sales_manager'],
+    steps: [
+      { key: 'howto.commission.s1', href: `${FI}/management/deals` },
+      { key: 'howto.commission.s2', href: `${FI}/finance` },
+    ],
+  },
+
+  // ── Team / Management ─────────────────────────────────────────────────────
+  {
+    id: 'invite-user',
+    titleKey: 'howto.inviteUser.name',
+    section: 'team',
+    roles: ['admin', 'ceo', 'director', 'sales_manager'],
+    steps: [
+      { key: 'howto.inviteUser.s1', href: `${FI}/settings/team` },
+      { key: 'howto.inviteUser.s2', href: `${FI}/crm/agents` },
+    ],
+  },
+
+  // ── Analytics ─────────────────────────────────────────────────────────────
+  {
+    id: 'team-performance',
+    titleKey: 'howto.teamPerf.name',
+    section: 'analytics',
+    roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'],
+    steps: [
+      { key: 'howto.teamPerf.s1', href: `${FI}/analytics` },
+      { key: 'howto.teamPerf.s2', href: `${FI}/analytics/team` },
+    ],
+  },
+
+  // ── Account ───────────────────────────────────────────────────────────────
+  {
+    id: 'personalize',
+    titleKey: 'howto.personalize.name',
+    section: 'account',
+    steps: [
+      { key: 'howto.personalize.s1', href: FI, anchor: 'user-menu' },
+      { key: 'howto.personalize.s2', href: FI },
+    ],
+  },
+
+  // ── Broker workspace ──────────────────────────────────────────────────────
+  {
+    id: 'bio-link',
+    titleKey: 'howto.bioLink.name',
+    section: 'broker',
+    roles: ['broker'],
+    steps: [
+      { key: 'howto.bioLink.s1', href: `${FI}/agent/bio` },
+      { key: 'howto.bioLink.s2', href: `${FI}/agent/leads` },
     ],
   },
 ]
 
 export const getHowTo = (id: string): HowToFlow | undefined => HOWTOS.find((h) => h.id === id)
+
+/** Flows visible to a given role (undefined roles ⇒ visible to everyone). */
+export const howtosForRole = (role?: string): HowToFlow[] =>
+  HOWTOS.filter((h) => !h.roles || (role ? h.roles.includes(role) : false))

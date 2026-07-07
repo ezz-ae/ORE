@@ -39,6 +39,84 @@ const en: Dict = {
   'howto.metaAd.s6.title': 'Step 6 — Watch it live',
   'howto.metaAd.s6.body': 'Your campaign appears here with its real Meta ID. When a test lead arrives it lands in CRM → Leads automatically. Done!',
 
+  'howto.landing.name': 'Create & publish a landing page',
+  'howto.landing.s1.title': 'Step 1 — Create from real inventory',
+  'howto.landing.s1.body': 'Press Create — the page is generated from live project data and AI writes the copy. Do it now; it takes seconds.',
+  'howto.landing.s2.title': 'Step 2 — It’s live. Now advertise it',
+  'howto.landing.s2.body': 'Your page is published at /lp/<name>. Use the row’s Campaign button to open the ad builder prefilled with this page as the destination.',
+
+  'howto.googleAd.name': 'Run a Google search campaign',
+  'howto.googleAd.s1.title': 'Step 1 — Connect Google Ads',
+  'howto.googleAd.s1.body': 'Follow the “How do I get this?” steps on this page to connect your Google Ads account. Already connected? Press Next.',
+  'howto.googleAd.s2.title': 'Step 2 — Build the campaign',
+  'howto.googleAd.s2.body': 'Pick the project, keywords and budget. AI drafts the responsive search ad; you approve before anything spends.',
+
+  'howto.aiCreative.name': 'Generate ad creative with AI',
+  'howto.aiCreative.s1.title': 'Step 1 — Describe, generate, refine',
+  'howto.aiCreative.s1.body': 'Pick a project and generate — AI writes headlines, copy and creative angles from the real listing data. Regenerate until it’s right.',
+  'howto.aiCreative.s2.title': 'Step 2 — Use it in a campaign',
+  'howto.aiCreative.s2.body': 'In the campaign builder’s Creative step, use the generated copy, keep the property photo or upload your own image.',
+
+  'howto.addLead.name': 'Add a lead manually',
+  'howto.addLead.s1.title': 'Step 1 — Add the lead',
+  'howto.addLead.s1.body': 'Press Add lead — a name and phone number is enough to start; you can complete the rest later. Try it now.',
+  'howto.addLead.s2.title': 'Step 2 — The 360° view',
+  'howto.addLead.s2.body': 'Your lead gets a serial code (FH-####). Open it any time for the full record: Call / WhatsApp buttons, notes, timeline, deals.',
+
+  'howto.followUp.name': 'Never miss a follow-up',
+  'howto.followUp.s1.title': 'Step 1 — The follow-up queue',
+  'howto.followUp.s1.body': 'Every lead that waited too long is queued here, most urgent first. Start each morning at the top of this list.',
+  'howto.followUp.s2.title': 'Step 2 — One tap to reach out',
+  'howto.followUp.s2.body': 'Open the lead and use Call or WhatsApp right from the row — every touch is logged on the lead’s timeline automatically.',
+
+  'howto.assignLead.name': 'Assign new leads to brokers',
+  'howto.assignLead.s1.title': 'Step 1 — The inbox',
+  'howto.assignLead.s1.body': 'The moment an ad or landing page captures a lead, it lands here unassigned. Nothing gets lost.',
+  'howto.assignLead.s2.title': 'Step 2 — Assign with capacity in view',
+  'howto.assignLead.s2.body': 'Pick the broker — each shows live workload so you never overload anyone. The broker is emailed the lead instantly.',
+
+  'howto.closeDeal.name': 'Close a lead into a deal',
+  'howto.closeDeal.s1.title': 'Step 1 — Advance on the board',
+  'howto.closeDeal.s1.body': 'Drag the lead across the pipeline as it progresses. Dropping it on Closed opens the deal window automatically.',
+  'howto.closeDeal.s2.title': 'Step 2 — The deal record',
+  'howto.closeDeal.s2.body': 'Enter price and commission — the full waterfall (referral, cashback, expenses, payout, company net) computes live, then goes for approval.',
+
+  'howto.advertise.name': 'Advertise a project from Inventory',
+  'howto.advertise.s1.title': 'Step 1 — Pick a ready project',
+  'howto.advertise.s1.body': 'Every project shows data-quality and ad-readiness scores. Open the one you want leads for.',
+  'howto.advertise.s2.title': 'Step 2 — The builder is prefilled',
+  'howto.advertise.s2.body': 'Pick the project here — name, photo, price and landing page fill in automatically. Continue to creative and budget.',
+
+  'howto.commission.name': 'Record a deal & track commission',
+  'howto.commission.s1.title': 'Step 1 — Record the deal',
+  'howto.commission.s1.body': 'Create the deal from a closed CRM lead or add it manually — project and broker autofill. Enter the commission and splits.',
+  'howto.commission.s2.title': 'Step 2 — Follow the money',
+  'howto.commission.s2.body': 'Finance rolls every approved deal into the company waterfall: referral, cashback, expenses, growth fund, broker payouts, company net.',
+
+  'howto.inviteUser.name': 'Add a team member',
+  'howto.inviteUser.s1.title': 'Step 1 — Add with a role',
+  'howto.inviteUser.s1.body': 'Add the member and choose their role — broker, marketing, management. The role decides exactly which apps they see.',
+  'howto.inviteUser.s2.title': 'Step 2 — Ready for leads',
+  'howto.inviteUser.s2.body': 'Brokers appear here with live capacity immediately — new leads can be assigned to them from the CRM inbox.',
+
+  'howto.teamPerf.name': 'See who’s performing',
+  'howto.teamPerf.s1.title': 'Step 1 — Company first',
+  'howto.teamPerf.s1.body': 'The company lens shows live totals — leads, deals, ad spend, revenue. Everything comes from real records, nothing is estimated.',
+  'howto.teamPerf.s2.title': 'Step 2 — Drill into a person',
+  'howto.teamPerf.s2.body': 'Open any team member for their complete record: leads handled, response times, deals closed, commission earned, ad spend used.',
+
+  'howto.personalize.name': 'Set language, theme & your account',
+  'howto.personalize.s1.title': 'Step 1 — Your account menu',
+  'howto.personalize.s1.body': 'Everything personal lives here: Language (English / العربية / Русский), Day / Night screen light, What’s new, and this Help.',
+  'howto.personalize.s2.title': 'Step 2 — Saved to your account',
+  'howto.personalize.s2.body': 'Your choices are saved to your ACCOUNT, not this browser — sign in anywhere and your setup follows you.',
+
+  'howto.bioLink.name': 'Set up your Bio Link (brokers)',
+  'howto.bioLink.s1.title': 'Step 1 — Build your public card',
+  'howto.bioLink.s1.body': 'Photo, contact buttons, featured projects — then share the link or QR in your Instagram / WhatsApp bio.',
+  'howto.bioLink.s2.title': 'Step 2 — Leads come straight to you',
+  'howto.bioLink.s2.body': 'Anyone who fills the form on your bio page becomes YOUR lead — created and assigned to you automatically, right here.',
+
 }
 
 const ar: Dict = {
@@ -77,6 +155,84 @@ const ar: Dict = {
   'howto.metaAd.s6.title': 'الخطوة 6 — تابعها مباشرة',
   'howto.metaAd.s6.body': 'تظهر حملتك هنا بمعرّف Meta الحقيقي. وعند وصول عميل تجريبي يصل تلقائياً إلى إدارة العملاء. انتهيت!',
 
+  'howto.landing.name': 'إنشاء صفحة هبوط ونشرها',
+  'howto.landing.s1.title': 'الخطوة 1 — أنشئها من المخزون الحقيقي',
+  'howto.landing.s1.body': 'اضغط إنشاء — تُولَّد الصفحة من بيانات المشروع الحية ويكتب الذكاء الاصطناعي النص. جرّبها الآن؛ تستغرق ثوانٍ.',
+  'howto.landing.s2.title': 'الخطوة 2 — أصبحت مباشرة. أعلن عنها',
+  'howto.landing.s2.body': 'صفحتك منشورة على ‎/lp/<الاسم>. استخدم زر الحملة في الصف لفتح منشئ الإعلانات معبأً بهذه الصفحة كوجهة.',
+
+  'howto.googleAd.name': 'إطلاق حملة بحث على Google',
+  'howto.googleAd.s1.title': 'الخطوة 1 — اربط Google Ads',
+  'howto.googleAd.s1.body': 'اتبع خطوات «كيف أحصل على هذا؟» في هذه الصفحة لربط حسابك. متصل بالفعل؟ اضغط التالي.',
+  'howto.googleAd.s2.title': 'الخطوة 2 — ابنِ الحملة',
+  'howto.googleAd.s2.body': 'اختر المشروع والكلمات المفتاحية والميزانية. يكتب الذكاء الاصطناعي الإعلان وأنت توافق قبل أي إنفاق.',
+
+  'howto.aiCreative.name': 'توليد التصميم الإعلاني بالذكاء الاصطناعي',
+  'howto.aiCreative.s1.title': 'الخطوة 1 — صف، ولّد، حسّن',
+  'howto.aiCreative.s1.body': 'اختر مشروعاً وولّد — يكتب الذكاء الاصطناعي العناوين والنصوص من بيانات الإعلان الحقيقية. أعد التوليد حتى يعجبك.',
+  'howto.aiCreative.s2.title': 'الخطوة 2 — استخدمه في حملة',
+  'howto.aiCreative.s2.body': 'في خطوة التصميم داخل منشئ الحملات استخدم النص المولَّد، وأبقِ صورة العقار أو ارفع صورتك.',
+
+  'howto.addLead.name': 'إضافة عميل يدوياً',
+  'howto.addLead.s1.title': 'الخطوة 1 — أضف العميل',
+  'howto.addLead.s1.body': 'اضغط إضافة عميل — يكفي الاسم ورقم الهاتف للبدء؛ أكمل الباقي لاحقاً. جرّبها الآن.',
+  'howto.addLead.s2.title': 'الخطوة 2 — العرض الشامل 360°',
+  'howto.addLead.s2.body': 'يحصل عميلك على رمز تسلسلي (FH-####). افتحه في أي وقت للسجل الكامل: اتصال / واتساب، ملاحظات، الخط الزمني، الصفقات.',
+
+  'howto.followUp.name': 'لا تفوّت أي متابعة',
+  'howto.followUp.s1.title': 'الخطوة 1 — طابور المتابعة',
+  'howto.followUp.s1.body': 'كل عميل انتظر طويلاً يظهر هنا، الأكثر إلحاحاً أولاً. ابدأ كل صباح من أعلى هذه القائمة.',
+  'howto.followUp.s2.title': 'الخطوة 2 — تواصل بنقرة واحدة',
+  'howto.followUp.s2.body': 'افتح العميل واستخدم اتصال أو واتساب من الصف مباشرة — يُسجَّل كل تواصل تلقائياً في الخط الزمني.',
+
+  'howto.assignLead.name': 'إسناد العملاء الجدد للوسطاء',
+  'howto.assignLead.s1.title': 'الخطوة 1 — صندوق الوارد',
+  'howto.assignLead.s1.body': 'لحظة وصول عميل من إعلان أو صفحة هبوط يظهر هنا غير مُسند. لا شيء يضيع.',
+  'howto.assignLead.s2.title': 'الخطوة 2 — أسند مع رؤية الطاقة',
+  'howto.assignLead.s2.body': 'اختر الوسيط — يظهر عبء عمل كل وسيط مباشرة فلا تُحمّل أحداً فوق طاقته. يصل بريد للوسيط فوراً.',
+
+  'howto.closeDeal.name': 'إغلاق عميل إلى صفقة',
+  'howto.closeDeal.s1.title': 'الخطوة 1 — تقدّم على اللوحة',
+  'howto.closeDeal.s1.body': 'اسحب العميل عبر مراحل خط المبيعات. إسقاطه على «مغلق» يفتح نافذة الصفقة تلقائياً.',
+  'howto.closeDeal.s2.title': 'الخطوة 2 — سجل الصفقة',
+  'howto.closeDeal.s2.body': 'أدخل السعر والعمولة — يُحسب الشلال كاملاً (إحالة، كاش باك، مصاريف، مستحقات، صافي الشركة) مباشرة ثم يذهب للاعتماد.',
+
+  'howto.advertise.name': 'الإعلان عن مشروع من المخزون',
+  'howto.advertise.s1.title': 'الخطوة 1 — اختر مشروعاً جاهزاً',
+  'howto.advertise.s1.body': 'كل مشروع يعرض جودة البيانات وجاهزية الإعلان. افتح المشروع الذي تريد عملاء له.',
+  'howto.advertise.s2.title': 'الخطوة 2 — المنشئ معبأ مسبقاً',
+  'howto.advertise.s2.body': 'اختر المشروع هنا — الاسم والصورة والسعر وصفحة الهبوط تُملأ تلقائياً. تابع إلى التصميم والميزانية.',
+
+  'howto.commission.name': 'تسجيل صفقة وتتبع العمولة',
+  'howto.commission.s1.title': 'الخطوة 1 — سجّل الصفقة',
+  'howto.commission.s1.body': 'أنشئ الصفقة من عميل مغلق في إدارة العملاء أو أضفها يدوياً — يُملأ المشروع والوسيط تلقائياً. أدخل العمولة والتقسيمات.',
+  'howto.commission.s2.title': 'الخطوة 2 — تتبّع المال',
+  'howto.commission.s2.body': 'تجمع المالية كل صفقة معتمدة في شلال الشركة: الإحالة، الكاش باك، المصاريف، صندوق النمو، مستحقات الوسطاء، صافي الشركة.',
+
+  'howto.inviteUser.name': 'إضافة عضو للفريق',
+  'howto.inviteUser.s1.title': 'الخطوة 1 — أضفه بدور',
+  'howto.inviteUser.s1.body': 'أضف العضو واختر دوره — وسيط، تسويق، إدارة. الدور يحدد بالضبط أي التطبيقات يرى.',
+  'howto.inviteUser.s2.title': 'الخطوة 2 — جاهز للعملاء',
+  'howto.inviteUser.s2.body': 'يظهر الوسطاء هنا بطاقتهم الاستيعابية مباشرة — ويمكن إسناد عملاء جدد لهم من صندوق الوارد.',
+
+  'howto.teamPerf.name': 'اعرف مَن يحقق النتائج',
+  'howto.teamPerf.s1.title': 'الخطوة 1 — الشركة أولاً',
+  'howto.teamPerf.s1.body': 'عدسة الشركة تعرض الإجماليات الحية — عملاء، صفقات، إنفاق إعلاني، إيرادات. كل شيء من سجلات حقيقية.',
+  'howto.teamPerf.s2.title': 'الخطوة 2 — تعمّق في شخص',
+  'howto.teamPerf.s2.body': 'افتح أي عضو للسجل الكامل: العملاء، أزمنة الاستجابة، الصفقات المغلقة، العمولة، الإنفاق الإعلاني.',
+
+  'howto.personalize.name': 'اللغة والمظهر وإعدادات حسابك',
+  'howto.personalize.s1.title': 'الخطوة 1 — قائمة حسابك',
+  'howto.personalize.s1.body': 'كل ما هو شخصي هنا: اللغة (English / العربية / Русский)، إضاءة الشاشة نهار/ليل، الجديد، وهذه المساعدة.',
+  'howto.personalize.s2.title': 'الخطوة 2 — محفوظ في حسابك',
+  'howto.personalize.s2.body': 'اختياراتك تُحفظ في حسابك لا في هذا المتصفح — سجّل الدخول من أي جهاز وستجد إعدادك.',
+
+  'howto.bioLink.name': 'إعداد رابطك التعريفي (للوسطاء)',
+  'howto.bioLink.s1.title': 'الخطوة 1 — ابنِ بطاقتك العامة',
+  'howto.bioLink.s1.body': 'صورة وأزرار تواصل ومشاريع مميزة — ثم شارك الرابط أو رمز QR في سيرة إنستغرام / واتساب.',
+  'howto.bioLink.s2.title': 'الخطوة 2 — العملاء يصلونك مباشرة',
+  'howto.bioLink.s2.body': 'كل من يملأ نموذج صفحتك يصبح عميلك أنت — يُنشأ ويُسند إليك تلقائياً، هنا.',
+
 }
 
 const ru: Dict = {
@@ -114,6 +270,84 @@ const ru: Dict = {
   'howto.metaAd.s5.body': 'Проверьте сводку и нажмите «Запустить». Оставьте на паузе для первого запуска — деньги не тратятся, пока вы не включите.',
   'howto.metaAd.s6.title': 'Шаг 6 — Смотрите вживую',
   'howto.metaAd.s6.body': 'Кампания появится здесь с реальным ID Meta. Тестовый лид автоматически попадёт в CRM → Лиды. Готово!',
+
+  'howto.landing.name': 'Создать и опубликовать посадочную страницу',
+  'howto.landing.s1.title': 'Шаг 1 — Из реального инвентаря',
+  'howto.landing.s1.body': 'Нажмите «Создать» — страница собирается из живых данных проекта, текст пишет ИИ. Попробуйте сейчас: это секунды.',
+  'howto.landing.s2.title': 'Шаг 2 — Страница живая. Рекламируйте',
+  'howto.landing.s2.body': 'Страница опубликована на /lp/<имя>. Кнопка «Кампания» в строке откроет конструктор рекламы с этой страницей как целью.',
+
+  'howto.googleAd.name': 'Запустить поисковую кампанию Google',
+  'howto.googleAd.s1.title': 'Шаг 1 — Подключите Google Ads',
+  'howto.googleAd.s1.body': 'Следуйте шагам «Как это получить?» на этой странице. Уже подключено? Жмите Далее.',
+  'howto.googleAd.s2.title': 'Шаг 2 — Соберите кампанию',
+  'howto.googleAd.s2.body': 'Выберите проект, ключевые слова и бюджет. ИИ пишет объявление; вы одобряете до любых трат.',
+
+  'howto.aiCreative.name': 'Сгенерировать креатив с ИИ',
+  'howto.aiCreative.s1.title': 'Шаг 1 — Опишите, сгенерируйте, доведите',
+  'howto.aiCreative.s1.body': 'Выберите проект и генерируйте — ИИ пишет заголовки и тексты из реальных данных листинга. Повторяйте, пока не понравится.',
+  'howto.aiCreative.s2.title': 'Шаг 2 — Используйте в кампании',
+  'howto.aiCreative.s2.body': 'На шаге «Креатив» конструктора вставьте текст, оставьте фото объекта или загрузите своё изображение.',
+
+  'howto.addLead.name': 'Добавить лид вручную',
+  'howto.addLead.s1.title': 'Шаг 1 — Добавьте лид',
+  'howto.addLead.s1.body': 'Нажмите «Добавить лид» — для старта хватит имени и телефона; остальное можно позже. Попробуйте сейчас.',
+  'howto.addLead.s2.title': 'Шаг 2 — Обзор 360°',
+  'howto.addLead.s2.body': 'Лид получает серийный код (FH-####). Откройте его в любой момент: звонок / WhatsApp, заметки, таймлайн, сделки.',
+
+  'howto.followUp.name': 'Не пропускать фоллоу-апы',
+  'howto.followUp.s1.title': 'Шаг 1 — Очередь фоллоу-апов',
+  'howto.followUp.s1.body': 'Каждый «залежавшийся» лид попадает сюда, самые срочные сверху. Начинайте утро с вершины списка.',
+  'howto.followUp.s2.title': 'Шаг 2 — Связь в один тап',
+  'howto.followUp.s2.body': 'Откройте лид — «Звонок» и WhatsApp прямо в строке; каждый контакт автоматически пишется в таймлайн.',
+
+  'howto.assignLead.name': 'Распределять новые лиды брокерам',
+  'howto.assignLead.s1.title': 'Шаг 1 — Входящие',
+  'howto.assignLead.s1.body': 'Как только реклама или посадочная страница ловит лид, он появляется здесь нераспределённым. Ничего не теряется.',
+  'howto.assignLead.s2.title': 'Шаг 2 — Назначайте, видя загрузку',
+  'howto.assignLead.s2.body': 'Выберите брокера — у каждого видна живая загрузка, никого не перегрузите. Брокер мгновенно получает письмо.',
+
+  'howto.closeDeal.name': 'Закрыть лид в сделку',
+  'howto.closeDeal.s1.title': 'Шаг 1 — Продвигайте по доске',
+  'howto.closeDeal.s1.body': 'Тяните лид по этапам воронки. Бросок на «Закрыто» автоматически открывает окно сделки.',
+  'howto.closeDeal.s2.title': 'Шаг 2 — Запись сделки',
+  'howto.closeDeal.s2.body': 'Введите цену и комиссию — весь водопад (реферал, кэшбэк, расходы, выплата, чистое компании) считается сразу и идёт на одобрение.',
+
+  'howto.advertise.name': 'Рекламировать проект из инвентаря',
+  'howto.advertise.s1.title': 'Шаг 1 — Выберите готовый проект',
+  'howto.advertise.s1.body': 'У каждого проекта — оценка качества данных и готовности к рекламе. Откройте тот, на который нужны лиды.',
+  'howto.advertise.s2.title': 'Шаг 2 — Конструктор уже заполнен',
+  'howto.advertise.s2.body': 'Выберите проект — название, фото, цена и посадочная страница подставятся сами. Дальше креатив и бюджет.',
+
+  'howto.commission.name': 'Записать сделку и следить за комиссией',
+  'howto.commission.s1.title': 'Шаг 1 — Запишите сделку',
+  'howto.commission.s1.body': 'Создайте сделку из закрытого лида CRM или вручную — проект и брокер заполняются сами. Введите комиссию и доли.',
+  'howto.commission.s2.title': 'Шаг 2 — Следите за деньгами',
+  'howto.commission.s2.body': 'Финансы сводят каждую одобренную сделку в общий водопад: рефералы, кэшбэк, расходы, фонд роста, выплаты брокерам, чистое компании.',
+
+  'howto.inviteUser.name': 'Добавить участника команды',
+  'howto.inviteUser.s1.title': 'Шаг 1 — Добавьте с ролью',
+  'howto.inviteUser.s1.body': 'Добавьте участника и выберите роль — брокер, маркетинг, менеджмент. Роль определяет, какие приложения он видит.',
+  'howto.inviteUser.s2.title': 'Шаг 2 — Готов к лидам',
+  'howto.inviteUser.s2.body': 'Брокеры сразу появляются здесь с живой загрузкой — новые лиды можно назначать им из входящих.',
+
+  'howto.teamPerf.name': 'Видеть, кто даёт результат',
+  'howto.teamPerf.s1.title': 'Шаг 1 — Сначала компания',
+  'howto.teamPerf.s1.body': 'Линза «Компания» показывает живые итоги — лиды, сделки, рекламные траты, выручка. Всё из реальных записей.',
+  'howto.teamPerf.s2.title': 'Шаг 2 — Загляните в человека',
+  'howto.teamPerf.s2.body': 'Откройте любого участника: лиды, скорость ответа, закрытые сделки, комиссия, использованный рекламный бюджет.',
+
+  'howto.personalize.name': 'Язык, тема и настройки аккаунта',
+  'howto.personalize.s1.title': 'Шаг 1 — Меню аккаунта',
+  'howto.personalize.s1.body': 'Всё личное здесь: язык (English / العربية / Русский), режим День / Ночь, «Что нового» и эта справка.',
+  'howto.personalize.s2.title': 'Шаг 2 — Хранится в аккаунте',
+  'howto.personalize.s2.body': 'Ваш выбор сохраняется в АККАУНТЕ, а не в браузере — войдите с любого устройства, и всё будет на месте.',
+
+  'howto.bioLink.name': 'Настроить свой био-линк (брокерам)',
+  'howto.bioLink.s1.title': 'Шаг 1 — Соберите публичную карточку',
+  'howto.bioLink.s1.body': 'Фото, кнопки связи, избранные проекты — затем поделитесь ссылкой или QR в био Instagram / WhatsApp.',
+  'howto.bioLink.s2.title': 'Шаг 2 — Лиды идут напрямую вам',
+  'howto.bioLink.s2.body': 'Каждый, кто заполнит форму на вашей био-странице, становится ВАШИМ лидом — создаётся и назначается вам автоматически.',
 
 }
 

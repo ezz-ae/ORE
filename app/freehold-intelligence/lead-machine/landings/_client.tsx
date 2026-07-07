@@ -104,6 +104,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
         subtitle={t('lm.landings.subtitle', { n: String(properties.length) })}
         actions={
           <button
+            data-coach="lm-landing-create"
             onClick={bulkCreate}
             disabled={bulkCreating || missing === 0}
             className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-60"
