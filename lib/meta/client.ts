@@ -218,6 +218,20 @@ export async function createAdSet(params: {
   const { adAccountId, pixelId } = await creds()
   const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId)
 
+  // Placements: an EMPTY platform list means Advantage+ placements (fully
+  // automatic — Meta's recommendation). Explicit platforms get the complete
+  // modern position set, Reels included, exactly as Ads Manager would.
+  const platforms = params.targeting.publisherPlatforms
+  const placementSpec: Record<string, unknown> = platforms.length === 0 ? {} : {
+    publisher_platforms: platforms,
+    ...(platforms.includes('facebook')
+      ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'video_feeds', 'search'] }
+      : {}),
+    ...(platforms.includes('instagram')
+      ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
+      : {}),
+  }
+
   const targetingSpec: Record<string, unknown> = {
     geo_locations: {
       countries: params.targeting.countries,
@@ -227,12 +241,13 @@ export async function createAdSet(params: {
     },
     age_min: params.targeting.ageMin,
     age_max: params.targeting.ageMax,
-    publisher_platforms: params.targeting.publisherPlatforms,
-    facebook_positions:  params.targeting.publisherPlatforms.includes('facebook')  ? ['feed', 'story'] : [],
-    instagram_positions: params.targeting.publisherPlatforms.includes('instagram') ? ['stream', 'story'] : [],
+    ...placementSpec,
     ...(params.targeting.interests.length > 0
       ? { interests: params.targeting.interests }
       : {}),
+    // Explicit Advantage-audience choice (required on newer accounts):
+    // broad (no interests) → let the algorithm expand; interests → respect them.
+    targeting_automation: { advantage_audience: params.targeting.interests.length > 0 ? 0 : 1 },
   }
 
   const body: Record<string, unknown> = {
@@ -240,16 +255,20 @@ export async function createAdSet(params: {
     campaign_id:       params.campaignId,
     billing_event:     'IMPRESSIONS',
     optimization_goal: optimizationGoal,
+    bid_strategy:      'LOWEST_COST_WITHOUT_CAP',
     daily_budget:      params.dailyBudgetAED * 100, // AED → fils (smallest unit)
     targeting:         targetingSpec,
     status:            params.status,
   }
 
-  // Attach pixel for conversion/offsite campaigns
-  if (pixelId && (params.objective === 'CONVERSIONS' || params.objective === 'LEAD_GENERATION')) {
-    body.promoted_object = {
-      pixel_id: pixelId,
-      custom_event_type: params.objective === 'CONVERSIONS' ? 'PURCHASE' : 'LEAD',
+  // Website destination + pixel signal for lead/conversion campaigns.
+  if (params.objective === 'CONVERSIONS' || params.objective === 'LEAD_GENERATION') {
+    body.destination_type = 'WEBSITE'
+    if (pixelId) {
+      body.promoted_object = {
+        pixel_id: pixelId,
+        custom_event_type: params.objective === 'CONVERSIONS' ? 'PURCHASE' : 'LEAD',
+      }
     }
   }
 
@@ -269,7 +288,7 @@ export async function createAdCreative(params: {
     message:     params.creative.primaryText,
     name:        params.creative.headline,
     description: params.creative.description,
-    call_to_action: { type: params.creative.cta },
+    call_to_action: { type: params.creative.cta, value: { link: params.creative.landingUrl } },
   }
 
   // Prefer an uploaded image (image_hash) — Meta's native, most reliable path.
@@ -283,6 +302,12 @@ export async function createAdCreative(params: {
   return apiPost(`/${adAccountId}/adcreatives`, {
     name:               params.name,
     object_story_spec:  { page_id: pageId, link_data: linkData },
+    // Dynamic UTMs close the attribution loop: the lead that lands on the
+    // page carries the REAL campaign/adset/ad ids into the CRM automatically.
+    url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+    // Explicit stance on Advantage+ creative enhancements (required field on
+    // newer accounts): OPT_OUT keeps the creative exactly as authored.
+    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
   })
 }
 
