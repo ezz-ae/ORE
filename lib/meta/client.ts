@@ -272,7 +272,21 @@ export async function createAdSet(params: {
     }
   }
 
-  return apiPost(`/${adAccountId}/adsets`, body)
+  try {
+    return await apiPost(`/${adAccountId}/adsets`, body)
+  } catch (err) {
+    // Some countries (the UAE included) don't support city-level targeting
+    // (subcode 1487479). Self-heal: retry once at country level — the honest
+    // equivalent, since the whole audience lives in one metro anyway.
+    const cityUnsupported = err instanceof MetaApiError &&
+      (err.message.includes('City Targeting Not Supported') || err.message.includes('subcode 1487479'))
+    if (cityUnsupported && params.targeting.cityKeys.length > 0) {
+      const geo = (body.targeting as Record<string, unknown>).geo_locations as Record<string, unknown>
+      delete geo.cities
+      return apiPost(`/${adAccountId}/adsets`, body)
+    }
+    throw err
+  }
 }
 
 /**
