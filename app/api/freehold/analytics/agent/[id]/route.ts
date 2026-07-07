@@ -52,7 +52,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       `SELECT id, lead_name, project_name, property_value_aed, net_commission_aed, commission_received_aed,
               payment_status, status, created_at::text, co_agent_name
        FROM freehold_site_deals
-       WHERE agent_id = $1 OR agent_id = $2 OR co_agent_name = $3
+       WHERE agent_id = $1 OR agent_id = $2 OR co_agent_id = $1 OR co_agent_id = $2 OR co_agent_name = $3
        ORDER BY created_at DESC LIMIT 50`, [id, email, name]).catch(() => []),
     query<{ credits: string; aed: string; active: string }>(
       `SELECT COALESCE(SUM(credits_spent),0)::text AS credits,

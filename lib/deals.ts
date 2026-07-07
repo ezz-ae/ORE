@@ -56,6 +56,7 @@ export interface Deal {
   developerName: string
   agentId: string
   agentName: string
+  coAgentId: string
   coAgentName: string
   agentSharePct: number
   propertyValueAed: number
@@ -116,6 +117,7 @@ export interface DealInput {
   growthAed?: number
   brokerCommissionPct?: number
   brokerCommissionAed?: number
+  coAgentId?: string
   coAgentName?: string
   agentSharePct?: number
   notes?: string
@@ -259,6 +261,7 @@ const ensureDealsSchema = async () => {
       developer_name text,
       agent_id text,
       agent_name text,
+      co_agent_id text,
       co_agent_name text,
       agent_share_pct numeric DEFAULT 100,
       property_value_aed numeric DEFAULT 0,
@@ -298,7 +301,7 @@ const ensureDealsSchema = async () => {
   const cols: Array<[string, string]> = [
     ["lead_id", "text"], ["lead_name", "text"], ["client_phone", "text"], ["client_email", "text"],
     ["project_slug", "text"], ["project_name", "text"], ["developer_name", "text"],
-    ["agent_id", "text"], ["agent_name", "text"],
+    ["agent_id", "text"], ["agent_name", "text"], ["co_agent_id", "text"],
     ["co_agent_name", "text"], ["agent_share_pct", "numeric DEFAULT 100"],
     ["property_value_aed", "numeric DEFAULT 0"], ["agency_commission_pct", "numeric DEFAULT 0"],
     ["agency_commission_aed", "numeric DEFAULT 0"], ["referral_commission_pct", "numeric DEFAULT 0"],
@@ -369,6 +372,7 @@ const mapRow = (row: DealRow): Deal => {
     developerName: str(row.developer_name),
     agentId: str(row.agent_id),
     agentName: str(row.agent_name),
+    coAgentId: str(row.co_agent_id),
     coAgentName: str(row.co_agent_name),
     agentSharePct: row.agent_share_pct == null ? 100 : num(row.agent_share_pct),
     propertyValueAed: num(row.property_value_aed),
@@ -408,7 +412,7 @@ const mapRow = (row: DealRow): Deal => {
 
 const SELECT = `
   id, lead_id, lead_name, client_phone, client_email, project_slug, project_name, developer_name,
-  agent_id, agent_name, co_agent_name, agent_share_pct, property_value_aed, agency_commission_pct, agency_commission_aed,
+  agent_id, agent_name, co_agent_id, co_agent_name, agent_share_pct, property_value_aed, agency_commission_pct, agency_commission_aed,
   referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
   expenses_aed, growth_pct, growth_aed, broker_commission_pct, broker_commission_aed, company_net_aed,
   commission_received_aed, payment_status, status, documents,
@@ -432,7 +436,7 @@ export async function listDeals(options: ListDealsOptions = {}): Promise<Deal[]>
     const params: unknown[] = []
     if (options.agentId) {
       params.push(options.agentId)
-      where.push(`agent_id = $${params.length}`)
+      where.push(`(agent_id = $${params.length} OR co_agent_id = $${params.length})`)
     }
     if (options.status) {
       params.push(options.status)
@@ -513,10 +517,10 @@ export async function createDeal(
       property_value_aed, agency_commission_pct, agency_commission_aed,
       referral_commission_pct, referral_commission_aed, cashback_pct, cashback_aed, net_commission_aed,
       expenses_aed, growth_pct, growth_aed, broker_commission_pct, broker_commission_aed, company_net_aed,
-      status, notes, created_by, created_at, updated_at
+      status, notes, created_by, co_agent_id, created_at, updated_at
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-      $21, $22, $23, $24, $25, $26, $27, $28, $29, now(), now()
+      $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, now(), now()
     ) RETURNING ${SELECT}`,
     [
       id,
@@ -548,6 +552,7 @@ export async function createDeal(
       status,
       input.notes || "",
       creator.id,
+      input.coAgentId || null,
     ],
   )
   return mapRow(rows[0])
@@ -599,6 +604,7 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       broker_commission_pct = $22,
       broker_commission_aed = $23,
       company_net_aed = $24,
+      co_agent_id = COALESCE($25, co_agent_id),
       updated_at = now()
      WHERE id = $1 RETURNING ${SELECT}`,
     [
@@ -626,6 +632,7 @@ export async function updateDealFields(id: string, input: DealInput): Promise<De
       commission.brokerCommissionPct,
       commission.brokerCommissionAed,
       commission.companyNetAed,
+      input.coAgentId ?? null,
     ],
   )
   return rows[0] ? mapRow(rows[0]) : null
@@ -791,7 +798,9 @@ export async function getFinanceTotals(options: { agentId?: string } = {}): Prom
     let agentFilter = ""
     if (options.agentId) {
       params.push(options.agentId)
-      agentFilter = `AND agent_id = $${params.length}`
+      // A broker's totals include deals they led AND deals they co-brokered,
+      // so shared-deal commission reaches both agents' books.
+      agentFilter = `AND (agent_id = $${params.length} OR co_agent_id = $${params.length})`
     }
     const rows = await query<Record<string, unknown>>(
       `SELECT

@@ -23,6 +23,7 @@ export interface DealFormValues {
   growthAed: number
   brokerCommissionPct: number
   brokerCommissionAed: number
+  coAgentId: string
   coAgentName: string
   agentSharePct: number
   notes: string
@@ -48,6 +49,7 @@ const EMPTY: DealFormValues = {
   growthAed: 0,
   brokerCommissionPct: 0,
   brokerCommissionAed: 0,
+  coAgentId: '',
   coAgentName: '',
   agentSharePct: 100,
   notes: '',
@@ -103,6 +105,25 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
   const [invLoading, setInvLoading] = useState(false)
   const [invQuery, setInvQuery] = useState('')
   const [shared, setShared] = useState(Boolean(initial?.coAgentName))
+
+  // Co-agent roster — a shared deal picks the second broker from the real team,
+  // storing their id so shared-deal commission reaches their own totals.
+  const [roster, setRoster] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    if (!shared || roster.length) return
+    fetch('/api/freehold/team')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const members = (d?.members || d?.team || d || []) as Array<Record<string, unknown>>
+        setRoster(
+          members
+            .filter((m) => String(m.role ?? m.dbRole ?? '').toLowerCase() === 'broker')
+            .map((m) => ({ id: String(m.id ?? ''), name: String(m.name ?? m.displayName ?? '') }))
+            .filter((m) => m.id && m.name),
+        )
+      })
+      .catch(() => {})
+  }, [shared, roster.length])
 
   const set = <K extends keyof DealFormValues>(key: K, value: DealFormValues[K]) =>
     setV((prev) => ({ ...prev, [key]: value }))
@@ -439,7 +460,7 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
             checked={shared}
             onChange={(e) => {
               setShared(e.target.checked)
-              if (!e.target.checked) { set('coAgentName', ''); set('agentSharePct', 100) }
+              if (!e.target.checked) { set('coAgentId', ''); set('coAgentName', ''); set('agentSharePct', 100) }
               else if (v.agentSharePct === 100) set('agentSharePct', 50)
             }}
           />
@@ -448,8 +469,24 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
         {shared && (
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className={labelCls}>Co-agent name</label>
-              <input className={inputCls} value={v.coAgentName} onChange={(e) => set('coAgentName', e.target.value)} placeholder="Second agent's name" />
+              <label className={labelCls}>Co-agent</label>
+              <select
+                className={inputCls}
+                value={v.coAgentId}
+                onChange={(e) => {
+                  const id = e.target.value
+                  set('coAgentId', id)
+                  set('coAgentName', roster.find((m) => m.id === id)?.name ?? '')
+                }}
+              >
+                <option value="">Select a broker…</option>
+                {v.coAgentId && !roster.some((m) => m.id === v.coAgentId) && v.coAgentName && (
+                  <option value={v.coAgentId}>{v.coAgentName}</option>
+                )}
+                {roster.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className={labelCls}>Your share % <span className="text-slate-600">(co-agent gets the rest)</span></label>
