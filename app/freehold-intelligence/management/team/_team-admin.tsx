@@ -134,7 +134,7 @@ export function TeamAdmin() {
               {openMenu === m.id && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
-                  <div className="absolute right-3 top-12 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
+                  <div className="absolute end-3 top-12 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
                     <MenuItem icon={Pencil} label="Edit details" onClick={() => { setEditing(m); setOpenMenu(null) }} />
                     {m.dbRole === 'broker' && <MenuItem icon={Coins} label="Open credit" onClick={() => openCredit(m)} />}
                     <MenuItem icon={m.suspended ? CheckCircle2 : XCircle} label={m.suspended ? 'Re-enable' : 'Disable'} onClick={() => toggleDisable(m)} tone="amber" />

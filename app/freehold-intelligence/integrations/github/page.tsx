@@ -185,10 +185,10 @@ export default function GitHubPage() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && connect()}
-                className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 pr-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
+                className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 pe-9 font-mono text-sm text-white placeholder-white/20 outline-none focus:border-white/25"
               />
               <button onClick={() => setShowTok((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
+                className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400">
                 {showTok ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>

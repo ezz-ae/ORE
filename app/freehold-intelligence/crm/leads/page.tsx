@@ -121,18 +121,18 @@ export default function CrmLeadsPage() {
       <div className="mt-7 space-y-3">
         {/* Search */}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={t('crm.searchNameSourceStageAgent')}
-            className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder:text-slate-600 outline-none transition focus:border-gold/50"
+            className="w-full rounded-xl border border-line bg-surface-2 py-2.5 ps-10 pe-10 text-sm text-slate-100 placeholder:text-slate-600 outline-none transition focus:border-gold/50"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
+              className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
             >
               <X className="h-4 w-4" />
             </button>

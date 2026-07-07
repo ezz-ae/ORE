@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
+import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
@@ -24,21 +25,9 @@ import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta } from '@/li
 import { useT } from '@/lib/i18n/provider'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
-const UAE_INTERESTS = [
-  { id: '6002714398372', name: 'Real estate investing' },
-  { id: '6003105898571', name: 'Property' },
-  { id: '6003193636887', name: 'Luxury goods' },
-  { id: '6004132891184', name: 'Investment' },
-  { id: '6003409935589', name: 'Architecture' },
-]
+// Interests/cities come from the shared proven catalog — the same list the
+// AI targeting loop is constrained to.
 
-const UAE_CITIES = [
-  { key: '297928',   name: 'Dubai' },
-  { key: '295424',   name: 'Abu Dhabi' },
-  { key: '297999',   name: 'Sharjah' },
-  { key: '289274',   name: 'Ajman' },
-  { key: '290095',   name: 'Ras Al Khaimah' },
-]
 
 // ─── Wizard state ─────────────────────────────────────────────────────────────
 type WizardStep = 1 | 2 | 3 | 4
@@ -137,6 +126,32 @@ export default function NewCampaignPage() {
     launchStatus: 'PAUSED',
   })
   const [uploadingImg, setUploadingImg] = useState(false)
+
+  // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
+  const [aiTargeting, setAiTargeting] = useState<TargetingRecommendation | null>(null)
+  const [aiTargetingLoading, setAiTargetingLoading] = useState(false)
+  const [aiTargetingApplied, setAiTargetingApplied] = useState(false)
+  async function fetchAiTargeting() {
+    setAiTargetingLoading(true)
+    try {
+      const res = await fetch('/api/freehold/ai/targeting', { cache: 'no-store' })
+      const d = await res.json()
+      if (res.ok && d?.recommendation) setAiTargeting(d.recommendation)
+    } catch { /* panel simply stays collapsed */ }
+    finally { setAiTargetingLoading(false) }
+  }
+  function applyAiTargeting() {
+    if (!aiTargeting) return
+    setForm((prev) => ({
+      ...prev,
+      interestIds: aiTargeting.interestIds,
+      ageMin: aiTargeting.ageMin,
+      ageMax: aiTargeting.ageMax,
+      cityKeys: aiTargeting.cityKeys,
+      dailyBudgetAED: aiTargeting.dailyBudgetAED,
+    }))
+    setAiTargetingApplied(true)
+  }
 
   // Real projects for the picker — loaded from the live inventory API.
   const [listings, setListings] = useState<WizardListing[]>([])
@@ -472,6 +487,51 @@ export default function NewCampaignPage() {
         {step === 2 && (
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
+
+            {/* AI targeting — learned from what your past leads actually did */}
+            <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gold">{t('lm.newCampaign.ai.title')}</span>
+                {!aiTargeting ? (
+                  <button
+                    type="button"
+                    onClick={fetchAiTargeting}
+                    disabled={aiTargetingLoading}
+                    className="rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    {aiTargetingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('lm.newCampaign.ai.get')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={applyAiTargeting}
+                    disabled={aiTargetingApplied}
+                    className="rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+                  >
+                    {aiTargetingApplied ? t('lm.newCampaign.ai.applied') : t('lm.newCampaign.ai.apply')}
+                  </button>
+                )}
+              </div>
+              {!aiTargeting && !aiTargetingLoading && (
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('lm.newCampaign.ai.hint')}</p>
+              )}
+              {aiTargeting && (
+                <div className="mt-2 space-y-2 text-xs leading-relaxed">
+                  <p className="text-slate-200">{aiTargeting.analysis}</p>
+                  <p className="text-slate-400">{aiTargeting.rationale}</p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {UAE_INTERESTS.filter((i) => aiTargeting.interestIds.includes(i.id)).map((i) => (
+                      <span key={i.id} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] text-gold">{i.name}</span>
+                    ))}
+                    <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">{aiTargeting.ageMin}–{aiTargeting.ageMax}</span>
+                    <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">AED {aiTargeting.dailyBudgetAED}/d</span>
+                  </div>
+                  {aiTargeting.suggestedNewInterests.length > 0 && (
+                    <p className="text-slate-500">{t('lm.newCampaign.ai.research')}: {aiTargeting.suggestedNewInterests.join(' · ')}</p>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div data-coach="wiz-budget">
               <Label>{t('lm.newCampaign.s2.label.budget')}</Label>

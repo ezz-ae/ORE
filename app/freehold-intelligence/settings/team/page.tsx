@@ -166,13 +166,13 @@ export default function TeamPage() {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as Role)}
-                className="appearance-none rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 pr-8 text-sm text-white outline-none focus:border-gold/40"
+                className="appearance-none rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 pe-8 text-sm text-white outline-none focus:border-gold/40"
               >
                 {ASSIGNABLE_ROLES.map((r) => (
                   <option key={r} value={r}>{t(ROLE_META[r].labelKey)}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              <ChevronDown className="pointer-events-none absolute end-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             </div>
           </div>
           <div className="flex gap-2">
@@ -267,7 +267,7 @@ export default function TeamPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
                         {openMenu === member.id && (
-                          <div className="absolute right-0 top-9 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
+                          <div className="absolute end-0 top-9 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
                             {ASSIGNABLE_ROLES.filter((r) => r !== member.dbRole).map((r) => {
                               const RoleIcon = ROLE_META[r].Icon
                               return (

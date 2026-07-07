@@ -9,6 +9,7 @@ import {
   Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
   Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
   BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper, History, Trash2,
+  Library as LibraryIcon, Image as ImageIcon2, Video, FileDown,
 } from 'lucide-react'
 import { saveAccountMemory } from '@/lib/freehold/account-memory'
 import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
@@ -49,12 +50,26 @@ type DemoOutput = {
 const allOutputs: DemoOutput[] = []
 const pinnedOutputs: DemoOutput[] = []
 
-type CenterTab = 'chat' | 'expert' | 'saved' | 'pinned'
+type CenterTab = 'chat' | 'expert' | 'library' | 'saved' | 'pinned'
 
 // Read-only view of a stored Expert turn (the side chat's rich blocks,
 // flattened to text for the Suite's history reader).
 type ExpertStoredTurn = { role: 'user' | 'assistant'; content?: string; blocks?: ExpertBlock[]; createdAt: string }
 type ExpertSessionRow = { id: string; title: string; messageCount: number; updatedAt: string }
+
+// The Library — every produced asset in one shelf (reports, notes, ad
+// creatives, images, videos, PDFs). Media is URL-based, ready for a
+// generative media model to publish into the same store later.
+type LibraryKind = 'report' | 'note' | 'creative' | 'image' | 'video' | 'pdf'
+type LibraryItem = { id: string; kind: LibraryKind; title: string; content: string | null; url: string | null; createdAt: string }
+const LIB_KINDS: LibraryKind[] = ['report', 'note', 'creative', 'image', 'video', 'pdf']
+function libIcon(kind: LibraryKind, className = 'h-3.5 w-3.5') {
+  if (kind === 'image') return <ImageIcon2 className={className} />
+  if (kind === 'video') return <Video className={className} />
+  if (kind === 'pdf') return <FileDown className={className} />
+  if (kind === 'creative') return <Megaphone className={className} />
+  return <FileText className={className} />
+}
 
 function expertBlocksText(blocks: ExpertBlock[] | undefined): string {
   if (!blocks?.length) return ''
@@ -151,6 +166,43 @@ export default function NotebookPage() {
     try { await fetch(`/api/freehold/expert/sessions?id=${encodeURIComponent(id)}`, { method: 'DELETE' }) } catch {}
     setExpertSessions((s) => s.filter((x) => x.id !== id))
     if (openExpertId === id) setOpenExpertId(null)
+  }
+
+  // ── Library ────────────────────────────────────────────────────────────────
+  const [libItems, setLibItems] = useState<LibraryItem[]>([])
+  const [libFilter, setLibFilter] = useState<'All' | LibraryKind>('All')
+  const [libOpenId, setLibOpenId] = useState<string | null>(null)
+  const [libForm, setLibForm] = useState<{ kind: LibraryKind; title: string; url: string }>({ kind: 'image', title: '', url: '' })
+  const [libSaving, setLibSaving] = useState(false)
+  useEffect(() => {
+    fetch('/api/freehold/library')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.items)) setLibItems(d.items) })
+      .catch(() => {})
+  }, [])
+  const libVisible = libFilter === 'All' ? libItems : libItems.filter((i) => i.kind === libFilter)
+
+  async function addLibMedia() {
+    if (!libForm.title.trim() || !/^https?:\/\//.test(libForm.url)) { toast.error(t('nb.lib.needUrl')); return }
+    setLibSaving(true)
+    try {
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: libForm.kind, title: libForm.title.trim(), url: libForm.url.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error || 'save failed')
+      setLibItems((prev) => [d.item, ...prev])
+      setLibForm({ kind: 'image', title: '', url: '' })
+      toast.success(t('nb.lib.saved'))
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('nb.lib.saveFailed'))
+    } finally { setLibSaving(false) }
+  }
+
+  async function deleteLibItem(id: string) {
+    try { await fetch(`/api/freehold/library?id=${encodeURIComponent(id)}`, { method: 'DELETE' }) } catch {}
+    setLibItems((prev) => prev.filter((i) => i.id !== id))
   }
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
@@ -303,15 +355,15 @@ export default function NotebookPage() {
 
         {/* search */}
         <div className="relative border-b border-line px-3 py-2.5">
-          <Search className="absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute start-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             value={sourceQuery}
             onChange={e => setSourceQuery(e.target.value)}
             placeholder={t('nb.searchSources')}
-            className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
+            className="w-full rounded-lg border border-line bg-surface py-1.5 ps-8 pe-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
           />
           {sourceQuery && (
-            <button onClick={() => setSourceQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <button onClick={() => setSourceQuery('')} className="absolute end-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
               <X className="h-3 w-3" />
             </button>
           )}
@@ -521,7 +573,7 @@ export default function NotebookPage() {
             </button>
           </div>
           <div className="flex items-center gap-1">
-            {((['chat', 'expert', 'saved', 'pinned'] as CenterTab[])).map(tab => (
+            {((['chat', 'expert', 'library', 'saved', 'pinned'] as CenterTab[])).map(tab => (
               <button
                 key={tab}
                 onClick={() => setCenterTab(tab)}
@@ -532,7 +584,7 @@ export default function NotebookPage() {
                     : 'text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
-                {tab === 'saved' ? t('nb.savedOutputs') : tab === 'pinned' ? t('nb.pinned') : tab === 'expert' ? t('nb.expertChats') : t('nb.chat')}
+                {tab === 'saved' ? t('nb.savedOutputs') : tab === 'pinned' ? t('nb.pinned') : tab === 'expert' ? t('nb.expertChats') : tab === 'library' ? t('nb.library') : t('nb.chat')}
               </button>
             ))}
           </div>
@@ -689,16 +741,123 @@ export default function NotebookPage() {
           </div>
         )}
 
+        {/* ── tab: Library — every produced asset on one shelf ── */}
+        {centerTab === 'library' && (
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            {/* Kind filter */}
+            <div className="mb-4 flex flex-wrap items-center gap-1.5">
+              {(['All', ...LIB_KINDS] as const).map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setLibFilter(k as 'All' | LibraryKind)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium capitalize transition ${
+                    libFilter === k ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line bg-surface text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {k === 'All' ? t('nb.lib.all') : t(`nb.lib.kind.${k}`)}
+                </button>
+              ))}
+            </div>
+
+            {/* Add media by URL — the shelf a media model will publish into */}
+            <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3">
+              <select
+                value={libForm.kind}
+                onChange={(e) => setLibForm((f) => ({ ...f, kind: e.target.value as LibraryKind }))}
+                className="rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-xs text-white outline-none"
+              >
+                {(['image', 'video', 'pdf'] as LibraryKind[]).map((k) => (
+                  <option key={k} value={k}>{t(`nb.lib.kind.${k}`)}</option>
+                ))}
+              </select>
+              <input
+                value={libForm.title}
+                onChange={(e) => setLibForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder={t('nb.lib.titlePlaceholder')}
+                className="min-w-[120px] flex-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
+              />
+              <input
+                value={libForm.url}
+                onChange={(e) => setLibForm((f) => ({ ...f, url: e.target.value }))}
+                placeholder="https://…"
+                className="min-w-[160px] flex-[2] rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 font-mono text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
+              />
+              <button
+                onClick={addLibMedia}
+                disabled={libSaving}
+                className="rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-50"
+              >
+                {libSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('common.add')}
+              </button>
+            </div>
+
+            {libVisible.length === 0 ? (
+              <div className="flex h-40 flex-col items-center justify-center gap-2 text-slate-500">
+                <LibraryIcon className="h-6 w-6 opacity-30" />
+                <p className="text-sm">{t('nb.lib.empty')}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {libVisible.map((item) => {
+                  const isOpen = libOpenId === item.id
+                  return (
+                    <div key={item.id} className="overflow-hidden rounded-xl border border-line bg-surface">
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line-strong bg-surface-2 text-slate-300">
+                          {libIcon(item.kind)}
+                        </div>
+                        <button
+                          onClick={() => item.content && setLibOpenId(isOpen ? null : item.id)}
+                          className="min-w-0 flex-1 text-start"
+                        >
+                          <div className="truncate text-sm font-semibold text-white">{item.title}</div>
+                          <div className="mt-0.5 text-xs capitalize text-slate-500">
+                            {t(`nb.lib.kind.${item.kind}`)} · {relativeTime(item.createdAt, t)}
+                          </div>
+                        </button>
+                        {item.url && (
+                          <a href={item.url} target="_blank" rel="noreferrer"
+                            className="shrink-0 rounded-full border border-line-strong bg-surface-2 px-3 py-1 text-xs text-slate-200 transition hover:border-gold/40 hover:text-white">
+                            {t('nb.lib.open')}
+                          </a>
+                        )}
+                        <button onClick={() => deleteLibItem(item.id)}
+                          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-600 transition hover:bg-red-400/10 hover:text-red-300">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {isOpen && item.content && (
+                        <div className="border-t border-line bg-white/[0.02] p-3">
+                          {item.content.trimStart().startsWith('<') ? (
+                            <iframe
+                              title={item.title}
+                              sandbox=""
+                              srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#181613;padding:12px">${item.content}</body>`}
+                              className="h-64 w-full rounded-lg border border-line bg-surface"
+                            />
+                          ) : (
+                            <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-app p-3 text-xs leading-relaxed text-slate-300">{item.content}</pre>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── tab: saved outputs ── */}
         {centerTab === 'saved' && (
           <div className="flex-1 overflow-y-auto px-5 py-5">
             <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
               <input
                 value={convQuery}
                 onChange={e => setConvQuery(e.target.value)}
                 placeholder={t('nb.searchConversations')}
-                className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
+                className="w-full rounded-xl border border-line bg-surface py-2 ps-9 pe-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
               />
             </div>
 

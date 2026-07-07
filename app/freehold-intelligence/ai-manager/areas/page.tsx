@@ -186,10 +186,10 @@ export default function AreaGuidesPage() {
 
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input type="text" placeholder={t('paim.areas.searchPlaceholder')} value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-teal-400/30" />
+            className="w-full rounded-lg border border-line bg-surface py-2 ps-8 pe-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-teal-400/30" />
         </div>
         <div className="flex gap-1 rounded-lg border border-line bg-surface p-1">
           {(['All', 'Published', 'Draft', 'Missing'] as FilterKey[]).map((f) => (

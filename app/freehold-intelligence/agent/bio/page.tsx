@@ -121,8 +121,8 @@ export default function AgentBioEditorPage() {
           <label className={label}>Featured projects <span className="text-slate-600">({p.projectSlugs.length} selected)</span></label>
         </div>
         <div className="relative mb-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <input className={`${input} pl-9`} value={invQuery} onChange={(e) => setInvQuery(e.target.value)} placeholder="Search your inventory…" />
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input className={`${input} ps-9`} value={invQuery} onChange={(e) => setInvQuery(e.target.value)} placeholder="Search your inventory…" />
         </div>
         <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-line bg-surface p-1.5">
           {invFiltered.length === 0 ? (

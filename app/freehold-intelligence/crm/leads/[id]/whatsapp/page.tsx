@@ -537,7 +537,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                 <MoreVertical className="h-4 w-4" />
               </button>
               {showOptions && (
-                <div className="absolute right-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
+                <div className="absolute end-0 top-9 z-50 w-44 overflow-hidden rounded-xl border border-white/[0.12] bg-[#1D2B38] shadow-xl">
                   {([
                     { label: t('crm.archiveChat'), run: () => patchLead({ archived: true }, t('crm.chatArchived')) },
                     { label: t('crm.muteNotifications'), run: () => patchLead({ muted_until: new Date(Date.now() + 30 * 864e5).toISOString() }, t('crm.mutedDays')) },

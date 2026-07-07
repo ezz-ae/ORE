@@ -35,7 +35,7 @@ export function WhatsNewMenuButton({ onClick }: { onClick?: () => void }) {
       className="flex w-full items-center gap-2 border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
     >
       <Sparkles className="h-4 w-4" />
-      <span className="flex-1 text-left">{t('whatsnew.menu')}</span>
+      <span className="flex-1 text-start">{t('whatsnew.menu')}</span>
       {unseen && <span className="h-2 w-2 rounded-full bg-gold" aria-label="new" />}
     </button>
   )
@@ -94,7 +94,7 @@ export function WhatsNew() {
       {/* Non-blocking corner nudge */}
       {toast && !open && latest && (
         // On phones the corner nudge sits ABOVE the bottom tab bar, never on it.
-        <div className="fixed bottom-20 right-4 z-[200] w-[min(92vw,340px)] md:bottom-4">
+        <div className="fixed bottom-20 end-4 z-[200] w-[min(92vw,340px)] md:bottom-4">
           <div className="overflow-hidden rounded-2xl border border-gold/25 bg-surface shadow-[0_16px_40px_rgba(15,23,42,0.28)]">
             <div className="flex items-start gap-3 p-4">
               <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
