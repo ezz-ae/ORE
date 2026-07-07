@@ -161,11 +161,28 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
   return res.data ?? []
 }
 
-function objectiveToOptimizationGoal(obj: MetaCampaignObjective): MetaOptimizationGoal {
+// Graph v17+ accepts only ODAX outcome objectives for NEW campaigns — the
+// legacy names (LEAD_GENERATION/CONVERSIONS/LINK_CLICKS) are rejected with
+// error 100. The wizard keeps its familiar vocabulary; we translate here.
+// Website-lead campaigns need a pixel to optimize for leads; without one the
+// honest fallback is a traffic campaign optimized for landing-page views.
+function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean): string {
   switch (obj) {
-    case 'LEAD_GENERATION': return 'LEAD_GENERATION'
-    case 'CONVERSIONS':     return 'OFFSITE_CONVERSIONS'
-    default:                return 'LINK_CLICKS'
+    case 'LEAD_GENERATION': return hasPixel ? 'OUTCOME_LEADS' : 'OUTCOME_TRAFFIC'
+    case 'CONVERSIONS':     return hasPixel ? 'OUTCOME_SALES' : 'OUTCOME_TRAFFIC'
+    default:                return 'OUTCOME_TRAFFIC'
+  }
+}
+
+function objectiveToOptimizationGoal(obj: MetaCampaignObjective, hasPixel: boolean): MetaOptimizationGoal {
+  switch (obj) {
+    case 'LEAD_GENERATION':
+    case 'CONVERSIONS':
+      // With a pixel we optimize on real conversion signal; without one,
+      // landing-page views is the best available quality proxy.
+      return hasPixel ? 'OFFSITE_CONVERSIONS' : 'LANDING_PAGE_VIEWS'
+    default:
+      return 'LINK_CLICKS'
   }
 }
 
@@ -178,7 +195,7 @@ export async function createAdSet(params: {
   status: 'ACTIVE' | 'PAUSED'
 }): Promise<{ id: string }> {
   const { adAccountId, pixelId } = await creds()
-  const optimizationGoal = objectiveToOptimizationGoal(params.objective)
+  const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId)
 
   const targetingSpec: Record<string, unknown> = {
     geo_locations: {
@@ -209,7 +226,10 @@ export async function createAdSet(params: {
 
   // Attach pixel for conversion/offsite campaigns
   if (pixelId && (params.objective === 'CONVERSIONS' || params.objective === 'LEAD_GENERATION')) {
-    body.promoted_object = { pixel_id: pixelId, custom_event_type: 'LEAD' }
+    body.promoted_object = {
+      pixel_id: pixelId,
+      custom_event_type: params.objective === 'CONVERSIONS' ? 'PURCHASE' : 'LEAD',
+    }
   }
 
   return apiPost(`/${adAccountId}/adsets`, body)
@@ -397,10 +417,11 @@ export async function launchFullCampaign(params: {
 }): Promise<LaunchCampaignResult> {
   const { adAccountId } = await creds()
 
-  // 1 — Campaign
+  // 1 — Campaign (ODAX objective — v20 rejects the legacy names)
+  const { pixelId } = await creds()
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
     name:                  params.campaignName,
-    objective:             params.objective,
+    objective:             toOdaxObjective(params.objective, !!pixelId),
     status:                params.launchStatus,
     special_ad_categories: [],
   })
