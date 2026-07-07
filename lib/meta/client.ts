@@ -110,10 +110,31 @@ async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<
 
   const json = (await res.json()) as MetaApiResponse<T> & T
   if ('error' in json && json.error) {
-    const e = json.error
-    throw new MetaApiError(e.message, e.code, e.type, e.fbtrace_id)
+    const e = json.error as { message: string; code: number; type: string; fbtrace_id?: string; error_subcode?: number; error_user_msg?: string; error_user_title?: string }
+    const detail = [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
+      .filter(Boolean).join(' — ')
+    throw new MetaApiError(detail, e.code, e.type, e.fbtrace_id)
   }
   return json as T
+}
+
+/**
+ * Ingest an external image into the ad account: fetch the bytes server-side
+ * and upload them, returning an image_hash — Meta's reliable creative path.
+ * External `picture` URLs are rejected surprisingly often (redirects, webp,
+ * hotlink protection); a native upload never is.
+ */
+export async function ingestImageFromUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+    if (!res.ok) return null
+    const buf = Buffer.from(await res.arrayBuffer())
+    if (buf.length < 1000 || buf.length > 8_000_000) return null
+    const { hash } = await uploadAdImage(buf.toString('base64'))
+    return hash
+  } catch {
+    return null
+  }
 }
 
 // ─── Campaigns ───────────────────────────────────────────────────────────────
@@ -415,10 +436,9 @@ export async function launchFullCampaign(params: {
   creative:     CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
 }): Promise<LaunchCampaignResult> {
-  const { adAccountId } = await creds()
+  const { adAccountId, pixelId } = await creds()
 
   // 1 — Campaign (ODAX objective — v20 rejects the legacy names)
-  const { pixelId } = await creds()
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
     name:                  params.campaignName,
     objective:             toOdaxObjective(params.objective, !!pixelId),
@@ -426,29 +446,48 @@ export async function launchFullCampaign(params: {
     special_ad_categories: [],
   })
 
+  // From here on, a failure must not leave a headless campaign behind.
+  const step = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
+    try {
+      return await fn()
+    } catch (err) {
+      await apiPost(`/${campaign.id}`, { status: 'DELETED' }).catch(() => {})
+      if (err instanceof MetaApiError) {
+        throw new MetaApiError(`[${name}] ${err.message}`, err.code, err.type, err.fbtrace)
+      }
+      throw err
+    }
+  }
+
   // 2 — Ad Set
-  const adSet = await createAdSet({
+  const adSet = await step('ad set', () => createAdSet({
     campaignId:     campaign.id,
     name:           `${params.listingName} — Ad Set`,
     objective:      params.objective,
     dailyBudgetAED: params.dailyBudgetAED,
     targeting:      params.targeting,
     status:         params.launchStatus,
-  })
+  }))
 
-  // 3 — Creative
-  const creative = await createAdCreative({
+  // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad
+  // account first (image_hash); external `picture` URLs are the flaky path.
+  const creativeInput = { ...params.creative }
+  if (!creativeInput.imageHash && creativeInput.imageUrl) {
+    const hash = await ingestImageFromUrl(creativeInput.imageUrl)
+    if (hash) creativeInput.imageHash = hash
+  }
+  const creative = await step('creative', () => createAdCreative({
     name:     `${params.listingName} — Creative`,
-    creative: params.creative,
-  })
+    creative: creativeInput,
+  }))
 
   // 4 — Ad
-  const ad = await createAd({
+  const ad = await step('ad', () => createAd({
     adSetId:    adSet.id,
     name:       `${params.listingName} — Ad`,
     creativeId: creative.id,
     status:     params.launchStatus,
-  })
+  }))
 
   return {
     campaignId: campaign.id,
