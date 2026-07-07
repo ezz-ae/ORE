@@ -10,7 +10,7 @@ const WhatsAppGlyph = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const HIDDEN_PREFIXES = ["/freehold-intelligence", "/chat"]
+const HIDDEN_PREFIXES = ["/freehold-intelligence", "/chat", "/server", "/crm"]
 
 export function WhatsAppFloat() {
   const pathname = usePathname() || "/"

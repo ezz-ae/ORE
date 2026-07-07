@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { authenticate, seedTeam } from '@/lib/freehold/accounts'
 import { authenticateFromDB } from '@/lib/freehold/auth-db'
 import { signSession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 
@@ -18,15 +17,10 @@ export async function POST(req: Request) {
   const email = body.email ?? ''
   const password = body.password ?? ''
 
-  // Ensure the real team exists in the DB so login, Team, Assignment and Agent
-  // capacity all share the same accounts.
-  await seedTeam()
-
-  // Try DB first, then fall back to hardcoded accounts
-  let user = await authenticateFromDB(email, password)
-  if (!user) {
-    user = authenticate(email, password)
-  }
+  // DB-only authentication — real accounts with hashed passwords. The old
+  // hardcoded-credential fallback and demo-team seeding are gone: they shipped
+  // plaintext passwords and resurrected deleted accounts on every login.
+  const user = await authenticateFromDB(email, password)
 
   if (!user) {
     return NextResponse.json({ error: 'Incorrect email or password' }, { status: 401 })

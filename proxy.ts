@@ -26,6 +26,7 @@ const PUBLIC_API_EXACT = new Set([
   "/api/embed",
   "/api/lp-analytics",          // anonymous landing-page analytics ingestion
   "/api/leads",                 // public landing-page lead capture (POST)
+  "/api/auth/roster",           // login-screen profile picker (names/roles only)
   "/api/auth/login",
   "/api/auth/request-reset",
   "/api/auth/reset",

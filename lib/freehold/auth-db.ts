@@ -33,6 +33,16 @@ function verifyPassword(plaintext: string, stored: string | null): boolean {
       return timingSafeEqual(derivedKey, Buffer.from(hashHex, 'hex'))
     } catch { return false }
   }
+  // Canonical app format (lib/auth hashPassword): "salt:hash" — scrypt-64.
+  // This is what real accounts created via the CRM/API use, so /server login
+  // accepts the same passwords as /api/auth/login.
+  if (parts.length === 2) {
+    const [salt, hashHex] = parts
+    try {
+      const derivedKey = scryptSync(plaintext, salt, 64)
+      return timingSafeEqual(derivedKey, Buffer.from(hashHex, 'hex'))
+    } catch { return false }
+  }
   return false
 }
 

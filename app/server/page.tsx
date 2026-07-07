@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, Lock, Mail, Check, Search } from 'lucide-react'
 import { login } from '@/lib/freehold/session'
@@ -8,42 +8,7 @@ import type { Role } from '@/lib/freehold/session-types'
 import { ROLE_COLORS } from '@/lib/freehold/session-types'
 import { BRAND, brandName } from '@/lib/freehold/brand'
 
-type UserHint = { email: string; name: string; initials: string; role: Role; password: string }
-
-// Display-only hints (shown in the role selector). Passwords are pre-filled
-// on select so each team member can sign in with one click.
-const USERS: UserHint[] = [
-  // CEO
-  { email: 'bashar@freeholdproperty.ae',      name: 'Bashar',       initials: 'BS', role: 'ceo',           password: 'FH_CEO_2026'    },
-  // Management
-  { email: 'yamen@freeholdproperty.ae',        name: 'Yamen',        initials: 'YA', role: 'director',      password: 'FH_Mgmt_2026'   },
-  { email: 'majd@freeholdproperty.ae',         name: 'Majd',         initials: 'MJ', role: 'director',      password: 'FH_Mgmt_2026'   },
-  // Admin / Office
-  { email: 'admin@freeholdproperty.ae',        name: 'Cor',          initials: 'CO', role: 'admin',         password: 'FH_Admin_2026'  },
-  { email: 'info@freeholdproperty.ae',         name: 'Office',       initials: 'OF', role: 'admin',         password: 'FH_Admin_2026'  },
-  // Brokers (alphabetical)
-  { email: 'ahmad@freeholdproperty.ae',        name: 'Ahmad',        initials: 'AH', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'ali.javed@freeholdproperty.ae',    name: 'Ali Javed',    initials: 'AJ', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'fatemah@freeholdproperty.ae',      name: 'Fatemah',      initials: 'FT', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'hanna@freeholdproperty.ae',        name: 'Hanna',        initials: 'HN', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'ibrahim@freeholdproperty.ae',      name: 'Ibrahim',      initials: 'IB', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'ihab@freeholdproperty.ae',         name: 'Ihab',         initials: 'IH', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'julie@freeholdproperty.ae',        name: 'Julie',        initials: 'JU', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'kashif@freeholdproperty.ae',       name: 'Kashif',       initials: 'KF', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'laila@freeholdproperty.ae',        name: 'Laila',        initials: 'LA', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'maha@freeholdproperty.ae',         name: 'Maha',         initials: 'MA', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'manar@freeholdproperty.ae',        name: 'Manar',        initials: 'MN', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'meera@freeholdproperty.ae',        name: 'Meera',        initials: 'ME', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'milia@freeholdproperty.ae',        name: 'Milia',        initials: 'MI', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'norelly@freeholdproperty.ae',      name: 'Norelly',      initials: 'NR', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'norelly1@freeholdproperty.ae',     name: 'Norelly (2)',  initials: 'N2', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'pravin@freeholdproperty.ae',       name: 'Pravin',       initials: 'PV', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'samah@freeholdproperty.ae',        name: 'Samah',        initials: 'SM', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'shaima@freeholdproperty.ae',       name: 'Shaima',       initials: 'SH', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'taleen@freeholdproperty.ae',       name: 'Taleen',       initials: 'TN', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'talal@freeholdproperty.ae',        name: 'Talal',        initials: 'TL', role: 'broker',        password: 'FH_Broker_2026' },
-  { email: 'wissam.farhat@freeholdproperty.ae',name: 'Wissam Farhat',initials: 'WF', role: 'broker',        password: 'FH_Broker_2026' },
-]
+type Profile = { email: string; name: string; initials: string; role: Role }
 
 type FilterTab = 'all' | 'management' | 'admin' | 'broker'
 
@@ -54,9 +19,9 @@ const TAB_META: Record<FilterTab, { label: string; desc: string }> = {
   broker:     { label: 'Broker', desc: 'Agents — personal workspace & leads' },
 }
 
-function inTab(role: UserHint['role'], t: FilterTab): boolean {
+function inTab(role: Role, t: FilterTab): boolean {
   if (t === 'all') return true
-  if (t === 'management') return role === 'ceo' || role === 'director'
+  if (t === 'management') return role === 'ceo' || role === 'director' || role === 'sales_manager' || role === 'marketing'
   return role === t
 }
 
@@ -73,10 +38,20 @@ export default function ServerAuth() {
   const [search, setSearch]     = useState('')
   const [tab, setTab]           = useState<FilterTab>('all')
 
-  function selectUser(u: UserHint) {
+  // Real team, from the database — only accounts that can actually sign in.
+  const [profiles, setProfiles] = useState<Profile[]>([])
+  useEffect(() => {
+    fetch('/api/auth/roster')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.profiles)) setProfiles(d.profiles) })
+      .catch(() => {})
+  }, [])
+
+  // Selecting a profile prefills the email only — everyone types their own
+  // password (no credentials ever ship to the browser).
+  function selectUser(u: Profile) {
     setSelected(u.email)
     setEmail(u.email)
-    setPassword(u.password)
     setError(false)
   }
 
@@ -95,10 +70,10 @@ export default function ServerAuth() {
   }
 
   const q = search.toLowerCase()
-  const visible = USERS.filter((u) => inTab(u.role, tab) && (!q || u.name.toLowerCase().includes(q)))
-  const tabCount = (t: FilterTab) => USERS.filter((u) => inTab(u.role, t)).length
+  const visible = profiles.filter((u) => inTab(u.role, tab) && (!q || u.name.toLowerCase().includes(q)))
+  const tabCount = (t: FilterTab) => profiles.filter((u) => inTab(u.role, t)).length
 
-  const selectedUser = USERS.find((u) => u.email === selected)
+  const selectedUser = profiles.find((u) => u.email === selected)
 
   return (
     <div
