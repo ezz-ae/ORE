@@ -10,16 +10,17 @@ type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 type DuplicateCluster = {
   id: string
-  confidence: 'high' | 'medium' | 'low'
+  confidence: 'high' | 'medium'
   matchReason: string[]
   primary: { id: string; name: string; phone: string; email: string; source: string; stage: string; intentScore: number; assignedAgent: string; arrivedAt: string }
   duplicate: { id: string; name: string; phone: string; email: string; source: string; stage: string; intentScore: number; assignedAgent: string; arrivedAt: string }
 }
 
+// Confidence is derived from real matching signals: same phone plus a second
+// corroborating field (email or name) = high; same phone alone = medium.
 const CONFIDENCE_CONFIG = {
   high:   { labelKey: 'crm.confidenceHigh',   border: 'border-red-400/20',    bg: 'bg-red-400/[0.04]',     text: 'text-red-300',     dot: 'bg-red-400' },
   medium: { labelKey: 'crm.confidenceMedium', border: 'border-orange-400/20', bg: 'bg-orange-400/[0.04]', text: 'text-orange-300',  dot: 'bg-orange-400' },
-  low:    { labelKey: 'crm.confidenceLow',    border: 'border-line',      bg: 'bg-surface',          text: 'text-slate-400',   dot: 'bg-slate-500' },
 }
 
 function LeadCard({ lead, isPrimary, t }: { lead: DuplicateCluster['primary']; isPrimary: boolean; t: TFn }) {
@@ -53,9 +54,14 @@ function LeadCard({ lead, isPrimary, t }: { lead: DuplicateCluster['primary']; i
   )
 }
 
-type ConfidenceFilter = 'All' | 'high' | 'medium' | 'low'
+type ConfidenceFilter = 'All' | 'high' | 'medium'
 
 const normPhone = (p: string) => (p || '').replace(/\D/g, '').slice(-9)
+const normName  = (n: string) => (n || '').trim().toLowerCase().replace(/\s+/g, ' ')
+
+// The dismissal timestamp is served by the CRM leads API but isn't part of the
+// shared CRMLeadIntelligence type.
+type LeadWithDismissal = { duplicateDismissedAt?: string | null }
 
 export default function CrmDuplicatesPage() {
   const t = useT()
@@ -64,15 +70,19 @@ export default function CrmDuplicatesPage() {
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>('All')
   const [flash, setFlash] = useState<string | null>(null)
 
-  // Real duplicate detection: group live leads that share a phone number (or email).
+  // Real duplicate detection: group live leads that share a phone number.
+  // Lost leads (incl. previously merged duplicates) and clusters dismissed as
+  // "not a duplicate" (persisted on the lead rows) are excluded.
   const allClusters = useMemo<DuplicateCluster[]>(() => {
     const card = (l: typeof leads[number]) => ({
       id: l.id, name: l.name, phone: l.phone, email: l.email, source: l.source,
       stage: l.stage, intentScore: l.intentScore, assignedAgent: l.assignedAgent || 'Unassigned',
       arrivedAt: l.lastContactAt,
     })
+    const dismissed = (l: typeof leads[number]) => !!(l as LeadWithDismissal).duplicateDismissedAt
     const byPhone = new Map<string, typeof leads>()
     for (const l of leads) {
+      if (l.pipelineStage === 'lost') continue
       const key = normPhone(l.phone)
       if (key.length < 7) continue
       byPhone.set(key, [...(byPhone.get(key) || []), l])
@@ -84,11 +94,18 @@ export default function CrmDuplicatesPage() {
       const primary = sorted[0]
       for (let i = 1; i < sorted.length; i++) {
         const dup = sorted[i]
-        const sameEmail = primary.email && dup.email && primary.email.toLowerCase() === dup.email.toLowerCase()
+        if (dismissed(primary) && dismissed(dup)) continue
+        const sameEmail = !!(primary.email && dup.email && primary.email.toLowerCase() === dup.email.toLowerCase())
+        const sameName = !!(normName(primary.name) && normName(primary.name) === normName(dup.name))
         clusters.push({
           id: `dup_${key}_${dup.id}`,
-          confidence: sameEmail ? 'high' : 'high',
-          matchReason: ['crm.matchSamePhone', ...(sameEmail ? ['crm.matchSameEmail'] : dup.source !== primary.source ? ['crm.matchDifferentSource'] : [])],
+          confidence: sameEmail || sameName ? 'high' : 'medium',
+          matchReason: [
+            'crm.matchSamePhone',
+            ...(sameEmail ? ['crm.matchSameEmail'] : []),
+            ...(sameName ? ['crm.matchSameName'] : []),
+            ...(!sameEmail && !sameName && dup.source !== primary.source ? ['crm.matchDifferentSource'] : []),
+          ],
           primary: card(primary),
           duplicate: card(dup),
         })
@@ -124,13 +141,41 @@ export default function CrmDuplicatesPage() {
       fetch(`/api/freehold/crm/leads/${cluster.duplicate.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'lost', message: `Merged into duplicate ${cluster.primary.id}` }),
-      }).catch(() => {})
+      })
+        .then((res) => { if (!res.ok) throw new Error('failed') })
+        .catch(() => {
+          setResolved((prev) => {
+            const next = { ...prev }
+            delete next[id]
+            return next
+          })
+          triggerFlash(t('crm.updateFailed'))
+        })
     }
   }
 
   function handleDismiss(id: string) {
+    const cluster = allClusters.find((c) => c.id === id)
     setResolved((prev) => ({ ...prev, [id]: 'dismissed' }))
     triggerFlash(t('crm.markedNotDuplicate'))
+    // Persist on both cluster members so the dismissal survives reloads.
+    if (cluster) {
+      const dismissedAt = new Date().toISOString()
+      Promise.all([cluster.primary.id, cluster.duplicate.id].map((leadId) =>
+        fetch(`/api/freehold/crm/leads/${leadId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ duplicate_dismissed_at: dismissedAt }),
+        }).then((res) => { if (!res.ok) throw new Error('failed') })
+      )).catch(() => {
+        // Revert the optimistic hide if persistence failed.
+        setResolved((prev) => {
+          const next = { ...prev }
+          delete next[id]
+          return next
+        })
+        triggerFlash(t('crm.updateFailed'))
+      })
+    }
   }
 
   return (
@@ -184,7 +229,7 @@ export default function CrmDuplicatesPage() {
             <h2 className="mt-1 text-xl font-semibold text-white">{t('crm.reviewAndResolve')}</h2>
           </div>
           <div className="ml-auto flex gap-1.5">
-            {(['All', 'high', 'medium', 'low'] as ConfidenceFilter[]).map((f) => (
+            {(['All', 'high', 'medium'] as ConfidenceFilter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setConfidenceFilter(f)}
@@ -195,7 +240,7 @@ export default function CrmDuplicatesPage() {
                     : 'border-line text-slate-400 hover:text-slate-300',
                 ].join(' ')}
               >
-                {f === 'All' ? t('crm.all') : f === 'high' ? t('crm.urgency.high') : f === 'medium' ? t('crm.urgency.medium') : t('crm.urgency.low')}
+                {f === 'All' ? t('crm.all') : f === 'high' ? t('crm.urgency.high') : t('crm.urgency.medium')}
               </button>
             ))}
           </div>

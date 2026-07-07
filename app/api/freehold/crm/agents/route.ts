@@ -27,6 +27,7 @@ export async function GET() {
       hot_leads: string
       recent_wins: string
       overdue_followups: string
+      top_interest: string | null
     }>(
       `SELECT
          u.id,
@@ -37,7 +38,8 @@ export async function GET() {
          COALESCE(l.total_leads, 0)::text        AS total_leads,
          COALESCE(l.hot_leads, 0)::text           AS hot_leads,
          COALESCE(l.recent_wins, 0)::text         AS recent_wins,
-         COALESCE(l.overdue_followups, 0)::text   AS overdue_followups
+         COALESCE(l.overdue_followups, 0)::text   AS overdue_followups,
+         s.top_interest
        FROM freehold_site_users u
        LEFT JOIN LATERAL (
          SELECT
@@ -50,6 +52,16 @@ export async function GET() {
          FROM freehold_site_leads
          WHERE assigned_broker_id = u.id::text
        ) l ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT COALESCE(interest, project_slug) AS top_interest
+         FROM freehold_site_leads
+         WHERE assigned_broker_id = u.id::text
+           AND COALESCE(interest, project_slug) IS NOT NULL
+           AND COALESCE(interest, project_slug) <> ''
+         GROUP BY 1
+         ORDER BY COUNT(*) DESC
+         LIMIT 1
+       ) s ON TRUE
        WHERE u.role = 'broker'
        ORDER BY l.total_leads DESC NULLS LAST`,
       []
@@ -75,7 +87,8 @@ export async function GET() {
         overdueFollowUps: parseInt(r.overdue_followups, 10),
         utilization,
         status,
-        specialty: '',
+        // Real signal: the project the broker's assigned leads ask about most.
+        specialty: r.top_interest ?? '',
         recentWins: parseInt(r.recent_wins, 10),
         email: r.email || '',
         phone: r.phone || '',

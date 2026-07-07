@@ -13,12 +13,36 @@ import {
   isManagementRole,
   EMPTY_DOCUMENTS,
   type DealDocumentChecklist,
+  type Deal,
 } from "@/lib/deals"
+import { earnCreditsForDeal } from "@/lib/freehold/credits-db"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const sessionId = (user: { brokerId?: string; email: string }) => user.brokerId || user.email
+
+/**
+ * Performance → credits: once a deal reaches its final approved/closed state,
+ * the agent earns ad credits from their net commission (1 credit / AED 1,000,
+ * min 1). Idempotent via the ledger `reference` (deal id), so approve + close
+ * can both call it safely. A failure here must never fail the approval.
+ * Note: deals only carry co_agent_name (no co-agent id), so only the primary
+ * agent earns for now.
+ */
+async function awardDealCredits(deal: Deal | null) {
+  if (!deal || !deal.agentId) return
+  try {
+    await earnCreditsForDeal(
+      deal.agentId,
+      deal.id,
+      deal.projectName || deal.leadName || deal.id,
+      deal.brokerCommissionAed,
+    )
+  } catch (error) {
+    console.error("[deals] earnCreditsForDeal failed", error)
+  }
+}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -77,6 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         }
         const deal = await finalApproveDeal(id, { name: user.name }, String(body.notes || ""))
         if (!deal) return NextResponse.json({ error: "Deal is not awaiting final approval" }, { status: 409 })
+        await awardDealCredits(deal)
         return NextResponse.json({ deal })
       }
 
@@ -100,6 +125,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           return NextResponse.json({ error: "A non-zero amount is required" }, { status: 400 })
         }
         const deal = await recordDealPayment(id, amount)
+        // Management-created deals skip final_approve and jump to approved →
+        // closed; the close is their first "final" moment (idempotent anyway).
+        if (deal?.status === "closed") await awardDealCredits(deal)
         return NextResponse.json({ deal })
       }
 

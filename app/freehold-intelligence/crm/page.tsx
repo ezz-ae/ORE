@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
@@ -12,6 +12,7 @@ import {
 } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
+import { loadCrmView, saveCrmView } from './_lib/view-prefs'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,15 +50,11 @@ const STAGE_CONFIG: Record<PipelineStage, { labelKey: string; dot: string; badge
 
 const STAGES: PipelineStage[] = ['new', 'contacted', 'qualified', 'viewing', 'negotiation', 'closed', 'lost']
 
-// Active pipeline budget midpoints (AED) — approximate, excluding closed/lost
-const BUDGET_MID: Record<string, number> = {
-  lead_001: 4_000_000, lead_002: 1_750_000, lead_011: 3_500_000,
-  lead_004: 1_800_000, lead_012: 2_500_000, lead_013: 2_000_000, lead_014: 900_000,
-  lead_003: 1_600_000, lead_005: 2_500_000, lead_015: 4_000_000, lead_016: 1_200_000,
-  lead_017: 5_000_000, lead_018: 3_000_000, lead_019: 2_000_000,
-  lead_006: 1_000_000, lead_020: 7_500_000,
+function fmtAedShort(n: number): string {
+  if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `AED ${(n / 1_000).toFixed(0)}K`
+  return `AED ${Math.round(n).toLocaleString()}`
 }
-const PIPELINE_VALUE = Object.values(BUDGET_MID).reduce((s, v) => s + v, 0)
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -72,15 +69,47 @@ export default function FreeholdCrmPage() {
 
   // Drill-down support: a deep link from Analytics (e.g. /crm?stage=closed or
   // /crm?source=meta) lands here pre-filtered. Read once on mount via the raw
-  // querystring to avoid the useSearchParams Suspense bailout.
+  // querystring to avoid the useSearchParams Suspense bailout. Otherwise the
+  // account's saved view (stage filter + search) is restored.
+  const viewHydrated = useRef(false)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const stage = params.get('stage')
-    if (stage === 'all' || (stage && (STAGES as string[]).includes(stage))) {
-      setStageFilter(stage as PipelineStage | 'all')
-    }
-    const source = params.get('source')
-    if (source) setQuery(source)
+    let cancelled = false
+    loadCrmView().then((view) => {
+      if (cancelled) return
+      const params = new URLSearchParams(window.location.search)
+      const stage = params.get('stage') ?? view.overviewStage
+      if (stage === 'all' || (stage && (STAGES as string[]).includes(stage))) {
+        setStageFilter(stage as PipelineStage | 'all')
+      }
+      const source = params.get('source')
+      if (source) setQuery(source)
+      else if (view.overviewSearch) setQuery(view.overviewSearch)
+      viewHydrated.current = true
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  // Persist the view on change (debounced in the account-memory helper).
+  useEffect(() => {
+    if (!viewHydrated.current) return
+    saveCrmView({ overviewStage: stageFilter, overviewSearch: query })
+  }, [stageFilter, query])
+
+  // Real pipeline value: open (in-progress) deals from the deals API. The API
+  // is session-scoped — brokers see their own deals, management sees all.
+  const [openDealValue, setOpenDealValue] = useState<number | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/deals?totals=1', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { deals?: Array<{ status: string; propertyValueAed: number }> } | null) => {
+        if (cancelled || !Array.isArray(d?.deals)) return
+        setOpenDealValue(d.deals
+          .filter(deal => deal.status === 'pending_step1' || deal.status === 'pending_step2')
+          .reduce((s, deal) => s + (Number(deal.propertyValueAed) || 0), 0))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
   }, [])
 
   const isActive = (l: CRMLeadIntelligence) =>
@@ -114,7 +143,7 @@ export default function FreeholdCrmPage() {
     { label: t('crm.tile.followUps'),  value: String(followUpsCount),                     sub: t('crm.tile.followUpsSub'),  color: 'text-red-400',     border: 'border-red-400/15',     bg: 'bg-red-400/[0.06]'     },
     { label: t('crm.tile.hot'),         value: String(hotCount),                           sub: t('crm.tile.hotSub'),      color: 'text-[#D4AF37]',   border: 'border-[#D4AF37]/20',   bg: 'bg-[#D4AF37]/[0.06]'   },
     { label: t('crm.tile.qualified'),   value: String(qualifiedCount),                     sub: t('crm.tile.qualifiedSub'),    color: 'text-violet-400',  border: 'border-violet-400/15',  bg: 'bg-violet-400/[0.06]'  },
-    { label: t('crm.tile.pipeline'),    value: `AED ${(PIPELINE_VALUE / 1_000_000).toFixed(1)}M`, sub: t('crm.tile.pipelineSub'), color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
+    { label: t('crm.tile.pipeline'),    value: openDealValue == null ? '—' : fmtAedShort(openDealValue), sub: t('crm.tile.pipelineSub'), color: 'text-emerald-400', border: 'border-emerald-400/15', bg: 'bg-emerald-400/[0.06]' },
     { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-line-strong',      bg: 'bg-white/[0.05]'       },
   ]
 

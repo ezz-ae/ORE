@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { UserCog, CheckCircle2, Users, AlertCircle, Clock, TrendingUp } from 'lucide-react'
+import { toast } from 'sonner'
 import type { CRMInboxLead, CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
@@ -301,15 +302,46 @@ export default function AssignmentPage() {
   const totalUnassigned = unassignedLeads.length
   const totalLeadsAll = leads.length
 
+  // Oldest lead waiting in the unassigned queue — a real, computable measure
+  // (first-response times aren't recorded, so no invented averages here).
+  const oldestWaiting = useMemo(() => {
+    let oldest: number | null = null
+    for (const l of unassignedLeads) {
+      const at = new Date(l.arrivedAt).getTime()
+      if (!Number.isNaN(at) && (oldest == null || at < oldest)) oldest = at
+    }
+    if (oldest == null) return '—'
+    const hours = Math.floor((Date.now() - oldest) / 3_600_000)
+    if (hours < 1) return '<1h'
+    if (hours < 48) return `${hours}h`
+    return `${Math.floor(hours / 24)}d`
+  }, [unassignedLeads])
+
   function handleAssign(leadId: string, agentId: string, agentName: string) {
     setAssignments((prev) => ({ ...prev, [leadId]: agentName }))
     setJustAssigned((prev) => new Set([...prev, leadId]))
 
-    // Persist the assignment.
+    const revert = () => {
+      setAssignments((prev) => {
+        const next = { ...prev }
+        delete next[leadId]
+        return next
+      })
+      setJustAssigned((prev) => {
+        const next = new Set(prev)
+        next.delete(leadId)
+        return next
+      })
+      toast.error(t('crm.updateFailed'))
+    }
+
+    // Persist the assignment; revert the optimistic update if it fails.
     fetch(`/api/freehold/crm/leads/${leadId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assigned_broker_id: agentId }),
-    }).catch(() => {})
+    })
+      .then((res) => { if (!res.ok) revert() })
+      .catch(revert)
 
     // Remove from flash set after 2 seconds
     setTimeout(() => {
@@ -352,7 +384,7 @@ export default function AssignmentPage() {
         <StatCard icon={TrendingUp}    label={t('crm.statTotalLeads')}      value={totalLeadsAll}       sub={t('crm.statCrmInbox')} />
         <StatCard icon={AlertCircle}   label={t('crm.unassigned')}          value={totalUnassigned}     sub={totalUnassigned > 0 ? t('crm.statActionNeeded') : t('crm.statQueueClear')} />
         <StatCard icon={Users}         label={t('crm.statAvailableAgents')} value={availableAgentCount} sub={t('crm.statOfTotal', { total: agentRoster.length })} />
-        <StatCard icon={Clock}         label={t('crm.statAvgResponse')}     value="4.2h"                sub={t('crm.statTeamAverage')} />
+        <StatCard icon={Clock}         label={t('crm.statOldestWaiting')}   value={oldestWaiting}       sub={t('crm.statInUnassignedQueue')} />
       </div>
 
       {/* ── Two-column layout ── */}

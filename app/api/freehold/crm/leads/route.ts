@@ -3,12 +3,23 @@ import { cookies } from 'next/headers'
 import { randomUUID } from 'node:crypto'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
-import { ensureLeadsTable } from '@/lib/data'
+import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const MANAGEMENT = ['admin', 'ceo', 'director', 'sales_manager']
+
+// Persistent "not a duplicate" dismissals live on the lead row.
+let dismissColEnsured: Promise<void> | null = null
+const ensureDismissColumn = () => {
+  if (!dismissColEnsured) {
+    dismissColEnsured = query(
+      `ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`
+    ).then(() => undefined).catch((e) => { dismissColEnsured = null; throw e })
+  }
+  return dismissColEnsured
+}
 
 interface DbLead {
   id: string
@@ -30,6 +41,7 @@ interface DbLead {
   updated_at: string | null
   snooze_until: string | null
   lead_code: string | null
+  duplicate_dismissed_at: string | null
 }
 
 function dbLeadToCRM(row: DbLead) {
@@ -72,6 +84,7 @@ function dbLeadToCRM(row: DbLead) {
     taggedProjects: row.project_slug ? [row.project_slug] : [],
     snoozeUntil: row.snooze_until ?? null,
     leadCode: row.lead_code ?? null,
+    duplicateDismissedAt: row.duplicate_dismissed_at ?? null,
   }
 }
 
@@ -83,6 +96,7 @@ export async function GET() {
 
   try {
     await ensureLeadsTable()
+    await ensureDismissColumn()
     const isBroker = user.role === 'broker'
     const brokerId = user.brokerId ?? user.email
 
@@ -90,7 +104,7 @@ export async function GET() {
     let sql = `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
                       status, priority, created_at::text, last_contact_at::text, country,
                       budget_aed, interest, message, landing_slug, updated_at::text,
-                      snooze_until::text, lead_code
+                      snooze_until::text, lead_code, duplicate_dismissed_at::text
                FROM freehold_site_leads`
 
     if (isBroker && brokerId) {
@@ -146,6 +160,19 @@ export async function POST(req: Request) {
         (body.interest || '').trim() || null, budget, (body.message || '').trim() || null,
       ],
     )
+    // Log creation on the lead's real activity timeline (best-effort).
+    try {
+      await ensureLeadActivityTable()
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, 'created', $3, $4)`,
+        [
+          randomUUID(), id,
+          `Lead created via ${(body.source || 'Direct').trim()}${assignedBrokerId ? ` · assigned to ${assignedBrokerId}` : ''}`,
+          user.email,
+        ],
+      )
+    } catch { /* non-fatal */ }
     return NextResponse.json({ ok: true, id }, { status: 201 })
   } catch (err) {
     console.error('[crm/leads] create failed', err)

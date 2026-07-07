@@ -1,5 +1,6 @@
 import { query } from '@/lib/db'
 import { notifyBrokerLowCredits } from '@/lib/transactional-email'
+import { creditsEarnedForCommission, type CreditTier } from '@/lib/freehold/credits-shared'
 
 export interface CreditBalance {
   broker_id: string
@@ -14,12 +15,26 @@ export interface CreditBalance {
 export interface CreditLedgerEntry {
   id: string
   broker_id: string
-  type: 'allocation' | 'spend' | 'refund' | 'adjustment'
+  type: 'allocation' | 'spend' | 'refund' | 'adjustment' | 'earn'
   amount: number
   note: string | null
+  reference: string | null
   meta: Record<string, unknown>
   created_by: string | null
   created_at: string
+}
+
+/** Per-broker row for the management balances list. */
+export interface BrokerBalanceRow {
+  id: string
+  name: string
+  email: string
+  tier: string
+  allocated: number
+  total_spent: number
+  balance: number
+  earned: number
+  cycle_end: string | null
 }
 
 export interface AdSpendAllocation {
@@ -50,7 +65,7 @@ export async function getCreditBalance(brokerId: string): Promise<CreditBalance 
 export async function getCreditLedger(brokerId: string, limit = 50): Promise<CreditLedgerEntry[]> {
   try {
     return await query<CreditLedgerEntry>(
-      `SELECT id, broker_id, type, amount, note, meta, created_by, created_at::text
+      `SELECT id, broker_id, type, amount, note, reference, meta, created_by, created_at::text
        FROM credit_ledger
        WHERE broker_id = $1
        ORDER BY created_at DESC
@@ -99,6 +114,9 @@ export async function ensureCreditsSchema(): Promise<void> {
         created_at TIMESTAMPTZ DEFAULT now()
       )
     `, [])
+    // Deal-earn idempotency: 'earn' entries store the deal id in `reference`.
+    await query(`ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS reference TEXT`, [])
+    await query(`CREATE INDEX IF NOT EXISTS idx_credit_ledger_reference ON credit_ledger(reference)`, [])
     await query(`
       CREATE TABLE IF NOT EXISTS ad_spend_allocations (
         id                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -122,6 +140,7 @@ export async function ensureCreditsSchema(): Promise<void> {
           WHEN cl.type = 'spend'      THEN -cl.amount
           WHEN cl.type = 'refund'     THEN  cl.amount
           WHEN cl.type = 'adjustment' THEN  cl.amount
+          WHEN cl.type = 'earn'       THEN  cl.amount
           ELSE 0
         END), 0)::integer AS balance,
         COALESCE(SUM(CASE WHEN cl.type = 'spend' THEN cl.amount ELSE 0 END), 0)::integer AS total_spent
@@ -218,4 +237,102 @@ export async function allocateCredits(
     `, [brokerId, amount, note, allocatedBy])
     return { ok: true }
   } catch { return { ok: false } }
+}
+
+/**
+ * Performance earn: credit a broker for a finally-approved/closed deal.
+ * Rule: 1 credit per AED 1,000 of broker net commission, minimum 1.
+ * Idempotent — the deal id is stored in `reference`, and a second call for the
+ * same deal + broker is a no-op.
+ */
+export async function earnCreditsForDeal(
+  brokerId: string,
+  dealId: string,
+  dealName: string,
+  brokerTotalAED: number
+): Promise<{ ok: boolean; credits?: number; skipped?: 'already_earned' }> {
+  if (!brokerId || !dealId) return { ok: false }
+  try {
+    await ensureCreditsSchema()
+    const existing = await query<{ id: string }>(
+      `SELECT id FROM credit_ledger
+       WHERE broker_id = $1 AND type = 'earn' AND reference = $2
+       LIMIT 1`,
+      [brokerId, dealId]
+    )
+    if (existing[0]) return { ok: true, skipped: 'already_earned' }
+    // Ensure the account row exists so the balances view picks the broker up.
+    await query(`
+      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
+      VALUES ($1, 'Starter', 0)
+      ON CONFLICT (broker_id) DO NOTHING
+    `, [brokerId])
+    const credits = creditsEarnedForCommission(brokerTotalAED)
+    await query(`
+      INSERT INTO credit_ledger (broker_id, type, amount, note, reference, meta)
+      VALUES ($1, 'earn', $2, $3, $4, $5)
+    `, [
+      brokerId,
+      credits,
+      `Deal earned: ${dealName}`,
+      dealId,
+      JSON.stringify({ deal_id: dealId, broker_total_aed: brokerTotalAED }),
+    ])
+    return { ok: true, credits }
+  } catch {
+    return { ok: false }
+  }
+}
+
+/** Persist a broker's tier (creates the account row when missing). */
+export async function setBrokerTier(
+  brokerId: string,
+  tier: CreditTier
+): Promise<{ ok: boolean }> {
+  if (!brokerId) return { ok: false }
+  try {
+    await ensureCreditsSchema()
+    await query(`
+      INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
+      VALUES ($1, $2, 0)
+      ON CONFLICT (broker_id) DO UPDATE SET
+        tier = $2,
+        updated_at = now()
+    `, [brokerId, tier])
+    return { ok: true }
+  } catch { return { ok: false } }
+}
+
+/**
+ * Management view: every broker with their real ledger-derived numbers.
+ * Brokers without a credit account yet appear with honest zeros ('Starter').
+ */
+export async function listBrokerBalances(): Promise<BrokerBalanceRow[]> {
+  try {
+    await ensureCreditsSchema()
+    return await query<BrokerBalanceRow>(
+      `SELECT
+         u.id,
+         COALESCE(u.name, u.email)          AS name,
+         u.email,
+         COALESCE(b.tier, 'Starter')        AS tier,
+         COALESCE(b.allocated, 0)::integer  AS allocated,
+         COALESCE(b.total_spent, 0)::integer AS total_spent,
+         COALESCE(b.balance, 0)::integer    AS balance,
+         COALESCE(e.earned, 0)::integer     AS earned,
+         b.cycle_end::text                  AS cycle_end
+       FROM freehold_site_users u
+       LEFT JOIN broker_credit_balances b
+         ON b.broker_id = u.id OR b.broker_id = u.email
+       LEFT JOIN (
+         SELECT broker_id, SUM(amount) AS earned
+         FROM credit_ledger
+         WHERE type = 'earn'
+         GROUP BY broker_id
+       ) e ON e.broker_id = COALESCE(b.broker_id, u.id)
+       WHERE u.role = 'broker'
+       ORDER BY COALESCE(u.name, u.email) ASC`,
+      []
+    )
+  } catch { return [] }
 }

@@ -1,72 +1,69 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Minus, CheckCircle, Clock, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Plus, Minus, CheckCircle, Trophy, Users, Zap, Coins, ArrowUpRight, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
+import { CREDIT_TIERS, TIER_MONTHLY_QUOTA, type CreditTier } from '@/lib/freehold/credits-shared'
 import { useT } from '@/lib/i18n/provider'
 
-type Agent = {
+type BrokerBalance = {
   id: string
   name: string
-  initials: string
-  tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
-  quota: number
-  used: number
-  pending: number
-  resetAt: string
+  email: string
+  tier: string
+  allocated: number
+  total_spent: number
+  balance: number
+  earned: number
+  cycle_end: string | null
 }
 
-const TIER_COLOR: Record<string, string> = {
-  Bronze:   'text-orange-400   bg-orange-400/10   border-orange-400/25',
-  Silver:   'text-slate-300    bg-surface-2    border-line-strong',
-  Gold:     'text-gold    bg-gold/10    border-gold/25',
-  Platinum: 'text-violet-300   bg-violet-400/10   border-violet-400/25',
+const TIER_COLOR: Record<CreditTier, string> = {
+  Starter: 'text-slate-300  bg-surface-2      border-line-strong',
+  Growth:  'text-teal-300   bg-teal-400/10    border-teal-400/25',
+  Pro:     'text-gold       bg-gold/10        border-gold/25',
+  Elite:   'text-violet-300 bg-violet-400/10  border-violet-400/25',
 }
 
-const TIER_QUOTA: Record<string, number> = {
-  Bronze: 12, Silver: 18, Gold: 25, Platinum: 40,
-}
-
-const NEXT_RESET = (() => {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString().slice(0, 10)
-})()
+const initialsOf = (name: string) =>
+  name.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
 
 export default function AgentCreditsPage() {
   const t = useT()
-  const [agents, setAgents]           = useState<Agent[]>([])
+  const [brokers, setBrokers]         = useState<BrokerBalance[]>([])
   const [loading, setLoading]         = useState(true)
   const [saved, setSaved]             = useState<string[]>([])
   const [adjustments, setAdjustments] = useState<Record<string, number>>({})
 
+  const loadBalances = useCallback(async () => {
+    const res = await fetch('/api/freehold/credits/admin/balances').catch(() => null)
+    if (!res || !res.ok) {
+      toast.error(t('finance.credits.loadFailed'))
+      return false
+    }
+    const data = await res.json().catch(() => null)
+    if (!Array.isArray(data?.balances)) {
+      toast.error(t('finance.credits.loadFailed'))
+      return false
+    }
+    setBrokers(data.balances as BrokerBalance[])
+    return true
+  }, [t])
+
   useEffect(() => {
-    fetch('/api/freehold/team')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.members) {
-          const brokers = data.members
-            .filter((m: any) => m.dbRole === 'broker')
-            .map((m: any): Agent => ({
-              id:      m.id,
-              name:    m.name,
-              initials: m.initials,
-              tier:    'Bronze',
-              quota:   TIER_QUOTA.Bronze,
-              used:    0,
-              pending: 0,
-              resetAt: NEXT_RESET,
-            }))
-          setAgents(brokers)
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [])
+    loadBalances().finally(() => setLoading(false))
+  }, [loadBalances])
+
+  function markSaved(id: string) {
+    setSaved((prev) => [...prev, id])
+    setTimeout(() => setSaved((prev) => prev.filter((x) => x !== id)), 2000)
+  }
 
   function adjust(id: string, delta: number) {
     setAdjustments((prev) => {
       const current = prev[id] ?? 0
-      const agent   = agents.find((a) => a.id === id)!
       const newVal  = Math.max(0, Math.min(50, current + delta))
       return { ...prev, [id]: newVal }
     })
@@ -82,26 +79,32 @@ export default function AgentCreditsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brokerId: id, amount: delta, note: 'Bonus credits (Finance)' }),
     }).catch(() => null)
-    if (!res || !res.ok) return
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, quota: a.quota + delta } : a,
-      ),
-    )
+    if (!res || !res.ok) {
+      toast.error(t('finance.credits.allocateFailed'))
+      return
+    }
     setAdjustments((prev) => ({ ...prev, [id]: 0 }))
-    setSaved((prev) => [...prev, id])
-    setTimeout(() => setSaved((prev) => prev.filter((x) => x !== id)), 2000)
+    await loadBalances()
+    markSaved(id)
   }
 
-  function setTier(id: string, tier: Agent['tier']) {
-    const newQuota = TIER_QUOTA[tier]
-    setAgents((prev) => prev.map((a) => a.id === id ? { ...a, tier, quota: newQuota } : a))
-    setSaved((prev) => [...prev, id])
-    setTimeout(() => setSaved((prev) => prev.filter((x) => x !== id)), 2000)
+  async function setTier(id: string, tier: CreditTier) {
+    const res = await fetch('/api/freehold/credits/admin/tier', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brokerId: id, tier }),
+    }).catch(() => null)
+    if (!res || !res.ok) {
+      toast.error(t('finance.credits.tierSaveFailed'))
+      return
+    }
+    setBrokers((prev) => prev.map((a) => (a.id === id ? { ...a, tier } : a)))
+    markSaved(id)
   }
 
-  const totalQuota = agents.reduce((s, a) => s + a.quota, 0)
-  const totalUsed  = agents.reduce((s, a) => s + a.used, 0)
+  const totalAllocated = brokers.reduce((s, a) => s + a.allocated, 0)
+  const totalSpent     = brokers.reduce((s, a) => s + a.total_spent, 0)
+  const totalBalance   = brokers.reduce((s, a) => s + a.balance, 0)
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -134,25 +137,31 @@ export default function AgentCreditsPage() {
         className="mb-8"
       />
 
-      {/* Summary row */}
+      {/* Summary row — computed from the real ledger balances */}
       <div className="mb-6 grid grid-cols-3 gap-3">
-        <StatCard label={t('finance.credits.totalQuota')}    value={totalQuota}              Icon={Zap}         hint={t('finance.credits.creditsAllocated')} />
-        <StatCard label={t('finance.credits.usedThisMonth')} value={totalUsed}              Icon={Users}       hint={t('finance.credits.creditsConsumed')}  />
-        <StatCard label={t('finance.credits.remaining')}       value={totalQuota - totalUsed} Icon={CheckCircle} hint={t('finance.credits.availableNow')}     />
+        <StatCard label={t('finance.credits.totalAllocated')} value={totalAllocated} Icon={Zap}         hint={t('finance.credits.creditsAllocated')} />
+        <StatCard label={t('finance.credits.totalSpent')}     value={totalSpent}     Icon={Users}       hint={t('finance.credits.creditsConsumed')}  />
+        <StatCard label={t('finance.credits.remaining')}      value={totalBalance}   Icon={CheckCircle} hint={t('finance.credits.availableNow')}     />
       </div>
 
       {/* Agents */}
       {loading && (
         <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <Loader2 className="h-5 w-5 animate-spin me-2" />
           <span className="text-sm">{t('finance.credits.loadingAgents')}</span>
         </div>
       )}
+      {!loading && brokers.length === 0 && (
+        <div className="rounded-xl border border-line bg-surface p-8 text-center text-sm text-slate-500">
+          {t('finance.credits.noBrokers')}
+        </div>
+      )}
       <div className="space-y-3">
-        {!loading && agents.map((agent) => {
-          const tc     = TIER_COLOR[agent.tier]
-          const pct    = agent.quota > 0 ? (agent.used / agent.quota) * 100 : 0
-          const adj    = adjustments[agent.id] ?? 0
+        {!loading && brokers.map((agent) => {
+          const tierKey = (CREDIT_TIERS as readonly string[]).includes(agent.tier) ? (agent.tier as CreditTier) : 'Starter'
+          const tc      = TIER_COLOR[tierKey]
+          const pct     = agent.allocated > 0 ? (agent.total_spent / agent.allocated) * 100 : 0
+          const adj     = adjustments[agent.id] ?? 0
           const isSaved = saved.includes(agent.id)
 
           return (
@@ -161,7 +170,7 @@ export default function AgentCreditsPage() {
               {/* Agent identity */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-gold">
-                  {agent.initials}
+                  {initialsOf(agent.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-white">{agent.name}</div>
@@ -169,7 +178,14 @@ export default function AgentCreditsPage() {
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
                       {agent.tier}
                     </span>
-                    <span className="text-xs text-slate-500">{t('finance.credits.resets', { date: new Date(agent.resetAt).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' }) })}</span>
+                    <span className="text-xs text-slate-500">
+                      {t('finance.credits.quotaPerMonth', { quota: TIER_MONTHLY_QUOTA[tierKey] })}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {agent.cycle_end
+                        ? t('finance.credits.resets', { date: new Date(agent.cycle_end).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' }) })
+                        : '—'}
+                    </span>
                   </div>
                 </div>
                 {isSaved && (
@@ -179,15 +195,18 @@ export default function AgentCreditsPage() {
                 )}
               </div>
 
-              {/* Usage bar */}
+              {/* Usage bar — real spend vs. real allocation */}
               <div className="mb-4">
                 <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">{t('finance.credits.leadsUsed', { used: agent.used, quota: agent.quota })}</span>
-                  {agent.pending > 0 && (
-                    <span className="flex items-center gap-1 text-amber-400/70">
-                      <Clock className="h-3 w-3" /> {t('finance.credits.pending', { count: agent.pending })}
-                    </span>
-                  )}
+                  <span className="text-slate-400">{t('finance.credits.creditsUsedOf', { used: agent.total_spent, allocated: agent.allocated })}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-slate-400">{t('finance.credits.balanceCount', { count: agent.balance })}</span>
+                    {agent.earned > 0 && (
+                      <span className="flex items-center gap-1 text-gold">
+                        <Trophy className="h-3 w-3" /> {t('finance.credits.earnedCount', { count: agent.earned })}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <div
@@ -200,26 +219,26 @@ export default function AgentCreditsPage() {
               {/* Controls */}
               <div className="flex items-center gap-4 flex-wrap">
 
-                {/* Tier selector */}
+                {/* Tier selector — persists via the admin tier API */}
                 <div>
                   <div className="mb-1.5 text-[10px] text-slate-500 uppercase tracking-wider">{t('finance.credits.tier')}</div>
                   <div className="flex gap-1.5">
-                    {(['Bronze', 'Silver', 'Gold', 'Platinum'] as const).map((t) => (
+                    {CREDIT_TIERS.map((tier) => (
                       <button
-                        key={t}
-                        onClick={() => setTier(agent.id, t)}
+                        key={tier}
+                        onClick={() => setTier(agent.id, tier)}
                         className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                          agent.tier === t ? TIER_COLOR[t] : 'border-line-strong text-slate-500 hover:text-slate-300'
+                          agent.tier === tier ? TIER_COLOR[tier] : 'border-line-strong text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        {t}
+                        {tier}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Manual quota adjustment */}
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ms-auto flex items-center gap-2">
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('finance.credits.bonusCredits')}</div>
                   <div className="flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-1 py-1">
                     <button

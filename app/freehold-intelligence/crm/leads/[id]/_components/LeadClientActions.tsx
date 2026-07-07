@@ -4,80 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Copy, CheckCircle, MessageSquare, BookOpen, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
+import { CheckCircle, MessageSquare, Zap, User, ArrowUpRight, Bell, Briefcase, Trophy, X } from 'lucide-react'
 import { DealForm, type DealFormValues } from '@/components/deals/deal-form'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
 
 // Reassigning a lead to another broker is a management action.
 const REASSIGN_ROLES = ['admin', 'sales_manager', 'director', 'ceo']
-
-interface CopyButtonProps {
-  text: string
-}
-
-export function CopyButton({ text }: CopyButtonProps) {
-  const t = useT()
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="flex items-center gap-1 text-sm text-gold/60 transition hover:text-gold"
-    >
-      {copied ? <CheckCircle className="h-3 w-3 text-gold" /> : <Copy className="h-3 w-3" />}
-      {copied ? t('crm.copied') : t('crm.copy')}
-    </button>
-  )
-}
-
-interface SuggestedMessageActionsProps {
-  message: string
-  phone: string
-  leadId: string
-}
-
-export function SuggestedMessageActions({ message, phone, leadId }: SuggestedMessageActionsProps) {
-  const t = useT()
-  const [sent, setSent] = useState(false)
-
-  return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      {/* Full in-app WhatsApp chat */}
-      <Link
-        href={`/freehold-intelligence/crm/leads/${leadId}/whatsapp`}
-        className="inline-flex items-center gap-2 rounded-[10px] bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-400"
-      >
-        <MessageSquare className="h-3.5 w-3.5" />
-        {t('crm.openWhatsAppChat')}
-      </Link>
-      {/* External wa.me fallback */}
-      <a
-        href={`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => setSent(true)}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-2 text-xs text-emerald-400 transition hover:bg-emerald-500/15"
-      >
-        <MessageSquare className="h-3.5 w-3.5" />
-        {sent ? t('crm.opened') : 'wa.me'}
-      </a>
-      <Link
-        href={`/freehold-intelligence/notebook?lead=${leadId}`}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 px-4 py-2 text-xs text-slate-400 transition hover:border-gold/30 hover:text-white"
-      >
-        <BookOpen className="h-3.5 w-3.5" />
-        {t('crm.notebook')}
-      </Link>
-    </div>
-  )
-}
 
 interface LeadSnapshot {
   phone?: string
@@ -244,6 +177,15 @@ export function QuickActions({ leadId, leadName, currentStage, lead, existingDea
           {applied.has('snooze') ? <CheckCircle className="h-3.5 w-3.5 text-gold" /> : <Bell className="h-3.5 w-3.5" />}
           {applied.has('snooze') ? t('crm.snoozed24h') : t('crm.snooze24h')}
         </button>
+
+        {/* WhatsApp chat */}
+        <Link
+          href={`/freehold-intelligence/crm/leads/${leadId}/whatsapp`}
+          className="flex w-full items-center gap-2.5 rounded-[12px] border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-2.5 text-sm text-emerald-300 transition hover:bg-emerald-500/15"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          {t('crm.openWhatsAppChat')}
+        </Link>
 
         <Link
           href="/freehold-intelligence/crm/pipeline"

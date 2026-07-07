@@ -36,12 +36,24 @@ export default function CrmAgentsPage() {
   const [contacted, setContacted] = useState<Set<string>>(new Set())
   const [flash, setFlash] = useState<string | null>(null)
   const [liveAgents, setLiveAgents] = useState<CRMAgentCapacity[] | null>(null)
+  const [closeStats, setCloseStats] = useState<{ avgCloseDays: number | null; closedDealsCount: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
     fetch('/api/freehold/crm/agents')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (!cancelled && d?.agents?.length > 0) setLiveAgents(d.agents) })
+      .catch(() => {})
+    fetch('/api/freehold/crm/summary', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!cancelled && d?.summary) {
+          setCloseStats({
+            avgCloseDays: d.summary.avgCloseDays ?? null,
+            closedDealsCount: d.summary.closedDealsCount ?? 0,
+          })
+        }
+      })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
@@ -170,7 +182,7 @@ export default function CrmAgentsPage() {
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 text-xs text-slate-400">{agent.role} · {agent.specialty}</div>
+                          <div className="mt-1 text-xs text-slate-400">{agent.role}{agent.specialty ? ` · ${agent.specialty}` : ''}</div>
                         </div>
                       </div>
 
@@ -255,7 +267,11 @@ export default function CrmAgentsPage() {
                 <PanelHeader title={t('crm.topPerformer')} />
                 <div className="p-5">
                   <div className="text-[18px] font-semibold text-white">{topPerformer.name}</div>
-                  <div className="mt-1 text-xs text-slate-400">{t('crm.recentWins', { count: topPerformer.recentWins, specialty: topPerformer.specialty.split(' · ')[0] })}</div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    {topPerformer.specialty
+                      ? t('crm.recentWins', { count: topPerformer.recentWins, specialty: topPerformer.specialty.split(' · ')[0] })
+                      : t('crm.recentWinsOnly', { count: topPerformer.recentWins })}
+                  </div>
                 </div>
               </Panel>
             )}
@@ -273,8 +289,14 @@ export default function CrmAgentsPage() {
             <Panel>
               <PanelHeader title={t('crm.avgTimeToClose')} />
               <div className="p-5">
-                <div className="text-[34px] font-semibold text-white">18d</div>
-                <div className="mt-1 text-xs text-slate-400">{t('crm.target21days')}</div>
+                <div className="text-[34px] font-semibold text-white">
+                  {closeStats?.avgCloseDays != null ? `${Math.round(closeStats.avgCloseDays)}d` : '—'}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">
+                  {closeStats && closeStats.closedDealsCount > 0
+                    ? t('crm.fromClosedDeals', { count: closeStats.closedDealsCount })
+                    : t('crm.noClosedDealsYet')}
+                </div>
               </div>
             </Panel>
           </div>

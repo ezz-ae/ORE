@@ -2,10 +2,65 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
-import { ensureLeadsTable } from '@/lib/data'
+import { ensureLeadsTable, ensureLeadActivityTable } from '@/lib/data'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+// "Not a duplicate" dismissals persist on the lead row (survives reloads and
+// devices). Best-effort column ensure, run once per instance.
+let dismissColEnsured: Promise<void> | null = null
+const ensureDismissColumn = () => {
+  if (!dismissColEnsured) {
+    dismissColEnsured = query(
+      `ALTER TABLE freehold_site_leads ADD COLUMN IF NOT EXISTS duplicate_dismissed_at timestamptz`
+    ).then(() => undefined).catch((e) => { dismissColEnsured = null; throw e })
+  }
+  return dismissColEnsured
+}
+
+// Describe what a PATCH changed so the lead's activity timeline reflects real
+// history. Failures never break the update itself.
+async function logPatchActivity(leadId: string, body: Record<string, unknown>, actor: string) {
+  const entries: Array<{ type: string; description: string }> = []
+  if (typeof body.status === 'string' && body.status) {
+    entries.push({ type: 'stage', description: `Stage changed to ${body.status}` })
+  }
+  if ('assigned_broker_id' in body) {
+    entries.push({
+      type: 'assignment',
+      description: body.assigned_broker_id ? `Assigned to ${body.assigned_broker_id}` : 'Unassigned',
+    })
+  }
+  if (typeof body.priority === 'string' && body.priority) {
+    entries.push({ type: 'note', description: `Priority set to ${body.priority}` })
+  }
+  if ('snooze_until' in body && body.snooze_until) {
+    const until = new Date(String(body.snooze_until))
+    entries.push({
+      type: 'note',
+      description: `Snoozed until ${Number.isNaN(until.getTime()) ? String(body.snooze_until) : until.toISOString().slice(0, 16).replace('T', ' ')}`,
+    })
+  }
+  if (body.archived === true) entries.push({ type: 'note', description: 'Conversation archived' })
+  if (body.blocked === true) entries.push({ type: 'note', description: 'Contact blocked' })
+  if ('duplicate_dismissed_at' in body && body.duplicate_dismissed_at) {
+    entries.push({ type: 'note', description: 'Marked as not a duplicate' })
+  }
+  if (entries.length === 0) return
+  try {
+    await ensureLeadActivityTable()
+    for (const e of entries) {
+      await query(
+        `INSERT INTO freehold_site_lead_activity (id, lead_id, activity_type, description, created_by)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [crypto.randomUUID(), leadId, e.type, e.description, actor]
+      )
+    }
+  } catch {
+    // Activity logging is best-effort — the update already succeeded.
+  }
+}
 
 export async function GET(
   _req: Request,
@@ -75,7 +130,7 @@ export async function PATCH(
     }
   }
 
-  const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message', 'snooze_until', 'archived', 'muted_until', 'blocked']
+  const ALLOWED_FIELDS = ['status', 'priority', 'assigned_broker_id', 'last_contact_at', 'interest', 'message', 'snooze_until', 'archived', 'muted_until', 'blocked', 'duplicate_dismissed_at']
   const updates: string[] = []
   const values: unknown[] = []
 
@@ -93,10 +148,12 @@ export async function PATCH(
 
   try {
     await ensureLeadsTable()
+    if ('duplicate_dismissed_at' in body) await ensureDismissColumn()
     await query(
       `UPDATE freehold_site_leads SET ${updates.join(', ')} WHERE id = $${values.length}`,
       values
     )
+    await logPatchActivity(id, body, user.email)
     return NextResponse.json({ ok: true, id })
   } catch {
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })
