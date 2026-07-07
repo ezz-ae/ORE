@@ -7,7 +7,18 @@ import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
 } from 'lucide-react'
-import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
+// Real inventory replaces the old seed listings: the picker loads live projects
+// from /api/freehold/inventory so campaigns are always built on real stock.
+interface WizardListing {
+  id: string
+  projectId: string
+  projectName: string
+  area: string
+  imageUrl: string
+  startingPrice: number | null
+  paymentPlan: string | null
+  landingUrl: string
+}
 import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
 
@@ -105,43 +116,79 @@ export default function NewCampaignPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [launched, setLaunched] = useState<{ campaignId: string; status: string } | null>(null)
 
-  // Seed initial creative from first listing
-  const defaultListing = leadMachineListings[0]
-
   const [form, setForm] = useState<WizardState>({
-    listingId:    defaultListing?.id ?? '',
+    listingId:    '',
     objective:    'LEAD_GENERATION',
-    campaignName: defaultListing ? `${defaultListing.projectName} — Lead Gen` : '',
+    campaignName: '',
     dailyBudgetAED: 200,
     cityKeys:     ['297928'], // Dubai
     ageMin:       28,
     ageMax:       65,
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
     publisherPlatforms: ['facebook', 'instagram'],
-    primaryText:  defaultListing
-      ? `${defaultListing.projectName} — starting from AED ${defaultListing.startingPrice?.toLocaleString() ?? '—'}. ${defaultListing.paymentPlan ?? ''}`
-      : '',
-    headline:     defaultListing?.projectName ?? '',
+    primaryText:  '',
+    headline:     '',
     description:  'Request the investor summary now.',
-    landingUrl:   defaultListing
-      ? `https://freeholdproperty.ae/off-plan/${defaultListing.projectId}`
-      : 'https://freeholdproperty.ae',
+    landingUrl:   'https://www.freeholdproperty.ae',
     cta:          'LEARN_MORE',
-    imageUrl:     defaultListing?.imageUrl ?? '',
+    imageUrl:     '',
     imageHash:    '',
     launchStatus: 'PAUSED',
   })
   const [uploadingImg, setUploadingImg] = useState(false)
+
+  // Real projects for the picker — loaded from the live inventory API.
+  const [listings, setListings] = useState<WizardListing[]>([])
+  const [listingsLoading, setListingsLoading] = useState(true)
 
   function update<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
     setApiError(null)
   }
 
+  // Everything the user types is saved: restore the last draft on mount, and
+  // persist the form on every change. Cleared after a successful launch.
+  const DRAFT_KEY = 'fh-campaign-draft'
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) {
+        const draft = JSON.parse(raw) as Partial<WizardState>
+        setForm((prev) => ({ ...prev, ...draft }))
+      }
+    } catch { /* ignore corrupt drafts */ }
+  }, [])
+  useEffect(() => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)) } catch { /* full/blocked storage */ }
+  }, [form])
+
+  // Load real inventory for the project picker.
+  useEffect(() => {
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const props: WizardListing[] = (d?.properties || [])
+          .map((p: Record<string, unknown>) => ({
+            id: String(p.slug || ''),
+            projectId: String(p.slug || ''),
+            projectName: String(p.name || ''),
+            area: String(p.area || ''),
+            imageUrl: (p.heroImage as string) || '',
+            startingPrice: typeof p.startingPriceAED === 'number' ? p.startingPriceAED : null,
+            paymentPlan: (p.paymentPlan as string) || null,
+            landingUrl: p.landingUrl
+              ? `https://www.freeholdproperty.ae${p.landingUrl}`
+              : `https://www.freeholdproperty.ae/projects/${p.slug}`,
+          }))
+          .filter((l: WizardListing) => l.id && l.projectName)
+        setListings(props)
+      })
+      .catch(() => {})
+      .finally(() => setListingsLoading(false))
+  }, [])
+
   // Prefill from a real inventory project when arriving via the Inventory
-  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>). The
-  // builder is seed-based, so a live project won't be in leadMachineListings —
-  // we seed the creative straight from the query params instead.
+  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     const project = p.get('project')
@@ -152,26 +199,27 @@ export default function NewCampaignPage() {
     const priceNum = price ? Number(price) : 0
     setForm((prev) => ({
       ...prev,
+      listingId: project || prev.listingId,
       campaignName: `${displayName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
       headline: displayName,
       primaryText: priceNum > 0
         ? `${displayName} — starting from AED ${priceNum.toLocaleString()}. Request the investor summary now.`
         : `${displayName} — request the investor summary now.`,
-      landingUrl: project ? `https://freeholdproperty.ae/off-plan/${project}` : prev.landingUrl,
+      landingUrl: project ? `https://www.freeholdproperty.ae/projects/${project}` : prev.landingUrl,
     }))
   }, [])
 
   // ── Listing change pre-populates creative ──────────────────────────────────
   function onListingChange(id: string) {
-    const listing = leadMachineListings.find((l) => l.id === id)
+    const listing = listings.find((l) => l.id === id)
     if (!listing) return
     setForm((prev) => ({
       ...prev,
       listingId:    listing.id,
       campaignName: `${listing.projectName} — ${prev.objective === 'LEAD_GENERATION' ? 'Lead Gen' : 'Traffic'}`,
-      primaryText:  `${listing.projectName} — starting from AED ${listing.startingPrice?.toLocaleString() ?? '—'}. ${listing.paymentPlan ?? ''}`.trim(),
+      primaryText:  `${listing.projectName} — starting from AED ${listing.startingPrice?.toLocaleString() ?? '—'}. ${listing.paymentPlan ?? 'Request the investor summary now.'}`.trim(),
       headline:     listing.projectName,
-      landingUrl:   `https://freeholdproperty.ae/off-plan/${listing.projectId}`,
+      landingUrl:   listing.landingUrl,
       imageUrl:     listing.imageUrl,
       imageHash:    '',   // fall back to the listing photo unless a new file is uploaded
     }))
@@ -206,7 +254,7 @@ export default function NewCampaignPage() {
     setLoading(true)
     setApiError(null)
 
-    const listing = leadMachineListings.find((l) => l.id === form.listingId)
+    const listing = listings.find((l) => l.id === form.listingId)
     const interests = UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id))
 
     const payload: LaunchCampaignPayload = {
@@ -251,6 +299,7 @@ export default function NewCampaignPage() {
       }
 
       setLaunched({ campaignId: data.campaignId, status: data.status })
+      try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
     } catch {
       setApiError('Network error. Please try again.')
     } finally {
@@ -287,7 +336,7 @@ export default function NewCampaignPage() {
     )
   }
 
-  const selectedListing = leadMachineListings.find((l) => l.id === form.listingId)
+  const selectedListing = listings.find((l) => l.id === form.listingId)
 
   const summaryTiles = [
     { labelKey: 'lm.newCampaign.s4.tileLabel.listing',   value: selectedListing?.projectName ?? form.listingId },
@@ -352,7 +401,10 @@ export default function NewCampaignPage() {
                 value={form.listingId}
                 onChange={(e) => onListingChange(e.target.value)}
               >
-                {leadMachineListings.map((l) => (
+                <option value="" disabled>
+                  {listingsLoading ? t('common.loading') : t('lm.newCampaign.s1.pickProject')}
+                </option>
+                {listings.map((l) => (
                   <option key={l.id} value={l.id}>{l.projectName} · {l.area}</option>
                 ))}
               </select>
