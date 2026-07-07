@@ -71,8 +71,36 @@ export async function getSystem(systemId: string): Promise<SystemModule | null> 
   return systems.find((system) => system.module_id === systemId) ?? null
 }
 
+let milestonesReady: Promise<void> | null = null
+const ensureMilestonesSchema = async () => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS freehold_milestone_progress (
+      code          text PRIMARY KEY,
+      milestone_id  text,
+      title         text NOT NULL DEFAULT '',
+      description   text,
+      success_event text,
+      owner         text,
+      deadline      date,
+      status        text NOT NULL DEFAULT 'planned',
+      progress_pct  numeric NOT NULL DEFAULT 0,
+      health        text
+    )
+  `)
+}
+const ensureMilestonesOnce = async () => {
+  if (!milestonesReady) milestonesReady = ensureMilestonesSchema().catch((e) => { milestonesReady = null; throw e })
+  await milestonesReady
+}
+
 export async function getMilestones(): Promise<Milestone[]> {
-  const rows = await safeQuery<Milestone>("SELECT * FROM freehold_milestone_progress ORDER BY deadline", [], [])
+  // Ensure the table exists on a fresh white-label DB (no seed rows — an empty
+  // roadmap renders honestly). `days_to_deadline` is derived, never stored.
+  try { await ensureMilestonesOnce() } catch { /* DB unavailable — fall through to empty */ }
+  const rows = await safeQuery<Milestone>(
+    "SELECT *, (deadline - CURRENT_DATE) AS days_to_deadline FROM freehold_milestone_progress ORDER BY deadline",
+    [], [],
+  )
   return rows.map(serializeTemporalFields)
 }
 
