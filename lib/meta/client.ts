@@ -320,6 +320,37 @@ export async function validateInterests(
   }
 }
 
+/**
+ * Validate interests against Meta's LIVE vocabulary. Interest ids rot as
+ * Meta prunes its graph — so we re-resolve by NAME at launch time and drop
+ * anything Meta no longer recognises. A launch never fails on a stale id;
+ * with no valid interests left, the ad set simply runs broad (Advantage+).
+ */
+export async function validateInterests(
+  interests: { id: string; name: string }[],
+): Promise<{ id: string; name: string }[]> {
+  if (!interests.length) return []
+  try {
+    const { token } = await creds()
+    const url = new URL(`${API_BASE}/search`)
+    url.searchParams.set('type', 'adinterestvalid')
+    url.searchParams.set('interest_list', JSON.stringify(interests.map((i) => i.name)))
+    url.searchParams.set('access_token', token)
+    const res = await fetch(url.toString())
+    const json = (await res.json()) as { data?: Array<{ name: string; valid: boolean; id?: string }> }
+    const valid = new Map((json.data ?? []).filter((d) => d.valid && d.id).map((d) => [d.name.toLowerCase(), String(d.id)]))
+    return interests
+      .map((i) => {
+        const id = valid.get(i.name.toLowerCase())
+        return id ? { id, name: i.name } : null
+      })
+      .filter((i): i is { id: string; name: string } => i !== null)
+  } catch {
+    // Validation unavailable → run broad rather than risk a stale-id failure.
+    return []
+  }
+}
+
 // ─── Creatives & Ads ─────────────────────────────────────────────────────────
 
 export async function createAdCreative(params: {
