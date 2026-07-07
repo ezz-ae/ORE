@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { getAllIntegrations } from '@/lib/freehold/mcp/mock-integrations'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { PageHeader } from '@/components/freehold/ui'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
@@ -94,12 +95,19 @@ export default function IntegrationsPage() {
   const [connecting, setConnecting] = useState<string | null>(null)
   const [connected,  setConnected]  = useState<string[]>([])
 
-  // Restore previously connected integrations (persisted on device).
+  // Restore previously connected integrations — this device first, then the
+  // ACCOUNT, so the list follows the user to any browser.
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('fh_connected_integrations') || '[]')
       if (Array.isArray(saved) && saved.length) setConnected(saved)
     } catch {}
+    loadAccountMemory().then((m) => {
+      const acct = m.connectedIntegrations
+      if (Array.isArray(acct) && acct.length) {
+        setConnected((prev) => Array.from(new Set([...prev, ...acct.filter((x): x is string => typeof x === 'string')])))
+      }
+    })
   }, [])
 
   // Live data — fetched on mount; falls back to mock catalog only until the
@@ -307,6 +315,7 @@ export default function IntegrationsPage() {
                               setConnected((prev) => {
                                 const next = [...prev, integration.id]
                                 try { localStorage.setItem('fh_connected_integrations', JSON.stringify(next)) } catch {}
+                                saveAccountMemory({ connectedIntegrations: next })
                                 return next
                               })
                               toast.success(t('integrations.connectedToast', { name: integration.name }))

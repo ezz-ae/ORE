@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Sparkles, X, ArrowRight } from 'lucide-react'
-import { CHANGELOG, hasUnseenChanges, markChangelogSeen } from '@/lib/freehold/changelog'
+import { CHANGELOG, CHANGELOG_VERSION, getSeenVersion, hasUnseenChanges, markChangelogSeen } from '@/lib/freehold/changelog'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 
 const OPEN_EVENT = 'fh:whatsnew:open'
@@ -17,7 +18,17 @@ export function openWhatsNew() {
 export function WhatsNewMenuButton({ onClick }: { onClick?: () => void }) {
   const t = useT()
   const [unseen, setUnseen] = useState(false)
-  useEffect(() => setUnseen(hasUnseenChanges()), [])
+  useEffect(() => {
+    let cancelled = false
+    // The account remembers what it has seen — a new device shows the dot
+    // only when the ACCOUNT hasn't seen the latest entry yet.
+    loadAccountMemory().then((m) => {
+      const acct = typeof m.whatsNewSeen === 'number' ? m.whatsNewSeen : 0
+      if (acct >= CHANGELOG_VERSION) markChangelogSeen()
+      if (!cancelled) setUnseen(hasUnseenChanges())
+    })
+    return () => { cancelled = true }
+  }, [])
   return (
     <button
       onClick={() => { onClick?.(); openWhatsNew() }}
@@ -47,15 +58,28 @@ export function WhatsNew() {
     const onOpen = () => { setOpen(true); setToast(false) }
     window.addEventListener(OPEN_EVENT, onOpen)
     let id: ReturnType<typeof setTimeout> | undefined
-    if (hasUnseenChanges()) {
-      // Slide in after the page settles, rather than blocking on first paint.
-      id = setTimeout(() => setToast(true), 1200)
-    }
-    return () => { if (id) clearTimeout(id); window.removeEventListener(OPEN_EVENT, onOpen) }
+    let cancelled = false
+    // Ask the ACCOUNT first: dismissing on one device dismisses everywhere.
+    loadAccountMemory().then((m) => {
+      if (cancelled) return
+      const acct = typeof m.whatsNewSeen === 'number' ? m.whatsNewSeen : 0
+      if (acct >= CHANGELOG_VERSION) { markChangelogSeen(); return }
+      const local = getSeenVersion()
+      if (local > acct) saveAccountMemory({ whatsNewSeen: local }) // backfill from this device
+      if (hasUnseenChanges()) {
+        // Slide in after the page settles, rather than blocking on first paint.
+        id = setTimeout(() => setToast(true), 1200)
+      }
+    })
+    return () => { cancelled = true; if (id) clearTimeout(id); window.removeEventListener(OPEN_EVENT, onOpen) }
   }, [])
 
-  function closePanel() { markChangelogSeen(); setOpen(false); setToast(false) }
-  function dismissToast() { markChangelogSeen(); setToast(false) }
+  function markSeenEverywhere() {
+    markChangelogSeen()
+    saveAccountMemory({ whatsNewSeen: CHANGELOG_VERSION })
+  }
+  function closePanel() { markSeenEverywhere(); setOpen(false); setToast(false) }
+  function dismissToast() { markSeenEverywhere(); setToast(false) }
   function openPanel() { setToast(false); setOpen(true) }
 
   const latest = CHANGELOG[0]

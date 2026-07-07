@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
+import { loadAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 
 /** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
@@ -85,15 +86,25 @@ export function ExpertChat() {
   const sessionId = useRef(`expert-${Date.now()}-${Math.random().toString(36).slice(2)}`)
   const dragging = useRef(false)
 
-  // Restore persisted width + open state
+  // Restore persisted width + open state — this device first (instant), then
+  // the ACCOUNT, so the panel looks the way the user left it on any device.
+  const layoutHydrated = useRef(false)
   useEffect(() => {
     const w = Number(localStorage.getItem('fi-expert-width'))
     if (w >= MIN_W && w <= MAX_W) setWidth(w)
     const o = localStorage.getItem('fi-expert-open')
     if (o === '0') setOpen(false)
+    loadAccountMemory().then((m) => {
+      if (typeof m.expertWidth === 'number' && m.expertWidth >= MIN_W && m.expertWidth <= MAX_W) setWidth(m.expertWidth)
+      if (typeof m.expertOpen === 'boolean') setOpen(m.expertOpen)
+      layoutHydrated.current = true
+    })
   }, [])
 
-  useEffect(() => { localStorage.setItem('fi-expert-open', open ? '1' : '0') }, [open])
+  useEffect(() => {
+    localStorage.setItem('fi-expert-open', open ? '1' : '0')
+    if (layoutHydrated.current) saveAccountMemoryDebounced('expertOpen', open, 800)
+  }, [open])
 
   useEffect(() => {
     if (!taRef.current) return
@@ -132,7 +143,11 @@ export function ExpertChat() {
     try { e.currentTarget.releasePointerCapture(e.pointerId) } catch {}
     document.body.style.userSelect = ''
     document.body.style.cursor = ''
-    setWidth((w) => { localStorage.setItem('fi-expert-width', String(w)); return w })
+    setWidth((w) => {
+      localStorage.setItem('fi-expert-width', String(w))
+      saveAccountMemoryDebounced('expertWidth', w, 500)
+      return w
+    })
   }, [])
 
   const send = useCallback(async (text?: string) => {

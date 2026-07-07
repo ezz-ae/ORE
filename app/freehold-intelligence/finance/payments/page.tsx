@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { CreditCard, Clock, CheckCircle2, AlertCircle, ArrowDownToLine, Plus, Landmark, RefreshCw, Loader2 } from 'lucide-react'
 import { PageHeader, StatCard, Section } from '@/components/freehold/ui'
+import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 
 function fmt(n: number) {
@@ -64,6 +65,10 @@ export default function PaymentsPage() {
   useEffect(() => {
     loadPayouts()
     try { const dc = localStorage.getItem('fh_default_card'); if (dc) setDefaultCard(dc) } catch {}
+    // The ACCOUNT's saved choice wins over the device cache.
+    loadAccountMemory().then((m) => {
+      if (typeof m.defaultCard === 'string' && m.defaultCard) setDefaultCard(m.defaultCard)
+    })
   }, [])
 
   async function payCommission(p: Payout) {
@@ -126,7 +131,7 @@ export default function PaymentsPage() {
               </div>
               {defaultCard === pm.id
                 ? <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-400">{t('finance.payments.default')}</span>
-                : <button onClick={() => { setDefaultCard(pm.id); try { localStorage.setItem('fh_default_card', pm.id) } catch {}; toast.success(t('finance.payments.defaultUpdated')) }} className="text-xs text-slate-500 hover:text-slate-300 transition">{t('finance.payments.setDefault')}</button>
+                : <button onClick={() => { setDefaultCard(pm.id); try { localStorage.setItem('fh_default_card', pm.id) } catch {}; saveAccountMemory({ defaultCard: pm.id }); toast.success(t('finance.payments.defaultUpdated')) }} className="text-xs text-slate-500 hover:text-slate-300 transition">{t('finance.payments.setDefault')}</button>
               }
             </div>
           ))}
