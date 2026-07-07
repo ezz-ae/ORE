@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
 
 type HealthFilter  = 'All' | 'on_track' | 'at_risk' | 'overdue' | 'complete'
 type StatusFilter  = 'All' | 'done' | 'in_progress' | 'blocked' | 'planned'
@@ -21,40 +22,37 @@ interface Milestone {
 function healthTone(health?: string | null) {
   switch (health) {
     case 'complete':
-    case 'on_track': return { dot: 'bg-gold', text: 'text-gold', bar: 'bg-gold' }
-    case 'at_risk':  return { dot: 'bg-gold',  text: 'text-[#F8E7AE]',  bar: 'bg-gold'  }
-    case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'    }
-    default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500'  }
+    case 'on_track': return { dot: 'bg-gold',       text: 'text-gold',       bar: 'bg-gold'      }
+    case 'at_risk':  return { dot: 'bg-amber-400',  text: 'text-amber-300',  bar: 'bg-amber-400' }
+    case 'overdue':  return { dot: 'bg-red-400',    text: 'text-red-300',    bar: 'bg-red-400'   }
+    default:         return { dot: 'bg-slate-500',  text: 'text-slate-400',  bar: 'bg-slate-500' }
   }
 }
 
-function statusLabel(status: string) {
-  switch (status) {
-    case 'done':
-    case 'live':        return 'Done'
-    case 'in_progress': return 'In progress'
-    case 'blocked':     return 'Blocked'
-    default:            return 'Planned'
-  }
+const STATUS_KEY: Record<string, string> = {
+  done: 'pmile.statusValue.done', live: 'pmile.statusValue.done',
+  in_progress: 'pmile.statusValue.inProgress', blocked: 'pmile.statusValue.blocked',
 }
 
-const HEALTH_PILLS: { key: HealthFilter; label: string }[] = [
-  { key: 'All',      label: 'All'       },
-  { key: 'on_track', label: 'On track'  },
-  { key: 'at_risk',  label: 'At risk'   },
-  { key: 'overdue',  label: 'Overdue'   },
-  { key: 'complete', label: 'Complete'  },
+const HEALTH_PILLS: { key: HealthFilter; labelKey: string }[] = [
+  { key: 'All',      labelKey: 'pmile.filterAll'          },
+  { key: 'on_track', labelKey: 'pmile.healthValue.on_track' },
+  { key: 'at_risk',  labelKey: 'pmile.healthValue.at_risk'  },
+  { key: 'overdue',  labelKey: 'pmile.healthValue.overdue'  },
+  { key: 'complete', labelKey: 'pmile.healthValue.complete' },
 ]
 
-const STATUS_PILLS: { key: StatusFilter; label: string }[] = [
-  { key: 'All',         label: 'All'         },
-  { key: 'done',        label: 'Done'        },
-  { key: 'in_progress', label: 'In progress' },
-  { key: 'blocked',     label: 'Blocked'     },
-  { key: 'planned',     label: 'Planned'     },
+const STATUS_PILLS: { key: StatusFilter; labelKey: string }[] = [
+  { key: 'All',         labelKey: 'pmile.filterAll'            },
+  { key: 'done',        labelKey: 'pmile.statusValue.done'       },
+  { key: 'in_progress', labelKey: 'pmile.statusValue.inProgress' },
+  { key: 'blocked',     labelKey: 'pmile.statusValue.blocked'    },
+  { key: 'planned',     labelKey: 'pmile.statusValue.planned'    },
 ]
 
 export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
+  const { t } = useI18n()
+  const statusLabel = (status: string) => t(STATUS_KEY[status] ?? 'pmile.statusValue.planned')
   const [healthFilter,  setHealthFilter]  = useState<HealthFilter>('All')
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>('All')
 
@@ -78,22 +76,22 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
     <>
       {/* Filter pills */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        {HEALTH_PILLS.map(({ key, label }) => (
+        {HEALTH_PILLS.map(({ key, labelKey }) => (
           <button
             key={key}
             onClick={() => setHealthFilter(key)}
             className={[
-              'rounded-full border px-3 py-1 text-sm font-medium transition',
+              'rounded-full border px-3 py-1 text-sm font-medium capitalize transition',
               healthFilter === key
                 ? 'border-gold/40 bg-gold/10 text-gold'
                 : 'border-line bg-surface text-slate-400 hover:text-slate-100',
             ].join(' ')}
           >
-            {label}
+            {t(labelKey)}
           </button>
         ))}
         <span className="self-center text-slate-700">|</span>
-        {STATUS_PILLS.map(({ key, label }) => (
+        {STATUS_PILLS.map(({ key, labelKey }) => (
           <button
             key={key}
             onClick={() => setStatusFilter(key)}
@@ -104,27 +102,27 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
                 : 'border-line bg-surface text-slate-400 hover:text-slate-100',
             ].join(' ')}
           >
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
 
       <p className="mt-2 text-xs text-slate-500">
         {filtered.length === milestones.length
-          ? `${milestones.length} milestones`
-          : `${filtered.length} of ${milestones.length} milestones`}
+          ? t('pmile.countMilestones', { count: milestones.length })
+          : t('pmile.countFiltered', { filtered: filtered.length, total: milestones.length })}
       </p>
 
       {/* List */}
       <ol className="mt-6 grid gap-3">
         {filtered.length === 0 ? (
           <li className="rounded-2xl border border-line bg-surface px-6 py-10 text-center text-sm text-slate-400">
-            No milestones match these filters.{' '}
+            {t('pmile.noMatch')}{' '}
             <button
               onClick={() => { setHealthFilter('All'); setStatusFilter('All') }}
               className="ml-1 text-gold/60 transition hover:text-gold"
             >
-              Clear
+              {t('pmile.clear')}
             </button>
           </li>
         ) : (
@@ -149,13 +147,13 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-slate-400">
-                      <span>{m.owner ?? 'Unassigned'}</span>
+                      <span>{m.owner ?? t('pmile.unassigned')}</span>
                       <span className="text-slate-600">·</span>
                       <span>{m.deadline}</span>
                       {m.days_to_deadline != null && (
                         <>
                           <span className="text-slate-600">·</span>
-                          <span>{m.days_to_deadline}d remaining</span>
+                          <span>{t('pmile.daysRemaining', { n: m.days_to_deadline })}</span>
                         </>
                       )}
                     </div>
