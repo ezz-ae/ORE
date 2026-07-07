@@ -238,6 +238,29 @@ export default function MetaIntegrationPage() {
     }
   }
 
+  // Switch which ad account server-side launches use, straight from its card.
+  // Keeps the already-connected Facebook Page unless none is known yet.
+  async function makeActive(accountId: string) {
+    const saved = localStorage.getItem(TOKEN_KEY) ?? token
+    const pageId = serverConn?.pageId || selPage || fbPages[0]?.id
+    if (!saved || !pageId) { setActivateMsg(t('pintmeta.pickPageFirst')); return }
+    setActivating(true); setActivateMsg('')
+    try {
+      const res = await fetch('/api/freehold/integrations/meta/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: saved, adAccountId: accountId, pageId }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d?.error ?? 'Could not switch account')
+      setServerConn({ configured: true, source: 'db', adAccountId: d.adAccountId, pageId })
+    } catch (err: any) {
+      setActivateMsg(err.message ?? 'Could not switch account')
+    } finally {
+      setActivating(false)
+    }
+  }
+
   // Restore saved token on mount
   useEffect(() => {
     const saved = localStorage.getItem(TOKEN_KEY)
@@ -562,8 +585,12 @@ export default function MetaIntegrationPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {accounts.map((account) => {
+          {[...accounts]
+            .sort((a, b) =>
+              (serverConn?.adAccountId === b.id ? 1 : 0) - (serverConn?.adAccountId === a.id ? 1 : 0))
+            .map((account) => {
             const isOpen = expanded.has(account.id)
+            const isActiveAccount = serverConn?.adAccountId === account.id
             const st = accountStatusLabel(account.account_status, t)
             const activeCampaigns = account.campaigns.filter((c) => c.status === 'ACTIVE').length
             const accountLeads = leads(account.insight)
@@ -571,7 +598,7 @@ export default function MetaIntegrationPage() {
             const avgCPL = accountLeads > 0 ? accountSpend / accountLeads : 0
 
             return (
-              <div key={account.id} className={`rounded-[20px] border bg-surface transition ${isOpen ? 'border-line-strong' : 'border-line'}`}>
+              <div key={account.id} className={`rounded-[20px] border bg-surface transition ${isActiveAccount ? 'border-gold/40' : isOpen ? 'border-line-strong' : 'border-line'}`}>
 
                 {/* Account header row */}
                 <button
@@ -582,6 +609,21 @@ export default function MetaIntegrationPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-white">{account.name}</span>
                       <span className={`text-xs font-medium ${st.color}`}>{st.label}</span>
+                      {isActiveAccount ? (
+                        <span className="rounded-full border border-gold/40 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gold">
+                          {t('pintmeta.activeChip')}
+                        </span>
+                      ) : serverConn ? (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); if (!activating) makeActive(account.id) }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); makeActive(account.id) } }}
+                          className="cursor-pointer rounded-full border border-line px-2 py-0.5 text-[10px] font-medium text-slate-400 transition hover:border-gold/40 hover:text-gold"
+                        >
+                          {activating ? '…' : t('pintmeta.setActive')}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
                       <span>act_{account.account_id}</span>

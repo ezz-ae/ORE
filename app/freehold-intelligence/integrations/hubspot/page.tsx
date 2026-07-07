@@ -108,6 +108,27 @@ export default function HubSpotPage() {
   const [errMsg,  setErrMsg]  = useState('')
   const [loading, setLoading] = useState(false)
   const [serverSynced, setServerSynced] = useState<boolean | null>(null)
+  const [syncBusy, setSyncBusy] = useState<'push' | 'pull' | 'both' | null>(null)
+  const [syncResult, setSyncResult] = useState<{ pushed: number; pulled: number; skipped: number } | null>(null)
+  const [syncError, setSyncError] = useState('')
+
+  // Directional sync control: write (push CRM→HubSpot), read (pull HubSpot→CRM), or both.
+  async function runSync(direction: 'push' | 'pull' | 'both') {
+    setSyncBusy(direction); setSyncError(''); setSyncResult(null)
+    try {
+      const res = await fetch('/api/freehold/integrations/hubspot/sync', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setSyncError(d?.error || 'Sync failed'); return }
+      setSyncResult({ pushed: d.pushed ?? 0, pulled: d.pulled ?? 0, skipped: d.skipped ?? 0 })
+    } catch {
+      setSyncError('Sync failed — network error')
+    } finally {
+      setSyncBusy(null)
+    }
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem(TOKEN_KEY)
@@ -197,6 +218,34 @@ export default function HubSpotPage() {
           </div>
         )}
       </div>
+
+      {/* Sync controls — direction is under your control: write, read, or both */}
+      {phase === 'connected' && (
+        <div className="mb-6 rounded-[18px] border border-line bg-surface p-5">
+          <div className="text-sm font-semibold text-white">{t('pinthub.syncTitle')}</div>
+          <p className="mt-1 text-xs text-slate-500">{t('pinthub.syncDesc')}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button onClick={() => runSync('push')} disabled={syncBusy !== null}
+              className="flex items-center gap-1.5 rounded-full border border-orange-400/25 bg-orange-400/[0.06] px-4 py-2 text-xs font-medium text-orange-300 transition hover:bg-orange-400/[0.12] disabled:opacity-40">
+              {syncBusy === 'push' ? <RefreshCw className="h-3 w-3 animate-spin" /> : <TrendingUp className="h-3 w-3" />} {t('pinthub.syncPush')}
+            </button>
+            <button onClick={() => runSync('pull')} disabled={syncBusy !== null}
+              className="flex items-center gap-1.5 rounded-full border border-sky-400/25 bg-sky-400/[0.06] px-4 py-2 text-xs font-medium text-sky-300 transition hover:bg-sky-400/[0.12] disabled:opacity-40">
+              {syncBusy === 'pull' ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Users2 className="h-3 w-3" />} {t('pinthub.syncPull')}
+            </button>
+            <button onClick={() => runSync('both')} disabled={syncBusy !== null}
+              className="flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/[0.12] disabled:opacity-40">
+              {syncBusy === 'both' ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} {t('pinthub.syncBoth')}
+            </button>
+            {syncResult && (
+              <span className="text-xs text-emerald-400">
+                {t('pinthub.syncResult', { pushed: String(syncResult.pushed), pulled: String(syncResult.pulled), skipped: String(syncResult.skipped) })}
+              </span>
+            )}
+            {syncError && <span className="text-xs text-red-400">{syncError}</span>}
+          </div>
+        </div>
+      )}
 
       {/* Connect form */}
       {phase !== 'connected' && (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Sparkles, X, ArrowRight } from 'lucide-react'
 import { CHANGELOG, hasUnseenChanges, markChangelogSeen } from '@/lib/freehold/changelog'
 import { useT } from '@/lib/i18n/provider'
@@ -39,8 +40,10 @@ export function WhatsNew() {
   const t = useT()
   const [open, setOpen] = useState(false)     // full panel
   const [toast, setToast] = useState(false)   // corner nudge
+  const [portalReady, setPortalReady] = useState(false)
 
   useEffect(() => {
+    setPortalReady(true)
     const onOpen = () => { setOpen(true); setToast(false) }
     window.addEventListener(OPEN_EVENT, onOpen)
     let id: ReturnType<typeof setTimeout> | undefined
@@ -57,7 +60,12 @@ export function WhatsNew() {
 
   const latest = CHANGELOG[0]
 
-  return (
+  // Portal to <body>: the nav header uses backdrop-blur, which turns it into a
+  // containing block for fixed descendants — rendered inline, the toast/panel
+  // got trapped inside (and broke) the header on phone and laptop.
+  if (!portalReady) return null
+
+  return createPortal(
     <>
       {/* Non-blocking corner nudge */}
       {toast && !open && latest && (
@@ -136,6 +144,7 @@ export function WhatsNew() {
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body,
   )
 }

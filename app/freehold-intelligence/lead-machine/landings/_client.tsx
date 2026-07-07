@@ -195,7 +195,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                     <span>{fmtPrice(p.startingPriceAED)}</span>
                     {p.linkedCampaigns > 0 && (
                       <><span>·</span>
-                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? t('lm.landings.campaign') : t('lm.landings.campaigns')}</span></>
+                      <span className="text-gold/60">{p.linkedCampaigns} {p.linkedCampaigns === 1 ? t('lm.landings.createCampaign') : t('lm.landings.campaigns')}</span></>
                     )}
                   </div>
 
@@ -217,6 +217,17 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                       className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
                       <Globe className="h-3 w-3" />
                     </a>
+                  )}
+
+                  {/* Ad flow in one click: landing page → campaign wizard,
+                      prefilled with this project + this landing page as the
+                      ad's destination URL. */}
+                  {p.landingStatus !== 'missing' && (
+                    <Link
+                      href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(p.slug)}&name=${encodeURIComponent(p.name)}${p.startingPriceAED ? `&price=${p.startingPriceAED}` : ''}&lp=${encodeURIComponent(p.slug)}`}
+                      className="flex items-center gap-1 rounded-full border border-gold/25 bg-gold/[0.07] px-2.5 py-1.5 text-xs text-gold/80 transition hover:text-gold">
+                      <Sparkles className="h-3 w-3" /> {t('lm.landings.createCampaign')}
+                    </Link>
                   )}
 
                   <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}

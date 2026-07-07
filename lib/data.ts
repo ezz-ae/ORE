@@ -2422,6 +2422,16 @@ export async function ensureUsersTable() {
       ADD COLUMN IF NOT EXISTS ban_reason text,
       ADD COLUMN IF NOT EXISTS settings jsonb
   `)
+
+  // The role vocabulary must cover every app role. A stray narrow seed
+  // constraint (gc_users_role_check: admin|broker only) silently rejected
+  // sales_manager/marketing/director/ceo account creation — replace it.
+  try {
+    await query(`ALTER TABLE freehold_site_users DROP CONSTRAINT IF EXISTS gc_users_role_check`)
+    await query(`ALTER TABLE freehold_site_users DROP CONSTRAINT IF EXISTS freehold_users_role_check`)
+    await query(`ALTER TABLE freehold_site_users ADD CONSTRAINT freehold_users_role_check
+      CHECK (role IS NULL OR role IN ('broker','admin','sales_manager','director','ceo','marketing'))`)
+  } catch { /* never block user ops on constraint maintenance */ }
 }
 
 export async function getUserProfileByEmail(email: string) {

@@ -194,6 +194,7 @@ export default function NewCampaignPage() {
     const project = p.get('project')
     const name = p.get('name')
     const price = p.get('price')
+    const lp = p.get('lp') // landing-page slug → the ad's destination URL
     if (!project && !name) return
     const displayName = name || project || ''
     const priceNum = price ? Number(price) : 0
@@ -205,7 +206,9 @@ export default function NewCampaignPage() {
       primaryText: priceNum > 0
         ? `${displayName} — starting from AED ${priceNum.toLocaleString()}. Request the investor summary now.`
         : `${displayName} — request the investor summary now.`,
-      landingUrl: project ? `https://www.freeholdproperty.ae/projects/${project}` : prev.landingUrl,
+      landingUrl: lp
+        ? `https://www.freeholdproperty.ae/lp/${lp}`
+        : project ? `https://www.freeholdproperty.ae/projects/${project}` : prev.landingUrl,
     }))
   }, [])
 

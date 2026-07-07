@@ -17,7 +17,17 @@ const I18nContext = createContext<I18nValue | null>(null)
 function readCookieLocale(): Locale {
   if (typeof document === 'undefined') return DEFAULT_LOCALE
   const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`))
-  return normalizeLocale(match ? decodeURIComponent(match[1]) : null)
+  if (match) return normalizeLocale(decodeURIComponent(match[1]))
+  // First visit on this device (no saved choice yet): follow the device
+  // language — an Arabic (or Russian) phone/laptop opens in that language.
+  try {
+    const langs = navigator.languages?.length ? [...navigator.languages] : [navigator.language]
+    for (const l of langs) {
+      const base = String(l || '').toLowerCase().split('-')[0]
+      if (base === 'ar' || base === 'ru') return normalizeLocale(base)
+    }
+  } catch { /* SSR / restricted */ }
+  return DEFAULT_LOCALE
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {

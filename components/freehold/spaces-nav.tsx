@@ -15,6 +15,7 @@ import { useCoach } from '@/components/freehold/coach/coach-marks'
 import { Compass, Sun, Moon } from 'lucide-react'
 import { useThemeMode } from '@/lib/freehold/use-theme-mode'
 import { WhatsNew, WhatsNewMenuButton } from '@/components/freehold/whats-new'
+import { PrefsSync, saveUserPref } from '@/components/freehold/prefs-sync'
 
 const HOME_HREF = '/freehold-intelligence'
 
@@ -171,13 +172,13 @@ export function SpacesNav() {
               <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('theme.appearance')}</div>
               <div className="flex gap-1.5 rounded-lg bg-white/[0.04] p-1">
                 <button
-                  onClick={() => theme.setMode('dark')}
+                  onClick={() => { theme.setMode('dark'); saveUserPref({ theme: 'dark' }) }}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'dark' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <Moon className="h-3.5 w-3.5" /> {t('theme.dark')}
                 </button>
                 <button
-                  onClick={() => theme.setMode('light')}
+                  onClick={() => { theme.setMode('light'); saveUserPref({ theme: 'light' }) }}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition ${theme.mode === 'light' ? 'bg-white/[0.10] text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <Sun className="h-3.5 w-3.5" /> {t('theme.light')}
@@ -208,6 +209,8 @@ export function SpacesNav() {
 
       {/* What's-new panel — auto-opens once per new feature version, then on demand */}
       <WhatsNew />
+      {/* Account memory: apply this account's saved settings on any device */}
+      <PrefsSync />
 
     </div>
   )

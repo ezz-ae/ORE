@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Check, Globe } from 'lucide-react'
 import { LOCALES, LOCALE_LABELS, LOCALE_FLAGS } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/provider'
+import { saveUserPref } from '@/components/freehold/prefs-sync'
 
 /**
  * Compact language switcher (EN / AR / RU). Designed to sit inside the account
@@ -20,7 +21,7 @@ export function LanguageSwitcher({ variant = 'menu' }: { variant?: 'menu' | 'inl
         {LOCALES.map((l) => (
           <button
             key={l}
-            onClick={() => setLocale(l)}
+            onClick={() => { setLocale(l); saveUserPref({ locale: l }) }}
             className={`rounded-md px-2 py-1 text-xs font-medium transition ${
               l === locale ? 'bg-gold/15 text-gold' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -50,7 +51,7 @@ export function LanguageSwitcher({ variant = 'menu' }: { variant?: 'menu' | 'inl
             {LOCALES.map((l) => (
               <button
                 key={l}
-                onClick={() => { setLocale(l); setOpen(false) }}
+                onClick={() => { setLocale(l); saveUserPref({ locale: l }); setOpen(false) }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-surface-2 hover:text-white"
               >
                 <span className="w-5 text-center">{LOCALE_FLAGS[l]}</span>
