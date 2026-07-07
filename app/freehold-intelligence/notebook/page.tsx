@@ -2,13 +2,16 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
   Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
   Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
-  BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper,
+  BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper, History, Trash2,
 } from 'lucide-react'
+import { saveAccountMemory } from '@/lib/freehold/account-memory'
+import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { useT } from '@/lib/i18n/provider'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -46,7 +49,26 @@ type DemoOutput = {
 const allOutputs: DemoOutput[] = []
 const pinnedOutputs: DemoOutput[] = []
 
-type CenterTab = 'chat' | 'saved' | 'pinned'
+type CenterTab = 'chat' | 'expert' | 'saved' | 'pinned'
+
+// Read-only view of a stored Expert turn (the side chat's rich blocks,
+// flattened to text for the Suite's history reader).
+type ExpertStoredTurn = { role: 'user' | 'assistant'; content?: string; blocks?: ExpertBlock[]; createdAt: string }
+type ExpertSessionRow = { id: string; title: string; messageCount: number; updatedAt: string }
+
+function expertBlocksText(blocks: ExpertBlock[] | undefined): string {
+  if (!blocks?.length) return ''
+  return blocks
+    .map((b) => {
+      if (b.type === 'text') return b.content
+      if (b.type === 'plan') return `${b.title || 'Plan'}\n${b.steps.map((s, i) => `${i + 1}. ${s.step}${s.detail ? ` — ${s.detail}` : ''}`).join('\n')}`
+      if (b.type === 'landing') return `${b.title}${b.subhead ? `\n${b.subhead}` : ''}\n${b.sections.map((s) => `${s.heading}: ${s.body}`).join('\n')}`
+      if (b.type === 'media') return `${b.label}: ${b.prompt}`
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n\n')
+}
 
 // ── studio generate grid ─────────────────────────────────────────────────────
 
@@ -97,6 +119,43 @@ function SourceCheckbox({ checked, onChange }: { checked: boolean; onChange: () 
 
 export default function NotebookPage() {
   const t = useT()
+  const router = useRouter()
+
+  // ── AI Suite: the account's Expert conversations (from ANY page) ──────────
+  const [expertSessions, setExpertSessions] = useState<ExpertSessionRow[]>([])
+  const [openExpertId, setOpenExpertId] = useState<string | null>(null)
+  const [openExpertTurns, setOpenExpertTurns] = useState<ExpertStoredTurn[]>([])
+  useEffect(() => {
+    fetch('/api/freehold/expert/sessions')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.sessions)) setExpertSessions(d.sessions) })
+      .catch(() => {})
+  }, [])
+
+  async function toggleExpertSession(id: string) {
+    if (openExpertId === id) { setOpenExpertId(null); return }
+    setOpenExpertId(id)
+    setOpenExpertTurns([])
+    try {
+      const r = await fetch(`/api/freehold/expert/sessions/${encodeURIComponent(id)}`)
+      if (!r.ok) return
+      const d = await r.json()
+      setOpenExpertTurns(Array.isArray(d.session?.messages) ? d.session.messages : [])
+    } catch { /* leave collapsed */ }
+  }
+
+  function continueExpertSession(id: string) {
+    // Point the account's side chat at this conversation, then go where the
+    // panel lives — it restores the session there (any page outside Notebook).
+    saveAccountMemory({ expertSession: id })
+    router.push('/freehold-intelligence')
+  }
+
+  async function deleteExpertSession(id: string) {
+    try { await fetch(`/api/freehold/expert/sessions?id=${encodeURIComponent(id)}`, { method: 'DELETE' }) } catch {}
+    setExpertSessions((s) => s.filter((x) => x.id !== id))
+    if (openExpertId === id) setOpenExpertId(null)
+  }
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
   const [showAddSource, setShowAddSource] = useState(false)
@@ -481,7 +540,7 @@ export default function NotebookPage() {
             </button>
           </div>
           <div className="flex items-center gap-1">
-            {((['chat', 'saved', 'pinned'] as CenterTab[])).map(tab => (
+            {((['chat', 'expert', 'saved', 'pinned'] as CenterTab[])).map(tab => (
               <button
                 key={tab}
                 onClick={() => setCenterTab(tab)}
@@ -492,7 +551,7 @@ export default function NotebookPage() {
                     : 'text-slate-500 hover:text-slate-300',
                 ].join(' ')}
               >
-                {tab === 'saved' ? t('nb.savedOutputs') : tab === 'pinned' ? t('nb.pinned') : t('nb.chat')}
+                {tab === 'saved' ? t('nb.savedOutputs') : tab === 'pinned' ? t('nb.pinned') : tab === 'expert' ? t('nb.expertChats') : t('nb.chat')}
               </button>
             ))}
           </div>
@@ -576,6 +635,77 @@ export default function NotebookPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* ── tab: Expert conversations — the side chat's full memory ── */}
+        {centerTab === 'expert' && (
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            {expertSessions.length === 0 ? (
+              <div className="flex h-48 flex-col items-center justify-center gap-2 text-slate-500">
+                <History className="h-6 w-6 opacity-30" />
+                <p className="text-sm">{t('nb.noExpertChats')}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {expertSessions.map((s) => {
+                  const isOpen = openExpertId === s.id
+                  return (
+                    <div key={s.id} className="overflow-hidden rounded-xl border border-line bg-surface">
+                      <div className="flex items-center gap-3 p-4">
+                        <button onClick={() => toggleExpertSession(s.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-gold/20 bg-gold/[0.06]">
+                            <Sparkles className="h-3.5 w-3.5 text-gold" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold text-white">{s.title}</div>
+                            <div className="mt-0.5 text-xs text-slate-500">
+                              {t('nb.msgCount', { count: s.messageCount })} · {relativeTime(s.updatedAt, t)}
+                            </div>
+                          </div>
+                          <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                        </button>
+                        <button
+                          onClick={() => continueExpertSession(s.id)}
+                          className="shrink-0 rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90"
+                        >
+                          {t('nb.continueChat')}
+                        </button>
+                        <button
+                          onClick={() => deleteExpertSession(s.id)}
+                          title={t('common.delete')}
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-600 transition hover:bg-red-400/10 hover:text-red-300"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {isOpen && (
+                        <div className="max-h-96 space-y-2.5 overflow-y-auto border-t border-line bg-white/[0.02] p-4">
+                          {openExpertTurns.length === 0 ? (
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('common.loading')}
+                            </div>
+                          ) : openExpertTurns.map((m, i) => (
+                            <div
+                              key={i}
+                              className={
+                                m.role === 'user'
+                                  ? 'ml-8 rounded-xl border border-line bg-surface-2 px-3.5 py-2.5'
+                                  : 'mr-8 rounded-xl border border-gold/12 bg-gold/[0.04] px-3.5 py-2.5'
+                              }
+                            >
+                              <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-200">
+                                {m.role === 'user' ? (m.content ?? '') : expertBlocksText(m.blocks)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ── tab: saved outputs ── */}

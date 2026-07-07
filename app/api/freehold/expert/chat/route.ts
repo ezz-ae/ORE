@@ -7,6 +7,7 @@ import { executeTool } from '@/lib/freehold/mcp/execute-tool'
 import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
+import { appendExpertTurn, getExpertSession, blocksToText } from '@/lib/freehold/expert-sessions'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     // Unauthenticated callers get the least-privilege 'viewer' role.
     const sessionUser = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
     const role: ExpertRole = sessionUser ? (SESSION_TO_EXPERT[sessionUser.role] ?? 'viewer') : 'viewer'
-    const sessionId = body.sessionId ?? `expert-${crypto.randomUUID()}`
+    const sessionId = body.sessionId?.trim() ? body.sessionId : `expert-${crypto.randomUUID()}`
 
     if (!message) {
       return NextResponse.json(
@@ -194,6 +195,19 @@ export async function POST(request: NextRequest) {
         ? `\n\nYou are advising MARKETING: focus on campaigns, ads, landing pages, content and attribution. Infrastructure/integration fixes are in scope only when they block ad delivery.`
         : `\n\nYou are advising an OPERATOR (owner/admin/manager): full-system scope is appropriate.`
 
+    // Durable session memory: replay the conversation's recent turns from the
+    // DB so a resumed chat (new device, cold instance) still remembers itself.
+    let durableHistory: Array<{ role: 'user' | 'model'; text: string }> | undefined
+    if (sessionUser && body.sessionId) {
+      const stored = await getExpertSession(body.sessionId, sessionUser.email)
+      if (stored?.messages.length) {
+        durableHistory = stored.messages.slice(-20).map((m) => ({
+          role: m.role === 'user' ? ('user' as const) : ('model' as const),
+          text: m.role === 'user' ? (m.content ?? '') : blocksToText(m.blocks),
+        })).filter((h) => h.text)
+      }
+    }
+
     const raw = await queryServerAgent(message, {
       sessionId,
       context: fullContext,
@@ -201,10 +215,16 @@ export async function POST(request: NextRequest) {
       responseMimeType: 'application/json',
       maxOutputTokens: 4096,
       temperature: 0.5,
+      history: durableHistory,
     })
 
     const blocks = parseBlocks(raw)
-    const data = { blocks, skill: skill.id }
+    // Persist the turn to the account's session so nothing is lost on reload —
+    // and return the (possibly newly created) session id to the client.
+    const persistedId = sessionUser
+      ? await appendExpertTurn(sessionId, sessionUser.email, message, blocks)
+      : sessionId
+    const data = { blocks, skill: skill.id, sessionId: persistedId }
 
     const response: McpResponseEnvelope<typeof data> = {
       requestId: crypto.randomUUID(),

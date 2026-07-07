@@ -6,12 +6,12 @@ import Link from 'next/link'
 import {
   Sparkles, ArrowUp, Loader2, X, Plus, PanelRightClose, PanelRightOpen,
   Check, Rocket, Pencil, Eye, ThumbsUp, ArrowRight, ImageIcon, Copy, ListChecks,
-  BookmarkPlus,
+  BookmarkPlus, History, Trash2, ChevronDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
-import { loadAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
+import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 
 /** Serialize assistant blocks into a self-contained HTML fragment for the Notebook. */
@@ -37,6 +37,17 @@ function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
 }
 
 type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[] }
+
+type SessionSummary = { id: string; title: string; messageCount: number; updatedAt: string }
+
+type StoredTurn = { role: 'user' | 'assistant'; content?: string; blocks?: ExpertBlock[] }
+
+const toMessages = (turns: StoredTurn[]): Message[] =>
+  turns.map((m) =>
+    m.role === 'user'
+      ? ({ role: 'user', content: m.content ?? '' } as Message)
+      : ({ role: 'assistant', blocks: Array.isArray(m.blocks) ? m.blocks : [] } as Message),
+  )
 
 const STARTER_KEYS = [
   'expert.starter1',
@@ -83,8 +94,13 @@ export function ExpertChat() {
   const [savedIdx, setSavedIdx] = useState<number | null>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const sessionId = useRef(`expert-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+  // Empty = "no conversation yet": the server mints an id on the first turn
+  // and we adopt it, so every conversation is durable from message one.
+  const sessionId = useRef('')
   const dragging = useRef(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [sessions, setSessions] = useState<SessionSummary[]>([])
+  const historyRef = useRef<HTMLDivElement>(null)
 
   // Restore persisted width + open state — this device first (instant), then
   // the ACCOUNT, so the panel looks the way the user left it on any device.
@@ -112,6 +128,66 @@ export function ExpertChat() {
       saveAccountMemoryDebounced('expertOpen', open, 800)
     }
   }, [open])
+
+  // Session memory: resume the account's current conversation on any device —
+  // a chat started on the laptop continues on the phone, reloads included.
+  useEffect(() => {
+    let cancelled = false
+    loadAccountMemory().then(async (m) => {
+      const sid = typeof m.expertSession === 'string' ? m.expertSession : ''
+      if (!sid || cancelled) return
+      sessionId.current = sid
+      try {
+        const r = await fetch(`/api/freehold/expert/sessions/${encodeURIComponent(sid)}`)
+        if (!r.ok || cancelled) return
+        const d = await r.json()
+        const restored = toMessages(d.session?.messages ?? [])
+        if (restored.length && !cancelled) setMessages((cur) => (cur.length ? cur : restored))
+      } catch { /* start fresh */ }
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  // Load the recent-conversations list when the history menu opens.
+  useEffect(() => {
+    if (!historyOpen) return
+    fetch('/api/freehold/expert/sessions')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.sessions)) setSessions(d.sessions) })
+      .catch(() => {})
+  }, [historyOpen])
+
+  // Close the history menu on outside click.
+  useEffect(() => {
+    if (!historyOpen) return
+    function onClick(e: MouseEvent) {
+      if (historyRef.current && !historyRef.current.contains(e.target as Node)) setHistoryOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [historyOpen])
+
+  async function openSession(id: string) {
+    setHistoryOpen(false)
+    try {
+      const r = await fetch(`/api/freehold/expert/sessions/${encodeURIComponent(id)}`)
+      if (!r.ok) return
+      const d = await r.json()
+      sessionId.current = id
+      setMessages(toMessages(d.session?.messages ?? []))
+      saveAccountMemory({ expertSession: id })
+    } catch { /* keep current conversation */ }
+  }
+
+  async function removeSession(id: string) {
+    try { await fetch(`/api/freehold/expert/sessions?id=${encodeURIComponent(id)}`, { method: 'DELETE' }) } catch {}
+    setSessions((s) => s.filter((x) => x.id !== id))
+    if (sessionId.current === id) {
+      sessionId.current = ''
+      setMessages([])
+      saveAccountMemory({ expertSession: null })
+    }
+  }
 
   useEffect(() => {
     if (!taRef.current) return
@@ -172,6 +248,13 @@ export function ExpertChat() {
       const data = await res.json()
       const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: t('expert.fallbackOk') }]
       setMessages((m) => [...m, { role: 'assistant', blocks }])
+      // Adopt the durable session id the server persisted this turn under —
+      // and remember it on the ACCOUNT so the conversation follows the user.
+      const sid = data?.data?.sessionId
+      if (typeof sid === 'string' && sid) {
+        sessionId.current = sid
+        saveAccountMemoryDebounced('expertSession', sid, 800)
+      }
     } catch {
       setMessages((m) => [...m, { role: 'assistant', blocks: [{ type: 'text', content: t('expert.fallbackErr') }] }])
     } finally {
@@ -197,7 +280,9 @@ export function ExpertChat() {
 
   function reset() {
     setMessages([]); setValue('')
-    sessionId.current = `expert-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    // New conversation: the server mints the next id on the first message.
+    sessionId.current = ''
+    saveAccountMemory({ expertSession: null })
   }
 
   function copy(text: string, key: string) {
@@ -283,6 +368,30 @@ export function ExpertChat() {
             </div>
           </div>
           <div className="flex items-center gap-0.5">
+            {/* Chat history — every conversation is remembered by the account */}
+            <div ref={historyRef} className="relative">
+              <button onClick={() => setHistoryOpen((o) => !o)} title={t('expert.history')} className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
+                <History className="h-4 w-4" />
+              </button>
+              {historyOpen && (
+                <div className="absolute right-0 top-9 z-30 max-h-80 w-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.7)]">
+                  <div className="border-b border-line px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('expert.history')}</div>
+                  {sessions.length === 0 ? (
+                    <div className="px-3.5 py-4 text-sm text-slate-500">{t('expert.noHistory')}</div>
+                  ) : sessions.map((s) => (
+                    <div key={s.id} className={`group flex items-center gap-2 border-b border-white/[0.04] px-2 py-1 ${s.id === sessionId.current ? 'bg-gold/[0.06]' : ''}`}>
+                      <button onClick={() => openSession(s.id)} className="min-w-0 flex-1 rounded-lg px-1.5 py-1.5 text-left transition hover:bg-white/[0.04]">
+                        <div className="truncate text-sm text-slate-200">{s.title}</div>
+                        <div className="text-[11px] text-slate-500">{Math.ceil(s.messageCount / 2)} ✦</div>
+                      </button>
+                      <button onClick={() => removeSession(s.id)} title={t('common.delete')} className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-slate-600 opacity-0 transition group-hover:opacity-100 hover:bg-red-400/10 hover:text-red-300">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             {messages.length > 0 && (
               <button onClick={reset} title={t('expert.newChat')} className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200">
                 <Plus className="h-4 w-4" />
@@ -322,9 +431,17 @@ export function ExpertChat() {
                   </div>
                 ) : (
                   <div key={i} className="grid gap-2.5">
-                    {m.blocks.map((b, j) => (
-                      <BlockView key={j} block={b} idx={`${i}-${j}`} onAction={send} onCopy={copy} copied={copied} />
-                    ))}
+                    {m.blocks.map((b, j) => {
+                      const view = <BlockView key={j} block={b} idx={`${i}-${j}`} onAction={send} onCopy={copy} copied={copied} />
+                      // Canvas accordion: big outputs (plans, landing drafts)
+                      // from EARLIER turns fold away so the conversation stays
+                      // light — the newest canvas is always open.
+                      const isBig = b.type === 'plan' || b.type === 'landing'
+                      const isLatest = i >= messages.length - 2
+                      if (!isBig || isLatest) return view
+                      const label = (b.type === 'plan' ? b.title : b.type === 'landing' ? b.title : '') || t('expert.canvas')
+                      return <CanvasAccordion key={j} label={label}>{view}</CanvasAccordion>
+                    })}
                     <button
                       onClick={() => saveToNotebook(m.blocks, i)}
                       className="inline-flex items-center gap-1.5 self-start rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-surface-2 hover:text-slate-200"
@@ -367,6 +484,25 @@ export function ExpertChat() {
         </div>
       </aside>
     </>
+  )
+}
+
+// ─── Canvas accordion — folds earlier big outputs, one tap to reopen ─────────
+
+function CanvasAccordion({ label, children }: { label: string; children: React.ReactNode }) {
+  const [openC, setOpenC] = useState(false)
+  return (
+    <div className="overflow-hidden rounded-xl border border-line bg-surface-2">
+      <button
+        onClick={() => setOpenC((o) => !o)}
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition hover:bg-white/[0.03]"
+      >
+        <ListChecks className="h-3.5 w-3.5 shrink-0 text-gold" />
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${openC ? 'rotate-180' : ''}`} />
+      </button>
+      {openC && <div className="border-t border-line p-2">{children}</div>}
+    </div>
   )
 }
 

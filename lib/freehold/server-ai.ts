@@ -95,6 +95,12 @@ export interface ServerQueryOptions {
   maxOutputTokens?: number
   /** Override sampling temperature (default 0.4). */
   temperature?: number
+  /**
+   * Durable conversation history to replay when this process holds none for
+   * the session (cold start / new instance). The warm in-memory cache still
+   * wins — this fallback makes session memory survive restarts and devices.
+   */
+  history?: Array<{ role: 'user' | 'model'; text: string }>
 }
 
 export async function queryServerAgent(
@@ -115,11 +121,11 @@ export async function queryServerAgent(
 
 async function callVertex(
   message: string,
-  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature }: ServerQueryOptions = {},
+  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature, history: durableHistory }: ServerQueryOptions = {},
 ): Promise<string> {
   const authHeaders = await getVertexAuthHeaders()
   const sid     = sessionId ?? 'server-anon'
-  const history = _history.get(sid) ?? []
+  const history = _history.get(sid) ?? durableHistory ?? []
 
   const inputText =
     context && history.length === 0
