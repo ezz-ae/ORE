@@ -9,11 +9,11 @@ import { NON_BROKER_ROLES } from '@/lib/freehold/apps'
 import { useT } from '@/lib/i18n/provider'
 
 const tabs = [
-  { label: 'Live Overview',  href: '/freehold-intelligence/ads-live',         exact: true },
-  { label: 'Meta Ads',       href: '/freehold-intelligence/ads-live/meta' },
-  { label: 'Google Ads',     href: '/freehold-intelligence/ads-live/google' },
-  { label: 'Ad Preview',     href: '/freehold-intelligence/ads-live/preview' },
-  { label: 'Build & manage', href: '/freehold-intelligence/lead-machine', divider: true },
+  { labelKey: 'lm.live.nav.overview', href: '/freehold-intelligence/ads-live',         exact: true },
+  { labelKey: 'lm.live.nav.meta',     href: '/freehold-intelligence/ads-live/meta' },
+  { labelKey: 'lm.live.nav.google',   href: '/freehold-intelligence/ads-live/google' },
+  { labelKey: 'lm.live.nav.preview',  href: '/freehold-intelligence/ads-live/preview' },
+  { labelKey: 'lm.live.nav.build',    href: '/freehold-intelligence/lead-machine', divider: true },
 ]
 
 export default function AdsLiveLayout({ children }: { children: React.ReactNode }) {
@@ -58,15 +58,15 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
           href="/freehold-intelligence/ads"
           className="flex items-center gap-2 text-sm text-slate-400 transition-colors hover:text-slate-100 shrink-0"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:block">All ad tools</span>
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+          <span className="hidden sm:block">{t('lm.live.allTools')}</span>
         </Link>
         <div className="h-5 w-px bg-surface-3 shrink-0" />
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-gold/25 bg-gold/10">
             <Megaphone className="h-3.5 w-3.5 text-gold" />
           </div>
-          <span className="text-sm font-semibold text-white">Ads <span className="text-slate-500 font-normal">· Live</span></span>
+          <span className="text-sm font-semibold text-white">{t('lm.live.appName')} <span className="text-slate-500 font-normal">{t('lm.live.appMode')}</span></span>
         </div>
         <div className="ml-auto">
           {live === true && (
@@ -106,7 +106,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
                       : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.05] border border-transparent',
                   ].join(' ')}
                 >
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </Link>
               )
             })}
@@ -129,7 +129,7 @@ export default function AdsLiveLayout({ children }: { children: React.ReactNode 
                       active ? 'border-pink-400 text-white' : 'border-transparent text-slate-400 hover:text-slate-200',
                     ].join(' ')}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </Link>
                 )
               })}
