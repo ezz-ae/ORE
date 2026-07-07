@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter, Geist_Mono, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -30,6 +30,15 @@ const playfair = Playfair_Display({
 })
 
 const siteUrl = getSiteUrl()
+
+// Phone/webapp behaviour: edge-to-edge with safe-area support (viewportFit)
+// and a browser-chrome colour that matches the app instead of default white.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0a1628",
+}
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
@@ -90,6 +99,12 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
   },
   manifest: "/site.webmanifest",
+  // Installed-to-home-screen behaviour: full-screen, app-like, no browser chrome.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Freehold",
+  },
   robots: {
     index: true,
     follow: true,

@@ -69,14 +69,18 @@ export function SpacesNav() {
         className="flex h-full shrink-0 items-center gap-2.5 border-r border-white/[0.07] px-5 transition hover:bg-white/[0.04]"
       >
         <Sparkles className="h-4 w-4 text-gold" />
-        <span className="hidden text-sm font-semibold tracking-tight text-white sm:block">
+        <span className="text-sm font-semibold tracking-tight text-white">
           {BRAND.company}
           <span className="ml-1 text-gold">{BRAND.product}</span>
         </span>
       </Link>
 
-      {/* App spine — role-aware, single source of truth */}
-      <nav data-coach="nav-spine" className="flex h-full flex-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      {/* Mobile spacer — keeps brand left, account right while the spine is hidden */}
+      <div className="flex-1 md:hidden" />
+
+      {/* App spine — role-aware, single source of truth. Hidden on phones:
+          the bottom tab bar takes over there, so the top stays calm. */}
+      <nav data-coach="nav-spine" className="hidden h-full flex-1 overflow-x-auto md:flex" style={{ scrollbarWidth: 'none' }}>
         <div className="flex h-full min-w-max">
           {/* Home — hidden for brokers (they use My Workspace tab) */}
           {role !== 'broker' && (

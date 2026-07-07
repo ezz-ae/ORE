@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -88,22 +88,29 @@ export function ExpertChat() {
 
   // Restore persisted width + open state — this device first (instant), then
   // the ACCOUNT, so the panel looks the way the user left it on any device.
+  // On PHONES the panel is a full-screen overlay, so it never opens by
+  // itself — only via the Expert button (a desktop "open" preference must
+  // not swallow a phone's first screen).
   const layoutHydrated = useRef(false)
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const isPhone = window.matchMedia('(max-width: 767px)').matches
     const w = Number(localStorage.getItem('fi-expert-width'))
     if (w >= MIN_W && w <= MAX_W) setWidth(w)
     const o = localStorage.getItem('fi-expert-open')
-    if (o === '0') setOpen(false)
+    if (o === '0' || isPhone) setOpen(false)
     loadAccountMemory().then((m) => {
       if (typeof m.expertWidth === 'number' && m.expertWidth >= MIN_W && m.expertWidth <= MAX_W) setWidth(m.expertWidth)
-      if (typeof m.expertOpen === 'boolean') setOpen(m.expertOpen)
+      if (typeof m.expertOpen === 'boolean' && !isPhone) setOpen(m.expertOpen)
       layoutHydrated.current = true
     })
   }, [])
 
   useEffect(() => {
     localStorage.setItem('fi-expert-open', open ? '1' : '0')
-    if (layoutHydrated.current) saveAccountMemoryDebounced('expertOpen', open, 800)
+    // Phones never persist "open" — the account preference is a desktop layout.
+    if (layoutHydrated.current && window.matchMedia('(min-width: 768px)').matches) {
+      saveAccountMemoryDebounced('expertOpen', open, 800)
+    }
   }, [open])
 
   useEffect(() => {

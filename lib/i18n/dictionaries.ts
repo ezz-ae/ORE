@@ -99,6 +99,7 @@ const en: Dict = {
   'nav.settings': 'Settings',
   'nav.management': 'Management',
   'nav.agent': 'My Workspace',
+  'nav.expert': 'Expert',
   // roles
   'role.broker': 'Broker',
   'role.admin': 'Admin',
@@ -280,6 +281,7 @@ const ar: Dict = {
   'nav.settings': 'الإعدادات',
   'nav.management': 'الإدارة',
   'nav.agent': 'مساحتي',
+  'nav.expert': 'الخبير',
   'role.broker': 'وسيط',
   'role.admin': 'مدير النظام',
   'role.sales_manager': 'مدير المبيعات',
@@ -452,6 +454,7 @@ const ru: Dict = {
   'nav.settings': 'Настройки',
   'nav.management': 'Управление',
   'nav.agent': 'Моё пространство',
+  'nav.expert': 'Эксперт',
   'role.broker': 'Брокер',
   'role.admin': 'Администратор',
   'role.sales_manager': 'Руководитель продаж',

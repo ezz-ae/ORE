@@ -2,6 +2,7 @@
 
 import { Toaster } from 'sonner'
 import { SpacesNav } from '@/components/freehold/spaces-nav'
+import { MobileTabBar } from '@/components/freehold/mobile-tab-bar'
 import { ExpertChat } from '@/components/freehold/expert-chat'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { BRAND } from '@/lib/freehold/brand'
@@ -48,6 +49,8 @@ function FreeholdShell({ children }: { children: React.ReactNode }) {
           </main>
           <ExpertChat />
         </div>
+        {/* Phone-only bottom tabs — the top spine hides on small screens */}
+        <MobileTabBar />
       </CoachProvider>
       <Toaster
         theme="dark"
