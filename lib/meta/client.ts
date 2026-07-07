@@ -444,6 +444,9 @@ export async function launchFullCampaign(params: {
     objective:             toOdaxObjective(params.objective, !!pixelId),
     status:                params.launchStatus,
     special_ad_categories: [],
+    // Budgets live on the ad set (not CBO) — Meta now requires this flag to
+    // be explicit (subcode 4834011). False = classic per-ad-set budgets.
+    is_adset_budget_sharing_enabled: false,
   })
 
   // From here on, a failure must not leave a headless campaign behind.
