@@ -42,6 +42,7 @@ export default function PaymentsPage() {
   useEffect(() => { loadPayouts() }, [])
 
   async function payCommission(p: Payout) {
+    if (!window.confirm(t('finance.payments.confirmPay', { agent: p.agentName, amount: fmt(p.outstandingAed) }))) return
     setPayingId(p.id)
     try {
       const res = await fetch(`/api/freehold/deals/${p.id}`, {

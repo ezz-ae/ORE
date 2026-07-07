@@ -66,6 +66,8 @@ export default function ManagementDashboard() {
   const [greeting, setGreeting] = useState('')
   const [dateStr, setDateStr]   = useState('')
   const [aiMessages, setAiMessages] = useState<{ role: string; text: string }[]>([])
+  const [dataLive, setDataLive] = useState<boolean | null>(null)
+  const [loadedAt, setLoadedAt] = useState('')
 
   useEffect(() => {
     const now  = new Date()
@@ -80,7 +82,10 @@ export default function ManagementDashboard() {
     fetch('/api/freehold/dashboard/stats', { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
-        if (!d) return
+        if (!d) { setDataLive(false); return }
+        setDataLive(true)
+        const dl = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
+        setLoadedAt(new Date().toLocaleTimeString(dl, { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Dubai' }))
         setStats(d.stats)
         setTasks(d.tasks || [])
         setEvents(d.events || [])
@@ -97,8 +102,8 @@ export default function ManagementDashboard() {
           setAiMessages([{ role: 'assistant', text }])
         }
       })
-      .catch(() => {})
-  }, [t])
+      .catch(() => setDataLive(false))
+  }, [t, locale])
 
   const STAT_CARDS: { label: string; value: string; delta?: StatDelta; hint?: string; icon: LucideIcon }[] = stats ? [
     { label: t('mgmt.stat.newLeadsToday'), value: String(stats.newLeadsToday), delta: stats.newLeadsDelta !== 0 ? { value: `${stats.newLeadsDelta > 0 ? '+' : ''}${stats.newLeadsDelta}`, direction: stats.newLeadsDelta >= 0 ? 'up' : 'down' } : undefined, icon: Target },
@@ -155,10 +160,17 @@ export default function ManagementDashboard() {
             <h1 className="text-lg font-semibold text-white">{greeting}</h1>
             <p className="mt-0.5 text-sm text-slate-500">{dateStr}</p>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-400">{t('mgmt.allSystemsLive')}</span>
-          </div>
+          {dataLive === true ? (
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="text-xs font-medium text-emerald-400">{t('mgmt.dataLive')}</span>
+            </div>
+          ) : dataLive === false ? (
+            <div className="flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              <span className="text-xs font-medium text-amber-400">{t('mgmt.dataUnavailable')}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -195,7 +207,7 @@ export default function ManagementDashboard() {
                   <Sparkles className="h-3.5 w-3.5 text-gold" />
                 </div>
                 <span className="text-sm font-semibold text-white">{t('mgmt.aiBriefing')}</span>
-                <span className="ml-auto text-xs text-slate-500">{t('mgmt.updatedAt', { time: '08:00 AM' })}</span>
+                {loadedAt && <span className="ml-auto text-xs text-slate-500">{t('mgmt.updatedAt', { time: loadedAt })}</span>}
               </div>
 
               <div className="max-h-72 overflow-y-auto px-5 py-4 space-y-3">
