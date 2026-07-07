@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, Search, Calculator, Building2, X } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
 
 export interface DealFormValues {
   leadId?: string | null
@@ -93,6 +94,7 @@ interface DealFormProps {
 }
 
 export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadLookup = true, busy }: DealFormProps) {
+  const { t } = useI18n()
   const [v, setV] = useState<DealFormValues>({ ...EMPTY, ...initial })
   const [leadResults, setLeadResults] = useState<LeadOption[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -247,11 +249,11 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
   async function handleSubmit() {
     setError('')
     if (!v.leadName.trim()) {
-      setError('Client / lead name is required.')
+      setError(t('mgmt.deals.form.errName'))
       return
     }
     if (v.propertyValueAed <= 0) {
-      setError('Property value must be greater than zero.')
+      setError(t('mgmt.deals.form.errValue'))
       return
     }
     await onSubmit(v)
@@ -266,11 +268,11 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
       {/* Client / lead */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="relative">
-          <label className={labelCls}>Client / Lead name *</label>
+          <label className={labelCls}>{t('mgmt.deals.form.clientName')} *</label>
           <div className="relative">
             <input
               className={inputCls}
-              placeholder="Start typing to search CRM…"
+              placeholder={t('mgmt.deals.form.clientNamePh')}
               value={v.leadName}
               onChange={(e) => { set('leadName', e.target.value); set('leadId', null) }}
               onFocus={() => leadResults.length && setShowResults(true)}
@@ -301,16 +303,16 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
               ))}
             </div>
           )}
-          {v.leadId && <p className="mt-1 text-xs text-emerald-400">Linked to CRM lead — details autofilled.</p>}
+          {v.leadId && <p className="mt-1 text-xs text-emerald-400">{t('mgmt.deals.form.leadLinked')}</p>}
         </div>
         <div>
-          <label className={labelCls}>Phone / WhatsApp</label>
+          <label className={labelCls}>{t('mgmt.deals.form.phone')}</label>
           <input className={inputCls} value={v.clientPhone} onChange={(e) => set('clientPhone', e.target.value)} placeholder="+971…" />
         </div>
       </div>
 
       <div>
-        <label className={labelCls}>Email</label>
+        <label className={labelCls}>{t('mgmt.deals.form.email')}</label>
         <input className={inputCls} value={v.clientEmail} onChange={(e) => set('clientEmail', e.target.value)} placeholder="client@email.com" />
       </div>
 
@@ -318,46 +320,46 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
       <div className="rounded-xl border border-line-strong bg-surface-2/50 p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            <Building2 className="h-3.5 w-3.5 text-gold" /> Property
+            <Building2 className="h-3.5 w-3.5 text-gold" /> {t('mgmt.deals.form.property')}
           </div>
           <button
             type="button"
             onClick={openInventory}
             className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1 text-xs font-medium text-gold transition hover:bg-gold/15"
           >
-            <Search className="h-3 w-3" /> Choose from inventory
+            <Search className="h-3 w-3" /> {t('mgmt.deals.form.chooseInventory')}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>Developer name</label>
+            <label className={labelCls}>{t('mgmt.deals.form.developer')}</label>
             <input className={inputCls} value={v.developerName} onChange={(e) => set('developerName', e.target.value)} placeholder="e.g. Emaar" />
           </div>
           <div>
-            <label className={labelCls}>Project name</label>
+            <label className={labelCls}>{t('mgmt.deals.form.project')}</label>
             <input className={inputCls} value={v.projectName} onChange={(e) => set('projectName', e.target.value)} placeholder="e.g. Dubai Hills Estate" />
           </div>
         </div>
-        {v.projectSlug && <p className="mt-2 text-xs text-emerald-400">Linked to inventory project · {v.projectSlug}</p>}
+        {v.projectSlug && <p className="mt-2 text-xs text-emerald-400">{t('mgmt.deals.form.projectLinked', { slug: v.projectSlug })}</p>}
       </div>
 
       {showInventory && (
         <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm" onClick={() => setShowInventory(false)}>
           <div className="my-10 w-full max-w-lg rounded-2xl border border-line-strong bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-              <h3 className="text-sm font-semibold text-white">Choose project from inventory</h3>
+              <h3 className="text-sm font-semibold text-white">{t('mgmt.deals.form.chooseProject')}</h3>
               <button onClick={() => setShowInventory(false)} className="rounded p-1 text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-4">
               <div className="relative mb-3">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input autoFocus className={`${inputCls} pl-9`} value={invQuery} onChange={(e) => setInvQuery(e.target.value)} placeholder="Search project, area, developer…" />
+                <input autoFocus className={`${inputCls} pl-9`} value={invQuery} onChange={(e) => setInvQuery(e.target.value)} placeholder={t('mgmt.deals.form.searchProject')} />
               </div>
               <div className="max-h-[50vh] space-y-1 overflow-y-auto">
                 {invLoading ? (
                   <div className="flex items-center justify-center py-8 text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
                 ) : invFiltered.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-slate-500">No projects found.</div>
+                  <div className="py-8 text-center text-sm text-slate-500">{t('mgmt.deals.form.noProjects')}</div>
                 ) : invFiltered.map((p) => (
                   <button key={p.slug} type="button" onClick={() => applyInventory(p)} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-surface-2">
                     <div className="min-w-0">
@@ -376,11 +378,11 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
       {/* Commercials */}
       <div className="rounded-xl border border-line-strong bg-surface-2/50 p-4">
         <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          <Calculator className="h-3.5 w-3.5 text-gold" /> Commercials
+          <Calculator className="h-3.5 w-3.5 text-gold" /> {t('mgmt.deals.form.commercials')}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelCls}>Total property value (AED) *</label>
+            <label className={labelCls}>{t('mgmt.deals.form.propertyValue')} *</label>
             <input
               type="number" min={0} className={inputCls}
               value={v.propertyValueAed || ''}
@@ -389,7 +391,7 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
             />
           </div>
           <div>
-            <label className={labelCls}>Agency commission %</label>
+            <label className={labelCls}>{t('mgmt.deals.form.agencyPct')}</label>
             <input
               type="number" min={0} step={0.1} className={inputCls}
               value={v.agencyCommissionPct || ''}
@@ -398,32 +400,32 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
             />
           </div>
           <div>
-            <label className={labelCls}>Referral commission % <span className="text-slate-600">or amount</span></label>
+            <label className={labelCls}>{t('mgmt.deals.form.referralPct')} <span className="text-slate-600">{t('mgmt.deals.form.orAmount')}</span></label>
             <div className="flex gap-2">
               <input type="number" min={0} step={0.1} className={inputCls} value={v.referralCommissionPct || ''} onChange={(e) => set('referralCommissionPct', Number(e.target.value) || 0)} placeholder="%" />
               <input type="number" min={0} className={inputCls} value={v.referralCommissionAed || ''} onChange={(e) => set('referralCommissionAed', Number(e.target.value) || 0)} placeholder="AED" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Cashback % <span className="text-slate-600">or amount</span></label>
+            <label className={labelCls}>{t('mgmt.deals.form.cashbackPct')} <span className="text-slate-600">{t('mgmt.deals.form.orAmount')}</span></label>
             <div className="flex gap-2">
               <input type="number" min={0} step={0.1} className={inputCls} value={v.cashbackPct || ''} onChange={(e) => set('cashbackPct', Number(e.target.value) || 0)} placeholder="%" />
               <input type="number" min={0} className={inputCls} value={v.cashbackAed || ''} onChange={(e) => set('cashbackAed', Number(e.target.value) || 0)} placeholder="AED" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Expenses <span className="text-slate-600">(deal costs, AED)</span></label>
-            <input type="number" min={0} className={inputCls} value={v.expensesAed || ''} onChange={(e) => set('expensesAed', Number(e.target.value) || 0)} placeholder="marketing, admin, gifts…" />
+            <label className={labelCls}>{t('mgmt.deals.form.expenses')} <span className="text-slate-600">{t('mgmt.deals.form.expensesHint')}</span></label>
+            <input type="number" min={0} className={inputCls} value={v.expensesAed || ''} onChange={(e) => set('expensesAed', Number(e.target.value) || 0)} placeholder={t('mgmt.deals.form.expensesPh')} />
           </div>
           <div>
-            <label className={labelCls}>Growth fund % <span className="text-slate-600">or amount (of net)</span></label>
+            <label className={labelCls}>{t('mgmt.deals.form.growthPct')} <span className="text-slate-600">{t('mgmt.deals.form.orAmountNet')}</span></label>
             <div className="flex gap-2">
               <input type="number" min={0} step={0.1} className={inputCls} value={v.growthPct || ''} onChange={(e) => set('growthPct', Number(e.target.value) || 0)} placeholder="%" />
               <input type="number" min={0} className={inputCls} value={v.growthAed || ''} onChange={(e) => set('growthAed', Number(e.target.value) || 0)} placeholder="AED" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Broker payout % <span className="text-slate-600">or amount (of distributable)</span></label>
+            <label className={labelCls}>{t('mgmt.deals.form.brokerPct')} <span className="text-slate-600">{t('mgmt.deals.form.orAmountDist')}</span></label>
             <div className="flex gap-2">
               <input type="number" min={0} step={0.1} className={inputCls} value={v.brokerCommissionPct || ''} onChange={(e) => set('brokerCommissionPct', Number(e.target.value) || 0)} placeholder="%" />
               <input type="number" min={0} className={inputCls} value={v.brokerCommissionAed || ''} onChange={(e) => set('brokerCommissionAed', Number(e.target.value) || 0)} placeholder="AED" />
@@ -434,14 +436,14 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
         {/* Live commission waterfall */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            { label: 'Agency (gross)', value: breakdown.agency, tone: 'text-white' },
-            { label: 'Referral', value: breakdown.referral, tone: 'text-slate-300' },
-            { label: 'Cashback', value: breakdown.cashback, tone: 'text-slate-300' },
-            { label: 'Net commission', value: breakdown.net, tone: 'text-white' },
-            { label: 'Expenses', value: breakdown.expenses, tone: 'text-slate-300' },
-            { label: 'Growth fund', value: breakdown.growth, tone: 'text-slate-300' },
-            { label: 'Broker payout', value: breakdown.broker, tone: 'text-sky-300' },
-            { label: 'Company net', value: breakdown.companyNet, tone: 'text-gold' },
+            { label: t('mgmt.deals.form.wfAgency'), value: breakdown.agency, tone: 'text-white' },
+            { label: t('mgmt.deals.form.wfReferral'), value: breakdown.referral, tone: 'text-slate-300' },
+            { label: t('mgmt.deals.form.wfCashback'), value: breakdown.cashback, tone: 'text-slate-300' },
+            { label: t('mgmt.deals.form.wfNet'), value: breakdown.net, tone: 'text-white' },
+            { label: t('mgmt.deals.form.wfExpenses'), value: breakdown.expenses, tone: 'text-slate-300' },
+            { label: t('mgmt.deals.form.wfGrowth'), value: breakdown.growth, tone: 'text-slate-300' },
+            { label: t('mgmt.deals.form.wfBroker'), value: breakdown.broker, tone: 'text-sky-300' },
+            { label: t('mgmt.deals.form.wfCompany'), value: breakdown.companyNet, tone: 'text-gold' },
           ].map((b) => (
             <div key={b.label} className="rounded-lg border border-line bg-surface px-3 py-2">
               <div className="text-[10px] uppercase tracking-wide text-slate-500">{b.label}</div>
@@ -464,12 +466,12 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
               else if (v.agentSharePct === 100) set('agentSharePct', 50)
             }}
           />
-          <span className="text-sm font-medium text-white">Shared deal (split between 2 agents)</span>
+          <span className="text-sm font-medium text-white">{t('mgmt.deals.form.sharedDeal')}</span>
         </label>
         {shared && (
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className={labelCls}>Co-agent</label>
+              <label className={labelCls}>{t('mgmt.deals.form.coAgent')}</label>
               <select
                 className={inputCls}
                 value={v.coAgentId}
@@ -479,7 +481,7 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
                   set('coAgentName', roster.find((m) => m.id === id)?.name ?? '')
                 }}
               >
-                <option value="">Select a broker…</option>
+                <option value="">{t('mgmt.deals.form.selectBroker')}</option>
                 {v.coAgentId && !roster.some((m) => m.id === v.coAgentId) && v.coAgentName && (
                   <option value={v.coAgentId}>{v.coAgentName}</option>
                 )}
@@ -489,11 +491,11 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
               </select>
             </div>
             <div>
-              <label className={labelCls}>Your share % <span className="text-slate-600">(co-agent gets the rest)</span></label>
+              <label className={labelCls}>{t('mgmt.deals.form.yourShare')} <span className="text-slate-600">{t('mgmt.deals.form.yourShareHint')}</span></label>
               <input type="number" min={1} max={99} className={inputCls} value={v.agentSharePct || ''} onChange={(e) => set('agentSharePct', Number(e.target.value) || 0)} placeholder="e.g. 50" />
               {shared && v.coAgentName.trim() && (
                 <p className="mt-1 text-xs text-slate-500">
-                  You: {fmtAED((breakdown.net * Math.min(100, Math.max(0, v.agentSharePct))) / 100)} · {v.coAgentName}: {fmtAED((breakdown.net * (100 - Math.min(100, Math.max(0, v.agentSharePct)))) / 100)}
+                  {t('mgmt.deals.form.splitYou', { amount: fmtAED((breakdown.net * Math.min(100, Math.max(0, v.agentSharePct))) / 100) })} · {v.coAgentName}: {fmtAED((breakdown.net * (100 - Math.min(100, Math.max(0, v.agentSharePct)))) / 100)}
                 </p>
               )}
             </div>
@@ -502,8 +504,8 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
       </div>
 
       <div>
-        <label className={labelCls}>Notes</label>
-        <textarea className={`${inputCls} min-h-[70px]`} value={v.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Anything management should know…" />
+        <label className={labelCls}>{t('mgmt.deals.form.notes')}</label>
+        <textarea className={`${inputCls} min-h-[70px]`} value={v.notes} onChange={(e) => set('notes', e.target.value)} placeholder={t('mgmt.deals.form.notesPh')} />
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -519,7 +521,7 @@ export function DealForm({ initial, submitLabel, onSubmit, onCancel, enableLeadL
         </button>
         {onCancel && (
           <button onClick={onCancel} className="rounded-lg border border-line px-4 py-2 text-sm text-slate-400 transition-colors hover:text-slate-200">
-            Cancel
+            {t('mgmt.deals.form.cancel')}
           </button>
         )}
       </div>
