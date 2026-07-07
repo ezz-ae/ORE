@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { MessageSquare, Phone, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, XCircle, Zap, Send, Shield } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { SetupGuide } from '@/components/freehold/setup-guide'
 
 const TOKEN_KEY = 'fh_whatsapp_token'
 const PHONE_KEY = 'fh_whatsapp_phone_id'
@@ -187,6 +188,13 @@ export default function WhatsAppPage() {
           </div>
         )}
       </div>
+
+      {/* Self-service: how to get the credentials */}
+      <SetupGuide steps={[
+        { key: 'guide.wa.1', path: 'developers.facebook.com → WhatsApp → API Setup' },
+        { key: 'guide.wa.2', path: 'Business Settings → System users → Generate token' },
+        { key: 'guide.wa.3' },
+      ]} />
 
       {/* Connect form */}
       {phase !== 'connected' && (

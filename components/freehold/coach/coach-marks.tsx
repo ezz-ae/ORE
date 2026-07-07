@@ -18,22 +18,25 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight, X, Sparkles } from 'lucide-react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useI18n } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
 import {
   tourForRole, tourForApp, appIdForPath, coachSeenKey, appCoachSeenKey,
   type CoachStep, type Placement,
 } from '@/lib/freehold/coach-tours'
+import { getHowTo } from '@/lib/freehold/howto'
 
 interface CoachCtx {
   /** launch the tour for the signed-in role from step 0 */
   start: () => void
   /** whether a tour exists for the signed-in role */
   available: boolean
+  /** start a task walkthrough (e.g. 'meta-ad') — guides across pages */
+  startHowTo: (id: string) => void
 }
 
-const Ctx = createContext<CoachCtx>({ start: () => {}, available: false })
+const Ctx = createContext<CoachCtx>({ start: () => {}, available: false, startHowTo: () => {} })
 
 export function useCoach(): CoachCtx {
   return useContext(Ctx)
@@ -75,6 +78,10 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   const seenKeyRef = useRef<string | null>(null)
   // Whether the currently-active tour was auto-started (vs. replayed on demand).
   const autoStartedRef = useRef(false)
+  // Active task walkthrough (cross-page): flow id + absolute index of the
+  // first step in the slice currently on screen + the slice length.
+  const howtoRef = useRef<{ id: string; base: number; len: number } | null>(null)
+  const router = useRouter()
 
   // The tour the "Take a tour" button replays on the current surface: the
   // app's contextual tour when on an app, otherwise the role welcome.
@@ -133,18 +140,80 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   // session) and, when it was auto-started, counts toward the session skip cap.
   const finish = useCallback(() => {
     setActive(false)
+    // Skipping a task walkthrough ends the whole flow — no skip-cap, no seen key.
+    if (howtoRef.current) {
+      howtoRef.current = null
+      try { sessionStorage.removeItem(HOWTO_SS) } catch {}
+      return
+    }
     if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
     if (autoStartedRef.current) noteAutoTourSkip()
   }, [])
 
   // Reaching the end is a completion, not a skip — mark seen, no skip count.
   const complete = useCallback(() => {
+    // Task walkthroughs advance across pages instead of just closing.
+    const h = howtoRef.current
+    if (h) {
+      const flow = getHowTo(h.id)
+      const nextIdx = h.base + h.len
+      setActive(false)
+      howtoRef.current = null
+      if (flow && nextIdx < flow.steps.length) {
+        try { sessionStorage.setItem(HOWTO_SS, JSON.stringify({ id: h.id, idx: nextIdx })) } catch {}
+        router.push(flow.steps[nextIdx].href) // resume effect picks it up there
+      } else {
+        try { sessionStorage.removeItem(HOWTO_SS) } catch {}
+      }
+      return
+    }
     setActive(false)
     if (seenKeyRef.current) { try { localStorage.setItem(seenKeyRef.current, '1') } catch {} }
-  }, [])
+  }, [router])
+
+  // ── Task walkthroughs ("How do I…") — cross-page guided flows ─────────────
+  const startHowTo = useCallback((id: string) => {
+    const flow = getHowTo(id)
+    if (!flow?.steps.length) return
+    try { sessionStorage.setItem(HOWTO_SS, JSON.stringify({ id, idx: 0 })) } catch {}
+    if (pathname !== flow.steps[0].href) {
+      router.push(flow.steps[0].href) // the resume effect starts the overlay there
+    } else {
+      // Already on the right page — trigger the resume effect via state below.
+      setResumeTick((n) => n + 1)
+    }
+  }, [pathname, router])
+
+  const [resumeTick, setResumeTick] = useState(0)
+
+  // Resume a pending walkthrough whenever we land on the page its next step
+  // expects. Shows the contiguous run of steps that belong to this page.
+  useEffect(() => {
+    if (!ready || active) return
+    let saved: { id: string; idx: number } | null = null
+    try { saved = JSON.parse(sessionStorage.getItem(HOWTO_SS) || 'null') } catch {}
+    if (!saved) return
+    const flow = getHowTo(saved.id)
+    if (!flow) { try { sessionStorage.removeItem(HOWTO_SS) } catch {}; return }
+    const step = flow.steps[saved.idx]
+    if (!step || step.href !== pathname) return // waiting for the user to arrive
+    let len = 1
+    while (saved.idx + len < flow.steps.length && flow.steps[saved.idx + len].href === pathname) len++
+    const slice: CoachStep[] = flow.steps.slice(saved.idx, saved.idx + len).map((s) => ({
+      key: s.key,
+      anchor: s.anchor,
+      placement: s.anchor ? 'bottom' : 'center',
+    }))
+    howtoRef.current = { id: saved.id, base: saved.idx, len }
+    seenKeyRef.current = null
+    autoStartedRef.current = false
+    // Give the page a beat to render its anchors before spotlighting.
+    const t = setTimeout(() => { setSteps(slice); setIndex(0); setActive(true) }, 700)
+    return () => clearTimeout(t)
+  }, [pathname, ready, active, resumeTick])
 
   return (
-    <Ctx.Provider value={{ start, available: contextualSteps.length > 0 }}>
+    <Ctx.Provider value={{ start, available: contextualSteps.length > 0, startHowTo }}>
       {children}
       {active && role && (
         <CoachOverlay
@@ -159,6 +228,8 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
     </Ctx.Provider>
   )
 }
+
+const HOWTO_SS = 'fh-howto'
 
 const CARD_W = 340
 const GAP = 14

@@ -185,6 +185,14 @@ export function SpacesNav() {
                 </button>
               </div>
             </div>
+            {/* Help & user guide */}
+            <Link
+              href="/freehold-intelligence/help"
+              onClick={() => setMenuOpen(false)}
+              className="block border-t border-white/[0.07] px-4 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+            >
+              {t('common.help')}
+            </Link>
             {/* What's new */}
             <WhatsNewMenuButton onClick={() => setMenuOpen(false)} />
             {coach.available && (

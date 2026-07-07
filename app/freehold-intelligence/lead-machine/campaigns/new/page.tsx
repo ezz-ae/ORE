@@ -397,7 +397,7 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s1.heading')}</h2>
 
-            <div>
+            <div data-coach="wiz-listing">
               <Label>{t('lm.newCampaign.s1.label.listing')}</Label>
               <select
                 className={inputCls()}
@@ -456,7 +456,7 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
 
-            <div>
+            <div data-coach="wiz-budget">
               <Label>{t('lm.newCampaign.s2.label.budget')}</Label>
               <input
                 type="number"
@@ -633,7 +633,7 @@ export default function NewCampaignPage() {
               />
             </div>
 
-            <div>
+            <div data-coach="wiz-creative">
               <Label>{t('lm.newCampaign.s3.label.imageUrl')}</Label>
               <input
                 className={inputCls()}
@@ -763,6 +763,7 @@ export default function NewCampaignPage() {
         ) : (
           <button
             type="button"
+            data-coach="wiz-launch"
             onClick={handleLaunch}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60"

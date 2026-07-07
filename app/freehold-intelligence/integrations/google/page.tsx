@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Eye, EyeOff, CheckCircle2, AlertCircle, XCircle, Copy, Info, BarChart2, MousePointerClick, TrendingUp, DollarSign } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { SetupGuide } from '@/components/freehold/setup-guide'
 
 const KEYS = {
   devToken:   'fh_gads_dev_token',
@@ -163,6 +164,15 @@ export default function GoogleAdsPage() {
           </button>
         )}
       </div>
+
+      {/* Self-service: how to get the five credentials */}
+      <SetupGuide steps={[
+        { key: 'guide.goog.1', path: 'Google Ads → Tools → API Center' },
+        { key: 'guide.goog.2', path: 'console.cloud.google.com → APIs & Services → Credentials' },
+        { key: 'guide.goog.3', path: 'developers.google.com/oauthplayground' },
+        { key: 'guide.goog.4' },
+        { key: 'guide.goog.5' },
+      ]} />
 
       {/* Info banner — explain why credentials are stored not used live */}
       <div className="mb-5 flex items-start gap-3 rounded-[14px] border border-blue-400/15 bg-blue-400/[0.04] px-4 py-3">

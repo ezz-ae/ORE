@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Users2, TrendingUp, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, Phone, Mail, XCircle, DollarSign, Clock } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { SetupGuide } from '@/components/freehold/setup-guide'
 
 const TOKEN_KEY = 'fh_hubspot_token'
 const BASE      = 'https://api.hubapi.com'
@@ -218,6 +219,13 @@ export default function HubSpotPage() {
           </div>
         )}
       </div>
+
+      {/* Self-service: how to get the token */}
+      <SetupGuide steps={[
+        { key: 'guide.hub.1', path: 'HubSpot → Settings → Integrations → Private Apps' },
+        { key: 'guide.hub.2', path: 'Private app → Scopes' },
+        { key: 'guide.hub.3' },
+      ]} />
 
       {/* Sync controls — direction is under your control: write, read, or both */}
       {phase === 'connected' && (

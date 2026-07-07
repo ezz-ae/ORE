@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/lib/i18n/provider'
+import { SetupGuide } from '@/components/freehold/setup-guide'
 import {
   Eye, EyeOff, Loader2, CheckCircle, XCircle, RefreshCw,
   LogOut, TrendingUp, TrendingDown, Users, DollarSign,
@@ -359,6 +360,15 @@ export default function MetaIntegrationPage() {
             <p className="text-xs text-slate-500">{t('pintmeta.subtitle')}</p>
           </div>
         </div>
+
+        {/* Self-service: how to get the token */}
+        <SetupGuide steps={[
+          { key: 'guide.meta.1', path: 'business.facebook.com → Settings → Users → System users' },
+          { key: 'guide.meta.2', path: 'System user → Add assets' },
+          { key: 'guide.meta.3', path: 'Generate new token' },
+          { key: 'guide.meta.4' },
+          { key: 'guide.meta.5' },
+        ]} />
 
         {/* Error banner */}
         {phase === 'error' && errMsg && (
