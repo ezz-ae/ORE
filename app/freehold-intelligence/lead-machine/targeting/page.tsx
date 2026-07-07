@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders, Search, X } from 'lucide-react'
+import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders, Search, X, Sparkles, Loader2 } from 'lucide-react'
+import { UAE_INTERESTS, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import type { TargetingUseCase } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
@@ -35,10 +36,26 @@ function countryName(code: string): string {
 
 type UseCaseFilter = 'All' | 'investor' | 'end_user' | 'golden_visa' | 'secondary' | 'international' | 'custom'
 
+type LoopPerf = { id: string; name: string; spendAED: number; cpl: number | null; crm: { total: number; qualified: number; closed: number; lost: number } }
+
 export default function TargetingPage() {
   const t = useT()
   const [useCaseFilter, setUseCaseFilter] = useState<UseCaseFilter>('All')
   const [query, setQuery] = useState('')
+
+  // The learning loop: what the last campaigns' LEADS actually did, and the
+  // AI's recommendation for the next round — same engine as the wizard.
+  const [loop, setLoop] = useState<{ recommendation: TargetingRecommendation; performance: LoopPerf[] } | null>(null)
+  const [loopLoading, setLoopLoading] = useState(false)
+  async function fetchLoop() {
+    setLoopLoading(true)
+    try {
+      const res = await fetch('/api/freehold/ai/targeting', { cache: 'no-store' })
+      const d = await res.json()
+      if (res.ok && d?.recommendation) setLoop({ recommendation: d.recommendation, performance: d.performance ?? [] })
+    } catch { /* panel stays collapsed */ }
+    finally { setLoopLoading(false) }
+  }
 
   const filtered = useMemo(() => {
     let items = TARGETING_TEMPLATES
@@ -57,6 +74,56 @@ export default function TargetingPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+
+      {/* Learning loop — leads → analysis → better targeting every round */}
+      <section className="mb-8 rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold">
+            <Sparkles className="h-4 w-4" /> {t('lm.targeting.loop.title')}
+          </div>
+          <button
+            onClick={fetchLoop}
+            disabled={loopLoading}
+            className="rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+          >
+            {loopLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : loop ? t('lm.targeting.loop.refresh') : t('lm.targeting.loop.run')}
+          </button>
+        </div>
+        {!loop && !loopLoading && (
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-400">{t('lm.targeting.loop.hint')}</p>
+        )}
+        {loop && (
+          <div className="mt-3 space-y-3">
+            <p className="text-sm leading-relaxed text-slate-200">{loop.recommendation.analysis}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {UAE_INTERESTS.filter((i) => loop.recommendation.interestIds.includes(i.id)).map((i) => (
+                <span key={i.id} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] text-gold">{i.name}</span>
+              ))}
+              <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">{loop.recommendation.ageMin}–{loop.recommendation.ageMax}</span>
+              <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">AED {loop.recommendation.dailyBudgetAED}/d</span>
+            </div>
+            <p className="text-xs leading-relaxed text-slate-400">{loop.recommendation.rationale}</p>
+            {loop.performance.length > 0 && (
+              <div className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-line bg-surface">
+                {loop.performance.slice(0, 6).map((c) => (
+                  <div key={c.id} className="flex items-center gap-3 px-4 py-2.5 text-xs">
+                    <span className="min-w-0 flex-1 truncate font-medium text-slate-200">{c.name}</span>
+                    <span className="shrink-0 text-slate-500">{c.cpl ? `AED ${c.cpl}/lead` : '—'}</span>
+                    <span className="shrink-0 text-gold">{c.crm.qualified} {t('lm.targeting.loop.qualified')}</span>
+                    <span className="shrink-0 text-red-300">{c.crm.lost} {t('lm.targeting.loop.lost')}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Link
+              href="/freehold-intelligence/lead-machine/campaigns/new"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90"
+            >
+              {t('lm.targeting.loop.useIt')} <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
+      </section>
 
       {/* Header */}
       <section>
