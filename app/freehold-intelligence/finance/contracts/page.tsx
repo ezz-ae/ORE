@@ -62,6 +62,10 @@ export default function ContractsPage() {
   const [newName,  setNewName]  = useState('')
   const [newParty, setNewParty] = useState('')
   const [newValue, setNewValue] = useState('')
+  const [newType,  setNewType]  = useState<ContractType>('service')
+  const [newStart, setNewStart] = useState('')
+  const [newEnd,   setNewEnd]   = useState('')
+  const [newAutoRenew, setNewAutoRenew] = useState(false)
   const [saving, setSaving] = useState(false)
 
   function load() {
@@ -95,11 +99,20 @@ export default function ContractsPage() {
     try {
       const res = await fetch('/api/freehold/contracts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim(), counterparty: newParty.trim(), value: newValue.trim() }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          counterparty: newParty.trim(),
+          value: newValue.trim(),
+          type: newType,
+          startDate: newStart || undefined,
+          endDate: newEnd || undefined,
+          autoRenew: newAutoRenew,
+        }),
       })
       if (!res.ok) throw new Error('Failed')
       toast.success(t('finance.contracts.added'))
       setShowNew(false); setNewName(''); setNewParty(''); setNewValue('')
+      setNewType('service'); setNewStart(''); setNewEnd(''); setNewAutoRenew(false)
       load()
     } catch { toast.error(t('finance.contracts.couldNotAdd')) } finally { setSaving(false) }
   }
@@ -166,6 +179,45 @@ export default function ContractsPage() {
               onChange={(e) => setNewValue(e.target.value)}
               className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400/40"
             />
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-slate-500">
+              {t('finance.contracts.typeLabel')}
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as ContractType)}
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+              >
+                {(Object.keys(TYPE_KEY) as ContractType[]).map((k) => (
+                  <option key={k} value={k} className="bg-surface">{t(TYPE_KEY[k])}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-slate-500">
+              {t('finance.contracts.startDate')}
+              <input
+                type="date"
+                value={newStart}
+                onChange={(e) => setNewStart(e.target.value)}
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[10px] uppercase tracking-wider text-slate-500">
+              {t('finance.contracts.endDate')}
+              <input
+                type="date"
+                value={newEnd}
+                onChange={(e) => setNewEnd(e.target.value)}
+                className="rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none focus:border-emerald-400/40"
+              />
+            </label>
+            <label className="col-span-2 flex items-center gap-2 text-xs text-slate-300">
+              <input
+                type="checkbox"
+                checked={newAutoRenew}
+                onChange={(e) => setNewAutoRenew(e.target.checked)}
+                className="h-4 w-4 rounded border-line-strong bg-surface-2 accent-emerald-400"
+              />
+              {t('finance.contracts.autoRenewLabel')}
+            </label>
           </div>
           <div className="flex gap-2 pt-1">
             <button

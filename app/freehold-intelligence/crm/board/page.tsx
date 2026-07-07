@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type DragEvent } from 'react'
 import Link from 'next/link'
 import { MoveHorizontal } from 'lucide-react'
+import { toast } from 'sonner'
 import {
   type CRMLeadIntelligence,
   type PipelineStage,
@@ -96,12 +97,26 @@ export default function CrmBoardPage() {
         [to]:   [...prev[to], { ...lead, pipelineStage: to, stage: to.charAt(0).toUpperCase() + to.slice(1) }],
       }
     })
-    // Persist the stage change.
+    // Persist the stage change; revert the optimistic move if it fails.
+    const revert = () => {
+      setStageMap(prev => {
+        const lead = prev[to].find(l => l.id === movingId)
+        if (!lead) return prev
+        return {
+          ...prev,
+          [to]:   prev[to].filter(l => l.id !== movingId),
+          [from]: [...prev[from], { ...lead, pipelineStage: from, stage: from.charAt(0).toUpperCase() + from.slice(1) }],
+        }
+      })
+      toast.error(t('crm.updateFailed'))
+    }
     fetch(`/api/freehold/crm/leads/${movingId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: to, last_contact_at: new Date().toISOString() }),
-    }).catch(() => {})
+    })
+      .then(res => { if (!res.ok) revert() })
+      .catch(revert)
     reset()
   }
 

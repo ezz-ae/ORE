@@ -8,7 +8,7 @@ import Image from 'next/image'
 import {
   ArrowLeft, Send, Sparkles, BookOpen, Brain,
   Phone, RefreshCw, LogOut, Wifi, WifiOff,
-  SmilePlus, Paperclip, Mic, MoreVertical,
+  SmilePlus, MoreVertical,
   Check, CheckCheck, Clock, X, Copy,
   ChevronDown, AlertCircle,
 } from 'lucide-react'
@@ -243,8 +243,6 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   const [copied, setCopied] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const fileAttachRef = useRef<HTMLInputElement>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -666,16 +664,6 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
               <button onClick={() => setShowEmoji((v) => !v)} className={`shrink-0 rounded-full p-2 transition hover:text-slate-300 ${showEmoji ? 'text-gold' : 'text-slate-500'}`}>
                 <SmilePlus className="h-5 w-5" />
               </button>
-              {/* Attachment */}
-              <input ref={fileAttachRef} type="file" multiple className="hidden"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? [])
-                  if (files.length) toast.success(files.length === 1 ? t('crm.fileReadyToSend', { count: files.length }) : t('crm.filesReadyToSend', { count: files.length }))
-                }}
-              />
-              <button onClick={() => fileAttachRef.current?.click()} className="shrink-0 rounded-full p-2 text-slate-500 transition hover:text-slate-300">
-                <Paperclip className="h-5 w-5" />
-              </button>
 
               {/* Text input */}
               <div className="flex flex-1 items-end rounded-[22px] bg-[#2A3942] px-4 py-2.5">
@@ -691,25 +679,14 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
                 />
               </div>
 
-              {/* Send / Mic */}
-              {input.trim() ? (
-                <button onClick={handleSend} disabled={sending}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400 disabled:opacity-50">
-                  {sending
-                    ? <RefreshCw className="h-5 w-5 animate-spin" />
-                    : <Send className="h-4.5 w-4.5" />
-                  }
-                </button>
-              ) : (
-                <button
-                  onMouseDown={() => setRecording(true)}
-                  onMouseUp={() => { setRecording(false); toast.success(t('crm.voiceNoteRecorded')) }}
-                  onMouseLeave={() => setRecording(false)}
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition ${recording ? 'bg-red-500 animate-pulse' : 'bg-[#00A884] hover:bg-emerald-400'}`}
-                >
-                  <Mic className="h-5 w-5" />
-                </button>
-              )}
+              {/* Send */}
+              <button onClick={handleSend} disabled={sending || !input.trim()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-emerald-400 disabled:opacity-50">
+                {sending
+                  ? <RefreshCw className="h-5 w-5 animate-spin" />
+                  : <Send className="h-4.5 w-4.5" />
+                }
+              </button>
             </div>
           </div>
         )}

@@ -50,6 +50,9 @@ const VALIDATORS: Record<string, (v: unknown) => boolean> = {
     Array.isArray(v) && v.length <= 64 && v.every((x) => typeof x === 'string' && x.length <= 64),
   // Preferred payment method on Finance → Payments.
   defaultCard: (v) => typeof v === 'string' && v.length <= 64,
+  // CRM view state (board/list filters, search, reports date range) — the CRM
+  // reopens the way the account left it; null clears it.
+  crmView: (v) => v === null || isSmallObject(v, 2048),
 }
 
 export async function GET() {

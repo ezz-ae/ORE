@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS broker_credit_accounts (
   broker_id   TEXT PRIMARY KEY,
   user_id     TEXT REFERENCES freehold_site_users(id) ON DELETE SET NULL,
-  tier        TEXT NOT NULL DEFAULT 'Starter',
+  tier        TEXT NOT NULL DEFAULT 'Starter', -- 'Starter' | 'Growth' | 'Pro' | 'Elite'
   allocated   INTEGER NOT NULL DEFAULT 0,
   cycle_start TIMESTAMPTZ NOT NULL DEFAULT now(),
   cycle_end   TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '30 days'),
@@ -18,15 +18,18 @@ CREATE INDEX IF NOT EXISTS idx_broker_credit_user ON broker_credit_accounts(user
 CREATE TABLE IF NOT EXISTS credit_ledger (
   id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   broker_id  TEXT NOT NULL REFERENCES broker_credit_accounts(broker_id) ON DELETE CASCADE,
-  type       TEXT NOT NULL, -- 'allocation' | 'spend' | 'refund' | 'adjustment'
+  type       TEXT NOT NULL, -- 'allocation' | 'spend' | 'refund' | 'adjustment' | 'earn'
   amount     INTEGER NOT NULL, -- positive = credit in, negative = debit out (in type-specific sign convention)
   note       TEXT,
+  reference  TEXT, -- external reference for idempotency (e.g. deal id for 'earn' entries)
   meta       JSONB DEFAULT '{}',
   created_by TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS reference TEXT;
 CREATE INDEX IF NOT EXISTS idx_credit_ledger_broker ON credit_ledger(broker_id);
 CREATE INDEX IF NOT EXISTS idx_credit_ledger_created ON credit_ledger(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_credit_ledger_reference ON credit_ledger(reference);
 
 -- ad_spend_allocations — per campaign credit tracking
 CREATE TABLE IF NOT EXISTS ad_spend_allocations (
@@ -58,6 +61,7 @@ SELECT
     WHEN cl.type = 'spend'      THEN -cl.amount
     WHEN cl.type = 'refund'     THEN  cl.amount
     WHEN cl.type = 'adjustment' THEN  cl.amount
+    WHEN cl.type = 'earn'       THEN  cl.amount
     ELSE 0
   END), 0)::integer AS balance,
   COALESCE(SUM(CASE WHEN cl.type = 'spend' THEN cl.amount ELSE 0 END), 0)::integer AS total_spent

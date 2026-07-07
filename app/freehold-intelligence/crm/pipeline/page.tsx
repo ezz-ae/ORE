@@ -1,11 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
-import { Users, ArrowRight, TrendingUp, Clock, AlertCircle } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Users, ArrowRight, TrendingUp, Clock, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { AiPrompt } from '@/components/freehold/ai-prompt'
 import { useT } from '@/lib/i18n/provider'
+
+// Computed pipeline stats from /api/freehold/crm/summary (real DB aggregates).
+type PipelineSummary = {
+  conversionRate: number | null
+  avgCloseDays: number | null
+  closedDealsCount: number
+  closedLeads: number
+  totalLeads: number
+  stuckStage: { stage: string; count: number } | null
+}
 
 // Real pipeline stages (match the lead status taxonomy used across the CRM)
 const STAGE_ORDER = ['New', 'Contacted', 'Qualified', 'Viewing', 'Negotiation', 'Closed']
@@ -17,6 +27,15 @@ const STAGE_NAME_KEY: Record<string, string> = {
   'Viewing':     'crm.stage.viewing',
   'Negotiation': 'crm.stage.negotiation',
   'Closed':      'crm.stage.closed',
+}
+
+// DB stage values (lowercase) → display keys, for computed summary labels.
+const DB_STAGE_KEY: Record<string, string> = {
+  new:         'crm.stage.new',
+  contacted:   'crm.stage.contacted',
+  qualified:   'crm.stage.qualified',
+  viewing:     'crm.stage.viewing',
+  negotiation: 'crm.stage.negotiation',
 }
 
 const STAGE_CONFIG: Record<string, { tone: string; dot: string; dotBg: string }> = {
@@ -44,6 +63,16 @@ export default function CrmPipelinePage() {
   const t = useT()
   const { leads } = useLiveLeads()
   const [activeStage, setActiveStage] = useState<string | null>(null)
+  const [summary, setSummary] = useState<PipelineSummary | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/summary', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.summary) setSummary(d.summary as PipelineSummary) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   // Compute real stage counts from live lead data
   const stageCounts = useMemo(() => leads.reduce<Record<string, typeof leads>>(
@@ -206,36 +235,57 @@ export default function CrmPipelinePage() {
           </section>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar — computed from real leads + deals (crm/summary) */}
         <aside className="hidden lg:block">
           <div className="sticky top-[112px] space-y-5">
             <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <TrendingUp className="h-3 w-3" /> {t('crm.conversionRate')}
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">23%</div>
-              <div className="mt-1 text-xs text-[#D4AF37]">{t('crm.vsLastMonth')}</div>
+              <div className="mt-3 text-[34px] font-semibold text-white">
+                {summary?.conversionRate != null ? `${summary.conversionRate}%` : '—'}
+              </div>
+              <div className="mt-1 text-xs text-slate-400">
+                {summary ? t('crm.closedOfTotalLeads', { closed: summary.closedLeads, total: summary.totalLeads }) : '—'}
+              </div>
             </div>
 
             <div className="rounded-xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                 <Clock className="h-3 w-3" /> {t('crm.avgTimeToClose')}
               </div>
-              <div className="mt-3 text-[34px] font-semibold text-white">18d</div>
-              <div className="mt-1 text-xs text-slate-400">{t('crm.target21days')}</div>
+              <div className="mt-3 text-[34px] font-semibold text-white">
+                {summary?.avgCloseDays != null ? `${Math.round(summary.avgCloseDays)}d` : '—'}
+              </div>
+              <div className="mt-1 text-xs text-slate-400">
+                {summary && summary.closedDealsCount > 0
+                  ? t('crm.fromClosedDeals', { count: summary.closedDealsCount })
+                  : t('crm.noClosedDealsYet')}
+              </div>
             </div>
 
-            <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-red-300/80">
-                <AlertCircle className="h-3 w-3" /> {t('crm.stuckStage')}
+            {summary?.stuckStage ? (
+              <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-5">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-red-300/80">
+                  <AlertCircle className="h-3 w-3" /> {t('crm.stuckStage')}
+                </div>
+                <div className="mt-3 text-sm font-semibold text-white">
+                  {t(DB_STAGE_KEY[summary.stuckStage.stage] ?? '') || summary.stuckStage.stage}
+                </div>
+                <div className="mt-2 text-xs leading-relaxed text-slate-400">
+                  {summary.stuckStage.count !== 1
+                    ? t('crm.stuckStageDesc', { count: summary.stuckStage.count })
+                    : t('crm.stuckStageDescSingular', { count: summary.stuckStage.count })}
+                </div>
               </div>
-              <div className="mt-3 text-sm font-semibold text-white">{t('crm.followUpToQualified')}</div>
-              <div className="mt-2 text-xs leading-relaxed text-slate-400">
-                {(stageCounts['Follow-up'] ?? []).length !== 1
-                  ? t('crm.stuckStageDesc', { count: (stageCounts['Follow-up'] ?? []).length })
-                  : t('crm.stuckStageDescSingular', { count: (stageCounts['Follow-up'] ?? []).length })}
+            ) : (
+              <div className="rounded-xl border border-line bg-surface p-5">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+                  <CheckCircle2 className="h-3 w-3" /> {t('crm.stuckStage')}
+                </div>
+                <div className="mt-3 text-xs leading-relaxed text-slate-400">{t('crm.noStuckStage')}</div>
               </div>
-            </div>
+            )}
           </div>
         </aside>
       </div>

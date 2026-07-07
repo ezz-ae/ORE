@@ -9,7 +9,7 @@ import {
 import { cookies } from 'next/headers'
 import type { CRMLeadIntelligence, CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
 import { query } from '@/lib/db'
-import { ensureLeadsTable } from '@/lib/data'
+import { ensureLeadsTable, getLeadActivity } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
 import { getDealByLeadId } from '@/lib/deals'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
@@ -31,10 +31,11 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       interest: string | null; message: string | null; created_at: string;
       landing_slug: string | null; lead_code: string | null;
       utm_source: string | null; utm_campaign: string | null; utm_id: string | null;
+      last_contact_at: string | null; snooze_until: string | null;
     }>(
       `SELECT id, name, phone, email, source, project_slug, assigned_broker_id,
               status, priority, budget_aed, interest, message, created_at::text, landing_slug, lead_code,
-              utm_source, utm_campaign, utm_id
+              utm_source, utm_campaign, utm_id, last_contact_at::text, snooze_until::text
        FROM freehold_site_leads WHERE id = $1${ownerFilter} LIMIT 1`,
       queryParams
     )
@@ -53,14 +54,14 @@ async function getLiveLead(id: string, ownerId: string | null): Promise<CRMLeadI
       intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : 55,
       urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
       duplicateRisk: false, wrongNumberRisk: false, assignedAgent: r.assigned_broker_id ?? '',
-      lastContactAt: r.created_at, nextBestAction: 'Follow up', suggestedMessage: '',
+      lastContactAt: r.last_contact_at ?? r.created_at, nextBestAction: '', suggestedMessage: '',
       aiSummary: r.message ?? '', hasViewingScheduled: false, viewingDate: null,
       viewingProperty: null, notes: [], taggedProjects: r.project_slug ? [r.project_slug] : [],
-      leadCode: r.lead_code ?? null,
+      leadCode: r.lead_code ?? null, snoozeUntil: r.snooze_until ?? null,
     } as unknown as CRMLeadIntelligence
   } catch { return null }
 }
-import { CopyButton, SuggestedMessageActions, QuickActions } from './_components/LeadClientActions'
+import { QuickActions } from './_components/LeadClientActions'
 
 function urgencyTone(u: string) {
   if (u === 'critical') return { ring: 'ring-red-400/40',     bg: 'bg-red-400/10',     text: 'text-red-300',     dot: 'bg-red-400',     labelKey: 'crm.urgency.critical' }
@@ -98,8 +99,38 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   // A lead can be converted to a deal only once.
   const existingDeal = await getDealByLeadId(lead.id)
 
-  // Activity timeline is populated from real lead events only (no seed log).
-  const leadActivity: CRMActivityEvent[] = []
+  // Next best action — a simple, honest heuristic from real lead state.
+  const snoozedUntil = lead.snoozeUntil && new Date(lead.snoozeUntil).getTime() > Date.now()
+    ? new Date(lead.snoozeUntil) : null
+  const nextBestAction = snoozedUntil
+    ? t('crm.nba.snoozedUntil', { date: snoozedUntil.toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' }) })
+    : lead.pipelineStage === 'new'
+    ? t('crm.nba.firstContact')
+    : lead.pipelineStage === 'qualified'
+    ? t('crm.nba.bookViewing')
+    : t('crm.nba.followUp')
+
+  // Activity timeline: real logged events for this lead (no seed log).
+  const activityRows = await getLeadActivity(lead.id).catch(() => [])
+  const activityTypeMap = (raw: string): CRMActivityEvent['type'] => {
+    const v = raw.toLowerCase()
+    if (v.includes('call')) return 'call'
+    if (v.includes('whatsapp') || v.includes('message')) return 'whatsapp'
+    if (v.includes('stage') || v.includes('status')) return 'stage_change'
+    if (v.includes('assign')) return 'assignment'
+    if (v.includes('follow')) return 'follow_up'
+    if (v.includes('note')) return 'note'
+    return 'system'
+  }
+  const leadActivity: CRMActivityEvent[] = activityRows.map((r) => ({
+    id: r.id,
+    leadId: r.lead_id,
+    leadName: lead.name,
+    type: activityTypeMap(r.activity_type ?? ''),
+    actor: r.created_by ?? '—',
+    content: r.description ?? r.activity_type ?? '',
+    createdAt: r.created_at,
+  }))
 
   // Real campaign attribution from the lead's captured UTM data (no seed). The
   // platform is inferred from the source string; the campaign drill-down links to
@@ -147,7 +178,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           {lead.name}
         </h1>
         <p className="mt-3 text-sm text-slate-400">
-          {t('crm.assignedToHubspot', { agent: lead.assignedAgent, id: lead.hubspotLeadId })}
+          {lead.assignedAgent ? t('crm.assignedTo', { agent: lead.assignedAgent }) : t('crm.unassigned')}
         </p>
       </section>
 
@@ -219,21 +250,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-gold/80">
               <Zap className="h-3.5 w-3.5" /> {t('crm.nextBestAction')}
             </div>
-            <p className="mt-3 text-sm leading-[1.7] text-slate-300">{lead.nextBestAction}</p>
-          </div>
-
-          {/* Suggested WhatsApp */}
-          <div className="rounded-xl border border-line bg-surface p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-                <Bell className="h-3.5 w-3.5" /> {t('crm.suggestedMessage')}
-              </div>
-              <CopyButton text={lead.suggestedMessage} />
-            </div>
-            <div className="mt-4 rounded-[14px] border border-emerald-400/15 bg-gold/[0.04] p-4">
-              <p className="text-[14px] leading-[1.7] text-slate-300 italic">"{lead.suggestedMessage}"</p>
-            </div>
-            <SuggestedMessageActions message={lead.suggestedMessage} phone={lead.phone} leadId={lead.id} />
+            <p className="mt-3 text-sm leading-[1.7] text-slate-300">{nextBestAction}</p>
           </div>
 
         </div>
@@ -379,22 +396,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 })}
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex gap-3 text-sm">
-                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                  <div>
-                    <p className="text-slate-300">{t('crm.leadCreatedVia', { source: lead.source })}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">{new Date(lead.lastContactAt).toLocaleDateString(dateLocale, { dateStyle: 'medium' })}</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 text-sm">
-                  <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-surface-3" />
-                  <div>
-                    <p className="text-slate-400">{t('crm.assignedTo', { agent: lead.assignedAgent })}</p>
-                    <p className="mt-0.5 text-sm text-slate-500">{t('crm.autoAssigned')}</p>
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs text-slate-500">{t('crm.noActivityYet')}</p>
             )}
           </div>
 

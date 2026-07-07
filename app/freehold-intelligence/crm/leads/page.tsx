@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Search, Target, X, Users, AlertTriangle } from 'lucide-react'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { loadCrmView, saveCrmView } from '../_lib/view-prefs'
 
 function urgencyConfig(u: string) {
   if (u === 'critical') return { dot: 'bg-red-400',   badge: 'border-red-400/20 bg-red-400/10 text-red-300',    label: 'Critical' }
@@ -41,6 +42,25 @@ export default function CrmLeadsPage() {
   const [activeStage, setActiveStage] = useState('All')
   const [activeAgent, setActiveAgent] = useState('All')
   const [activeLanding, setActiveLanding] = useState('All')
+
+  // Restore + persist this account's saved list view (filters + search).
+  const viewHydrated = useRef(false)
+  useEffect(() => {
+    let cancelled = false
+    loadCrmView().then((view) => {
+      if (cancelled) return
+      if (view.leadsSearch) setQuery(view.leadsSearch)
+      if (view.leadsStage) setActiveStage(view.leadsStage)
+      if (view.leadsAgent) setActiveAgent(view.leadsAgent)
+      if (view.leadsLanding) setActiveLanding(view.leadsLanding)
+      viewHydrated.current = true
+    })
+    return () => { cancelled = true }
+  }, [])
+  useEffect(() => {
+    if (!viewHydrated.current) return
+    saveCrmView({ leadsSearch: query, leadsStage: activeStage, leadsAgent: activeAgent, leadsLanding: activeLanding })
+  }, [query, activeStage, activeAgent, activeLanding])
 
   const ALL_STAGES = useMemo(
     () => ['All', ...Array.from(new Set(leads.map((l) => l.stage)))],
