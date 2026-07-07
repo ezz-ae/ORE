@@ -43,6 +43,8 @@ const VALIDATORS: Record<string, (v: unknown) => boolean> = {
   // Expert side-panel layout.
   expertOpen:  (v) => typeof v === 'boolean',
   expertWidth: (v) => typeof v === 'number' && Number.isFinite(v) && v >= 200 && v <= 2000,
+  // The Expert conversation the account is currently in — resumes anywhere.
+  expertSession: (v) => v === null || (typeof v === 'string' && v.length <= 80),
   // Marked-as-connected catalog integrations on the Integrations hub.
   connectedIntegrations: (v) =>
     Array.isArray(v) && v.length <= 64 && v.every((x) => typeof x === 'string' && x.length <= 64),
