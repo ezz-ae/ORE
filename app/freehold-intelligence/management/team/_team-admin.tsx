@@ -6,6 +6,7 @@ import {
   UserPlus, MoreHorizontal, Pencil, Ban, CheckCircle2, XCircle,
   Coins, Trash2, Loader2, ShieldAlert, X,
 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n/provider'
 
 type Role = 'ceo' | 'director' | 'admin' | 'sales_manager' | 'marketing' | 'broker'
 type Status = 'active' | 'suspended' | 'banned'
@@ -23,9 +24,13 @@ interface Member {
   commissionRate: number | null
 }
 
-const ROLE_LABEL: Record<Role, string> = {
-  ceo: 'CEO', director: 'Director', admin: 'Admin',
-  sales_manager: 'Sales Manager', marketing: 'Marketing', broker: 'Broker',
+// CEO / Admin stay as-is (proper nouns); the rest resolve through i18n.
+const ROLE_KEY: Record<Role, string> = {
+  ceo: 'mgmt.team.admin.role.ceo', director: 'mgmt.team.admin.role.director', admin: 'mgmt.team.admin.role.admin',
+  sales_manager: 'mgmt.team.admin.role.salesManager', marketing: 'mgmt.team.admin.role.marketing', broker: 'mgmt.team.admin.role.broker',
+}
+const STATUS_KEY: Record<Status, string> = {
+  active: 'mgmt.team.admin.status.active', suspended: 'mgmt.team.admin.status.suspended', banned: 'mgmt.team.admin.status.banned',
 }
 const ASSIGNABLE: Role[] = ['director', 'admin', 'sales_manager', 'marketing', 'broker']
 
@@ -38,6 +43,7 @@ const STATUS_STYLE: Record<Status, string> = {
 const inputCls = 'w-full rounded-[10px] border border-line-strong bg-surface-2 px-3 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-gold/40'
 
 export function TeamAdmin() {
+  const { t } = useI18n()
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
@@ -59,57 +65,57 @@ export function TeamAdmin() {
     }).catch(() => null)
     const data = await res?.json().catch(() => ({}))
     if (res?.ok) { toast.success(okMsg); load() }
-    else toast.error(data?.error || 'Update failed')
+    else toast.error(data?.error || t('mgmt.team.admin.updateFailed'))
     setOpenMenu(null)
   }
 
   async function toggleDisable(m: Member) {
-    await patch(m.id, { suspended: !m.suspended }, m.suspended ? 'Member re-enabled' : 'Member disabled')
+    await patch(m.id, { suspended: !m.suspended }, m.suspended ? t('mgmt.team.admin.reEnabled') : t('mgmt.team.admin.disabled'))
   }
 
   async function toggleBan(m: Member) {
-    if (m.banned) { await patch(m.id, { banned: false }, 'Ban lifted'); return }
-    const reason = window.prompt('Reason for banning this member? (optional)') ?? ''
-    await patch(m.id, { banned: true, banReason: reason }, 'Member banned')
+    if (m.banned) { await patch(m.id, { banned: false }, t('mgmt.team.admin.banLifted')); return }
+    const reason = window.prompt(t('mgmt.team.admin.banReasonPrompt')) ?? ''
+    await patch(m.id, { banned: true, banReason: reason }, t('mgmt.team.admin.banned'))
   }
 
   async function openCredit(m: Member) {
     setOpenMenu(null)
-    const raw = window.prompt(`Open / add credits for ${m.name} (number of credits):`)
+    const raw = window.prompt(t('mgmt.team.admin.creditPrompt', { name: m.name }))
     if (raw == null) return
     const amount = Number(raw)
-    if (!Number.isFinite(amount) || amount <= 0) { toast.error('Enter a positive amount'); return }
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error(t('mgmt.team.admin.positiveAmount')); return }
     const res = await fetch('/api/freehold/credits/admin/allocate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ brokerId: m.id, amount, note: 'Opened from Management → Team' }),
     }).catch(() => null)
-    if (res?.ok) toast.success(`Added ${amount} credits to ${m.name}`)
-    else toast.error('Could not allocate credits')
+    if (res?.ok) toast.success(t('mgmt.team.admin.creditsAdded', { amount, name: m.name }))
+    else toast.error(t('mgmt.team.admin.creditsFailed'))
   }
 
   async function remove(m: Member) {
-    if (!window.confirm(`Remove ${m.name}? This cannot be undone.`)) return
+    if (!window.confirm(t('mgmt.team.admin.removeConfirm', { name: m.name }))) return
     setMembers((prev) => prev.filter((x) => x.id !== m.id))
     setOpenMenu(null)
     const res = await fetch(`/api/freehold/team/${m.id}`, { method: 'DELETE' }).catch(() => null)
-    if (res?.ok) toast.success('Member removed'); else { toast.error('Could not remove'); load() }
+    if (res?.ok) toast.success(t('mgmt.team.admin.removed')); else { toast.error(t('mgmt.team.admin.removeFailed')); load() }
   }
 
   return (
     <section className="rounded-[18px] border border-line bg-surface p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">Team management</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Create, edit, disable, ban, and fund team members</p>
+          <h2 className="text-sm font-semibold text-white">{t('mgmt.team.admin.title')}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">{t('mgmt.team.admin.subtitle')}</p>
         </div>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/[0.07] px-4 py-2 text-sm font-medium text-gold transition hover:bg-gold/15">
-          <UserPlus className="h-4 w-4" /> New member
+          <UserPlus className="h-4 w-4" /> {t('mgmt.team.admin.newMember')}
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-10 text-slate-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…</div>
+        <div className="flex items-center justify-center py-10 text-slate-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('mgmt.team.admin.loading')}</div>
       ) : (
         <div className="space-y-2">
           {members.map((m) => (
@@ -117,13 +123,13 @@ export function TeamAdmin() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium text-white truncate">{m.name}</span>
-                  <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] text-slate-400">{ROLE_LABEL[m.dbRole] ?? m.dbRole}</span>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[m.status]}`}>{m.status}</span>
+                  <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-[10px] text-slate-400">{t(ROLE_KEY[m.dbRole]) ?? m.dbRole}</span>
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[m.status]}`}>{t(STATUS_KEY[m.status])}</span>
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span className="truncate">{m.email}</span>
                   {m.phone && <span>· {m.phone}</span>}
-                  {m.commissionRate != null && <span>· {m.commissionRate}% comm.</span>}
+                  {m.commissionRate != null && <span>· {t('mgmt.team.admin.commShort', { rate: m.commissionRate })}</span>}
                   {m.banned && m.banReason && <span className="text-red-400/70">· {m.banReason}</span>}
                 </div>
               </div>
@@ -135,18 +141,18 @@ export function TeamAdmin() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
                   <div className="absolute end-3 top-12 z-50 w-48 rounded-[12px] border border-line-strong bg-surface py-1 shadow-xl">
-                    <MenuItem icon={Pencil} label="Edit details" onClick={() => { setEditing(m); setOpenMenu(null) }} />
-                    {m.dbRole === 'broker' && <MenuItem icon={Coins} label="Open credit" onClick={() => openCredit(m)} />}
-                    <MenuItem icon={m.suspended ? CheckCircle2 : XCircle} label={m.suspended ? 'Re-enable' : 'Disable'} onClick={() => toggleDisable(m)} tone="amber" />
-                    <MenuItem icon={m.banned ? ShieldAlert : Ban} label={m.banned ? 'Lift ban' : 'Ban'} onClick={() => toggleBan(m)} tone="red" />
+                    <MenuItem icon={Pencil} label={t('mgmt.team.admin.editDetails')} onClick={() => { setEditing(m); setOpenMenu(null) }} />
+                    {m.dbRole === 'broker' && <MenuItem icon={Coins} label={t('mgmt.team.admin.openCredit')} onClick={() => openCredit(m)} />}
+                    <MenuItem icon={m.suspended ? CheckCircle2 : XCircle} label={m.suspended ? t('mgmt.team.admin.reEnable') : t('mgmt.team.admin.disable')} onClick={() => toggleDisable(m)} tone="amber" />
+                    <MenuItem icon={m.banned ? ShieldAlert : Ban} label={m.banned ? t('mgmt.team.admin.liftBan') : t('mgmt.team.admin.ban')} onClick={() => toggleBan(m)} tone="red" />
                     <div className="my-1 border-t border-line" />
-                    <MenuItem icon={Trash2} label="Remove" onClick={() => remove(m)} tone="red" />
+                    <MenuItem icon={Trash2} label={t('mgmt.team.admin.remove')} onClick={() => remove(m)} tone="red" />
                   </div>
                 </>
               )}
             </div>
           ))}
-          {members.length === 0 && <p className="py-6 text-center text-sm text-slate-500">No team members yet.</p>}
+          {members.length === 0 && <p className="py-6 text-center text-sm text-slate-500">{t('mgmt.team.admin.noMembers')}</p>}
         </div>
       )}
 
@@ -166,6 +172,7 @@ function MenuItem({ icon: Icon, label, onClick, tone }: { icon: React.ElementTyp
 }
 
 function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { t } = useI18n()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<Role>('broker')
@@ -174,7 +181,7 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [saving, setSaving] = useState(false)
 
   async function create() {
-    if (!name.trim() || !email.trim()) { toast.error('Name and email are required'); return }
+    if (!name.trim() || !email.trim()) { toast.error(t('mgmt.team.admin.nameEmailRequired')); return }
     setSaving(true)
     try {
       const res = await fetch('/api/freehold/team', {
@@ -182,7 +189,7 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
         body: JSON.stringify({ name: name.trim(), email: email.trim(), role }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to create')
+      if (!res.ok) throw new Error(data?.error || t('mgmt.team.admin.failedCreate'))
       // Apply optional phone/commission via PATCH on the new member.
       const id = data?.member?.id
       if (id && (phone.trim() || commission.trim())) {
@@ -191,34 +198,35 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
           body: JSON.stringify({ phone: phone.trim(), commissionRate: commission.trim() || null }),
         }).catch(() => {})
       }
-      toast.success(`${name.trim()} added`)
+      toast.success(t('mgmt.team.admin.memberAdded', { name: name.trim() }))
       onCreated()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to create')
+      toast.error(e instanceof Error ? e.message : t('mgmt.team.admin.failedCreate'))
     } finally { setSaving(false) }
   }
 
   return (
-    <Modal title="New team member" onClose={onClose}>
-      <input className={inputCls} placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input className={inputCls} placeholder="Email address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+    <Modal title={t('mgmt.team.admin.newMemberTitle')} onClose={onClose}>
+      <input className={inputCls} placeholder={t('mgmt.team.admin.fullName')} value={name} onChange={(e) => setName(e.target.value)} />
+      <input className={inputCls} placeholder={t('mgmt.team.admin.emailAddress')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-        {ASSIGNABLE.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+        {ASSIGNABLE.map((r) => <option key={r} value={r}>{t(ROLE_KEY[r])}</option>)}
       </select>
       <div className="flex gap-2">
-        <input className={inputCls} placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <input className={inputCls} placeholder="Commission %" type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
+        <input className={inputCls} placeholder={t('mgmt.team.admin.phoneOptional')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input className={inputCls} placeholder={t('mgmt.team.admin.commissionPct')} type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
       </div>
-      <p className="text-xs text-slate-500">A default password is set on creation; the member can reset it. Disabled/banned members cannot sign in.</p>
+      <p className="text-xs text-slate-500">{t('mgmt.team.admin.passwordHint')}</p>
       <button onClick={create} disabled={saving}
         className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Create member
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} {t('mgmt.team.admin.createMember')}
       </button>
     </Modal>
   )
 }
 
 function EditMemberModal({ member, onClose, onSaved }: { member: Member; onClose: () => void; onSaved: () => void }) {
+  const { t } = useI18n()
   const [name, setName] = useState(member.name)
   const [email, setEmail] = useState(member.email)
   const [role, setRole] = useState<Role>(member.dbRole)
@@ -237,30 +245,30 @@ function EditMemberModal({ member, onClose, onSaved }: { member: Member; onClose
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to save')
-      toast.success('Member updated')
+      if (!res.ok) throw new Error(data?.error || t('mgmt.team.admin.failedSave'))
+      toast.success(t('mgmt.team.admin.memberUpdated'))
       onSaved()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to save')
+      toast.error(e instanceof Error ? e.message : t('mgmt.team.admin.failedSave'))
     } finally { setSaving(false) }
   }
 
   const isOwner = member.dbRole === 'ceo'
 
   return (
-    <Modal title={`Edit ${member.name}`} onClose={onClose}>
-      <input className={inputCls} placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input className={inputCls} placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+    <Modal title={t('mgmt.team.admin.editTitle', { name: member.name })} onClose={onClose}>
+      <input className={inputCls} placeholder={t('mgmt.team.admin.fullName')} value={name} onChange={(e) => setName(e.target.value)} />
+      <input className={inputCls} placeholder={t('mgmt.team.admin.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={isOwner}>
-        {(isOwner ? (['ceo'] as Role[]) : ASSIGNABLE).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+        {(isOwner ? (['ceo'] as Role[]) : ASSIGNABLE).map((r) => <option key={r} value={r}>{t(ROLE_KEY[r])}</option>)}
       </select>
       <div className="flex gap-2">
-        <input className={inputCls} placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <input className={inputCls} placeholder="Commission %" type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
+        <input className={inputCls} placeholder={t('mgmt.team.admin.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input className={inputCls} placeholder={t('mgmt.team.admin.commissionPct')} type="number" value={commission} onChange={(e) => setCommission(e.target.value)} />
       </div>
       <button onClick={save} disabled={saving}
         className="flex items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-gold/90 disabled:opacity-50">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />} Save changes
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />} {t('mgmt.team.admin.saveChanges')}
       </button>
     </Modal>
   )
