@@ -232,6 +232,14 @@ export async function createAdSet(params: {
       : {}),
   }
 
+  // Explicit Advantage-audience choice (required on newer accounts):
+  // broad (no interests) → let the algorithm expand; interests → respect them.
+  const advantageAudience = params.targeting.interests.length > 0 ? 0 : 1
+  // Advantage+ audiences treat a minimum age above 25 as a suggestion only —
+  // Meta rejects a hard age_min > 25 (subcode 1870188). Clamp to comply; the
+  // algorithm still skews delivery to the intended age band via its signals.
+  const ageMin = advantageAudience === 1 ? Math.min(params.targeting.ageMin, 25) : params.targeting.ageMin
+
   const targetingSpec: Record<string, unknown> = {
     geo_locations: {
       countries: params.targeting.countries,
@@ -239,15 +247,13 @@ export async function createAdSet(params: {
         ? { cities: params.targeting.cityKeys.map((key) => ({ key })) }
         : {}),
     },
-    age_min: params.targeting.ageMin,
+    age_min: ageMin,
     age_max: params.targeting.ageMax,
     ...placementSpec,
     ...(params.targeting.interests.length > 0
       ? { interests: params.targeting.interests }
       : {}),
-    // Explicit Advantage-audience choice (required on newer accounts):
-    // broad (no interests) → let the algorithm expand; interests → respect them.
-    targeting_automation: { advantage_audience: params.targeting.interests.length > 0 ? 0 : 1 },
+    targeting_automation: { advantage_audience: advantageAudience },
   }
 
   const body: Record<string, unknown> = {
