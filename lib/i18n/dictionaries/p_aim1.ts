@@ -56,6 +56,11 @@ const en: Dict = {
   // ── Pages page ───────────────────────────────────────────────
   'paim.pages.breadcrumb': 'AI Manager · Pages',
   'paim.pages.title': 'Website Pages',
+  'paim.pages.liveTitle': 'The live site, page by page',
+  'paim.pages.liveSubtitle': 'Every row opens the real public page — core site pages plus the landing pages generated from Inventory.',
+  'paim.pages.core': 'Core site pages',
+  'paim.pages.landings': 'Live landing pages',
+  'paim.pages.noLandings': 'No landing pages published yet — generate them in Lead Machine → Landing pages.',
   'paim.pages.reviewAll': 'AI Review All',
   'paim.pages.reviewingAll': 'Reviewing…',
   // filter labels
@@ -150,6 +155,11 @@ const ar: Dict = {
   // ── Pages page ───────────────────────────────────────────────
   'paim.pages.breadcrumb': 'مدير الذكاء الاصطناعي · الصفحات',
   'paim.pages.title': 'صفحات الموقع',
+  'paim.pages.liveTitle': 'الموقع المباشر، صفحة بصفحة',
+  'paim.pages.liveSubtitle': 'كل صف يفتح الصفحة العامة الحقيقية — صفحات الموقع الأساسية وصفحات الهبوط المولّدة من المخزون.',
+  'paim.pages.core': 'صفحات الموقع الأساسية',
+  'paim.pages.landings': 'صفحات الهبوط المباشرة',
+  'paim.pages.noLandings': 'لا صفحات هبوط منشورة بعد — ولّدها في ماكينة العملاء ← صفحات الهبوط.',
   'paim.pages.reviewAll': 'مراجعة الكل بالذكاء الاصطناعي',
   'paim.pages.reviewingAll': 'جارٍ المراجعة…',
   'paim.pages.filter.all': 'الكل',
@@ -237,6 +247,11 @@ const ru: Dict = {
   // ── Pages page ───────────────────────────────────────────────
   'paim.pages.breadcrumb': 'AI-менеджер · Страницы',
   'paim.pages.title': 'Страницы сайта',
+  'paim.pages.liveTitle': 'Живой сайт, страница за страницей',
+  'paim.pages.liveSubtitle': 'Каждая строка открывает настоящую публичную страницу — основные страницы сайта и посадочные из Инвентаря.',
+  'paim.pages.core': 'Основные страницы',
+  'paim.pages.landings': 'Живые посадочные страницы',
+  'paim.pages.noLandings': 'Опубликованных посадочных страниц пока нет — создайте их в Lead Machine → Посадочные страницы.',
   'paim.pages.reviewAll': 'ИИ-проверка всех',
   'paim.pages.reviewingAll': 'Проверка…',
   'paim.pages.filter.all': 'Все',

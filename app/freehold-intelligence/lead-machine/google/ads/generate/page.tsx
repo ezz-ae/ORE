@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, AlertCircle, ArrowUpRight, Info } from 'lucide-react'
-import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
+import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { GeneratedRsaVariant, GenerateRsaPayload } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
 
@@ -93,7 +93,11 @@ function CharBadge({ text, limit, warn }: { text: string; limit: number; warn: n
 
 export default function GenerateRsaPage() {
   const t = useT()
-  const [listingId, setListingId] = useState<string>(leadMachineListings[0]?.id ?? '')
+  const { projects } = useLiveProjects()
+  const [listingId, setListingId] = useState<string>('')
+  useEffect(() => {
+    if (!listingId && projects.length) setListingId(projects[0].id)
+  }, [projects, listingId])
   const [angle, setAngle]         = useState<RsaAngle>('investor')
   const [tone, setTone]           = useState<RsaTone>('direct')
   const [loading, setLoading]     = useState(false)
@@ -122,7 +126,7 @@ export default function GenerateRsaPage() {
     } catch { /* ignore malformed prefill */ }
   }, [])
 
-  const listing = leadMachineListings.find((l) => l.id === listingId)
+  const listing = projects.find((l) => l.id === listingId)
 
   // ── Generate ────────────────────────────────────────────────────────────────
 
@@ -135,10 +139,10 @@ export default function GenerateRsaPage() {
 
     const payload: GenerateRsaPayload = {
       listingId:    listing.id,
-      listingName:  listing.projectName,
+      listingName:  listing.name,
       area:         listing.area,
-      developer:    listing.developer,
-      startingPrice: listing.startingPrice,
+      developer:    '',
+      startingPrice: listing.priceAED,
       paymentPlan:  listing.paymentPlan,
       angle,
       tone,
@@ -233,17 +237,17 @@ export default function GenerateRsaPage() {
                 onChange={(e) => setListingId(e.target.value)}
                 className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
-                {leadMachineListings.map((l) => (
-                  <option key={l.id} value={l.id}>{l.projectName}</option>
+                {projects.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
             </div>
             {listing && (
               <div className="mt-1.5 text-sm text-slate-500">
-                {listing.area} · {listing.developer}
-                {listing.startingPrice != null && (
-                  <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
+                {listing.area}
+                {listing.priceAED != null && (
+                  <> · AED {((listing.priceAED ?? 0) / 1_000_000).toFixed(1)}M from</>
                 )}
               </div>
             )}

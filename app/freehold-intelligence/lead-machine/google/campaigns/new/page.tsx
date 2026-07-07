@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Search, ChevronDown, Check, Zap, AlertCircle, ArrowRight } from 'lucide-react'
-import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
+import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import { UAE_REAL_ESTATE_KEYWORD_THEMES } from '@/lib/google/keyword-themes'
 import type { GoogleCampaignType, GoogleBiddingStrategy, GoogleKeywordMatchType } from '@/lib/google/types'
 import { useT } from '@/lib/i18n/provider'
@@ -58,15 +58,15 @@ export default function GoogleCampaignNewPage() {
   const [error, setError]     = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const listing0 = leadMachineListings[0]
+  const { projects } = useLiveProjects()
   const [form, setForm] = useState<FormState>({
-    listingId:       listing0?.id ?? '',
-    campaignName:    listing0 ? `${listing0.projectName} — Search` : '',
+    listingId:       '',
+    campaignName:    '',
     type:            'SEARCH',
     biddingStrategy: 'MAXIMIZE_CONVERSIONS',
     dailyBudgetAED:  200,
     targetCpaAED:    150,
-    finalUrl:        listing0?.landingUrl ? `https://freeholdproperty.ae${listing0.landingUrl}` : '',
+    finalUrl:        '',
     selectedThemes:  [],
     customKeywords:  '',
     headlines:       DEFAULT_HEADLINES,
@@ -79,17 +79,23 @@ export default function GoogleCampaignNewPage() {
   }
 
   function onListingChange(id: string) {
-    const l = leadMachineListings.find((x) => x.id === id)
+    const l = projects.find((x) => x.id === id)
     if (l) {
       patch({
         listingId:    id,
-        campaignName: `${l.projectName} — ${form.type === 'PERFORMANCE_MAX' ? 'PMax' : 'Search'}`,
-        // Auto-fill the landing URL when a listing with an active landing page is selected.
+        campaignName: `${l.name} — ${form.type === 'PERFORMANCE_MAX' ? 'PMax' : 'Search'}`,
+        // Auto-fill the landing URL from the project's live selling page.
         // The user can still override it manually.
-        finalUrl: l.landingUrl ? `https://freeholdproperty.ae${l.landingUrl}` : form.finalUrl,
+        finalUrl: l.landingUrl || form.finalUrl,
       })
     }
   }
+
+  // Default to the first LIVE project once inventory loads.
+  useEffect(() => {
+    if (!form.listingId && projects.length) onListingChange(projects[0].id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects])
 
   function toggleTheme(id: string) {
     patch({
@@ -136,8 +142,8 @@ export default function GoogleCampaignNewPage() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           listingId:       form.listingId,
-          listingName:     leadMachineListings.find((l) => l.id === form.listingId)?.projectName ?? '',
-          area:            leadMachineListings.find((l) => l.id === form.listingId)?.area ?? '',
+          listingName:     projects.find((l) => l.id === form.listingId)?.name ?? '',
+          area:            projects.find((l) => l.id === form.listingId)?.area ?? '',
           campaignName:    form.campaignName,
           type:            form.type,
           biddingStrategy: form.biddingStrategy,
@@ -160,7 +166,7 @@ export default function GoogleCampaignNewPage() {
     }
   }
 
-  const listing = leadMachineListings.find((l) => l.id === form.listingId)
+  const listing = projects.find((l) => l.id === form.listingId)
   const selectedThemeKwCount = UAE_REAL_ESTATE_KEYWORD_THEMES
     .filter((t) => form.selectedThemes.includes(t.id))
     .reduce((s, t) => s + t.keywords.length, 0)
@@ -259,16 +265,16 @@ export default function GoogleCampaignNewPage() {
                 onChange={(e) => onListingChange(e.target.value)}
                 className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
-                {leadMachineListings.map((l) => (
-                  <option key={l.id} value={l.id}>{l.projectName}</option>
+                {projects.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
             </div>
             {listing && (
               <p className="mt-1 text-sm text-slate-500">
-                {listing.area} · {listing.developer}
-                {listing.startingPrice && <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>}
+                {listing.area}
+                {listing.priceAED && <> · AED {(listing.priceAED / 1_000_000).toFixed(1)}M from</>}
               </p>
             )}
           </div>
@@ -297,7 +303,7 @@ export default function GoogleCampaignNewPage() {
                   onClick={() => {
                     patch({
                       type: t.value,
-                      campaignName: listing ? `${listing.projectName} — ${t.value === 'PERFORMANCE_MAX' ? 'PMax' : t.label}` : form.campaignName,
+                      campaignName: listing ? `${listing.name} — ${t.value === 'PERFORMANCE_MAX' ? 'PMax' : t.label}` : form.campaignName,
                     })
                   }}
                   className={[
@@ -574,7 +580,7 @@ export default function GoogleCampaignNewPage() {
       {step === 5 && (
         <section className="mt-10 space-y-4">
           {[
-            { label: 'Listing',          value: listing?.projectName ?? '—' },
+            { label: 'Listing',          value: listing?.name ?? '—' },
             { label: 'Campaign name',    value: form.campaignName            },
             { label: 'Type',             value: form.type.replace('_', ' ')  },
             { label: 'Bidding',          value: form.biddingStrategy.replace(/_/g, ' ') + (form.biddingStrategy === 'TARGET_CPA' ? ` · AED ${form.targetCpaAED} target` : '') },

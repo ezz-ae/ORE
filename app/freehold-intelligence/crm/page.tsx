@@ -7,7 +7,6 @@ import {
   RefreshCw, ChevronRight,
 } from 'lucide-react'
 import {
-  integrationSyncStatuses,
   type PipelineStage,
   type CRMLeadIntelligence,
 } from '@/src/features/freehold-intelligence/server-session'
@@ -59,22 +58,6 @@ const BUDGET_MID: Record<string, number> = {
   lead_006: 1_000_000, lead_020: 7_500_000,
 }
 const PIPELINE_VALUE = Object.values(BUDGET_MID).reduce((s, v) => s + v, 0)
-
-// ─── Sync dot helper ──────────────────────────────────────────────────────────
-
-function syncDot(status: string) {
-  if (status === 'synced')  return 'bg-emerald-400'
-  if (status === 'syncing') return 'bg-amber-400 animate-pulse'
-  if (status === 'error')   return 'bg-red-400'
-  return 'bg-slate-600'
-}
-
-function syncLabel(s: typeof integrationSyncStatuses[0], t: (key: string, vars?: Record<string, string | number>) => string) {
-  if (s.status === 'synced')        return <span className="text-xs text-slate-500">{t('crm.leadsCount', { count: s.leadsIn })}</span>
-  if (s.status === 'not_connected') return <span className="text-xs text-slate-600">{t('crm.notConnected')}</span>
-  if (s.status === 'syncing')       return <span className="text-xs text-amber-400/70">{t('crm.syncing')}</span>
-  return <span className="text-xs text-red-400/70">{t('crm.error')}</span>
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -135,8 +118,6 @@ export default function FreeholdCrmPage() {
     { label: t('crm.tile.closedMtd'),  value: String(closedCount),                        sub: t('crm.tile.closedMtdSub'),          color: 'text-slate-400',   border: 'border-line-strong',      bg: 'bg-white/[0.05]'       },
   ]
 
-  const lastSyncStr = integrationSyncStatuses.find(s => s.lastSyncAt)?.lastSyncAt
-  const totalLeadsIn = integrationSyncStatuses.reduce((s, i) => s + i.leadsIn, 0)
 
   return (
     <div className="px-4 pb-16 pt-5 sm:px-6">

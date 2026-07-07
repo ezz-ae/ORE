@@ -1,409 +1,136 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { CheckSquare, AlertCircle, Clock, MessageSquare, CheckCircle2, ArrowUpRight, Sparkles, X, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { CheckSquare, Handshake, FileText, ArrowUpRight, Loader2, CheckCircle2 } from 'lucide-react'
+import { useSessionGuard } from '@/lib/freehold/use-session'
+import { PageHeader, StatCard, Panel } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
-type ReviewType = 'approval' | 'decision' | 'correction' | 'access request' | 'comment'
-type ReviewPriority = 'critical' | 'high' | 'medium' | 'low'
 
-type ReviewItem = {
+// The approvals inbox — REAL queues only: deals waiting for management
+// approval and ad requests waiting to become campaigns. Approving happens on
+// the owning page (deals / campaigns); this is the one place to see what waits.
+
+interface PendingDeal {
   id: string
-  type: ReviewType
-  priority: ReviewPriority
-  project: string
-  projectHref?: string
-  title: string
-  body: string
-  owner: string
-  requestedBy: string
-  dueDate?: string
-  linkedTo?: string
+  projectName?: string | null
+  agentName?: string | null
+  priceAed?: number | null
 }
 
-const INITIAL_ITEMS: ReviewItem[] = [
-  {
-    id: 'rv_001',
-    type: 'access request',
-    priority: 'critical',
-    project: 'Palm Jumeirah Investor Pack',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_palm_001',
-    title: 'Meta billing owner — blocks ad launch',
-    body: 'Campaign launch cannot proceed until the Meta ad account billing owner is confirmed and a valid payment method is attached. This is the top launch blocker across the entire pipeline.',
-    owner: 'Owner',
-    requestedBy: 'Marketing',
-    dueDate: 'Today',
-    linkedTo: 'Ad Request · Palm Q2',
-  },
-  {
-    id: 'rv_002',
-    type: 'approval',
-    priority: 'high',
-    project: 'Palm Jumeirah Investor Pack',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_palm_001',
-    title: 'Landing page approval needed',
-    body: 'The Palm investor landing is at 84% completion. Hero, payment plan, lead form and WhatsApp flow are all ready. Only tracking confirmation and owner sign-off are outstanding. Approve to move to campaign packaging.',
-    owner: 'Owner',
-    requestedBy: 'Marketing',
-    dueDate: 'Today',
-    linkedTo: 'Landing · palm-investor-preview',
-  },
-  {
-    id: 'rv_003',
-    type: 'approval',
-    priority: 'high',
-    project: 'Dubai Hills Yield Campaign',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_hills_002',
-    title: 'Campaign angle approval — investor yield corridor',
-    body: 'Marketing needs approval on the Dubai Hills family-investor yield corridor angle before the ad request moves to ready to launch. This is the last gate before campaign packaging can begin.',
-    owner: 'Owner',
-    requestedBy: 'Marketing',
-    dueDate: 'Tomorrow',
-    linkedTo: 'Ad Request · Hills Q2',
-  },
-  {
-    id: 'rv_004',
-    type: 'correction',
-    priority: 'medium',
-    project: 'Sobha Hartland II Villas',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_sobha_007',
-    title: 'Verify and update handover date',
-    body: 'Handover date shown as Q4 2026, but developer documentation suggests Q2 2027. Incorrect handover dates cause campaign mis-targeting. Confirm with developer and update the listing field.',
-    owner: 'Data Manager',
-    requestedBy: 'Marketing',
-    dueDate: '25 May',
-    linkedTo: 'Listing · lm_sobha_007',
-  },
-  {
-    id: 'rv_005',
-    type: 'decision',
-    priority: 'medium',
-    project: 'Business Bay Canal View',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_bay_003',
-    title: 'Select primary campaign audience for Canal View',
-    body: 'Two audiences are viable: UAE end-users (families upgrading to Business Bay) and GCC investors (yield-focused). The landing and ad copy diverge significantly by audience. Choose the primary before briefing the campaign.',
-    owner: 'Marketing',
-    requestedBy: 'Marketing',
-    dueDate: '24 May',
-    linkedTo: 'Listing · lm_bay_003',
-  },
-  {
-    id: 'rv_006',
-    type: 'comment',
-    priority: 'low',
-    project: 'Dubai Hills Yield Campaign',
-    projectHref: '/freehold-intelligence/lead-machine/listings/lm_hills_002',
-    title: 'Add payment-plan proof point above lead form',
-    body: 'The 70/30 construction-linked payment plan is a strong conversion signal. Adding a one-line callout above the lead form could increase lead quality from paid traffic.',
-    owner: 'Marketing',
-    requestedBy: 'Marketing',
-    linkedTo: 'Landing · Hills yield',
-  },
-]
-
-const PRIORITY_ORDER: Record<ReviewPriority, number> = { critical: 0, high: 1, medium: 2, low: 3 }
-
-function priorityTone(p: ReviewPriority) {
-  if (p === 'critical') return { ring: 'border-red-400/25', bg: 'bg-red-400/[0.05]', text: 'text-red-300', dot: 'bg-red-400' }
-  if (p === 'high')     return { ring: 'border-gold/25', bg: 'bg-gold/[0.05]', text: 'text-[#F8E7AE]', dot: 'bg-gold' }
-  if (p === 'medium')   return { ring: 'border-teal-400/20', bg: 'bg-teal-400/[0.04]', text: 'text-teal-200', dot: 'bg-teal-400' }
-  return                       { ring: 'border-line', bg: 'bg-surface', text: 'text-slate-400', dot: 'bg-slate-500' }
+interface AdRequestRow {
+  id: string
+  project_slug: string
+  platform: string | null
+  status: string | null
+  created_at: string
 }
 
-const PRIORITY_LABEL_KEY: Record<ReviewPriority, string> = {
-  critical: 'previews.priorityCritical',
-  high: 'previews.priorityHigh',
-  medium: 'previews.priorityMedium',
-  low: 'previews.priorityLow',
-}
-
-const TYPE_LABEL_KEY: Record<FilterType, string> = {
-  'All': 'previews.filterAll',
-  'approval': 'previews.typeApproval',
-  'decision': 'previews.typeDecision',
-  'correction': 'previews.typeCorrection',
-  'access request': 'previews.typeAccessRequest',
-  'comment': 'previews.typeComment',
-}
-
-function typeTone(t: ReviewType) {
-  if (t === 'approval')       return 'bg-gold/10 border-gold/20 text-emerald-200'
-  if (t === 'access request') return 'bg-red-400/10 border-red-400/20 text-red-200'
-  if (t === 'decision')       return 'bg-gold/10 border-gold/20 text-[#F8E7AE]'
-  if (t === 'correction')     return 'bg-teal-400/10 border-teal-400/20 text-teal-200'
-  return                              'bg-surface-2 border-line-strong text-slate-400'
-}
-
-function typeIcon(t: ReviewType) {
-  if (t === 'approval' || t === 'decision') return <CheckCircle2 className="h-3.5 w-3.5 text-gold" />
-  if (t === 'access request') return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-  if (t === 'correction') return <MessageSquare className="h-3.5 w-3.5 text-slate-400" />
-  return <Clock className="h-3.5 w-3.5 text-slate-500" />
-}
-
-type FilterType = 'All' | ReviewType
-const TYPE_FILTERS: FilterType[] = ['All', 'approval', 'decision', 'correction', 'access request', 'comment']
-
-type Resolution = { status: 'approved' | 'rejected' }
+const MGMT = ['admin', 'ceo', 'director', 'sales_manager'] as const
 
 export default function ReviewRequestsPage() {
   const t = useT()
-  const [items, setItems]               = useState<ReviewItem[]>(INITIAL_ITEMS)
-  const [activeType, setActiveType]     = useState<FilterType>('All')
-  const [resolutions, setResolutions]   = useState<Record<string, Resolution>>({})
-  const [commentName, setCommentName]   = useState('')
-  const [commentText, setCommentText]   = useState('')
-  const [commentFlash, setCommentFlash] = useState(false)
+  const { ready } = useSessionGuard([...MGMT, 'marketing'])
+  const [deals, setDeals] = useState<PendingDeal[]>([])
+  const [adRequests, setAdRequests] = useState<AdRequestRow[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Load persisted resolutions so approve/reject decisions survive reloads.
   useEffect(() => {
-    fetch('/api/freehold/reviews', { cache: 'no-store' })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (!d?.resolutions) return
-        const mapped: Record<string, Resolution> = {}
-        for (const [id, val] of Object.entries(d.resolutions as Record<string, { status: string }>)) {
-          mapped[id] = { status: val.status as Resolution['status'] }
-        }
-        setResolutions((prev) => ({ ...mapped, ...prev }))
-      })
-      .catch(() => {})
-  }, [])
+    if (!ready) return
+    let cancelled = false
+    Promise.all([
+      fetch('/api/freehold/deals?status=pending_step2', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/freehold/lead-machine/ad-requests', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([d, a]) => {
+      if (cancelled) return
+      if (Array.isArray(d?.deals)) setDeals(d.deals)
+      if (Array.isArray(a?.adRequests)) setAdRequests(a.adRequests.filter((r: AdRequestRow) => !/launch|live|reject/i.test(r.status ?? '')))
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [ready])
 
-  const filtered = useMemo(() => {
-    const base = items.filter((r) => !resolutions[r.id])
-    const typed = activeType === 'All' ? base : base.filter((r) => r.type === activeType)
-    return [...typed].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
-  }, [items, resolutions, activeType])
+  if (!ready) return null
 
-  const stats = useMemo(() => ({
-    total:    items.filter((r) => !resolutions[r.id]).length,
-    critical: items.filter((r) => !resolutions[r.id] && r.priority === 'critical').length,
-    approvals: items.filter((r) => !resolutions[r.id] && r.type === 'approval').length,
-    resolved: Object.keys(resolutions).length,
-  }), [items, resolutions])
-
-  function resolve(id: string, status: 'approved' | 'rejected') {
-    setResolutions((prev) => ({ ...prev, [id]: { status } }))
-    fetch('/api/freehold/reviews', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId: id, status }),
-    }).catch(() => {})
-  }
-
-  function handleComment(e: React.FormEvent) {
-    e.preventDefault()
-    if (!commentText.trim()) return
-    const newItem: ReviewItem = {
-      id: `rv_${Date.now()}`,
-      type: 'comment',
-      priority: 'low',
-      project: 'General',
-      title: commentText.slice(0, 60) + (commentText.length > 60 ? '…' : ''),
-      body: commentText,
-      owner: commentName || 'Owner',
-      requestedBy: commentName || 'Owner',
-    }
-    setItems((prev) => [...prev, newItem])
-    fetch('/api/freehold/reviews', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'comment', author: commentName || 'Owner', body: commentText }),
-    }).catch(() => {})
-    setCommentName('')
-    setCommentText('')
-    setCommentFlash(true)
-    setTimeout(() => setCommentFlash(false), 2500)
-  }
-
-  const hasFilter = activeType !== 'All'
+  const total = deals.length + adRequests.length
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+      <PageHeader
+        eyebrow={t('previews.eyebrow')}
+        Icon={CheckSquare}
+        title={t('previews.title')}
+        subtitle={t('previews.subtitle')}
+      />
 
-      {/* Header */}
-      <section>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
-          <CheckSquare className="h-3.5 w-3.5" /> {t('previews.eyebrow')}
-        </div>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-white">
-          {t('previews.headlineDecisions', { n: stats.total })}
-          <br />
-          <span className="text-slate-400">{t('previews.headlineBlockers', { n: stats.critical })}</span>
-        </h1>
-        <p className="mt-5 max-w-xl text-base leading-[1.65] text-slate-300">
-          {t('previews.intro')}
-          {stats.resolved > 0 && (
-            <span className="ml-2 text-gold/80">{t('previews.resolvedThisSession', { n: stats.resolved })}</span>
-          )}
-        </p>
-      </section>
-
-      {/* Stat tiles */}
-      <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-[18px] border border-red-400/20 bg-red-400/[0.06] p-4 text-center">
-          <p className="text-[26px] font-semibold text-red-300">{stats.critical}</p>
-          <p className="text-xs text-red-400/60 mt-1">{t('previews.statBlockers')}</p>
-        </div>
-        <div className="rounded-[18px] border border-gold/20 bg-gold/[0.06] p-4 text-center">
-          <p className="text-[26px] font-semibold text-gold">{stats.approvals}</p>
-          <p className="text-xs text-gold/60 mt-1">{t('previews.statApprovals')}</p>
-        </div>
-        <div className="rounded-[18px] border border-line bg-surface p-4 text-center">
-          <p className="text-[26px] font-semibold text-white">{stats.total}</p>
-          <p className="text-xs text-slate-500 mt-1">{t('previews.statOpen')}</p>
-        </div>
-        <div className="rounded-[18px] border border-emerald-400/15 bg-gold/[0.04] p-4 text-center">
-          <p className="text-[26px] font-semibold text-gold/70">{stats.resolved}</p>
-          <p className="text-xs text-gold/40 mt-1">{t('previews.statResolved')}</p>
-        </div>
-      </section>
-
-      {/* Type filter pills */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-400 shrink-0">{t('previews.filter')}</span>
-        {TYPE_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setActiveType(f)}
-            className={`rounded-full border px-3 py-0.5 text-sm font-medium capitalize transition ${
-              activeType === f
-                ? 'border-gold/30 bg-gold/10 text-gold'
-                : 'border-line bg-surface text-slate-400 hover:text-slate-100 hover:border-line-strong'
-            }`}
-          >
-            {t(TYPE_LABEL_KEY[f])}
-          </button>
-        ))}
-        {hasFilter && (
-          <button
-            onClick={() => setActiveType('All')}
-            className="flex items-center gap-1 rounded-full border border-line bg-surface px-2.5 py-0.5 text-sm text-slate-400 transition hover:text-slate-100"
-          >
-            <X className="h-3 w-3" /> {t('previews.clear')}
-          </button>
-        )}
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <StatCard label={t('previews.stat.deals')} value={deals.length} hint={t('previews.stat.dealsHint')} />
+        <StatCard label={t('previews.stat.adRequests')} value={adRequests.length} hint={t('previews.stat.adRequestsHint')} />
       </div>
 
-      <p className="mt-2 text-sm text-slate-500">{t('previews.itemsShown', { shown: filtered.length, total: stats.total })}</p>
-
-      {/* Review items */}
-      <section className="mt-4 space-y-4">
-        {filtered.length === 0 ? (
-          <div className="rounded-[22px] border border-line bg-surface py-14 text-center text-sm text-slate-400">
-            {stats.total === 0 ? t('previews.allResolved') : t('previews.noMatch')}
-          </div>
-        ) : (
-          filtered.map((item) => {
-            const tone = priorityTone(item.priority)
-            return (
-              <div key={item.id} className={`rounded-[22px] border p-6 ${tone.ring} ${tone.bg}`}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${tone.ring} ${tone.text}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                      {t(PRIORITY_LABEL_KEY[item.priority])}
-                    </span>
-                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium capitalize ${typeTone(item.type)}`}>
-                      {typeIcon(item.type)}
-                      {t(TYPE_LABEL_KEY[item.type])}
-                    </span>
-                  </div>
-                  {item.dueDate && (
-                    <div className="flex items-center gap-1.5 text-sm text-slate-400">
-                      <Clock className="h-3 w-3" /> {t('previews.due', { date: item.dueDate })}
+      {loading ? (
+        <div className="mt-8 flex items-center gap-2 rounded-2xl border border-line bg-surface px-5 py-6 text-sm text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}
+        </div>
+      ) : total === 0 ? (
+        <div className="mt-8 rounded-2xl border border-gold/20 bg-gold/[0.04] px-6 py-10 text-center">
+          <CheckCircle2 className="mx-auto h-7 w-7 text-gold" />
+          <p className="mt-3 text-sm font-medium text-slate-200">{t('previews.allClear')}</p>
+        </div>
+      ) : (
+        <div className="mt-8 space-y-8">
+          {deals.length > 0 && (
+            <section>
+              <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <Handshake className="h-4 w-4" /> {t('previews.sec.deals')}
+              </h2>
+              <Panel>
+                <div className="divide-y divide-line">
+                  {deals.map((d) => (
+                    <div key={d.id} className="flex items-center gap-4 px-6 py-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-white">{d.projectName || d.id}</div>
+                        <div className="mt-0.5 text-xs text-slate-500">
+                          {d.agentName || '—'}{d.priceAed ? ` · AED ${Number(d.priceAed).toLocaleString()}` : ''}
+                        </div>
+                      </div>
+                      <Link href="/freehold-intelligence/management/deals" className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90">
+                        {t('previews.review')} <ArrowUpRight className="h-3 w-3" />
+                      </Link>
                     </div>
-                  )}
+                  ))}
                 </div>
+              </Panel>
+            </section>
+          )}
 
-                <h3 className="mt-3 text-base font-semibold text-white">{item.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{item.body}</p>
-
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                  <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                    <span>{t('previews.project')} <span className="text-slate-300">{item.project}</span></span>
-                    <span>{t('previews.owner')} <span className="text-slate-300">{item.owner}</span></span>
-                    {item.linkedTo && <span>{t('previews.linked')} <span className="text-slate-300">{item.linkedTo}</span></span>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => resolve(item.id, 'approved')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-gold/20 bg-gold/[0.06] px-3.5 py-1.5 text-xs font-medium text-gold transition hover:border-emerald-400/35 hover:bg-gold/10"
-                    >
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                      {t('previews.approve')}
-                    </button>
-                    <button
-                      onClick={() => resolve(item.id, 'rejected')}
-                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-red-400/20 bg-red-400/[0.04] px-3.5 py-1.5 text-xs font-medium text-red-300 transition hover:border-red-400/30 hover:bg-red-400/[0.08]"
-                    >
-                      <ThumbsDown className="h-3.5 w-3.5" />
-                      {t('previews.reject')}
-                    </button>
-                  </div>
+          {adRequests.length > 0 && (
+            <section>
+              <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <FileText className="h-4 w-4" /> {t('previews.sec.adRequests')}
+              </h2>
+              <Panel>
+                <div className="divide-y divide-line">
+                  {adRequests.map((r) => (
+                    <div key={r.id} className="flex items-center gap-4 px-6 py-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-white">{r.project_slug}</div>
+                        <div className="mt-0.5 text-xs text-slate-500">{r.platform || 'Meta'} · {r.status ?? 'Draft'}</div>
+                      </div>
+                      <Link
+                        href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(r.project_slug)}`}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line-strong bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40 hover:text-white"
+                      >
+                        {t('previews.build')} <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-
-                {item.projectHref && (
-                  <Link
-                    href={item.projectHref}
-                    className="mt-3 inline-flex items-center gap-1 text-sm text-slate-400 transition hover:text-gold"
-                  >
-                    {t('previews.openWorkspace')} <ArrowUpRight className="h-3 w-3" />
-                  </Link>
-                )}
-              </div>
-            )
-          })
-        )}
-      </section>
-
-      {/* Add comment */}
-      <section className="mt-8 rounded-[22px] border border-line bg-surface p-6">
-        <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <MessageSquare className="h-3.5 w-3.5" /> {t('previews.addComment')}
+              </Panel>
+            </section>
+          )}
         </div>
-        {commentFlash && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm text-gold">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            {t('previews.commentAdded')}
-          </div>
-        )}
-        <form onSubmit={handleComment} className="space-y-3">
-          <input
-            value={commentName}
-            onChange={(e) => setCommentName(e.target.value)}
-            placeholder={t('previews.namePlaceholder')}
-            className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition"
-          />
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder={t('previews.commentPlaceholder')}
-            rows={3}
-            className="w-full rounded-[12px] border border-line-strong bg-surface-2 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/30 transition resize-none"
-          />
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-[12px] bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-white/90 disabled:opacity-50"
-              disabled={!commentText.trim()}
-            >
-              {t('previews.addCommentButton')}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* AI take */}
-      <section className="mt-8 rounded-[22px] border border-gold/15 bg-gold/[0.03] px-6 py-7">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80 mb-3">
-          <Sparkles className="h-3 w-3" /> {t('previews.aiTake')}
-        </div>
-        <p className="text-base font-medium leading-[1.65] text-slate-100">
-          {t('previews.aiTakeBody')}
-        </p>
-      </section>
-
-
+      )}
     </div>
   )
 }

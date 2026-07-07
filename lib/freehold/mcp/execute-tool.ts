@@ -5,6 +5,7 @@ import { getToolById } from '@/lib/freehold/mcp/registry';
 import { userHasRole, isActionApproved } from '@/lib/freehold/mcp/permissions';
 import { getLiveIntegrationStatuses } from '@/lib/freehold/integration-status';
 import { getInventoryAnalysis } from '@/src/features/freehold-intelligence/inventory';
+import { getInventoryPropertiesFromDB } from '@/lib/inventory-data';
 import { query } from '@/lib/db';
 
 export interface ToolCallRequest {
@@ -137,7 +138,7 @@ export async function executeTool(request: ToolCallRequest): Promise<McpResponse
         break;
       }
       case 'inventory-analysis': {
-        result = getInventoryAnalysis();
+        result = getInventoryAnalysis(await getInventoryPropertiesFromDB());
         evidence = ['Ranked inventory by composite ad-opportunity score'];
         warnings = result.counts.fixFirst > 0 ? [`${result.counts.fixFirst} high-potential listing(s) blocked from ads`] : [];
         nextActions = [

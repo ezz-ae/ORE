@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { FileText, Plus, AlertCircle, ArrowUpRight, CheckCircle2, Users, Zap } from 'lucide-react'
 import { listLeadForms, MetaConfigError, MetaApiError } from '@/lib/meta/client'
-import { demoForms } from '@/lib/meta/demo-data'
 import type { MetaLeadForm } from '@/lib/meta/types'
 import { getServerT } from '@/lib/i18n/server'
 import { DemoNotice } from '@/components/freehold/demo-badge'
@@ -17,7 +16,8 @@ async function getForms(): Promise<FormsResponse> {
     const forms = await listLeadForms()
     return { forms }
   } catch (err) {
-    if (err instanceof MetaConfigError) return { forms: demoForms, demo: true }
+    // Not connected → nothing fake: an empty list plus the connect notice.
+    if (err instanceof MetaConfigError) return { forms: [], demo: true }
     if (err instanceof MetaApiError)    return { forms: [], error: err.message }
     return { forms: [], error: 'Unexpected error loading forms' }
   }

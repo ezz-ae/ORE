@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
-import { inventoryProperties } from "@/src/features/freehold-intelligence/inventory"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -171,26 +170,9 @@ export async function POST(req: NextRequest) {
       [projectSlug.toLowerCase()],
     )
 
-    let project = projectRows[0]
-    // Fall back to the static inventory seed for curated/seed-only projects that
-    // aren't (yet) in the DB, so a landing page can still be created and will
-    // appear publicly at /lp/<slug>. Without this, those items 404.
-    if (!project) {
-      const seed = inventoryProperties.find(
-        (p) => p.slug.toLowerCase() === projectSlug.toLowerCase(),
-      )
-      if (seed) {
-        project = {
-          slug: seed.slug,
-          name: seed.name,
-          area: seed.area,
-          hero_image: null,
-          payload: { developer: { name: seed.developer } },
-          price_from_aed: seed.startingPriceAED,
-          rental_yield: seed.roi,
-        }
-      }
-    }
+    // DB projects only — no seed fallback: a project must exist in Inventory
+    // before it can have a landing page.
+    const project = projectRows[0]
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }

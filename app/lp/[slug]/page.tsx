@@ -5,7 +5,8 @@ import {
   ShoppingBag, GraduationCap, Coffee, Dumbbell, Trees, Waves,
 } from 'lucide-react'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
+import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
@@ -45,9 +46,10 @@ function toObj(v: unknown): Record<string, unknown> {
 }
 
 // ─── Inventory fallback ───────────────────────────────────────────────────────
+// When no landing page row exists yet, build the page from the LIVE inventory
+// project (never from seed data).
 
-function inventoryToLandingPage(slug: string): LandingPageData | null {
-  const prop = inventoryProperties.find((p) => p.slug === slug)
+function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData | null {
   if (!prop) return null
 
   const priceText = fmtAed(prop.startingPriceAED)
@@ -99,7 +101,8 @@ async function getPage(slug: string): Promise<LandingPageData | null> {
     const dbPage = await getLandingPageBySlug(slug, { includeDraft: true })
     if (dbPage) return dbPage
   } catch { /* fallback */ }
-  return inventoryToLandingPage(slug)
+  const prop = await getInventoryPropertyBySlug(slug).catch(() => null)
+  return inventoryToLandingPage(prop)
 }
 
 // ─── Section components ───────────────────────────────────────────────────────

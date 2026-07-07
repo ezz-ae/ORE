@@ -1,19 +1,29 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Lock, ShieldAlert, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
-import { currentServerUser, getRoleScope, crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
+import { getRoleScope, type ServerRole } from '@/src/features/freehold-intelligence/server-session'
+import { useSession } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
 
+// Map the real session role onto the security matrix's role vocabulary.
+const SESSION_TO_MATRIX: Record<string, ServerRole> = {
+  ceo: 'owner', director: 'admin', admin: 'admin',
+  sales_manager: 'sales_manager', marketing: 'marketing', broker: 'sales_agent',
+}
+
+// Every item here reflects what is actually deployed: fail-closed API
+// middleware, expiring HMAC sessions, DB-backed roles and a Postgres rate
+// limiter are all live.
 const HARDENING_CHECKLIST = [
   { key: 'isolation',      done: true },
   { key: 'aiScope',        done: true },
   { key: 'mcpGating',      done: true },
   { key: 'auditLog',       done: true },
-  { key: 'authMiddleware', done: false },
-  { key: 'sessionExpiry',  done: false },
-  { key: 'rbacDb',         done: false },
-  { key: 'rateLimit',      done: false },
+  { key: 'authMiddleware', done: true },
+  { key: 'sessionExpiry',  done: true },
+  { key: 'rbacDb',         done: true },
+  { key: 'rateLimit',      done: true },
 ]
 
 const ROLE_MATRIX = [
@@ -26,14 +36,10 @@ const ROLE_MATRIX = [
   { role: 'Viewer',        key: 'viewer',       canView: true,  canEdit: false, canApprove: false, canAdmin: false },
 ]
 
-const scope = getRoleScope(currentServerUser.role)
-
-const allAuditEvents = [...crmActivityLog]
-  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-const allEventTypes = Array.from(new Set(allAuditEvents.map((e) => e.type)))
-
 type ChecklistFilter = 'All' | 'Done' | 'Pending'
+
+// Live audit rows — every call/message/stage-change actually logged.
+type AuditRow = { id: string; actor: string; type: string; leadName: string; createdAt: string }
 
 function Check({ ok }: { ok: boolean }) {
   return ok
@@ -49,6 +55,29 @@ export default function SecurityPage() {
 
   const [checklistFilter, setChecklistFilter] = useState<ChecklistFilter>('All')
   const [auditTypeFilter, setAuditTypeFilter] = useState<string>('All')
+  const { user } = useSession()
+  const matrixRole: ServerRole = SESSION_TO_MATRIX[user?.role ?? ''] ?? 'viewer'
+  const scope = getRoleScope(matrixRole)
+
+  const [allAuditEvents, setAllAuditEvents] = useState<AuditRow[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/activity', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !Array.isArray(d?.activity)) return
+        setAllAuditEvents(d.activity.map((r: { id: string; activity_type: string; created_at: string; lead_name: string | null; actor?: string | null }) => ({
+          id: String(r.id),
+          actor: r.actor ?? '—',
+          type: r.activity_type,
+          leadName: r.lead_name ?? '—',
+          createdAt: r.created_at,
+        })))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+  const allEventTypes = useMemo(() => Array.from(new Set(allAuditEvents.map((e) => e.type))).slice(0, 6), [allAuditEvents])
 
   const filteredChecklist = useMemo(() => {
     if (checklistFilter === 'Done')    return HARDENING_CHECKLIST.filter((i) => i.done)
@@ -59,7 +88,7 @@ export default function SecurityPage() {
   const filteredAudit = useMemo(() => {
     if (auditTypeFilter === 'All') return allAuditEvents.slice(0, 12)
     return allAuditEvents.filter((e) => e.type === auditTypeFilter).slice(0, 12)
-  }, [auditTypeFilter])
+  }, [auditTypeFilter, allAuditEvents])
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-16 pt-6 sm:pt-16">
@@ -171,12 +200,12 @@ export default function SecurityPage() {
               {ROLE_MATRIX.map((row) => (
                 <tr
                   key={row.role}
-                  className={`transition hover:bg-surface-2 ${row.role.toLowerCase().replace(' ', '_') === currentServerUser.role ? 'bg-gold/[0.04]' : ''}`}
+                  className={`transition hover:bg-surface-2 ${row.key === matrixRole || row.role.toLowerCase().replace(' ', '_') === matrixRole ? 'bg-gold/[0.04]' : ''}`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-100">{t(`psec.role.${row.key}`)}</span>
-                      {row.role.toLowerCase().replace(' ', '_') === currentServerUser.role && (
+                      {row.role.toLowerCase().replace(' ', '_') === matrixRole && (
                         <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">{t('psec.you')}</span>
                       )}
                     </div>
@@ -196,7 +225,7 @@ export default function SecurityPage() {
       {/* Current session scope */}
       <section className="mt-14">
         <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('psec.session.eyebrow')}</div>
-        <h2 className="mt-2 text-xl font-semibold text-white">{t('psec.session.title', { role: currentServerUser.role.replace('_', ' ') })}</h2>
+        <h2 className="mt-2 text-xl font-semibold text-white">{t('psec.session.title', { role: (user?.role ?? '').replace('_', ' ') })}</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {scope.map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/15 bg-gold/[0.05] px-3.5 py-1.5 text-xs text-gold/80">

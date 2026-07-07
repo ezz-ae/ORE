@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, Building2 } from 'lucide-react'
-import { leadMachineListings } from '@/src/features/freehold-intelligence/lead-machine'
+import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/lib/meta/types'
 import type { MetaCta } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
@@ -53,17 +53,20 @@ function CopyButton({ text }: { text: string }) {
 
 export default function GenerateCreativePage() {
   const t = useT()
-  const [listingId, setListingId] = useState(leadMachineListings[0]?.id ?? '')
+  const { projects, loading: projectsLoading } = useLiveProjects()
+  const [listingId, setListingId] = useState('')
+  // Default to the first LIVE project once inventory loads.
+  useEffect(() => {
+    if (!listingId && projects.length) setListingId(projects[0].id)
+  }, [projects, listingId])
   const [angle, setAngle]         = useState<CreativeAngle>('investor')
   const [tone, setTone]           = useState<CreativeTone>('direct')
   const [cta, setCta]             = useState<MetaCta>('LEARN_MORE')
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
   const [variants, setVariants]   = useState<GeneratedCreativeVariant[]>([])
-  // Real-project override: arriving from AI-Manager / Inventory "Generate Ad
-  // Creatives" (?project=&name=&area=&developer=&price=). The generator is
-  // seed-based, so a live project won't be in leadMachineListings — generate
-  // straight from the params instead of a seed listing.
+  // Real-project override: arriving with ?project=&name=&area=&price= from a
+  // project page pre-fills the generator without waiting for the picker.
   const [override, setOverride] = useState<{ slug: string; name: string; area: string; developer: string; price: number } | null>(null)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -78,14 +81,14 @@ export default function GenerateCreativePage() {
     })
   }, [])
 
-  const listing = leadMachineListings.find((l) => l.id === listingId)
+  const listing = projects.find((l) => l.id === listingId)
 
   async function generate() {
     // Override (real project) takes precedence over the selected seed listing.
     const ctx = override
       ? { id: override.slug || override.name, name: override.name, area: override.area, developer: override.developer, price: override.price, paymentPlan: '' }
       : listing
-        ? { id: listing.id, name: listing.projectName, area: listing.area, developer: listing.developer, price: listing.startingPrice, paymentPlan: listing.paymentPlan }
+        ? { id: listing.id, name: listing.name, area: listing.area, developer: '', price: listing.priceAED ?? 0, paymentPlan: listing.paymentPlan ?? '' }
         : null
     if (!ctx) return
     setLoading(true)
@@ -169,17 +172,18 @@ export default function GenerateCreativePage() {
                     onChange={(e) => setListingId(e.target.value)}
                     className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
                   >
-                    {leadMachineListings.map((l) => (
-                      <option key={l.id} value={l.id}>{l.projectName}</option>
+                    {projectsLoading && <option value="">…</option>}
+                    {projects.map((l) => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
                     ))}
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
                 </div>
                 {listing && (
                   <div className="mt-1.5 text-sm text-slate-500">
-                    {listing.area} · {listing.developer}
-                    {listing.startingPrice && (
-                      <> · AED {(listing.startingPrice / 1_000_000).toFixed(1)}M from</>
+                    {listing.area}
+                    {listing.priceAED && (
+                      <> · AED {(listing.priceAED / 1_000_000).toFixed(1)}M from</>
                     )}
                   </div>
                 )}

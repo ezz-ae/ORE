@@ -12,7 +12,7 @@ import {
   Bell,
   Zap,
 } from 'lucide-react'
-import { crmActivityLog, type CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
+import type { CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
 import { PageHeader, StatCard, Panel, EmptyState } from '@/components/freehold/ui'
 import { useI18n, useT } from '@/lib/i18n/provider'
 
@@ -20,106 +20,20 @@ type TFn = (key: string, vars?: Record<string, string | number>) => string
 
 // ─── Supplemental static events to enrich the timeline ────────────────────────
 
-const EXTRA_EVENTS: CRMActivityEvent[] = [
-  {
-    id: 'act_015',
-    leadId: 'inbox_004',
-    leadName: 'Mohammed Al-Farsi',
-    type: 'call',
-    actor: 'Ahmad K.',
-    content: 'First contact. Budget confirmed at AED 3M+. Interested in Palm or Creek Beach. Fast decision-maker — will decide within the week.',
-    outcome: 'connected',
-    durationMin: 18,
-    createdAt: '2026-06-05T08:10:00+04:00',
-  },
-  {
-    id: 'act_016',
-    leadId: 'inbox_001',
-    leadName: 'Fatima Al-Rashidi',
-    type: 'assignment',
-    actor: 'system',
-    content: 'Lead assigned to Sara M. based on Golden Visa and beachfront specialty match.',
-    createdAt: '2026-06-05T07:45:00+04:00',
-  },
-  {
-    id: 'act_017',
-    leadId: 'inbox_001',
-    leadName: 'Fatima Al-Rashidi',
-    type: 'whatsapp',
-    actor: 'Sara M.',
-    content: 'Sent Emaar Beachfront overview with ROI breakdown and Golden Visa eligibility note.',
-    createdAt: '2026-06-05T08:30:00+04:00',
-  },
-  {
-    id: 'act_018',
-    leadId: 'lead_005',
-    leadName: 'Priya Nair',
-    type: 'note',
-    actor: 'Sara M.',
-    content: 'Creek Beach shortlisted as primary option — eligibility threshold confirmed, now comparing payment plans.',
-    createdAt: '2026-06-05T09:00:00+04:00',
-  },
-  {
-    id: 'act_019',
-    leadId: 'lead_001',
-    leadName: 'Rami Haddad',
-    type: 'follow_up',
-    actor: 'system',
-    content: 'Automated reminder: Payment plan comparison sent 4 hours ago — no reply yet. Consider a follow-up call this afternoon.',
-    createdAt: '2026-06-05T13:30:00+04:00',
-  },
-  {
-    id: 'act_020',
-    leadId: 'inbox_002',
-    leadName: 'Dominic Okafor',
-    type: 'assignment',
-    actor: 'system',
-    content: 'Lead assigned to Omar. International timezone — WhatsApp message recommended before calling.',
-    createdAt: '2026-06-04T10:00:00+04:00',
-  },
-  {
-    id: 'act_021',
-    leadId: 'inbox_002',
-    leadName: 'Dominic Okafor',
-    type: 'whatsapp',
-    actor: 'Omar',
-    content: 'Sent Palm Q2 investor summary with payment plan and yield data via WhatsApp.',
-    createdAt: '2026-06-04T10:15:00+04:00',
-  },
-  {
-    id: 'act_022',
-    leadId: 'lead_004',
-    leadName: 'Abdullah Al-Mansoori',
-    type: 'stage_change',
-    actor: 'Ahmad K.',
-    content: 'Stage moved: New → Qualified. Interest confirmed in Dubai Hills 70/30 plan. Brochure sent.',
-    createdAt: '2026-06-04T11:00:00+04:00',
-  },
-  {
-    id: 'act_023',
-    leadId: 'lead_002',
-    leadName: 'Sara Khan',
-    type: 'system',
-    actor: 'system',
-    content: 'Duplicate risk resolved — records merged. Original source retained as primary.',
-    createdAt: '2026-06-03T18:00:00+04:00',
-  },
-  {
-    id: 'act_024',
-    leadId: 'inbox_003',
-    leadName: 'Anita Sharma',
-    type: 'call',
-    actor: 'Layla',
-    content: 'Qualification call — discussed JVC vs Dubai Hills. School proximity is a key factor. Sent school zone map.',
-    outcome: 'connected',
-    durationMin: 14,
-    createdAt: '2026-06-03T11:00:00+04:00',
-  },
-]
+// ─── Live log ─────────────────────────────────────────────────────────────────
+// Events come from the real CRM activity API — every call, message, note and
+// stage change actually logged against a lead. No sample rows.
 
-// ─── Merged log ────────────────────────────────────────────────────────────────
-
-const ALL_EVENTS: CRMActivityEvent[] = [...crmActivityLog, ...EXTRA_EVENTS]
+function mapType(raw: string): CRMActivityEvent['type'] {
+  const t = raw.toLowerCase()
+  if (t.includes('call')) return 'call'
+  if (t.includes('whatsapp') || t.includes('message') || t.includes('email')) return 'whatsapp'
+  if (t.includes('stage') || t.includes('status')) return 'stage_change'
+  if (t.includes('assign')) return 'assignment'
+  if (t.includes('follow')) return 'follow_up'
+  if (t.includes('note')) return 'note'
+  return 'system'
+}
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -407,10 +321,34 @@ export default function CrmActivityPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  // Live events from the CRM activity log.
+  const [events, setEvents] = useState<CRMActivityEvent[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/activity', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const rows = d?.activity as Array<{ id: string; lead_id?: string | null; activity_type: string; description: string | null; created_at: string; lead_name: string | null; actor?: string | null }> | undefined
+        if (!rows) return
+        setEvents(rows.map((r) => ({
+          id: String(r.id),
+          leadId: String(r.lead_id ?? ''),
+          leadName: r.lead_name ?? '—',
+          type: mapType(r.activity_type),
+          actor: r.actor ?? '',
+          content: r.description ?? r.activity_type,
+          createdAt: r.created_at,
+        })))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   // Pre-sort all events newest first
   const sortedAll = useMemo(
-    () => [...ALL_EVENTS].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    []
+    () => [...events].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [events]
   )
 
   // Filtered events

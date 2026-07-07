@@ -90,11 +90,7 @@ const SEND_DESTINATIONS = [
   { key: 'email',     labelKey: 'nb.dest.email',    icon: <Mail className="h-3.5 w-3.5" /> },
 ]
 
-const MOCK_UPLOADS = [
-  { id: 'upload_1', name: 'Palm_Investor_Pack_v3.pdf', type: 'pdf', size: '2.4 MB' },
-  { id: 'upload_2', name: 'Dubai_Hills_Brochure.pdf',  type: 'pdf', size: '1.8 MB' },
-  { id: 'upload_3', name: 'Market_Report_Q2_2026.pdf', type: 'pdf', size: '4.1 MB' },
-]
+// Uploads are user-added sources only — no sample files.
 
 const CHAT_SUGGESTIONS = [
   'nb.suggestion.whatsappHotLead',
@@ -165,7 +161,6 @@ export default function NotebookPage() {
     live_projects: false,
     crm_leads: false,
     uploads: false,
-    ...Object.fromEntries(MOCK_UPLOADS.map(u => [u.id, false])),
   })
   const [isDragOver, setIsDragOver] = useState(false)
 
@@ -452,7 +447,7 @@ export default function NotebookPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-medium text-slate-100">{t('nb.uploads')}</span>
-                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{MOCK_UPLOADS.length}</span>
+                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] text-slate-400">{customSources.length}</span>
                 </div>
                 <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.pdfsDocuments')}</p>
               </div>
@@ -462,20 +457,6 @@ export default function NotebookPage() {
           {/* Individual uploads */}
           {checkedSources.uploads && (
             <div className="ml-6 space-y-0.5 pb-1">
-              {MOCK_UPLOADS.map(u => (
-                <div
-                  key={u.id}
-                  className="flex items-center gap-1.5 rounded px-2 py-1.5 hover:bg-surface-2 transition cursor-pointer"
-                  onClick={() => toggleSource(u.id)}
-                >
-                  <SourceCheckbox checked={!!checkedSources[u.id]} onChange={() => toggleSource(u.id)} />
-                  <FileText className="h-3 w-3 shrink-0 text-slate-500" />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs text-slate-300">{u.name}</p>
-                    <p className="text-[10px] text-slate-600">{u.size}</p>
-                  </div>
-                </div>
-              ))}
               {customSources.map(s => (
                 <div
                   key={s.id}

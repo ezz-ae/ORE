@@ -55,6 +55,8 @@ export interface MetaInsights {
   date_stop: string
 }
 
+export type MetaCampaignWithInsights = MetaCampaign & { insights: MetaInsights | null }
+
 export interface MetaAdSet {
   id: string
   name: string
