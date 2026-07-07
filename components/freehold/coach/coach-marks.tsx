@@ -57,6 +57,9 @@ const SKIP_CAP = 2
 
 function autoTourSuppressed(): boolean {
   if (typeof window === 'undefined') return false
+  // Phones stay calm: no self-starting tours on a small screen — the user can
+  // still run any tour from the account menu or a Help walkthrough.
+  try { if (window.matchMedia('(max-width: 767px)').matches) return true } catch { /* ignore */ }
   try { return Number(window.sessionStorage.getItem(SKIP_KEY)) >= SKIP_CAP } catch { return false }
 }
 
