@@ -7,7 +7,7 @@ import {
   ArrowLeft, ArrowRight, Check, FileText, AlertCircle,
   Plus, Trash2, CheckSquare, Square,
 } from 'lucide-react'
-import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
+import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { MetaFormQuestion, MetaFormQuestionType, CreateLeadFormPayload } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
 
@@ -89,14 +89,15 @@ export default function NewFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]   = useState<string | null>(null)
   const [created, setCreated] = useState<{ id: string } | null>(null)
+  const { projects } = useLiveProjects()
 
   function onListingChange(id: string) {
-    const listing = leadMachineListings.find((l) => l.id === id)
-    const landing = listing ? leadMachineLandings.find((l) => l.projectId === listing.projectId) : null
+    const listing = projects.find((l) => l.id === id)
+    const landing = listing?.hasLanding ? listing : null
     setForm((prev) => ({
       ...prev,
       listingId: id,
-      formName:  listing ? `${listing.projectName} — Lead Form` : prev.formName,
+      formName:  listing ? `${listing.name} — Lead Form` : prev.formName,
       landingUrl: landing?.landingUrl ?? prev.landingUrl,
     }))
   }
@@ -141,7 +142,7 @@ export default function NewFormPage() {
       const payload: CreateLeadFormPayload = {
         name:              form.formName,
         listingId:         form.listingId,
-        listingName:       leadMachineListings.find((l) => l.id === form.listingId)?.projectName ?? form.formName,
+        listingName:       projects.find((l) => l.id === form.listingId)?.name ?? form.formName,
         landingUrl:        form.landingUrl,
         questions:         buildQuestions(),
         privacyPolicyUrl:  form.privacyPolicyUrl,
@@ -230,8 +231,8 @@ export default function NewFormPage() {
               className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
             >
               <option value="">{t('pforms.basics.selectListing')}</option>
-              {leadMachineListings.map((l) => (
-                <option key={l.id} value={l.id}>{l.projectName}</option>
+              {projects.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
           </div>
@@ -381,7 +382,7 @@ export default function NewFormPage() {
               title: t('pforms.review.formDetails'),
               rows: [
                 [t('pforms.review.name'),      form.formName        || '—'],
-                [t('pforms.review.listing'),   leadMachineListings.find((l) => l.id === form.listingId)?.projectName ?? '—'],
+                [t('pforms.review.listing'),   projects.find((l) => l.id === form.listingId)?.name ?? '—'],
                 [t('pforms.review.landingUrl'), form.landingUrl     || '—'],
                 [t('pforms.review.privacyPolicy'), form.privacyPolicyUrl || '—'],
               ],

@@ -12,7 +12,7 @@
  * still behaves, just without persistence.
  */
 import { query } from '@/lib/db'
-import type { MetaCampaignWithInsights } from '@/lib/meta/demo-data'
+import type { MetaCampaignWithInsights } from '@/lib/meta/types'
 import type { LaunchCampaignPayload, MetaCampaignStatus } from '@/lib/meta/types'
 
 let ensured: Promise<void> | null = null

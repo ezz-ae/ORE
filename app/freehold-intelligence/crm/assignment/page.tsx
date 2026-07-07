@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { UserCog, CheckCircle2, Users, AlertCircle, Clock, TrendingUp } from 'lucide-react'
-import { crmAgentRoster, crmInboxLeads } from '@/src/features/freehold-intelligence/server-session'
 import type { CRMInboxLead, CRMAgentCapacity } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { useT } from '@/lib/i18n/provider'
@@ -234,7 +233,8 @@ export default function AssignmentPage() {
 
   // Derive inbox leads from live leads: new stage = unassigned, contacted = assigned
   const inboxLeads: CRMInboxLead[] = useMemo(() => {
-    if (leads.length === 0) return crmInboxLeads
+    // Real leads only — an empty inbox stays honestly empty.
+    if (leads.length === 0) return []
     return leads
       .filter(l => l.pipelineStage === 'new' || l.pipelineStage === 'contacted')
       .map(l => ({

@@ -16,8 +16,6 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react'
-import { getAllIntegrations } from '@/lib/freehold/mcp/mock-integrations'
-import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { PageHeader } from '@/components/freehold/ui'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
@@ -54,7 +52,7 @@ type IntMeta = { category: string; icon: LucideIcon; copy: string }
 const META: Record<string, IntMeta & { href?: string }> = {
   hubspot:      { category: 'CRM',            icon: Users2,        copy: 'Lead capture, contact sync, pipeline automation.',         href: '/freehold-intelligence/integrations/hubspot' },
   'meta-ads':   { category: 'Paid Ads',       icon: Megaphone,     copy: 'Meta & Instagram campaigns and pixel events.',             href: '/freehold-intelligence/integrations/meta' },
-  'google-ads': { category: 'Paid Ads',       icon: Megaphone,     copy: 'Google search and display — budget and bidding.' },
+  'google-ads': { category: 'Paid Ads',       icon: Megaphone,     copy: 'Google search and display — budget and bidding.',          href: '/freehold-intelligence/integrations/google' },
   whatsapp:     { category: 'Messaging',      icon: MessageSquare, copy: 'Automated and agent-triggered WhatsApp flows.',            href: '/freehold-intelligence/integrations/whatsapp' },
   tracking:     { category: 'Analytics',      icon: BarChart3,     copy: 'Meta Pixel, GA4, GTM, conversion attribution.' },
   neon:         { category: 'Infrastructure', icon: Database,      copy: 'Neon PostgreSQL — the private data layer.' },
@@ -85,34 +83,14 @@ function statusCfg(status: string) {
   }
 }
 
-// Mock fallback data (module-level, kept as initial state)
-const mockIntegrations = getAllIntegrations()
+
 
 export default function IntegrationsPage() {
   const t = useT()
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('All')
-  const [connecting, setConnecting] = useState<string | null>(null)
-  const [connected,  setConnected]  = useState<string[]>([])
-
-  // Restore previously connected integrations — this device first, then the
-  // ACCOUNT, so the list follows the user to any browser.
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('fh_connected_integrations') || '[]')
-      if (Array.isArray(saved) && saved.length) setConnected(saved)
-    } catch {}
-    loadAccountMemory().then((m) => {
-      const acct = m.connectedIntegrations
-      if (Array.isArray(acct) && acct.length) {
-        setConnected((prev) => Array.from(new Set([...prev, ...acct.filter((x): x is string => typeof x === 'string')])))
-      }
-    })
-  }, [])
-
-  // Live data — fetched on mount; falls back to mock catalog only until the
-  // real status arrives (or if the API is unreachable).
-  const [integrations, setIntegrations] = useState<any[]>(mockIntegrations)
+  // Live data only — the page renders nothing until the real status arrives.
+  const [integrations, setIntegrations] = useState<any[]>([])
   const [isLive, setIsLive] = useState(false)
 
   useEffect(() => {
@@ -301,30 +279,6 @@ export default function IntegrationsPage() {
                         <Link href={meta.href} className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white sm:inline-flex">
                           {t('integrations.view')} <ArrowUpRight className="h-3 w-3" />
                         </Link>
-                      ) : connected.includes(integration.id) ? (
-                        <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-400 sm:inline-flex">
-                          {t('integrations.filter.connected')}
-                        </span>
-                      ) : integration.status !== 'connected' ? (
-                        <button
-                          disabled={connecting === integration.id}
-                          onClick={() => {
-                            setConnecting(integration.id)
-                            setTimeout(() => {
-                              setConnecting(null)
-                              setConnected((prev) => {
-                                const next = [...prev, integration.id]
-                                try { localStorage.setItem('fh_connected_integrations', JSON.stringify(next)) } catch {}
-                                saveAccountMemory({ connectedIntegrations: next })
-                                return next
-                              })
-                              toast.success(t('integrations.connectedToast', { name: integration.name }))
-                            }, 1200)
-                          }}
-                          className="hidden shrink-0 items-center gap-1 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-slate-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60 sm:inline-flex"
-                        >
-                          {connecting === integration.id ? t('integrations.connecting') : (<>{t('integrations.connect')} <ArrowUpRight className="h-3 w-3" /></>)}
-                        </button>
                       ) : null}
                     </div>
                   )

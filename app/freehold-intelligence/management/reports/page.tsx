@@ -10,19 +10,6 @@ import {
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-const TOP_EVENTS = [
-  { rank: 1,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Sara Al Mansoori closed Palm Jumeirah Villa deal — AED 4.2M commission AED 63K' },
-  { rank: 2,  type: 'lead',     icon: TrendingUp,    color: 'text-teal-400 bg-teal-500/15',         text: 'Meta CPL hit all-time low of AED 32 — 68 new leads in 24 hours from Dubai Hills campaign' },
-  { rank: 3,  type: 'finance',  icon: DollarSign,    color: 'text-gold bg-gold/15',    text: 'Monthly revenue target of AED 300K exceeded — current MTD AED 320K (+6.7% above target)' },
-  { rank: 4,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Khalid Rashid progressed 2 deals to Contract Review stage — combined value AED 8M' },
-  { rank: 5,  type: 'warning',  icon: AlertTriangle, color: 'text-amber-400 bg-amber-500/15',     text: 'Tariq Bin Zayed deal (AED 4.2M) at risk — 12 days without agent follow-up action required' },
-  { rank: 6,  type: 'ads',      icon: Megaphone,     color: 'text-violet-400 bg-violet-500/15',   text: 'Google Ads CTR dropped 15% week-over-week — "Palm Q3" campaign underperforming, review keywords' },
-  { rank: 7,  type: 'team',     icon: Users,         color: 'text-indigo-400 bg-indigo-500/15',   text: '7 of 12 agents logged in before 9AM — team engagement highest since January 2026' },
-  { rank: 8,  type: 'deal',     icon: CheckCircle2,  color: 'text-emerald-400 bg-emerald-500/15', text: 'Ahmed Hassan signed MOU for Downtown Dubai 3BR — deal value AED 950K, expected close June 14' },
-  { rank: 9,  type: 'finance',  icon: DollarSign,    color: 'text-gold bg-gold/15',    text: '3 invoices overdue — total AED 64,500 outstanding. Emirates Hills and DIFC deals flagged for follow-up' },
-  { rank: 10, type: 'ads',      icon: Megaphone,     color: 'text-violet-400 bg-violet-500/15',   text: 'WhatsApp broadcast to 148 warm leads generated 18 deal conversions — highest ROI channel at 1,200%' },
-]
-
 function fmtAedShort(n: number): string {
   if (!n || n <= 0) return 'AED 0'
   if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`

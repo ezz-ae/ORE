@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
-import { inventoryProperties } from '@/src/features/freehold-intelligence/inventory'
+import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useI18n, useT } from '@/lib/i18n/provider'
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
@@ -145,7 +145,7 @@ function AiPanel({
   leadName: string
   phone: string
   messages: WAMessage[]
-  inventoryCtx: typeof inventoryProperties
+  inventoryCtx: InventoryProperty[]
   onSelect: (text: string) => void
   onClose: () => void
 }) {
@@ -250,8 +250,17 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
 
-  // ── Inventory matches ──────────────────────────────────────────────────────
-  const invMatches = inventoryProperties
+  // ── Inventory matches — LIVE projects only ────────────────────────────────
+  const [inventory, setInventory] = useState<InventoryProperty[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && Array.isArray(d?.properties)) setInventory(d.properties) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+  const invMatches = inventory
     .filter((p) => {
       const budget = lead.budgetAED ?? ''
       const nums = budget.match(/[\d.]+/g)?.map(Number) ?? []

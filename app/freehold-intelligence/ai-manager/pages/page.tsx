@@ -1,230 +1,97 @@
 'use client'
 
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { FileText, Sparkles, Globe, Check, AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { FileText, Globe, ArrowUpRight, LayoutTemplate } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-interface PageRow {
-  title: string
-  url: string
-  type: 'Landing' | 'Blog' | 'Static' | 'Legal'
-  status: 'Published' | 'Draft' | 'Review'
-  words: number
-  seo: number
-  lastAiReview: string
-}
+// The REAL sitemap of the public site — every row is an actual route you can
+// open, plus the live landing pages generated from Inventory. No invented SEO
+// scores, word counts or review statuses.
 
-const websitePages: PageRow[] = [
-  { title: 'Home',                  url: '/',                      type: 'Landing', status: 'Published', words: 1200, seo: 88, lastAiReview: '2026-05-20' },
-  { title: 'Projects',              url: '/projects',              type: 'Landing', status: 'Published', words: 950,  seo: 82, lastAiReview: '2026-05-18' },
-  { title: 'About',                 url: '/about',                 type: 'Static',  status: 'Published', words: 680,  seo: 71, lastAiReview: '2026-05-10' },
-  { title: 'Contact',               url: '/contact',               type: 'Static',  status: 'Published', words: 320,  seo: 65, lastAiReview: '2026-05-08' },
-  { title: 'Dubai Hills Guide',     url: '/areas/dubai-hills',     type: 'Landing', status: 'Published', words: 3200, seo: 94, lastAiReview: '2026-05-22' },
-  { title: 'Palm Jumeirah',         url: '/areas/palm-jumeirah',   type: 'Landing', status: 'Review',    words: 2800, seo: 78, lastAiReview: '2026-05-05' },
-  { title: 'Blog',                  url: '/blog',                  type: 'Blog',    status: 'Published', words: 450,  seo: 60, lastAiReview: '2026-05-15' },
-  { title: 'Privacy Policy',        url: '/privacy',               type: 'Legal',   status: 'Draft',     words: 1800, seo: 42, lastAiReview: '2026-04-12' },
-  { title: 'Terms & Conditions',    url: '/terms',                 type: 'Legal',   status: 'Draft',     words: 2100, seo: 38, lastAiReview: '2026-04-12' },
-  { title: 'AI Chat',               url: '/chat',                  type: 'Static',  status: 'Review',    words: 280,  seo: 55, lastAiReview: '2026-05-01' },
+const SITE = 'https://www.freeholdproperty.ae'
+
+const CORE_PAGES: { title: string; url: string }[] = [
+  { title: 'Home',              url: '/' },
+  { title: 'Projects',          url: '/projects' },
+  { title: 'Compare projects',  url: '/projects/compare' },
+  { title: 'Properties',        url: '/properties' },
+  { title: 'Search',            url: '/search' },
+  { title: 'Services',          url: '/services' },
+  { title: 'ROI calculator',    url: '/tools/roi-calculator' },
+  { title: 'Market tracker',    url: '/tools/market-tracker' },
+  { title: 'Payment simulator', url: '/tools/payment-simulator' },
+  { title: 'Comparator',        url: '/tools/comparator' },
+  { title: 'AI discovery',      url: '/tools/ai-discovery' },
+  { title: 'Terms',             url: '/terms' },
 ]
 
-function typeBadge(type: PageRow['type']) {
-  if (type === 'Landing') return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
-  if (type === 'Blog')    return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
-  if (type === 'Legal')   return 'text-slate-400 bg-surface-2 border-line-strong'
-  return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-}
-
-function statusBadge(status: PageRow['status']) {
-  if (status === 'Published') return 'text-gold bg-gold/10 border-gold/20'
-  if (status === 'Review')    return 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-  return 'text-slate-400 bg-surface-2 border-line-strong'
-}
-
-function seoColor(score: number) {
-  if (score >= 80) return 'text-gold'
-  if (score >= 60) return 'text-gold'
-  return 'text-slate-400'
-}
-
-type FilterKey = 'All' | PageRow['type'] | PageRow['status']
-const FILTERS: FilterKey[] = ['All', 'Landing', 'Blog', 'Static', 'Legal', 'Published', 'Review', 'Draft']
+interface Landing { name: string; url: string }
 
 export default function WebsitePagesPage() {
   const t = useT()
+  const [landings, setLandings] = useState<Landing[]>([])
 
-  const filterKey: Record<FilterKey, string> = {
-    All: 'paim.pages.filter.all',
-    Landing: 'paim.pages.filter.landing',
-    Blog: 'paim.pages.filter.blog',
-    Static: 'paim.pages.filter.static',
-    Legal: 'paim.pages.filter.legal',
-    Published: 'paim.pages.filter.published',
-    Review: 'paim.pages.filter.review',
-    Draft: 'paim.pages.filter.draft',
-  }
-  const typeKey: Record<PageRow['type'], string> = {
-    Landing: 'paim.pages.type.landing',
-    Blog: 'paim.pages.type.blog',
-    Static: 'paim.pages.type.static',
-    Legal: 'paim.pages.type.legal',
-  }
-  const statusLabelKey: Record<PageRow['status'], string> = {
-    Published: 'paim.pages.status.published',
-    Review: 'paim.pages.status.review',
-    Draft: 'paim.pages.status.draft',
-  }
-  const colKey = ['paim.pages.col.pageTitle', 'paim.pages.col.url', 'paim.pages.col.type', 'paim.pages.col.status', 'paim.pages.col.words', 'paim.pages.col.seo', 'paim.pages.col.lastReview', 'paim.pages.col.actions']
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !Array.isArray(d?.properties)) return
+        setLandings(
+          d.properties
+            .filter((p: { landingUrl?: string | null }) => p.landingUrl)
+            .map((p: { name: string; landingUrl: string }) => ({ name: p.name, url: p.landingUrl })),
+        )
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
-  const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
-  const [reviewing, setReviewing] = useState<string | null>(null)
-  const [reviewed, setReviewed] = useState<string[]>([])
-  const filtered = websitePages.filter((p) => {
-    if (activeFilter === 'All') return true
-    return p.type === activeFilter || p.status === activeFilter
-  })
-
-  function startReview(slug: string) {
-    setReviewing(slug)
-    toast.promise(new Promise(r => setTimeout(r, 2000)), {
-      loading: t('paim.pages.toast.reviewingOne'),
-      success: t('paim.pages.toast.reviewComplete'),
-      error: t('paim.pages.toast.reviewFailed'),
-    })
-    setTimeout(() => { setReviewing(null); setReviewed(r => [...r, slug]) }, 2000)
-  }
+  const Row = ({ title, url }: { title: string; url: string }) => (
+    <a
+      href={`${SITE}${url}`}
+      target="_blank"
+      rel="noreferrer"
+      className="group flex items-center gap-4 px-5 py-3.5 transition hover:bg-white/[0.03]"
+    >
+      <Globe className="h-4 w-4 shrink-0 text-slate-500" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium text-slate-100">{title}</div>
+        <div className="truncate font-mono text-xs text-slate-500">{url}</div>
+      </div>
+      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-600 transition group-hover:text-gold" />
+    </a>
+  )
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-
-      {/* Header */}
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
-        <FileText className="h-3.5 w-3.5" />
-        {t('paim.pages.breadcrumb')}
+    <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/85">
+        <FileText className="h-4 w-4" /> {t('paim.pages.breadcrumb')}
       </div>
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-          {t('paim.pages.title')}
-        </h1>
-        <button
-          disabled={reviewing !== null}
-          onClick={() => {
-            setReviewing('all')
-            toast.promise(new Promise(r => setTimeout(r, 2500)), {
-              loading: t('paim.pages.toast.reviewingN', { n: filtered.length }),
-              success: t('paim.pages.toast.allReviewed'),
-              error: t('paim.pages.toast.reviewFailed'),
-            })
-            setTimeout(() => { setReviewing(null); setReviewed(filtered.map(p => p.url)) }, 2500)
-          }}
-          className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
-        >
-          <Sparkles className="h-4 w-4" />
-          {reviewing === 'all' ? t('paim.pages.reviewingAll') : t('paim.pages.reviewAll')}
-        </button>
-      </div>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white">{t('paim.pages.liveTitle')}</h1>
+      <p className="mt-1 max-w-[58ch] text-sm text-slate-400">{t('paim.pages.liveSubtitle')}</p>
 
-      {/* Filter pills */}
-      <div className="mt-5 flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setActiveFilter(f)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
-              activeFilter === f
-                ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
-                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
-            }`}
-          >
-            {t(filterKey[f])}
-          </button>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.pages.stat.total')} </span>
-          <span className="font-semibold text-slate-100">{websitePages.length}</span>
+      <section className="mt-8">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{t('paim.pages.core')}</h2>
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {CORE_PAGES.map((p) => <Row key={p.url} {...p} />)}
         </div>
-        <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.pages.stat.published')} </span>
-          <span className="font-semibold text-gold">{websitePages.filter((p) => p.status === 'Published').length}</span>
-        </div>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.pages.stat.needsReview')} </span>
-          <span className="font-semibold text-amber-400">{websitePages.filter((p) => p.status === 'Review').length}</span>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.pages.stat.draft')} </span>
-          <span className="font-semibold text-slate-400">{websitePages.filter((p) => p.status === 'Draft').length}</span>
-        </div>
-      </div>
+      </section>
 
-      {/* Table */}
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
-        <table className="w-full min-w-[900px]">
-          <thead>
-            <tr className="border-b border-line">
-              {colKey.map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-slate-500">
-                  {t(h)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {filtered.map((page) => (
-              <tr key={page.url} className="group transition hover:bg-surface-2">
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-2">
-                    {page.status === 'Review'
-                      ? <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-amber-400" />
-                      : <Globe className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
-                    }
-                    <span className="text-sm font-medium text-slate-300">{page.title}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3.5 font-mono text-xs text-slate-400">{page.url}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`inline-block rounded-full border px-2.5 py-0.5 text-sm font-medium ${typeBadge(page.type)}`}>
-                    {t(typeKey[page.type])}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(page.status)}`}>
-                    {page.status === 'Published' && <Check className="h-3 w-3" />}
-                    {t(statusLabelKey[page.status])}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5 text-sm text-slate-400">{page.words.toLocaleString()}</td>
-                <td className="px-4 py-3.5">
-                  <span className={`text-sm font-semibold ${seoColor(page.seo)}`}>{page.seo}</span>
-                  <span className="text-xs text-slate-500">{t('paim.pages.seoSuffix')}</span>
-                </td>
-                <td className="px-4 py-3.5 text-xs text-slate-400">{page.lastAiReview}</td>
-                <td className="px-4 py-3.5">
-                  {reviewed.includes(page.url) ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
-                      <Check className="h-3 w-3" /> {t('paim.pages.reviewed')}
-                    </span>
-                  ) : (
-                    <button
-                      disabled={reviewing === page.url}
-                      onClick={() => startReview(page.url)}
-                      className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      {reviewing === page.url ? t('paim.pages.reviewing') : t('paim.pages.review')}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
+      <section className="mt-10">
+        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <LayoutTemplate className="h-4 w-4" /> {t('paim.pages.landings')} · {landings.length}
+        </h2>
+        {landings.length === 0 ? (
+          <div className="rounded-2xl border border-line bg-surface px-5 py-8 text-center text-sm text-slate-400">
+            {t('paim.pages.noLandings')}
+          </div>
+        ) : (
+          <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+            {landings.map((p) => <Row key={p.url} title={p.name} url={p.url} />)}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

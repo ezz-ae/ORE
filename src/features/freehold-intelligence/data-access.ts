@@ -1,7 +1,7 @@
 import { query } from "@/lib/db"
 import type { AuditEvent, DashboardSnapshot, Milestone, RbacRow, ReviewItem, SystemModule } from "./types"
-import { fallbackDashboard, fallbackMilestones, fallbackSystems } from "./data/fallbacks"
-import { inventoryProperties, type InventoryProperty } from "./inventory"
+import { fallbackDashboard } from "./data/fallbacks"
+import type { InventoryProperty } from "./inventory"
 
 const safeQuery = async <T,>(sql: string, params: unknown[] = [], fallback: T[] = []): Promise<T[]> => {
   try {
@@ -60,8 +60,10 @@ export async function getSystems(): Promise<SystemModule[]> {
       ELSE NULL
     END
     ORDER BY m.layer, m.module_name
-  `, [], fallbackSystems)
-  return rows.length ? rows : fallbackSystems
+  `, [], [])
+  // Real rows only — an empty systems table renders as empty, not as a
+  // fictional roadmap.
+  return rows
 }
 
 export async function getSystem(systemId: string): Promise<SystemModule | null> {
@@ -70,8 +72,8 @@ export async function getSystem(systemId: string): Promise<SystemModule | null> 
 }
 
 export async function getMilestones(): Promise<Milestone[]> {
-  const rows = await safeQuery<Milestone>("SELECT * FROM freehold_milestone_progress ORDER BY deadline", [], fallbackMilestones)
-  return (rows.length ? rows : fallbackMilestones).map(serializeTemporalFields)
+  const rows = await safeQuery<Milestone>("SELECT * FROM freehold_milestone_progress ORDER BY deadline", [], [])
+  return rows.map(serializeTemporalFields)
 }
 
 export async function getMilestone(code: string): Promise<Milestone | null> {
@@ -110,7 +112,8 @@ export async function getInventoryProperties(): Promise<InventoryProperty[]> {
   const rows = await safeQuery<InventoryProperty>(
     `SELECT * FROM freehold_site_projects ORDER BY campaign_readiness DESC`,
     [],
-    inventoryProperties,
+    [],
   )
-  return rows.length ? rows : inventoryProperties
+  // Real rows only — no seed inventory fallback.
+  return rows
 }

@@ -7,8 +7,7 @@ import {
   BarChart3, Globe, ArrowUpRight,
 } from 'lucide-react'
 import { cookies } from 'next/headers'
-import { crmActivityLog, type CRMLeadIntelligence } from '@/src/features/freehold-intelligence/server-session'
-import { leadMachineListings, leadMachineLandings } from '@/src/features/freehold-intelligence/lead-machine'
+import type { CRMLeadIntelligence, CRMActivityEvent } from '@/src/features/freehold-intelligence/server-session'
 import { query } from '@/lib/db'
 import { ensureLeadsTable } from '@/lib/data'
 import { getLandingAttribution, type LandingAttribution } from '@/lib/landing-pages'
@@ -100,14 +99,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const existingDeal = await getDealByLeadId(lead.id)
 
   // Activity timeline is populated from real lead events only (no seed log).
-  const leadActivity: typeof crmActivityLog = []
-
-  // Resolve attribution. Campaign attribution comes from live landing data
-  // (landingAttribution above) and the lead's own fields; no seed campaign
-  // benchmark is consulted, so these stay null and the live fallback renders.
-  const sourceCampaign = ((): { name: string; platform: 'meta' | 'google'; spendAED: number; cpl: number } | null => null)()
-  const sourceLanding  = leadMachineLandings.find((l) => l.id === lead.landingId) ?? null
-  const sourceListing = ((): { id: string; projectName: string; area: string; developer: string } | null => null)()
+  const leadActivity: CRMActivityEvent[] = []
 
   // Real campaign attribution from the lead's captured UTM data (no seed). The
   // platform is inferred from the source string; the campaign drill-down links to
@@ -311,60 +303,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               <BarChart3 className="h-3 w-3" /> {t('crm.attribution')}
             </div>
 
-            {sourceCampaign ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.campaign')}</div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-medium text-slate-300 leading-snug">{sourceCampaign.name}</span>
-                    <span className={`shrink-0 rounded-full border px-1.5 py-px text-xs font-medium ${
-                      sourceCampaign.platform === 'meta'
-                        ? 'border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-300'
-                        : 'border-gold/25 bg-gold/10 text-gold'
-                    }`}>
-                      {sourceCampaign.platform === 'meta' ? 'Meta' : 'Google'}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex gap-3 text-xs text-slate-500">
-                    <span>{t('crm.spent', { amount: `AED ${sourceCampaign.spendAED.toLocaleString()}` })}</span>
-                    <span>·</span>
-                    <span>{t('crm.cpl', { amount: `AED ${sourceCampaign.cpl.toFixed(0)}` })}</span>
-                  </div>
-                </div>
-
-                {sourceListing && (
-                  <div>
-                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.property')}</div>
-                    <Link
-                      href={`/freehold-intelligence/lead-machine/listings/${sourceListing.id}`}
-                      className="group flex items-center justify-between gap-2 text-xs text-gold/65 transition hover:text-gold"
-                    >
-                      <span className="leading-snug">{sourceListing.projectName}</span>
-                      <ArrowUpRight className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition" />
-                    </Link>
-                    <div className="mt-0.5 text-xs text-slate-500">{sourceListing.area} · {sourceListing.developer}</div>
-                  </div>
-                )}
-
-                {sourceLanding && (
-                  <div>
-                    <div className="text-xs text-slate-500 uppercase tracking-[0.15em] mb-1.5">{t('crm.landingPage')}</div>
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-3 w-3 shrink-0 text-slate-500" />
-                      <span className="font-mono text-xs text-slate-400">{sourceLanding.landingUrl}</span>
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">{sourceLanding.status} · {t('crm.complete', { percent: sourceLanding.completion })}</div>
-                  </div>
-                )}
-
-                <Link
-                  href="/freehold-intelligence/lead-machine/campaigns/attribution"
-                  className="flex items-center gap-1 text-xs text-gold/45 transition hover:text-gold"
-                >
-                  {t('crm.viewFullAttribution')} <ArrowUpRight className="h-2.5 w-2.5" />
-                </Link>
-              </div>
-            ) : (
               <div className="space-y-3 text-xs text-slate-400">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-slate-500">{t('crm.campaign')}</span>
@@ -394,7 +332,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 )}
               </div>
-            )}
           </div>
 
           {/* Quick actions */}

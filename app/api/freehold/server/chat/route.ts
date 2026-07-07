@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
-import { currentServerUser } from '@/src/features/freehold-intelligence/server-session'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 
 export async function POST(request: Request) {
@@ -21,7 +20,7 @@ export async function POST(request: Request) {
       sessionId: body.sessionId,
       context:   body.context,
     })
-    return NextResponse.json({ answer, role: currentServerUser.role })
+    return NextResponse.json({ answer, role: user.role })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Server AI unavailable'
     return NextResponse.json({ error: msg }, { status: 500 })

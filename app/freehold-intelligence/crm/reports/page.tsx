@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { TrendingUp, BarChart3, Target, Users, Zap } from 'lucide-react'
-import { crmActivityLog } from '@/src/features/freehold-intelligence/server-session'
 import { useLiveLeads } from '@/lib/freehold/use-live-leads'
 import { PageHeader, StatCard, Section, Panel, PanelHeader, EmptyState } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
@@ -106,11 +105,20 @@ export default function CrmReportsPage() {
   }, [leads])
   const maxMonthly = Math.max(...monthlyLeads.map((m) => m.leads), 1)
 
-  // Live stats from real data
+  // Live stats from real data — call counts come from the real activity log.
+  const [activity, setActivity] = useState<Array<{ activity_type: string }>>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/crm/activity', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && Array.isArray(d?.activity)) setActivity(d.activity) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
   const totalLeads   = leads.length
   const critical     = leads.filter((l) => l.urgency === 'critical').length
-  const callsLogged  = crmActivityLog.filter((e) => e.type === 'call').length
-  const connected    = crmActivityLog.filter((e) => e.outcome === 'connected').length
+  const callsLogged  = activity.filter((e) => /call/i.test(e.activity_type)).length
+  const connected    = activity.filter((e) => /connect/i.test(e.activity_type)).length
   const connectRate  = callsLogged > 0 ? Math.round((connected / callsLogged) * 100) : 0
 
   // Intent score distribution — filtered

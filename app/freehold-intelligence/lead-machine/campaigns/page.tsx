@@ -5,7 +5,7 @@ import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 import { DemoNotice } from '@/components/freehold/demo-badge'
 import { listCampaigns, getCampaignInsights, MetaConfigError, MetaApiError } from '@/lib/meta/client'
-import { demoCampaigns } from '@/lib/meta/demo-data'
+import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { query } from '@/lib/db'
 import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
@@ -38,7 +38,8 @@ async function getCampaigns(): Promise<CampaignsResponse> {
     )
     return { campaigns: withInsights }
   } catch (err) {
-    if (err instanceof MetaConfigError) return { campaigns: demoCampaigns, demo: true }
+    // Not connected → the in-app sandbox campaigns (real, user-created) only.
+    if (err instanceof MetaConfigError) return { campaigns: await listLocalCampaigns(), demo: true }
     if (err instanceof MetaApiError)    return { campaigns: [], error: err.message, type: err.type }
     return { campaigns: [], error: 'Unexpected error loading campaigns', type: 'unknown' }
   }
