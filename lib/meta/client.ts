@@ -225,7 +225,7 @@ export async function createAdSet(params: {
   const placementSpec: Record<string, unknown> = platforms.length === 0 ? {} : {
     publisher_platforms: platforms,
     ...(platforms.includes('facebook')
-      ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'video_feeds', 'search'] }
+      ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] }
       : {}),
     ...(platforms.includes('instagram')
       ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
