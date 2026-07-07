@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Target, Users, Globe, ArrowUpRight, Zap, MapPin, Sliders, Search, X, Sparkles, Loader2 } from 'lucide-react'
-import { UAE_INTERESTS, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
+import { UAE_INTERESTS, STRATEGY_LABELS, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import type { TargetingUseCase } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
@@ -95,7 +95,16 @@ export default function TargetingPage() {
         {loop && (
           <div className="mt-3 space-y-3">
             <p className="text-sm leading-relaxed text-slate-200">{loop.recommendation.analysis}</p>
+            {loop.recommendation.signalPlan && (
+              <p className="text-xs leading-relaxed text-slate-400">{loop.recommendation.signalPlan}</p>
+            )}
+            {loop.recommendation.creativeAngle && (
+              <p className="text-xs leading-relaxed text-slate-400">{loop.recommendation.creativeAngle}</p>
+            )}
             <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-full border border-gold/40 bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
+                {STRATEGY_LABELS[loop.recommendation.strategy]}
+              </span>
               {UAE_INTERESTS.filter((i) => loop.recommendation.interestIds.includes(i.id)).map((i) => (
                 <span key={i.id} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] text-gold">{i.name}</span>
               ))}

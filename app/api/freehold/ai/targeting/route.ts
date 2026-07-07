@@ -3,8 +3,9 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { listCampaigns, getCampaignInsights } from '@/lib/meta/client'
-import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
+import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { query } from '@/lib/db'
+import { getNetworkBenchmarks, refreshLiveTenantSignals } from '@/lib/entrestate/targeting-base'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -86,6 +87,8 @@ async function gatherPerformance(): Promise<{ connected: boolean; campaigns: Cam
   }
 }
 
+const STRATEGIES: TargetingStrategy[] = ['advantage_broad', 'lookalike_qualified', 'retargeting_warm', 'interest_refined']
+
 function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendation {
   const ids = new Set(UAE_INTERESTS.map((i) => i.id))
   const cityKeys = new Set(UAE_CITIES.map((c) => c.key))
@@ -94,16 +97,27 @@ function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendat
     const n = Number(v)
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : d
   }
-  const interestIds = arr(raw.interestIds).filter((i) => ids.has(i))
+  const txt = (v: unknown, max = 500) => String(v ?? '').slice(0, max)
+  const strategy = (STRATEGIES.includes(raw.strategy as TargetingStrategy) ? raw.strategy : 'advantage_broad') as TargetingStrategy
+  // Interests apply ONLY on the cold-start strategy; every other strategy runs
+  // broad and lets Meta's algorithm hunt on our signals.
+  const interestIds = strategy === 'interest_refined' ? arr(raw.interestIds).filter((i) => ids.has(i)) : []
+  const seedRaw = String(raw.lookalikeSeed ?? '')
   const cities = arr(raw.cityKeys).filter((c) => cityKeys.has(c))
   return {
-    analysis: String(raw.analysis ?? '').slice(0, 800),
-    interestIds: interestIds.length ? interestIds : [UAE_INTERESTS[0].id],
+    strategy,
+    analysis: txt(raw.analysis, 800),
+    interestIds,
+    lookalikeSeed: seedRaw === 'closed_leads' || seedRaw === 'qualified_leads' ? seedRaw : (strategy === 'lookalike_qualified' ? 'qualified_leads' : null),
+    exclusions: arr(raw.exclusions).slice(0, 4).map((e) => e.slice(0, 120)),
     ageMin: num(raw.ageMin, 28, 18, 60),
     ageMax: Math.max(num(raw.ageMax, 60, 25, 65), num(raw.ageMin, 28, 18, 60) + 5),
     cityKeys: cities.length ? cities : ['297928'],
     dailyBudgetAED: num(raw.dailyBudgetAED, 250, 50, 5000),
-    rationale: String(raw.rationale ?? '').slice(0, 800),
+    signalPlan: txt(raw.signalPlan),
+    creativeAngle: txt(raw.creativeAngle),
+    learningPhase: txt(raw.learningPhase, 300),
+    rationale: txt(raw.rationale, 800),
     suggestedNewInterests: arr(raw.suggestedNewInterests).slice(0, 5).map((s) => s.slice(0, 60)),
   }
 }
@@ -115,25 +129,39 @@ export async function GET() {
   const rl = await checkRateLimit(`ai-targeting:${auth.user.email}`, { limit: 20, windowSec: 3600 })
   if (!rl.ok) return NextResponse.json({ error: 'Try again shortly', retryAfterSec: rl.retryAfterSec }, { status: 429 })
 
-  const perf = await gatherPerformance()
+  // Keep this tenant's contribution to the shared brain fresh, then read the
+  // NETWORK's aggregated benchmarks — every system user's learning combined,
+  // never any client's raw data.
+  await refreshLiveTenantSignals().catch(() => {})
+  const [perf, benchmarks] = await Promise.all([gatherPerformance(), getNetworkBenchmarks(15)])
 
-  const prompt = `You are the media buyer for a Dubai real-estate lead machine. Analyse the ACTUAL results below and recommend the targeting for the NEXT Meta lead campaign so it beats the previous round.
+  const qualifiedPool = perf.campaigns.reduce((n, c) => n + c.crm.qualified, 0)
+  const closedPool = perf.campaigns.reduce((n, c) => n + c.crm.closed, 0)
+
+  const prompt = `You are the head of performance at a full-service marketing agency running a Dubai real-estate lead machine. Your doctrine is ALGORITHM vs ALGORITHM: Meta's delivery system finds the buyers — your job is to feed it better signals, seeds, exclusions and creative than the competition. You NEVER ship a lazy interest stack like "real estate + Dubai" as a strategy; that is what juniors do.
 
 CAMPAIGN PERFORMANCE (real):
 ${JSON.stringify(perf.campaigns, null, 1)}
 
-QUALITY SIGNAL: crm.qualified/closed vs crm.lost per campaign tells you which audiences produce REAL buyers, not just cheap form-fills. A campaign with low CPL but high "lost" is worse than a higher-CPL campaign whose leads qualify.
+SEED POOLS AVAILABLE FOR LOOKALIKES: ${qualifiedPool} qualified leads, ${closedPool} closed buyers in the CRM.
 
-ALLOWED INTERESTS (you may ONLY recommend these ids):
-${JSON.stringify(UAE_INTERESTS)}
+QUALITY SIGNAL: crm.qualified/closed vs crm.lost per campaign shows which delivery produced REAL buyers. A cheap-CPL campaign whose leads mark "lost" is worse than a pricier one that closes.
 
-ALLOWED CITY KEYS:
-${JSON.stringify(UAE_CITIES)}
+NETWORK BENCHMARKS (aggregated, anonymized signals from ALL tenants of the system — use them especially when this tenant's own history is thin):
+${JSON.stringify(benchmarks)}
+
+STRATEGY MENU (pick ONE):
+- "advantage_broad": broad targeting + Advantage; the algorithm hunts using our conversion signals. Default when signal volume exists or nothing else is clearly better.
+- "lookalike_qualified": seed a lookalike from the qualified/closed CRM cohort. Prefer this when the seed pool is ≥ 20.
+- "retargeting_warm": re-engage engaged-but-unconverted leads/visitors. Only when there is meaningful volume to re-engage.
+- "interest_refined": COLD START ONLY (no history, tiny pools). Even then, creative + landing page do the real selecting; interests come ONLY from this catalog: ${JSON.stringify(UAE_INTERESTS)}
+
+ALLOWED CITY KEYS: ${JSON.stringify(UAE_CITIES)}
 
 Return PURE JSON:
-{"analysis":"<what the data says, 2-4 sentences>","interestIds":["..."],"ageMin":n,"ageMax":n,"cityKeys":["..."],"dailyBudgetAED":n,"rationale":"<why this beats the last round, 2-3 sentences>","suggestedNewInterests":["<interest NAMES worth researching in Meta's tool — no ids>"]}
+{"strategy":"<one of the four>","analysis":"<what the data says, 2-4 sentences>","interestIds":[],"lookalikeSeed":"qualified_leads|closed_leads|null","exclusions":["<who to exclude and why, e.g. existing CRM leads uploaded as a customer list>"],"ageMin":n,"ageMax":n,"cityKeys":["..."],"dailyBudgetAED":n,"signalPlan":"<how to feed the algorithm: which events, weekly qualified-lead feedback, optimization goal>","creativeAngle":"<the creative angle that self-selects the right buyer>","learningPhase":"<budget discipline: learning phase, when/how to scale without resets>","rationale":"<why this beats the last round, 2-3 sentences>","suggestedNewInterests":["<names only, for the catalog>"]}
 
-If there is no performance history yet, recommend a sensible cold-start setup for Dubai real-estate investors and say so in the analysis.`
+If there is no history at all, choose interest_refined honestly, say so, and put the real weight on creativeAngle + signalPlan.`
 
   const raw = await queryServerAgent(prompt, {
     systemPrompt: 'You are a precise performance-marketing analyst. Return only valid JSON matching the requested schema.',
@@ -148,8 +176,11 @@ If there is no performance history yet, recommend a sensible cold-start setup fo
     const jsonStart = raw.indexOf('{')
     rec = clampRecommendation(JSON.parse(jsonStart >= 0 ? raw.slice(jsonStart, raw.lastIndexOf('}') + 1) : raw))
   } catch {
-    rec = clampRecommendation({})
+    rec = clampRecommendation({ strategy: 'interest_refined', interestIds: [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id] })
     rec.analysis = 'AI is offline — this is the proven cold-start setup for Dubai real-estate investors.'
+    rec.signalPlan = 'Connect the pixel/CAPI and feed qualified-lead outcomes back weekly so the algorithm optimizes for quality.'
+    rec.creativeAngle = 'ROI-first investor creative: real yield numbers and payment plan up front — the creative does the selecting.'
+    rec.learningPhase = 'Hold the budget steady through the learning phase; scale by +20% steps, never mid-learning.'
     rec.rationale = 'Connect the AI service for data-driven recommendations from your lead outcomes.'
   }
 
