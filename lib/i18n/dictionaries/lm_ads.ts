@@ -132,6 +132,14 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.noCampaigns': 'No campaigns yet.',
     'lm.live.badgeLive': 'Live',
     'lm.live.badgeOffline': 'Not connected',
+    'lm.live.nav.overview': 'Live Overview',
+    'lm.live.nav.meta': 'Meta Ads',
+    'lm.live.nav.google': 'Google Ads',
+    'lm.live.nav.preview': 'Ad Preview',
+    'lm.live.nav.build': 'Build & manage',
+    'lm.live.allTools': 'All ad tools',
+    'lm.live.appName': 'Ads',
+    'lm.live.appMode': '· Live',
 
     // ---- Ad Preview (ads-live/preview/page.tsx) ----
     'lm.preview.eyebrow': 'Ad Preview',
@@ -289,6 +297,14 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.noCampaigns': 'لا توجد حملات بعد.',
     'lm.live.badgeLive': 'مباشر',
     'lm.live.badgeOffline': 'غير متصل',
+    'lm.live.nav.overview': 'النظرة المباشرة',
+    'lm.live.nav.meta': 'إعلانات Meta',
+    'lm.live.nav.google': 'إعلانات Google',
+    'lm.live.nav.preview': 'معاينة الإعلان',
+    'lm.live.nav.build': 'الإنشاء والإدارة',
+    'lm.live.allTools': 'كل أدوات الإعلان',
+    'lm.live.appName': 'الإعلانات',
+    'lm.live.appMode': '· مباشر',
 
     // ---- Ad Preview ----
     'lm.preview.eyebrow': 'معاينة الإعلان',
@@ -446,6 +462,14 @@ export const lm_ads: Record<Locale, Dict> = {
     'lm.meta.noCampaigns': 'Кампаний пока нет.',
     'lm.live.badgeLive': 'В эфире',
     'lm.live.badgeOffline': 'Не подключено',
+    'lm.live.nav.overview': 'Живой обзор',
+    'lm.live.nav.meta': 'Meta Ads',
+    'lm.live.nav.google': 'Google Ads',
+    'lm.live.nav.preview': 'Превью рекламы',
+    'lm.live.nav.build': 'Создание и управление',
+    'lm.live.allTools': 'Все рекламные инструменты',
+    'lm.live.appName': 'Реклама',
+    'lm.live.appMode': '· Live',
 
     // ---- Ad Preview ----
     'lm.preview.eyebrow': 'Превью рекламы',

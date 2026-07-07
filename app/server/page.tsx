@@ -7,17 +7,11 @@ import { login } from '@/lib/freehold/session'
 import type { Role } from '@/lib/freehold/session-types'
 import { ROLE_COLORS } from '@/lib/freehold/session-types'
 import { BRAND, brandName } from '@/lib/freehold/brand'
+import { I18nProvider, useT } from '@/lib/i18n/provider'
 
 type Profile = { email: string; name: string; initials: string; role: Role }
 
 type FilterTab = 'all' | 'management' | 'admin' | 'broker'
-
-const TAB_META: Record<FilterTab, { label: string; desc: string }> = {
-  all:        { label: 'All',    desc: 'Everyone on the team' },
-  management: { label: 'Mgmt',   desc: 'Leadership — full access including Management' },
-  admin:      { label: 'Admin',  desc: 'Office desk — day-to-day operations' },
-  broker:     { label: 'Broker', desc: 'Agents — personal workspace & leads' },
-}
 
 function inTab(role: Role, t: FilterTab): boolean {
   if (t === 'all') return true
@@ -25,7 +19,18 @@ function inTab(role: Role, t: FilterTab): boolean {
   return role === t
 }
 
+// The login page lives outside the app shell, so it mounts its own i18n
+// provider — first visit from an Arabic device opens the sign-in in Arabic.
 export default function ServerAuth() {
+  return (
+    <I18nProvider>
+      <ServerAuthInner />
+    </I18nProvider>
+  )
+}
+
+function ServerAuthInner() {
+  const t = useT()
   const router = useRouter()
 
   const [email, setEmail]       = useState('')
@@ -98,7 +103,7 @@ export default function ServerAuth() {
             <Shield className="h-7 w-7 text-gold" />
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-white">{BRAND.company} Server</h1>
-          <p className="mt-1 text-sm text-slate-500">Select your profile to sign in</p>
+          <p className="mt-1 text-sm text-slate-500">{t('login.subtitle')}</p>
         </div>
 
         {/* Role selector panel */}
@@ -107,24 +112,24 @@ export default function ServerAuth() {
           {/* Tab row + search */}
           <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
             <div className="flex gap-1">
-              {(['all', 'management', 'admin', 'broker'] as FilterTab[]).map((t) => (
+              {(['all', 'management', 'admin', 'broker'] as FilterTab[]).map((ft) => (
                 <button
-                  key={t}
+                  key={ft}
                   type="button"
-                  onClick={() => { setTab(t); setSearch('') }}
+                  onClick={() => { setTab(ft); setSearch('') }}
                   className={[
                     'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
-                    tab === t
+                    tab === ft
                       ? 'bg-surface-3 text-white'
                       : 'text-slate-500 hover:text-slate-300 hover:bg-surface-2',
                   ].join(' ')}
                 >
-                  {TAB_META[t].label}
+                  {t(`login.tab.${ft}`)}
                   <span className={[
                     'rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums',
-                    tab === t ? 'bg-surface text-slate-300' : 'bg-surface-2 text-slate-500',
+                    tab === ft ? 'bg-surface text-slate-300' : 'bg-surface-2 text-slate-500',
                   ].join(' ')}>
-                    {tabCount(t)}
+                    {tabCount(ft)}
                   </span>
                 </button>
               ))}
@@ -135,7 +140,7 @@ export default function ServerAuth() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search…"
+                placeholder={t('login.search')}
                 className="w-28 rounded-lg border border-line bg-surface-2 py-1 pl-7 pr-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-line-strong transition-colors"
               />
             </div>
@@ -143,13 +148,13 @@ export default function ServerAuth() {
 
           {/* Active-tab description */}
           <div className="border-b border-line px-4 py-2">
-            <p className="text-[11px] text-slate-500">{TAB_META[tab].desc}</p>
+            <p className="text-[11px] text-slate-500">{t(`login.tabDesc.${tab}`)}</p>
           </div>
 
           {/* User grid */}
           <div className="overflow-y-auto max-h-[220px] p-2.5">
             {visible.length === 0 ? (
-              <p className="py-4 text-center text-xs text-slate-600">No results</p>
+              <p className="py-4 text-center text-xs text-slate-600">{t('login.noResults')}</p>
             ) : (
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                 {visible.map((u) => {
@@ -192,17 +197,17 @@ export default function ServerAuth() {
             <Lock className="h-3 w-3" />
             {selectedUser ? (
               <span>
-                Signing in as{' '}
+                {t('login.signingInAs')}{' '}
                 <span style={{ color: ROLE_COLORS[selectedUser.role] }}>{selectedUser.name}</span>
               </span>
             ) : (
-              'Secure Authentication'
+              t('login.secureAuth')
             )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Email</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">{t('login.email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                 <input
@@ -220,13 +225,13 @@ export default function ServerAuth() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Password</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-300">{t('login.password')}</label>
               <div className="relative">
                 <input
                   type={show ? 'text' : 'password'}
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(false) }}
-                  placeholder="Enter your password"
+                  placeholder={t('login.passwordPlaceholder')}
                   autoComplete="current-password"
                   className={[
                     'w-full rounded-xl border bg-surface-2 px-4 py-2.5 pr-11 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
@@ -238,7 +243,7 @@ export default function ServerAuth() {
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {error && <p className="mt-1.5 text-xs text-red-400">Incorrect email or password. Please try again.</p>}
+              {error && <p className="mt-1.5 text-xs text-red-400">{t('login.error')}</p>}
             </div>
 
             <label className="flex cursor-pointer items-center gap-2.5 select-none">
@@ -249,7 +254,7 @@ export default function ServerAuth() {
                 ].join(' ')}>
                 {remember && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
               </button>
-              <span className="text-sm text-slate-400" onClick={() => setRemember(r => !r)}>Remember me</span>
+              <span className="text-sm text-slate-400" onClick={() => setRemember(r => !r)}>{t('login.remember')}</span>
             </label>
 
             <button
@@ -257,7 +262,7 @@ export default function ServerAuth() {
               disabled={!email || !password || loading}
               className="w-full rounded-xl bg-gold py-2.5 text-sm font-semibold text-ink transition-opacity hover:opacity-90 disabled:opacity-40"
             >
-              {loading ? 'Verifying…' : 'Sign in'}
+              {loading ? t('login.verifying') : t('login.signIn')}
             </button>
           </form>
         </div>
