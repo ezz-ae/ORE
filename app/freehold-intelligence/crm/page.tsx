@@ -189,17 +189,17 @@ export default function FreeholdCrmPage() {
           {/* ── Search bar ── */}
           <div className="mb-2.5 flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder={t('crm.searchLeadsProjectsAgents')}
-                className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
+                className="w-full rounded-[10px] border border-line bg-surface py-2 ps-8 pe-8 text-sm text-white placeholder-slate-500 outline-none focus:border-[#D4AF37]/50"
               />
               {query && (
                 <button
                   onClick={() => setQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

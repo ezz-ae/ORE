@@ -170,14 +170,14 @@ export default function GenerateCreativePage() {
                   <select
                     value={listingId}
                     onChange={(e) => setListingId(e.target.value)}
-                    className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
+                    className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pe-10 text-sm text-white focus:border-gold/40 focus:outline-none"
                   >
                     {projectsLoading && <option value="">…</option>}
                     {projects.map((l) => (
                       <option key={l.id} value={l.id}>{l.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+                  <ChevronDown className="pointer-events-none absolute end-3 top-3.5 h-4 w-4 text-slate-500" />
                 </div>
                 {listing && (
                   <div className="mt-1.5 text-sm text-slate-500">
@@ -247,13 +247,13 @@ export default function GenerateCreativePage() {
               <select
                 value={cta}
                 onChange={(e) => setCta(e.target.value as MetaCta)}
-                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-gold/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pe-10 text-sm text-white focus:border-gold/40 focus:outline-none"
               >
                 {CTAS.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+              <ChevronDown className="pointer-events-none absolute end-3 top-3.5 h-4 w-4 text-slate-500" />
             </div>
           </div>
 

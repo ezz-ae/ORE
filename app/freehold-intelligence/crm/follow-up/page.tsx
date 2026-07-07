@@ -413,7 +413,7 @@ function SnoozeControl({ onPick, label }: { onPick: (hours: number) => void; lab
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-line-strong bg-surface shadow-xl">
+          <div className="absolute end-0 z-20 mt-1 w-36 overflow-hidden rounded-lg border border-line-strong bg-surface shadow-xl">
             {SNOOZE_OPTIONS.map((opt) => (
               <button
                 key={opt.hours}

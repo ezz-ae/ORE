@@ -134,7 +134,7 @@ export function SpacesNav() {
           >
             {user?.initials ?? '··'}
           </span>
-          <span className="hidden text-left sm:block">
+          <span className="hidden text-start sm:block">
             <span className="block text-xs font-semibold leading-tight text-slate-100">{user?.name ?? 'Account'}</span>
             <span className="block text-[10px] leading-tight" style={{ color: role ? ROLE_COLORS[role] : '#64748B' }}>
               {role ? ROLE_LABELS[role] : ''}
@@ -144,7 +144,7 @@ export function SpacesNav() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-white/[0.12] bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.75)]">
+          <div className="absolute end-2 top-12 z-50 w-56 overflow-hidden rounded-xl border border-white/[0.12] bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.75)]">
             <div className="border-b border-white/[0.07] px-4 py-3">
               <div className="text-sm font-semibold text-white">{user?.name ?? 'Account'}</div>
               <div className="text-xs text-slate-500">{user?.email ?? ''}</div>

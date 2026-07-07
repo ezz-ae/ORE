@@ -392,12 +392,12 @@ export default function MetaIntegrationPage() {
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && connect(token)}
               placeholder="EAABwzLixnjYBO..."
-              className="w-full rounded-[12px] border border-line bg-surface-2 py-3 pl-4 pr-12 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/50 transition"
+              className="w-full rounded-[12px] border border-line bg-surface-2 py-3 ps-4 pe-12 font-mono text-sm text-white placeholder:text-slate-500 outline-none focus:border-gold/50 transition"
             />
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
+              className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
             >
               {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

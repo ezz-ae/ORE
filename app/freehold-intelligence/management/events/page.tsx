@@ -107,13 +107,13 @@ export default function EventsPage() {
             </div>
           </div>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input
               type="text"
               placeholder={t('mgmt.events.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="h-8 w-56 rounded-lg border border-line-strong bg-surface-2 pl-8 pr-3 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-gold/40"
+              className="h-8 w-56 rounded-lg border border-line-strong bg-surface-2 ps-8 pe-3 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-gold/40"
             />
           </div>
         </div>

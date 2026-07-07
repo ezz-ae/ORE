@@ -245,13 +245,13 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 
         {/* Search */}
         <div className="relative ml-auto w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             placeholder={t('inv.search.namePlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[12px] border border-line bg-surface-2 py-2 pl-8 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-gold/50 focus:outline-none"
+            className="w-full rounded-[12px] border border-line bg-surface-2 py-2 ps-8 pe-4 text-sm text-white placeholder:text-slate-500 focus:border-gold/50 focus:outline-none"
           />
         </div>
       </div>

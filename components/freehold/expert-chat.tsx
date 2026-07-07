@@ -319,7 +319,7 @@ export function ExpertChat() {
         onClick={() => setOpen(true)}
         aria-label={t('expert.openAria')}
         data-coach="expert-chat"
-        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-l border-line bg-app py-4 transition hover:bg-surface-2 md:flex"
+        className="hidden h-full w-11 shrink-0 flex-col items-center gap-3 border-s border-line bg-app py-4 transition hover:bg-surface-2 md:flex"
       >
         <span className="grid h-7 w-7 place-items-center rounded-full bg-gold/15 ring-1 ring-gold/30">
           <Sparkles className="h-3.5 w-3.5 text-gold" />
@@ -344,14 +344,14 @@ export function ExpertChat() {
       <aside
         style={{ width }}
         data-coach="expert-chat"
-        className="fixed inset-y-0 right-0 z-[200] flex h-full w-full flex-col border-l border-line bg-app md:static md:z-auto md:w-auto"
+        className="fixed inset-y-0 end-0 z-[200] flex h-full w-full flex-col border-s border-line bg-app md:static md:z-auto md:w-auto"
       >
         {/* Drag handle (desktop) */}
         <div
           onPointerDown={onDragStart}
           onPointerMove={onDrag}
           onPointerUp={onDragEnd}
-          className="absolute left-0 top-0 z-10 hidden h-full w-1.5 -translate-x-1/2 cursor-col-resize md:block"
+          className="absolute start-0 top-0 z-10 hidden h-full w-1.5 -translate-x-1/2 cursor-col-resize md:block"
         >
           <div className="mx-auto h-full w-px bg-surface-2 transition group-hover:bg-gold/40" />
         </div>
@@ -374,7 +374,7 @@ export function ExpertChat() {
                 <History className="h-4 w-4" />
               </button>
               {historyOpen && (
-                <div className="absolute right-0 top-9 z-30 max-h-80 w-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.7)]">
+                <div className="absolute end-0 top-9 z-30 max-h-80 w-72 overflow-y-auto rounded-xl border border-line bg-surface shadow-[0_24px_60px_rgba(0,0,0,0.7)]">
                   <div className="border-b border-line px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('expert.history')}</div>
                   {sessions.length === 0 ? (
                     <div className="px-3.5 py-4 text-sm text-slate-500">{t('expert.noHistory')}</div>
@@ -426,7 +426,7 @@ export function ExpertChat() {
             <div className="grid gap-4">
               {messages.map((m, i) =>
                 m.role === 'user' ? (
-                  <div key={i} className="ml-auto max-w-[90%] rounded-xl rounded-br-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
+                  <div key={i} className="ms-auto max-w-[90%] rounded-xl rounded-ee-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
                     {m.content}
                   </div>
                 ) : (

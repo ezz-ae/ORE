@@ -88,13 +88,13 @@ export default function ProjectsClient({ initialProperties }: { initialPropertie
       {/* Search + controls */}
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
           <input
             type="text"
             placeholder={t('inv.projects.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-[10px] border border-line bg-surface py-2 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
+            className="w-full rounded-[10px] border border-line bg-surface py-2 ps-8 pe-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-amber-400/30"
           />
         </div>
         <button onClick={expandAll}   className="text-xs text-slate-500 hover:text-slate-400 transition">{t('inv.projects.expandAll')}</button>

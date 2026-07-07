@@ -202,11 +202,11 @@ export default function GoogleAdsPage() {
                 placeholder={placeholder}
                 value={creds[key]}
                 onChange={(e) => setCreds((prev) => ({ ...prev, [key]: e.target.value }))}
-                className={`w-full rounded-[9px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-blue-400/50 ${mono ? 'font-mono pr-9' : ''} ${secret ? 'pr-9' : ''}`}
+                className={`w-full rounded-[9px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-blue-400/50 ${mono ? 'font-mono pe-9' : ''} ${secret ? 'pe-9' : ''}`}
               />
               {secret && (
                 <button onClick={() => toggleShow(key)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                  className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                   {shows[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               )}

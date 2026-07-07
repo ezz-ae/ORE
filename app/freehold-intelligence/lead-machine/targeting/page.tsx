@@ -91,18 +91,18 @@ export default function TargetingPage() {
       <div className="mt-8">
         {/* Search bar */}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute start-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('lm.targeting.searchPlaceholder')}
-            className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-9 pr-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
+            className="w-full rounded-xl border border-line bg-surface-2 py-2.5 ps-9 pe-9 text-sm text-slate-100 placeholder:text-slate-600 focus:border-gold/40 focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-400"
+              className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-400"
               aria-label={t('lm.targeting.clearSearch')}
             >
               <X className="h-3.5 w-3.5" />

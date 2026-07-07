@@ -235,13 +235,13 @@ export default function GenerateRsaPage() {
               <select
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pe-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {projects.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+              <ChevronDown className="pointer-events-none absolute end-3 top-3.5 h-4 w-4 text-slate-500" />
             </div>
             {listing && (
               <div className="mt-1.5 text-sm text-slate-500">

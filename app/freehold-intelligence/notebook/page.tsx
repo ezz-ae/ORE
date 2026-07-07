@@ -303,15 +303,15 @@ export default function NotebookPage() {
 
         {/* search */}
         <div className="relative border-b border-line px-3 py-2.5">
-          <Search className="absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute start-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             value={sourceQuery}
             onChange={e => setSourceQuery(e.target.value)}
             placeholder={t('nb.searchSources')}
-            className="w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
+            className="w-full rounded-lg border border-line bg-surface py-1.5 ps-8 pe-7 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
           />
           {sourceQuery && (
-            <button onClick={() => setSourceQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <button onClick={() => setSourceQuery('')} className="absolute end-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
               <X className="h-3 w-3" />
             </button>
           )}
@@ -693,12 +693,12 @@ export default function NotebookPage() {
         {centerTab === 'saved' && (
           <div className="flex-1 overflow-y-auto px-5 py-5">
             <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
               <input
                 value={convQuery}
                 onChange={e => setConvQuery(e.target.value)}
                 placeholder={t('nb.searchConversations')}
-                className="w-full rounded-xl border border-line bg-surface py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
+                className="w-full rounded-xl border border-line bg-surface py-2 ps-9 pe-4 text-xs text-white placeholder-slate-500 outline-none transition focus:border-line-strong"
               />
             </div>
 

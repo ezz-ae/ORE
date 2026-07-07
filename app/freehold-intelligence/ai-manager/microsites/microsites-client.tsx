@@ -79,12 +79,12 @@ export function MicrositesClient() {
       </div>
 
       <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={t('paim.micro.searchPlaceholder')}
-          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-teal-400/40"
+          className="w-full rounded-xl border border-line bg-surface-2 py-2.5 ps-10 pe-4 text-sm text-slate-100 placeholder:text-slate-600 outline-none focus:border-teal-400/40"
         />
       </div>
 

@@ -135,13 +135,13 @@ function ServerAuthInner() {
               ))}
             </div>
             <div className="relative ml-auto">
-              <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-600" />
+              <Search className="absolute start-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-600" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('login.search')}
-                className="w-28 rounded-lg border border-line bg-surface-2 py-1 pl-7 pr-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-line-strong transition-colors"
+                className="w-28 rounded-lg border border-line bg-surface-2 py-1 ps-7 pe-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-line-strong transition-colors"
               />
             </div>
           </div>
@@ -209,7 +209,7 @@ function ServerAuthInner() {
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-300">{t('login.email')}</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+                <Mail className="absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                 <input
                   type="email"
                   value={email}
@@ -217,7 +217,7 @@ function ServerAuthInner() {
                   placeholder="you@freeholdproperty.ae"
                   autoComplete="username"
                   className={[
-                    'w-full rounded-xl border bg-surface-2 py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
+                    'w-full rounded-xl border bg-surface-2 py-2.5 ps-10 pe-4 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
                     error ? 'border-red-500/60' : 'border-line-strong focus:border-gold/50',
                   ].join(' ')}
                 />
@@ -234,12 +234,12 @@ function ServerAuthInner() {
                   placeholder={t('login.passwordPlaceholder')}
                   autoComplete="current-password"
                   className={[
-                    'w-full rounded-xl border bg-surface-2 px-4 py-2.5 pr-11 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
+                    'w-full rounded-xl border bg-surface-2 px-4 py-2.5 pe-11 text-sm text-white outline-none transition-colors placeholder:text-slate-700',
                     error ? 'border-red-500/60' : 'border-line-strong focus:border-gold/50',
                   ].join(' ')}
                 />
                 <button type="button" tabIndex={-1} onClick={() => setShow(s => !s)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors">
+                  className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors">
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>

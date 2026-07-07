@@ -263,13 +263,13 @@ export default function GoogleCampaignNewPage() {
               <select
                 value={form.listingId}
                 onChange={(e) => onListingChange(e.target.value)}
-                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pr-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
+                className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pe-10 text-sm text-white focus:border-[#4285F4]/40 focus:outline-none"
               >
                 {projects.map((l) => (
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+              <ChevronDown className="pointer-events-none absolute end-3 top-3.5 h-4 w-4 text-slate-500" />
             </div>
             {listing && (
               <p className="mt-1 text-sm text-slate-500">
@@ -528,7 +528,7 @@ export default function GoogleCampaignNewPage() {
                       onChange={(e) => updateHeadline(i, e.target.value)}
                       placeholder={`Headline ${i + 1}${i < 3 ? ' (recommended)' : ''}`}
                       maxLength={35}
-                      className={`w-full rounded-[12px] border bg-surface px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
+                      className={`w-full rounded-[12px] border bg-surface px-4 py-2.5 pe-12 text-sm text-white placeholder-white/20 focus:outline-none ${
                         over ? 'border-red-400/40 focus:border-red-400/60' : 'border-line focus:border-[#4285F4]/40'
                       }`}
                     />
@@ -559,7 +559,7 @@ export default function GoogleCampaignNewPage() {
                       placeholder={`Description ${i + 1}`}
                       rows={2}
                       maxLength={95}
-                      className={`w-full resize-none rounded-[12px] border bg-surface px-4 py-2.5 pr-12 text-sm text-white placeholder-white/20 focus:outline-none ${
+                      className={`w-full resize-none rounded-[12px] border bg-surface px-4 py-2.5 pe-12 text-sm text-white placeholder-white/20 focus:outline-none ${
                         over ? 'border-red-400/40' : 'border-line focus:border-[#4285F4]/40'
                       }`}
                     />
