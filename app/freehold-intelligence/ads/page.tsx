@@ -22,7 +22,29 @@ type SubApp = {
   icon: string
 }
 
-const PLATFORMS: SubApp[] = [
+// The clear sitemap:
+//   Landing pages   — every project (Inventory) becomes a selling page
+//   Meta Ads        — campaigns, creative (hero image/copy), lead forms, targeting
+//   Google Ads      — its own world: search campaigns + RSA generator
+//   Across platforms— live results, attribution, optimizer, requests
+const LANDING: SubApp[] = [
+  {
+    id: 'landings', labelKey: 'lm.ads.landings.label', subKey: 'lm.ads.landings.sub',
+    href: '/freehold-intelligence/lead-machine/landings', Icon: LayoutTemplate,
+    metricKey: 'lm.ads.landings.metric',
+    accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/30',
+    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  },
+  {
+    id: 'inventory', labelKey: 'nav.inventory', subKey: 'lm.ads.inventory.sub',
+    href: '/freehold-intelligence/inventory/projects', Icon: Activity,
+    metricKey: 'lm.ads.inventory.metric',
+    accent: '#FBBF24', card: 'border-amber-400/15 hover:border-amber-400/30',
+    icon: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  },
+]
+
+const META: SubApp[] = [
   {
     id: 'meta', labelKey: 'lm.ads.meta.label', subKey: 'lm.ads.meta.sub',
     href: '/freehold-intelligence/ads-live/meta', Icon: Facebook,
@@ -31,35 +53,11 @@ const PLATFORMS: SubApp[] = [
     icon: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   },
   {
-    id: 'google', labelKey: 'lm.ads.google.label', subKey: 'lm.ads.google.sub',
-    href: '/freehold-intelligence/lead-machine/google', Icon: Chrome,
-    metricKey: 'lm.ads.google.metric',
-    accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/35',
-    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  },
-  {
-    id: 'live', labelKey: 'lm.ads.live.label', subKey: 'lm.ads.live.sub',
-    href: '/freehold-intelligence/ads-live', Icon: Activity,
-    metricKey: 'lm.ads.live.metric',
-    accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/35',
-    icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
-  },
-]
-
-const BUILD: SubApp[] = [
-  {
     id: 'campaigns', labelKey: 'lm.ads.campaigns.label', subKey: 'lm.ads.campaigns.sub',
     href: '/freehold-intelligence/lead-machine/campaigns', Icon: Rocket,
     metricKey: 'lm.ads.campaigns.metric',
     accent: '#D4AF37', card: 'border-gold/15 hover:border-gold/35',
     icon: 'text-gold bg-gold/10 border-gold/20',
-  },
-  {
-    id: 'forms', labelKey: 'lm.ads.forms.label', subKey: 'lm.ads.forms.sub',
-    href: '/freehold-intelligence/lead-machine/forms', Icon: FileText,
-    metricKey: 'lm.ads.forms.metric',
-    accent: '#A78BFA', card: 'border-violet-400/15 hover:border-violet-400/30',
-    icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
   },
   {
     id: 'creatives', labelKey: 'lm.ads.creatives.label', subKey: 'lm.ads.creatives.sub',
@@ -69,27 +67,44 @@ const BUILD: SubApp[] = [
     icon: 'text-sky-400 bg-sky-400/10 border-sky-400/20',
   },
   {
+    id: 'forms', labelKey: 'lm.ads.forms.label', subKey: 'lm.ads.forms.sub',
+    href: '/freehold-intelligence/lead-machine/forms', Icon: FileText,
+    metricKey: 'lm.ads.forms.metric',
+    accent: '#A78BFA', card: 'border-violet-400/15 hover:border-violet-400/30',
+    icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
+  },
+  {
+    id: 'targeting', labelKey: 'lm.ads.targeting.label', subKey: 'lm.ads.targeting.sub',
+    href: '/freehold-intelligence/lead-machine/targeting', Icon: Target,
+    metricKey: 'lm.ads.targeting.metric',
+    accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/30',
+    icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+  },
+]
+
+const GOOGLE: SubApp[] = [
+  {
+    id: 'google', labelKey: 'lm.ads.google.label', subKey: 'lm.ads.google.sub',
+    href: '/freehold-intelligence/lead-machine/google', Icon: Chrome,
+    metricKey: 'lm.ads.google.metric',
+    accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/35',
+    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  },
+  {
     id: 'rsa', labelKey: 'lm.ads.rsa.label', subKey: 'lm.ads.rsa.sub',
     href: '/freehold-intelligence/lead-machine/google/ads/generate', Icon: Sparkles,
     metricKey: 'lm.ads.rsa.metric',
     accent: '#FBBF24', card: 'border-amber-400/15 hover:border-amber-400/30',
     icon: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
   },
-  {
-    id: 'landings', labelKey: 'lm.ads.landings.label', subKey: 'lm.ads.landings.sub',
-    href: '/freehold-intelligence/lead-machine/landings', Icon: LayoutTemplate,
-    metricKey: 'lm.ads.landings.metric',
-    accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/30',
-    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  },
 ]
 
-const OPTIMIZE: SubApp[] = [
+const ACROSS: SubApp[] = [
   {
-    id: 'targeting', labelKey: 'lm.ads.targeting.label', subKey: 'lm.ads.targeting.sub',
-    href: '/freehold-intelligence/lead-machine/targeting', Icon: Target,
-    metricKey: 'lm.ads.targeting.metric',
-    accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/30',
+    id: 'live', labelKey: 'lm.ads.live.label', subKey: 'lm.ads.live.sub',
+    href: '/freehold-intelligence/ads-live', Icon: Activity,
+    metricKey: 'lm.ads.live.metric',
+    accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/35',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
   },
   {
@@ -166,19 +181,24 @@ export default function AdsLauncher() {
 
       <ExpertDepth prompts={['expert.depth.ads.q1', 'expert.depth.ads.q2', 'expert.depth.ads.q3', 'expert.depth.ads.q4']} className="mb-8" />
 
-      {/* Platforms */}
-      <Section title={t('lm.ads.section.platforms')} className="mb-8">
-        <Grid apps={PLATFORMS} />
+      {/* Projects → selling pages */}
+      <Section title={t('lm.ads.section.landing')} className="mb-8">
+        <Grid apps={LANDING} />
       </Section>
 
-      {/* Build */}
-      <Section title={t('lm.ads.section.build')} className="mb-8">
-        <Grid apps={BUILD} />
+      {/* Meta Ads — campaigns + creative + forms + targeting, all Meta */}
+      <Section title={t('lm.ads.section.meta')} className="mb-8">
+        <Grid apps={META} />
       </Section>
 
-      {/* Optimize */}
-      <Section title={t('lm.ads.section.optimize')}>
-        <Grid apps={OPTIMIZE} />
+      {/* Google Ads — its own world */}
+      <Section title={t('lm.ads.section.google')} className="mb-8">
+        <Grid apps={GOOGLE} />
+      </Section>
+
+      {/* Across platforms */}
+      <Section title={t('lm.ads.section.across')}>
+        <Grid apps={ACROSS} />
       </Section>
 
     </div>

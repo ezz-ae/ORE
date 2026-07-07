@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   ArrowLeft, Megaphone,
-  Activity, Building2,
+  Activity,
   BarChart3, Zap,
   Monitor, ClipboardList, Crosshair, Palette,
   Search, Radio,
@@ -12,40 +12,49 @@ import {
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 
-// Full nav shown to managers
+// One clear mental model, no platform mixing:
+//   Inventory (app)  = the projects on the front-end site
+//   Landing pages    = turns those projects into selling pages
+//   Meta Ads         = campaigns + creative (hero image/copy) + lead forms + targeting
+//   Google Ads       = its own world (search campaigns, RSA)
+//   Across platforms = live results, attribution, optimizer, ops
 const MANAGER_NAV_SECTIONS = [
   {
     label: 'Pipeline',
     items: [
-      { label: 'Pipeline',    href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
-      { label: 'Listings',    href: '/freehold-intelligence/lead-machine/listings',                    Icon: Building2   },
+      { label: 'Pipeline',      href: '/freehold-intelligence/lead-machine',                exact: true, Icon: Activity    },
     ],
   },
   {
-    label: 'Campaigns',
+    label: 'Landing pages',
     items: [
-      { label: 'Campaigns',   href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
-      { label: 'Attribution', href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
-      { label: 'Optimizer',   href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
+      { label: 'Landing pages', href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
     ],
   },
   {
-    label: 'Creative',
+    label: 'Meta Ads',
     items: [
-      { label: 'Landings',    href: '/freehold-intelligence/lead-machine/landings',                    Icon: Monitor     },
-      { label: 'Forms',       href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
-      { label: 'Targeting',   href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
-      { label: 'Creatives',   href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
+      { label: 'Campaigns',     href: '/freehold-intelligence/lead-machine/campaigns',      exact: true, Icon: Megaphone   },
+      { label: 'Creative',      href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
+      { label: 'Lead forms',    href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
+      { label: 'Targeting',     href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
     ],
   },
   {
-    label: 'Operations',
+    label: 'Google Ads',
     items: [
-      { label: 'Google Ads',  href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
-      { label: 'Live',        href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
-      { label: 'Ad Requests', href: '/freehold-intelligence/lead-machine/ad-requests',                 Icon: FileText    },
-      { label: 'Requirements',href: '/freehold-intelligence/lead-machine/requirements',                Icon: FileCheck   },
-      { label: 'Permissions', href: '/freehold-intelligence/lead-machine/permissions',                 Icon: Shield      },
+      { label: 'Google Ads',    href: '/freehold-intelligence/lead-machine/google',                      Icon: Search      },
+    ],
+  },
+  {
+    label: 'Across platforms',
+    items: [
+      { label: 'Live',          href: '/freehold-intelligence/ads-live',                                 Icon: Radio       },
+      { label: 'Attribution',   href: '/freehold-intelligence/lead-machine/campaigns/attribution',       Icon: BarChart3   },
+      { label: 'Optimizer',     href: '/freehold-intelligence/lead-machine/campaigns/optimize',          Icon: Zap         },
+      { label: 'Ad Requests',   href: '/freehold-intelligence/lead-machine/ad-requests',                 Icon: FileText    },
+      { label: 'Requirements',  href: '/freehold-intelligence/lead-machine/requirements',                Icon: FileCheck   },
+      { label: 'Permissions',   href: '/freehold-intelligence/lead-machine/permissions',                 Icon: Shield      },
     ],
   },
 ]
