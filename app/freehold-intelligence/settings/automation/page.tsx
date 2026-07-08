@@ -9,10 +9,10 @@ import {
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
 import {
-  RULE_TRIGGERS, TRIGGER_LABELS, CONDITION_FIELDS, FIELD_LABELS, NUMERIC_FIELDS,
-  OPERATOR_LABELS, NUMERIC_OPERATORS, TEXT_OPERATORS,
-  ACTION_TYPES, ACTION_LABELS, DISTRIBUTION_STRATEGIES, STRATEGY_LABELS,
-  AUTOMATION_STEPS, STEP_LABELS, defaultStepsForDifficulty, defaultConfig,
+  RULE_TRIGGERS, CONDITION_FIELDS, NUMERIC_FIELDS,
+  NUMERIC_OPERATORS, TEXT_OPERATORS,
+  ACTION_TYPES, DISTRIBUTION_STRATEGIES,
+  AUTOMATION_STEPS, defaultStepsForDifficulty, defaultConfig,
   type AutomationRule, type Condition, type Action, type WorkspaceAutomationConfig,
   type DifficultyLevel, type AutomationMode, type RuleTrigger, type Operator, type ConditionField, type ActionType,
 } from '@/lib/automation/types'
@@ -187,7 +187,7 @@ function RulesSection({ rules, setRules, brokers }: {
                 {!rule.enabled && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-slate-500">{t('pauto.rules.paused')}</span>}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                {TRIGGER_LABELS[rule.trigger]} · {rule.conditions.length === 1 ? t('pauto.rules.summaryCondition', { n: rule.conditions.length }) : t('pauto.rules.summaryConditionPlural', { n: rule.conditions.length })} · {rule.actions.length === 1 ? t('pauto.rules.summaryAction', { n: rule.actions.length }) : t('pauto.rules.summaryActionPlural', { n: rule.actions.length })}
+                {t(`pauto.trigger.${rule.trigger}`)} · {rule.conditions.length === 1 ? t('pauto.rules.summaryCondition', { n: rule.conditions.length }) : t('pauto.rules.summaryConditionPlural', { n: rule.conditions.length })} · {rule.actions.length === 1 ? t('pauto.rules.summaryAction', { n: rule.actions.length }) : t('pauto.rules.summaryActionPlural', { n: rule.actions.length })}
                 {rule.runCount > 0 && <> · {t('pauto.rules.ran', { n: rule.runCount })}</>}
               </div>
             </div>
@@ -240,7 +240,7 @@ function RuleEditor({ rule, setRule, onSave, onCancel, brokers, saving }: {
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
         <span>{t('pauto.editor.trigger')}</span>
         <select value={rule.trigger} onChange={(e) => update({ trigger: e.target.value as RuleTrigger })} className={sel}>
-          {RULE_TRIGGERS.map((t) => <option key={t} value={t}>{TRIGGER_LABELS[t]}</option>)}
+          {RULE_TRIGGERS.map((tr) => <option key={tr} value={tr}>{t(`pauto.trigger.${tr}`)}</option>)}
         </select>
       </div>
 
@@ -266,10 +266,10 @@ function RuleEditor({ rule, setRule, onSave, onCancel, brokers, saving }: {
             return (
               <div key={i} className="flex flex-wrap items-center gap-2">
                 <select value={c.field} onChange={(e) => setCondition(i, { field: e.target.value as ConditionField })} className={sel}>
-                  {CONDITION_FIELDS.map((f) => <option key={f} value={f}>{FIELD_LABELS[f]}</option>)}
+                  {CONDITION_FIELDS.map((f) => <option key={f} value={f}>{t(`pauto.field.${f}`)}</option>)}
                 </select>
                 <select value={c.operator} onChange={(e) => setCondition(i, { operator: e.target.value as Operator })} className={sel}>
-                  {ops.map((o) => <option key={o} value={o}>{OPERATOR_LABELS[o]}</option>)}
+                  {ops.map((o) => <option key={o} value={o}>{t(`pauto.op.${o}`)}</option>)}
                 </select>
                 {!noValue && (
                   <input value={String(c.value ?? '')} onChange={(e) => setCondition(i, { value: numeric ? Number(e.target.value) : e.target.value })}
@@ -295,7 +295,7 @@ function RuleEditor({ rule, setRule, onSave, onCancel, brokers, saving }: {
           {rule.actions.map((a, i) => (
             <div key={i} className="flex flex-wrap items-center gap-2">
               <select value={a.type} onChange={(e) => setAction(i, { type: e.target.value as ActionType })} className={sel}>
-                {ACTION_TYPES.map((t) => <option key={t} value={t}>{ACTION_LABELS[t]}</option>)}
+                {ACTION_TYPES.map((at) => <option key={at} value={at}>{t(`pauto.action.${at}`)}</option>)}
               </select>
               {a.type === 'assign_to_agent' && (
                 <select value={a.brokerId ?? ''} onChange={(e) => setAction(i, { brokerId: e.target.value })} className={sel}>
@@ -306,13 +306,13 @@ function RuleEditor({ rule, setRule, onSave, onCancel, brokers, saving }: {
               {a.type === 'set_priority' && (
                 <select value={a.value ?? ''} onChange={(e) => setAction(i, { value: e.target.value })} className={sel}>
                   <option value="">{t('pauto.editor.priorityPlaceholder')}</option>
-                  {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{t(`pauto.priority.${p}`)}</option>)}
                 </select>
               )}
               {a.type === 'set_status' && (
                 <select value={a.value ?? ''} onChange={(e) => setAction(i, { value: e.target.value })} className={sel}>
                   <option value="">{t('pauto.editor.statusPlaceholder')}</option>
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{t(`pauto.status.${s}`)}</option>)}
                 </select>
               )}
               {a.type === 'snooze' && (
@@ -390,7 +390,7 @@ function DistributionSection({ config, setConfig, brokers }: {
             <div>
               <div className="mb-1.5 text-sm font-medium text-slate-300">{t('pauto.dist.strategy')}</div>
               <select value={d.strategy} onChange={(e) => setD({ strategy: e.target.value as typeof d.strategy })} className={`${sel} w-full`}>
-                {DISTRIBUTION_STRATEGIES.map((s) => <option key={s} value={s}>{STRATEGY_LABELS[s]}</option>)}
+                {DISTRIBUTION_STRATEGIES.map((s) => <option key={s} value={s}>{t(`pauto.strategy.${s}`)}</option>)}
               </select>
             </div>
 
@@ -509,7 +509,7 @@ function ModesSection({ config, setConfig }: {
         <div className="space-y-2">
           {AUTOMATION_STEPS.map((step) => (
             <div key={step} className="flex items-center justify-between gap-3">
-              <span className="text-sm text-slate-300">{STEP_LABELS[step]}</span>
+              <span className="text-sm text-slate-300">{t(`pauto.step.${step}`)}</span>
               <div className="flex gap-1">
                 {(['manual', 'assisted', 'auto'] as const).map((m) => (
                   <button key={m} onClick={() => setStep(step, m)}
