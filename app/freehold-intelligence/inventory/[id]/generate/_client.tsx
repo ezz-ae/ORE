@@ -60,7 +60,7 @@ const AI_VARIANTS: Record<string, (p: InventoryProperty) => Partial<LandingConfi
   }),
   luxury: (p) => ({
     headline: `${p.name} — Exclusive ${p.area} Living`,
-    subheadline: `Crafted by ${p.developer} · ${p.bedrooms} residences · ${p.sizeRange}`,
+    subheadline: `Crafted by ${p.developer} · ${p.bedrooms} residences${p.sizeRange ? ` · ${p.sizeRange}` : ''}`,
     highlights: [
       `Prestigious ${p.area} address — among Dubai's most sought-after locations`,
       `${p.bedrooms} bedroom ${p.type}s designed for discerning lifestyles`,
@@ -470,7 +470,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
               {[
                 ['Status', prop.status.replace('_', ' ')],
                 ['Bedrooms', prop.bedrooms + ' BR'],
-                ['Size', prop.sizeRange],
+                ['Size', prop.sizeRange || '—'],
                 ['Price from', fmtPrice(prop.startingPriceAED)],
                 ['ROI', prop.roi ? prop.roi.toFixed(1) + '%' : '—'],
                 ['Ad Readiness', prop.adReadiness + '%'],

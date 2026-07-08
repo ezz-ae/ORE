@@ -14,6 +14,8 @@ interface DeveloperRow {
   profileStatus: 'Complete' | 'Incomplete' | 'Draft'
   seo:           number
   leads30d:      number
+  id?:           string
+  custom?:       boolean
 }
 
 type FilterKey = 'All' | 'Complete' | 'Incomplete' | 'Draft'
@@ -67,47 +69,52 @@ export default function DeveloperProfilesPage() {
   const [showNew,    setShowNew]    = useState(false)
   const [newName,    setNewName]    = useState('')
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/freehold/public/developers').then((r) => r.ok ? r.json() : { developers: [] }).catch(() => ({ developers: [] })),
-      fetch('/api/freehold/web-content?kind=developer', { cache: 'no-store' }).then((r) => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
-    ])
-      .then(([data, custom]) => {
-        const mapped: DeveloperRow[] = (data.developers ?? []).map((d: {
-          slug: string; name: string; project_count: number | null;
-          avg_score: number | null; avg_yield: number | null
-        }, i: number) => ({
-          slug: d.slug,
-          name: d.name,
-          initials: initials(d.name),
-          color: AVATAR_COLORS[i % AVATAR_COLORS.length],
-          listings: d.project_count ?? 0,
-          profileStatus: deriveStatus(d.avg_score, d.project_count),
-          seo: Math.min(100, Math.round((d.avg_score ?? 40) * 1.1)),
-          leads30d: 0,
-        }))
-        const customDevs: DeveloperRow[] = (custom.items ?? []).map((c: { slug: string; name: string; status: string; body?: string }, i: number) => ({
-          slug: c.slug,
-          name: c.name,
-          initials: initials(c.name),
-          color: AVATAR_COLORS[i % AVATAR_COLORS.length],
-          listings: 0,
-          profileStatus: (c.body ? 'Complete' : 'Draft') as DeveloperRow['profileStatus'],
-          seo: c.body ? 60 : 20,
-          leads30d: 0,
-        }))
-        const seen = new Set(mapped.map((m) => m.slug))
-        setDevelopers([...customDevs.filter((c) => !seen.has(c.slug)), ...mapped])
-      })
-      .catch(() => toast.error(t('paim.devs.toastLoadFail')))
-      .finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    try {
+      const [data, custom] = await Promise.all([
+        fetch('/api/freehold/public/developers').then((r) => r.ok ? r.json() : { developers: [] }).catch(() => ({ developers: [] })),
+        fetch('/api/freehold/web-content?kind=developer', { cache: 'no-store' }).then((r) => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
+      ])
+      const mapped: DeveloperRow[] = (data.developers ?? []).map((d: {
+        slug: string; name: string; project_count: number | null;
+        avg_score: number | null; avg_yield: number | null
+      }, i: number) => ({
+        slug: d.slug,
+        name: d.name,
+        initials: initials(d.name),
+        color: AVATAR_COLORS[i % AVATAR_COLORS.length],
+        listings: d.project_count ?? 0,
+        profileStatus: deriveStatus(d.avg_score, d.project_count),
+        seo: Math.round(d.avg_score ?? 0),
+        leads30d: 0,
+      }))
+      const customDevs: DeveloperRow[] = (custom.items ?? []).map((c: { id: string; slug: string; name: string; status: string; body?: string }, i: number) => ({
+        id: c.id,
+        custom: true,
+        slug: c.slug,
+        name: c.name,
+        initials: initials(c.name),
+        color: AVATAR_COLORS[i % AVATAR_COLORS.length],
+        listings: 0,
+        profileStatus: (c.status === 'published' || c.body ? 'Complete' : 'Draft') as DeveloperRow['profileStatus'],
+        seo: 0,
+        leads30d: 0,
+      }))
+      const seen = new Set(mapped.map((m) => m.slug))
+      setDevelopers([...customDevs.filter((c) => !seen.has(c.slug)), ...mapped])
+    } catch {
+      toast.error(t('paim.devs.toastLoadFail'))
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => { load() }, [])
 
   const filtered = developers
     .filter((d) => filter === 'All' || d.profileStatus === filter)
     .filter((d) => !search || d.name.toLowerCase().includes(search.toLowerCase()))
 
-  async function aiWrite(name: string) {
+  async function aiWrite(name: string, slug: string) {
     setWriting(name)
     try {
       const res = await fetch('/api/freehold/ai/generate', {
@@ -118,9 +125,17 @@ export default function DeveloperProfilesPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
-      try { await navigator.clipboard.writeText(data.text) } catch { /* optional */ }
+      // Persist the generated profile as published web-content (create, or
+      // update an existing custom row) — no clipboard-only output.
+      const existing = developers.find((d) => d.slug === slug && d.custom)
+      const save = existing
+        ? fetch('/api/freehold/web-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: existing.id, body: data.text, status: 'published' }) })
+        : fetch('/api/freehold/web-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'developer', name, slug, body: data.text, status: 'published' }) })
+      const saved = await save
+      if (!saved.ok) throw new Error('save failed')
       setWritten((p) => [...p, name])
-      toast.success(data.source === 'gemini' ? t('paim.devs.toastGeneratedCopied', { name }) : t('paim.devs.toastGenerated', { name }))
+      toast.success(t('paim.devs.toastGenerated', { name }))
+      load()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('paim.devs.toastGenFail'))
     } finally {
@@ -130,7 +145,6 @@ export default function DeveloperProfilesPage() {
 
   const complete    = developers.filter((d) => d.profileStatus === 'Complete').length
   const avgSeo      = developers.length ? Math.round(developers.reduce((s, d) => s + d.seo, 0) / developers.length) : 0
-  const totalLeads  = developers.reduce((s, d) => s + d.leads30d, 0)
   const incomplete  = developers.filter((d) => d.profileStatus !== 'Complete').length
 
   return (
@@ -146,11 +160,10 @@ export default function DeveloperProfilesPage() {
         </button>
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3">
         {[
           { id: 'complete', label: t('paim.devs.statComplete'),  value: loading ? '…' : `${complete}/${developers.length}`, Icon: CheckCircle2, color: 'text-emerald-400' },
           { id: 'avgSeo',   label: t('paim.devs.statAvgSeo'),   value: loading ? '…' : avgSeo,                             Icon: TrendingUp,   color: 'text-teal-400'     },
-          { id: 'leads',    label: t('paim.devs.statLeads'), value: loading ? '…' : totalLeads,                         Icon: Globe,        color: 'text-gold'   },
         ].map(({ id, label, value, Icon, color }) => (
           <div key={id} className="rounded-xl border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
@@ -177,8 +190,7 @@ export default function DeveloperProfilesPage() {
                 })
                 const data = await res.json()
                 if (!res.ok) throw new Error(data?.error || 'Failed')
-                setDevelopers((prev) => [{ slug: data.item.slug, name: data.item.name, initials: initials(data.item.name), color: AVATAR_COLORS[0], listings: 0, profileStatus: 'Draft', seo: 20, leads30d: 0 }, ...prev])
-                setShowNew(false); setNewName(''); toast.success(t('paim.devs.toastCreated'))
+                setShowNew(false); setNewName(''); toast.success(t('paim.devs.toastCreated')); load()
               } catch (err) { toast.error(err instanceof Error ? err.message : t('paim.devs.toastCreateFail')) }
             }}
               className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
@@ -256,7 +268,7 @@ export default function DeveloperProfilesPage() {
               {isExpanded && (
                 <div className="border-t border-line px-5 py-4">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => aiWrite(d.name)} disabled={isWriting}
+                    <button onClick={() => aiWrite(d.name, d.slug)} disabled={isWriting}
                       className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                         isWritten ? 'border-emerald-400/25 text-emerald-400' : 'border-teal-400/25 bg-teal-400/[0.06] text-teal-400 hover:bg-teal-400/15'
                       } disabled:opacity-50`}>
