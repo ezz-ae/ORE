@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { MessageSquare, Layers, Wrench, FileText, ImageIcon, Code, Play, Flag, GitBranch, Globe, User, Package, Video } from "lucide-react"
+import { MessageSquare, Layers, Wrench, FileText, ImageIcon, Code, Play, Flag, GitBranch, Globe, User, Building2, Video } from "lucide-react"
 
 type NodeType = {
   type: string
@@ -14,9 +14,9 @@ const nodeTypes: NodeType[] = [
   { type: "prompt", label: "Prompt", icon: <FileText className="h-3.5 w-3.5" /> },
   { type: "textModel", label: "Text Model", icon: <MessageSquare className="h-3.5 w-3.5" /> },
   { type: "imageGeneration", label: "Image", icon: <ImageIcon className="h-3.5 w-3.5" /> },
-  { type: "ugcModel", label: "UGC Model", icon: <User className="h-3.5 w-3.5" /> },
-  { type: "productUpload", label: "Product", icon: <Package className="h-3.5 w-3.5" /> },
-  { type: "script", label: "Script", icon: <FileText className="h-3.5 w-3.5" /> },
+  { type: "ugcModel", label: "Presenter", icon: <User className="h-3.5 w-3.5" /> },
+  { type: "productUpload", label: "Property", icon: <Building2 className="h-3.5 w-3.5" /> },
+  { type: "script", label: "Listing Script", icon: <FileText className="h-3.5 w-3.5" /> },
   { type: "videoGeneration", label: "Video", icon: <Video className="h-3.5 w-3.5" /> },
   { type: "httpRequest", label: "HTTP", icon: <Globe className="h-3.5 w-3.5" /> },
   { type: "conditional", label: "Condition", icon: <GitBranch className="h-3.5 w-3.5" /> },

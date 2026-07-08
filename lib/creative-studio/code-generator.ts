@@ -214,28 +214,28 @@ export function generateAISDKCode(nodes: Node[], edges: Edge[]): string {
         break
 
       case "ugcModel":
-        nodeCode += `${indent}// UGC Model Node - defines the AI creator parameters\n`
+        nodeCode += `${indent}// Presenter Node - defines the on-camera property presenter\n`
         nodeCode += `${indent}const ${varName} = {\n`
-        nodeCode += `${indent}  type: 'ugc-model-params',\n`
+        nodeCode += `${indent}  type: 'presenter-params',\n`
         nodeCode += `${indent}  gender: ${JSON.stringify(node.data.gender || "female")},\n`
-        nodeCode += `${indent}  ethnicity: ${JSON.stringify(node.data.ethnicity || "caucasian")},\n`
+        nodeCode += `${indent}  ethnicity: ${JSON.stringify(node.data.ethnicity || "middle-eastern")},\n`
         nodeCode += `${indent}  ageRange: ${JSON.stringify(node.data.ageRange || "26-35")},\n`
         nodeCode += `${indent}  description: ${JSON.stringify(node.data.description || "")},\n`
         nodeCode += `${indent}};\n\n`
         break
 
       case "productUpload":
-        nodeCode += `${indent}// Product Upload Node - product image and metadata\n`
-        nodeCode += `${indent}// Note: In production, upload the product image to Vercel Blob first\n`
+        nodeCode += `${indent}// Property Node - listing image and metadata (from inventory)\n`
         nodeCode += `${indent}const ${varName} = {\n`
-        nodeCode += `${indent}  type: 'product-upload',\n`
+        nodeCode += `${indent}  type: 'property',\n`
         nodeCode += `${indent}  name: ${JSON.stringify(node.data.productName || "")},\n`
-        nodeCode += `${indent}  image: process.env.PRODUCT_IMAGE_URL || '', // Set your product image URL\n`
+        nodeCode += `${indent}  area: ${JSON.stringify(node.data.area || "")},\n`
+        nodeCode += `${indent}  image: ${JSON.stringify(node.data.productImage || "")},\n`
         nodeCode += `${indent}};\n\n`
         break
 
       case "script":
-        nodeCode += `${indent}// Video Script Node - dialogue for the UGC creator to speak\n`
+        nodeCode += `${indent}// Listing Script Node - voiceover for the property presenter\n`
         nodeCode += `${indent}const ${varName} = ${JSON.stringify(node.data.script || "")};\n\n`
         break
 
@@ -247,7 +247,7 @@ export function generateAISDKCode(nodes: Node[], edges: Edge[]): string {
         const vidScriptVar = vidInputVars.length > 2 ? vidInputVars[2] : '""'
         nodeCode += `${indent}const ${varName}_result = await fal.subscribe('fal-ai/veo3.1/image-to-video', {\n`
         nodeCode += `${indent}  input: {\n`
-        nodeCode += `${indent}    prompt: \`Animate this UGC creator presenting the product. \${${vidScriptVar}}\`,\n`
+        nodeCode += `${indent}    prompt: \`Animate this presenter showcasing the property. \${${vidScriptVar}}\`,\n`
         nodeCode += `${indent}    image_url: ${modelImgVar},\n`
         nodeCode += `${indent}    aspect_ratio: '${node.data.aspectRatio || "9:16"}',\n`
         nodeCode += `${indent}    duration: '${node.data.duration || "8s"}',\n`
@@ -392,7 +392,7 @@ export function generateRouteHandlerCode(nodes: Node[], edges: Edge[]): string {
     code += `    import { fal } from '@fal-ai/client';\n`
     code += `    const videoResult = await fal.subscribe('fal-ai/veo3.1/image-to-video', {\n`
     code += `      input: {\n`
-    code += `        prompt: 'Animate this UGC creator presenting the product',\n`
+    code += `        prompt: 'Animate this presenter showcasing the property',\n`
     code += `        image_url: images?.[0] || input,\n`
     code += `        aspect_ratio: '9:16',\n`
     code += `        duration: '8s',\n`

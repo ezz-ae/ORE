@@ -75,7 +75,7 @@ const nodeTypes: NodeTypes = {
   videoGeneration: VideoGenerationNode,
 }
 
-// Use UGC Video Generation template as default
+// Use the Property Reel template as the default canvas
 const ugcTemplate = WORKFLOW_TEMPLATES[0]
 const initialNodes: Node[] = ugcTemplate.nodes as unknown as Node[]
 const initialEdges: Edge[] = ugcTemplate.edges as unknown as Edge[]
@@ -237,9 +237,9 @@ export default function AgentBuilder() {
     tool: "Tool",
     structuredOutput: "Structured Output",
     memory: "Memory",
-    ugcModel: "UGC Model",
-    productUpload: "Product Upload",
-    script: "Video Script",
+    ugcModel: "Presenter",
+    productUpload: "Property",
+    script: "Listing Script",
     videoGeneration: "Video Generation",
   }
 

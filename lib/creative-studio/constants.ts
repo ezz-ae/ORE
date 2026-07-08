@@ -55,8 +55,8 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
   audio: { model: "openai/tts-1", voice: "alloy", speed: 1.0 },
   structuredOutput: { schemaName: "Schema", mode: "object" },
   memory: { operation: "load", sessionId: "default", key: "", memoryType: "fact", limit: 10 },
-  ugcModel: { ethnicity: "caucasian", gender: "female", ageRange: "26-35", description: "", isLocked: false },
-  productUpload: { productImage: undefined, productName: "" },
+  ugcModel: { ethnicity: "middle-eastern", gender: "female", ageRange: "26-35", description: "Polished Dubai property consultant, confident and warm on camera.", isLocked: false },
+  productUpload: { productImage: undefined, productName: "", propertyId: undefined, area: "", developer: "", price: null, bedrooms: "", propertyType: "" },
   script: { script: "" },
   videoGeneration: { model: "fal-ai/veo-3.1", aspectRatio: "9:16", duration: "8s" },
 }
@@ -127,37 +127,37 @@ export const NODE_TYPES: Record<NodeType, { label: string; description: string }
   audio: { label: "Audio", description: "Text-to-speech" },
   structuredOutput: { label: "Structured", description: "Schema output" },
   memory: { label: "Memory", description: "Persistent storage" },
-  ugcModel: { label: "UGC Model", description: "AI influencer model" },
-  productUpload: { label: "Product", description: "Product image upload" },
-  script: { label: "Script", description: "Video dialogue" },
+  ugcModel: { label: "Presenter", description: "On-camera property presenter" },
+  productUpload: { label: "Property", description: "Pick a listing from inventory" },
+  script: { label: "Listing Script", description: "Reel voiceover / dialogue" },
   videoGeneration: { label: "Video", description: "Video generation" },
 }
 
 // Workflow templates
 export const WORKFLOW_TEMPLATES = [
   {
-    id: "ugc-video-generation",
-    name: "UGC Video Generation",
-    description: "Generate UGC product videos with AI models",
+    id: "property-reel",
+    name: "Property Reel",
+    description: "Turn a real listing into a short vertical property video",
     nodes: [
       { id: "1", type: "start", position: { x: 50, y: 300 }, data: {} },
       {
         id: "2",
         type: "ugcModel",
         position: { x: 300, y: 150 },
-        data: { ethnicity: "caucasian", gender: "female", ageRange: "26-35", description: "", isLocked: false },
+        data: { ethnicity: "middle-eastern", gender: "female", ageRange: "26-35", description: "Polished Dubai property consultant, confident and warm on camera.", isLocked: false },
       },
       {
         id: "3",
         type: "productUpload",
         position: { x: 300, y: 350 },
-        data: { productImage: undefined, productName: "" },
+        data: { productImage: undefined, productName: "", propertyId: undefined, area: "", developer: "", price: null, bedrooms: "", propertyType: "" },
       },
       {
         id: "4",
         type: "script",
         position: { x: 300, y: 520 },
-        data: { script: "Hey everyone! I just got this amazing product and I have to share it with you..." },
+        data: { script: "This is one of the most sought-after addresses in the area — walk in and the light does all the talking. Book your viewing today before it's gone." },
       },
       {
         id: "5",
