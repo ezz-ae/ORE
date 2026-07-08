@@ -1,29 +1,45 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { Bot, MapPin, Building2, FileText, BookOpen, ArrowUpRight, Activity } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
-const CONTENT_TYPES = [
-  { labelKey: 'studio.ct.listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,      summary: '28 listings',          alert: '5 need updates',       alertColor: 'text-slate-400' },
-  { labelKey: 'studio.ct.areas',      href: '/freehold-intelligence/ai-manager/areas',      icon: MapPin,   summary: '12 area guides',        alert: '3 missing content',    alertColor: 'text-amber-400' },
-  { labelKey: 'studio.ct.developers', href: '/freehold-intelligence/ai-manager/developers', icon: Building2,summary: '18 developer profiles', alert: '2 incomplete',         alertColor: 'text-amber-400' },
-  { labelKey: 'studio.ct.pages',      href: '/freehold-intelligence/ai-manager/pages',      icon: FileText, summary: '34 pages',              alert: '8 need AI review',     alertColor: 'text-slate-400' },
-  { labelKey: 'studio.ct.topics',     href: '/freehold-intelligence/ai-manager/topics',     icon: BookOpen, summary: '47 topics',             alert: '12 unpublished',       alertColor: 'text-slate-400' },
-]
 
-// Sample recent-activity feed (illustrative until the content event log is wired).
-const ACTIVITY = [
-  { text: 'Generated content for Emaar Beachfront listing',       time: '4m ago' },
-  { text: 'Updated Dubai Hills Estate area guide',                 time: '18m ago' },
-  { text: 'Published 3 blog topics on Golden Visa eligibility',   time: '1h ago' },
-  { text: 'Added developer profile: Binghatti Properties',         time: '2h ago' },
-  { text: 'AI review completed for 8 landing pages',              time: '3h ago' },
+type WcItem = { id: string; kind: string; name: string; status: string; created_at: string }
+
+const CONTENT_TYPES = [
+  { labelKey: 'studio.ct.listings',   href: '/freehold-intelligence/ai-manager/listings',   icon: Bot,       kind: 'listing'   },
+  { labelKey: 'studio.ct.areas',      href: '/freehold-intelligence/ai-manager/areas',      icon: MapPin,    kind: 'area'      },
+  { labelKey: 'studio.ct.developers', href: '/freehold-intelligence/ai-manager/developers', icon: Building2, kind: 'developer' },
+  { labelKey: 'studio.ct.pages',      href: '/freehold-intelligence/ai-manager/pages',      icon: FileText,  kind: 'page'      },
+  { labelKey: 'studio.ct.topics',     href: '/freehold-intelligence/ai-manager/topics',     icon: BookOpen,  kind: 'topic'     },
 ]
 
 export default function AiManagerPage() {
   const t = useT()
   const depth = ['studio.ai.q1', 'studio.ai.q2', 'studio.ai.q3', 'studio.ai.q4']
+
+  // Real content inventory: listing count from live projects, everything else
+  // from the web-content store. Recent activity is the newest content pieces.
+  const [items, setItems] = useState<WcItem[] | null>(null)
+  const [listingCount, setListingCount] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/web-content', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setItems(Array.isArray(d?.items) ? d.items : []))
+      .catch(() => setItems([]))
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.properties)) setListingCount(d.properties.length) })
+      .catch(() => {})
+  }, [])
+
+  const countFor = (kind: string) =>
+    kind === 'listing' ? listingCount : items ? items.filter((i) => i.kind === kind).length : null
+  const draftsFor = (kind: string) =>
+    items ? items.filter((i) => i.kind === kind && i.status !== 'published').length : 0
+  const recent = (items ?? []).slice(0, 6)
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
 
@@ -40,6 +56,8 @@ export default function AiManagerPage() {
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CONTENT_TYPES.map((ct) => {
           const Icon = ct.icon
+          const count = countFor(ct.kind)
+          const drafts = draftsFor(ct.kind)
           return (
             <Link
               key={ct.labelKey}
@@ -54,8 +72,10 @@ export default function AiManagerPage() {
               </div>
               <div>
                 <div className="text-sm font-semibold text-slate-100">{t(ct.labelKey)}</div>
-                <div className="mt-0.5 text-sm text-slate-400">{ct.summary}</div>
-                <div className={`mt-1 text-sm font-medium ${ct.alertColor}`}>{ct.alert}</div>
+                <div className="mt-0.5 text-sm text-slate-400">{count == null ? '—' : t('studio.itemCount', { count })}</div>
+                {ct.kind !== 'listing' && drafts > 0 && (
+                  <div className="mt-1 text-sm font-medium text-amber-400">{t('studio.draftCount', { count: drafts })}</div>
+                )}
               </div>
             </Link>
           )
@@ -68,17 +88,23 @@ export default function AiManagerPage() {
           <Activity className="h-4 w-4 text-slate-400" />
           <h2 className="text-sm font-semibold text-slate-100">{t('studio.activity')}</h2>
         </div>
-        <ul className="space-y-4">
-          {ACTIVITY.map((item, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold/50" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug text-slate-400">{item.text}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{item.time}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {recent.length === 0 ? (
+          <p className="text-sm text-slate-500">{t('studio.activityEmpty')}</p>
+        ) : (
+          <ul className="space-y-4">
+            {recent.map((item) => (
+              <li key={item.id} className="flex items-start gap-3">
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gold/50" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm leading-snug text-slate-400">
+                    {t(item.status === 'published' ? 'studio.activityPublished' : 'studio.activityDrafted', { name: item.name })}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">{new Date(item.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

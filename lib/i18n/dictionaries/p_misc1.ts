@@ -125,6 +125,9 @@ const en: Dict = {
   // Toasts
   'plistnew.toast.filesAdded': '{n} file(s) added',
   'plistnew.toast.savedDraft': 'Saved as draft',
+  'plistnew.toast.nameFirst': 'Enter a listing name first',
+  'plistnew.toast.genFailed': 'AI generation failed. Please retry.',
+  'plistnew.toast.saveFailed': 'Could not save. Please retry.',
   'plistnew.toast.published': 'Listing published',
 }
 
@@ -239,6 +242,9 @@ const ar: Dict = {
   'plistnew.publish': 'نشر',
   'plistnew.toast.filesAdded': 'تمت إضافة {n} ملف',
   'plistnew.toast.savedDraft': 'تم الحفظ كمسودة',
+  'plistnew.toast.nameFirst': 'أدخل اسم القائمة أولًا',
+  'plistnew.toast.genFailed': 'فشل توليد الذكاء الاصطناعي. حاول مرة أخرى.',
+  'plistnew.toast.saveFailed': 'تعذّر الحفظ. حاول مرة أخرى.',
   'plistnew.toast.published': 'تم نشر القائمة',
 }
 
@@ -353,6 +359,9 @@ const ru: Dict = {
   'plistnew.publish': 'Опубликовать',
   'plistnew.toast.filesAdded': 'Добавлено файлов: {n}',
   'plistnew.toast.savedDraft': 'Сохранено как черновик',
+  'plistnew.toast.nameFirst': 'Сначала введите название объявления',
+  'plistnew.toast.genFailed': 'Не удалось сгенерировать. Повторите попытку.',
+  'plistnew.toast.saveFailed': 'Не удалось сохранить. Повторите попытку.',
   'plistnew.toast.published': 'Объявление опубликовано',
 }
 

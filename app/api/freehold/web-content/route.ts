@@ -7,7 +7,7 @@ import { query } from "@/lib/db"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const KINDS = ["area", "developer", "topic", "page"]
+const KINDS = ["area", "developer", "topic", "page", "listing"]
 
 let ensured: Promise<void> | null = null
 const ensure = async () => {
@@ -66,5 +66,38 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error("[web-content] create failed", e)
     return NextResponse.json({ error: "Failed to create" }, { status: 500 })
+  }
+}
+
+// Update a row's body and/or status — lets generated content be saved and
+// published instead of only living in the clipboard/local state.
+export async function PATCH(req: NextRequest) {
+  const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  let body: Record<string, unknown>
+  try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }
+  const id = String(body.id || "").trim()
+  if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 })
+
+  const sets: string[] = []
+  const params: unknown[] = []
+  if (typeof body.body === "string") { params.push(body.body); sets.push(`body = $${params.length}`) }
+  if (body.status === "published" || body.status === "draft") { params.push(body.status); sets.push(`status = $${params.length}`) }
+  if (sets.length === 0) return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
+
+  try {
+    await ensureOnce()
+    params.push(id)
+    const rows = await query<Record<string, unknown>>(
+      `UPDATE freehold_site_web_content SET ${sets.join(", ")}, updated_at = now()
+       WHERE id = $${params.length}
+       RETURNING id, kind, name, slug, body, status, created_at::text`,
+      params,
+    )
+    if (rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json({ item: rows[0] })
+  } catch (e) {
+    console.error("[web-content] update failed", e)
+    return NextResponse.json({ error: "Failed to update" }, { status: 500 })
   }
 }
