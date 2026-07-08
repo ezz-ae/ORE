@@ -362,9 +362,9 @@ export async function createAdCreative(params: {
     // Dynamic UTMs close the attribution loop: the lead that lands on the
     // page carries the REAL campaign/adset/ad ids into the CRM automatically.
     url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
-    // Explicit stance on Advantage+ creative enhancements (required field on
-    // newer accounts): OPT_OUT keeps the creative exactly as authored.
-    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
+    // Note: the `standard_enhancements` field under degrees_of_freedom_spec is
+    // deprecated (Meta error subcode 3858504) — it must not be sent. We omit it
+    // and let the account's default creative-enhancement settings apply.
   })
 }
 
