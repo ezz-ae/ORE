@@ -77,7 +77,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
     e.stopPropagation()
   }
 
-  const currentEthnicity = data.ethnicity || "caucasian"
+  const currentEthnicity = data.ethnicity || "middle-eastern"
   const currentGender = data.gender || "female"
   const currentAgeRange = data.ageRange || "26-35"
 
@@ -88,7 +88,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
       <div className="p-3">
         <div className="flex items-center gap-2">
           <User className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">UGC Model</span>
+          <span className="text-[11px] font-medium text-foreground">Presenter</span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -186,7 +186,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
                 value={data.description || ""}
                 onChange={(e) => handleUpdate("description", e.target.value)}
                 onMouseDown={stopPropagation}
-                placeholder="e.g., wearing casual clothing, smiling warmly..."
+                placeholder="e.g., smart-casual agent, warm smile, presenting on location..."
                 className="min-h-[60px] text-xs font-mono resize-none"
                 disabled={isLocked}
               />
@@ -194,7 +194,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
 
             {isLocked && data.lockedImageUrl && (
               <div className="space-y-1.5">
-                <Label className="text-[10px] text-amber-500">Locked Model Preview</Label>
+                <Label className="text-[10px] text-amber-500">Locked Presenter Preview</Label>
                 <div className="rounded border border-amber-500/30 overflow-hidden">
                   <img 
                     src={data.lockedImageUrl || "/placeholder.svg"} 
@@ -223,7 +223,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         {isExpanded && !isLocked && (
           <div className="mt-3 pt-3 border-t border-border">
             <p className="text-[9px] text-muted-foreground text-center">
-              These parameters will be used by the Image Generation node to create a realistic model image.
+              These parameters shape the on-camera property presenter created by the Image node.
             </p>
           </div>
         )}

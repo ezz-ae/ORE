@@ -22,9 +22,9 @@ const NODE_LABELS: Record<string, string> = {
   tool: "Tool",
   structuredOutput: "Structured Output",
   memory: "Memory",
-  ugcModel: "UGC Model",
-  productUpload: "Product Upload",
-  script: "Video Script",
+  ugcModel: "Presenter",
+  productUpload: "Property",
+  script: "Listing Script",
   videoGeneration: "Video Generation",
 }
 

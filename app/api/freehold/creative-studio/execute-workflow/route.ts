@@ -12,6 +12,16 @@ type Edge = { source: string; target: string }
 
 const str = (v: unknown) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v))
 
+// Find the first http(s) URL anywhere in the resolved inputs (used as the
+// reference image for image/video generation).
+const findUrl = (inputs: string[]): string | undefined => {
+  for (const i of inputs) {
+    const m = String(i).match(/https?:\/\/[^\s"']+/)
+    if (m) return m[0]
+  }
+  return undefined
+}
+
 // Interpolate $input1/$input2/$input into a template.
 function interpolate(template: string, inputs: string[]): string {
   let out = template.replace(/\$input(\d+)/g, (_, n) => inputs[Number(n) - 1] ?? "")
@@ -56,18 +66,31 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
     case "imageGeneration": {
       const r = await genImage(primary || "A cinematic Dubai real-estate hero image.", {
         aspectRatio: str(d.aspectRatio) || undefined,
-        imageUrl: inputs.find((i) => /^https?:\/\//.test(i)) || undefined,
+        imageUrl: findUrl(inputs),
       })
       return r.url
     }
     case "videoGeneration": {
       const r = await genVideo(primary || "A cinematic property walkthrough.", {
-        imageUrl: inputs.find((i) => /^https?:\/\//.test(i)) || undefined,
+        imageUrl: findUrl(inputs),
       })
       return r.url
     }
-    case "productUpload":
-      return str(d.productImage) || str(d.productName) || ""
+    case "productUpload": {
+      // Emit a real listing line (name, beds, area, developer, price) plus the
+      // hero-image URL, so downstream prompts describe the actual property.
+      const parts = [
+        str(d.productName),
+        str(d.bedrooms),
+        d.area ? `in ${str(d.area)}` : "",
+        d.developer ? `by ${str(d.developer)}` : "",
+        d.price ? `from AED ${Number(d.price).toLocaleString("en-US")}` : "",
+      ].filter(Boolean)
+      const line = parts.join(", ")
+      const img = str(d.productImage)
+      const isHttp = /^https?:\/\//.test(img)
+      return [line, isHttp ? img : ""].filter(Boolean).join(" ") || img || line
+    }
     case "conditional": {
       const cond = str(d.condition)
       try {

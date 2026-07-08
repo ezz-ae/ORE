@@ -9,7 +9,7 @@ import {
   ImageIcon,
   Flag,
   User,
-  Package,
+  Building2,
   Video,
 } from "lucide-react"
 
@@ -23,9 +23,9 @@ type NodeType = {
 const nodeTypes: NodeType[] = [
   { type: "start", label: "Start", icon: <Play className="h-5 w-5" />, category: "flow" },
   { type: "end", label: "End", icon: <Flag className="h-5 w-5" />, category: "flow" },
-  { type: "productUpload", label: "Product Upload", icon: <Package className="h-5 w-5" />, category: "ugc" },
-  { type: "ugcModel", label: "UGC Model", icon: <User className="h-5 w-5" />, category: "ugc" },
-  { type: "script", label: "Script", icon: <FileText className="h-5 w-5" />, category: "ugc" },
+  { type: "productUpload", label: "Property", icon: <Building2 className="h-5 w-5" />, category: "ugc" },
+  { type: "ugcModel", label: "Presenter", icon: <User className="h-5 w-5" />, category: "ugc" },
+  { type: "script", label: "Listing Script", icon: <FileText className="h-5 w-5" />, category: "ugc" },
   { type: "imageGeneration", label: "Image Gen", icon: <ImageIcon className="h-5 w-5" />, category: "ai" },
   { type: "videoGeneration", label: "Video Gen", icon: <Video className="h-5 w-5" />, category: "ai" },
 ]

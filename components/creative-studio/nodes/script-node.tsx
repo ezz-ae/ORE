@@ -1,12 +1,14 @@
 "use client"
 
 import type React from "react"
-import { memo, useMemo } from "react"
+import { memo, useMemo, useState } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
-import { FileText, Clock } from "lucide-react"
+import { FileText, Clock, Sparkles, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 
 export type ScriptNodeData = {
   script?: string
@@ -53,6 +55,30 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
     handleUpdate("script", value)
   }
 
+  const [generating, setGenerating] = useState(false)
+  const handleGenerate = async () => {
+    setGenerating(true)
+    try {
+      const brief = script.trim() || "a premium Dubai property"
+      const res = await fetch("/api/freehold/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Write a punchy vertical property-reel voiceover for ${brief}. One or two short sentences, under ${maxCharacters} characters (~${maxSeconds}s spoken), ending with a clear call to action. Return only the voiceover text, no quotes or notes.`,
+          system: "You are a senior Dubai real-estate video copywriter for Freehold Property UAE. Write natural spoken lines for short social reels. No placeholders, no emojis.",
+        }),
+      })
+      const d = await res.json()
+      const text = String(d.text || "").trim().replace(/^["']|["']$/g, "")
+      if (text) { handleUpdate("script", text); toast.success("Script generated") }
+      else toast.error("Could not generate script")
+    } catch {
+      toast.error("Could not generate script")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const stopPropagation = (e: React.MouseEvent) => {
     e.stopPropagation()
   }
@@ -71,7 +97,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
       <div className="p-3">
         <div className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Video Script</span>
+          <span className="text-[11px] font-medium text-foreground">Listing Script</span>
           <div className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span>{maxSeconds}s max</span>
@@ -88,7 +114,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[10px] text-muted-foreground">Dialogue Script</Label>
+                <Label className="text-[10px] text-muted-foreground">Voiceover</Label>
                 <span className={`text-[10px] font-mono ${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
                   {characterCount}/{maxCharacters}
                 </span>
@@ -97,9 +123,19 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
                 value={script}
                 onChange={(e) => handleScriptChange(e.target.value)}
                 onMouseDown={stopPropagation}
-                placeholder="Enter the dialogue for the model to speak in the video..."
+                placeholder="What the presenter says over the reel — or type a short brief and Generate…"
                 className={`min-h-[100px] text-xs font-mono resize-none ${isOverLimit ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 gap-1.5 text-[10px]"
+                disabled={generating}
+                onClick={(e) => { e.stopPropagation(); handleGenerate() }}
+              >
+                {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {generating ? "Writing…" : "Generate with AI"}
+              </Button>
               {isOverLimit && (
                 <p className="text-[9px] text-destructive">
                   Script exceeds the {maxSeconds}-second limit ({maxCharacters} chars). Please shorten your dialogue.
@@ -113,7 +149,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
             </div>
 
             <p className="text-[9px] text-muted-foreground">
-              Write the dialogue the model will speak. Keep it under {maxCharacters} characters (~{maxSeconds}s of speech).
+              The voiceover the presenter speaks over the reel. Keep it under {maxCharacters} characters (~{maxSeconds}s of speech).
             </p>
           </div>
         )}

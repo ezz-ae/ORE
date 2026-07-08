@@ -140,9 +140,9 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
             <div className="bg-muted/50 rounded p-2 space-y-1">
               <p className="text-[9px] text-muted-foreground font-medium">Inputs (connect in order):</p>
               <ul className="text-[9px] text-muted-foreground list-disc list-inside space-y-0.5">
-                <li>Top: Model image (UGC Model/Image)</li>
-                <li>Middle: Product image (optional)</li>
-                <li>Bottom: Script/dialogue (Script node)</li>
+                <li>Top: Presenter image (Presenter/Image)</li>
+                <li>Middle: Property image (optional)</li>
+                <li>Bottom: Voiceover (Listing Script node)</li>
               </ul>
             </div>
 
