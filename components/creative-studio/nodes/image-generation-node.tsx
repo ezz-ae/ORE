@@ -1,0 +1,246 @@
+"use client"
+
+import type React from "react"
+import { memo } from "react"
+import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
+import { ImageIcon, Lock, Unlock } from "lucide-react"
+import { getStatusColor } from "@/lib/creative-studio/node-utils"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { IMAGE_MODELS, PROVIDER_LOGOS } from "@/lib/creative-studio/constants"
+
+export type ImageGenerationNodeData = {
+  model: string
+  aspectRatio?: string
+  outputFormat?: string
+  status?: "idle" | "running" | "completed" | "error"
+  output?: string // output is now a string (base64 data URL)
+  isLocked?: boolean
+  lockedImageUrl?: string
+  isExpanded?: boolean
+  onUpdate?: (data: any) => void
+  connectedHandles?: string[]
+}
+
+function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationNodeData>>) {
+  const status = data.status || "idle"
+  const isExpanded = data.isExpanded || false
+  const isLocked = data.isLocked || false
+
+  const handleUpdate = (field: string, value: any) => {
+    if (data.onUpdate) {
+      const { isExpanded, onUpdate, ...restData } = data
+      data.onUpdate({ ...restData, [field]: value })
+    }
+  }
+
+  const toggleLock = () => {
+    if (data.onUpdate) {
+      const { isExpanded, onUpdate, ...restData } = data
+      if (isLocked) {
+        // Unlock: clear the locked image
+        data.onUpdate({ ...restData, isLocked: false, lockedImageUrl: undefined })
+      } else if (data.output) {
+        // Lock: save current output as locked image
+        data.onUpdate({ ...restData, isLocked: true, lockedImageUrl: data.output })
+      }
+    }
+  }
+
+  const stopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
+  const getModelLabel = (modelValue: string) => {
+    const model = IMAGE_MODELS.find((m) => m.value === modelValue)
+    return model?.label || modelValue
+  }
+
+  const getCurrentModelLogo = () => {
+    const model = IMAGE_MODELS.find((m) => m.value === data.model)
+    const group = model?.group || "OpenAI"
+    return PROVIDER_LOGOS[group]
+  }
+
+  const currentModel = data.model || "openai/gpt-image-1"
+
+  return (
+    <div
+      className={`w-[260px] rounded-md border bg-card transition-colors duration-150 ${getStatusColor(status, selected)}`}
+    >
+      <div className="p-3">
+<div className="flex items-center gap-2">
+          <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-medium text-foreground">Image</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto h-6 w-6 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleLock()
+                  }}
+                  disabled={!data.output && !isLocked}
+                >
+                  {isLocked ? (
+                    <Lock className="h-3.5 w-3.5 text-amber-500" />
+                  ) : (
+                    <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isLocked ? "Unlock to regenerate" : "Lock to reuse this image"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {!isExpanded && (
+          <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">{getModelLabel(currentModel)}</div>
+        )}
+
+        {isExpanded && (
+          <div className="mt-3 space-y-3" onClick={stopPropagation}>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-muted-foreground">Model</Label>
+              <Select value={currentModel} onValueChange={(value) => handleUpdate("model", value)}>
+                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {IMAGE_MODELS.map((model) => (
+                    <SelectItem key={model.value} value={model.value} className="py-2">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          {PROVIDER_LOGOS[model.group] && (
+                            <img
+                              src={PROVIDER_LOGOS[model.group] || "/placeholder.svg"}
+                              alt={model.group}
+                              className="h-4 w-4 rounded-sm object-contain"
+                            />
+                          )}
+                          <span className="text-xs">{model.label}</span>
+                        </div>
+                        {"description" in model && model.description && (
+                          <span className="text-[10px] text-muted-foreground ml-6">{model.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-muted-foreground">Aspect Ratio</Label>
+              <Select value={data.aspectRatio || "1:1"} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
+                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1" className="text-xs py-1.5">
+                    1:1 (Square)
+                  </SelectItem>
+                  <SelectItem value="16:9" className="text-xs py-1.5">
+                    16:9 (Landscape)
+                  </SelectItem>
+                  <SelectItem value="9:16" className="text-xs py-1.5">
+                    9:16 (Portrait)
+                  </SelectItem>
+                  <SelectItem value="4:3" className="text-xs py-1.5">
+                    4:3
+                  </SelectItem>
+                  <SelectItem value="3:4" className="text-xs py-1.5">
+                    3:4
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {status === "running" && (
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
+            generating
+          </div>
+        )}
+
+        {/* Show locked image */}
+        {isLocked && data.lockedImageUrl && (
+          <div className="mt-3 space-y-2">
+            <div className="rounded overflow-hidden border border-amber-500/30">
+              <img 
+                src={data.lockedImageUrl || "/placeholder.svg"} 
+                alt="Locked image" 
+                className="w-full h-auto max-h-[200px] object-contain bg-muted/30"
+              />
+            </div>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-500 font-mono">
+              <Lock className="h-3 w-3" />
+              <span>Locked - will be reused</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show generated image output (when not locked) */}
+        {!isLocked && status === "completed" && data.output && typeof data.output === "string" && (data.output.startsWith("data:image/") || data.output.startsWith("https://")) && (
+          <div className="mt-3 space-y-2">
+            <div className="rounded overflow-hidden border border-green-500/30">
+              <img 
+                src={data.output || "/placeholder.svg"} 
+                alt="Generated" 
+                className="w-full h-auto max-h-[200px] object-contain bg-muted/30"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-xs bg-transparent"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleLock()
+              }}
+            >
+              <Lock className="mr-1.5 h-3 w-3" />
+              Lock This Image
+            </Button>
+          </div>
+        )}
+
+        {!isLocked && status === "completed" && !data.output && (
+          <div className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-mono">
+            No image generated
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className="mt-2 text-[10px] text-red-600 dark:text-red-400 font-mono">
+            Generation failed
+          </div>
+        )}
+      </div>
+
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="input"
+        className="!bg-muted-foreground/40 !border-0 !w-2 !h-2"
+        style={{ top: "50%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="output"
+        className="!bg-muted-foreground/40 !border-0 !w-2 !h-2"
+      />
+    </div>
+  )
+}
+
+export default memo(ImageGenerationNode)
