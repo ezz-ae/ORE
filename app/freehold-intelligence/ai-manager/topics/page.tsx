@@ -1,238 +1,117 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { BookOpen, Plus, Sparkles, Calendar, Check, CheckCircle } from 'lucide-react'
+import { BookOpen, Plus, Sparkles, Check, CheckCircle, Loader2 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-type TopicStatus = 'Published' | 'Draft' | 'Scheduled' | 'Idea'
-type TopicCategory = 'Market News' | 'Area Guide' | 'Investment' | 'Legal' | 'Lifestyle'
+type TopicStatus = 'published' | 'draft'
 
-interface TopicRow {
+interface Topic {
+  id: string
   title: string
-  category: TopicCategory
   status: TopicStatus
-  scheduledDate?: string
-  words: number
-  seo: number
+  body: string
+  createdAt: string
 }
 
-const topics: TopicRow[] = [
-  {
-    title: 'Dubai Property Market Q2 2026 Report',
-    category: 'Market News',
-    status: 'Published',
-    words: 2800,
-    seo: 91,
-  },
-  {
-    title: 'Top 10 Areas for ROI in Dubai',
-    category: 'Investment',
-    status: 'Published',
-    words: 2400,
-    seo: 88,
-  },
-  {
-    title: 'Golden Visa: Complete Guide for Property Investors',
-    category: 'Legal',
-    status: 'Published',
-    words: 3100,
-    seo: 94,
-  },
-  {
-    title: 'Off Plan vs Ready Properties',
-    category: 'Investment',
-    status: 'Scheduled',
-    scheduledDate: '2026-06-10',
-    words: 1900,
-    seo: 82,
-  },
-  {
-    title: 'Dubai Hills Estate: Living Guide',
-    category: 'Area Guide',
-    status: 'Published',
-    words: 2600,
-    seo: 89,
-  },
-  {
-    title: 'How to Choose a Developer in Dubai',
-    category: 'Investment',
-    status: 'Draft',
-    words: 1400,
-    seo: 64,
-  },
-  {
-    title: 'Palm Jumeirah vs Dubai Marina',
-    category: 'Area Guide',
-    status: 'Scheduled',
-    scheduledDate: '2026-06-15',
-    words: 2100,
-    seo: 77,
-  },
-  {
-    title: 'UAE Mortgage Guide for Expats',
-    category: 'Legal',
-    status: 'Draft',
-    words: 1700,
-    seo: 58,
-  },
-  {
-    title: 'Property Tax in Dubai Explained',
-    category: 'Legal',
-    status: 'Idea',
-    words: 0,
-    seo: 0,
-  },
-  {
-    title: 'Best Family Communities 2026',
-    category: 'Lifestyle',
-    status: 'Idea',
-    words: 0,
-    seo: 0,
-  },
-  {
-    title: 'Binghatti vs DAMAC: Comparison',
-    category: 'Market News',
-    status: 'Draft',
-    words: 1600,
-    seo: 61,
-  },
-  {
-    title: 'Dubai Creek Harbour: Investment Outlook',
-    category: 'Area Guide',
-    status: 'Scheduled',
-    scheduledDate: '2026-06-20',
-    words: 2300,
-    seo: 80,
-  },
-]
+const FILTERS: Array<TopicStatus | 'all'> = ['all', 'published', 'draft']
 
-const FILTERS: Array<TopicStatus | 'All'> = ['All', 'Published', 'Draft', 'Scheduled', 'Idea']
-const CATEGORY_FILTERS: Array<TopicCategory | 'All'> = ['All', 'Market News', 'Area Guide', 'Investment', 'Legal', 'Lifestyle']
-
-function categoryBadge(cat: TopicCategory) {
-  if (cat === 'Market News') return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
-  if (cat === 'Area Guide')  return 'text-gold bg-gold/10 border-gold/20'
-  if (cat === 'Investment')  return 'text-gold bg-gold/10 border-gold/20'
-  if (cat === 'Legal')       return 'text-slate-400 bg-violet-500/10 border-violet-500/20'
-  return 'text-slate-400 bg-rose-500/10 border-rose-500/20'
-}
-
-function statusBadge(status: TopicStatus) {
-  if (status === 'Published')  return 'text-gold bg-gold/10 border-gold/20'
-  if (status === 'Scheduled')  return 'text-slate-400 bg-teal-500/10 border-teal-500/20'
-  if (status === 'Idea')       return 'text-slate-400 bg-surface-2 border-line-strong'
-  return 'text-slate-400 bg-surface-2 border-line-strong'
-}
-
-function seoColor(score: number) {
-  if (score === 0)   return 'text-slate-500'
-  if (score >= 80)   return 'text-gold'
-  if (score >= 60)   return 'text-gold'
-  return 'text-slate-400'
-}
+const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 
 export default function TopicsPage() {
   const t = useT()
 
   const statusKey: Record<TopicStatus, string> = {
-    Published: 'paim.topics.status.published',
-    Draft: 'paim.topics.status.draft',
-    Scheduled: 'paim.topics.status.scheduled',
-    Idea: 'paim.topics.status.idea',
+    published: 'paim.topics.status.published',
+    draft: 'paim.topics.status.draft',
   }
-  const categoryKey: Record<TopicCategory, string> = {
-    'Market News': 'paim.topics.cat.marketNews',
-    'Area Guide': 'paim.topics.cat.areaGuide',
-    Investment: 'paim.topics.cat.investment',
-    Legal: 'paim.topics.cat.legal',
-    Lifestyle: 'paim.topics.cat.lifestyle',
+  const filterKey: Record<TopicStatus | 'all', string> = {
+    all: 'paim.topics.filter.all',
+    published: 'paim.topics.filter.published',
+    draft: 'paim.topics.filter.draft',
   }
-  const statusFilterKey: Record<TopicStatus | 'All', string> = {
-    All: 'paim.topics.filter.all',
-    Published: 'paim.topics.filter.published',
-    Draft: 'paim.topics.filter.draft',
-    Scheduled: 'paim.topics.filter.scheduled',
-    Idea: 'paim.topics.filter.idea',
-  }
-  const categoryFilterKey: Record<TopicCategory | 'All', string> = {
-    All: 'paim.topics.filter.all',
-    'Market News': 'paim.topics.cat.marketNews',
-    'Area Guide': 'paim.topics.cat.areaGuide',
-    Investment: 'paim.topics.cat.investment',
-    Legal: 'paim.topics.cat.legal',
-    Lifestyle: 'paim.topics.cat.lifestyle',
-  }
-  const colKey = ['paim.topics.col.title', 'paim.topics.col.category', 'paim.topics.col.status', 'paim.topics.col.scheduled', 'paim.topics.col.words', 'paim.topics.col.seo', 'paim.topics.col.actions']
+  const colKey = ['paim.topics.col.title', 'paim.topics.col.status', 'paim.topics.col.words', 'paim.topics.col.actions']
 
-  const [activeFilter, setActiveFilter] = useState<TopicStatus | 'All'>('All')
-  const [categoryFilter, setCategoryFilter] = useState<TopicCategory | 'All'>('All')
-  const [topicStatuses, setTopicStatuses] = useState<Record<string, TopicStatus>>({})
-  const [flash, setFlash] = useState<string | null>(null)
+  const [items, setItems] = useState<Topic[] | null>(null)
+  const [activeFilter, setActiveFilter] = useState<TopicStatus | 'all'>('all')
   const [generating, setGenerating] = useState(false)
-  const [extraTopics, setExtraTopics] = useState<TopicRow[]>([])
-  const [draftingTitle, setDraftingTitle] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
-  function getStatus(topic: TopicRow): TopicStatus {
-    return topicStatuses[topic.title] ?? topic.status
+  const mapRow = (r: Record<string, unknown>): Topic => ({
+    id: String(r.id), title: String(r.name ?? ''), status: r.status === 'published' ? 'published' : 'draft',
+    body: typeof r.body === 'string' ? r.body : '', createdAt: String(r.created_at ?? ''),
+  })
+
+  async function load() {
+    const res = await fetch('/api/freehold/web-content?kind=topic', { cache: 'no-store' }).catch(() => null)
+    const d = res && res.ok ? await res.json().catch(() => null) : null
+    setItems(Array.isArray(d?.items) ? d.items.map(mapRow) : [])
   }
+  useEffect(() => { load() }, [])
 
-  function triggerFlash(msg: string) {
-    setFlash(msg)
-    setTimeout(() => setFlash(null), 2500)
-  }
-
-  function handlePublish(topic: TopicRow) {
-    setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Published' }))
-    triggerFlash(t('paim.topics.flash.published', { title: topic.title.slice(0, 45) }))
-  }
-
-  // Draft a real article for a topic via the AI endpoint; only mark it drafted
-  // once the server actually returns content.
-  async function handleGenerate(topic: TopicRow) {
-    setDraftingTitle(topic.title)
-    const res = await fetch('/api/freehold/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: `Write a publication-ready ${topic.category} article draft (300-400 words) for Freehold Property UAE titled "${topic.title}". Specific to Dubai real estate, no placeholders.`,
-      }),
-    }).catch(() => null)
-    setDraftingTitle(null)
-    if (!res || !res.ok) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
-    setTopicStatuses((prev) => ({ ...prev, [topic.title]: 'Draft' }))
-    triggerFlash(t('paim.topics.flash.generatedDraft', { title: topic.title.slice(0, 40) }))
-  }
-
-  // Ask the AI for a fresh topic idea and add it to the list.
+  // Ask the AI for a fresh topic title and create a real draft row.
   async function handleGenerateTopic() {
     setGenerating(true)
-    const res = await fetch('/api/freehold/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: 'Suggest ONE fresh, specific blog topic title for a Dubai real-estate audience (investors/buyers). Reply with the title only, no quotes, max 12 words.',
-      }),
-    }).catch(() => null)
-    setGenerating(false)
-    if (!res || !res.ok) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
-    const data = await res.json().catch(() => null) as { text?: string } | null
-    const title = (data?.text || '').split('\n')[0].replace(/^["'\s]+|["'\s]+$/g, '').slice(0, 90)
-    if (!title) { triggerFlash(t('paim.topics.flash.generateFailed')); return }
-    setExtraTopics((prev) => [{ title, category: 'Market News', status: 'Idea', words: 0, seo: 0 }, ...prev])
-    triggerFlash(t('paim.topics.flash.newTopic', { title: title.slice(0, 45) }))
+    try {
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Suggest ONE fresh, specific blog topic title for a Dubai real-estate audience (investors/buyers). Reply with the title only, no quotes, max 12 words.' }),
+      })
+      const data = await res.json().catch(() => null) as { text?: string } | null
+      const title = (data?.text || '').split('\n')[0].replace(/^["'\s]+|["'\s]+$/g, '').slice(0, 90)
+      if (!res.ok || !title) { toast.error(t('paim.topics.flash.generateFailed')); return }
+      const cr = await fetch('/api/freehold/web-content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'topic', name: title, status: 'draft' }),
+      })
+      if (!cr.ok) { toast.error(t('paim.topics.flash.generateFailed')); return }
+      toast.success(t('paim.topics.flash.newTopic', { title: title.slice(0, 45) }))
+      load()
+    } catch { toast.error(t('paim.topics.flash.generateFailed')) }
+    finally { setGenerating(false) }
   }
 
-  const filtered = useMemo(() => {
-    return [...extraTopics, ...topics].filter((t) => {
-      const status = getStatus(t)
-      if (activeFilter !== 'All' && status !== activeFilter) return false
-      if (categoryFilter !== 'All' && t.category !== categoryFilter) return false
-      return true
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilter, categoryFilter, topicStatuses, extraTopics])
+  // Generate a real article body for a topic and save it.
+  async function handleWrite(topic: Topic) {
+    setBusyId(topic.id)
+    try {
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: `Write a publication-ready blog article (400-600 words) for Freehold Property UAE titled "${topic.title}". Specific to Dubai real estate, no placeholders.` }),
+      })
+      const data = await res.json().catch(() => null) as { text?: string } | null
+      if (!res.ok || !data?.text) { toast.error(t('paim.topics.flash.generateFailed')); return }
+      const up = await fetch('/api/freehold/web-content', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: topic.id, body: data.text }),
+      })
+      if (!up.ok) { toast.error(t('paim.topics.flash.generateFailed')); return }
+      toast.success(t('paim.topics.flash.generatedDraft', { title: topic.title.slice(0, 40) }))
+      load()
+    } catch { toast.error(t('paim.topics.flash.generateFailed')) }
+    finally { setBusyId(null) }
+  }
+
+  async function handlePublish(topic: Topic) {
+    setBusyId(topic.id)
+    try {
+      const up = await fetch('/api/freehold/web-content', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: topic.id, status: 'published' }),
+      })
+      if (!up.ok) { toast.error(t('paim.topics.flash.generateFailed')); return }
+      toast.success(t('paim.topics.flash.published', { title: topic.title.slice(0, 45) }))
+      load()
+    } catch { toast.error(t('paim.topics.flash.generateFailed')) }
+    finally { setBusyId(null) }
+  }
+
+  const rows = items ?? []
+  const filtered = useMemo(
+    () => rows.filter((r) => activeFilter === 'all' || r.status === activeFilter),
+    [rows, activeFilter],
+  )
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -243,49 +122,30 @@ export default function TopicsPage() {
         {t('paim.topics.breadcrumb')}
       </div>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-          {t('paim.topics.title')}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{t('paim.topics.title')}</h1>
         <button
           disabled={generating}
           onClick={handleGenerateTopic}
           className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
         >
-          <Plus className="h-4 w-4" />
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {generating ? t('paim.topics.generating') : t('paim.topics.generateTopic')}
         </button>
       </div>
 
-      {/* Status filter pills */}
+      {/* Status filter */}
       <div className="mt-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
             key={f}
-            onClick={() => setActiveFilter(f as TopicStatus | 'All')}
+            onClick={() => setActiveFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition border ${
               activeFilter === f
                 ? 'bg-rose-500/10 border-rose-500/30 text-slate-300'
-                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200 hover:border-line-strong'
+                : 'border-line-strong bg-surface-2 text-slate-400 hover:text-slate-200'
             }`}
           >
-            {t(statusFilterKey[f])}
-          </button>
-        ))}
-      </div>
-      {/* Category filter */}
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {CATEGORY_FILTERS.map((c) => (
-          <button
-            key={c}
-            onClick={() => setCategoryFilter(c as TopicCategory | 'All')}
-            className={[
-              'rounded-full px-2.5 py-0.5 text-sm font-medium transition border',
-              categoryFilter === c
-                ? 'border-slate-500 bg-surface-3 text-slate-200'
-                : 'border-line-strong text-slate-500 hover:text-slate-300',
-            ].join(' ')}
-          >
-            {t(categoryFilterKey[c])}
+            {t(filterKey[f])}
           </button>
         ))}
       </div>
@@ -294,29 +154,21 @@ export default function TopicsPage() {
       <div className="mt-4 flex flex-wrap gap-3">
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">{t('paim.topics.stat.total')} </span>
-          <span className="font-semibold text-slate-100">{topics.length}</span>
+          <span className="font-semibold text-slate-100">{rows.length}</span>
         </div>
         <div className="rounded-xl border border-gold/20 bg-gold/10 px-4 py-2.5 text-sm">
           <span className="text-slate-500">{t('paim.topics.stat.published')} </span>
-          <span className="font-semibold text-gold">{topics.filter((row) => row.status === 'Published').length}</span>
-        </div>
-        <div className="rounded-xl border border-teal-500/20 bg-teal-500/10 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.topics.stat.scheduled')} </span>
-          <span className="font-semibold text-slate-400">{topics.filter((row) => row.status === 'Scheduled').length}</span>
+          <span className="font-semibold text-gold">{rows.filter((r) => r.status === 'published').length}</span>
         </div>
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span className="text-slate-500">{t('paim.topics.stat.draft')} </span>
-          <span className="font-semibold text-slate-400">{topics.filter((row) => row.status === 'Draft').length}</span>
-        </div>
-        <div className="rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span className="text-slate-500">{t('paim.topics.stat.ideas')} </span>
-          <span className="font-semibold text-slate-500">{topics.filter((row) => row.status === 'Idea').length}</span>
+          <span className="font-semibold text-slate-400">{rows.filter((r) => r.status === 'draft').length}</span>
         </div>
       </div>
 
       {/* Table */}
       <div className="mt-6 overflow-x-auto rounded-2xl border border-line bg-surface-2">
-        <table className="w-full min-w-[900px]">
+        <table className="w-full min-w-[720px]">
           <thead>
             <tr className="border-b border-line">
               {colKey.map((h) => (
@@ -327,80 +179,45 @@ export default function TopicsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-500">
-                  {t('paim.topics.empty')}
-                </td>
-              </tr>
-            ) : filtered.map((topic, i) => {
-              const effectiveStatus = getStatus(topic)
-              return (
-              <tr key={i} className="group transition hover:bg-surface-2">
+            {items == null ? (
+              <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-500"><Loader2 className="inline h-4 w-4 animate-spin" /></td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-slate-500">{t('paim.topics.empty')}</td></tr>
+            ) : filtered.map((topic) => (
+              <tr key={topic.id} className="group transition hover:bg-surface-2">
                 <td className="px-4 py-3.5">
                   <span className="text-sm font-medium leading-snug text-slate-300">{topic.title}</span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className={`inline-block rounded-full border px-2.5 py-0.5 text-sm font-medium ${categoryBadge(topic.category)}`}>
-                    {t(categoryKey[topic.category])}
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${topic.status === 'published' ? 'text-gold bg-gold/10 border-gold/20' : 'text-slate-400 bg-surface-2 border-line-strong'}`}>
+                    {topic.status === 'published' && <Check className="h-3 w-3" />}
+                    {t(statusKey[topic.status])}
                   </span>
-                </td>
-                <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(effectiveStatus)}`}>
-                    {effectiveStatus === 'Published' && <Check className="h-3 w-3" />}
-                    {effectiveStatus === 'Scheduled' && <Calendar className="h-3 w-3" />}
-                    {t(statusKey[effectiveStatus])}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5 text-xs text-slate-400">
-                  {topic.scheduledDate ?? '—'}
                 </td>
                 <td className="px-4 py-3.5 text-sm text-slate-400">
-                  {topic.words > 0 ? topic.words.toLocaleString() : '—'}
-                </td>
-                <td className="px-4 py-3.5">
-                  {topic.seo > 0 ? (
-                    <>
-                      <span className={`text-sm font-semibold ${seoColor(topic.seo)}`}>{topic.seo}</span>
-                      <span className="text-xs text-slate-500">{t('paim.topics.seoSuffix')}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-slate-500">—</span>
-                  )}
+                  {topic.body ? wordCount(topic.body).toLocaleString() : '—'}
                 </td>
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2">
-                    {effectiveStatus === 'Published' ? (
-                      <span className="flex items-center gap-1 text-sm text-gold">
-                        <CheckCircle className="h-3 w-3" /> {t('paim.topics.live')}
-                      </span>
+                    {topic.status === 'published' ? (
+                      <span className="flex items-center gap-1 text-sm text-gold"><CheckCircle className="h-3 w-3" /> {t('paim.topics.live')}</span>
                     ) : (
-                      <>
-                        <button onClick={() => toast.info(t('paim.topics.toast.editing', { title: topic.title }))} className="text-xs text-slate-400 transition hover:text-slate-200">{t('paim.topics.edit')}</button>
-                        <button
-                          disabled={draftingTitle === topic.title}
-                          onClick={() => effectiveStatus === 'Idea' ? handleGenerate(topic) : handlePublish(topic)}
-                          className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          {draftingTitle === topic.title ? t('paim.topics.generating') : effectiveStatus === 'Idea' ? t('paim.topics.generate') : t('paim.topics.publish')}
-                        </button>
-                      </>
+                      <button
+                        disabled={busyId === topic.id}
+                        onClick={() => (topic.body ? handlePublish(topic) : handleWrite(topic))}
+                        className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
+                      >
+                        {busyId === topic.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                        {busyId === topic.id ? t('paim.topics.generating') : topic.body ? t('paim.topics.publish') : t('paim.topics.generate')}
+                      </button>
                     )}
                   </div>
                 </td>
               </tr>
-              )
-            })}
+            ))}
           </tbody>
         </table>
       </div>
-
-      {flash && (
-        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full border border-gold/25 bg-surface px-5 py-2.5 text-sm font-medium text-gold shadow-xl">
-          {flash}
-        </div>
-      )}
     </div>
   )
 }
