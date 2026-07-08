@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { MapPin, Sparkles, Globe, Plus, RefreshCw, TrendingUp, FileText, Search } from 'lucide-react'
+import { MapPin, Sparkles, Globe, Plus, RefreshCw, TrendingUp, Search } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 interface AreaRow {
@@ -13,6 +13,8 @@ interface AreaRow {
   properties:  number
   leads30d:    number
   lastUpdated: string
+  id?:         string
+  custom?:     boolean
 }
 
 type FilterKey = 'All' | 'Published' | 'Draft' | 'Missing'
@@ -65,45 +67,50 @@ export default function AreaGuidesPage() {
   const [showNew,  setShowNew]  = useState(false)
   const [newName,  setNewName]  = useState('')
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/freehold/public/areas').then((r) => r.ok ? r.json() : { areas: [] }).catch(() => ({ areas: [] })),
-      fetch('/api/freehold/web-content?kind=area', { cache: 'no-store' }).then((r) => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
-    ])
-      .then(([data, custom]) => {
-        const mapped: AreaRow[] = (data.areas ?? []).map((a: {
-          slug: string; name: string; avg_score: number | null;
-          project_count: number | null; avg_yield: number | null
-        }) => ({
-          slug: a.slug,
-          name: a.name,
-          status: deriveStatus(a.avg_score, a.project_count),
-          seo: Math.min(100, Math.round((a.avg_score ?? 40) * 1.1)),
-          properties: a.project_count ?? 0,
-          leads30d: 0,
-          lastUpdated: new Date().toISOString().slice(0, 10),
-        }))
-        const customAreas: AreaRow[] = (custom.items ?? []).map((c: { slug: string; name: string; status: string; body?: string }) => ({
-          slug: c.slug,
-          name: c.name,
-          status: (c.status === 'published' ? 'Published' : 'Draft') as AreaRow['status'],
-          seo: c.body ? 60 : 20,
-          properties: 0,
-          leads30d: 0,
-          lastUpdated: new Date().toISOString().slice(0, 10),
-        }))
-        const seen = new Set(mapped.map((m) => m.slug))
-        setAreas([...customAreas.filter((c) => !seen.has(c.slug)), ...mapped])
-      })
-      .catch(() => toast.error(t('paim.areas.toastLoadFail')))
-      .finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    try {
+      const [data, custom] = await Promise.all([
+        fetch('/api/freehold/public/areas').then((r) => r.ok ? r.json() : { areas: [] }).catch(() => ({ areas: [] })),
+        fetch('/api/freehold/web-content?kind=area', { cache: 'no-store' }).then((r) => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] })),
+      ])
+      const mapped: AreaRow[] = (data.areas ?? []).map((a: {
+        slug: string; name: string; avg_score: number | null;
+        project_count: number | null; avg_yield: number | null
+      }) => ({
+        slug: a.slug,
+        name: a.name,
+        status: deriveStatus(a.avg_score, a.project_count),
+        seo: Math.round(a.avg_score ?? 0),
+        properties: a.project_count ?? 0,
+        leads30d: 0,
+        lastUpdated: '',
+      }))
+      const customAreas: AreaRow[] = (custom.items ?? []).map((c: { id: string; slug: string; name: string; status: string; body?: string; created_at?: string }) => ({
+        id: c.id,
+        custom: true,
+        slug: c.slug,
+        name: c.name,
+        status: (c.status === 'published' ? 'Published' : 'Draft') as AreaRow['status'],
+        seo: 0,
+        properties: 0,
+        leads30d: 0,
+        lastUpdated: (c.created_at ?? '').slice(0, 10),
+      }))
+      const seen = new Set(mapped.map((m) => m.slug))
+      setAreas([...customAreas.filter((c) => !seen.has(c.slug)), ...mapped])
+    } catch {
+      toast.error(t('paim.areas.toastLoadFail'))
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => { load() }, [])
 
   const filtered = areas
     .filter((a) => filter === 'All' || a.status === filter)
     .filter((a) => !search || a.name.toLowerCase().includes(search.toLowerCase()))
 
-  async function aiWrite(name: string) {
+  async function aiWrite(name: string, slug: string) {
     setWriting(name)
     try {
       const res = await fetch('/api/freehold/ai/generate', {
@@ -114,9 +121,17 @@ export default function AreaGuidesPage() {
       })
       const data = await res.json()
       if (!res.ok || !data.text) throw new Error(data?.error || 'AI failed')
-      try { await navigator.clipboard.writeText(data.text) } catch { /* clipboard optional */ }
+      // Persist the generated guide as a published web-content row (create, or
+      // update if a custom row already exists for this slug) — no clipboard-only.
+      const existing = areas.find((a) => a.slug === slug && a.custom)
+      const save = existing
+        ? fetch('/api/freehold/web-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: existing.id, body: data.text, status: 'published' }) })
+        : fetch('/api/freehold/web-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'area', name, slug, body: data.text, status: 'published' }) })
+      const saved = await save
+      if (!saved.ok) throw new Error('save failed')
       setWritten((p) => [...p, name])
-      toast.success(data.source === 'gemini' ? t('paim.areas.toastGeneratedCopied', { name }) : t('paim.areas.toastGenerated', { name }))
+      toast.success(t('paim.areas.toastGenerated', { name }))
+      load()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('paim.areas.toastGenFail'))
     } finally {
@@ -126,7 +141,6 @@ export default function AreaGuidesPage() {
 
   const published  = areas.filter((a) => a.status === 'Published').length
   const avgSeo     = areas.length ? Math.round(areas.reduce((s, a) => s + a.seo, 0) / areas.length) : 0
-  const totalLeads = areas.reduce((s, a) => s + a.leads30d, 0)
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -158,8 +172,7 @@ export default function AreaGuidesPage() {
                 })
                 const data = await res.json()
                 if (!res.ok) throw new Error(data?.error || 'Failed')
-                setAreas((prev) => [{ slug: data.item.slug, name: data.item.name, status: 'Draft', seo: 20, properties: 0, leads30d: 0, lastUpdated: new Date().toISOString().slice(0, 10) }, ...prev])
-                setShowNew(false); setNewName(''); toast.success(t('paim.areas.toastCreated'))
+                setShowNew(false); setNewName(''); toast.success(t('paim.areas.toastCreated')); load()
               } catch (err) { toast.error(err instanceof Error ? err.message : t('paim.areas.toastCreateFail')) }
             }}
               className="rounded-full border border-teal-400/25 bg-teal-400/[0.07] px-4 py-2 text-xs font-medium text-teal-400 transition hover:bg-teal-400/15">
@@ -170,11 +183,10 @@ export default function AreaGuidesPage() {
         </div>
       )}
 
-      <div className="mb-5 grid grid-cols-3 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3">
         {[
           { id: 'published', label: t('paim.areas.statPublished'), value: loading ? '…' : published, sub: t('paim.areas.statPublishedSub', { n: areas.length }), Icon: Globe,      color: 'text-emerald-400' },
           { id: 'avgSeo',    label: t('paim.areas.statAvgSeo'),    value: loading ? '…' : avgSeo,    sub: t('paim.areas.statAvgSeoSub'),           Icon: TrendingUp,  color: 'text-teal-400'     },
-          { id: 'leads',     label: t('paim.areas.statLeads'),     value: loading ? '…' : totalLeads, sub: t('paim.areas.statLeadsSub'),      Icon: FileText,    color: 'text-gold'   },
         ].map(({ id, label, value, sub, Icon, color }) => (
           <div key={id} className="rounded-xl border border-line bg-surface p-4">
             <Icon className={`h-4 w-4 ${color}`} />
@@ -235,7 +247,7 @@ export default function AreaGuidesPage() {
               </div>
               <div className="flex justify-center">{seoBar(a.seo)}</div>
               <div className="flex items-center gap-1.5 justify-center">
-                <button onClick={() => aiWrite(a.name)} disabled={isWriting}
+                <button onClick={() => aiWrite(a.name, a.slug)} disabled={isWriting}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                     isWritten ? 'border-emerald-400/20 text-emerald-400' : 'border-teal-400/20 bg-teal-400/[0.06] text-teal-400/80 hover:bg-teal-400/15'
                   } disabled:opacity-50`}>
