@@ -18,7 +18,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Users, Megaphone, DollarSign, TrendingUp, Bot, Package,
-  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle,
+  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard,
 } from 'lucide-react'
 import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
@@ -111,6 +111,14 @@ export const APPS: AppDef[] = [
     metric: 'AI research workspace', badge: 0, accent: '#F472B6',
     card: 'border-pink-400/15 hover:border-pink-400/30',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+  },
+  {
+    id: 'creative-studio', label: 'Creative Studio', sub: 'Agentic · Video · Landings · Ads',
+    href: '/freehold-intelligence/creative-studio', Icon: Clapperboard,
+    metric: 'Visual AI workflow builder', badge: 0, accent: '#A78BFA',
+    card: 'border-violet-400/15 hover:border-violet-400/30',
+    icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
+    roles: STUDIO_ROLES,
   },
   {
     id: 'integrations', label: 'Integrations', sub: 'Meta · Google · HubSpot · Zapier',

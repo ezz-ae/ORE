@@ -134,7 +134,7 @@ export function ExecutionPanel({
     })
 
     try {
-      const response = await fetch("/api/execute-workflow", {
+      const response = await fetch("/api/freehold/creative-studio/execute-workflow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
