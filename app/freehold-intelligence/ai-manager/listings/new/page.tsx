@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Sparkles, ArrowLeft, Check, Image, Save } from 'lucide-react'
+import { Sparkles, ArrowLeft, Check, Save } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 const PROPERTY_TYPES = ['apartment', 'villa', 'townhouse', 'penthouse', 'duplex', 'commercial']
@@ -13,17 +13,64 @@ const STATUSES = ['offPlan', 'ready', 'underConstruction', 'comingSoon', 'soldOu
 export default function NewListingPage() {
   const t = useT()
   const router = useRouter()
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [state, setState] = useState<{ generating: boolean; generated: boolean }>({
-    generating: false,
-    generated: false,
-  })
+  const [form, setForm] = useState({ name: '', area: '', developer: '', price: '', type: '', status: '', bedrooms: '' })
+  const [content, setContent] = useState({ description: '', features: '', seo: '' })
+  const [generating, setGenerating] = useState(false)
+  const [generated, setGenerated] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const set = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
-  function handleGenerate() {
-    setState({ generating: true, generated: false })
-    setTimeout(() => {
-      setState({ generating: false, generated: true })
-    }, 1200)
+  async function handleGenerate() {
+    if (!form.name.trim()) { toast.error(t('plistnew.toast.nameFirst')); return }
+    setGenerating(true)
+    try {
+      const facts = [form.name, form.area && `in ${form.area}`, form.developer && `by ${form.developer}`,
+        form.type, form.status, form.bedrooms && `${form.bedrooms} bedrooms`, form.price && `priced ${form.price}`]
+        .filter(Boolean).join(', ')
+      const prompt = `Write publication-ready copy for this Dubai property listing: ${facts}.\n`
+        + `Return three clearly separated sections with these exact headers:\n`
+        + `## DESCRIPTION\n(2 short paragraphs)\n## FEATURES\n(5-7 bullet points)\n## SEO\n(a single meta description under 160 characters)`
+      const res = await fetch('/api/freehold/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.text) throw new Error(data?.error || 'failed')
+      const text: string = data.text
+      const grab = (h: string, next: string[]) => {
+        const re = new RegExp(`##\\s*${h}\\s*([\\s\\S]*?)(?=##\\s*(?:${next.join('|')})|$)`, 'i')
+        return (text.match(re)?.[1] ?? '').trim()
+      }
+      const description = grab('DESCRIPTION', ['FEATURES', 'SEO']) || text
+      const features = grab('FEATURES', ['SEO'])
+      const seo = grab('SEO', []).slice(0, 160)
+      setContent({ description, features, seo })
+      setGenerated(true)
+    } catch {
+      toast.error(t('plistnew.toast.genFailed'))
+    } finally { setGenerating(false) }
+  }
+
+  async function save(status: 'draft' | 'published') {
+    if (!form.name.trim()) { toast.error(t('plistnew.toast.nameFirst')); return }
+    setSaving(true)
+    try {
+      const body = [
+        content.description && `## Description\n${content.description}`,
+        content.features && `## Features\n${content.features}`,
+        content.seo && `## SEO\n${content.seo}`,
+        `## Details\n- Area: ${form.area || '—'}\n- Developer: ${form.developer || '—'}\n- Type: ${form.type || '—'}\n- Status: ${form.status || '—'}\n- Bedrooms: ${form.bedrooms || '—'}\n- Price: ${form.price || '—'}`,
+      ].filter(Boolean).join('\n\n')
+      const res = await fetch('/api/freehold/web-content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'listing', name: form.name.trim(), slug: form.name.trim(), body, status }),
+      })
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d?.error || 'failed') }
+      toast.success(status === 'published' ? t('plistnew.toast.published') : t('plistnew.toast.savedDraft'))
+      router.push('/freehold-intelligence/ai-manager/listings')
+    } catch {
+      toast.error(t('plistnew.toast.saveFailed'))
+    } finally { setSaving(false) }
   }
 
   return (
@@ -54,11 +101,13 @@ export default function NewListingPage() {
         </div>
         <div className="rounded-2xl border border-line bg-surface-2 p-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {['name', 'area', 'developer', 'price'].map((field) => (
+            {(['name', 'area', 'developer', 'price'] as const).map((field) => (
               <div key={field}>
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">{t(`plistnew.field.${field}.label`)}</label>
                 <input
                   type="text"
+                  value={form[field]}
+                  onChange={(e) => set(field, e.target.value)}
                   placeholder={t(`plistnew.field.${field}.ph`)}
                   className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
                 />
@@ -68,22 +117,24 @@ export default function NewListingPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.type.label')}</label>
-              <select className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
+              <select value={form.type} onChange={(e) => set('type', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
                 <option value="">{t('plistnew.field.type.ph')}</option>
-                {PROPERTY_TYPES.map((pt) => <option key={pt}>{t(`plistnew.type.${pt}`)}</option>)}
+                {PROPERTY_TYPES.map((pt) => <option key={pt} value={t(`plistnew.type.${pt}`)}>{t(`plistnew.type.${pt}`)}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.status.label')}</label>
-              <select className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
+              <select value={form.status} onChange={(e) => set('status', e.target.value)} className="w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-slate-300 focus:border-rose-500/40 focus:outline-none">
                 <option value="">{t('plistnew.field.status.ph')}</option>
-                {STATUSES.map((s) => <option key={s}>{t(`plistnew.statusOpt.${s}`)}</option>)}
+                {STATUSES.map((s) => <option key={s} value={t(`plistnew.statusOpt.${s}`)}>{t(`plistnew.statusOpt.${s}`)}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.bedrooms.label')}</label>
               <input
                 type="text"
+                value={form.bedrooms}
+                onChange={(e) => set('bedrooms', e.target.value)}
                 placeholder={t('plistnew.field.bedrooms.ph')}
                 className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
               />
@@ -101,10 +152,10 @@ export default function NewListingPage() {
         <div className="rounded-2xl border border-line bg-surface-2 p-6 space-y-5">
           <button
             onClick={handleGenerate}
-            disabled={state.generating}
+            disabled={generating}
             className="flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/20 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-rose-500/20 disabled:opacity-60"
           >
-            {state.generating ? (
+            {generating ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-rose-400/30 border-t-rose-400" />
                 {t('plistnew.generating')}
@@ -117,7 +168,7 @@ export default function NewListingPage() {
             )}
           </button>
 
-          {state.generated && (
+          {generated && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <div className="flex items-center gap-1.5 text-xs text-gold">
                 <Check className="h-3.5 w-3.5" />
@@ -128,8 +179,9 @@ export default function NewListingPage() {
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.description.label')}</label>
                 <textarea
                   rows={5}
+                  value={content.description}
+                  onChange={(e) => setContent((p) => ({ ...p, description: e.target.value }))}
                   className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
-                  defaultValue={t('plistnew.field.description.value')}
                 />
               </div>
 
@@ -137,8 +189,9 @@ export default function NewListingPage() {
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.features.label')}</label>
                 <textarea
                   rows={4}
+                  value={content.features}
+                  onChange={(e) => setContent((p) => ({ ...p, features: e.target.value }))}
                   className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
-                  defaultValue={t('plistnew.field.features.value')}
                 />
               </div>
 
@@ -150,8 +203,9 @@ export default function NewListingPage() {
                 <textarea
                   rows={2}
                   maxLength={160}
+                  value={content.seo}
+                  onChange={(e) => setContent((p) => ({ ...p, seo: e.target.value }))}
                   className="w-full rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-slate-100 focus:border-rose-500/40 focus:outline-none resize-none"
-                  defaultValue={t('plistnew.field.seo.value')}
                 />
               </div>
             </div>
@@ -159,53 +213,20 @@ export default function NewListingPage() {
         </div>
       </section>
 
-      {/* Step 3 */}
-      <section className="mt-8">
-        <div className="flex items-center gap-2 mb-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500/20 text-sm font-bold text-slate-400">3</span>
-          <h2 className="text-sm font-semibold text-slate-100">{t('plistnew.step3.title')}</h2>
-        </div>
-        <div className="rounded-2xl border border-line bg-surface-2 p-6">
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.10] bg-surface-2 py-10 gap-3">
-            <Image className="h-8 w-8 text-slate-600" />
-            <p className="text-sm text-slate-500">{t('plistnew.dropzone')}</p>
-            <input
-              type="file"
-              ref={fileRef}
-              multiple
-              className="hidden"
-              onChange={(e) => toast.success(t('plistnew.toast.filesAdded', { n: e.target.files?.length ?? 0 }))}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="rounded-lg border border-white/[0.10] bg-surface-2 px-4 py-2 text-xs text-slate-400 hover:text-slate-100 transition"
-            >
-              {t('plistnew.chooseFiles')}
-            </button>
-          </div>
-          <div className="mt-4">
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">{t('plistnew.field.imageCount.label')}</label>
-            <input
-              type="number"
-              placeholder="0"
-              className="w-28 rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500/40 focus:outline-none"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <button
-          onClick={() => { toast.success(t('plistnew.toast.savedDraft')); router.push('/freehold-intelligence/ai-manager/listings') }}
-          className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white"
+          onClick={() => save('draft')}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl border border-white/[0.10] bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:text-white disabled:opacity-60"
         >
           <Save className="h-4 w-4" />
           {t('plistnew.saveDraft')}
         </button>
         <button
-          onClick={() => { toast.success(t('plistnew.toast.published')); router.push('/freehold-intelligence/ai-manager/listings') }}
-          className="flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rose-500/80"
+          onClick={() => save('published')}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-rose-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-rose-500/80 disabled:opacity-60"
         >
           <Check className="h-4 w-4" />
           {t('plistnew.publish')}
