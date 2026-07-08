@@ -40,6 +40,7 @@ export default function ApiPage() {
           {t('settings.api.subtitlePrefix')}{' '}
           <Link href="/freehold-intelligence/settings/security" className="text-gold/80 hover:text-gold underline underline-offset-2">{t('settings.api.securityLink')}</Link>
         </p>
+        <p className="mt-2 text-xs text-slate-500">{t('settings.api.referenceNote')}</p>
       </div>
 
       {/* Base URL */}
