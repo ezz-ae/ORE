@@ -16,9 +16,12 @@ export default async function ServerStatusPage() {
   const integrations = await getIntegrationStatusSummary().catch(() => null)
   const stateOf = (id: string) =>
     integrations?.statuses.find((x) => x.id === id)?.state === 'connected' ? 'live' : 'pending'
+  // The runtime is serving this request, so "live" reflects the real fact that
+  // this server component executed and its own status probe succeeded.
+  const runtimeLive = integrations != null ? 'live' : 'pending'
   const INFRA = [
     { label: t('pss.infra.neon.label'),    status: stateOf('neon'),    note: t('pss.infra.neon.note') },
-    { label: t('pss.infra.vercel.label'),  status: 'live',             note: t('pss.infra.vercel.note') },
+    { label: t('pss.infra.vercel.label'),  status: runtimeLive,        note: t('pss.infra.vercel.note') },
     { label: t('pss.infra.mcp.label'),     status: stateOf('ai'),      note: t('pss.infra.mcp.note') },
     { label: t('pss.infra.auth.label'),    status: stateOf('session'), note: t('pss.infra.auth.note') },
   ] as const

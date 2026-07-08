@@ -18,22 +18,9 @@ type ApiKey = {
   active: boolean
 }
 
-const INITIAL_KEYS: ApiKey[] = [
-  { id: 'k1', name: 'Production — Lead Machine', prefix: 'fh_prod_7x3k', scopes: ['leads:read', 'campaigns:write'], createdAt: '2026-01-10', lastUsed: '2026-06-06', active: true },
-  { id: 'k2', name: 'HubSpot Sync',              prefix: 'fh_prod_9m2n', scopes: ['crm:read', 'crm:write'],        createdAt: '2026-03-22', lastUsed: '2026-06-05', active: true },
-  { id: 'k3', name: 'Analytics Export',          prefix: 'fh_prod_4p1q', scopes: ['analytics:read'],               createdAt: '2026-05-01', lastUsed: '2026-05-28', active: false },
-]
-
-const AUDIT_LOG = [
-  { time: '2026-06-06 09:14', event: 'Login',             detail: 'faisal@freeholdproperty.ae',  ip: '88.99.120.44',   ok: true  },
-  { time: '2026-06-05 17:32', event: 'API key used',      detail: 'Production — Lead Machine',   ip: '35.180.12.7',    ok: true  },
-  { time: '2026-06-05 09:00', event: 'Login',             detail: 'sara@freeholdproperty.ae',    ip: '77.241.18.93',   ok: true  },
-  { time: '2026-06-04 22:11', event: 'Failed login',      detail: 'unknown@gmail.com',           ip: '193.104.201.50', ok: false },
-  { time: '2026-06-04 14:05', event: 'Settings changed',  detail: 'Lead pool quotas updated',    ip: '88.99.120.44',   ok: true  },
-  { time: '2026-06-03 10:44', event: 'API key created',   detail: 'HubSpot Sync',                ip: '88.99.120.44',   ok: true  },
-]
-
 const ALL_SCOPES = ['leads:read', 'leads:write', 'crm:read', 'crm:write', 'campaigns:read', 'campaigns:write', 'analytics:read', 'finance:read']
+
+type AuditRow = { id: string; event: string; detail: string; actor: string; time: string }
 
 export default function SecurityPage() {
   const { t, locale } = useI18n()
@@ -44,7 +31,8 @@ export default function SecurityPage() {
   const [revealed, setRevealed] = useState<string | null>(null)
   const [newSecret, setNewSecret] = useState<string | null>(null)
   const [copied, setCopied]   = useState<string | null>(null)
-  const [twoFaOn, setTwoFaOn] = useState(true)
+  const [twoFaOn, setTwoFaOn] = useState(false)
+  const [audit, setAudit]     = useState<AuditRow[]>([])
 
   function loadKeys() {
     fetch('/api/freehold/settings/api-keys', { cache: 'no-store' })
@@ -63,6 +51,21 @@ export default function SecurityPage() {
     fetch('/api/freehold/settings', { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.settings && typeof d.settings.twoFa === 'boolean') setTwoFaOn(d.settings.twoFa) })
+      .catch(() => {})
+    // Real audit trail from the shared activity log (same source the Security
+    // dashboard uses) — no fabricated logins/IPs.
+    fetch('/api/freehold/crm/activity', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (!Array.isArray(d?.activity)) return
+        setAudit(d.activity.slice(0, 12).map((r: { id: string; activity_type: string; created_at: string; lead_name: string | null; actor?: string | null }) => ({
+          id: String(r.id),
+          event: r.activity_type,
+          detail: r.lead_name ?? '—',
+          actor: r.actor ?? '—',
+          time: r.created_at,
+        })))
+      })
       .catch(() => {})
   }, [])
 
@@ -290,21 +293,27 @@ export default function SecurityPage() {
       <section>
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('settings.security.auditLog')}</div>
         <div className="rounded-[18px] border border-line bg-surface overflow-hidden">
-          <div className="divide-y divide-line">
-            {AUDIT_LOG.map((entry, i) => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3">
-                <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${entry.ok ? 'bg-emerald-400/60' : 'bg-red-400'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-sm font-medium ${entry.ok ? 'text-slate-100' : 'text-red-400/90'}`}>{entry.event}</span>
-                    <span className="text-xs text-slate-400 truncate">{entry.detail}</span>
+          {audit.length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-slate-500">{t('settings.security.auditEmpty')}</div>
+          ) : (
+            <div className="divide-y divide-line">
+              {audit.map((entry) => (
+                <div key={entry.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400/60" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-slate-100 capitalize">{entry.event.replace(/_/g, ' ')}</span>
+                      <span className="text-xs text-slate-400 truncate">{entry.detail}</span>
+                    </div>
+                    <div className="text-xs text-slate-600">{entry.actor}</div>
                   </div>
-                  <div className="text-xs text-slate-600">{entry.ip}</div>
+                  <span className="shrink-0 text-xs text-slate-600 tabular-nums whitespace-nowrap">
+                    {new Date(entry.time).toLocaleDateString(locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE', { day: 'numeric', month: 'short' })}
+                  </span>
                 </div>
-                <span className="shrink-0 text-xs text-slate-600 tabular-nums whitespace-nowrap">{entry.time.split(' ')[1]}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

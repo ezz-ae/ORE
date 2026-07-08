@@ -102,9 +102,11 @@ export default function MarketingAnalyticsPage() {
         <section>
           <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
             {t('analytics.sec.channels')}
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
-              <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
-            </span>
+            {channels.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+                <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
+              </span>
+            )}
           </div>
           <div className="rounded-xl border border-line bg-white/[0.05] p-5">
             {channels.length > 0 ? (
@@ -130,9 +132,11 @@ export default function MarketingAnalyticsPage() {
         <section>
           <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
             {t('analytics.kpi.adSpend')}
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
-              <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
-            </span>
+            {spend && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+                <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl border border-line bg-white/[0.05] p-5">
@@ -154,9 +158,11 @@ export default function MarketingAnalyticsPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
             {t('analytics.mk.breakdown')}
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
-              <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
-            </span>
+            {rows && rows.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+                <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1">

@@ -118,7 +118,10 @@ export default function TasksPage() {
     const open = tasks.filter(t => effectiveStatus(t) !== 'done').length
     const critical = tasks.filter(t => t.priority === 'critical').length
     const blocked = tasks.filter(t => effectiveStatus(t) === 'blocked').length
-    const dueToday = tasks.filter(t => t.dueDate === 'Today' && effectiveStatus(t) !== 'done').length
+    // Match a literal "Today" label OR a real ISO date equal to today.
+    const todayIso = new Date().toISOString().slice(0, 10)
+    const dueToday = tasks.filter(t => effectiveStatus(t) !== 'done' && t.dueDate
+      && (t.dueDate === 'Today' || t.dueDate.slice(0, 10) === todayIso)).length
     return { open, critical, blocked, dueToday }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, statuses])
@@ -430,13 +433,15 @@ export default function TasksPage() {
         </form>
       </section>
 
-      {/* AI take */}
+      {/* Focus — a real summary computed from the loaded tasks */}
       <section className="mt-8 rounded-[22px] border border-gold/15 bg-gold/[0.03] px-6 py-7">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/80 mb-3">
-          <Sparkles className="h-3 w-3" /> {t('ptasks.ai.title')}
+          <Sparkles className="h-3 w-3" /> {t('ptasks.focus.title')}
         </div>
         <p className="text-base font-medium leading-[1.65] text-slate-100">
-          {t('ptasks.ai.body')}
+          {stats.open === 0
+            ? t('ptasks.focus.clear')
+            : t('ptasks.focus.summary', { open: stats.open, blocked: stats.blocked, critical: stats.critical, due: stats.dueToday })}
         </p>
       </section>
 

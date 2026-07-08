@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
-  Sparkles,
   ArrowUpRight,
   BarChart3,
   Database,
@@ -161,9 +160,9 @@ export default function IntegrationsPage() {
       {/* Critical blockers */}
       {critical.length > 0 && (
         <section className="mt-20">
-          <div className="text-sm font-medium uppercase tracking-wider text-red-300/85">Must clear before launch</div>
+          <div className="text-sm font-medium uppercase tracking-wider text-red-300/85">{t('integrations.mustClear')}</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
-            {critical.length} {critical.length === 1 ? 'thing is' : 'things are'} holding back the server
+            {critical.length === 1 ? t('integrations.blockersOne') : t('integrations.blockersMany', { count: critical.length })}
           </h2>
           <div className="mt-7 grid gap-4">
             {critical.map((b: any) => (
@@ -179,7 +178,7 @@ export default function IntegrationsPage() {
                     <h3 className="mt-2 text-lg font-semibold text-white">{b.title || b.message}</h3>
                   </div>
                   <span className="shrink-0 rounded-full border border-red-400/25 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-red-200">
-                    Critical
+                    {t('integrations.critical')}
                   </span>
                 </div>
                 {(b.description || b.resolutionSteps?.[0]) && (
@@ -289,15 +288,6 @@ export default function IntegrationsPage() {
         )}
       </div>
 
-      {/* AI take footer */}
-      <section className="mt-20 rounded-[28px] border border-line bg-surface-2 px-7 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-gold/80">
-          <Sparkles className="h-3 w-3" /> AI take
-        </div>
-        <p className="mt-3 text-[17px] font-medium leading-[1.65] text-slate-100 sm:text-lg">
-          The fastest path to launch is to confirm the Meta billing owner. Once that's cleared, conversion event mapping is a single check on the tracking side, and Dubai Hills can move into a paid campaign immediately.
-        </p>
-      </section>
     </div>
   )
 }

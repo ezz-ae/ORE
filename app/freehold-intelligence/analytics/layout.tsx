@@ -71,10 +71,6 @@ export default function AnalyticsLayout({ children }: { children: React.ReactNod
           </div>
           <span className="text-sm font-semibold text-white">{t('analytics.title')}</span>
         </div>
-        <div className="ml-auto flex items-center gap-2 text-sm text-slate-400">
-          <span className="h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-          {t('analytics.live')}
-        </div>
       </header>
 
       {/* Section sub-nav */}

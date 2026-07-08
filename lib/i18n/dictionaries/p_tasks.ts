@@ -38,6 +38,9 @@ const en: Dict = {
   'ptasks.create.submit': 'Create task',
   // AI take
   'ptasks.ai.title': 'AI take',
+  'ptasks.focus.title': 'Focus',
+  'ptasks.focus.clear': 'No open tasks — the queue is clear.',
+  'ptasks.focus.summary': '{open} open · {blocked} blocked · {critical} critical · {due} due today. Clear blockers first, then the critical items.',
   'ptasks.ai.body': 'The two blocked tasks (Meta billing, auth middleware) have the highest downstream impact. Billing unblocks the entire campaign pipeline. After that, the Palm landing approval and the CRM lead review are both achievable today and unlock agent momentum immediately.',
 }
 
@@ -78,6 +81,9 @@ const ar: Dict = {
   'ptasks.create.submit': 'إنشاء المهمة',
   // AI take
   'ptasks.ai.title': 'رأي الذكاء الاصطناعي',
+  'ptasks.focus.title': 'التركيز',
+  'ptasks.focus.clear': 'لا توجد مهام مفتوحة — القائمة خالية.',
+  'ptasks.focus.summary': '{open} مفتوحة · {blocked} متوقفة · {critical} حرجة · {due} مستحقة اليوم. عالج المعوّقات أولًا، ثم العناصر الحرجة.',
   'ptasks.ai.body': 'المهمتان المعطّلتان (فوترة Meta، الوسيط البرمجي للمصادقة) لهما أكبر أثر لاحق. تُحرِّر الفوترة مسار الحملات بالكامل. بعد ذلك، تُعد موافقة صفحة هبوط Palm ومراجعة العميل المحتمل في CRM قابلتين للإنجاز اليوم وتُطلقان زخم الوكلاء على الفور.',
 }
 
@@ -118,6 +124,9 @@ const ru: Dict = {
   'ptasks.create.submit': 'Создать задачу',
   // AI take
   'ptasks.ai.title': 'Мнение ИИ',
+  'ptasks.focus.title': 'Фокус',
+  'ptasks.focus.clear': 'Нет открытых задач — очередь пуста.',
+  'ptasks.focus.summary': '{open} открытых · {blocked} заблокировано · {critical} критических · {due} на сегодня. Сначала снимите блокировки, затем критические.',
   'ptasks.ai.body': 'Две заблокированные задачи (биллинг Meta, middleware авторизации) имеют наибольшее влияние на остальные. Биллинг разблокирует весь конвейер кампаний. После этого одобрение лендинга Palm и проверка лида в CRM выполнимы уже сегодня и сразу запускают импульс агентов.',
 }
 
