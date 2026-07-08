@@ -1,42 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { BarChart3, ArrowUpRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { useSession } from '@/lib/freehold/use-session'
-import { siteAnalytics } from '@/src/features/freehold-intelligence/analytics'
 import { prettySource, fmtAed } from '@/lib/freehold/analytics-format'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 
 type Live = { sources: { label: string; count: number }[] } | null
-
-function formatDuration(seconds: number): string {
-  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-}
-
-// Two-series traffic sparkline (sample data).
-function SparklineChart({ daily }: { daily: { pageViews: number; uniqueVisitors: number }[] }) {
-  const W = 600, H = 110, PAD_B = 4
-  const max = Math.max(1, ...daily.map((d) => Math.max(d.pageViews, d.uniqueVisitors)))
-  const toX = (i: number) => (daily.length <= 1 ? 0 : (i / (daily.length - 1)) * W)
-  const toY = (v: number) => H - PAD_B - (v / max) * (H - PAD_B - 8)
-  const pv = daily.map((d, i) => `${toX(i)},${toY(d.pageViews)}`).join(' ')
-  const uv = daily.map((d, i) => `${toX(i)},${toY(d.uniqueVisitors)}`).join(' ')
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: 110 }} aria-hidden="true">
-      <line x1="0" y1={H - PAD_B} x2={W} y2={H - PAD_B} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-      <polyline points={pv} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-      <polyline points={uv} fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function SampleTag({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-400/80">
-      {label}
-    </span>
-  )
-}
 
 type BreakRow = { key: string; label: string; leads: number; closed: number; convRate: number; hotShare: number; avgBudget: number; score: number }
 
@@ -44,7 +16,6 @@ export default function MarketingAnalyticsPage() {
   const t = useT()
   const { user } = useSession()
   const role = user?.role
-  const a = siteAnalytics
   const [live, setLive] = useState<Live>(null)
   const [spend, setSpend] = useState<{ total: number; last30: number } | null>(null)
   const [dim, setDim] = useState<'source' | 'country' | 'agent'>('source')
@@ -86,7 +57,6 @@ export default function MarketingAnalyticsPage() {
 
   const channels = live?.sources ?? []
   const maxChannel = Math.max(1, ...channels.map((c) => c.count))
-  const totalDeviceSessions = useMemo(() => a.devices.reduce((s, d) => s + d.sessions, 0), [a.devices])
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -223,92 +193,26 @@ export default function MarketingAnalyticsPage() {
         </div>
       </section>
 
-      {/* Sample web-traffic banner */}
-      <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <SampleTag label={t('analytics.sample')} />
-          <span className="text-sm text-slate-300">{t('analytics.sec.trafficBlock')}</span>
-        </div>
-        <p className="mt-1.5 text-xs text-slate-500">{t('analytics.sampleTraffic')}</p>
-      </div>
-
-      {/* Sample KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
-          <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.pageViews')}</div><SampleTag label={t('analytics.sample')} /></div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{a.totalPageViews.toLocaleString('en-US')}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
-          <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.uniqueVisitors')}</div><SampleTag label={t('analytics.sample')} /></div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{a.totalUniqueSessions.toLocaleString('en-US')}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
-          <div className="flex items-center justify-between"><div className="text-xs font-medium uppercase tracking-wider text-slate-400">{t('analytics.kpi.avgSession')}</div><SampleTag label={t('analytics.sample')} /></div>
-          <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{formatDuration(a.avgSessionDuration)}</div>
-        </div>
-      </div>
-
-      {/* Sample daily traffic */}
+      {/* Web traffic — real numbers require a connected analytics provider.
+          No fabricated visitor/pageview data is shown. */}
       <section>
-        <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.dailyTraffic')} <SampleTag label={t('analytics.sample')} /></div>
-        <div className="rounded-xl border border-line bg-white/[0.05] p-5">
-          <SparklineChart daily={a.daily} />
-          <div className="mt-3 flex items-center gap-5">
-            <div className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-white/60" /><span className="text-xs text-slate-400">{t('analytics.kpi.pageViews')}</span></div>
-            <div className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: '#D4AF37' }} /><span className="text-xs text-slate-400">{t('analytics.kpi.uniqueVisitors')}</span></div>
+        <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
+          {t('analytics.sec.trafficBlock')}
+        </div>
+        <div className="rounded-xl border border-line bg-white/[0.03] px-6 py-10 text-center">
+          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-white/[0.04]">
+            <BarChart3 className="h-5 w-5 text-slate-400" />
           </div>
+          <div className="text-sm font-medium text-slate-200">{t('analytics.traffic.connectTitle')}</div>
+          <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-slate-500">{t('analytics.traffic.connectBody')}</p>
+          <Link
+            href="/freehold-intelligence/integrations"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] px-4 py-2 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/[0.14]"
+          >
+            {t('analytics.traffic.connectCta')} <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </section>
-
-      {/* Sample top pages + devices */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.topPages')} <SampleTag label={t('analytics.sample')} /></div>
-          <div className="overflow-hidden rounded-xl border border-line bg-white/[0.05]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line">
-                  <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.page')}</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.views')}</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500">{t('analytics.th.bounce')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.08]">
-                {a.topPages.slice(0, 6).map((p) => (
-                  <tr key={p.path} className="transition hover:bg-white/[0.04]">
-                    <td className="px-5 py-3">
-                      <div className="font-medium text-slate-300">{p.title}</div>
-                      <div className="mt-0.5 font-mono text-xs text-slate-500">{p.path}</div>
-                    </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-slate-300">{p.pageViews.toLocaleString('en-US')}</td>
-                    <td className="px-5 py-3 text-right tabular-nums text-slate-400">{Math.round(p.bounceRate * 100)}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section>
-          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">{t('analytics.sec.devices')} <SampleTag label={t('analytics.sample')} /></div>
-          <div className="space-y-3">
-            {a.devices.map((d) => {
-              const pct = Math.round((d.sessions / totalDeviceSessions) * 100)
-              return (
-                <div key={d.device} className="rounded-xl border border-line bg-white/[0.05] p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium uppercase tracking-wider text-slate-400 capitalize">{d.device}</span>
-                    <span className="text-xs font-semibold text-slate-300">{pct}%</span>
-                  </div>
-                  <div className="mt-2 h-1.5 w-full rounded-full bg-white/[0.08]">
-                    <div className="h-full rounded-full bg-violet-500" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      </div>
     </div>
   )
 }

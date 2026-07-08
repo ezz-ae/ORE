@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { LOCALES, LOCALE_LABELS, normalizeLocale, type Locale } from "@/lib/i18n/config"
+import { geminiGenerate, geminiText } from "@/lib/gemini-rest"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -46,25 +47,8 @@ export async function POST(req: NextRequest) {
     `Return ONLY the translated text with no quotes, labels, or commentary.`
 
   try {
-    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp"
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: `${system}\n\nTEXT:\n${text}` }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
-        }),
-      },
-    )
-    if (!res.ok) {
-      const detail = await res.text().catch(() => `HTTP ${res.status}`)
-      console.error("[i18n/translate] gemini error", detail)
-      return NextResponse.json({ text, to, source: "error", translated: false }, { status: 502 })
-    }
-    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-    const out = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
+    const data = await geminiGenerate(apiKey, [{ role: "user", parts: [{ text: `${system}\n\nTEXT:\n${text}` }] }], { temperature: 0.2, maxOutputTokens: 2048 })
+    const out = geminiText(data)
     if (!out) return NextResponse.json({ text, to, source: "error", translated: false }, { status: 502 })
     return NextResponse.json({ text: out, to, source: "gemini", translated: true })
   } catch (e) {

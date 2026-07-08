@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import type { GenerateRsaPayload, GeneratedRsaVariant } from '@/lib/google/types'
+import { geminiGenerate } from '@/lib/gemini-rest'
 
 function fmtPrice(n: number | null): string {
   if (!n) return ''
@@ -199,20 +200,10 @@ Produce exactly 2 distinct variants. Each variant: 12 headlines (each MAX 30 cha
 Return ONLY JSON, no markdown:
 {"variants":[{"note":"short label","headlines":["..."],"descriptions":["..."]}]}`
   try {
-    const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 2048, responseMimeType: 'application/json' },
-        }),
-      },
-    )
-    if (!res.ok) return null
-    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+    let data
+    try {
+      data = await geminiGenerate(apiKey, [{ role: 'user', parts: [{ text: prompt }] }], { temperature: 0.8, maxOutputTokens: 2048, responseMimeType: 'application/json' })
+    } catch { return null }
     const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ''
     const parsed = JSON.parse(raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()) as { variants?: Array<{ note?: string; headlines?: string[]; descriptions?: string[] }> }
     if (!Array.isArray(parsed.variants) || parsed.variants.length === 0) return null

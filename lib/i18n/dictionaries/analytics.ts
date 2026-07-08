@@ -62,7 +62,10 @@ const en: Dict = {
   'analytics.sec.topPages': 'Top Pages',
   'analytics.sec.devices': 'Device Breakdown',
   'analytics.sec.countries': 'Countries',
-  'analytics.sec.trafficBlock': 'Website traffic metrics below',
+  'analytics.sec.trafficBlock': 'Website traffic',
+  'analytics.traffic.connectTitle': 'Connect a web-analytics provider',
+  'analytics.traffic.connectBody': 'Page views, sessions, devices and top pages appear here once you connect Google Analytics or Plausible. Lead sources, conversions and ad spend above are already live from your CRM.',
+  'analytics.traffic.connectCta': 'Set up in Integrations',
 
   // table headers
   'analytics.th.agent': 'Agent',
@@ -274,7 +277,10 @@ const ar: Dict = {
   'analytics.sec.topPages': 'أبرز الصفحات',
   'analytics.sec.devices': 'توزيع الأجهزة',
   'analytics.sec.countries': 'الدول',
-  'analytics.sec.trafficBlock': 'مقاييس زيارات الموقع أدناه',
+  'analytics.sec.trafficBlock': 'زيارات الموقع',
+  'analytics.traffic.connectTitle': 'اربط مزوّد تحليلات الويب',
+  'analytics.traffic.connectBody': 'تظهر مشاهدات الصفحات والجلسات والأجهزة وأهم الصفحات هنا بمجرد ربط Google Analytics أو Plausible. أما مصادر العملاء والتحويلات وإنفاق الإعلانات أعلاه فهي مباشرة بالفعل من إدارة العملاء.',
+  'analytics.traffic.connectCta': 'الإعداد في التكاملات',
 
   'analytics.th.agent': 'الوكيل',
   'analytics.th.leads': 'العملاء',
@@ -477,7 +483,10 @@ const ru: Dict = {
   'analytics.sec.topPages': 'Топ страниц',
   'analytics.sec.devices': 'Разбивка по устройствам',
   'analytics.sec.countries': 'Страны',
-  'analytics.sec.trafficBlock': 'Метрики веб-трафика ниже',
+  'analytics.sec.trafficBlock': 'Веб-трафик',
+  'analytics.traffic.connectTitle': 'Подключите провайдера веб-аналитики',
+  'analytics.traffic.connectBody': 'Просмотры, сессии, устройства и топ страниц появятся здесь после подключения Google Analytics или Plausible. Источники лидов, конверсии и расходы на рекламу выше уже отображаются вживую из CRM.',
+  'analytics.traffic.connectCta': 'Настроить в Интеграциях',
 
   'analytics.th.agent': 'Агент',
   'analytics.th.leads': 'Лиды',
