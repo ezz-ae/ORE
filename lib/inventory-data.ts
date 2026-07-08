@@ -161,7 +161,9 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     bedrooms: bedroomsLabel(unitTypes),
     totalUnits: null,
     availableUnits: null,
-    sizeRange: '550–1,800 sqft',
+    // No size column on freehold_site_projects — leave empty rather than
+    // invent an identical range for every project (UI shows an em-dash).
+    sizeRange: '',
     roi: row.rental_yield ? Number(row.rental_yield) : null,
     landingStatus: mapLandingStatus(landing),
     // Only link out when the page is actually published — the public /lp route
@@ -174,8 +176,11 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     adReadiness,
     linkedCampaigns: 0,
     leads30d,
-    views30d: leads30d > 0 ? leads30d * 12 : 0,
-    lastUpdated: new Date().toISOString().slice(0, 10),
+    // No real web-analytics source — do not fabricate a views figure from
+    // leads. Consumers show 0 / an em-dash until a real analytics feed exists.
+    views30d: 0,
+    // No updated_at column — leave empty rather than always-today.
+    lastUpdated: '',
     tags: row.golden_visa_eligible ? ['golden_visa'] : [],
   }
 }

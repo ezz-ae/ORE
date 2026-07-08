@@ -69,6 +69,8 @@ const en: Dict = {
   'pins.content.pages': 'Website Pages',
   'pins.content.blog': 'Blog Topics',
   'pins.status.good': 'Good',
+  'pins.status.inProgress': 'In progress',
+  'pins.status.empty': 'Empty',
   'pins.status.needsWork': 'Needs work',
   'pins.status.review': 'Review',
   // recommended actions
@@ -146,6 +148,8 @@ const ar: Dict = {
   'pins.content.pages': 'صفحات الموقع',
   'pins.content.blog': 'مواضيع المدونة',
   'pins.status.good': 'جيد',
+  'pins.status.inProgress': 'قيد التنفيذ',
+  'pins.status.empty': 'فارغ',
   'pins.status.needsWork': 'يحتاج عملاً',
   'pins.status.review': 'مراجعة',
   // recommended actions
@@ -223,6 +227,8 @@ const ru: Dict = {
   'pins.content.pages': 'Страницы сайта',
   'pins.content.blog': 'Темы блога',
   'pins.status.good': 'Хорошо',
+  'pins.status.inProgress': 'В процессе',
+  'pins.status.empty': 'Пусто',
   'pins.status.needsWork': 'Требует доработки',
   'pins.status.review': 'На проверку',
   // recommended actions

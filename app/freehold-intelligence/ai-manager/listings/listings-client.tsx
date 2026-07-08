@@ -1,23 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Bot, Plus, Edit2, Sparkles, Package, Loader2, Megaphone } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useT } from '@/lib/i18n/provider'
 
-type ListingStatus = 'Published' | 'Draft' | 'Needs Review'
+type ListingStatus = 'Published' | 'Draft'
 type FilterKey = 'All' | ListingStatus | 'Off Plan' | 'Ready'
-type Content = { status: ListingStatus; seo: number; words: number }
+// Content status/word-count come from a real web-content row when one exists
+// for this listing's slug; otherwise the listing simply has no content yet.
+type Content = { status: ListingStatus; words: number | null; id?: string }
 
-const FILTERS: FilterKey[] = ['All', 'Published', 'Draft', 'Needs Review', 'Off Plan', 'Ready']
+const FILTERS: FilterKey[] = ['All', 'Published', 'Draft', 'Off Plan', 'Ready']
 
 const FILTER_KEY: Record<FilterKey, string> = {
   'All': 'paim.listings.filter.All',
   'Published': 'paim.listings.filter.Published',
   'Draft': 'paim.listings.filter.Draft',
-  'Needs Review': 'paim.listings.filter.NeedsReview',
   'Off Plan': 'paim.listings.filter.OffPlan',
   'Ready': 'paim.listings.filter.Ready',
 }
@@ -25,62 +26,55 @@ const FILTER_KEY: Record<FilterKey, string> = {
 const STATUS_KEY: Record<ListingStatus, string> = {
   'Published': 'paim.listings.status.Published',
   'Draft': 'paim.listings.status.Draft',
-  'Needs Review': 'paim.listings.status.NeedsReview',
-}
-
-const seedContent: Record<string, Content> = {
-  prop_sobha_007:  { status: 'Published',    seo: 95, words: 2400 },
-  prop_hills_002:  { status: 'Published',    seo: 91, words: 2200 },
-  prop_palm_001:   { status: 'Published',    seo: 88, words: 1800 },
-  prop_jvc_005:    { status: 'Published',    seo: 84, words: 1900 },
-  prop_bay_003:    { status: 'Needs Review', seo: 65, words: 950  },
-  prop_creek_006:  { status: 'Draft',        seo: 58, words: 840  },
-  prop_marina_004: { status: 'Needs Review', seo: 52, words: 800  },
-  prop_rak_008:    { status: 'Draft',        seo: 38, words: 420  },
 }
 
 function statusBadge(status: ListingStatus) {
-  if (status === 'Published')    return 'text-gold bg-gold/10 border-gold/20'
-  if (status === 'Needs Review') return 'text-slate-400 bg-rose-500/10 border-rose-500/20'
+  if (status === 'Published') return 'text-gold bg-gold/10 border-gold/20'
   return 'text-slate-400 bg-surface-2 border-line-strong'
 }
 
-function seoColor(score: number) {
-  if (score >= 85) return 'text-gold'
-  if (score >= 65) return 'text-gold'
-  return 'text-slate-400'
-}
+const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 
 export default function ListingsClient({ initialProperties }: { initialProperties: InventoryProperty[] }) {
   const t = useT()
   const [activeFilter, setActiveFilter] = useState<FilterKey>('All')
   const [processing, setProcessing] = useState<string | null>(null)
   const [improving, setImproving] = useState<string[]>([])
-  const [content, setContent] = useState<Record<string, Content>>(() => {
-    const m: Record<string, Content> = {}
-    initialProperties.forEach((p) => { m[p.id] = seedContent[p.id] ?? { status: 'Draft', seo: 40, words: 300 } })
-    return m
-  })
+  // Content keyed by listing slug, loaded from the real web-content store.
+  const [content, setContent] = useState<Record<string, Content>>({})
+
+  async function loadContent() {
+    const res = await fetch('/api/freehold/web-content?kind=listing', { cache: 'no-store' }).catch(() => null)
+    const d = res && res.ok ? await res.json().catch(() => null) : null
+    const map: Record<string, Content> = {}
+    for (const it of (d?.items ?? []) as Array<{ id: string; slug: string; status: string; body?: string }>) {
+      map[it.slug] = { id: it.id, status: it.status === 'published' ? 'Published' : 'Draft', words: it.body ? wordCount(it.body) : null }
+    }
+    setContent(map)
+  }
+  useEffect(() => { loadContent() }, [])
+
+  const contentFor = (prop: InventoryProperty): Content => content[prop.slug] ?? { status: 'Draft', words: null }
 
   const listings = useMemo(() => {
     return initialProperties
-      .map((prop) => ({ prop, content: content[prop.id] ?? { status: 'Draft' as ListingStatus, seo: 40, words: 300 } }))
+      .map((prop) => ({ prop, content: contentFor(prop) }))
       .filter(({ prop, content }) => {
         if (activeFilter === 'All')      return true
         if (activeFilter === 'Off Plan') return prop.status === 'off_plan'
         if (activeFilter === 'Ready')    return prop.status === 'ready'
         return content.status === activeFilter
       })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilter, initialProperties, content])
 
   const counts = useMemo(() => ({
-    Published:      initialProperties.filter((p) => content[p.id]?.status === 'Published').length,
-    Draft:          initialProperties.filter((p) => content[p.id]?.status === 'Draft').length,
-    'Needs Review': initialProperties.filter((p) => content[p.id]?.status === 'Needs Review').length,
+    Published: initialProperties.filter((p) => content[p.slug]?.status === 'Published').length,
+    Draft:     initialProperties.filter((p) => (content[p.slug]?.status ?? 'Draft') === 'Draft').length,
   }), [initialProperties, content])
 
-  // Real AI rewrite for one listing — generates fresh copy and updates its
-  // content state from the actual result (word count + publishable status).
+  // Real AI rewrite for one listing — generates fresh copy and SAVES it to the
+  // web-content store (published) so the status/word-count survive a reload.
   async function improveOne(prop: InventoryProperty): Promise<boolean> {
     const res = await fetch('/api/freehold/ai/generate', {
       method: 'POST',
@@ -93,8 +87,13 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
     const data = await res.json().catch(() => null) as { text?: string } | null
     const text = data?.text?.trim() || ''
     if (!text) return false
-    const words = text.split(/\s+/).filter(Boolean).length
-    setContent((c) => ({ ...c, [prop.id]: { status: 'Published', seo: Math.max(c[prop.id]?.seo ?? 0, 90), words } }))
+    const existing = content[prop.slug]
+    const save = existing?.id
+      ? fetch('/api/freehold/web-content', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: existing.id, body: text, status: 'published' }) })
+      : fetch('/api/freehold/web-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'listing', name: prop.name, slug: prop.slug, body: text, status: 'published' }) })
+    const saved = await save.catch(() => null)
+    if (!saved || !saved.ok) return false
+    setContent((c) => ({ ...c, [prop.slug]: { ...c[prop.slug], status: 'Published', words: wordCount(text) } }))
     return true
   }
 
@@ -144,10 +143,6 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
             <span className="rounded-xl border border-line bg-surface-2 px-3 py-1 text-xs">
               <span className="text-slate-500">{t('paim.listings.draft')} </span>
               <span className="font-semibold text-slate-400">{counts.Draft}</span>
-            </span>
-            <span className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs">
-              <span className="text-slate-500">{t('paim.listings.needsReview')} </span>
-              <span className="font-semibold text-slate-400">{counts['Needs Review']}</span>
             </span>
           </div>
         </div>
@@ -202,7 +197,6 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                 'paim.listings.col.area',
                 'paim.listings.col.propertyStatus',
                 'paim.listings.col.contentStatus',
-                'paim.listings.col.seoScore',
                 'paim.listings.col.words',
                 'paim.listings.col.images',
                 'paim.listings.col.lastUpdated',
@@ -217,7 +211,7 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
           <tbody className="divide-y divide-line">
             {listings.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-sm text-slate-500">
+                <td colSpan={8} className="py-12 text-center text-sm text-slate-500">
                   {t('paim.listings.empty')}
                 </td>
               </tr>
@@ -241,13 +235,9 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
                       {t(STATUS_KEY[content.status])}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`text-sm font-semibold ${seoColor(content.seo)}`}>{content.seo}</span>
-                    <span className="text-xs text-slate-500">/100</span>
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-slate-400">{content.words.toLocaleString()}</td>
+                  <td className="px-4 py-3.5 text-sm text-slate-400">{content.words != null ? content.words.toLocaleString() : '—'}</td>
                   <td className="px-4 py-3.5 text-sm text-slate-400">{prop.imageCount}</td>
-                  <td className="px-4 py-3.5 text-xs text-slate-400">{prop.lastUpdated}</td>
+                  <td className="px-4 py-3.5 text-xs text-slate-400">{prop.lastUpdated || '—'}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <Link href="/freehold-intelligence/ai-manager/listings/new" className="text-xs text-slate-400 hover:text-slate-200 transition">

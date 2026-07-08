@@ -166,7 +166,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </p>
             <DetailRow label={t('inv.detail.type')} value={prop.type.charAt(0).toUpperCase() + prop.type.slice(1)} />
             <DetailRow label={t('inv.detail.bedrooms')} value={prop.bedrooms} />
-            <DetailRow label={t('inv.detail.sizeRange')} value={prop.sizeRange} />
+            <DetailRow label={t('inv.detail.sizeRange')} value={prop.sizeRange || null} />
             <DetailRow label={t('inv.detail.handoverYear')} value={prop.handoverYear ?? null} />
             <DetailRow label={t('inv.detail.paymentPlan')} value={prop.paymentPlan} />
             <DetailRow label={t('inv.detail.totalUnits')} value={prop.totalUnits !== null ? String(prop.totalUnits) : null} />
@@ -237,10 +237,12 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          <div className="rounded-[16px] border border-line bg-surface-2 px-4 py-3">
-            <span className="text-sm text-slate-500">Last updated: </span>
-            <span className="text-sm text-slate-400">{prop.lastUpdated}</span>
-          </div>
+          {prop.lastUpdated && (
+            <div className="rounded-[16px] border border-line bg-surface-2 px-4 py-3">
+              <span className="text-sm text-slate-500">Last updated: </span>
+              <span className="text-sm text-slate-400">{prop.lastUpdated}</span>
+            </div>
+          )}
         </div>
       </div>
 
