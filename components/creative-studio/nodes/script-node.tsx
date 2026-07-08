@@ -9,6 +9,7 @@ import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { useT } from "@/lib/i18n/provider"
 
 export type ScriptNodeData = {
   script?: string
@@ -29,6 +30,7 @@ const DURATION_LIMITS: Record<string, { maxChars: number; seconds: number }> = {
 const DEFAULT_DURATION = "8s"
 
 function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
+  const t = useT()
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
   const script = data.script || ""
@@ -70,10 +72,10 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
       })
       const d = await res.json()
       const text = String(d.text || "").trim().replace(/^["']|["']$/g, "")
-      if (text) { handleUpdate("script", text); toast.success("Script generated") }
-      else toast.error("Could not generate script")
+      if (text) { handleUpdate("script", text); toast.success(t("pcsn.script.genOk")) }
+      else toast.error(t("pcsn.script.genErr"))
     } catch {
-      toast.error("Could not generate script")
+      toast.error(t("pcsn.script.genErr"))
     } finally {
       setGenerating(false)
     }
@@ -97,10 +99,10 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
       <div className="p-3">
         <div className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Listing Script</span>
+          <span className="text-[11px] font-medium text-foreground">{t("pcsn.node.listingScript")}</span>
           <div className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span>{maxSeconds}s max</span>
+            <span>{t("pcsn.script.dur", { sec: maxSeconds })}</span>
           </div>
         </div>
 
@@ -114,7 +116,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-[10px] text-muted-foreground">Voiceover</Label>
+                <Label className="text-[10px] text-muted-foreground">{t("pcsn.script.voiceover")}</Label>
                 <span className={`text-[10px] font-mono ${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
                   {characterCount}/{maxCharacters}
                 </span>
@@ -123,7 +125,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
                 value={script}
                 onChange={(e) => handleScriptChange(e.target.value)}
                 onMouseDown={stopPropagation}
-                placeholder="What the presenter says over the reel — or type a short brief and Generate…"
+                placeholder={t("pcsn.script.ph")}
                 className={`min-h-[100px] text-xs font-mono resize-none ${isOverLimit ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
               <Button
@@ -134,22 +136,22 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
                 onClick={(e) => { e.stopPropagation(); handleGenerate() }}
               >
                 {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                {generating ? "Writing…" : "Generate with AI"}
+                {generating ? t("pcsn.script.writing") : t("pcsn.script.generate")}
               </Button>
               {isOverLimit && (
                 <p className="text-[9px] text-destructive">
-                  Script exceeds the {maxSeconds}-second limit ({maxCharacters} chars). Please shorten your dialogue.
+                  {t("pcsn.script.over", { sec: maxSeconds, max: maxCharacters })}
                 </p>
               )}
             </div>
 
             <div className="flex items-center justify-between text-[10px] text-muted-foreground bg-muted/50 rounded px-2 py-1.5">
-              <span>Estimated duration:</span>
+              <span>{t("pcsn.script.estimated")}</span>
               <span className="font-mono">{estimatedSeconds}s / {maxSeconds}s</span>
             </div>
 
             <p className="text-[9px] text-muted-foreground">
-              The voiceover the presenter speaks over the reel. Keep it under {maxCharacters} characters (~{maxSeconds}s of speech).
+              {t("pcsn.script.help", { max: maxCharacters, sec: maxSeconds })}
             </p>
           </div>
         )}
@@ -157,7 +159,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
         {status === "running" && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
-            processing script
+            {t("pcsn.processing")}
           </div>
         )}
       </div>

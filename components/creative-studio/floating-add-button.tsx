@@ -12,6 +12,13 @@ import {
   Building2,
   Video,
 } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
+
+const NODE_KEY: Record<string, string> = {
+  start: "pcsn.node.start", end: "pcsn.node.end", productUpload: "pcsn.node.property",
+  ugcModel: "pcsn.node.presenter", script: "pcsn.node.listingScript",
+  imageGeneration: "pcsn.node.imageGen", videoGeneration: "pcsn.node.videoGen",
+}
 
 type NodeType = {
   type: string
@@ -37,6 +44,7 @@ type FloatingAddButtonProps = {
 const DRAG_THRESHOLD = 5
 
 export function FloatingAddButton({ onAddNode }: FloatingAddButtonProps) {
+  const t = useT()
   const [isOpen, setIsOpen] = useState(false)
   const [position, setPosition] = useState({ x: 20, y: 100 })
   const [isDragging, setIsDragging] = useState(false)
@@ -173,7 +181,7 @@ export function FloatingAddButton({ onAddNode }: FloatingAddButtonProps) {
                   className="flex w-full items-center gap-3.5 rounded px-3.5 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-secondary"
                 >
                   <span className="text-muted-foreground">{node.icon}</span>
-                  {node.label}
+                  {NODE_KEY[node.type] ? t(NODE_KEY[node.type]) : node.label}
                 </button>
               ))}
             </div>

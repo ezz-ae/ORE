@@ -2,6 +2,16 @@
 
 import type React from "react"
 import { MessageSquare, Layers, Wrench, FileText, ImageIcon, Code, Play, Flag, GitBranch, Globe, User, Building2, Video } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
+
+// Node type → i18n key for its display name.
+const NODE_KEY: Record<string, string> = {
+  start: "pcsn.node.start", end: "pcsn.node.end", prompt: "pcsn.node.prompt", textModel: "pcsn.node.textModel",
+  imageGeneration: "pcsn.node.image", ugcModel: "pcsn.node.presenter", productUpload: "pcsn.node.property",
+  script: "pcsn.node.listingScript", videoGeneration: "pcsn.node.video", httpRequest: "pcsn.node.http",
+  conditional: "pcsn.node.condition", javascript: "pcsn.node.javascript", embeddingModel: "pcsn.node.embedding",
+  tool: "pcsn.node.tool", audio: "pcsn.node.audio", structuredOutput: "pcsn.node.structured", memory: "pcsn.node.memory",
+}
 
 type NodeType = {
   type: string
@@ -32,6 +42,7 @@ type NodePaletteProps = {
 }
 
 export function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
+  const t = useT()
   const onDragStart = (event: React.DragEvent, nodeType: string) => {
     event.dataTransfer.setData("application/reactflow", nodeType)
     event.dataTransfer.effectAllowed = "move"
@@ -54,7 +65,7 @@ export function NodePalette({ onAddNode, onClose }: NodePaletteProps) {
             className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-secondary"
           >
             <span className="text-muted-foreground">{node.icon}</span>
-            {node.label}
+            {NODE_KEY[node.type] ? t(NODE_KEY[node.type]) : node.label}
           </button>
         ))}
       </div>

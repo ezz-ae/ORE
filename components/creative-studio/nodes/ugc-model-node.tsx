@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useT } from "@/lib/i18n/provider"
 
 export type UgcModelNodeData = {
   ethnicity: string
@@ -49,6 +50,7 @@ const AGE_RANGES = [
 ]
 
 function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>) {
+  const t = useT()
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
   const isLocked = data.isLocked || false
@@ -88,7 +90,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
       <div className="p-3">
         <div className="flex items-center gap-2">
           <User className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Presenter</span>
+          <span className="text-[11px] font-medium text-foreground">{t("pcsn.node.presenter")}</span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -110,7 +112,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {isLocked ? "Unlock to regenerate with new parameters" : "Lock to reuse the generated image"}
+                {isLocked ? t("pcsn.pres.unlockTip") : t("pcsn.pres.lockTip")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -124,7 +126,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             {isLocked && (
               <div className="flex items-center gap-1 text-[10px] text-amber-500 font-mono">
                 <Lock className="h-3 w-3" />
-                <span>Locked</span>
+                <span>{t("pcsn.pres.locked")}</span>
               </div>
             )}
           </div>
@@ -133,7 +135,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Gender</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.gender")}</Label>
               <Select value={currentGender} onValueChange={(value) => handleUpdate("gender", value)} disabled={isLocked}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -149,7 +151,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Ethnicity</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.ethnicity")}</Label>
               <Select value={currentEthnicity} onValueChange={(value) => handleUpdate("ethnicity", value)} disabled={isLocked}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -165,7 +167,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Age Range</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.age")}</Label>
               <Select value={currentAgeRange} onValueChange={(value) => handleUpdate("ageRange", value)} disabled={isLocked}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -181,12 +183,12 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Additional Description (optional)</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.desc")}</Label>
               <Textarea
                 value={data.description || ""}
                 onChange={(e) => handleUpdate("description", e.target.value)}
                 onMouseDown={stopPropagation}
-                placeholder="e.g., smart-casual agent, warm smile, presenting on location..."
+                placeholder={t("pcsn.pres.descPh")}
                 className="min-h-[60px] text-xs font-mono resize-none"
                 disabled={isLocked}
               />
@@ -194,7 +196,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
 
             {isLocked && data.lockedImageUrl && (
               <div className="space-y-1.5">
-                <Label className="text-[10px] text-amber-500">Locked Presenter Preview</Label>
+                <Label className="text-[10px] text-amber-500">{t("pcsn.pres.lockedPreview")}</Label>
                 <div className="rounded border border-amber-500/30 overflow-hidden">
                   <img 
                     src={data.lockedImageUrl || "/placeholder.svg"} 
@@ -210,20 +212,20 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         {status === "running" && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
-            processing
+            {t("pcsn.processing")}
           </div>
         )}
 
         {status === "completed" && (
           <div className="mt-2 text-[10px] text-green-600 dark:text-green-400 font-mono">
-            Parameters ready
+            {t("pcsn.pres.ready")}
           </div>
         )}
 
         {isExpanded && !isLocked && (
           <div className="mt-3 pt-3 border-t border-border">
             <p className="text-[9px] text-muted-foreground text-center">
-              These parameters shape the on-camera property presenter created by the Image node.
+              {t("pcsn.pres.help")}
             </p>
           </div>
         )}
