@@ -18,7 +18,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Users, Megaphone, DollarSign, TrendingUp, Bot, Package,
-  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard,
+  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard, CalendarDays,
 } from 'lucide-react'
 import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
@@ -104,6 +104,13 @@ export const APPS: AppDef[] = [
     card: 'border-violet-400/15 hover:border-violet-400/30',
     icon: 'text-violet-400 bg-violet-400/10 border-violet-400/20',
     brokerHide: true,
+  },
+  {
+    id: 'calendar', label: 'Calendar', sub: 'Meetings · Bookings · Training · Follow-ups',
+    href: '/freehold-intelligence/calendar', Icon: CalendarDays,
+    metric: 'Company timeline', badge: 0, accent: '#F59E0B',
+    card: 'border-amber-500/15 hover:border-amber-500/30',
+    icon: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
   },
   {
     id: 'notebook', label: 'Notebook', sub: 'Research · Offers · Exports',

@@ -24,7 +24,7 @@ const NAV_KEYS: Record<string, string> = {
   crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
   'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
   integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
-  agent: 'nav.agent',
+  agent: 'nav.agent', calendar: 'nav.calendar',
 }
 
 export function SpacesNav() {
