@@ -53,9 +53,11 @@ export default function MarketAnalyticsPage() {
       <section>
         <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-slate-400">
           {t('analytics.sec.marketOverview')}
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
-            <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
-          </span>
+          {stats && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+              <span className="h-1 w-1 rounded-full bg-emerald-400" /> {t('analytics.live')}
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <MetricCard Icon={Building2} label={t('analytics.metric.projects')} value={num(stats?.liveProjects)} />

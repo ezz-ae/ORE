@@ -10,6 +10,7 @@
 
 import { getStoredMetaCreds, getStoredCreds, type WhatsAppStoredCreds } from '@/lib/freehold/integration-credentials'
 import type { GoogleStoredCreds } from '@/lib/google/client'
+import type { HubspotStoredCreds } from '@/lib/hubspot/client'
 
 export type IntegrationState = 'connected' | 'partial' | 'disconnected'
 
@@ -91,7 +92,15 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
 
   // ── HubSpot CRM (private-app token) ─────────────────────────────────────────
   const hubKeys = ['HUBSPOT_TOKEN']
-  const hub = evaluate(hubKeys)
+  let hub = evaluate(hubKeys)
+  // A token saved through Integrations → HubSpot counts as connected, matching
+  // Meta/Google/WhatsApp — otherwise the Overview would report "not connected"
+  // while the HubSpot page and sync are genuinely working.
+  let hubSource: 'env' | 'db' | null = hub.state === 'connected' ? 'env' : null
+  if (hub.state !== 'connected') {
+    const stored = await getStoredCreds<HubspotStoredCreds>('hubspot').catch(() => null)
+    if (stored?.token) { hub = { state: 'connected', missing: [] }; hubSource = 'db' }
+  }
 
   // ── AI (Gemini API or Vertex service account) ──────────────────────────────
   const geminiOk = hasAny('GEMINI_API_KEY', 'Gemini_API_KEY', 'google_api_key')
@@ -157,8 +166,8 @@ export async function getLiveIntegrationStatuses(): Promise<LiveIntegrationStatu
       missingKeys: hub.missing,
       note:
         hub.state === 'connected'
-          ? 'Live — two-way contact↔lead sync available via the private-app token.'
-          : 'Add HUBSPOT_TOKEN (a HubSpot private-app token) in Vercel to sync contacts and leads.',
+          ? (hubSource === 'db' ? 'Live (connected in-app) — ' : 'Live — ') + 'two-way contact↔lead sync available via the private-app token.'
+          : 'Add HUBSPOT_TOKEN (a HubSpot private-app token) in Vercel, or connect in Integrations → HubSpot, to sync contacts and leads.',
     },
     {
       id: 'ai',

@@ -216,6 +216,21 @@ export default function NotebookPage() {
   })
   const [isDragOver, setIsDragOver] = useState(false)
 
+  // Real source counts — the Sources panel shows live project + lead totals,
+  // not fabricated numbers.
+  const [projectCount, setProjectCount] = useState<number | null>(null)
+  const [leadCount, setLeadCount] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/inventory', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.properties)) setProjectCount(d.properties.length) })
+      .catch(() => {})
+    fetch('/api/freehold/crm/leads', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { const arr = d?.leads ?? d; if (Array.isArray(arr)) setLeadCount(arr.length) })
+      .catch(() => {})
+  }, [])
+
   // Persisted outputs (saved tables / reports) from the DB.
   type SavedOutput = { id: string; title: string; type: string; content: string; created_at: string }
   const [dbOutputs, setDbOutputs] = useState<SavedOutput[]>([])
@@ -463,7 +478,7 @@ export default function NotebookPage() {
                     {t('nb.inventoryLink')}
                   </Link>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.projectRecords', { count: 933 })}</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{projectCount == null ? '—' : t('nb.projectRecords', { count: projectCount })}</p>
               </div>
             </div>
           </div>
@@ -485,7 +500,7 @@ export default function NotebookPage() {
                     {t('nb.crmLink')}
                   </Link>
                 </div>
-                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.activeLeads', { count: 18 })}</p>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{leadCount == null ? '—' : t('nb.activeLeads', { count: leadCount })}</p>
               </div>
             </div>
           </div>

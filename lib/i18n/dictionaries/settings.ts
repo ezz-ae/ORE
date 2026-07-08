@@ -288,6 +288,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.security.keyCreated': 'API key created — copy it now, it won’t be shown again',
     'settings.security.keyCreateFailed': 'Failed to create key',
     'settings.security.auditLog': 'Audit log',
+    'settings.security.auditEmpty': 'No activity recorded yet.',
 
     // ── API page ──
     'settings.api.title': 'API Reference',
@@ -631,6 +632,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.security.keyCreated': 'تم إنشاء مفتاح API — انسخه الآن، لن يُعرض مجدداً',
     'settings.security.keyCreateFailed': 'فشل إنشاء المفتاح',
     'settings.security.auditLog': 'سجل التدقيق',
+    'settings.security.auditEmpty': 'لم يُسجَّل أي نشاط بعد.',
 
     // ── API page ──
     'settings.api.title': 'مرجع API',
@@ -974,6 +976,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.security.keyCreated': 'Ключ API создан — скопируйте его сейчас, он больше не будет показан',
     'settings.security.keyCreateFailed': 'Не удалось создать ключ',
     'settings.security.auditLog': 'Журнал аудита',
+    'settings.security.auditEmpty': 'Активность пока не зафиксирована.',
 
     // ── API page ──
     'settings.api.title': 'Справочник API',

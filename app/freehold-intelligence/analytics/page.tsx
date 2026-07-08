@@ -21,15 +21,17 @@ type Totals = {
   totalPaidAed: number; totalOutstandingAed: number
 } | null
 
-function Kpi({ label, value, sub, href, drillLabel }: { label: string; value: string; sub: string; href?: string; drillLabel?: string }) {
+function Kpi({ label, value, sub, href, drillLabel, live }: { label: string; value: string; sub: string; href?: string; drillLabel?: string; live?: boolean }) {
   const body = (
     <>
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</div>
-        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
-          <span className="h-1 w-1 rounded-full bg-emerald-400" />
-          live
-        </span>
+        {live && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-400/90">
+            <span className="h-1 w-1 rounded-full bg-emerald-400" />
+            live
+          </span>
+        )}
       </div>
       <div className="mt-3 text-2xl font-semibold tabular-nums text-slate-100">{value}</div>
       {href ? (
@@ -154,14 +156,14 @@ export default function CompanyAnalyticsPage() {
 
       {/* KPI grid — live lead + deal metrics */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label={t('analytics.kpi.totalLeads')} value={dash((live?.leads.total ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.allTime')} />
-        <Kpi label={t('analytics.kpi.newLeads')} value={dash((live?.leads.last30d ?? 0).toLocaleString('en-US'))} sub={t('analytics.last30')} />
-        <Kpi label={t('analytics.kpi.conversions')} value={dash((live?.leads.closed ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.closedLeads')} href="/freehold-intelligence/crm?stage=closed" drillLabel={t('analytics.kpi.viewClosed')} />
-        <Kpi label={t('analytics.kpi.closingRate')} value={dash(`${live?.leads.closingRate ?? 0}%`)} sub={t('analytics.kpi.closedOverTotal')} />
-        <Kpi label={t('analytics.kpi.salesVolume')} value={totals ? fmtAed(totals.totalSalesAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
-        <Kpi label={t('analytics.kpi.commission')} value={totals ? fmtAed(totals.totalCommissionAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
-        <Kpi label={t('analytics.kpi.deals')} value={totals ? totals.approvedDeals.toLocaleString('en-US') : '—'} sub={t('analytics.kpi.approvedClosed')} />
-        <Kpi label={t('analytics.kpi.pending')} value={totals ? totals.pendingDeals.toLocaleString('en-US') : '—'} sub={t('analytics.kpi.pending')} />
+        <Kpi live={!!live} label={t('analytics.kpi.totalLeads')} value={dash((live?.leads.total ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.allTime')} />
+        <Kpi live={!!live} label={t('analytics.kpi.newLeads')} value={dash((live?.leads.last30d ?? 0).toLocaleString('en-US'))} sub={t('analytics.last30')} />
+        <Kpi live={!!live} label={t('analytics.kpi.conversions')} value={dash((live?.leads.closed ?? 0).toLocaleString('en-US'))} sub={t('analytics.kpi.closedLeads')} href="/freehold-intelligence/crm?stage=closed" drillLabel={t('analytics.kpi.viewClosed')} />
+        <Kpi live={!!live} label={t('analytics.kpi.closingRate')} value={dash(`${live?.leads.closingRate ?? 0}%`)} sub={t('analytics.kpi.closedOverTotal')} />
+        <Kpi live={!!totals} label={t('analytics.kpi.salesVolume')} value={totals ? fmtAed(totals.totalSalesAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
+        <Kpi live={!!totals} label={t('analytics.kpi.commission')} value={totals ? fmtAed(totals.totalCommissionAed) : '—'} sub={t('analytics.kpi.approvedClosed')} />
+        <Kpi live={!!totals} label={t('analytics.kpi.deals')} value={totals ? totals.approvedDeals.toLocaleString('en-US') : '—'} sub={t('analytics.kpi.approvedClosed')} />
+        <Kpi live={!!totals} label={t('analytics.kpi.pending')} value={totals ? totals.pendingDeals.toLocaleString('en-US') : '—'} sub={t('analytics.kpi.pending')} />
       </div>
 
       {/* Daily leads */}

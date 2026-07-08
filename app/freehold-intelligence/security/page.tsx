@@ -12,18 +12,20 @@ const SESSION_TO_MATRIX: Record<string, ServerRole> = {
   sales_manager: 'sales_manager', marketing: 'marketing', broker: 'sales_agent',
 }
 
-// Every item here reflects what is actually deployed: fail-closed API
-// middleware, expiring HMAC sessions, DB-backed roles and a Postgres rate
-// limiter are all live.
-const HARDENING_CHECKLIST = [
-  { key: 'isolation',      done: true },
-  { key: 'aiScope',        done: true },
-  { key: 'mcpGating',      done: true },
-  { key: 'auditLog',       done: true },
-  { key: 'authMiddleware', done: true },
-  { key: 'sessionExpiry',  done: true },
-  { key: 'rbacDb',         done: true },
-  { key: 'rateLimit',      done: true },
+// The checklist reflects what is actually deployed. Code-level protections
+// (fail-closed API middleware, AI scoping, MCP gating, the Postgres rate
+// limiter) are compiled in and always on. The `probe` items depend on runtime
+// configuration and are verified live against the integration-status endpoint,
+// so the score drops if session signing or the database are misconfigured.
+const HARDENING_CHECKLIST: { key: string; probe?: 'session' | 'db' }[] = [
+  { key: 'isolation'      },
+  { key: 'aiScope'        },
+  { key: 'mcpGating'      },
+  { key: 'auditLog',       probe: 'db'      },
+  { key: 'authMiddleware' },
+  { key: 'sessionExpiry',  probe: 'session' },
+  { key: 'rbacDb',         probe: 'db'      },
+  { key: 'rateLimit'      },
 ]
 
 const ROLE_MATRIX = [
@@ -49,8 +51,28 @@ function Check({ ok }: { ok: boolean }) {
 
 export default function SecurityPage() {
   const t = useT()
-  const done  = HARDENING_CHECKLIST.filter((i) => i.done).length
-  const total = HARDENING_CHECKLIST.length
+
+  // Real runtime posture: session signing + database reachability, probed via
+  // the integration-status endpoint. Optimistic true until known, then the
+  // score reflects (and can drop to) actual configuration.
+  const [posture, setPosture] = useState<{ session: boolean; db: boolean }>({ session: true, db: true })
+  useEffect(() => {
+    fetch('/api/freehold/integrations/status', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const list: { id: string; state: string }[] = d?.statuses ?? []
+        const sessionOk = list.find((s) => s.id === 'session')?.state === 'connected'
+        const dbOk = list.find((s) => s.id === 'neon')?.state === 'connected'
+        if (list.length) setPosture({ session: sessionOk, db: dbOk })
+      })
+      .catch(() => {})
+  }, [])
+
+  const isDone = (i: { probe?: 'session' | 'db' }) =>
+    i.probe === 'session' ? posture.session : i.probe === 'db' ? posture.db : true
+  const checklist = HARDENING_CHECKLIST.map((i) => ({ ...i, done: isDone(i) }))
+  const done  = checklist.filter((i) => i.done).length
+  const total = checklist.length
   const pct   = Math.round((done / total) * 100)
 
   const [checklistFilter, setChecklistFilter] = useState<ChecklistFilter>('All')
@@ -80,10 +102,10 @@ export default function SecurityPage() {
   const allEventTypes = useMemo(() => Array.from(new Set(allAuditEvents.map((e) => e.type))).slice(0, 6), [allAuditEvents])
 
   const filteredChecklist = useMemo(() => {
-    if (checklistFilter === 'Done')    return HARDENING_CHECKLIST.filter((i) => i.done)
-    if (checklistFilter === 'Pending') return HARDENING_CHECKLIST.filter((i) => !i.done)
-    return HARDENING_CHECKLIST
-  }, [checklistFilter])
+    if (checklistFilter === 'Done')    return checklist.filter((i) => i.done)
+    if (checklistFilter === 'Pending') return checklist.filter((i) => !i.done)
+    return checklist
+  }, [checklistFilter, checklist])
 
   const filteredAudit = useMemo(() => {
     if (auditTypeFilter === 'All') return allAuditEvents.slice(0, 12)
