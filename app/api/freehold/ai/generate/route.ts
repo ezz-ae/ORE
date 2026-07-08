@@ -32,27 +32,35 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp"
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: `${system}\n\n${prompt}` }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-        }),
-      },
-    )
-    if (!res.ok) {
-      const detail = await res.text().catch(() => `HTTP ${res.status}`)
-      console.error("[ai/generate] gemini error", detail)
-      return NextResponse.json({ error: "AI generation failed" }, { status: 502 })
+    // Try the configured model first, then fall through current Gemini models
+    // so a retired GEMINI_MODEL (e.g. gemini-1.5-flash-latest → 404) still works.
+    const candidates = Array.from(new Set(
+      [process.env.GEMINI_MODEL?.trim(), "gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest"].filter(Boolean) as string[],
+    ))
+    let lastDetail = ""
+    for (const model of candidates) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: `${system}\n\n${prompt}` }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+          }),
+        },
+      )
+      if (res.ok) {
+        const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
+        if (!text) return NextResponse.json({ error: "AI returned no content" }, { status: 502 })
+        return NextResponse.json({ text, source: "gemini" })
+      }
+      lastDetail = await res.text().catch(() => `HTTP ${res.status}`)
+      if (res.status !== 404 && !/NOT_FOUND/i.test(lastDetail)) break
     }
-    const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
-    if (!text) return NextResponse.json({ error: "AI returned no content" }, { status: 502 })
-    return NextResponse.json({ text, source: "gemini" })
+    console.error("[ai/generate] gemini error", lastDetail)
+    return NextResponse.json({ error: "AI generation failed" }, { status: 502 })
   } catch (e) {
     console.error("[ai/generate] failed", e)
     return NextResponse.json({ error: "AI generation failed" }, { status: 500 })

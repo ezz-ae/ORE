@@ -11,28 +11,44 @@ const FAL_KEY = () => process.env.FAL_KEY || ""
 
 export interface TextOptions { temperature?: number; maxTokens?: number; system?: string }
 
+// Try the configured model first, then fall through current Gemini models so a
+// retired GEMINI_MODEL (e.g. gemini-1.5-flash-latest → 404) can't break nodes.
+const GEMINI_MODELS = (): string[] => {
+  const configured = process.env.GEMINI_MODEL?.trim()
+  const current = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"]
+  return Array.from(new Set([configured, ...current].filter(Boolean) as string[]))
+}
+
 /** Text generation via Gemini (Freehold's default provider). */
 export async function genText(prompt: string, opts: TextOptions = {}): Promise<string> {
   const key = GEMINI_KEY()
   if (!key) throw new Error("Text generation needs GEMINI_API_KEY. Add it in your environment (Integrations → AI).")
-  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp"
   const system = opts.system || "You are a senior creative marketing copywriter for a Dubai real-estate brand. Write clear, specific, publication-ready copy. No placeholders."
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: `${system}\n\n${prompt}` }] }],
-        generationConfig: { temperature: opts.temperature ?? 0.7, maxOutputTokens: opts.maxTokens ?? 2048 },
-      }),
-    },
-  )
-  if (!res.ok) throw new Error(`Gemini error: ${await res.text().catch(() => res.status)}`)
-  const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
-  if (!text) throw new Error("Gemini returned no content.")
-  return text
+
+  let lastErr = ""
+  for (const model of GEMINI_MODELS()) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: `${system}\n\n${prompt}` }] }],
+          generationConfig: { temperature: opts.temperature ?? 0.7, maxOutputTokens: opts.maxTokens ?? 2048 },
+        }),
+      },
+    )
+    if (res.ok) {
+      const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ""
+      if (!text) throw new Error("Gemini returned no content.")
+      return text
+    }
+    lastErr = await res.text().catch(() => String(res.status))
+    // 404 = model retired/unknown → try the next candidate; other errors are fatal.
+    if (res.status !== 404 && !/NOT_FOUND/i.test(lastErr)) break
+  }
+  throw new Error(`Gemini error: ${lastErr}`)
 }
 
 export interface ImageOptions { aspectRatio?: string; imageUrl?: string; model?: string }

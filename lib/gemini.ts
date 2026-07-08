@@ -164,13 +164,12 @@ RESPONSE FORMAT:
 - Format data in tables when appropriate`
 
 export const DEFAULT_GEMINI_MODELS = [
-  // Current family first (preferred), legacy models below for backward compatibility.
+  // Current models only — the 1.5/1.0 families are retired and now 404.
+  "gemini-2.0-flash",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest",
-  "gemini-1.0-pro",
+  "gemini-flash-latest",
+  "gemini-2.5-pro",
 ]
 
 export async function listGeminiModels(): Promise<string[]> {

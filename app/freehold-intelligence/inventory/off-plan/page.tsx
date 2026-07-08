@@ -45,8 +45,21 @@ export default function OffPlanPage() {
   }, [])
 
   const OFFPLAN_STATUSES = ['off_plan', 'under_construction', 'coming_soon']
+  const currentYear = new Date().getFullYear()
 
-  const base = allProperties.filter((p) => OFFPLAN_STATUSES.includes(p.status))
+  // Off-plan = not yet handed over. Classify from the real handover year in the
+  // project payload as well as an explicit status, so projects that carry a
+  // future handover date surface here even when the status column is unset.
+  const isOffPlan = (p: InventoryProperty) =>
+    OFFPLAN_STATUSES.includes(p.status) ||
+    (p.handoverYear != null && p.handoverYear >= currentYear && p.status !== 'ready' && p.status !== 'sold_out')
+
+  // The status to render on the card: keep a specific off-plan status if the
+  // project has one, otherwise label handover-derived items as off-plan.
+  const offPlanStatus = (p: InventoryProperty) =>
+    OFFPLAN_STATUSES.includes(p.status) ? p.status : 'off_plan'
+
+  const base = allProperties.filter(isOffPlan)
 
   const handoverYears = ['All', ...Array.from(new Set(base.map((p) => p.handoverYear).filter(Boolean))).sort().map(String)]
 
@@ -67,8 +80,8 @@ export default function OffPlanPage() {
   }, {})
 
   const totalLeads      = props.reduce((s, p) => s + p.leads30d, 0)
-  const offPlanCount    = props.filter((p) => p.status === 'off_plan').length
-  const underConstCount = props.filter((p) => p.status === 'under_construction').length
+  const offPlanCount    = props.filter((p) => offPlanStatus(p) === 'off_plan').length
+  const underConstCount = props.filter((p) => offPlanStatus(p) === 'under_construction').length
 
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-7 sm:px-8">
@@ -149,8 +162,8 @@ export default function OffPlanPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-white truncate">{p.name}</span>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[p.status]}`}>
-                    {STATUS_LABEL_KEY[p.status] ? t(STATUS_LABEL_KEY[p.status]) : p.status}
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLE[offPlanStatus(p)]}`}>
+                    {t(STATUS_LABEL_KEY[offPlanStatus(p)])}
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-xs text-slate-500 flex-wrap">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
+import { geminiGenerate } from "@/lib/gemini-rest"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -380,32 +381,18 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = buildGenerationPrompt(projectData, audience)
-    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp"
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-          },
-        }),
-      },
-    )
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text().catch(() => `HTTP ${geminiRes.status}`)
+    let geminiData
+    try {
+      geminiData = await geminiGenerate(apiKey, [{ role: "user", parts: [{ text: prompt }] }], {
+        responseMimeType: "application/json",
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+      })
+    } catch (err) {
+      const errText = err instanceof Error ? err.message : "AI generation failed"
       console.error("[lp-generate] Gemini error:", errText)
       return NextResponse.json({ error: "AI generation failed", detail: errText }, { status: 502 })
-    }
-
-    const geminiData = await geminiRes.json() as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
     }
     const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || ""
 
