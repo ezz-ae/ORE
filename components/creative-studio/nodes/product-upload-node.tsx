@@ -8,6 +8,7 @@ import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useT } from "@/lib/i18n/provider"
 
 export type ProductUploadNodeData = {
   // productImage / productName kept for engine compatibility (downstream image/video nodes)
@@ -43,6 +44,7 @@ function fmtAED(n?: number | null): string {
 }
 
 function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeData>>) {
+  const t = useT()
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -107,12 +109,12 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
       <div className="p-3">
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Property</span>
+          <span className="text-[11px] font-medium text-foreground">{t("pcsn.node.property")}</span>
         </div>
 
         {!isExpanded && (
           <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">
-            {data.productName ? `${data.productName}${data.area ? ` · ${data.area}` : ""}` : "No property selected"}
+            {data.productName ? `${data.productName}${data.area ? ` · ${data.area}` : ""}` : t("pcsn.prop.noneSelected")}
           </div>
         )}
 
@@ -144,14 +146,14 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
 
             {/* Live inventory picker */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-foreground font-medium">Pick from inventory</Label>
+              <Label className="text-[10px] text-foreground font-medium">{t("pcsn.prop.pick")}</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input value={q} onChange={(e) => setQ(e.target.value)} onMouseDown={stop} placeholder="Search project, area, developer…" className="h-8 pl-7 text-xs" />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} onMouseDown={stop} placeholder={t("pcsn.prop.search")} className="h-8 pl-7 text-xs" />
               </div>
               <div className="max-h-[160px] overflow-y-auto rounded border border-border divide-y divide-border">
-                {loading && <div className="flex items-center gap-2 p-2 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Loading inventory…</div>}
-                {!loading && filtered.length === 0 && <div className="p-2 text-[10px] text-muted-foreground">No properties in inventory yet.</div>}
+                {loading && <div className="flex items-center gap-2 p-2 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t("pcsn.prop.loading")}</div>}
+                {!loading && filtered.length === 0 && <div className="p-2 text-[10px] text-muted-foreground">{t("pcsn.prop.none")}</div>}
                 {!loading && filtered.map((p) => (
                   <button key={p.id} onClick={() => selectProperty(p)} className="flex w-full items-center gap-2 p-1.5 text-left hover:bg-muted/50">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
@@ -168,24 +170,22 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
 
             {/* Manual image override */}
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Or upload a render / photo</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.prop.upload")}</Label>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               <Button variant="outline" className="w-full h-9 flex items-center gap-2 border-dashed bg-transparent" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}>
                 <Upload className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Upload image</span>
+                <span className="text-[10px] text-muted-foreground">{t("pcsn.prop.uploadBtn")}</span>
               </Button>
             </div>
 
-            <p className="text-[9px] text-muted-foreground">
-              The selected listing (name, area, price, beds) feeds the image, script and video prompts — so the reel is about a real property from your inventory.
-            </p>
+            <p className="text-[9px] text-muted-foreground">{t("pcsn.prop.help")}</p>
           </div>
         )}
 
         {status === "running" && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
-            processing
+            {t("pcsn.processing")}
           </div>
         )}
       </div>

@@ -7,25 +7,15 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Run, RunStep } from "@/lib/creative-studio/types"
+import { useT } from "@/lib/i18n/provider"
 
-const NODE_LABELS: Record<string, string> = {
-  start: "Start",
-  end: "End",
-  textModel: "Text Model",
-  prompt: "Prompt",
-  conditional: "Condition",
-  httpRequest: "HTTP Request",
-  imageGeneration: "Image Generation",
-  javascript: "JavaScript",
-  audio: "Audio",
-  embeddingModel: "Embedding",
-  tool: "Tool",
-  structuredOutput: "Structured Output",
-  memory: "Memory",
-  ugcModel: "Presenter",
-  productUpload: "Property",
-  script: "Listing Script",
-  videoGeneration: "Video Generation",
+const NODE_KEY: Record<string, string> = {
+  start: "pcsn.node.start", end: "pcsn.node.end", textModel: "pcsn.node.textModel", prompt: "pcsn.node.prompt",
+  conditional: "pcsn.node.condition", httpRequest: "pcsn.node.http", imageGeneration: "pcsn.node.image",
+  javascript: "pcsn.node.javascript", audio: "pcsn.node.audio", embeddingModel: "pcsn.node.embedding",
+  tool: "pcsn.node.tool", structuredOutput: "pcsn.node.structured", memory: "pcsn.node.memory",
+  ugcModel: "pcsn.node.presenter", productUpload: "pcsn.node.property", script: "pcsn.node.listingScript",
+  videoGeneration: "pcsn.node.videoGeneration",
 }
 
 type ExecutionResult = {
@@ -60,6 +50,7 @@ export function ExecutionPanel({
   onRunComplete,
   initialStopAtNodeId,
 }: ExecutionPanelProps) {
+  const t = useT()
   const [isExecuting, setIsExecuting] = useState(false)
   const [executionLog, setExecutionLog] = useState<ExecutionResult[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -316,7 +307,7 @@ export function ExecutionPanel({
                 <SelectItem key={node.id} value={node.id} className="text-xs">
                   <span className="flex items-center gap-2">
                     <StopCircle className="h-3 w-3 text-amber-500" />
-                    {NODE_LABELS[node.type || ""] || node.type} 
+                    {NODE_KEY[node.type || ""] ? t(NODE_KEY[node.type || ""]) : node.type} 
                     {node.data?.label ? ` (${node.data.label})` : ""}
                   </span>
                 </SelectItem>
