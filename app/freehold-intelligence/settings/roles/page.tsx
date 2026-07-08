@@ -83,6 +83,7 @@ export default function RolesPage() {
         <p className="mt-1 text-sm text-slate-400">
           {t('settings.roles.subtitle')}
         </p>
+        <p className="mt-2 text-xs text-slate-500">{t('settings.roles.referenceNote')}</p>
       </div>
 
       {/* Role cards */}

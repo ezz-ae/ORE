@@ -192,6 +192,7 @@ export const settings: Record<Locale, Dict> = {
     // ── Roles page ──
     'settings.roles.title': 'Roles & Permissions',
     'settings.roles.subtitle': 'System-level role definitions. Assign roles to team members in the Team tab.',
+    'settings.roles.referenceNote': 'Reference only — this shows what each role can do. Roles are assigned per member in the Team tab.',
     'settings.roles.permission': 'Permission',
     // Role cards
     'settings.roles.owner': 'Owner',
@@ -227,6 +228,10 @@ export const settings: Record<Locale, Dict> = {
 
     // ── Billing page ──
     'settings.billing.title': 'Billing',
+    'settings.billing.managedNote': 'Your subscription is managed by your account manager. This page shows your live workspace usage.',
+    'settings.billing.contactTitle': 'Billing &amp; subscription',
+    'settings.billing.contactBody': 'For invoices, plan changes, or payment details, contact your account manager — billing is handled directly with your team.',
+    'settings.billing.contactBilling': 'Contact billing',
     'settings.billing.planName': 'Professional',
     'settings.billing.active': 'Active',
     'settings.billing.billedMonthly': 'Billed monthly · Next charge {date}',
@@ -294,6 +299,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.api.title': 'API Reference',
     'settings.api.subtitlePrefix': 'RESTful API for integrating Freehold Intelligence with external tools. Manage keys in',
     'settings.api.securityLink': 'Security →',
+    'settings.api.referenceNote': 'API reference. Endpoints activate as the API rolls out; manage your keys in Security.',
     'settings.api.baseUrl': 'Base URL',
     'settings.api.authPrefix': 'All requests require',
     'settings.api.quick.fullDocs': 'Full docs',
@@ -536,6 +542,7 @@ export const settings: Record<Locale, Dict> = {
     // ── Roles page ──
     'settings.roles.title': 'الأدوار والصلاحيات',
     'settings.roles.subtitle': 'تعريفات الأدوار على مستوى النظام. عيّن الأدوار لأعضاء الفريق في علامة تبويب الفريق.',
+    'settings.roles.referenceNote': 'للاطّلاع فقط — يوضّح ما يمكن لكل دور فعله. تُعيَّن الأدوار لكل عضو في علامة تبويب الفريق.',
     'settings.roles.permission': 'الصلاحية',
     // Role cards
     'settings.roles.owner': 'المالك',
@@ -571,6 +578,10 @@ export const settings: Record<Locale, Dict> = {
 
     // ── Billing page ──
     'settings.billing.title': 'الفوترة',
+    'settings.billing.managedNote': 'يُدار اشتراكك بواسطة مدير حسابك. تعرض هذه الصفحة استخدام مساحة عملك المباشر.',
+    'settings.billing.contactTitle': 'الفوترة والاشتراك',
+    'settings.billing.contactBody': 'للفواتير أو تغييرات الخطة أو تفاصيل الدفع، تواصل مع مدير حسابك — تتم الفوترة مباشرةً مع فريقك.',
+    'settings.billing.contactBilling': 'التواصل بشأن الفوترة',
     'settings.billing.planName': 'احترافي',
     'settings.billing.active': 'نشط',
     'settings.billing.billedMonthly': 'فوترة شهرية · الدفعة التالية {date}',
@@ -638,6 +649,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.api.title': 'مرجع API',
     'settings.api.subtitlePrefix': 'واجهة برمجة RESTful لدمج Freehold Intelligence مع الأدوات الخارجية. أدِر المفاتيح في',
     'settings.api.securityLink': 'الأمان ←',
+    'settings.api.referenceNote': 'مرجع واجهة برمجة التطبيقات. تُفعَّل نقاط النهاية مع إطلاق الواجهة؛ أدِر مفاتيحك في الأمان.',
     'settings.api.baseUrl': 'عنوان URL الأساسي',
     'settings.api.authPrefix': 'تتطلب جميع الطلبات',
     'settings.api.quick.fullDocs': 'الوثائق الكاملة',
@@ -880,6 +892,7 @@ export const settings: Record<Locale, Dict> = {
     // ── Roles page ──
     'settings.roles.title': 'Роли и права доступа',
     'settings.roles.subtitle': 'Определения ролей системного уровня. Назначайте роли участникам на вкладке «Команда».',
+    'settings.roles.referenceNote': 'Только для справки — показывает возможности каждой роли. Роли назначаются участникам на вкладке «Команда».',
     'settings.roles.permission': 'Право доступа',
     // Role cards
     'settings.roles.owner': 'Владелец',
@@ -915,6 +928,10 @@ export const settings: Record<Locale, Dict> = {
 
     // ── Billing page ──
     'settings.billing.title': 'Оплата',
+    'settings.billing.managedNote': 'Ваша подписка управляется вашим менеджером. На этой странице показано реальное использование рабочего пространства.',
+    'settings.billing.contactTitle': 'Оплата и подписка',
+    'settings.billing.contactBody': 'По счетам, изменениям тарифа или платёжным данным обращайтесь к вашему менеджеру — оплата ведётся напрямую с вашей командой.',
+    'settings.billing.contactBilling': 'Связаться по оплате',
     'settings.billing.planName': 'Профессиональный',
     'settings.billing.active': 'Активен',
     'settings.billing.billedMonthly': 'Ежемесячная оплата · Следующее списание {date}',
@@ -982,6 +999,7 @@ export const settings: Record<Locale, Dict> = {
     'settings.api.title': 'Справочник API',
     'settings.api.subtitlePrefix': 'RESTful API для интеграции Freehold Intelligence с внешними инструментами. Управляйте ключами в разделе',
     'settings.api.securityLink': 'Безопасность →',
+    'settings.api.referenceNote': 'Справочник по API. Эндпоинты активируются по мере выпуска API; управляйте ключами в разделе «Безопасность».',
     'settings.api.baseUrl': 'Базовый URL',
     'settings.api.authPrefix': 'Все запросы требуют',
     'settings.api.quick.fullDocs': 'Полная документация',
