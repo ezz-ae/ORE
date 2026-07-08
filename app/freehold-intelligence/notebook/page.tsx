@@ -9,7 +9,7 @@ import {
   Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
   Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
   BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper, History, Trash2,
-  Library as LibraryIcon, Image as ImageIcon2, Video, FileDown,
+  Library as LibraryIcon, Image as ImageIcon2, Video, FileDown, Download,
 } from 'lucide-react'
 import { saveAccountMemory } from '@/lib/freehold/account-memory'
 import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
@@ -47,7 +47,6 @@ type DemoOutput = {
   id: string; type: string; title: string; content: string; pinned: boolean
   tags: string[]; status: string; conversationId: string
 }
-const allOutputs: DemoOutput[] = []
 const pinnedOutputs: DemoOutput[] = []
 
 type CenterTab = 'chat' | 'expert' | 'library' | 'saved' | 'pinned'
@@ -98,11 +97,11 @@ const GENERATE_TYPES = [
   { key: 'social_post',   labelKey: 'nb.gen.socialPost',   icon: <Newspaper className="h-5 w-5" /> },
 ]
 
+// Only real destinations: attach to a lead's CRM timeline, or download the
+// output. (Ads/WhatsApp/email "sends" were clipboard+toast fakes — removed.)
 const SEND_DESTINATIONS = [
   { key: 'crm',       labelKey: 'nb.dest.crm',      icon: <Users className="h-3.5 w-3.5" /> },
-  { key: 'ads_live',  labelKey: 'nb.dest.adsLive',  icon: <Globe className="h-3.5 w-3.5" /> },
-  { key: 'whatsapp',  labelKey: 'nb.dest.whatsapp', icon: <Phone className="h-3.5 w-3.5" /> },
-  { key: 'email',     labelKey: 'nb.dest.email',    icon: <Mail className="h-3.5 w-3.5" /> },
+  { key: 'download',  labelKey: 'nb.dest.download', icon: <Download className="h-3.5 w-3.5" /> },
 ]
 
 // Uploads are user-added sources only — no sample files.
@@ -245,12 +244,14 @@ export default function NotebookPage() {
   // Real, persisted conversation threads (per-user; management sees the team's).
   type ConvSummary = { id: string; title: string; messages: { role: 'user' | 'assistant'; content: string }[]; updatedAt: string; savedOutputs: unknown[] }
   const [conversations, setConversations] = useState<ConvSummary[]>([])
-  useEffect(() => {
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  function loadConversations() {
     fetch('/api/freehold/notebook/conversations')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (Array.isArray(d?.conversations)) setConversations(d.conversations) })
       .catch(() => {})
-  }, [])
+  }
+  useEffect(() => { loadConversations() }, [])
 
   // center panel
   const [centerTab, setCenterTab] = useState<CenterTab>('chat')
@@ -271,6 +272,7 @@ export default function NotebookPage() {
   const [genInput, setGenInput] = useState('')
   const [genResult, setGenResult] = useState('')
   const [genLoading, setGenLoading] = useState(false)
+  const [genSaving, setGenSaving] = useState(false)
   // Lead context: when the Notebook is opened from a CRM lead (?lead=<id>),
   // "Send to CRM" attaches the output to that lead's timeline (a real edge).
   const [leadCtx, setLeadCtx] = useState<string | null>(null)
@@ -278,6 +280,24 @@ export default function NotebookPage() {
     const id = new URLSearchParams(window.location.search).get('lead')
     if (id) setLeadCtx(id)
   }, [])
+
+  async function saveGenerated() {
+    if (!genResult.trim()) return
+    const type = GENERATE_TYPES.find((g) => g.key === activeGenerate)
+    setGenSaving(true)
+    try {
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'report', title: type ? t(type.labelKey) : t('nb.notebookOutput'), content: genResult }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok || !d?.item) throw new Error('failed')
+      setLibItems((prev) => [d.item, ...prev])
+      toast.success(t('nb.savedToLibrary'))
+    } catch {
+      toast.error(t('nb.saveFailed'))
+    } finally { setGenSaving(false) }
+  }
 
   async function runGenerate() {
     const type = GENERATE_TYPES.find((g) => g.key === activeGenerate)
@@ -337,16 +357,18 @@ export default function NotebookPage() {
     setChatInput('')
     setChatPending(true)
     try {
-      const res = await fetch('/api/freehold/server-ai/chat', {
+      // Use the PERSISTING notebook endpoint so the thread is real and shows up
+      // in the sidebar / reloads (the old server-ai/chat call was ephemeral).
+      const res = await fetch('/api/freehold/notebook/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, role: 'owner' }),
+        body: JSON.stringify({ message, conversationId: conversationId ?? undefined }),
       })
       const data = await res.json()
-      const answer =
-        data?.data?.answer || data?.answer || data?.message || data?.reply ||
-        t('nb.chatFallback')
+      const answer = data?.answer || data?.message || t('nb.chatFallback')
+      if (data?.conversationId) setConversationId(data.conversationId)
       setChatMessages(m => [...m, { role: 'assistant', content: answer }])
+      loadConversations()
     } catch {
       setChatMessages(m => [...m, { role: 'assistant', content: t('nb.chatError') }])
     } finally {
@@ -1054,12 +1076,21 @@ export default function NotebookPage() {
                 {genResult && (
                   <div className="mt-2 rounded-lg border border-line bg-surface p-2.5">
                     <p className="max-h-48 overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed text-slate-300">{genResult}</p>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success(t('nb.copied')) }}
-                      className="mt-2 text-[10px] font-medium text-gold/80 hover:text-gold"
-                    >
-                      {t('nb.copyToClipboard')}
-                    </button>
+                    <div className="mt-2 flex items-center gap-3">
+                      <button
+                        onClick={saveGenerated}
+                        disabled={genSaving}
+                        className="text-[10px] font-medium text-gold/80 hover:text-gold disabled:opacity-50"
+                      >
+                        {genSaving ? t('nb.saving') : t('nb.saveToLibrary')}
+                      </button>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success(t('nb.copied')) }}
+                        className="text-[10px] font-medium text-slate-400 hover:text-slate-200"
+                      >
+                        {t('nb.copyToClipboard')}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1069,8 +1100,11 @@ export default function NotebookPage() {
           {/* recent outputs */}
           <div className="px-4 py-4">
             <p className="mb-3 text-xs font-medium text-slate-400">{t('nb.recentOutputs')}</p>
+            {dbOutputs.length === 0 ? (
+              <p className="text-xs text-slate-500">{t('nb.noOutputsYet')}</p>
+            ) : (
             <div className="space-y-2">
-              {allOutputs.slice(0, 6).map(output => (
+              {dbOutputs.slice(0, 6).map(output => (
                 <div
                   key={output.id}
                   className="flex items-start gap-3 rounded-xl border border-line bg-surface-2 p-3 transition hover:border-line-strong"
@@ -1079,13 +1113,8 @@ export default function NotebookPage() {
                     {outputTypeIcon(output.type, 'h-3 w-3')}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate text-xs font-medium text-slate-100">{output.title}</span>
-                      {output.pinned && <Pin className="h-2.5 w-2.5 shrink-0 text-gold" />}
-                    </div>
-                    <span className={`mt-0.5 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium capitalize ${statusTone(output.status)}`}>
-                      {output.status.replace(/_/g, ' ')}
-                    </span>
+                    <span className="block truncate text-xs font-medium text-slate-100">{output.title}</span>
+                    <span className="mt-0.5 block text-[10px] text-slate-500">{new Date(output.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
                   </div>
                   <button
                     onClick={() => setActiveSendOutput(activeSendOutput === output.id ? null : output.id)}
@@ -1096,6 +1125,7 @@ export default function NotebookPage() {
                 </div>
               ))}
             </div>
+            )}
           </div>
 
           {/* send to */}
@@ -1126,7 +1156,7 @@ export default function NotebookPage() {
               {activeSendDest && (
                 <button
                   onClick={async () => {
-                    const output = allOutputs.find(o => o.id === activeSendOutput)
+                    const output = dbOutputs.find(o => o.id === activeSendOutput)
                     const dest = SEND_DESTINATIONS.find(d => d.key === activeSendDest)
                     const destLabel = dest ? t(dest.labelKey) : t('nb.destinationFallback')
                     const title = output?.title ?? t('nb.notebookOutput')
@@ -1150,14 +1180,12 @@ export default function NotebookPage() {
                       return
                     }
 
-                    if (activeSendDest === 'download') {
-                      const blob = new Blob([fullText], { type: 'text/plain' })
-                      const url = URL.createObjectURL(blob); const a = document.createElement('a')
-                      a.href = url; a.download = `${(output?.title ?? 'output').replace(/\s+/g, '-').toLowerCase()}.txt`
-                      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
-                    } else {
-                      navigator.clipboard.writeText(fullText).catch(() => {})
-                    }
+                    // Download the output as a text file (the only remaining
+                    // non-CRM destination).
+                    const blob = new Blob([fullText], { type: 'text/plain' })
+                    const url = URL.createObjectURL(blob); const a = document.createElement('a')
+                    a.href = url; a.download = `${(output?.title ?? 'output').replace(/\s+/g, '-').toLowerCase()}.txt`
+                    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url)
                     toast.success(t('nb.sentTo', { label: destLabel }))
                     setActiveSendDest(null); setActiveSendOutput(null)
                   }}
