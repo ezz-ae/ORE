@@ -301,9 +301,13 @@ export default function NewCampaignPage() {
             imageUrl: (p.heroImage as string) || '',
             startingPrice: typeof p.startingPriceAED === 'number' ? p.startingPriceAED : null,
             paymentPlan: (p.paymentPlan as string) || null,
+            // One landing per listing: always /lp/[slug]. When a dedicated
+            // landing page exists we use its own slug; otherwise /lp/[project]
+            // renders live from inventory — so the ad never points anywhere
+            // but the listing's landing.
             landingUrl: p.landingUrl
               ? `https://www.freeholdproperty.ae${p.landingUrl}`
-              : `https://www.freeholdproperty.ae/projects/${p.slug}`,
+              : `https://www.freeholdproperty.ae/lp/${p.slug}`,
           }))
           .filter((l: WizardListing) => l.id && l.projectName)
         setListings(props)
@@ -333,7 +337,7 @@ export default function NewCampaignPage() {
         : `${displayName} — request the investor summary now.`,
       landingUrl: lp
         ? `https://www.freeholdproperty.ae/lp/${lp}`
-        : project ? `https://www.freeholdproperty.ae/projects/${project}` : prev.landingUrl,
+        : project ? `https://www.freeholdproperty.ae/lp/${project}` : prev.landingUrl,
     }))
   }, [])
 
