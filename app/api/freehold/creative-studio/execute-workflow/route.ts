@@ -78,8 +78,9 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
       return r.url
     }
     case "productUpload": {
-      // Emit a real listing line (name, beds, area, developer, price) plus the
-      // hero-image URL, so downstream prompts describe the actual property.
+      // Prefer the AI-written brief; otherwise a real listing line (name, beds,
+      // area, developer, price). Append the reference image so downstream image
+      // generation describes and edits the actual property.
       const parts = [
         str(d.productName),
         str(d.bedrooms),
@@ -87,10 +88,11 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
         d.developer ? `by ${str(d.developer)}` : "",
         d.price ? `from AED ${Number(d.price).toLocaleString("en-US")}` : "",
       ].filter(Boolean)
-      const line = parts.join(", ")
-      const img = str(d.productImage)
-      const isHttp = /^https?:\/\//.test(img)
-      return [line, isHttp ? img : ""].filter(Boolean).join(" ") || img || line
+      const text = str(d.brief) || parts.join(", ")
+      // Prefer the uploaded environment/backdrop as the reference, else the hero.
+      const img = str(d.environmentImage) || str(d.productImage)
+      const usable = /^(https?:\/\/|data:image\/)/.test(img) ? img : ""
+      return [text, usable].filter(Boolean).join(" ") || usable || text
     }
     case "conditional": {
       const cond = str(d.condition)

@@ -3,11 +3,13 @@
 import type React from "react"
 import { memo, useRef, useState, useEffect } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
-import { Building2, Upload, X, Search, Loader2, MapPin } from "lucide-react"
+import { Building2, Upload, X, Search, Loader2, MapPin, Sparkles, FileText, ImagePlus } from "lucide-react"
+import { toast } from "sonner"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { useT } from "@/lib/i18n/provider"
 
 export type ProductUploadNodeData = {
@@ -21,6 +23,13 @@ export type ProductUploadNodeData = {
   price?: number | null
   bedrooms?: string
   propertyType?: string
+  // Media & brief editor
+  environmentImage?: string
+  brochureName?: string
+  brochureData?: string
+  link?: string
+  notes?: string
+  brief?: string
   status?: "idle" | "running" | "completed" | "error"
   output?: string
   isExpanded?: boolean
@@ -48,11 +57,14 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const envInputRef = useRef<HTMLInputElement>(null)
+  const brochureInputRef = useRef<HTMLInputElement>(null)
 
   const [properties, setProperties] = useState<InvProperty[]>([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [q, setQ] = useState("")
+  const [writing, setWriting] = useState(false)
 
   // Pull the real inventory the first time the node is opened.
   useEffect(() => {
@@ -87,12 +99,49 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
 
   const clearProperty = () => handleUpdate({ propertyId: undefined, productImage: undefined })
 
+  const readAsDataUrl = (file: File, onDone: (dataUrl: string) => void) => {
+    const reader = new FileReader()
+    reader.onload = (event) => onDone(event.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => handleUpdate({ productImage: event.target?.result as string })
-      reader.readAsDataURL(file)
+    if (file) readAsDataUrl(file, (d) => handleUpdate({ productImage: d }))
+  }
+
+  const handleEnvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) readAsDataUrl(file, (d) => handleUpdate({ environmentImage: d }))
+  }
+
+  const handleBrochureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) readAsDataUrl(file, (d) => handleUpdate({ brochureData: d, brochureName: file.name }))
+  }
+
+  // Ask the AI to write an image-generation prompt from the property + info.
+  const handleWritePrompt = async () => {
+    setWriting(true)
+    try {
+      const res = await fetch("/api/freehold/creative-studio/write-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          property: { name: data.productName, area: data.area, developer: data.developer, price: data.price, bedrooms: data.bedrooms },
+          notes: data.notes || "",
+          link: data.link || "",
+          brochureData: data.brochureData || "",
+          brochureMime: "application/pdf",
+        }),
+      })
+      const d = await res.json()
+      if (d.prompt) { handleUpdate({ brief: d.prompt }); toast.success(t("pcsn.prop.briefDone")) }
+      else toast.error(d.error || t("pcsn.prop.briefFail"))
+    } catch {
+      toast.error(t("pcsn.prop.briefFail"))
+    } finally {
+      setWriting(false)
     }
   }
 
@@ -176,6 +225,42 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
                 <Upload className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-[10px] text-muted-foreground">{t("pcsn.prop.uploadBtn")}</span>
               </Button>
+            </div>
+
+            {/* Media & brief editor */}
+            <div className="space-y-2 rounded border border-border bg-muted/10 p-2">
+              <Label className="text-[10px] text-foreground font-medium">{t("pcsn.prop.mediaBrief")}</Label>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <input ref={envInputRef} type="file" accept="image/*" onChange={handleEnvUpload} className="hidden" />
+                <Button variant="outline" className="h-8 gap-1.5 border-dashed bg-transparent px-2" onClick={(e) => { e.stopPropagation(); envInputRef.current?.click() }}>
+                  <ImagePlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-[9px] text-muted-foreground truncate">{data.environmentImage ? t("pcsn.prop.envSet") : t("pcsn.prop.env")}</span>
+                </Button>
+                <input ref={brochureInputRef} type="file" accept="application/pdf" onChange={handleBrochureUpload} className="hidden" />
+                <Button variant="outline" className="h-8 gap-1.5 border-dashed bg-transparent px-2" onClick={(e) => { e.stopPropagation(); brochureInputRef.current?.click() }}>
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-[9px] text-muted-foreground truncate">{data.brochureName || t("pcsn.prop.brochure")}</span>
+                </Button>
+              </div>
+
+              <Input value={data.link || ""} onChange={(e) => handleUpdate({ link: e.target.value })} onMouseDown={stop}
+                placeholder={t("pcsn.prop.linkPh")} className="h-8 text-xs" />
+              <Textarea value={data.notes || ""} onChange={(e) => handleUpdate({ notes: e.target.value })} onMouseDown={stop}
+                placeholder={t("pcsn.prop.notesPh")} className="min-h-[48px] text-xs resize-none" />
+
+              <Button className="w-full h-8 gap-1.5 text-[10px]" disabled={writing} onClick={(e) => { e.stopPropagation(); handleWritePrompt() }}>
+                {writing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {writing ? t("pcsn.prop.writing") : t("pcsn.prop.writePrompt")}
+              </Button>
+
+              {data.brief && (
+                <div className="space-y-1">
+                  <Label className="text-[9px] text-emerald-500">{t("pcsn.prop.brief")}</Label>
+                  <Textarea value={data.brief} onChange={(e) => handleUpdate({ brief: e.target.value })} onMouseDown={stop}
+                    className="min-h-[64px] text-xs resize-none border-emerald-500/30" />
+                </div>
+              )}
             </div>
 
             <p className="text-[9px] text-muted-foreground">{t("pcsn.prop.help")}</p>
