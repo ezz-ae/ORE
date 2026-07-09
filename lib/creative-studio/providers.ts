@@ -19,6 +19,18 @@ const GEMINI_MODELS = (): string[] => {
   return Array.from(new Set([configured, ...current].filter(Boolean) as string[]))
 }
 
+// Turn Google's raw error payloads into one clear line for the run panel.
+function friendlyGeminiError(raw: string): string {
+  if (/RESOURCE_EXHAUSTED|"code":\s*429|quota|rate.?limit/i.test(raw)) {
+    return "Gemini is over quota / rate-limited. The free tier is exhausted — enable billing on your Google AI (Gemini) key, or wait a minute and retry."
+  }
+  if (/API_KEY_INVALID|API key not valid|"code":\s*40[13]/i.test(raw)) {
+    return "The Gemini API key was rejected. Check GEMINI_API_KEY in Integrations → AI."
+  }
+  const short = raw.replace(/\s+/g, " ").slice(0, 200)
+  return `Gemini error: ${short}`
+}
+
 /** Text generation via Gemini (Freehold's default provider). */
 export async function genText(prompt: string, opts: TextOptions = {}): Promise<string> {
   const key = GEMINI_KEY()
@@ -48,7 +60,7 @@ export async function genText(prompt: string, opts: TextOptions = {}): Promise<s
     // 404 = model retired/unknown → try the next candidate; other errors are fatal.
     if (res.status !== 404 && !/NOT_FOUND/i.test(lastErr)) break
   }
-  throw new Error(`Gemini error: ${lastErr}`)
+  throw new Error(friendlyGeminiError(lastErr))
 }
 
 export interface ImageOptions { aspectRatio?: string; imageUrl?: string; model?: string }
@@ -159,6 +171,11 @@ export async function genImage(prompt: string, opts: ImageOptions = {}): Promise
     return { url, provider: "fal.ai" }
   }
 
+  // The key exists but every Google attempt failed — almost always the same
+  // quota/rate-limit wall (or Imagen not enabled on the key), not a missing key.
+  if (key) {
+    throw new Error("Image generation failed on Google — likely the Gemini quota/rate limit (free tier exhausted) or Imagen isn't enabled on your key. Enable billing on your Gemini key, or add FAL_KEY for premium image/video.")
+  }
   throw new Error("Image generation needs GEMINI_API_KEY (Google, default) or FAL_KEY. Add one in your environment (Integrations → AI).")
 }
 

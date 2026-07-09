@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LayoutTemplate, Video, FileText } from "lucide-react"
+import { LayoutTemplate, Video, FileText, ImageIcon, Zap } from "lucide-react"
 import { WORKFLOW_TEMPLATES } from "@/lib/creative-studio/constants"
 import type { Node, Edge } from "@xyflow/react"
 
@@ -20,7 +20,10 @@ interface TemplatesMenuProps {
 }
 
 const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
-  "ugc-video-generation": <Video className="h-3.5 w-3.5" />,
+  "property-reel": <Video className="h-3.5 w-3.5" />,
+  "instagram-ad": <ImageIcon className="h-3.5 w-3.5" />,
+  "story-creative": <FileText className="h-3.5 w-3.5" />,
+  "quick-image": <Zap className="h-3.5 w-3.5" />,
 }
 
 export function TemplatesMenu({ onLoadTemplate }: TemplatesMenuProps) {
@@ -43,7 +46,7 @@ export function TemplatesMenu({ onLoadTemplate }: TemplatesMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wide py-1.5 px-2">
-          Templates
+          Ready sets
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {WORKFLOW_TEMPLATES.map((template) => (
