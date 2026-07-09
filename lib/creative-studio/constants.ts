@@ -46,7 +46,7 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
     completionSignal: "TASK_COMPLETE",
     maxIterations: 10,
   },
-  imageGeneration: { model: "google/imagen-3", aspectRatio: "9:16", outputFormat: "png" },
+  imageGeneration: { model: "google/imagen-3", format: "insta_ad", aspectRatio: "1:1", outputFormat: "png" },
   conditional: { condition: "input1 === 'value'" },
   javascript: { code: "// Access inputs as input1, input2, etc.\nreturn input1.toUpperCase()" },
   httpRequest: { url: "https://api.example.com", method: "GET" },
@@ -58,7 +58,7 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
   ugcModel: { ethnicity: "middle-eastern", gender: "female", ageRange: "26-35", description: "Polished Dubai property consultant, confident and warm on camera.", isLocked: false },
   productUpload: { productImage: undefined, productName: "", propertyId: undefined, area: "", developer: "", price: null, bedrooms: "", propertyType: "" },
   script: { script: "" },
-  videoGeneration: { model: "fal-ai/veo-3.1", aspectRatio: "9:16", duration: "8s" },
+  videoGeneration: { model: "fal-ai/veo-3.1", format: "reels", aspectRatio: "9:16", duration: "8s" },
 }
 
 export const IMAGE_MODELS = [
@@ -112,6 +112,18 @@ export const TTS_VOICES = [
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const
 
 export const ASPECT_RATIOS = ["1:1", "16:9", "4:3", "3:2", "9:16"] as const
+
+// Creative format presets — pick a placement and the aspect ratio + media type
+// follow. Image formats run on Google (Imagen); video formats need a video key.
+export const CREATIVE_FORMATS = [
+  { value: "story",    label: "Story",          aspect: "9:16", kind: "image" as const, hint: "9:16 · full-screen vertical" },
+  { value: "insta_ad", label: "Insta Ad",       aspect: "1:1",  kind: "image" as const, hint: "1:1 · feed square" },
+  { value: "creative", label: "Creative Image", aspect: "4:3",  kind: "image" as const, hint: "4:3 · versatile" },
+  { value: "reels",    label: "Reels",          aspect: "9:16", kind: "video" as const, hint: "9:16 · short vertical video" },
+  { value: "youtube",  label: "YouTube",        aspect: "16:9", kind: "video" as const, hint: "16:9 · landscape video" },
+] as const
+
+export type CreativeFormat = (typeof CREATIVE_FORMATS)[number]
 
 // Node type metadata
 export const NODE_TYPES: Record<NodeType, { label: string; description: string }> = {
