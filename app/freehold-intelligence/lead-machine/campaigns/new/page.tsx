@@ -9,7 +9,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Radar, Repeat, Crosshair, Gauge,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -64,16 +64,6 @@ interface WizardState {
   cplCapAED:     number
   autoEnhance:   'on' | 'off' | 'approval'
 }
-
-// Targeting strategies — the "mastered" way to aim, not a naive interest stack.
-// Each preset shapes the audience; 'custom' opens the full audience builder.
-const STRATEGIES: { key: TargetingStrategy | 'custom'; icon: typeof Radar; labelKey: string; descKey: string; broad: boolean }[] = [
-  { key: 'advantage_broad',     icon: Radar,     labelKey: 'lm.newCampaign.strat.broad',      descKey: 'lm.newCampaign.strat.broadDesc',      broad: true },
-  { key: 'lookalike_qualified', icon: Users,     labelKey: 'lm.newCampaign.strat.lookalike',  descKey: 'lm.newCampaign.strat.lookalikeDesc',  broad: true },
-  { key: 'retargeting_warm',    icon: Repeat,    labelKey: 'lm.newCampaign.strat.retarget',   descKey: 'lm.newCampaign.strat.retargetDesc',   broad: true },
-  { key: 'interest_refined',    icon: Crosshair, labelKey: 'lm.newCampaign.strat.interest',   descKey: 'lm.newCampaign.strat.interestDesc',   broad: false },
-  { key: 'custom',              icon: Sliders,   labelKey: 'lm.newCampaign.strat.custom',     descKey: 'lm.newCampaign.strat.customDesc',     broad: false },
-]
 
 // Auto-enhancement lets the AI act on delivery: 'on' = apply automatically,
 // 'approval' = recommend and wait for a click, 'off' = never touch it.
@@ -194,18 +184,6 @@ export default function NewCampaignPage() {
   const [uploadingImg, setUploadingImg] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
 
-  // Picking a strategy shapes the audience. Broad strategies clear the interest
-  // stack (let the algorithm hunt); interest_refined keeps it; custom opens the
-  // full builder popup.
-  function selectStrategy(s: (typeof STRATEGIES)[number]) {
-    if (s.key === 'custom') { setAudienceOpen(true) }
-    setForm((prev) => ({
-      ...prev,
-      strategy: s.key,
-      interestIds: s.broad ? [] : (prev.interestIds.length ? prev.interestIds : [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id]),
-    }))
-    setApiError(null)
-  }
   const GENDER_OPTIONS: { key: string; val: number[] }[] = [
     { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
   ]
@@ -710,6 +688,8 @@ export default function NewCampaignPage() {
                         <span className="font-semibold text-white">{fmtReach(buyerMatch.estimate.lower)}–{fmtReach(buyerMatch.estimate.upper)}</span>
                         <span className="ms-2 text-xs text-slate-500">{t('bm.liveReach')}</span>
                       </div>
+                    ) : buyerMatch.metaConnected ? (
+                      <span className="text-xs text-slate-400">{t('bm.reachWarming')}</span>
                     ) : (
                       <span className="text-xs text-slate-400">{t('bm.connectMeta')}</span>
                     )}
@@ -776,35 +756,6 @@ export default function NewCampaignPage() {
               ) : (
                 <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
               )}
-            </div>
-
-            {/* Strategy — the mastered way to aim (algorithm-vs-algorithm), not a naive interest stack */}
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.strategy')}</Label>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {STRATEGIES.map((s) => {
-                  const Icon = s.icon
-                  const active = form.strategy === s.key
-                  return (
-                    <button
-                      key={s.key}
-                      type="button"
-                      onClick={() => selectStrategy(s)}
-                      className={`flex items-start gap-3 rounded-[14px] border p-3.5 text-left transition ${
-                        active ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface-2 hover:border-white/10'
-                      }`}
-                    >
-                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-gold/15 text-gold' : 'bg-white/[0.04] text-slate-400'}`}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] font-semibold text-white">{t(s.labelKey)}</span>
-                        <span className="mt-0.5 block text-[11px] leading-relaxed text-slate-500">{t(s.descKey)}</span>
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
             </div>
 
             {/* Audience summary — the full builder opens as a popup (nested tab) */}

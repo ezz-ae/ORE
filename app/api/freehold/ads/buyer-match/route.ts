@@ -4,7 +4,7 @@ import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { query } from "@/lib/db"
 import { getInventoryPropertyBySlug } from "@/lib/inventory-data"
 import { UAE_INTERESTS } from "@/lib/meta/targeting-catalog"
-import { getReachEstimate } from "@/lib/meta/client"
+import { getReachEstimate, isMetaConfigured } from "@/lib/meta/client"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -104,15 +104,21 @@ export async function POST(req: NextRequest) {
     interestNames: interests.map((i) => i.name),
   }
 
-  // ── Live Meta reach estimate for that spec (null when not connected) ──
-  const estimate = await getReachEstimate({
-    countries,
-    cityKeys: [],
-    ageMin: band.ageMin,
-    ageMax: band.ageMax,
-    publisherPlatforms: ["facebook", "instagram"],
-    interests,
-  })
+  // ── Live Meta reach estimate for that spec ──
+  // metaConnected is decided by real creds, NOT by whether the estimate call
+  // returned data — so a connected account whose estimate is momentarily
+  // unavailable never sees a misleading "connect Meta".
+  const metaConnected = await isMetaConfigured()
+  const estimate = metaConnected
+    ? await getReachEstimate({
+        countries,
+        cityKeys: [],
+        ageMin: band.ageMin,
+        ageMax: band.ageMax,
+        publisherPlatforms: ["facebook", "instagram"],
+        interests,
+      })
+    : null
 
   const closeRate = leads.qualified > 0 ? Math.round((leads.closed / leads.qualified) * 100) : null
 
@@ -133,6 +139,6 @@ export async function POST(req: NextRequest) {
     },
     recommendation,
     estimate: estimate ? { lower: estimate.lower, upper: estimate.upper, ready: estimate.ready } : null,
-    metaConnected: !!estimate,
+    metaConnected,
   })
 }
