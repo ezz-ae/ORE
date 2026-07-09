@@ -126,6 +126,15 @@ export default function InventoryClient({ initialProperties }: { initialProperti
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [query, setQuery] = useState('')
 
+  // Only show a status filter chip when at least one property actually has that
+  // status — a permanent "0 results" filter (e.g. off-plan showing nothing)
+  // erodes trust more than it helps.
+  const statusCounts = initialProperties.reduce<Record<string, number>>((acc, p) => {
+    acc[p.status] = (acc[p.status] || 0) + 1
+    return acc
+  }, {})
+  const visibleFilters = FILTERS.filter((f) => f.value === 'all' || (statusCounts[f.value] || 0) > 0)
+
   const filtered = initialProperties
     .filter((p) => filter === 'all' || p.status === filter)
     .filter((p) => {
@@ -227,7 +236,7 @@ export default function InventoryClient({ initialProperties }: { initialProperti
       <div className="mt-10 flex flex-wrap items-center gap-3">
         {/* Filter pills */}
         <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
+          {visibleFilters.map((f) => (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}

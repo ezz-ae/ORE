@@ -26,13 +26,16 @@ type DBProjectRow = {
 // ── Row mappers ───────────────────────────────────────────────────────────────
 
 function mapStatus(raw: string | null): PropertyStatus {
-  if (!raw) return 'active'
-  const s = raw.toLowerCase()
-  if (s === 'selling' || s === 'ready') return 'ready'
-  if (s === 'off-plan' || s === 'offplan') return 'off_plan'
-  if (s === 'under-construction' || s === 'construction') return 'under_construction'
-  if (s === 'coming-soon') return 'coming_soon'
-  if (s === 'sold-out' || s === 'soldout') return 'sold_out'
+  // Normalise the source vocabulary (available/reserved/sold/selling/launching/
+  // upcoming/completed/sold-out plus off-plan variants) to our categories.
+  const s = (raw || '').toLowerCase().trim().replace(/[\s_]+/g, '-')
+  if (['off-plan', 'offplan', 'launching', 'launch', 'upcoming', 'pre-launch', 'prelaunch', 'announced'].includes(s)) return 'off_plan'
+  if (['under-construction', 'construction', 'building'].includes(s)) return 'under_construction'
+  if (['coming-soon', 'comingsoon'].includes(s)) return 'coming_soon'
+  if (['ready', 'available', 'completed', 'complete', 'handover', 'move-in', 'movein'].includes(s)) return 'ready'
+  if (['sold-out', 'soldout', 'sold'].includes(s)) return 'sold_out'
+  // 'selling' / 'reserved' / unknown stay neutral; the off-plan view reclassifies
+  // these by handover date (a future handover ⇒ off-plan).
   return 'active'
 }
 
@@ -118,6 +121,11 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
   const landing = landingMap.get(row.slug)
   const hasLanding = !!landing
   const handoverYear = extractHandoverYear(row.payload)
+  // The canonical status lives in the payload (mirrors the rest of the app);
+  // fall back to the column.
+  const payloadStatus = row.payload && typeof row.payload === 'object'
+    ? ((row.payload as Record<string, unknown>).status as string | undefined)
+    : undefined
 
   // Composite scores
   const dataQuality = Math.min(
@@ -152,7 +160,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
           : unitTypes.some((t) => /Office|Retail/i.test(t))
             ? 'commercial'
             : 'apartment',
-    status: mapStatus(row.status),
+    status: mapStatus(payloadStatus || row.status),
     startingPriceAED: row.price_from_aed ? Number(row.price_from_aed) : null,
     maxPriceAED: row.price_to_aed ? Number(row.price_to_aed) : null,
     heroImage: row.hero_image || null,
@@ -295,7 +303,7 @@ export async function getInventoryPropertiesFromDB(): Promise<InventoryProperty[
         `SELECT ${SELECT_FIELDS}
          FROM freehold_site_projects p
          ORDER BY COALESCE(p.market_score, 0) DESC NULLS LAST
-         LIMIT 500`,
+         LIMIT 2000`,
       ),
       getLandingMap(),
       getLeadCounts(),
