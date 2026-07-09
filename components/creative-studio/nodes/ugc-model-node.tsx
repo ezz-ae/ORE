@@ -11,8 +11,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useT } from "@/lib/i18n/provider"
+import { PRESENTER_PERSONAS } from "@/lib/creative-studio/constants"
 
 export type UgcModelNodeData = {
+  persona?: string
   ethnicity: string
   gender: string
   ageRange: string
@@ -82,6 +84,20 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
   const currentEthnicity = data.ethnicity || "middle-eastern"
   const currentGender = data.gender || "female"
   const currentAgeRange = data.ageRange || "26-35"
+  const currentPersona = data.persona || "layla"
+  const isCustom = currentPersona === "custom"
+  const personaObj = PRESENTER_PERSONAS.find((p) => p.id === currentPersona)
+
+  const selectPersona = (idValue: string) => {
+    if (!data.onUpdate || isLocked) return
+    const { isExpanded: _e, onUpdate: _o, ...rest } = data
+    if (idValue === "custom") {
+      data.onUpdate({ ...rest, persona: "custom" })
+      return
+    }
+    const p = PRESENTER_PERSONAS.find((x) => x.id === idValue)
+    if (p) data.onUpdate({ ...rest, persona: p.id, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange, description: p.description })
+  }
 
   return (
     <div
@@ -121,7 +137,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         {!isExpanded && (
           <div className="mt-2 space-y-1">
             <div className="text-[10px] text-muted-foreground font-mono truncate">
-              {GENDERS.find(g => g.value === currentGender)?.label}, {ETHNICITIES.find(e => e.value === currentEthnicity)?.label}
+              {personaObj ? `${personaObj.name} · ${personaObj.tagline}` : `${GENDERS.find(g => g.value === currentGender)?.label}, ${ETHNICITIES.find(e => e.value === currentEthnicity)?.label}`}
             </div>
             {isLocked && (
               <div className="flex items-center gap-1 text-[10px] text-amber-500 font-mono">
@@ -134,6 +150,35 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
 
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
+            {/* Persona presets */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-foreground font-medium">{t("pcsn.pres.persona")}</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PRESENTER_PERSONAS.map((p) => {
+                  const active = currentPersona === p.id
+                  return (
+                    <button key={p.id} disabled={isLocked} onClick={() => selectPersona(p.id)}
+                      className={`rounded border px-2 py-1.5 text-left transition ${active ? "border-primary/50 bg-primary/10" : "border-border hover:bg-muted/50"} ${isLocked ? "opacity-60" : ""}`}>
+                      <span className="block text-[11px] font-medium text-foreground">{p.name}</span>
+                      <span className="block text-[9px] text-muted-foreground">{p.tagline}</span>
+                    </button>
+                  )
+                })}
+                <button disabled={isLocked} onClick={() => selectPersona("custom")}
+                  className={`rounded border px-2 py-1.5 text-left transition ${isCustom ? "border-primary/50 bg-primary/10" : "border-border hover:bg-muted/50"} ${isLocked ? "opacity-60" : ""}`}>
+                  <span className="block text-[11px] font-medium text-foreground">{t("pcsn.pres.custom")}</span>
+                  <span className="block text-[9px] text-muted-foreground">{t("pcsn.pres.customHint")}</span>
+                </button>
+              </div>
+            </div>
+
+            {!isCustom && personaObj && (
+              <div className="rounded border border-border bg-muted/20 p-2 text-[10px] leading-relaxed text-muted-foreground">
+                {personaObj.description}
+              </div>
+            )}
+
+            {isCustom && (<>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.gender")}</Label>
               <Select value={currentGender} onValueChange={(value) => handleUpdate("gender", value)} disabled={isLocked}>
@@ -193,6 +238,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
                 disabled={isLocked}
               />
             </div>
+            </>)}
 
             {isLocked && data.lockedImageUrl && (
               <div className="space-y-1.5">
