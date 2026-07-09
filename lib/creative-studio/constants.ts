@@ -46,7 +46,7 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
     completionSignal: "TASK_COMPLETE",
     maxIterations: 10,
   },
-  imageGeneration: { model: "fal-ai/flux-2-pro/edit", aspectRatio: "9:16", outputFormat: "jpeg" },
+  imageGeneration: { model: "google/imagen-3", aspectRatio: "9:16", outputFormat: "png" },
   conditional: { condition: "input1 === 'value'" },
   javascript: { code: "// Access inputs as input1, input2, etc.\nreturn input1.toUpperCase()" },
   httpRequest: { url: "https://api.example.com", method: "GET" },
@@ -62,8 +62,9 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
 }
 
 export const IMAGE_MODELS = [
-  { value: "fal-ai/flux-2-pro/edit", label: "Flux 2 Pro Edit", group: "Fal AI", description: "Image-to-image, best quality (recommended)" },
-  { value: "fal-ai/flux-2/lora/edit", label: "Flux 2 LoRA Edit", group: "Fal AI", description: "Image-to-image with LoRA support" },
+  { value: "google/imagen-3", label: "Imagen 3", group: "Google", description: "Text-to-image, cost-efficient (default)" },
+  { value: "google/gemini-image", label: "Gemini Image", group: "Google", description: "Image-to-image editing on your Gemini key" },
+  { value: "fal-ai/flux-2-pro/edit", label: "Flux 2 Pro Edit", group: "Fal AI (premium)", description: "Premium quality — needs FAL_KEY" },
 ] as const
 
 export const EMBEDDING_MODELS = [
