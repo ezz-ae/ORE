@@ -34,6 +34,8 @@ export default function RoadshowPage() {
   const [answers, setAnswers] = useState({ audience: '', goal: 'registrations', budget: '', offer: '', keyMessage: '', durationDays: '10' })
   const [plan, setPlan] = useState<Plan | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [draftBusy, setDraftBusy] = useState(false)
+  const [draftLink, setDraftLink] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/freehold/calendar')
@@ -72,6 +74,29 @@ export default function RoadshowPage() {
       toast.error(t('proad.err.gen'))
     } finally {
       setGenerating(false)
+    }
+  }
+
+  async function createDraft() {
+    if (!selected || !plan) return
+    setDraftBusy(true)
+    try {
+      const res = await fetch('/api/freehold/ads/roadshow-launch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: { title: selected.title, startsAt: selected.startsAt, location: selected.location, externalParty: selected.externalParty, description: selected.description },
+          answers,
+          plan,
+        }),
+      })
+      const d = await res.json()
+      if (d.ok && d.link) { setDraftLink(d.link as string); toast.success(t('proad.asset.draftReady')) }
+      else toast.error(d.error || t('proad.err.launch'))
+    } catch {
+      toast.error(t('proad.err.launch'))
+    } finally {
+      setDraftBusy(false)
     }
   }
 
@@ -218,12 +243,23 @@ export default function RoadshowPage() {
               {(plan.assets && plan.assets.length ? plan.assets : [{ type: 'landing' }, { type: 'fb_event' }, { type: 'campaign' }]).map((as, i) => {
                 const meta = ASSET_META[as.type || ''] || { Icon: LayoutTemplate, href: null }
                 const Icon = meta.Icon
+                const isCampaign = as.type === 'campaign'
                 return (
                   <div key={i} className="flex flex-col rounded-xl border border-line bg-surface p-3.5">
                     <Icon className="h-4 w-4 text-rose-400" />
                     <div className="mt-2 text-sm font-medium text-white">{as.label || t(`proad.asset.${as.type}`)}</div>
                     {as.note && <div className="mt-1 text-[11px] leading-relaxed text-slate-500">{as.note}</div>}
-                    {meta.href ? (
+                    {isCampaign ? (
+                      draftLink ? (
+                        <Link href={draftLink} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-400/20">
+                          {t('proad.asset.openDraft')} <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <button onClick={createDraft} disabled={draftBusy} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-400/20 disabled:opacity-60">
+                          {draftBusy ? <><Loader2 className="h-3 w-3 animate-spin" />{t('proad.asset.building')}</> : <>{t('proad.asset.buildDraft')} <Rocket className="h-3 w-3" /></>}
+                        </button>
+                      )
+                    ) : meta.href ? (
                       <Link href={meta.href} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-400/20">
                         {t('proad.asset.create')} <ExternalLink className="h-3 w-3" />
                       </Link>
