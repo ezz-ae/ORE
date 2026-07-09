@@ -6,7 +6,14 @@
 // provider can serve a node, we return a clear, actionable message rather than
 // a fake result.
 
-const GEMINI_KEY = () => process.env.GEMINI_API_KEY || process.env.google_api_key || ""
+// Accept the common env-var name variants so a key set under any of them works.
+const GEMINI_KEY = () =>
+  process.env.GEMINI_API_KEY ||
+  process.env.Gemini_API_KEY ||
+  process.env.GOOGLE_API_KEY ||
+  process.env.google_api_key ||
+  process.env.GEMINI_KEY ||
+  ""
 const FAL_KEY = () => process.env.FAL_KEY || ""
 
 export interface TextOptions { temperature?: number; maxTokens?: number; system?: string }
