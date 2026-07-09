@@ -39,6 +39,7 @@ interface WizardState {
   campaignName:  string
   // Step 2
   dailyBudgetAED: number
+  countries:     string[]
   cityKeys:      string[]
   ageMin:        number
   ageMax:        number
@@ -61,6 +62,10 @@ const OBJECTIVES: { value: MetaCampaignObjective; label: string; desc: string }[
   { value: 'CONVERSIONS',     label: 'Conversions',      desc: 'Drive traffic to your landing page and track pixel conversions.' },
   { value: 'LINK_CLICKS',     label: 'Traffic',          desc: 'Maximise clicks to your landing page. Good for awareness.' },
 ]
+
+// Countries the ad can be delivered in. AE is the home market; the rest cover
+// the GCC + the key expat/investor source markets for Dubai real estate.
+const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
 
 const CTA_OPTIONS: { value: MetaCta; label: string }[] = [
   { value: 'LEARN_MORE',   label: 'Learn More' },
@@ -111,6 +116,7 @@ export default function NewCampaignPage() {
     objective:    'LEAD_GENERATION',
     campaignName: '',
     dailyBudgetAED: 200,
+    countries:    ['AE'],
     cityKeys:     ['297928'], // Dubai
     ageMin:       28,
     ageMax:       65,
@@ -298,7 +304,7 @@ export default function NewCampaignPage() {
       listingName:    listing?.projectName ?? form.campaignName,
       dailyBudgetAED: form.dailyBudgetAED,
       targeting: {
-        countries:          ['AE'],
+        countries:          form.countries.length ? form.countries : ['AE'],
         cityKeys:           form.cityKeys,
         ageMin:             form.ageMin,
         ageMax:             form.ageMax,
@@ -555,6 +561,36 @@ export default function NewCampaignPage() {
               <p className="mt-1 text-sm text-slate-500">
                 {t('lm.newCampaign.s2.monthlyNote', { n: (form.dailyBudgetAED * 30).toLocaleString() })}
               </p>
+            </div>
+
+            <div>
+              <Label>{t('lm.newCampaign.s2.label.countries')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {COUNTRY_CODES.map((code) => {
+                  const selected = form.countries.includes(code)
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() =>
+                        update('countries',
+                          selected
+                            ? form.countries.filter((c) => c !== code)
+                            : [...form.countries, code],
+                        )
+                      }
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                        selected
+                          ? 'border-gold/40 bg-gold/15 text-gold'
+                          : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'
+                      }`}
+                    >
+                      {t(`lm.country.${code}`)}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-1.5 text-sm text-slate-500">{t('lm.newCampaign.s2.countriesHint')}</p>
             </div>
 
             <div>
