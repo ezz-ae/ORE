@@ -55,7 +55,17 @@ interface WizardState {
   imageHash:     string
   // Step 4
   launchStatus:  'ACTIVE' | 'PAUSED'
+  cplCapAED:     number
+  autoEnhance:   'on' | 'off' | 'approval'
 }
+
+// Auto-enhancement lets the AI act on delivery: 'on' = apply automatically,
+// 'approval' = recommend and wait for a click, 'off' = never touch it.
+const AUTO_ENHANCE_OPTIONS: { value: 'on' | 'off' | 'approval'; labelKey: string; descKey: string }[] = [
+  { value: 'approval', labelKey: 'lm.newCampaign.s4.autoEnhance.approval', descKey: 'lm.newCampaign.s4.autoEnhance.approvalDesc' },
+  { value: 'on',       labelKey: 'lm.newCampaign.s4.autoEnhance.on',       descKey: 'lm.newCampaign.s4.autoEnhance.onDesc' },
+  { value: 'off',      labelKey: 'lm.newCampaign.s4.autoEnhance.off',      descKey: 'lm.newCampaign.s4.autoEnhance.offDesc' },
+]
 
 const OBJECTIVES: { value: MetaCampaignObjective; label: string; desc: string }[] = [
   { value: 'LEAD_GENERATION', label: 'Lead generation',  desc: 'Collect leads directly on Facebook/Instagram with a native form.' },
@@ -102,6 +112,20 @@ function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1.5 block text-xs font-medium text-slate-400">{children}</label>
 }
 
+// Honest projections for a just-fired campaign — clearly labelled as ESTIMATES,
+// never presented as delivered numbers. They give way to real reach/leads/CPL
+// once Meta reports the first delivery.
+function estimatePotentialReach(countryCount: number, interestCount: number): { min: number; max: number } {
+  // Broad (no interest constraint) hunts a far larger pool than a refined stack.
+  const base = Math.max(1, countryCount) * (interestCount > 0 ? 45_000 : 130_000)
+  return { min: Math.round((base * 0.6) / 1000) * 1000, max: Math.round((base * 1.15) / 1000) * 1000 }
+}
+function estimateMonthlyResults(dailyBudgetAED: number, cplCapAED: number): number {
+  if (cplCapAED <= 0) return 0
+  return Math.max(0, Math.floor((dailyBudgetAED * 30) / cplCapAED))
+}
+const fmtReach = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n))
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function NewCampaignPage() {
   const t = useT()
@@ -130,6 +154,8 @@ export default function NewCampaignPage() {
     imageUrl:     '',
     imageHash:    '',
     launchStatus: 'PAUSED',
+    cplCapAED:    150,
+    autoEnhance:  'approval',
   })
   const [uploadingImg, setUploadingImg] = useState(false)
 
@@ -348,17 +374,46 @@ export default function NewCampaignPage() {
     }
   }
 
-  // ─── Success screen ────────────────────────────────────────────────────────
+  // ─── Success screen — honest post-launch state ──────────────────────────────
+  // A just-fired campaign has NO reach, NO leads, NO CPL yet. Instead of showing
+  // zeros (which read as broken), we show what we CAN honestly say: potential
+  // reach (estimate), expected results (from budget ÷ CPL cap), the CPL cap
+  // itself, and the auto-enhancement mode. Each estimate is labelled as such and
+  // becomes the real metric once Meta reports the first delivery.
   if (launched) {
+    const reach = estimatePotentialReach(form.countries.length, form.interestIds.length)
+    const expected = estimateMonthlyResults(form.dailyBudgetAED, form.cplCapAED)
+    const enhanceLabel = AUTO_ENHANCE_OPTIONS.find((o) => o.value === form.autoEnhance)?.labelKey ?? 'lm.newCampaign.s4.autoEnhance.approval'
+    const resultCards = [
+      { label: t('lm.newCampaign.result.potentialReach'), value: `${fmtReach(reach.min)}–${fmtReach(reach.max)}`, note: t('lm.newCampaign.result.potentialReachNote'), tone: 'text-gold' },
+      { label: t('lm.newCampaign.result.expectedResults'), value: expected > 0 ? `~${expected}/${t('lm.newCampaign.result.perMonth')}` : '—', note: t('lm.newCampaign.result.expectedResultsNote'), tone: 'text-emerald-400' },
+      { label: t('lm.newCampaign.result.cplCap'), value: `AED ${form.cplCapAED.toLocaleString()}`, note: t('lm.newCampaign.result.cplCapNote'), tone: 'text-white' },
+      { label: t('lm.newCampaign.result.autoEnhance'), value: t(enhanceLabel), note: t('lm.newCampaign.result.autoEnhanceNote'), tone: 'text-violet-300' },
+    ]
     return (
-      <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 text-center sm:px-6">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-gold" />
-        <h1 className="mt-6 text-[32px] font-semibold text-white">{t('lm.newCampaign.success.title')}</h1>
-        <p className="mt-3 text-[16px] text-slate-400">
-          {launched.status === 'ACTIVE'
-            ? t('lm.newCampaign.success.liveMsg')
-            : t('lm.newCampaign.success.pausedMsg')}
-        </p>
+      <div className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:px-6">
+        <div className="text-center">
+          <CheckCircle2 className="mx-auto h-14 w-14 text-gold" />
+          <h1 className="mt-6 text-[32px] font-semibold text-white">{t('lm.newCampaign.success.title')}</h1>
+          <p className="mt-3 text-[16px] text-slate-400">
+            {launched.status === 'ACTIVE'
+              ? t('lm.newCampaign.success.liveMsg')
+              : t('lm.newCampaign.success.pausedMsg')}
+          </p>
+        </div>
+
+        {/* Honest results — estimates until the campaign delivers. */}
+        <div className="mt-8 grid grid-cols-2 gap-3">
+          {resultCards.map((c) => (
+            <div key={c.label} className="rounded-[16px] border border-line bg-surface-2 p-4">
+              <div className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">{c.label}</div>
+              <div className={`mt-1.5 text-[22px] font-semibold leading-none ${c.tone}`}>{c.value}</div>
+              <div className="mt-1.5 text-[11px] leading-relaxed text-slate-500">{c.note}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-[11px] text-slate-600">{t('lm.newCampaign.result.becomesReal')}</p>
+
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/campaigns/${launched.campaignId}`}
@@ -841,6 +896,43 @@ export default function NewCampaignPage() {
                   >
                     <div className="text-sm font-semibold text-white">{t(opt.labelKey)}</div>
                     <p className="mt-1 text-sm text-slate-500">{t(opt.descKey)}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* CPL cap — the number that actually matters before there's a real CPL. */}
+            <div>
+              <Label>{t('lm.newCampaign.s4.label.cplCap')}</Label>
+              <div className="relative">
+                <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">AED</span>
+                <input
+                  type="number" min="10"
+                  className={`${inputCls(form.cplCapAED < 10)} ps-12`}
+                  value={form.cplCapAED}
+                  onChange={(e) => update('cplCapAED', Math.max(0, parseInt(e.target.value) || 0))}
+                />
+              </div>
+              <p className="mt-1 text-sm text-slate-500">{t('lm.newCampaign.s4.cplCapHint')}</p>
+            </div>
+
+            {/* Auto-enhancement — let the AI act, recommend, or stay out. */}
+            <div>
+              <Label>{t('lm.newCampaign.s4.label.autoEnhance')}</Label>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {AUTO_ENHANCE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update('autoEnhance', opt.value)}
+                    className={`rounded-[14px] border p-3 text-left transition ${
+                      form.autoEnhance === opt.value
+                        ? 'border-gold/40 bg-gold/[0.06]'
+                        : 'border-line hover:border-white/10'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-white">{t(opt.labelKey)}</div>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{t(opt.descKey)}</p>
                   </button>
                 ))}
               </div>
