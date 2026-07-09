@@ -16,7 +16,8 @@ const str = (v: unknown) => (v == null ? "" : typeof v === "string" ? v : JSON.s
 // reference image for image/video generation).
 const findUrl = (inputs: string[]): string | undefined => {
   for (const i of inputs) {
-    const m = String(i).match(/https?:\/\/[^\s"']+/)
+    // Accept both hosted URLs and inline data: URLs (Google returns base64).
+    const m = String(i).match(/(https?:\/\/[^\s"']+|data:image\/[^\s"']+)/)
     if (m) return m[0]
   }
   return undefined

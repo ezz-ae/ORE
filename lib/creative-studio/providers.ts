@@ -53,22 +53,113 @@ export async function genText(prompt: string, opts: TextOptions = {}): Promise<s
 
 export interface ImageOptions { aspectRatio?: string; imageUrl?: string; model?: string }
 
-/** Image generation: fal.ai when configured, otherwise an honest instruction. */
+// Google is the default image provider (cheap, uses the existing GEMINI key).
+// It returns base64, so we hand back a data: URL — there is no blob host.
+const IMAGEN_ASPECTS: Record<string, string> = {
+  "1:1": "1:1", "9:16": "9:16", "16:9": "16:9", "4:3": "4:3", "3:4": "3:4",
+  "4:5": "3:4", "2:3": "3:4", "3:2": "4:3",
+}
+
+// Resolve a reference image (http URL or data: URL) to inline base64 for editing.
+async function toInlineImage(imageUrl?: string): Promise<{ data: string; mime: string } | null> {
+  if (!imageUrl) return null
+  if (imageUrl.startsWith("data:")) {
+    const m = imageUrl.match(/^data:([^;]+);base64,(.+)$/)
+    return m ? { mime: m[1], data: m[2] } : null
+  }
+  if (/^https?:\/\//.test(imageUrl)) {
+    try {
+      const r = await fetch(imageUrl)
+      if (!r.ok) return null
+      const buf = Buffer.from(await r.arrayBuffer())
+      return { data: buf.toString("base64"), mime: r.headers.get("content-type") || "image/jpeg" }
+    } catch { return null }
+  }
+  return null
+}
+
+// Imagen 3 — clean text-to-image with real aspect-ratio control.
+async function imagenGenerate(prompt: string, aspectRatio: string, key: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${key}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1, aspectRatio: IMAGEN_ASPECTS[aspectRatio] || "1:1" },
+        }),
+      },
+    )
+    if (!res.ok) return null
+    const j = (await res.json()) as { predictions?: Array<{ bytesBase64Encoded?: string; mimeType?: string }> }
+    const p = j.predictions?.[0]
+    return p?.bytesBase64Encoded ? `data:${p.mimeType || "image/png"};base64,${p.bytesBase64Encoded}` : null
+  } catch { return null }
+}
+
+// Gemini native image (also does image→image editing when given a reference).
+async function geminiImage(prompt: string, key: string, ref: { data: string; mime: string } | null): Promise<string | null> {
+  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"]
+  const parts: unknown[] = []
+  if (ref) parts.push({ inline_data: { mime_type: ref.mime, data: ref.data } })
+  parts.push({ text: prompt })
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } }),
+        },
+      )
+      if (!res.ok) continue
+      const j = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<Record<string, unknown>> } }> }
+      for (const part of j.candidates?.[0]?.content?.parts ?? []) {
+        const inl = (part.inlineData || part.inline_data) as { data?: string; mimeType?: string; mime_type?: string } | undefined
+        if (inl?.data) return `data:${inl.mimeType || inl.mime_type || "image/png"};base64,${inl.data}`
+      }
+    } catch { continue }
+  }
+  return null
+}
+
+/**
+ * Image generation. Google (Imagen / Gemini) is the default — cheap and served
+ * by the existing GEMINI key. fal.ai is used only as an optional premium path.
+ */
 export async function genImage(prompt: string, opts: ImageOptions = {}): Promise<{ url: string; provider: string }> {
+  const key = GEMINI_KEY()
+  const aspect = opts.aspectRatio || "1:1"
+
+  if (key) {
+    const ref = await toInlineImage(opts.imageUrl)
+    // With a reference image → Gemini editing. Without → Imagen for aspect control.
+    if (!ref) {
+      const im = await imagenGenerate(prompt, aspect, key)
+      if (im) return { url: im, provider: "google-imagen" }
+    }
+    const gm = await geminiImage(ref ? `${prompt}\n\nMaintain the composition and use ${aspect} framing.` : `${prompt}\n\nRender in ${aspect} aspect ratio.`, key, ref)
+    if (gm) return { url: gm, provider: "google-gemini" }
+  }
+
+  // Optional premium provider.
   if (FAL_KEY()) {
     const { fal } = await import("@fal-ai/client")
     fal.config({ credentials: FAL_KEY() })
     const model = opts.model || (opts.imageUrl ? "fal-ai/flux-2-pro/edit" : "fal-ai/flux-2-pro")
     const input: Record<string, unknown> = { prompt }
-    if (opts.imageUrl) input.image_url = opts.imageUrl
+    if (opts.imageUrl && /^https?:\/\//.test(opts.imageUrl)) input.image_url = opts.imageUrl
     if (opts.aspectRatio) input.aspect_ratio = opts.aspectRatio
     const result = (await fal.subscribe(model, { input })) as { data?: { images?: Array<{ url?: string }> } }
     const url = result?.data?.images?.[0]?.url
     if (!url) throw new Error("fal.ai returned no image.")
     return { url, provider: "fal.ai" }
   }
-  // Vertex Imagen is the intended premium fallback; until it's wired, be honest.
-  throw new Error("Image generation needs a fal.ai key (FAL_KEY) — add it in your environment to enable image nodes. Freehold can also route this to Vertex Imagen once configured.")
+
+  throw new Error("Image generation needs GEMINI_API_KEY (Google, default) or FAL_KEY. Add one in your environment (Integrations → AI).")
 }
 
 export interface VideoOptions { imageUrl?: string; model?: string; duration?: number }
@@ -86,5 +177,5 @@ export async function genVideo(prompt: string, opts: VideoOptions = {}): Promise
     if (!url) throw new Error("fal.ai returned no video.")
     return { url, provider: "fal.ai" }
   }
-  throw new Error("Video generation needs a fal.ai key (FAL_KEY) — add it in your environment to enable video nodes.")
+  throw new Error("Video generation needs a fal.ai key (FAL_KEY), or Google Veo access on your Gemini key — add one in your environment to enable video nodes. Image generation already runs on Google by default.")
 }
