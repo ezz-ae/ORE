@@ -308,9 +308,12 @@ export function ExpertChat() {
     }
   }
 
-  // The Notebook is its own conversation/notes workspace — don't dock a second
-  // chat there (avoids two chat inputs competing on one page).
-  if (pathname?.startsWith('/freehold-intelligence/notebook')) return null
+  // The Notebook and Creative Studio are their own focused workspaces — don't
+  // dock a second chat there (the Studio is a full-bleed canvas showcase).
+  if (
+    pathname?.startsWith('/freehold-intelligence/notebook') ||
+    pathname?.startsWith('/freehold-intelligence/creative-studio')
+  ) return null
 
   // ─── Collapsed rail ──
   if (!open) {
