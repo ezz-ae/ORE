@@ -5,11 +5,9 @@ import { memo } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { MessageSquare } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { TEXT_MODELS, PROVIDER_LOGOS } from "@/lib/creative-studio/constants"
 
 export type TextModelNodeData = {
   model: string
@@ -40,18 +38,6 @@ function TextModelNode({ data, selected }: NodeProps<Node<TextModelNodeData>>) {
     e.stopPropagation()
   }
 
-  const getShortModelName = () => {
-    const model = data.model || "openai/gpt-5"
-    const parts = model.split("/")
-    return parts[parts.length - 1]
-  }
-
-  const getCurrentModelLogo = () => {
-    const model = TEXT_MODELS.find((m) => m.value === data.model)
-    const group = model?.group || "OpenAI"
-    return PROVIDER_LOGOS[group]
-  }
-
   return (
     <div
       className={`w-[280px] rounded border bg-card transition-colors duration-150 ${getStatusColor(status, selected)}`}
@@ -60,7 +46,6 @@ function TextModelNode({ data, selected }: NodeProps<Node<TextModelNodeData>>) {
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-medium text-foreground">Text Model</span>
-          <span className="ml-auto text-xs text-muted-foreground font-mono">{getShortModelName()}</span>
         </div>
 
         {!isExpanded && (
@@ -72,31 +57,6 @@ function TextModelNode({ data, selected }: NodeProps<Node<TextModelNodeData>>) {
 
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Model</Label>
-              <Select value={data.model || "openai/gpt-5"} onValueChange={(value) => handleUpdate("model", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {TEXT_MODELS.map((model) => (
-                    <SelectItem key={model.value} value={model.value} className="py-1.5">
-                      <div className="flex items-center gap-2">
-                        {PROVIDER_LOGOS[model.group] && (
-                          <img
-                            src={PROVIDER_LOGOS[model.group] || "/placeholder.svg"}
-                            alt={model.group}
-                            className="h-4 w-4 rounded-sm object-contain"
-                          />
-                        )}
-                        <span>{model.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-1.5" onMouseDown={stopPropagation}>
               <Label className="text-xs text-muted-foreground">Temperature: {data.temperature || 0.7}</Label>
               <Slider

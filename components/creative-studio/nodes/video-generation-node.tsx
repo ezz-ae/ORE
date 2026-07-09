@@ -7,12 +7,12 @@ import { Video, Play } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PROVIDER_LOGOS, CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
+import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
 
 const VIDEO_FORMATS = CREATIVE_FORMATS.filter((f) => f.kind === "video")
 
 export type VideoGenerationNodeData = {
-  model: string
+  model?: string
   format?: string
   aspectRatio?: string
   duration?: number
@@ -21,10 +21,6 @@ export type VideoGenerationNodeData = {
   isExpanded?: boolean
   onUpdate?: (data: any) => void
 }
-
-const VIDEO_MODELS = [
-  { value: "fal-ai/veo-3.1", label: "Veo 3.1", group: "Fal AI", description: "Image-to-video with audio (recommended)" },
-]
 
 const ASPECT_RATIOS = [
   { value: "9:16", label: "9:16 (Vertical/Stories)" },
@@ -53,12 +49,6 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
     e.stopPropagation()
   }
 
-  const getModelLabel = (modelValue: string) => {
-    const model = VIDEO_MODELS.find((m) => m.value === modelValue)
-    return model?.label || modelValue
-  }
-
-  const currentModel = data.model || "fal-ai/veo-3.1"
   const currentAspectRatio = data.aspectRatio || "9:16"
   const currentFormat = data.format || "reels"
   const formatLabel = VIDEO_FORMATS.find((f) => f.value === currentFormat)?.label || "Reels"
@@ -83,7 +73,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
 
         {!isExpanded && (
           <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">
-            {formatLabel} · {getModelLabel(currentModel)}
+            {formatLabel}
           </div>
         )}
 
@@ -106,36 +96,8 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[9px] text-muted-foreground">Video needs a video key (FAL_KEY or Google Veo access). Image formats run on Google by default.</p>
+              <p className="text-[9px] text-muted-foreground">Video needs a video provider key in your environment. Image formats work by default.</p>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Model</Label>
-              <Select value={currentModel} onValueChange={(value) => handleUpdate("model", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VIDEO_MODELS.map((model) => (
-                    <SelectItem key={model.value} value={model.value} className="py-1.5">
-                      <div className="flex items-center gap-2">
-                        {PROVIDER_LOGOS[model.group] && (
-                          <img
-                            src={PROVIDER_LOGOS[model.group] || "/placeholder.svg"}
-                            alt={model.group}
-                            className="h-4 w-4 rounded-sm object-contain"
-                          />
-                        )}
-                        <div className="flex flex-col">
-                          <span className="text-xs">{model.label}</span>
-                          <span className="text-[9px] text-muted-foreground">{model.description}</span>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">Aspect Ratio</Label>
               <Select value={currentAspectRatio} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
