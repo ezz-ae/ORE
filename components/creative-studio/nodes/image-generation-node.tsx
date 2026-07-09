@@ -9,10 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { IMAGE_MODELS, PROVIDER_LOGOS } from "@/lib/creative-studio/constants"
+import { IMAGE_MODELS, PROVIDER_LOGOS, CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
+
+const IMAGE_FORMATS = CREATIVE_FORMATS.filter((f) => f.kind === "image")
 
 export type ImageGenerationNodeData = {
   model: string
+  format?: string
   aspectRatio?: string
   outputFormat?: string
   status?: "idle" | "running" | "completed" | "error"
@@ -64,7 +67,16 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
     return PROVIDER_LOGOS[group]
   }
 
-  const currentModel = data.model || "openai/gpt-image-1"
+  const currentModel = data.model || "google/imagen-3"
+  const currentFormat = data.format || "insta_ad"
+  const formatLabel = IMAGE_FORMATS.find((f) => f.value === currentFormat)?.label || "Creative Image"
+
+  const selectFormat = (value: string) => {
+    if (!data.onUpdate) return
+    const f = IMAGE_FORMATS.find((x) => x.value === value)
+    const { isExpanded: _e, onUpdate: _o, ...rest } = data
+    data.onUpdate({ ...rest, format: value, aspectRatio: f?.aspect || data.aspectRatio })
+  }
 
   return (
     <div
@@ -102,11 +114,29 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
         </div>
 
         {!isExpanded && (
-          <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">{getModelLabel(currentModel)}</div>
+          <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">{formatLabel} · {getModelLabel(currentModel)}</div>
         )}
 
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-foreground font-medium">Format</Label>
+              <Select value={currentFormat} onValueChange={selectFormat}>
+                <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {IMAGE_FORMATS.map((f) => (
+                    <SelectItem key={f.value} value={f.value} className="py-1.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs">{f.label}</span>
+                        <span className="text-[10px] text-muted-foreground">{f.hint}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">Model</Label>
               <Select value={currentModel} onValueChange={(value) => handleUpdate("model", value)}>
