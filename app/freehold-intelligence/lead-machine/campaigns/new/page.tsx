@@ -23,7 +23,7 @@ interface WizardListing {
   paymentPlan: string | null
   landingUrl: string
 }
-import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta } from '@/lib/meta/types'
+import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
@@ -241,6 +241,38 @@ export default function NewCampaignPage() {
   function applyBuyerMatch() {
     if (!buyerMatch) return
     setForm((prev) => ({ ...prev, strategy: 'interest_refined', ageMin: buyerMatch.recommendation.ageMin, ageMax: buyerMatch.recommendation.ageMax, interestIds: buyerMatch.recommendation.interestIds }))
+  }
+
+  // ── Creative: real ad preview + AI copy generation (existing generator) ──
+  const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
+  const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
+  const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
+  const [genLoading, setGenLoading] = useState(false)
+  const CREATIVE_ANGLES = ['investor', 'urgency', 'lifestyle', 'yield', 'golden_visa', 'end_user'] as const
+  async function generateCopy() {
+    const listing = listings.find((l) => l.id === form.listingId)
+    if (!listing) { setApiError(t('lm.newCampaign.s3.needListing')); return }
+    setGenLoading(true); setApiError(null)
+    try {
+      const res = await fetch('/api/meta/creatives/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listing.id, listingName: listing.projectName, area: listing.area,
+          developer: 'Freehold', startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
+          angle: genAngle, tone: 'direct', cta: form.cta,
+        }),
+      })
+      const d = await res.json()
+      if (Array.isArray(d.variants)) setVariants(d.variants)
+      else setApiError(d.error || t('lm.newCampaign.s3.genFailed'))
+    } catch {
+      setApiError(t('lm.newCampaign.s3.genFailed'))
+    } finally {
+      setGenLoading(false)
+    }
+  }
+  function applyVariant(v: GeneratedCreativeVariant) {
+    setForm((prev) => ({ ...prev, primaryText: v.primaryText, headline: v.headline, description: v.description || prev.description, cta: v.cta }))
   }
 
   // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
@@ -934,6 +966,84 @@ export default function NewCampaignPage() {
         {step === 3 && (
           <div className="space-y-5">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s3.heading')}</h2>
+
+            {/* Live ad preview — the actual creative, per placement, not lines of text */}
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,260px)_1fr]">
+              <div>
+                <div className="mb-2 flex items-center gap-1.5">
+                  {(['feed', 'story'] as const).map((p) => (
+                    <button key={p} type="button" onClick={() => setPreviewPlacement(p)}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${previewPlacement === p ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400'}`}>
+                      {t(`lm.newCampaign.s3.placement.${p}`)}
+                    </button>
+                  ))}
+                </div>
+                {/* The rendered ad */}
+                <div className="overflow-hidden rounded-2xl border border-line bg-black">
+                  {previewPlacement === 'feed' ? (
+                    <div className="bg-[#18181b]">
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        <div className="h-7 w-7 rounded-full bg-gold/80" />
+                        <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+                      </div>
+                      {form.primaryText && <div className="px-3 pb-2 text-[11px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
+                      <div className="aspect-square w-full bg-surface-2">
+                        {form.imageUrl
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                          : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
+                        <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[10px] text-slate-500">{form.description}</div></div>
+                        <span className="shrink-0 rounded-md bg-gold/90 px-2 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative aspect-[9/16] w-full bg-surface-2">
+                      {form.imageUrl
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                        : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-3">
+                        <div className="text-[12px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
+                        <div className="mt-0.5 line-clamp-2 text-[10px] text-slate-300">{form.primaryText}</div>
+                        <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* AI copy generation — real Gemini variants (existing generator) */}
+              <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.s3.generate')}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {CREATIVE_ANGLES.map((a) => (
+                    <button key={a} type="button" onClick={() => setGenAngle(a)}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${genAngle === a ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400'}`}>
+                      {t(`lm.newCampaign.s3.angle.${a}`)}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={generateCopy} disabled={genLoading || !form.listingId}
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                  {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {genLoading ? t('lm.newCampaign.s3.generating') : t('lm.newCampaign.s3.generate')}
+                </button>
+                {variants.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {variants.map((v) => (
+                      <button key={v.id} type="button" onClick={() => applyVariant(v)}
+                        className="block w-full rounded-xl border border-line bg-surface p-2.5 text-left transition hover:border-gold/30">
+                        <div className="text-[11px] font-semibold text-white">{v.headline}</div>
+                        <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-slate-400">{v.primaryText}</div>
+                        <span className="mt-1 inline-block text-[10px] text-gold/70">{t('lm.newCampaign.s3.useVariant')}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div>
               <Label>{t('lm.newCampaign.s3.label.primaryText')}</Label>
