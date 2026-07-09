@@ -8,6 +8,7 @@ import { UAE_INTERESTS, UAE_CITIES, STRATEGY_LABELS, type TargetingRecommendatio
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
+  Monitor, Sparkles, ChevronRight,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -35,6 +36,7 @@ type WizardStep = 1 | 2 | 3 | 4
 interface WizardState {
   // Step 1
   listingId:     string
+  productObjective: ProductObjectiveKey
   objective:     MetaCampaignObjective
   campaignName:  string
   // Step 2
@@ -67,10 +69,24 @@ const AUTO_ENHANCE_OPTIONS: { value: 'on' | 'off' | 'approval'; labelKey: string
   { value: 'off',      labelKey: 'lm.newCampaign.s4.autoEnhance.off',      descKey: 'lm.newCampaign.s4.autoEnhance.offDesc' },
 ]
 
-const OBJECTIVES: { value: MetaCampaignObjective; label: string; desc: string }[] = [
-  { value: 'LEAD_GENERATION', label: 'Lead generation',  desc: 'Collect leads directly on Facebook/Instagram with a native form.' },
-  { value: 'CONVERSIONS',     label: 'Conversions',      desc: 'Drive traffic to your landing page and track pixel conversions.' },
-  { value: 'LINK_CLICKS',     label: 'Traffic',          desc: 'Maximise clicks to your landing page. Good for awareness.' },
+// The objective is the setup-changer: it's what the operator actually picks, and
+// it rewrites the destination + downstream steps. Each maps to a real Meta
+// objective the launch client already handles. Roadshow is its own strategic
+// builder — selecting it routes there, so there's still ONE entry to campaigns.
+type ProductObjectiveKey = 'smart_landing' | 'meta_lead' | 'branding'
+const PRODUCT_OBJECTIVES: {
+  key: ProductObjectiveKey | 'roadshow'
+  meta: MetaCampaignObjective | null
+  dest: 'landing' | 'form' | 'event'
+  route?: string
+  icon: typeof Monitor
+  labelKey: string
+  descKey: string
+}[] = [
+  { key: 'smart_landing', meta: 'LINK_CLICKS',     dest: 'landing', icon: Monitor,   labelKey: 'lm.newCampaign.obj.smartLanding',      descKey: 'lm.newCampaign.obj.smartLandingDesc' },
+  { key: 'meta_lead',     meta: 'LEAD_GENERATION', dest: 'form',    icon: FileText,  labelKey: 'lm.newCampaign.obj.metaLead',          descKey: 'lm.newCampaign.obj.metaLeadDesc' },
+  { key: 'branding',      meta: 'REACH',           dest: 'landing', icon: Megaphone, labelKey: 'lm.newCampaign.obj.branding',          descKey: 'lm.newCampaign.obj.brandingDesc' },
+  { key: 'roadshow',      meta: null,              dest: 'event',   route: '/freehold-intelligence/lead-machine/roadshow', icon: Sparkles, labelKey: 'lm.newCampaign.obj.roadshow', descKey: 'lm.newCampaign.obj.roadshowDesc' },
 ]
 
 // Countries the ad can be delivered in. AE is the home market; the rest cover
@@ -137,7 +153,8 @@ export default function NewCampaignPage() {
 
   const [form, setForm] = useState<WizardState>({
     listingId:    '',
-    objective:    'LEAD_GENERATION',
+    productObjective: 'smart_landing',
+    objective:    'LINK_CLICKS',
     campaignName: '',
     dailyBudgetAED: 200,
     countries:    ['AE'],
@@ -193,6 +210,16 @@ export default function NewCampaignPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
     setApiError(null)
   }
+
+  // Picking the objective is the setup-changer. Roadshow is a strategic builder
+  // of its own — route there (keeping one entry point to campaigns).
+  function selectObjective(po: (typeof PRODUCT_OBJECTIVES)[number]) {
+    if (po.route) { router.push(po.route); return }
+    setForm((prev) => ({ ...prev, productObjective: po.key as ProductObjectiveKey, objective: po.meta ?? prev.objective }))
+    setApiError(null)
+  }
+
+  const activeObjective = PRODUCT_OBJECTIVES.find((o) => o.key === form.productObjective) ?? PRODUCT_OBJECTIVES[0]
 
   // Everything the user types is saved: restore the last draft on mount
   // (this device first, then the ACCOUNT — so a draft started on the laptop
@@ -436,7 +463,7 @@ export default function NewCampaignPage() {
 
   const summaryTiles = [
     { labelKey: 'lm.newCampaign.s4.tileLabel.listing',   value: selectedListing?.projectName ?? form.listingId },
-    { labelKey: 'lm.newCampaign.s4.tileLabel.objective',  value: OBJECTIVES.find((o) => o.value === form.objective)?.label ?? form.objective },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.objective',  value: t(activeObjective.labelKey) },
     { labelKey: 'lm.newCampaign.s4.tileLabel.budget',     value: `AED ${form.dailyBudgetAED.toLocaleString()}` },
     { labelKey: 'lm.newCampaign.s4.tileLabel.audience',   value: t('lm.newCampaign.s4.audienceValue', { min: String(form.ageMin), max: String(form.ageMax) }) },
     { labelKey: 'lm.newCampaign.s4.tileLabel.platforms',  value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
@@ -508,27 +535,35 @@ export default function NewCampaignPage() {
 
             <div>
               <Label>{t('lm.newCampaign.s1.label.objective')}</Label>
-              <div className="space-y-2">
-                {OBJECTIVES.map((obj) => (
-                  <button
-                    key={obj.value}
-                    type="button"
-                    onClick={() => update('objective', obj.value)}
-                    className={`w-full rounded-[14px] border p-4 text-left transition ${
-                      form.objective === obj.value
-                        ? 'border-gold/40 bg-gold/[0.06]'
-                        : 'border-line bg-surface-2 hover:border-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`h-3.5 w-3.5 shrink-0 rounded-full border-2 ${form.objective === obj.value ? 'border-gold bg-gold' : 'border-white/25'}`} />
-                      <div>
-                        <div className="text-[14px] font-semibold text-white">{obj.label}</div>
-                        <p className="mt-0.5 text-xs text-slate-500">{obj.desc}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+              <p className="mb-2 text-xs text-slate-500">{t('lm.newCampaign.s1.objectiveHint')}</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {PRODUCT_OBJECTIVES.map((po) => {
+                  const Icon = po.icon
+                  const active = !po.route && form.productObjective === po.key
+                  return (
+                    <button
+                      key={po.key}
+                      type="button"
+                      onClick={() => selectObjective(po)}
+                      className={`flex items-start gap-3 rounded-[14px] border p-4 text-left transition ${
+                        active
+                          ? 'border-gold/40 bg-gold/[0.06]'
+                          : 'border-line bg-surface-2 hover:border-white/10'
+                      }`}
+                    >
+                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-gold/15 text-gold' : 'bg-white/[0.04] text-slate-400'}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1 text-[14px] font-semibold text-white">
+                          {t(po.labelKey)}
+                          {po.route && <ChevronRight className="h-3.5 w-3.5 text-slate-500" />}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{t(po.descKey)}</span>
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
