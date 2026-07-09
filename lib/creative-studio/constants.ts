@@ -55,7 +55,7 @@ export const DEFAULT_NODE_DATA: Record<NodeType, Record<string, unknown>> = {
   audio: { model: "openai/tts-1", voice: "alloy", speed: 1.0 },
   structuredOutput: { schemaName: "Schema", mode: "object" },
   memory: { operation: "load", sessionId: "default", key: "", memoryType: "fact", limit: 10 },
-  ugcModel: { ethnicity: "middle-eastern", gender: "female", ageRange: "26-35", description: "Polished Dubai property consultant, confident and warm on camera.", isLocked: false },
+  ugcModel: { persona: "layla", ethnicity: "middle-eastern", gender: "female", ageRange: "26-35", description: "Polished, elegant Dubai luxury property consultant; tailored modern business wear; warm, confident, high-end.", isLocked: false },
   productUpload: { productImage: undefined, productName: "", propertyId: undefined, area: "", developer: "", price: null, bedrooms: "", propertyType: "" },
   script: { script: "" },
   videoGeneration: { model: "fal-ai/veo-3.1", format: "reels", aspectRatio: "9:16", duration: "8s" },
@@ -84,6 +84,17 @@ export const ETHNICITIES = [
   { value: "middle-eastern", label: "Middle Eastern" },
   { value: "south-asian", label: "South Asian" },
   { value: "mixed", label: "Mixed" },
+] as const
+
+// Ready-made on-camera presenter personas for real-estate reels. Picking one
+// pre-fills the demographic fields; "Custom" exposes the manual controls.
+export const PRESENTER_PERSONAS = [
+  { id: "layla", name: "Layla", tagline: "Luxury consultant", gender: "female", ethnicity: "middle-eastern", ageRange: "26-35",
+    description: "Polished, elegant Dubai luxury property consultant; tailored modern business wear; warm, confident, high-end." },
+  { id: "omar", name: "Omar", tagline: "Investment advisor", gender: "male", ethnicity: "middle-eastern", ageRange: "36-45",
+    description: "Sharp, data-driven Dubai real-estate investment advisor; crisp navy suit; assured, trustworthy, ROI-focused." },
+  { id: "sara", name: "Sara", tagline: "Community specialist", gender: "female", ethnicity: "south-asian", ageRange: "26-35",
+    description: "Warm, approachable community-living specialist; smart-casual; friendly and relatable for families." },
 ] as const
 
 export const GENDERS = [
