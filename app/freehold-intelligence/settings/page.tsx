@@ -145,6 +145,19 @@ export default function SettingsPage() {
   const { user } = useSession()
   const canReset = user?.role === 'ceo' || user?.role === 'admin'
 
+  // Real team for the brand access list — no hardcoded owner.
+  const [team, setTeam] = useState<{ name: string; email: string; role: string }[]>([])
+  useEffect(() => {
+    fetch('/api/freehold/team')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.members)) {
+          setTeam(d.members.map((m: { name: string; email: string; role: string }) => ({ name: m.name, email: m.email, role: m.role })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // Operational reset (go-live).
   const [resetScope, setResetScope] = useState<'leads' | 'all-demo'>('leads')
   const [resetting, setResetting] = useState(false)
@@ -446,18 +459,16 @@ export default function SettingsPage() {
                   <label className="text-xs font-medium text-slate-500">{t('settings.brand.accessControl')}</label>
                 </div>
                 <div className="space-y-2">
-                  {[
-                    { role: t('settings.brand.access.owner'),      perms: t('settings.brand.access.owner.perms'),      email: 'm@ezz.ae' },
-                    { role: t('settings.brand.access.admin'),      perms: t('settings.brand.access.admin.perms'),      email: 'admin@freeholdproperty.ae' },
-                    { role: t('settings.brand.access.salesAgent'), perms: t('settings.brand.access.salesAgent.perms'), email: t('settings.brand.access.members', { count: 3 }) },
-                  ].map((u) => (
-                    <div key={u.role} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
+                  {team.length === 0 ? (
+                    <p className="px-1 text-xs text-slate-500">{t('settings.brand.access.empty')}</p>
+                  ) : team.map((u) => (
+                    <div key={u.email} className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3">
                       <div>
-                        <p className="text-sm font-medium text-slate-100">{u.role}</p>
+                        <p className="text-sm font-medium text-slate-100">{u.name}</p>
                         <p className="text-xs text-slate-500">{u.email}</p>
                       </div>
                       <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-sm text-slate-400">
-                        {u.perms}
+                        {u.role}
                       </span>
                     </div>
                   ))}
