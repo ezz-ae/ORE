@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
-import { UAE_INTERESTS, UAE_CITIES, STRATEGY_LABELS, type TargetingRecommendation } from '@/lib/meta/targeting-catalog'
+import { UAE_INTERESTS, UAE_CITIES, STRATEGY_LABELS, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
+import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight,
+  Monitor, Sparkles, ChevronRight, Sliders, Radar, Repeat, Crosshair, Gauge,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -40,11 +41,14 @@ interface WizardState {
   objective:     MetaCampaignObjective
   campaignName:  string
   // Step 2
+  strategy:      TargetingStrategy | 'custom'
   dailyBudgetAED: number
+  lifetimeCapAED: number
   countries:     string[]
   cityKeys:      string[]
   ageMin:        number
   ageMax:        number
+  genders:       number[]
   interestIds:   string[]
   publisherPlatforms: string[]
   // Step 3
@@ -60,6 +64,16 @@ interface WizardState {
   cplCapAED:     number
   autoEnhance:   'on' | 'off' | 'approval'
 }
+
+// Targeting strategies — the "mastered" way to aim, not a naive interest stack.
+// Each preset shapes the audience; 'custom' opens the full audience builder.
+const STRATEGIES: { key: TargetingStrategy | 'custom'; icon: typeof Radar; labelKey: string; descKey: string; broad: boolean }[] = [
+  { key: 'advantage_broad',     icon: Radar,     labelKey: 'lm.newCampaign.strat.broad',      descKey: 'lm.newCampaign.strat.broadDesc',      broad: true },
+  { key: 'lookalike_qualified', icon: Users,     labelKey: 'lm.newCampaign.strat.lookalike',  descKey: 'lm.newCampaign.strat.lookalikeDesc',  broad: true },
+  { key: 'retargeting_warm',    icon: Repeat,    labelKey: 'lm.newCampaign.strat.retarget',   descKey: 'lm.newCampaign.strat.retargetDesc',   broad: true },
+  { key: 'interest_refined',    icon: Crosshair, labelKey: 'lm.newCampaign.strat.interest',   descKey: 'lm.newCampaign.strat.interestDesc',   broad: false },
+  { key: 'custom',              icon: Sliders,   labelKey: 'lm.newCampaign.strat.custom',     descKey: 'lm.newCampaign.strat.customDesc',     broad: false },
+]
 
 // Auto-enhancement lets the AI act on delivery: 'on' = apply automatically,
 // 'approval' = recommend and wait for a click, 'off' = never touch it.
@@ -156,11 +170,14 @@ export default function NewCampaignPage() {
     productObjective: 'smart_landing',
     objective:    'LINK_CLICKS',
     campaignName: '',
+    strategy:     'advantage_broad',
     dailyBudgetAED: 200,
+    lifetimeCapAED: 0,
     countries:    ['AE'],
     cityKeys:     ['297928'], // Dubai
     ageMin:       28,
     ageMax:       65,
+    genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
     publisherPlatforms: ['facebook', 'instagram'],
     primaryText:  '',
@@ -175,6 +192,24 @@ export default function NewCampaignPage() {
     autoEnhance:  'approval',
   })
   const [uploadingImg, setUploadingImg] = useState(false)
+  const [audienceOpen, setAudienceOpen] = useState(false)
+
+  // Picking a strategy shapes the audience. Broad strategies clear the interest
+  // stack (let the algorithm hunt); interest_refined keeps it; custom opens the
+  // full builder popup.
+  function selectStrategy(s: (typeof STRATEGIES)[number]) {
+    if (s.key === 'custom') { setAudienceOpen(true) }
+    setForm((prev) => ({
+      ...prev,
+      strategy: s.key,
+      interestIds: s.broad ? [] : (prev.interestIds.length ? prev.interestIds : [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id]),
+    }))
+    setApiError(null)
+  }
+  const GENDER_OPTIONS: { key: string; val: number[] }[] = [
+    { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
+  ]
+  const genderKey = form.genders.length === 0 ? 'all' : form.genders[0] === 1 ? 'men' : 'women'
 
   // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
   const [aiTargeting, setAiTargeting] = useState<TargetingRecommendation | null>(null)
@@ -361,6 +396,7 @@ export default function NewCampaignPage() {
         cityKeys:           form.cityKeys,
         ageMin:             form.ageMin,
         ageMax:             form.ageMax,
+        genders:            form.genders,
         publisherPlatforms: form.publisherPlatforms,
         interests,
       },
@@ -639,48 +675,123 @@ export default function NewCampaignPage() {
               )}
             </div>
 
-            <div data-coach="wiz-budget">
-              <Label>{t('lm.newCampaign.s2.label.budget')}</Label>
-              <input
-                type="number"
-                min="50"
-                className={inputCls(form.dailyBudgetAED < 50)}
-                value={form.dailyBudgetAED}
-                onChange={(e) => update('dailyBudgetAED', Math.max(50, parseInt(e.target.value) || 50))}
-              />
-              <p className="mt-1 text-sm text-slate-500">
-                {t('lm.newCampaign.s2.monthlyNote', { n: (form.dailyBudgetAED * 30).toLocaleString() })}
-              </p>
+            {/* Strategy — the mastered way to aim (algorithm-vs-algorithm), not a naive interest stack */}
+            <div>
+              <Label>{t('lm.newCampaign.s2.label.strategy')}</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {STRATEGIES.map((s) => {
+                  const Icon = s.icon
+                  const active = form.strategy === s.key
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => selectStrategy(s)}
+                      className={`flex items-start gap-3 rounded-[14px] border p-3.5 text-left transition ${
+                        active ? 'border-gold/40 bg-gold/[0.06]' : 'border-line bg-surface-2 hover:border-white/10'
+                      }`}
+                    >
+                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-gold/15 text-gold' : 'bg-white/[0.04] text-slate-400'}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[13px] font-semibold text-white">{t(s.labelKey)}</span>
+                        <span className="mt-0.5 block text-[11px] leading-relaxed text-slate-500">{t(s.descKey)}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
+            {/* Audience summary — the full builder opens as a popup (nested tab) */}
+            <div className="rounded-[16px] border border-line bg-surface-2 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s2.audience')}</div>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{form.countries.map((c) => t(`lm.country.${c}`)).join(', ') || t('lm.country.AE')}</span>
+                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{form.ageMin}–{form.ageMax}</span>
+                    <span className="rounded-full border border-line bg-surface px-2 py-0.5 text-slate-300">{t(`lm.newCampaign.s2.gender.${genderKey}`)}</span>
+                    {form.interestIds.length > 0
+                      ? <span className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{t('lm.newCampaign.s2.nInterests', { n: String(form.interestIds.length) })}</span>
+                      : <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-emerald-300">{t('lm.newCampaign.ai.broad')}</span>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAudienceOpen(true)}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20"
+                >
+                  <Sliders className="h-3.5 w-3.5" /> {t('lm.newCampaign.s2.editAudience')}
+                </button>
+              </div>
+            </div>
+
+            {/* Budget + Smart Spender */}
+            <div data-coach="wiz-budget" className="rounded-[16px] border border-line bg-surface-2 p-4 space-y-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold"><Gauge className="h-3.5 w-3.5" /> {t('lm.newCampaign.s2.smartSpender')}</div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>{t('lm.newCampaign.s2.label.budget')}</Label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">AED</span>
+                    <input type="number" min="50" className={`${inputCls(form.dailyBudgetAED < 50)} ps-12`} value={form.dailyBudgetAED}
+                      onChange={(e) => update('dailyBudgetAED', Math.max(50, parseInt(e.target.value) || 50))} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{t('lm.newCampaign.s2.monthlyNote', { n: (form.dailyBudgetAED * 30).toLocaleString() })}</p>
+                </div>
+                <div>
+                  <Label>{t('lm.newCampaign.s2.label.lifetimeCap')}</Label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">AED</span>
+                    <input type="number" min="0" placeholder={t('lm.newCampaign.s2.lifetimeCapPh')} className={`${inputCls()} ps-12`} value={form.lifetimeCapAED || ''}
+                      onChange={(e) => update('lifetimeCapAED', Math.max(0, parseInt(e.target.value) || 0))} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{t('lm.newCampaign.s2.lifetimeCapHint')}</p>
+                </div>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.s2.smartSpenderNote')}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Audience builder — a tab shown as a popup because we're nested in the wizard */}
+        <TabPopup
+          open={audienceOpen}
+          onClose={() => setAudienceOpen(false)}
+          title={t('lm.newCampaign.s2.audienceBuilder')}
+          subtitle={t('lm.newCampaign.s2.audienceBuilderSub')}
+          footer={<button type="button" onClick={() => setAudienceOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lm.newCampaign.s2.useAudience')}</button>}
+        >
+          <div className="space-y-5">
             <div>
               <Label>{t('lm.newCampaign.s2.label.countries')}</Label>
               <div className="flex flex-wrap gap-2">
                 {COUNTRY_CODES.map((code) => {
                   const selected = form.countries.includes(code)
                   return (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() =>
-                        update('countries',
-                          selected
-                            ? form.countries.filter((c) => c !== code)
-                            : [...form.countries, code],
-                        )
-                      }
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                        selected
-                          ? 'border-gold/40 bg-gold/15 text-gold'
-                          : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'
-                      }`}
-                    >
+                    <button key={code} type="button"
+                      onClick={() => update('countries', selected ? form.countries.filter((c) => c !== code) : [...form.countries, code])}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
                       {t(`lm.country.${code}`)}
                     </button>
                   )
                 })}
               </div>
-              <p className="mt-1.5 text-sm text-slate-500">{t('lm.newCampaign.s2.countriesHint')}</p>
+              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.countriesHint')}</p>
+            </div>
+
+            <div>
+              <Label>{t('lm.newCampaign.s2.label.gender')}</Label>
+              <div className="flex flex-wrap gap-2">
+                {GENDER_OPTIONS.map((g) => (
+                  <button key={g.key} type="button" onClick={() => update('genders', g.val)}
+                    className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${genderKey === g.key ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
+                    {t(`lm.newCampaign.s2.gender.${g.key}`)}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -689,22 +800,9 @@ export default function NewCampaignPage() {
                 {UAE_CITIES.map((city) => {
                   const selected = form.cityKeys.includes(city.key)
                   return (
-                    <button
-                      key={city.key}
-                      type="button"
-                      onClick={() =>
-                        update('cityKeys',
-                          selected
-                            ? form.cityKeys.filter((k) => k !== city.key)
-                            : [...form.cityKeys, city.key],
-                        )
-                      }
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                        selected
-                          ? 'border-gold/40 bg-gold/15 text-gold'
-                          : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'
-                      }`}
-                    >
+                    <button key={city.key} type="button"
+                      onClick={() => update('cityKeys', selected ? form.cityKeys.filter((k) => k !== city.key) : [...form.cityKeys, city.key])}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
                       {city.name}
                     </button>
                   )
@@ -715,21 +813,11 @@ export default function NewCampaignPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>{t('lm.newCampaign.s2.label.ageMin')}</Label>
-                <input
-                  type="number" min="18" max="65"
-                  className={inputCls()}
-                  value={form.ageMin}
-                  onChange={(e) => update('ageMin', parseInt(e.target.value))}
-                />
+                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMin} onChange={(e) => update('ageMin', parseInt(e.target.value))} />
               </div>
               <div>
                 <Label>{t('lm.newCampaign.s2.label.ageMax')}</Label>
-                <input
-                  type="number" min="18" max="65"
-                  className={inputCls()}
-                  value={form.ageMax}
-                  onChange={(e) => update('ageMax', parseInt(e.target.value))}
-                />
+                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMax} onChange={(e) => update('ageMax', parseInt(e.target.value))} />
               </div>
             </div>
 
@@ -739,22 +827,9 @@ export default function NewCampaignPage() {
                 {UAE_INTERESTS.map((int) => {
                   const selected = form.interestIds.includes(int.id)
                   return (
-                    <button
-                      key={int.id}
-                      type="button"
-                      onClick={() =>
-                        update('interestIds',
-                          selected
-                            ? form.interestIds.filter((i) => i !== int.id)
-                            : [...form.interestIds, int.id],
-                        )
-                      }
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                        selected
-                          ? 'border-gold/40 bg-gold/15 text-gold'
-                          : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'
-                      }`}
-                    >
+                    <button key={int.id} type="button"
+                      onClick={() => update('interestIds', selected ? form.interestIds.filter((i) => i !== int.id) : [...form.interestIds, int.id])}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
                       {int.name}
                     </button>
                   )
@@ -772,22 +847,9 @@ export default function NewCampaignPage() {
                 ].map((p) => {
                   const selected = form.publisherPlatforms.includes(p.value)
                   return (
-                    <button
-                      key={p.value}
-                      type="button"
-                      onClick={() =>
-                        update('publisherPlatforms',
-                          selected
-                            ? form.publisherPlatforms.filter((v) => v !== p.value)
-                            : [...form.publisherPlatforms, p.value],
-                        )
-                      }
-                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                        selected
-                          ? 'border-gold/40 bg-gold/15 text-gold'
-                          : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'
-                      }`}
-                    >
+                    <button key={p.value} type="button"
+                      onClick={() => update('publisherPlatforms', selected ? form.publisherPlatforms.filter((v) => v !== p.value) : [...form.publisherPlatforms, p.value])}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${selected ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:border-white/15'}`}>
                       {p.label}
                     </button>
                   )
@@ -795,7 +857,7 @@ export default function NewCampaignPage() {
               </div>
             </div>
           </div>
-        )}
+        </TabPopup>
 
         {/* ── Step 3: Creative ──────────────────────────────────────────── */}
         {step === 3 && (

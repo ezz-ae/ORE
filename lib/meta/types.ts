@@ -102,6 +102,8 @@ export interface CampaignTargeting {
   ageMax: number
   publisherPlatforms: string[]
   interests: { id: string; name: string }[]
+  /** Meta gender codes: 1 = men, 2 = women. Omitted / empty = all genders. */
+  genders?: number[]
 }
 
 export interface CampaignCreative {

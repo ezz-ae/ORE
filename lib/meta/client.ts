@@ -261,6 +261,9 @@ export async function createAdSet(params: {
     age_min: ageMin,
     age_max: ageMax,
     ...placementSpec,
+    ...(params.targeting.genders && params.targeting.genders.length > 0
+      ? { genders: params.targeting.genders }
+      : {}),
     ...(params.targeting.interests.length > 0
       ? { interests: params.targeting.interests }
       : {}),
