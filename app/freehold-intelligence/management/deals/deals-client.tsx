@@ -118,13 +118,16 @@ export function DealsClient() {
           </Panel>
         )}
 
-        {/* Totals */}
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <StatCard label={t('mgmt.deals.totalSales')} value={fmtAED(totals?.totalSalesAed || 0)} Icon={TrendingUp} />
-          <StatCard label={t('mgmt.deals.grossCommission')} value={fmtAED(totals?.totalCommissionAed || 0)} Icon={Briefcase} />
-          <StatCard label={t('mgmt.deals.approvedDeals')} value={String(totals?.approvedDeals || 0)} Icon={CheckCircle2} />
-          <StatCard label={t('mgmt.deals.awaitingApproval')} value={String(totals?.pendingDeals || 0)} Icon={Clock} />
-        </div>
+        {/* Totals — hidden until there are deals, so a fresh instance never
+            shows AED 0 / 0 tiles above an empty approval queue. */}
+        {deals.length > 0 && (
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <StatCard label={t('mgmt.deals.totalSales')} value={fmtAED(totals?.totalSalesAed || 0)} Icon={TrendingUp} />
+            <StatCard label={t('mgmt.deals.grossCommission')} value={fmtAED(totals?.totalCommissionAed || 0)} Icon={Briefcase} />
+            <StatCard label={t('mgmt.deals.approvedDeals')} value={String(totals?.approvedDeals || 0)} Icon={CheckCircle2} />
+            <StatCard label={t('mgmt.deals.awaitingApproval')} value={String(totals?.pendingDeals || 0)} Icon={Clock} />
+          </div>
+        )}
 
         {/* Approval queue */}
         <Panel>

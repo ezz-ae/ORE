@@ -37,7 +37,8 @@ export default async function LeadMachineOverviewPage() {
       href: '/freehold-intelligence/lead-machine/landings',
       icon: Monitor,
       desc: t('lm.hub.nav.landings.desc'),
-      count: `${livePages} ${t('lm.hub.count.pages')}`,
+      // Don't advertise "0 pages" — the count only helps once there are pages.
+      count: livePages > 0 ? `${livePages} ${t('lm.hub.count.pages')}` : undefined,
     },
     {
       label: t('lm.hub.nav.metaCampaigns'),
@@ -80,13 +81,17 @@ export default async function LeadMachineOverviewPage() {
         }
       />
 
-      {/* Live stats — straight from the inventory the site runs on */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label={t('lm.hub.stat.projects')} value={props.length} hint={t('lm.hub.stat.fromInventory')} />
-        <StatCard label={t('lm.hub.stat.landingsReady')} value={livePages} hint={t('lm.hub.stat.canLaunch')} />
-        <StatCard label={t('lm.hub.stat.missingPages')} value={missingPages} hint={t('lm.hub.stat.generateThem')} />
-        <StatCard label={t('lm.hub.stat.adReady')} value={adReady} hint={t('lm.hub.stat.score80')} />
-      </div>
+      {/* Live stats — straight from the inventory the site runs on. Hidden
+          entirely when there's no inventory so a fresh instance never shows a
+          wall of zeros above the empty-state below. */}
+      {props.length > 0 && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label={t('lm.hub.stat.projects')} value={props.length} hint={t('lm.hub.stat.fromInventory')} />
+          <StatCard label={t('lm.hub.stat.landingsReady')} value={livePages} hint={t('lm.hub.stat.canLaunch')} />
+          <StatCard label={t('lm.hub.stat.missingPages')} value={missingPages} hint={t('lm.hub.stat.generateThem')} />
+          <StatCard label={t('lm.hub.stat.adReady')} value={adReady} hint={t('lm.hub.stat.score80')} />
+        </div>
+      )}
 
       {/* Readiness matrix — real projects, real scores, links into Inventory */}
       {matrix.length > 0 ? (
