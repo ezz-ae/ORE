@@ -71,6 +71,13 @@ async function creds() {
   return { token, adAccountId, pageId, pixelId: pixelId ?? null }
 }
 
+// True when Meta ad credentials are configured (env or stored) — distinct from
+// whether a given API call succeeds. Lets callers separate "not connected" from
+// "connected but this call returned nothing".
+export async function isMetaConfigured(): Promise<boolean> {
+  try { await creds(); return true } catch { return false }
+}
+
 async function apiFetch<T>(
   path: string,
   options?: RequestInit,
