@@ -113,9 +113,14 @@ async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<
     const e = json.error as { message: string; code: number; type: string; fbtrace_id?: string; error_subcode?: number; error_user_msg?: string; error_user_title?: string }
     // Account-configuration blockers get an actionable message instead of
     // Meta's raw jargon — the fix is a dashboard step, not a system problem.
-    const detail = e.error_subcode === 1885183
-      ? 'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again. — subcode 1885183'
-      : [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
+    const ACTIONABLE: Record<number, string> = {
+      1885183:
+        'Your Meta developer app is in Development Mode, so Meta blocks live ad creation. In developers.facebook.com open the app that issued your access token, complete Settings → Basic (privacy policy URL), switch the app to Live, then launch again. — subcode 1885183',
+      1341012:
+        'The connected access token cannot use this Facebook Page. Fix it in Meta Business Settings: (1) add the Page to the same Business that owns the ad account, (2) give the token owner (the person or system user who connected Meta) an Admin or Advertiser role on that Page, and (3) confirm META_PAGE_ID is that Page’s ID. Then reconnect and launch again. — subcode 1341012',
+    }
+    const detail = (e.error_subcode && ACTIONABLE[e.error_subcode])
+      || [e.message, e.error_user_title, e.error_user_msg, e.error_subcode ? `subcode ${e.error_subcode}` : '']
           .filter(Boolean).join(' — ')
     throw new MetaApiError(detail, e.code, e.type, e.fbtrace_id)
   }
