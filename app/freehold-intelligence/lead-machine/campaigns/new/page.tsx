@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
-import { UAE_INTERESTS, UAE_CITIES, STRATEGY_LABELS, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
+import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
@@ -210,6 +210,38 @@ export default function NewCampaignPage() {
     { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
   ]
   const genderKey = form.genders.length === 0 ? 'all' : form.genders[0] === 1 ? 'men' : 'women'
+
+  // ── Buyer Match: the audience that actually buys THIS listing, from our own
+  // closed deals + leads, anchored to the price band, with a live Meta estimate.
+  type BuyerMatch = {
+    band: { key: string; label: string; min: number; max: number | null }
+    listing: { price: number; area: string }
+    buyers: { deals: number; avgValue: number; totalValue: number; topDevelopers: { name: string; count: number }[]; leads: number; qualified: number; closed: number; closeRate: number | null; topSources: { source: string; count: number }[]; hasData: boolean }
+    recommendation: { ageMin: number; ageMax: number; interestIds: string[]; interestNames: string[] }
+    estimate: { lower: number; upper: number; ready: boolean } | null
+    metaConnected: boolean
+  }
+  const [buyerMatch, setBuyerMatch] = useState<BuyerMatch | null>(null)
+  const [bmLoading, setBmLoading] = useState(false)
+  const countriesKey = form.countries.join(',')
+  useEffect(() => {
+    if (step !== 2 || !form.listingId) return
+    const listing = listings.find((l) => l.id === form.listingId)
+    setBmLoading(true)
+    fetch('/api/freehold/ads/buyer-match', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingSlug: form.listingId, price: listing?.startingPrice || 0, countries: form.countries }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setBuyerMatch(d as BuyerMatch) })
+      .catch(() => {})
+      .finally(() => setBmLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, form.listingId, countriesKey])
+  function applyBuyerMatch() {
+    if (!buyerMatch) return
+    setForm((prev) => ({ ...prev, strategy: 'interest_refined', ageMin: buyerMatch.recommendation.ageMin, ageMax: buyerMatch.recommendation.ageMax, interestIds: buyerMatch.recommendation.interestIds }))
+  }
 
   // The learning loop: fetch AI targeting learned from ACTUAL lead outcomes.
   const [aiTargeting, setAiTargeting] = useState<TargetingRecommendation | null>(null)
@@ -624,58 +656,93 @@ export default function NewCampaignPage() {
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
 
-            {/* AI targeting — learned from what your past leads actually did */}
-            <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
+            {/* Buyer Match — the audience that actually buys THIS listing, from
+                our own deals + leads, with a live Meta reach estimate. */}
+            <div className="rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gold">{t('lm.newCampaign.ai.title')}</span>
-                {!aiTargeting ? (
-                  <button
-                    type="button"
-                    onClick={fetchAiTargeting}
-                    disabled={aiTargetingLoading}
-                    className="rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
-                  >
-                    {aiTargetingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('lm.newCampaign.ai.get')}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={applyAiTargeting}
-                    disabled={aiTargetingApplied}
-                    className="rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
-                  >
-                    {aiTargetingApplied ? t('lm.newCampaign.ai.applied') : t('lm.newCampaign.ai.apply')}
-                  </button>
-                )}
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Crosshair className="h-3.5 w-3.5" /> {t('bm.title')}</span>
+                {buyerMatch && <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">{buyerMatch.band.label} · {buyerMatch.band.min >= 1e6 ? `${buyerMatch.band.min / 1e6}M` : `${Math.round(buyerMatch.band.min / 1000)}K`}{buyerMatch.band.max ? `–${buyerMatch.band.max / 1e6}M` : '+'}</span>}
               </div>
-              {!aiTargeting && !aiTargetingLoading && (
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('lm.newCampaign.ai.hint')}</p>
-              )}
-              {aiTargeting && (
-                <div className="mt-2 space-y-2 text-xs leading-relaxed">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full border border-gold/40 bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
-                      {STRATEGY_LABELS[aiTargeting.strategy]}
-                    </span>
-                    <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">{aiTargeting.ageMin}–{aiTargeting.ageMax}</span>
-                    <span className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-slate-300">AED {aiTargeting.dailyBudgetAED}/d</span>
-                    {aiTargeting.interestIds.length === 0 && (
-                      <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] text-emerald-300">{t('lm.newCampaign.ai.broad')}</span>
+
+              {bmLoading && !buyerMatch ? (
+                <div className="flex items-center gap-2 py-4 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('bm.loading')}</div>
+              ) : !form.listingId ? (
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
+              ) : buyerMatch ? (
+                <div className="mt-3 space-y-3">
+                  {/* Live reach estimate */}
+                  <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-3">
+                    <Gauge className="h-4 w-4 text-gold" />
+                    {buyerMatch.estimate ? (
+                      <div className="text-sm">
+                        <span className="font-semibold text-white">{fmtReach(buyerMatch.estimate.lower)}–{fmtReach(buyerMatch.estimate.upper)}</span>
+                        <span className="ms-2 text-xs text-slate-500">{t('bm.liveReach')}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">{t('bm.connectMeta')}</span>
                     )}
-                    {UAE_INTERESTS.filter((i) => aiTargeting.interestIds.includes(i.id)).map((i) => (
-                      <span key={i.id} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[11px] text-gold">{i.name}</span>
-                    ))}
                   </div>
-                  <p className="text-slate-200">{aiTargeting.analysis}</p>
-                  {aiTargeting.signalPlan && <p className="text-slate-400"><span className="font-semibold text-slate-300">{t('lm.newCampaign.ai.signals')}:</span> {aiTargeting.signalPlan}</p>}
-                  {aiTargeting.creativeAngle && <p className="text-slate-400"><span className="font-semibold text-slate-300">{t('lm.newCampaign.ai.creative')}:</span> {aiTargeting.creativeAngle}</p>}
-                  {aiTargeting.exclusions.length > 0 && <p className="text-slate-400"><span className="font-semibold text-slate-300">{t('lm.newCampaign.ai.exclude')}:</span> {aiTargeting.exclusions.join(' · ')}</p>}
-                  {aiTargeting.learningPhase && <p className="text-slate-500">{aiTargeting.learningPhase}</p>}
-                  <p className="text-slate-400">{aiTargeting.rationale}</p>
-                  {aiTargeting.suggestedNewInterests.length > 0 && (
-                    <p className="text-slate-500">{t('lm.newCampaign.ai.research')}: {aiTargeting.suggestedNewInterests.join(' · ')}</p>
+
+                  {/* Real buyer profile from our own data */}
+                  {buyerMatch.buyers.hasData ? (
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl border border-line bg-surface p-2.5">
+                        <div className="text-[17px] font-semibold text-gold">{buyerMatch.buyers.deals}</div>
+                        <div className="text-[10px] text-slate-500">{t('bm.closedDeals')}</div>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface p-2.5">
+                        <div className="text-[17px] font-semibold text-white">{buyerMatch.buyers.avgValue >= 1e6 ? `${(buyerMatch.buyers.avgValue / 1e6).toFixed(1)}M` : buyerMatch.buyers.avgValue ? `${Math.round(buyerMatch.buyers.avgValue / 1000)}K` : '—'}</div>
+                        <div className="text-[10px] text-slate-500">{t('bm.avgValue')}</div>
+                      </div>
+                      <div className="rounded-xl border border-line bg-surface p-2.5">
+                        <div className="text-[17px] font-semibold text-emerald-400">{buyerMatch.buyers.closeRate != null ? `${buyerMatch.buyers.closeRate}%` : '—'}</div>
+                        <div className="text-[10px] text-slate-500">{t('bm.closeRate')}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-xs leading-relaxed text-slate-400">{t('bm.noData')}</p>
+                  )}
+
+                  {buyerMatch.buyers.topSources.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="text-slate-500">{t('bm.topSources')}:</span>
+                      {buyerMatch.buyers.topSources.map((s) => (
+                        <span key={s.source} className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-slate-300">{s.source} · {s.count}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Recommended audience + apply */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
+                    <div className="min-w-0 text-[11px]">
+                      <span className="text-slate-400">{t('bm.recommended')}: </span>
+                      <span className="text-slate-200">{buyerMatch.recommendation.ageMin}–{buyerMatch.recommendation.ageMax}</span>
+                      {buyerMatch.recommendation.interestNames.map((n) => (
+                        <span key={n} className="ms-1 rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{n}</span>
+                      ))}
+                    </div>
+                    <button type="button" onClick={applyBuyerMatch} className="shrink-0 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('bm.apply')}</button>
+                  </div>
+
+                  <p className="text-[10px] leading-relaxed text-slate-600">{t('bm.provenance')}</p>
+
+                  {/* Secondary: the network learning-loop read (real Meta + CRM outcomes) */}
+                  {!aiTargeting ? (
+                    <button type="button" onClick={fetchAiTargeting} disabled={aiTargetingLoading} className="text-[11px] text-gold/70 transition hover:text-gold disabled:opacity-60">
+                      {aiTargetingLoading ? '…' : `+ ${t('lm.newCampaign.ai.title')}`}
+                    </button>
+                  ) : (
+                    <div className="space-y-1 border-t border-line pt-2 text-[11px] leading-relaxed text-slate-400">
+                      <p className="text-slate-300">{aiTargeting.analysis}</p>
+                      {aiTargeting.rationale && <p>{aiTargeting.rationale}</p>}
+                      <button type="button" onClick={applyAiTargeting} disabled={aiTargetingApplied} className="text-gold/70 transition hover:text-gold disabled:opacity-60">
+                        {aiTargetingApplied ? t('lm.newCampaign.ai.applied') : t('lm.newCampaign.ai.apply')}
+                      </button>
+                    </div>
                   )}
                 </div>
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
               )}
             </div>
 

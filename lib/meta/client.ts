@@ -178,6 +178,46 @@ export async function updateCampaignStatus(
   return apiPost(`/${campaignId}`, { status })
 }
 
+// ─── Live reach / delivery estimate ──────────────────────────────────────────
+// Meta's real audience-size estimate for a targeting spec — the number a free
+// tool never surfaces mid-build. Returns null when Meta isn't connected (so the
+// UI shows "connect for a live estimate" instead of a fabricated figure) or when
+// the estimate isn't ready yet.
+export interface ReachEstimate { lower: number; upper: number; ready: boolean }
+
+export async function getReachEstimate(
+  targeting: CampaignTargeting,
+  optimizationGoal: MetaOptimizationGoal = 'REACH',
+): Promise<ReachEstimate | null> {
+  try {
+    const { adAccountId } = await creds()
+    // A minimal, valid targeting_spec for the estimate — geo + age + gender +
+    // interests. Kept independent of createAdSet so the proven launch path is
+    // untouched.
+    const spec: Record<string, unknown> = {
+      geo_locations: { countries: targeting.countries.length ? targeting.countries : ['AE'] },
+      age_min: targeting.ageMin,
+      age_max: targeting.ageMax,
+      ...(targeting.genders && targeting.genders.length ? { genders: targeting.genders } : {}),
+      ...(targeting.interests.length ? { interests: targeting.interests } : {}),
+    }
+    const res = await apiFetch<{ data?: Array<{ estimate_mau_lower_bound?: number; estimate_mau_upper_bound?: number; estimate_dau?: number; estimate_ready?: boolean }> }>(
+      `/${adAccountId}/delivery_estimate`,
+      undefined,
+      { optimization_goal: optimizationGoal, targeting_spec: JSON.stringify(spec) },
+    )
+    const d = res.data?.[0]
+    if (!d) return null
+    const lower = d.estimate_mau_lower_bound ?? d.estimate_dau ?? 0
+    const upper = d.estimate_mau_upper_bound ?? lower
+    if (!lower && !upper) return null
+    return { lower, upper, ready: d.estimate_ready ?? true }
+  } catch {
+    // Not connected / not permitted / not ready → honest null, never a fake number.
+    return null
+  }
+}
+
 export async function deleteCampaign(campaignId: string): Promise<{ success: boolean }> {
   return updateCampaignStatus(campaignId, 'DELETED')
 }
