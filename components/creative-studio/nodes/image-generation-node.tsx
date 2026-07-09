@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { IMAGE_MODELS, PROVIDER_LOGOS, CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
+import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
 
 const IMAGE_FORMATS = CREATIVE_FORMATS.filter((f) => f.kind === "image")
 
@@ -56,18 +56,6 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
     e.stopPropagation()
   }
 
-  const getModelLabel = (modelValue: string) => {
-    const model = IMAGE_MODELS.find((m) => m.value === modelValue)
-    return model?.label || modelValue
-  }
-
-  const getCurrentModelLogo = () => {
-    const model = IMAGE_MODELS.find((m) => m.value === data.model)
-    const group = model?.group || "OpenAI"
-    return PROVIDER_LOGOS[group]
-  }
-
-  const currentModel = data.model || "google/imagen-3"
   const currentFormat = data.format || "insta_ad"
   const formatLabel = IMAGE_FORMATS.find((f) => f.value === currentFormat)?.label || "Creative Image"
 
@@ -114,7 +102,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
         </div>
 
         {!isExpanded && (
-          <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">{formatLabel} · {getModelLabel(currentModel)}</div>
+          <div className="mt-2 text-[10px] text-muted-foreground font-mono truncate">{formatLabel}</div>
         )}
 
         {isExpanded && (
@@ -131,35 +119,6 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
                       <div className="flex flex-col gap-0.5">
                         <span className="text-xs">{f.label}</span>
                         <span className="text-[10px] text-muted-foreground">{f.hint}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Model</Label>
-              <Select value={currentModel} onValueChange={(value) => handleUpdate("model", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {IMAGE_MODELS.map((model) => (
-                    <SelectItem key={model.value} value={model.value} className="py-2">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          {PROVIDER_LOGOS[model.group] && (
-                            <img
-                              src={PROVIDER_LOGOS[model.group] || "/placeholder.svg"}
-                              alt={model.group}
-                              className="h-4 w-4 rounded-sm object-contain"
-                            />
-                          )}
-                          <span className="text-xs">{model.label}</span>
-                        </div>
-                        {"description" in model && model.description && (
-                          <span className="text-[10px] text-muted-foreground ml-6">{model.description}</span>
-                        )}
                       </div>
                     </SelectItem>
                   ))}

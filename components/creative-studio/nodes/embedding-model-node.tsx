@@ -7,8 +7,6 @@ import { Layers } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { EMBEDDING_MODELS } from "@/lib/creative-studio/constants"
 
 export type EmbeddingModelNodeData = {
   model: string
@@ -46,31 +44,12 @@ function EmbeddingModelNode({ data, selected }: NodeProps<Node<EmbeddingModelNod
 
         {!isExpanded && (
           <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-            <div className="font-mono">{data.model?.split("/")[1] || "text-embedding-3-small"}</div>
             <div>Dimensions: {data.dimensions || 1536}</div>
           </div>
         )}
 
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Model</Label>
-              <Select
-                value={data.model || "openai/text-embedding-3-small"}
-                onValueChange={(value) => handleUpdate("model", value)}
-              >
-                <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EMBEDDING_MODELS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Dimensions</Label>
               <Input
