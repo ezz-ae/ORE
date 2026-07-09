@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Run, RunStep } from "@/lib/creative-studio/types"
+import { studioErrorLabel } from "@/lib/creative-studio/error-codes"
 import { useT } from "@/lib/i18n/provider"
 
 const NODE_KEY: Record<string, string> = {
@@ -217,7 +218,7 @@ export function ExecutionPanel({
                     nodeId: update.nodeId || "unknown",
                     type: errorNode?.type || "unknown",
                     output: null,
-                    error: update.error,
+                    error: studioErrorLabel(update.error),
                   },
                 ])
                 setCurrentNodeId(null)
@@ -228,7 +229,7 @@ export function ExecutionPanel({
                     ...step,
                     status: "error",
                     completedAt: new Date().toISOString(),
-                    error: update.error,
+                    error: studioErrorLabel(update.error),
                   }
                 }
                 break
@@ -240,7 +241,7 @@ export function ExecutionPanel({
                 setStoppedAt(update.stoppedAtNodeId || null)
                 break
               case "error":
-                setError(update.error || "Execution failed")
+                setError(update.error ? studioErrorLabel(update.error) : "Couldn’t finish — code CS-01. Tap retry, or send this code to support.")
                 break
             }
           } catch {}
@@ -258,7 +259,7 @@ export function ExecutionPanel({
       }
       onRunComplete?.(run)
     } catch (err: any) {
-      setError(err.message || "Failed to execute workflow")
+      setError(studioErrorLabel(err?.message))
       const completedAt = new Date().toISOString()
       const run: Run = {
         id: runId,
