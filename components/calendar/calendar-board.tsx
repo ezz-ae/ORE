@@ -14,7 +14,7 @@ import { EventDetail } from "./event-detail"
 interface Me { email: string; name: string; role: string; isMgmt: boolean }
 type View = "month" | "agenda"
 
-const ALL_KINDS: AnyKind[] = ["team_meeting", "meeting", "training", "car", "report", "task", "followup"]
+const ALL_KINDS: AnyKind[] = ["roadshow", "team_meeting", "meeting", "training", "car", "report", "task", "followup"]
 
 export function CalendarBoard() {
   const t = useT()

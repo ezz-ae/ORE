@@ -18,7 +18,7 @@
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 
-export type CalendarKind = "meeting" | "team_meeting" | "training" | "car" | "report"
+export type CalendarKind = "meeting" | "team_meeting" | "training" | "car" | "report" | "roadshow"
 export type VirtualKind = "task" | "followup"
 export type AnyKind = CalendarKind | VirtualKind
 
@@ -26,7 +26,7 @@ export type CalendarVisibility = "global" | "private"
 export type CalendarStatus = "confirmed" | "pending" | "approved" | "declined" | "cancelled"
 export type RSVP = "invited" | "accepted" | "declined"
 
-export const CALENDAR_KINDS: CalendarKind[] = ["meeting", "team_meeting", "training", "car", "report"]
+export const CALENDAR_KINDS: CalendarKind[] = ["meeting", "team_meeting", "training", "car", "report", "roadshow"]
 /** Kinds that must be approved by management before they are live. */
 export const APPROVAL_KINDS: CalendarKind[] = ["car", "training"]
 /** Kinds that book a shared, non-shareable resource — overlaps are blocked. */

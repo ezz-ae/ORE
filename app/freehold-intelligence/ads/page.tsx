@@ -46,6 +46,13 @@ const LANDING: SubApp[] = [
 
 const META: SubApp[] = [
   {
+    id: 'roadshow', labelKey: 'lm.ads.roadshow.label', subKey: 'lm.ads.roadshow.sub',
+    href: '/freehold-intelligence/lead-machine/roadshow', Icon: Megaphone,
+    metricKey: 'lm.ads.roadshow.metric',
+    accent: '#FB7185', card: 'border-rose-400/15 hover:border-rose-400/35',
+    icon: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
+  },
+  {
     id: 'meta', labelKey: 'lm.ads.meta.label', subKey: 'lm.ads.meta.sub',
     href: '/freehold-intelligence/ads-live/meta', Icon: Facebook,
     metricKey: 'lm.ads.meta.metric',
