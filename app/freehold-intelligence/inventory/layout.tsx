@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, Package } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -16,6 +17,30 @@ const tabs = [
 export default function InventoryLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const t = useT()
+
+  // Trust rule: the off-plan tab only appears once we confirm off-plan inventory
+  // actually exists — a permanently-empty "0 projects" tab reads as broken.
+  const [hasOffPlan, setHasOffPlan] = useState<boolean | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/freehold/inventory')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled) return
+        const props: Array<{ status: string; handoverYear?: number | null }> = Array.isArray(d?.properties) ? d.properties : []
+        const yr = new Date().getFullYear()
+        const n = props.filter((p) =>
+          ['off_plan', 'under_construction', 'coming_soon'].includes(p.status) ||
+          (p.handoverYear != null && p.handoverYear >= yr && p.status !== 'ready' && p.status !== 'sold_out'),
+        ).length
+        setHasOffPlan(n > 0)
+      })
+      .catch(() => { if (!cancelled) setHasOffPlan(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const onOffPlan = pathname.startsWith('/freehold-intelligence/inventory/off-plan')
+  const visibleTabs = tabs.filter((tab) => tab.key !== 'inv.tab.offPlan' || hasOffPlan === true || onOffPlan)
 
   function isActive(tab: typeof tabs[number]) {
     if (tab.exact) return pathname === tab.href
@@ -49,7 +74,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
         {/* Desktop sidebar */}
         <aside className="hidden lg:flex lg:flex-col sticky top-14 h-[calc(100vh-56px)] w-56 shrink-0 overflow-y-auto border-r border-white/[0.07] bg-chrome">
           <nav className="flex-1 px-2 py-4 space-y-0.5">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = isActive(tab)
               return (
                 <Link
@@ -74,7 +99,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
           {/* Mobile tabs */}
           <div className="lg:hidden sticky top-14 z-30 overflow-x-auto border-b border-white/[0.07] bg-chrome/95 backdrop-blur-xl">
             <nav className="flex min-w-max px-4">
-              {tabs.map((tab) => {
+              {visibleTabs.map((tab) => {
                 const active = isActive(tab)
                 return (
                   <Link
