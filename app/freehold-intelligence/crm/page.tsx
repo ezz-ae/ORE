@@ -4,8 +4,9 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, X, PhoneCall, MessageCircle, ArrowUpRight,
-  RefreshCw, ChevronRight,
+  RefreshCw, ChevronRight, Users, Plus,
 } from 'lucide-react'
+import { EmptyState } from '@/components/freehold/ui/empty-state'
 import {
   type PipelineStage,
   type CRMLeadIntelligence,
@@ -60,7 +61,7 @@ function fmtAedShort(n: number): string {
 
 export default function FreeholdCrmPage() {
   const t = useT()
-  const { leads } = useLiveLeads()
+  const { leads, loading: leadsLoading } = useLiveLeads()
   const [query, setQuery]           = useState('')
   const [stageFilter, setStageFilter] = useState<PipelineStage | 'all'>('all')
   // Relative times depend on Date.now(); compute only after mount to avoid SSR/client hydration mismatch.
@@ -172,6 +173,21 @@ export default function FreeholdCrmPage() {
           </div>
 
 
+          {/* Empty pipeline → one clean state instead of a wall of zeros. */}
+          {!leadsLoading && leads.length === 0 ? (
+            <EmptyState
+              Icon={Users}
+              title={t('crm.empty.title')}
+              description={t('crm.empty.desc')}
+              className="mb-5"
+              action={(
+                <Link href="/freehold-intelligence/crm/leads" className="inline-flex items-center gap-1.5 rounded-full bg-[#D4AF37] px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+                  <Plus className="h-3.5 w-3.5" /> {t('crm.empty.cta')}
+                </Link>
+              )}
+            />
+          ) : (
+          <>
           {/* ── 6 Metric tiles ── */}
           <div className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {TILES.map(t => (
@@ -214,6 +230,8 @@ export default function FreeholdCrmPage() {
               })}
             </div>
           </div>
+          </>
+          )}
 
           {/* ── Search bar ── */}
           <div className="mb-2.5 flex items-center gap-2">

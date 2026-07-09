@@ -164,13 +164,16 @@ export default function InventoryClient({ initialProperties }: { initialProperti
         prompts={['expert.depth.inventory.q1', 'expert.depth.inventory.q2', 'expert.depth.inventory.q3', 'expert.depth.inventory.q4']}
       />
 
-      {/* Stats row */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label={t('inv.stat.totalProperties')} value={stats.total} hint={t('inv.stat.totalProperties.hint')} />
-        <StatCard label={t('inv.stat.liveLandings')} value={stats.live} hint={t('inv.stat.liveLandings.hint')} delta={{ value: t('inv.stat.liveLandings.delta'), direction: 'up' }} />
-        <StatCard label={t('inv.stat.missingLanding')} value={stats.missingLanding} hint={t('inv.stat.missingLanding.hint')} delta={stats.missingLanding > 0 ? { value: t('inv.stat.missingLanding.delta'), direction: 'down' } : undefined} />
-        <StatCard label={t('inv.stat.adReady')} value={stats.adReady} hint={t('inv.stat.adReady.hint')} delta={{ value: t('inv.stat.adReady.delta'), direction: 'up' }} />
-      </div>
+      {/* Stats row — hidden on an empty inventory so a fresh instance never
+          shows 0/0/0/0 above the empty state. */}
+      {initialProperties.length > 0 && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label={t('inv.stat.totalProperties')} value={stats.total} hint={t('inv.stat.totalProperties.hint')} />
+          <StatCard label={t('inv.stat.liveLandings')} value={stats.live} hint={t('inv.stat.liveLandings.hint')} delta={{ value: t('inv.stat.liveLandings.delta'), direction: 'up' }} />
+          <StatCard label={t('inv.stat.missingLanding')} value={stats.missingLanding} hint={t('inv.stat.missingLanding.hint')} delta={stats.missingLanding > 0 ? { value: t('inv.stat.missingLanding.delta'), direction: 'down' } : undefined} />
+          <StatCard label={t('inv.stat.adReady')} value={stats.adReady} hint={t('inv.stat.adReady.hint')} delta={{ value: t('inv.stat.adReady.delta'), direction: 'up' }} />
+        </div>
+      )}
 
       {/* ── Ad-readiness analysis (only when there is real inventory) ──────── */}
       {initialProperties.length > 0 && (

@@ -63,6 +63,9 @@ export const crm: Record<Locale, Dict> = {
     // ── Overview (page.tsx) ──
     'crm.commandCentre': 'CRM Command Centre',
     'crm.leadsPipelineStages': '{leads} leads · {stages} pipeline stages',
+    'crm.empty.title': 'No leads yet',
+    'crm.empty.desc': 'Your pipeline metrics and funnel appear here as leads come in — from landing pages, ad forms, or added by your team.',
+    'crm.empty.cta': 'Add your first lead',
     'crm.tile.newLeads': 'New Leads',
     'crm.tile.newLeadsSub': 'need first response',
     'crm.tile.followUps': 'Follow-ups',
@@ -599,6 +602,9 @@ export const crm: Record<Locale, Dict> = {
 
     'crm.commandCentre': 'مركز قيادة CRM',
     'crm.leadsPipelineStages': '{leads} عميل محتمل · {stages} مراحل في المسار',
+    'crm.empty.title': 'لا عملاء محتملون بعد',
+    'crm.empty.desc': 'تظهر مؤشرات المسار والقمع هنا مع ورود العملاء المحتملين — من صفحات الهبوط أو نماذج الإعلانات أو بإضافة فريقك.',
+    'crm.empty.cta': 'أضف أول عميل محتمل',
     'crm.tile.newLeads': 'عملاء محتملون جدد',
     'crm.tile.newLeadsSub': 'بحاجة إلى رد أول',
     'crm.tile.followUps': 'المتابعات',
@@ -1121,6 +1127,9 @@ export const crm: Record<Locale, Dict> = {
 
     'crm.commandCentre': 'Командный центр CRM',
     'crm.leadsPipelineStages': '{leads} лидов · {stages} этапов воронки',
+    'crm.empty.title': 'Пока нет лидов',
+    'crm.empty.desc': 'Метрики воронки появятся здесь по мере поступления лидов — с лендингов, форм рекламы или добавленных вашей командой.',
+    'crm.empty.cta': 'Добавить первого лида',
     'crm.tile.newLeads': 'Новые лиды',
     'crm.tile.newLeadsSub': 'нужен первый ответ',
     'crm.tile.followUps': 'Напоминания',
