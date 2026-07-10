@@ -190,7 +190,8 @@ export default function AgentBuilder() {
   )
 
   const onUpdateNode = useCallback((nodeId: string, data: any) => {
-    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data } : node)))
+    // Merge (don't replace) so status/output written by other handlers mid-run aren't clobbered.
+    setNodes((nds) => nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node)))
   }, [])
 
   const handleNodeStatusChange = useCallback((nodeId: string, status: "idle" | "running" | "completed" | "error") => {

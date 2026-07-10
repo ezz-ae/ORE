@@ -226,19 +226,23 @@ export default function NewCampaignPage() {
   }
   const [buyerMatch, setBuyerMatch] = useState<BuyerMatch | null>(null)
   const [bmLoading, setBmLoading] = useState(false)
+  const [bmError, setBmError] = useState(false)
   const countriesKey = form.countries.join(',')
-  useEffect(() => {
-    if (step !== 2 || !form.listingId) return
+  function loadBuyerMatch() {
+    if (!form.listingId) return
     const listing = listings.find((l) => l.id === form.listingId)
-    setBmLoading(true)
+    setBuyerMatch(null); setBmError(false); setBmLoading(true)
     fetch('/api/freehold/ads/buyer-match', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ listingSlug: form.listingId, price: listing?.startingPrice || 0, countries: form.countries }),
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d && !d.error) setBuyerMatch(d as BuyerMatch) })
-      .catch(() => {})
+      .then((d) => { if (d && !d.error) setBuyerMatch(d as BuyerMatch); else setBmError(true) })
+      .catch(() => setBmError(true))
       .finally(() => setBmLoading(false))
+  }
+  useEffect(() => {
+    if (step === 2 && form.listingId) loadBuyerMatch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, form.listingId, countriesKey])
   function applyBuyerMatch() {
@@ -784,6 +788,11 @@ export default function NewCampaignPage() {
                     </div>
                   )}
                 </div>
+              ) : bmError ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-slate-400">{t('bm.failed')}</p>
+                  <button type="button" onClick={loadBuyerMatch} className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold transition hover:bg-gold/20">{t('bm.retry')}</button>
+                </div>
               ) : (
                 <p className="mt-2 text-xs leading-relaxed text-slate-400">{t('bm.pickListing')}</p>
               )}
@@ -898,11 +907,11 @@ export default function NewCampaignPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>{t('lm.newCampaign.s2.label.ageMin')}</Label>
-                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMin} onChange={(e) => update('ageMin', parseInt(e.target.value))} />
+                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMin} onChange={(e) => update('ageMin', Math.min(65, Math.max(18, parseInt(e.target.value) || 18)))} />
               </div>
               <div>
                 <Label>{t('lm.newCampaign.s2.label.ageMax')}</Label>
-                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMax} onChange={(e) => update('ageMax', parseInt(e.target.value))} />
+                <input type="number" min="18" max="65" className={inputCls()} value={form.ageMax} onChange={(e) => update('ageMax', Math.min(65, Math.max(form.ageMin || 18, parseInt(e.target.value) || 65)))} />
               </div>
             </div>
 

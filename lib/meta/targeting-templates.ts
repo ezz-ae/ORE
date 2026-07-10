@@ -6,7 +6,6 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     name:           'UAE Premium Investor',
     description:    'High-net-worth UAE residents actively researching off-plan and ready investment property. Targets key investor corridors — Dubai + Abu Dhabi.',
     audience:       'UAE residents, 30–60, high-value property interests',
-    estimatedReach: '45,000 – 80,000',
     useCase:        'investor',
     targeting: {
       countries:          ['AE'],
@@ -26,7 +25,6 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     name:           'UAE Family End User',
     description:    'Families looking for primary residences in quality suburban neighbourhoods. School districts and community-living signals.',
     audience:       'UAE residents, 28–50, family & homeownership interests',
-    estimatedReach: '90,000 – 160,000',
     useCase:        'end_user',
     targeting: {
       countries:          ['AE'],
@@ -46,7 +44,6 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     name:           'Golden Visa Seekers',
     description:    'High-income expats and international residents researching UAE residency through property. AED 2M+ budget signal. Dubai-first.',
     audience:       'UAE + GCC expats, 28–55, residency & investment interests',
-    estimatedReach: '30,000 – 55,000',
     useCase:        'golden_visa',
     targeting: {
       countries:          ['AE'],
@@ -67,7 +64,6 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     name:           'International Investor',
     description:    'GCC and international buyers comparing Dubai against other global markets. Suitable for flagship, beachfront, and high-ticket projects.',
     audience:       'GCC + Europe + Asia, 32–65, luxury property interests',
-    estimatedReach: '200,000 – 400,000',
     useCase:        'international',
     targeting: {
       countries:          ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'DE', 'IN'],
@@ -86,7 +82,6 @@ export const TARGETING_TEMPLATES: TargetingTemplate[] = [
     name:           'Secondary Market Buyer',
     description:    'Buyers comparing resale and secondary market options. Lower entry, faster handover, and rental yield are their key signals.',
     audience:       'UAE residents, 28–55, secondary market interests',
-    estimatedReach: '60,000 – 100,000',
     useCase:        'secondary',
     targeting: {
       countries:          ['AE'],

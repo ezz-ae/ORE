@@ -48,6 +48,8 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
         maxTokens: typeof d.maxTokens === "number" ? d.maxTokens : undefined,
       })
     case "ugcModel": {
+      // Honor the node's LOCK: reuse the frozen persona instead of regenerating.
+      if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
       const desc = [d.gender, d.ageRange, d.ethnicity].filter(Boolean).join(", ")
       return genText(
         `Describe a realistic UGC creator persona for a Dubai real-estate ad — ${desc || "authentic local creator"}. ${str(d.description)}. One vivid paragraph for an image/video prompt.`,
@@ -65,6 +67,8 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
       }
     }
     case "imageGeneration": {
+      // Honor the node's LOCK: reuse the frozen image instead of regenerating.
+      if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
       const r = await genImage(primary || "A cinematic Dubai real-estate hero image.", {
         aspectRatio: str(d.aspectRatio) || undefined,
         imageUrl: findUrl(inputs),
@@ -72,8 +76,17 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
       return r.url
     }
     case "videoGeneration": {
+      // Honor the node's LOCK: reuse the frozen output instead of regenerating.
+      if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
       const r = await genVideo(primary || "A cinematic property walkthrough.", {
         imageUrl: findUrl(inputs),
+        // Wire the Duration dropdown through to the generator (value may be '8s' or a number).
+        duration:
+          typeof d.duration === "string"
+            ? parseInt(d.duration)
+            : typeof d.duration === "number"
+              ? d.duration
+              : undefined,
       })
       return r.url
     }

@@ -19,15 +19,12 @@ export type ScriptNodeData = {
   onUpdate?: (data: any) => void
 }
 
-// Average speaking rate: ~15 characters per second
-// Character limits scale with video duration for accurate timing
+// Average speaking rate: ~15 characters per second.
+// Scripts target a fixed 8-second reel (the default video length), so the
+// character budget is a fixed 120 chars (~8s spoken) to keep voiceover on time.
 const CHARS_PER_SECOND = 15
-const DURATION_LIMITS: Record<string, { maxChars: number; seconds: number }> = {
-  "4s": { maxChars: 60, seconds: 4 },
-  "6s": { maxChars: 90, seconds: 6 },
-  "8s": { maxChars: 120, seconds: 8 },
-}
-const DEFAULT_DURATION = "8s"
+const MAX_SECONDS = 8
+const MAX_CHARACTERS = MAX_SECONDS * CHARS_PER_SECOND
 
 function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
   const t = useT()
@@ -35,11 +32,8 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
   const isExpanded = data.isExpanded || false
   const script = data.script || ""
 
-  // Get limits based on the connected video duration (default to 8s)
-  const durationKey = DEFAULT_DURATION
-  const limits = DURATION_LIMITS[durationKey] || DURATION_LIMITS["8s"]
-  const maxCharacters = limits.maxChars
-  const maxSeconds = limits.seconds
+  const maxCharacters = MAX_CHARACTERS
+  const maxSeconds = MAX_SECONDS
 
   const characterCount = script.length
   const isOverLimit = characterCount > maxCharacters

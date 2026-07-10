@@ -97,7 +97,17 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
     })
   }
 
-  const clearProperty = () => handleUpdate({ propertyId: undefined, productImage: undefined })
+  const clearProperty = () =>
+    handleUpdate({
+      propertyId: undefined,
+      productName: "",
+      productImage: undefined,
+      area: "",
+      developer: "",
+      price: null,
+      bedrooms: "",
+      propertyType: "",
+    })
 
   const readAsDataUrl = (file: File, onDone: (dataUrl: string) => void) => {
     const reader = new FileReader()

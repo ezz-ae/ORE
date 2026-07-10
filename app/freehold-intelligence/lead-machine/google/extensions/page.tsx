@@ -538,14 +538,16 @@ export default function GoogleExtensionsPage() {
 
           {/* ── Create extension CTA ── */}
           <div className="mt-8 flex justify-end">
-            <button
-              disabled
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-500"
+            <a
+              href="https://ads.google.com/aw/assets"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium text-slate-400 transition hover:border-[#4285F4]/30 hover:text-white"
               title="Create and manage extensions directly in Google Ads Manager"
             >
               Create in Google Ads Manager
               <ExternalLink className="h-3.5 w-3.5" />
-            </button>
+            </a>
           </div>
         </>
       )}

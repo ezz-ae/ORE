@@ -330,14 +330,10 @@ export default function TargetingPage() {
                   </div>
 
                   {/* Params grid */}
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                       <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">{t('lm.targeting.param.ageRange')}</div>
                       <div className="text-[14px] font-semibold text-white">{tmpl.targeting.ageMin}–{tmpl.targeting.ageMax}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">{t('lm.targeting.param.estReach')}</div>
-                      <div className="text-[14px] font-semibold text-gold">{tmpl.estimatedReach}</div>
                     </div>
                     <div>
                       <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-2">{t('lm.targeting.param.countries')}</div>

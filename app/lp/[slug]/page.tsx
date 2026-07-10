@@ -234,19 +234,18 @@ function DescriptionSection({ d, page }: { d: Record<string, unknown>; page: Lan
 function GallerySection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
   const title = pick(d, 'title') || 'Project Gallery'
   const labels = pickArr(d, 'labels', 'rooms', 'views').map(toStr).filter(Boolean)
-  const hasImage = page.heroImage && !page.heroImage.endsWith('/logo.png')
 
-  const defaultLabels = ['Lobby & Entrance', 'Living Room', 'Master Bedroom', 'Kitchen & Dining', 'Pool & Amenities', 'View from Terrace']
-  const cells = labels.length ? labels : defaultLabels
+  // Only render tiles backed by a REAL image URL — never a placeholder box.
+  // Collect image URLs from the section data plus the hero image (when it's a
+  // real project image, not the fallback logo).
+  const dataImages = pickArr(d, 'images', 'photos', 'gallery')
+    .map((img) => (typeof img === 'string' ? img.trim() : toStr(toObj(img).url) || toStr(toObj(img).src) || toStr(toObj(img).image)))
+    .filter(Boolean)
+  const heroImage = page.heroImage && !page.heroImage.endsWith('/logo.png') ? page.heroImage : ''
+  const images = Array.from(new Set([...(heroImage ? [heroImage] : []), ...dataImages])).slice(0, 6)
 
-  const gradients = [
-    'from-[#1a1008] to-[#2d1f0a]',
-    'from-[#080d1a] to-[#0f1626]',
-    'from-[#0a1208] to-[#162012]',
-    'from-[#1a0808] to-[#2d1212]',
-    'from-[#08101a] to-[#0c1820]',
-    'from-[#12080a] to-[#201010]',
-  ]
+  // Match how AmenitiesSection / DeveloperSection bail when their data is absent.
+  if (!images.length) return null
 
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
@@ -260,25 +259,21 @@ function GallerySection({ d, page }: { d: Record<string, unknown>; page: Landing
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {cells.slice(0, 6).map((label, i) => (
-            <div key={i} className={`group relative overflow-hidden rounded-xl ${i === 0 ? 'col-span-2 sm:col-span-1' : ''}`}>
-              {hasImage && i === 0 ? (
-                <div className="aspect-[4/3] bg-cover bg-center" style={{ backgroundImage: `url(${page.heroImage})` }}>
+          {images.map((src, i) => {
+            const label = labels[i]
+            return (
+              <div key={i} className={`group relative overflow-hidden rounded-xl ${i === 0 ? 'col-span-2 sm:col-span-1' : ''}`}>
+                <div className="aspect-[4/3] bg-cover bg-center" style={{ backgroundImage: `url(${src})` }}>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 </div>
-              ) : (
-                <div className={`aspect-[4/3] bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center`}>
-                  <div className="text-center">
-                    <div className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/20">Render</div>
-                    <div className="h-px w-12 mx-auto bg-white/10" />
+                {label && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-3 pt-6">
+                    <span className="text-[12px] font-medium text-white/80">{label}</span>
                   </div>
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-3 pt-6">
-                <span className="text-[12px] font-medium text-white/80">{label}</span>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
@@ -289,13 +284,8 @@ function UnitsSection({ d }: { d: Record<string, unknown> }) {
   const title = pick(d, 'title') || 'Available Residences'
   const units = pickArr(d, 'units', 'types').map(toObj)
 
-  const defaultUnits = [
-    { type: '1 Bedroom', size: '650–850 sqft', price: 'AED 1.2M – 1.6M', features: ['Balcony with skyline view', 'Open-plan living', 'Built-in wardrobes'], cta: 'Request Floor Plan' },
-    { type: '2 Bedroom', size: '1,050–1,350 sqft', price: 'AED 1.9M – 2.5M', features: ['Master en-suite', 'Study/den', 'Corner views available'], cta: 'Request Floor Plan' },
-    { type: '3 Bedroom', size: '1,600–2,100 sqft', price: 'AED 2.8M – 3.8M', features: ['Private pool option', 'Maid\'s room', 'Premium finishes'], cta: 'Request Floor Plan' },
-  ]
-
-  const list = units.length ? units : defaultUnits as unknown as Record<string, unknown>[]
+  // Only render real units — never invent unit types or pricing on a public page.
+  if (!units.length) return null
 
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
@@ -307,7 +297,7 @@ function UnitsSection({ d }: { d: Record<string, unknown> }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((unit, i) => {
+          {units.map((unit, i) => {
             const type = toStr(unit.type) || toStr(unit.unitType)
             const size = toStr(unit.size)
             const price = toStr(unit.price) || toStr(unit.priceRange)

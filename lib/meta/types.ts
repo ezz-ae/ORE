@@ -225,7 +225,6 @@ export interface TargetingTemplate {
   name: string
   description: string
   audience: string
-  estimatedReach: string
   useCase: TargetingUseCase
   targeting: CampaignTargeting
 }

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
+import { useT } from "@/lib/i18n/provider"
 
 const IMAGE_FORMATS = CREATIVE_FORMATS.filter((f) => f.kind === "image")
 
@@ -28,6 +29,7 @@ export type ImageGenerationNodeData = {
 }
 
 function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationNodeData>>) {
+  const t = useT()
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
   const isLocked = data.isLocked || false
@@ -57,7 +59,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
   }
 
   const currentFormat = data.format || "insta_ad"
-  const formatLabel = IMAGE_FORMATS.find((f) => f.value === currentFormat)?.label || "Creative Image"
+  const formatLabel = IMAGE_FORMATS.find((f) => f.value === currentFormat)?.label || t("pcsn.img.creativeFallback")
 
   const selectFormat = (value: string) => {
     if (!data.onUpdate) return
@@ -73,7 +75,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
       <div className="p-3">
 <div className="flex items-center gap-2">
           <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Image</span>
+          <span className="text-[11px] font-medium text-foreground">{t("pcsn.node.image")}</span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -95,7 +97,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {isLocked ? "Unlock to regenerate" : "Lock to reuse this image"}
+                {isLocked ? t("pcsn.img.unlockTip") : t("pcsn.img.lockTip")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -108,7 +110,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
         {isExpanded && (
           <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-foreground font-medium">Format</Label>
+              <Label className="text-[10px] text-foreground font-medium">{t("pcsn.img.format")}</Label>
               <Select value={currentFormat} onValueChange={selectFormat}>
                 <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -126,20 +128,20 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Aspect Ratio</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.img.aspect")}</Label>
               <Select value={data.aspectRatio || "1:1"} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1:1" className="text-xs py-1.5">
-                    1:1 (Square)
+                    1:1 ({t("pcsn.img.square")})
                   </SelectItem>
                   <SelectItem value="16:9" className="text-xs py-1.5">
-                    16:9 (Landscape)
+                    16:9 ({t("pcsn.img.landscape")})
                   </SelectItem>
                   <SelectItem value="9:16" className="text-xs py-1.5">
-                    9:16 (Portrait)
+                    9:16 ({t("pcsn.img.portrait")})
                   </SelectItem>
                   <SelectItem value="4:3" className="text-xs py-1.5">
                     4:3
@@ -156,7 +158,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
         {status === "running" && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
-            generating
+            {t("pcsn.processing")}
           </div>
         )}
 
@@ -172,7 +174,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
             </div>
             <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-500 font-mono">
               <Lock className="h-3 w-3" />
-              <span>Locked - will be reused</span>
+              <span>{t("pcsn.img.lockedReuse")}</span>
             </div>
           </div>
         )}
@@ -197,20 +199,20 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
               }}
             >
               <Lock className="mr-1.5 h-3 w-3" />
-              Lock This Image
+              {t("pcsn.img.lockThis")}
             </Button>
           </div>
         )}
 
         {!isLocked && status === "completed" && !data.output && (
           <div className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-mono">
-            No image generated
+            {t("pcsn.img.noImage")}
           </div>
         )}
 
         {status === "error" && (
           <div className="mt-2 text-[10px] text-red-600 dark:text-red-400 font-mono">
-            Generation failed
+            {t("pcsn.img.genFailed")}
           </div>
         )}
       </div>
