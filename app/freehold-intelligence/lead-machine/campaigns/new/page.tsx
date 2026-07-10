@@ -9,7 +9,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -77,19 +77,22 @@ const AUTO_ENHANCE_OPTIONS: { value: 'on' | 'off' | 'approval'; labelKey: string
 // it rewrites the destination + downstream steps. Each maps to a real Meta
 // objective the launch client already handles. Roadshow is its own strategic
 // builder — selecting it routes there, so there's still ONE entry to campaigns.
-type ProductObjectiveKey = 'smart_landing' | 'meta_lead' | 'branding'
+type ProductObjectiveKey = 'smart_landing' | 'meta_lead' | 'branding' | 'whatsapp' | 'call'
+type ObjectiveDest = 'landing' | 'form' | 'event' | 'whatsapp' | 'phone'
 const PRODUCT_OBJECTIVES: {
   key: ProductObjectiveKey | 'roadshow'
   meta: MetaCampaignObjective | null
-  dest: 'landing' | 'form' | 'event'
+  dest: ObjectiveDest
   route?: string
   icon: typeof Monitor
   labelKey: string
   descKey: string
 }[] = [
-  { key: 'smart_landing', meta: 'LINK_CLICKS',     dest: 'landing', icon: Monitor,   labelKey: 'lm.newCampaign.obj.smartLanding',      descKey: 'lm.newCampaign.obj.smartLandingDesc' },
-  { key: 'meta_lead',     meta: 'LEAD_GENERATION', dest: 'form',    icon: FileText,  labelKey: 'lm.newCampaign.obj.metaLead',          descKey: 'lm.newCampaign.obj.metaLeadDesc' },
-  { key: 'branding',      meta: 'REACH',           dest: 'landing', icon: Megaphone, labelKey: 'lm.newCampaign.obj.branding',          descKey: 'lm.newCampaign.obj.brandingDesc' },
+  { key: 'smart_landing', meta: 'LINK_CLICKS',     dest: 'landing', icon: Monitor,       labelKey: 'lm.newCampaign.obj.smartLanding',      descKey: 'lm.newCampaign.obj.smartLandingDesc' },
+  { key: 'meta_lead',     meta: 'LEAD_GENERATION', dest: 'form',    icon: FileText,      labelKey: 'lm.newCampaign.obj.metaLead',          descKey: 'lm.newCampaign.obj.metaLeadDesc' },
+  { key: 'whatsapp',      meta: 'LINK_CLICKS',     dest: 'whatsapp', icon: MessageCircle, labelKey: 'lm.newCampaign.obj.whatsapp',          descKey: 'lm.newCampaign.obj.whatsappDesc' },
+  { key: 'call',          meta: 'LINK_CLICKS',     dest: 'phone',   icon: Phone,         labelKey: 'lm.newCampaign.obj.call',              descKey: 'lm.newCampaign.obj.callDesc' },
+  { key: 'branding',      meta: 'REACH',           dest: 'landing', icon: Megaphone,     labelKey: 'lm.newCampaign.obj.branding',          descKey: 'lm.newCampaign.obj.brandingDesc' },
   { key: 'roadshow',      meta: null,              dest: 'event',   route: '/freehold-intelligence/lead-machine/roadshow', icon: Sparkles, labelKey: 'lm.newCampaign.obj.roadshow', descKey: 'lm.newCampaign.obj.roadshowDesc' },
 ]
 
@@ -326,6 +329,23 @@ export default function NewCampaignPage() {
   }
 
   const activeObjective = PRODUCT_OBJECTIVES.find((o) => o.key === form.productObjective) ?? PRODUCT_OBJECTIVES[0]
+
+  // Lead form — wired into the Meta Lead objective. The forms feature already
+  // exists (/lead-machine/forms + /api/meta/forms); the builder now lets you
+  // pick, create, or edit the in-ad form the leads land in.
+  type LeadFormLite = { id: string; name: string; leads_count?: number; status?: string }
+  const [leadForms, setLeadForms] = useState<LeadFormLite[]>([])
+  const [leadFormId, setLeadFormId] = useState('')
+  const [leadFormsLoading, setLeadFormsLoading] = useState(false)
+  useEffect(() => {
+    if (form.productObjective !== 'meta_lead') return
+    setLeadFormsLoading(true)
+    fetch('/api/meta/forms', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.forms)) setLeadForms(d.forms as LeadFormLite[]) })
+      .catch(() => {})
+      .finally(() => setLeadFormsLoading(false))
+  }, [form.productObjective])
 
   // Everything the user types is saved: restore the last draft on mount
   // (this device first, then the ACCOUNT — so a draft started on the laptop
@@ -683,6 +703,33 @@ export default function NewCampaignPage() {
                 })}
               </div>
             </div>
+
+            {/* Meta Lead → the in-ad lead form. Choose, create, or edit it. */}
+            {form.productObjective === 'meta_lead' && (
+              <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><FileText className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.title')}</div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.leadForm.hint')}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <select value={leadFormId} onChange={(e) => setLeadFormId(e.target.value)} className={`${inputCls()} max-w-xs`}>
+                    <option value="">{leadFormsLoading ? t('common.loading') : t('lm.newCampaign.leadForm.pick')}</option>
+                    {leadForms.map((f) => (
+                      <option key={f.id} value={f.id}>{f.name}{typeof f.leads_count === 'number' ? ` · ${f.leads_count}` : ''}</option>
+                    ))}
+                  </select>
+                  {leadFormId ? (
+                    <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-2 text-xs text-slate-300 transition hover:text-white">
+                      {t('lm.newCampaign.leadForm.edit')} <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  ) : null}
+                  <Link href="/freehold-intelligence/lead-machine/forms/new" className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                    <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.create')}
+                  </Link>
+                </div>
+                {!leadFormsLoading && leadForms.length === 0 && (
+                  <p className="mt-2 text-[11px] text-slate-500">{t('lm.newCampaign.leadForm.empty')}</p>
+                )}
+              </div>
+            )}
 
             <div>
               <Label>{t('lm.newCampaign.s1.label.name')}</Label>
