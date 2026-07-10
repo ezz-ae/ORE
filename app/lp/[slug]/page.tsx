@@ -5,12 +5,17 @@ import {
   ShoppingBag, GraduationCap, Coffee, Dumbbell, Trees, Waves,
 } from 'lucide-react'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
+import {
+  LP_CHROME, normalizeLpLang, lpDir, lpFill, translateLandingContent, type LpLang,
+} from '@/lib/landing-i18n'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
 import { Tracker } from './_tracker'
+
+type Dict = Record<string, string>
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -107,7 +112,7 @@ async function getPage(slug: string): Promise<LandingPageData | null> {
 
 // ─── Section components ───────────────────────────────────────────────────────
 
-function HeroSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
+function HeroSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
   const title = pick(d, 'title') || page.title
   const subtitle = pick(d, 'subtitle') || page.subtitle
   const eyebrow = pick(d, 'eyebrow')
@@ -164,12 +169,12 @@ function HeroSection({ d, page }: { d: Record<string, unknown>; page: LandingPag
                 {page.ctaText} <ChevronRight className="h-4 w-4" />
               </a>
               <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/10 px-7 py-4 text-[15px] font-semibold text-[#25D366] transition-all hover:bg-[#25D366]/20">
-                <MessageCircle className="h-4 w-4" /> WhatsApp
+                <MessageCircle className="h-4 w-4" /> {L['hero.whatsapp']}
               </a>
             </div>
 
             <div className="mt-10 flex items-center gap-5 border-t border-white/[0.07] pt-7">
-              {[{ icon: Shield, label: 'DLD Registered' }, { icon: Star, label: 'RERA Certified' }, { icon: Award, label: 'Award-Winning Agency' }].map(({ icon: Icon, label }) => (
+              {[{ icon: Shield, label: L['hero.badge.dld'] }, { icon: Star, label: L['hero.badge.rera'] }, { icon: Award, label: L['hero.badge.award'] }].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2 text-[11px] text-white/35">
                   <Icon className="h-3.5 w-3.5 text-white/25" />{label}
                 </div>
@@ -181,11 +186,11 @@ function HeroSection({ d, page }: { d: Record<string, unknown>; page: LandingPag
           <div className="lg:pt-4">
             <div className="rounded-2xl border border-white/[0.09] bg-[#0A0D18]/90 p-7 shadow-2xl backdrop-blur-xl">
               <div className="mb-5">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">Free Consultation</div>
-                <h3 className="text-[20px] font-bold text-white">Request Investment Pack</h3>
-                <p className="mt-1 text-[13px] text-white/40">Floor plans, pricing, and ROI analysis — delivered within 24 hours.</p>
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">{L['hero.form.eyebrow']}</div>
+                <h3 className="text-[20px] font-bold text-white">{L['hero.form.title']}</h3>
+                <p className="mt-1 text-[13px] text-white/40">{L['hero.form.subtitle']}</p>
               </div>
-              <LeadForm propertyName={page.project?.name || title} slug={page.slug} ctaText={page.ctaText} pixels={page.pixels} />
+              <LeadForm propertyName={page.project?.name || title} slug={page.slug} ctaText={page.ctaText} L={L} pixels={page.pixels} />
             </div>
           </div>
         </div>
@@ -194,8 +199,8 @@ function HeroSection({ d, page }: { d: Record<string, unknown>; page: LandingPag
   )
 }
 
-function DescriptionSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
-  const title = pick(d, 'title') || `About ${page.project?.name || page.title}`
+function DescriptionSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
+  const title = pick(d, 'title') || `${L['desc.aboutPrefix']} ${page.project?.name || page.title}`
   const body = pick(d, 'body', 'description', 'content')
   const highlights = pickArr(d, 'highlights').map(toStr).filter(Boolean)
 
@@ -206,7 +211,7 @@ function DescriptionSection({ d, page }: { d: Record<string, unknown>; page: Lan
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">About the Project</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['desc.eyebrow']}</div>
             <h2 className="mb-6 text-[34px] font-bold leading-tight text-white">{title}</h2>
             {body && <div className="space-y-4">{body.split('\n\n').filter(Boolean).map((para, i) => (
               <p key={i} className="text-[16px] leading-[1.75] text-white/60">{para}</p>
@@ -214,7 +219,7 @@ function DescriptionSection({ d, page }: { d: Record<string, unknown>; page: Lan
           </div>
           {highlights.length > 0 && (
             <div className="space-y-3">
-              <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest text-white/30">Highlights</div>
+              <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest text-white/30">{L['desc.highlights']}</div>
               {highlights.map((h, i) => (
                 <div key={i} className="flex items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4">
                   <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15">
@@ -231,8 +236,8 @@ function DescriptionSection({ d, page }: { d: Record<string, unknown>; page: Lan
   )
 }
 
-function GallerySection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
-  const title = pick(d, 'title') || 'Project Gallery'
+function GallerySection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
+  const title = pick(d, 'title') || L['gallery.title']
   const labels = pickArr(d, 'labels', 'rooms', 'views').map(toStr).filter(Boolean)
 
   // Only render tiles backed by a REAL image URL — never a placeholder box.
@@ -250,11 +255,11 @@ function GallerySection({ d, page }: { d: Record<string, unknown>; page: Landing
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Visuals</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['gallery.eyebrow']}</div>
         <div className="mb-8 flex items-end justify-between">
           <h2 className="text-[34px] font-bold text-white">{title}</h2>
           <a href="#lead-form" className="hidden text-[13px] text-[#D4AF37]/70 hover:text-[#D4AF37] sm:block">
-            Request floor plans →
+            {L['gallery.requestFloorPlans']}
           </a>
         </div>
 
@@ -280,8 +285,8 @@ function GallerySection({ d, page }: { d: Record<string, unknown>; page: Landing
   )
 }
 
-function UnitsSection({ d }: { d: Record<string, unknown> }) {
-  const title = pick(d, 'title') || 'Available Residences'
+function UnitsSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
+  const title = pick(d, 'title') || L['units.title']
   const units = pickArr(d, 'units', 'types').map(toObj)
 
   // Only render real units — never invent unit types or pricing on a public page.
@@ -290,10 +295,10 @@ function UnitsSection({ d }: { d: Record<string, unknown> }) {
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Residences</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['units.eyebrow']}</div>
         <div className="mb-10 flex items-end justify-between">
           <h2 className="text-[34px] font-bold text-white">{title}</h2>
-          <span className="hidden text-[13px] text-white/30 sm:block">All prices are indicative · Subject to availability</span>
+          <span className="hidden text-[13px] text-white/30 sm:block">{L['units.disclaimer']}</span>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -309,17 +314,17 @@ function UnitsSection({ d }: { d: Record<string, unknown> }) {
                 <div className="h-1 w-full" style={{ background: i === 0 ? '#9B8020' : i === 1 ? '#D4AF37' : '#C9A227' }} />
                 <div className="flex flex-1 flex-col p-6">
                   <div className="mb-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Unit Type</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['units.unitType']}</div>
                     <div className="mt-1 text-[22px] font-bold text-white">{type}</div>
                   </div>
 
                   <div className="mb-5 grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-white/[0.04] px-3 py-2.5">
-                      <div className="text-[10px] text-white/30 uppercase tracking-wide">Size</div>
+                      <div className="text-[10px] text-white/30 uppercase tracking-wide">{L['units.size']}</div>
                       <div className="mt-0.5 text-[13px] font-semibold text-white/80">{size}</div>
                     </div>
                     <div className="rounded-lg bg-[#D4AF37]/[0.08] border border-[#D4AF37]/20 px-3 py-2.5">
-                      <div className="text-[10px] text-[#D4AF37]/50 uppercase tracking-wide">Price</div>
+                      <div className="text-[10px] text-[#D4AF37]/50 uppercase tracking-wide">{L['units.price']}</div>
                       <div className="mt-0.5 text-[13px] font-semibold text-[#D4AF37]">{price}</div>
                     </div>
                   </div>
@@ -335,7 +340,7 @@ function UnitsSection({ d }: { d: Record<string, unknown> }) {
                   )}
 
                   <a href="#lead-form" className="mt-auto flex items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] py-3 text-[13px] font-semibold text-[#D4AF37] transition-all hover:bg-[#D4AF37]/15">
-                    Request Floor Plan <ChevronRight className="h-3.5 w-3.5" />
+                    {L['units.requestFloorPlan']} <ChevronRight className="h-3.5 w-3.5" />
                   </a>
                 </div>
               </div>
@@ -364,16 +369,16 @@ function KeyFactsSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function PaymentPlanSection({ d }: { d: Record<string, unknown> }) {
+function PaymentPlanSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   const down = Number(pick(d, 'downPayment')) || 20
   const during = Number(pick(d, 'duringConstruction')) || 50
   const onHand = Number(pick(d, 'onHandover')) || 30
   const post = Number(pick(d, 'postHandover')) || 0
   const stages = [
-    { label: 'Down Payment', pct: down, sub: 'On booking', color: '#D4AF37' },
-    { label: 'During Construction', pct: during, sub: 'Paid in instalments', color: '#9B8020' },
-    { label: 'On Handover', pct: onHand, sub: 'Keys handover', color: '#6B5A15' },
-    ...(post > 0 ? [{ label: 'Post Handover', pct: post, sub: 'After completion', color: '#3D330B' }] : []),
+    { label: L['payment.stage.down'], pct: down, sub: L['payment.stage.downSub'], color: '#D4AF37' },
+    { label: L['payment.stage.during'], pct: during, sub: L['payment.stage.duringSub'], color: '#9B8020' },
+    { label: L['payment.stage.handover'], pct: onHand, sub: L['payment.stage.handoverSub'], color: '#6B5A15' },
+    ...(post > 0 ? [{ label: L['payment.stage.post'], pct: post, sub: L['payment.stage.postSub'], color: '#3D330B' }] : []),
   ].filter(s => s.pct > 0)
 
   return (
@@ -381,9 +386,9 @@ function PaymentPlanSection({ d }: { d: Record<string, unknown> }) {
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Finance</div>
-            <h2 className="mb-4 text-[34px] font-bold text-white">Flexible Payment Plan</h2>
-            <p className="mb-10 text-[15px] text-white/45 leading-relaxed">Developer-backed payment structure designed to minimise your upfront commitment while securing your investment in one of Dubai's most coveted addresses.</p>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['payment.eyebrow']}</div>
+            <h2 className="mb-4 text-[34px] font-bold text-white">{L['payment.title']}</h2>
+            <p className="mb-10 text-[15px] text-white/45 leading-relaxed">{L['payment.intro']}</p>
 
             {/* Progress bar */}
             <div className="mb-6 flex h-3 overflow-hidden rounded-full bg-white/[0.06]">
@@ -403,9 +408,9 @@ function PaymentPlanSection({ d }: { d: Record<string, unknown> }) {
 
           <div className="space-y-3">
             {[
-              { icon: Shield, title: 'Developer-Backed Plan', desc: 'Payment milestones tied to construction progress — your capital is protected at every stage.' },
-              { icon: TrendingUp, title: 'Build Equity Immediately', desc: 'Properties historically appreciate during construction in Dubai, often delivering returns before handover.' },
-              { icon: Award, title: '0% Commission', desc: 'All Freehold transactions are fee-free to buyers. You pay only the agreed purchase price.' },
+              { icon: Shield, title: L['payment.card1.title'], desc: L['payment.card1.desc'] },
+              { icon: TrendingUp, title: L['payment.card2.title'], desc: L['payment.card2.desc'] },
+              { icon: Award, title: L['payment.card3.title'], desc: L['payment.card3.desc'] },
             ].map(({ icon: Icon, title, desc }, i) => (
               <div key={i} className="flex gap-4 rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#D4AF37]/10">
@@ -424,7 +429,7 @@ function PaymentPlanSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function RoiSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
+function RoiSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
   const yield_ = Number(pick(d, 'rentalYield', 'expectedRoi')) || 0
   const price = Number(pick(d, 'startPriceAed')) || page.project?.priceFromAed || 0
 
@@ -435,24 +440,24 @@ function RoiSection({ d, page }: { d: Record<string, unknown>; page: LandingPage
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Investment Returns</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['roi.eyebrow']}</div>
         <div className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto]">
-          <h2 className="text-[34px] font-bold text-white">Why This Investment Works</h2>
+          <h2 className="text-[34px] font-bold text-white">{L['roi.title']}</h2>
           <div className="flex items-center gap-2 text-[13px] text-white/30">
-            <Clock className="h-4 w-4" /> Projections — not financial advice
+            <Clock className="h-4 w-4" /> {L['roi.disclaimer']}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="col-span-2 rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] p-7 text-center sm:col-span-1">
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60 mb-3">Projected Yield</div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60 mb-3">{L['roi.projectedYield']}</div>
             <div className="text-[56px] font-bold text-[#D4AF37] leading-none">{yield_ > 0 ? `${yield_.toFixed(1)}%` : '—'}</div>
-            <div className="mt-2 text-[12px] text-white/35">Estimated net annual return</div>
+            <div className="mt-2 text-[12px] text-white/35">{L['roi.projectedYieldSub']}</div>
           </div>
           {[
-            { label: 'Annual Income', value: annual ? fmtAed(annual) : '—', sub: 'Gross rental income' },
-            { label: 'Monthly Income', value: monthly ? fmtAed(monthly) : '—', sub: 'Average per month' },
-            { label: '5-Year Rental', value: fiveYr ? fmtAed(fiveYr) : '—', sub: 'Cumulative income' },
+            { label: L['roi.annual'], value: annual ? fmtAed(annual) : '—', sub: L['roi.annualSub'] },
+            { label: L['roi.monthly'], value: monthly ? fmtAed(monthly) : '—', sub: L['roi.monthlySub'] },
+            { label: L['roi.fiveYear'], value: fiveYr ? fmtAed(fiveYr) : '—', sub: L['roi.fiveYearSub'] },
           ].map(({ label, value, sub }, i) => (
             <div key={i} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center">
               <div className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-3">{label}</div>
@@ -472,9 +477,9 @@ const LOCATION_ICONS: Record<string, React.ElementType> = {
   gym: Dumbbell, park: Trees, beach: Waves, default: MapPin,
 }
 
-function LocationSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
+function LocationSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
   const area = pick(d, 'area') || page.project?.area || 'Dubai'
-  const title = pick(d, 'title') || `Life in ${area}`
+  const title = pick(d, 'title') || `${L['location.lifeInPrefix']} ${area}`
   const subtitle = pick(d, 'subtitle')
   // Only render real, project-specific distances — no generic default landmarks.
   const dList = pickArr(d, 'distances', 'landmarks').map(toObj)
@@ -483,7 +488,7 @@ function LocationSection({ d, page }: { d: Record<string, unknown>; page: Landin
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Location</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['location.eyebrow']}</div>
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
             <h2 className="mb-3 text-[34px] font-bold text-white">{title}</h2>
@@ -514,9 +519,9 @@ function LocationSection({ d, page }: { d: Record<string, unknown>; page: Landin
               <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-[#D4AF37]/60" />
-                  <span className="text-[14px] font-semibold text-white">{area}, Dubai</span>
+                  <span className="text-[14px] font-semibold text-white">{area}{L['location.dubaiSuffix']}</span>
                 </div>
-                <span className="text-[11px] text-white/30">United Arab Emirates</span>
+                <span className="text-[11px] text-white/30">{L['location.uae']}</span>
               </div>
               <div className="px-5 py-5">
                 {highlights.length > 0 ? (
@@ -528,7 +533,7 @@ function LocationSection({ d, page }: { d: Record<string, unknown>; page: Landin
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-[14px] text-white/40 leading-relaxed">{area} is one of Dubai's most sought-after addresses, combining world-class infrastructure with exceptional lifestyle amenities and strong capital appreciation fundamentals.</p>
+                  <p className="text-[14px] text-white/40 leading-relaxed">{lpFill(L['location.defaultDesc'], { area })}</p>
                 )}
               </div>
             </div>
@@ -539,25 +544,24 @@ function LocationSection({ d, page }: { d: Record<string, unknown>; page: Landin
   )
 }
 
-const WHY_DUBAI = [
-  { icon: Shield, stat: '#1', label: 'Safest city globally', sub: 'Global Peace Index 2024' },
-  { icon: TrendingUp, stat: '0%', label: 'Income & capital gains tax', sub: 'For all residents' },
-  { icon: Globe, stat: '200+', label: 'Nationalities call Dubai home', sub: 'Most cosmopolitan city' },
-  { icon: Building2, stat: '$55bn+', label: 'Real estate transactions 2024', sub: 'Record-breaking year' },
-  { icon: Star, stat: 'Top 3', label: 'Global luxury market', sub: 'Knight Frank 2024' },
-  { icon: Award, stat: '10yr', label: 'Golden Visa residency', sub: 'For qualifying investors' },
-]
-
-function WhyDubaiSection({ d }: { d: Record<string, unknown> }) {
+function WhyDubaiSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
+  const whyDubai = [
+    { icon: Shield, stat: '#1', label: L['whyDubai.1.label'], sub: L['whyDubai.1.sub'] },
+    { icon: TrendingUp, stat: '0%', label: L['whyDubai.2.label'], sub: L['whyDubai.2.sub'] },
+    { icon: Globe, stat: '200+', label: L['whyDubai.3.label'], sub: L['whyDubai.3.sub'] },
+    { icon: Building2, stat: '$55bn+', label: L['whyDubai.4.label'], sub: L['whyDubai.4.sub'] },
+    { icon: Star, stat: 'Top 3', label: L['whyDubai.5.label'], sub: L['whyDubai.5.sub'] },
+    { icon: Award, stat: '10yr', label: L['whyDubai.6.label'], sub: L['whyDubai.6.sub'] },
+  ]
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Why Dubai</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['whyDubai.eyebrow']}</div>
         <div className="mb-10 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
-          <h2 className="text-[34px] font-bold text-white">The World's Most Compelling Investment City</h2>
+          <h2 className="text-[34px] font-bold text-white">{L['whyDubai.title']}</h2>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {WHY_DUBAI.map(({ icon: Icon, stat, label, sub }) => (
+          {whyDubai.map(({ icon: Icon, stat, label, sub }) => (
             <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-6">
               <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-[#D4AF37]/10">
                 <Icon className="h-4.5 w-4.5 text-[#D4AF37]/70" />
@@ -573,10 +577,10 @@ function WhyDubaiSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function GoldenVisaSection({ d }: { d: Record<string, unknown> }) {
+function GoldenVisaSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   const benefits = pickArr(d, 'benefits').map(toStr).filter(Boolean)
   const threshold = pick(d, 'threshold') || 'AED 2,000,000'
-  const defaultBenefits = ['10-year renewable UAE residency', 'Sponsor spouse and children under 25', 'No UAE local sponsor required', 'Own property outright in all freehold zones', 'Renewable indefinitely while owning property']
+  const defaultBenefits = [L['goldenVisa.benefit1'], L['goldenVisa.benefit2'], L['goldenVisa.benefit3'], L['goldenVisa.benefit4'], L['goldenVisa.benefit5']]
 
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
@@ -586,16 +590,16 @@ function GoldenVisaSection({ d }: { d: Record<string, unknown> }) {
             <div className="p-10">
               <div className="mb-1 flex items-center gap-2">
                 <Star className="h-4 w-4 text-[#D4AF37]" />
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">UAE Golden Visa</span>
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/70">{L['goldenVisa.eyebrow']}</span>
               </div>
-              <h2 className="mt-4 text-[36px] font-bold leading-tight text-white">Golden Visa<br />Eligible Property</h2>
-              <p className="mt-3 text-[15px] text-white/50 leading-relaxed">Properties at {threshold}+ threshold unlock the UAE 10-year Golden Visa — giving you and your family full residency rights with no sponsor required.</p>
+              <h2 className="mt-4 text-[36px] font-bold leading-tight text-white">{L['goldenVisa.title']}</h2>
+              <p className="mt-3 text-[15px] text-white/50 leading-relaxed">{lpFill(L['goldenVisa.desc'], { threshold })}</p>
               <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-7 py-3.5 text-[14px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
-                Check Eligibility <ChevronRight className="h-4 w-4" />
+                {L['goldenVisa.cta']} <ChevronRight className="h-4 w-4" />
               </a>
             </div>
             <div className="border-t border-[#D4AF37]/10 p-10 lg:border-l lg:border-t-0">
-              <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest text-white/30">What You Get</div>
+              <div className="mb-5 text-[11px] font-semibold uppercase tracking-widest text-white/30">{L['goldenVisa.whatYouGet']}</div>
               <ul className="space-y-4">
                 {(benefits.length ? benefits : defaultBenefits).map((b, i) => (
                   <li key={i} className="flex items-start gap-3 text-[14px] text-white/65">
@@ -611,7 +615,7 @@ function GoldenVisaSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function AmenitiesSection({ d }: { d: Record<string, unknown> }) {
+function AmenitiesSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   const items = pickArr(d, 'items').map(toStr).filter(Boolean)
   if (!items.length) return null
 
@@ -626,8 +630,8 @@ function AmenitiesSection({ d }: { d: Record<string, unknown> }) {
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Amenities</div>
-        <h2 className="mb-8 text-[34px] font-bold text-white">World-Class Amenities</h2>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['amenities.eyebrow']}</div>
+        <h2 className="mb-8 text-[34px] font-bold text-white">{L['amenities.title']}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item, i) => {
             const Icon = getIcon(item)
@@ -644,7 +648,7 @@ function AmenitiesSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function DeveloperSection({ d }: { d: Record<string, unknown> }) {
+function DeveloperSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   // Use the real developer name only — never default to a brand we can't verify.
   const name = pick(d, 'name', 'developer')
   const desc = pick(d, 'description', 'about')
@@ -655,10 +659,10 @@ function DeveloperSection({ d }: { d: Record<string, unknown> }) {
   return (
     <section className="border-t border-white/[0.05] bg-[#0A0D16] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Developer</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['developer.eyebrow']}</div>
         <div className={`grid grid-cols-1 gap-10 ${stats.length ? 'lg:grid-cols-[1fr_320px]' : ''}`}>
           <div>
-            <h2 className="mb-4 text-[34px] font-bold text-white">Built by {name}</h2>
+            <h2 className="mb-4 text-[34px] font-bold text-white">{L['developer.builtByPrefix']} {name}</h2>
             {desc && <p className="text-[15px] text-white/50 leading-relaxed">{desc}</p>}
           </div>
           {stats.length > 0 && (
@@ -677,7 +681,7 @@ function DeveloperSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function SocialProofSection({ d }: { d: Record<string, unknown> }) {
+function SocialProofSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   const testimonials = pickArr(d, 'testimonials', 'items').map(toObj)
   // Never fabricate reviews — only render real testimonials when present.
   const list = testimonials.filter((t) => toStr(t.quote))
@@ -687,12 +691,12 @@ function SocialProofSection({ d }: { d: Record<string, unknown> }) {
   return (
     <section className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Social Proof</div>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['social.eyebrow']}</div>
         <div className="mb-10 flex items-end justify-between">
-          <h2 className="text-[34px] font-bold text-white">Investor Experiences</h2>
+          <h2 className="text-[34px] font-bold text-white">{L['social.title']}</h2>
           <div className="hidden items-center gap-1 sm:flex">
             {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-[#D4AF37] text-[#D4AF37]" />)}
-            <span className="ml-2 text-[13px] text-white/40">{avg} average</span>
+            <span className="ml-2 text-[13px] text-white/40">{avg} {L['social.average']}</span>
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -714,16 +718,16 @@ function SocialProofSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function NeighborhoodSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
+function NeighborhoodSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
   const area = pick(d, 'area') || page.project?.area || 'Dubai'
   const description = pick(d, 'description', 'body', 'about')
   const highlights = pickArr(d, 'highlights').map(toStr).filter(Boolean)
 
   const defaultHighlights = [
-    `${area} is one of Dubai's most connected and sought-after communities`,
-    'Access to world-class schools, retail, dining, and lifestyle infrastructure',
-    'Strong rental demand driven by young professionals and families',
-    'Capital growth track record with continued development investment',
+    lpFill(L['neighborhood.default1'], { area }),
+    L['neighborhood.default2'],
+    L['neighborhood.default3'],
+    L['neighborhood.default4'],
   ]
 
   return (
@@ -731,8 +735,8 @@ function NeighborhoodSection({ d, page }: { d: Record<string, unknown>; page: La
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Neighbourhood</div>
-            <h2 className="mb-4 text-[34px] font-bold text-white">Life in {area}</h2>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['neighborhood.eyebrow']}</div>
+            <h2 className="mb-4 text-[34px] font-bold text-white">{L['neighborhood.lifeInPrefix']} {area}</h2>
             {description && (
               <p className="text-[15px] text-white/50 leading-relaxed">{description}</p>
             )}
@@ -753,7 +757,7 @@ function NeighborhoodSection({ d, page }: { d: Record<string, unknown>; page: La
   )
 }
 
-function MarketIntelligenceSection({ d }: { d: Record<string, unknown> }) {
+function MarketIntelligenceSection({ d, L }: { d: Record<string, unknown>; L: Dict }) {
   const summary = pick(d, 'summary')
   const bullets = pickArr(d, 'bullets').map(toStr).filter(Boolean)
 
@@ -766,11 +770,11 @@ function MarketIntelligenceSection({ d }: { d: Record<string, unknown> }) {
               <Sparkles className="h-5 w-5 text-[#D4AF37]" />
             </div>
             <div>
-              <div className="text-[15px] font-semibold text-white">AI Market Analysis</div>
-              <div className="text-[12px] text-white/35">Investment-grade context from live market data</div>
+              <div className="text-[15px] font-semibold text-white">{L['market.title']}</div>
+              <div className="text-[12px] text-white/35">{L['market.subtitle']}</div>
             </div>
             <div className="ml-auto flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />Live
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />{L['market.live']}
             </div>
           </div>
           {summary && <p className="mb-6 text-[15px] leading-relaxed text-white/65 border-l-2 border-[#D4AF37]/40 pl-5">{summary}</p>}
@@ -789,8 +793,8 @@ function MarketIntelligenceSection({ d }: { d: Record<string, unknown> }) {
   )
 }
 
-function AiConciergeSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
-  const title = pick(d, 'title') || 'Ask Our AI Advisor'
+function AiConciergeSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
+  const title = pick(d, 'title') || L['ai.title']
   const subtitle = pick(d, 'subtitle')
   const prompts = pickArr(d, 'prompts').map(toStr).filter(Boolean)
   const name = page.project?.name || page.title
@@ -807,16 +811,16 @@ function AiConciergeSection({ d, page }: { d: Record<string, unknown>; page: Lan
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_480px]">
           <div>
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">AI Advisor</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['ai.eyebrow']}</div>
             <h2 className="mb-3 text-[34px] font-bold text-white">{title}</h2>
-            <p className="text-[15px] text-white/50 leading-relaxed">{subtitle || `Get instant, expert-level answers about ${name} — from yield analysis to buyer profiles to area comparisons. Powered by Freehold AI.`}</p>
+            <p className="text-[15px] text-white/50 leading-relaxed">{subtitle || lpFill(L['ai.subtitle'], { name })}</p>
             <div className="mt-6 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366]/15 ring-1 ring-[#25D366]/25">
                 <MessageCircle className="h-5 w-5 text-[#25D366]" />
               </div>
               <div>
-                <div className="text-[13px] font-semibold text-white/80">WhatsApp AI — instant answers</div>
-                <div className="text-[11px] text-white/35">Tap any question below to start</div>
+                <div className="text-[13px] font-semibold text-white/80">{L['ai.whatsappTitle']}</div>
+                <div className="text-[11px] text-white/35">{L['ai.whatsappSub']}</div>
               </div>
             </div>
           </div>
@@ -835,20 +839,20 @@ function AiConciergeSection({ d, page }: { d: Record<string, unknown>; page: Lan
   )
 }
 
-function LeadFormSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
-  const title = pick(d, 'title') || 'Get the Full Investment Pack'
-  const subtitle = pick(d, 'subtitle') || 'Floor plans, pricing, ROI analysis, and brochure — delivered within 24 hours by a senior Freehold consultant.'
+function LeadFormSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
+  const title = pick(d, 'title') || L['leadForm.title']
+  const subtitle = pick(d, 'subtitle') || L['leadForm.subtitle']
 
   return (
     <section id="lead-form" className="border-t border-white/[0.05] px-5 py-20 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
           <div className="flex flex-col justify-center">
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Contact Us</div>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['leadForm.eyebrow']}</div>
             <h2 className="mb-3 text-[34px] font-bold text-white">{title}</h2>
             <p className="mb-8 text-[15px] text-white/50 leading-relaxed">{subtitle}</p>
             <div className="space-y-4">
-              {[{ icon: Clock, text: 'Response within 24 hours, guaranteed' }, { icon: Shield, text: 'No pressure sales — honest, expert advice' }, { icon: Users, text: 'Dedicated investment consultant assigned' }, { icon: Award, text: '0% buyer commission — always' }].map(({ icon: Icon, text }) => (
+              {[{ icon: Clock, text: L['leadForm.benefit1'] }, { icon: Shield, text: L['leadForm.benefit2'] }, { icon: Users, text: L['leadForm.benefit3'] }, { icon: Award, text: L['leadForm.benefit4'] }].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 text-[14px] text-white/55">
                   <Icon className="h-4 w-4 shrink-0 text-[#D4AF37]/60" />{text}
                 </div>
@@ -857,7 +861,7 @@ function LeadFormSection({ d, page }: { d: Record<string, unknown>; page: Landin
           </div>
           <div>
             <div className="rounded-2xl border border-[#D4AF37]/15 bg-[#0A0D16] p-8">
-              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} pixels={page.pixels} />
+              <LeadForm propertyName={page.project?.name || page.title} slug={page.slug} ctaText={page.ctaText} L={L} pixels={page.pixels} />
             </div>
           </div>
         </div>
@@ -866,16 +870,16 @@ function LeadFormSection({ d, page }: { d: Record<string, unknown>; page: Landin
   )
 }
 
-function DownloadBrochureSection({ d, page }: { d: Record<string, unknown>; page: LandingPageData }) {
-  const title = pick(d, 'title') || 'Download the Full Brochure'
-  const subtitle = pick(d, 'subtitle') || 'Floor plans, specifications, payment schedule, and full investment analysis in one document.'
+function DownloadBrochureSection({ d, page, L }: { d: Record<string, unknown>; page: LandingPageData; L: Dict }) {
+  const title = pick(d, 'title') || L['brochure.title']
+  const subtitle = pick(d, 'subtitle') || L['brochure.subtitle']
 
   return (
     <section className="border-t border-white/[0.05] px-5 py-16 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="rounded-2xl p-10 text-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.05) 60%, transparent 100%)', border: '1px solid rgba(212,175,55,0.18)' }}>
           <div className="mx-auto max-w-lg">
-            <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">Free Download</div>
+            <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['brochure.eyebrow']}</div>
             <h3 className="text-[28px] font-bold text-white">{title}</h3>
             <p className="mx-auto mt-3 text-[14px] text-white/45 leading-relaxed">{subtitle}</p>
             <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
@@ -890,25 +894,25 @@ function DownloadBrochureSection({ d, page }: { d: Record<string, unknown>; page
 
 // ─── Section dispatcher ───────────────────────────────────────────────────────
 
-function Section({ section, page }: { section: LandingSection; page: LandingPageData }) {
+function Section({ section, page, L }: { section: LandingSection; page: LandingPageData; L: Dict }) {
   const d = section.data
   switch (section.type) {
-    case 'hero': return <HeroSection d={d} page={page} />
-    case 'description': return <DescriptionSection d={d} page={page} />
-    case 'gallery': return <GallerySection d={d} page={page} />
-    case 'units': return <UnitsSection d={d} />
+    case 'hero': return <HeroSection d={d} page={page} L={L} />
+    case 'description': return <DescriptionSection d={d} page={page} L={L} />
+    case 'gallery': return <GallerySection d={d} page={page} L={L} />
+    case 'units': return <UnitsSection d={d} L={L} />
     case 'key-facts': return <KeyFactsSection d={d} />
-    case 'payment-plan': return <PaymentPlanSection d={d} />
-    case 'roi': return <RoiSection d={d} page={page} />
-    case 'why-dubai': return <WhyDubaiSection d={d} />
-    case 'golden-visa': return <GoldenVisaSection d={d} />
-    case 'amenities': return <AmenitiesSection d={d} />
-    case 'location': return <LocationSection d={d} page={page} />
-    case 'developer-profile': return <DeveloperSection d={d} />
-    case 'social-proof': return <SocialProofSection d={d} />
-    case 'market-intelligence': return <MarketIntelligenceSection d={d} />
-    case 'ai-concierge': return <AiConciergeSection d={d} page={page} />
-    case 'neighborhood': return <NeighborhoodSection d={d} page={page} />
+    case 'payment-plan': return <PaymentPlanSection d={d} L={L} />
+    case 'roi': return <RoiSection d={d} page={page} L={L} />
+    case 'why-dubai': return <WhyDubaiSection d={d} L={L} />
+    case 'golden-visa': return <GoldenVisaSection d={d} L={L} />
+    case 'amenities': return <AmenitiesSection d={d} L={L} />
+    case 'location': return <LocationSection d={d} page={page} L={L} />
+    case 'developer-profile': return <DeveloperSection d={d} L={L} />
+    case 'social-proof': return <SocialProofSection d={d} L={L} />
+    case 'market-intelligence': return <MarketIntelligenceSection d={d} L={L} />
+    case 'ai-concierge': return <AiConciergeSection d={d} page={page} L={L} />
+    case 'neighborhood': return <NeighborhoodSection d={d} page={page} L={L} />
     case 'faq': {
       const items = (pickArr(d, 'items') as Array<{ question?: string; answer?: string }>)
         .map(it => ({ question: toStr(it?.question), answer: toStr(it?.answer) }))
@@ -919,9 +923,9 @@ function Section({ section, page }: { section: LandingSection; page: LandingPage
           <div className="mx-auto max-w-6xl">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[300px_1fr]">
               <div>
-                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">FAQ</div>
-                <h2 className="text-[34px] font-bold text-white">Common Questions</h2>
-                <p className="mt-3 text-[14px] text-white/40 leading-relaxed">Everything investors typically ask before committing to a Dubai off-plan purchase.</p>
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['faq.eyebrow']}</div>
+                <h2 className="text-[34px] font-bold text-white">{L['faq.title']}</h2>
+                <p className="mt-3 text-[14px] text-white/40 leading-relaxed">{L['faq.subtitle']}</p>
               </div>
               <FaqAccordion items={items} />
             </div>
@@ -929,84 +933,108 @@ function Section({ section, page }: { section: LandingSection; page: LandingPage
         </section>
       )
     }
-    case 'download-brochure': return <DownloadBrochureSection d={d} page={page} />
-    case 'lead-form': return <LeadFormSection d={d} page={page} />
+    case 'download-brochure': return <DownloadBrochureSection d={d} page={page} L={L} />
+    case 'lead-form': return <LeadFormSection d={d} page={page} L={L} />
     default: return null
   }
 }
 
 // ─── Chrome ───────────────────────────────────────────────────────────────────
 
-function Topbar({ page }: { page: LandingPageData }) {
+const LP_LANGS: Array<{ code: LpLang; label: string }> = [
+  { code: 'en', label: 'EN' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'ru', label: 'RU' },
+]
+
+function LangSwitcher({ lang }: { lang: LpLang }) {
+  return (
+    <div className="flex items-center gap-1" dir="ltr">
+      {LP_LANGS.map(({ code, label }) => (
+        <a
+          key={code}
+          href={`?lang=${code}`}
+          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+            code === lang
+              ? 'bg-[#D4AF37]/15 text-[#D4AF37]'
+              : 'text-white/40 hover:text-white/70'
+          }`}
+        >
+          {label}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function Topbar({ page, L, lang }: { page: LandingPageData; L: Dict; lang: LpLang }) {
   const price = fmtAed(page.project?.priceFromAed)
   const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in ${page.title}`)}`
   return (
     <div className="fixed left-0 right-0 top-0 z-50 border-b border-white/[0.06] bg-[#06070C]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
-        <div className="text-[13px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD <span className="font-normal text-white/30">Property UAE</span></div>
-        {price !== 'Price on request' && <div className="hidden text-[12px] text-white/40 sm:block">From <span className="font-semibold text-white/70">{price}</span></div>}
+        <div className="text-[13px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD <span className="font-normal text-white/30">{L['topbar.brandSuffix']}</span></div>
+        {price !== 'Price on request' && <div className="hidden text-[12px] text-white/40 sm:block">{L['topbar.from']} <span className="font-semibold text-white/70">{price}</span></div>}
         <div className="flex items-center gap-2">
+          <LangSwitcher lang={lang} />
           <a href={waUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 px-3 py-1.5 text-[12px] font-medium text-[#25D366] transition hover:bg-[#25D366]/20">
-            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+            <MessageCircle className="h-3.5 w-3.5" /> {L['topbar.whatsapp']}
           </a>
           <a href="tel:+971504173622" className="hidden items-center gap-1.5 rounded-full border border-white/[0.12] px-3 py-1.5 text-[12px] text-white/50 transition hover:text-white/80 sm:flex">
-            <Phone className="h-3 w-3" /> Call
+            <Phone className="h-3 w-3" /> {L['topbar.call']}
           </a>
         </div>
       </div>
       {page.isDraft && (
         <div className="border-t border-amber-500/20 bg-amber-500/10 px-5 py-1.5 text-center text-[11px] font-medium text-amber-300">
-          DRAFT — not published · Go to CRM → Landing Pages to publish
+          {L['topbar.draft']}
         </div>
       )}
     </div>
   )
 }
 
-function Footer({ page }: { page: LandingPageData }) {
+function Footer({ page, L }: { page: LandingPageData; L: Dict }) {
   return (
     <footer className="border-t border-white/[0.06] px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div>
-            <div className="text-[14px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD Property UAE</div>
-            <div className="mt-2 text-[12px] text-white/30 leading-relaxed">Sobha Sapphire, Office 904<br />Business Bay, Dubai, UAE</div>
+            <div className="text-[14px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD {L['footer.brandSuffix']}</div>
+            <div className="mt-2 whitespace-pre-line text-[12px] text-white/30 leading-relaxed">{L['footer.address']}</div>
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/30 mb-3">Contact</div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/30 mb-3">{L['footer.contact']}</div>
             <div className="space-y-1 text-[12px] text-white/40">
-              <div>+971 50 417 3622</div>
-              <div>info@freeholdproperty.ae</div>
-              <div>freeholdproperty.ae</div>
+              <div dir="ltr">+971 50 417 3622</div>
+              <div dir="ltr">info@freeholdproperty.ae</div>
+              <div dir="ltr">freeholdproperty.ae</div>
             </div>
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/30 mb-3">Certifications</div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/30 mb-3">{L['footer.certifications']}</div>
             <div className="space-y-1 text-[12px] text-white/40">
-              <div>RERA Licensed Agency</div>
-              <div>DLD Registered Broker</div>
-              <div>Dubai Chamber Member</div>
+              <div>{L['footer.cert1']}</div>
+              <div>{L['footer.cert2']}</div>
+              <div>{L['footer.cert3']}</div>
             </div>
           </div>
         </div>
         <div className="mt-8 border-t border-white/[0.05] pt-6 text-center text-[10px] text-white/15 leading-relaxed">
-          © {new Date().getFullYear()} Freehold Property UAE. All rights reserved.
-          Prices, yields, and availability subject to change without notice.
-          Projected returns are estimates only and do not constitute financial advice.
-          Regulated by the Dubai Land Department.
+          © {new Date().getFullYear()} {L['footer.legal']}
         </div>
       </div>
     </footer>
   )
 }
 
-function NotFound() {
+function NotFound({ L }: { L: Dict }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#06070C] px-5 text-center">
       <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/40 mb-3">404</div>
-      <h1 className="text-[28px] font-bold text-white mb-2">Page not found</h1>
-      <p className="text-[14px] text-white/35">This property page is not available or has been removed.</p>
-      <a href="https://freeholdproperty.ae" className="mt-8 text-[13px] text-[#D4AF37]/60 hover:text-[#D4AF37]">← Back to Freehold</a>
+      <h1 className="text-[28px] font-bold text-white mb-2">{L['notFound.title']}</h1>
+      <p className="text-[14px] text-white/35">{L['notFound.desc']}</p>
+      <a href="https://freeholdproperty.ae" className="mt-8 text-[13px] text-[#D4AF37]/60 hover:text-[#D4AF37]">{L['notFound.back']}</a>
     </div>
   )
 }
@@ -1024,31 +1052,43 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function LandingPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function LandingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { slug } = await params
-  const page = await getPage(slug)
-  if (!page) return <NotFound />
+  const sp = await searchParams
+  const lang = normalizeLpLang(sp.lang)
+  const L = LP_CHROME[lang]
+  const dir = lpDir(lang)
 
-  const price = fmtAed(page.project?.priceFromAed)
+  const page = await getPage(slug)
+  if (!page) return <NotFound L={L} />
+
+  const localized = await translateLandingContent(page, lang)
+  const price = fmtAed(localized.project?.priceFromAed)
 
   return (
-    <div className="min-h-screen bg-[#06070C] text-white">
+    <div className="min-h-screen bg-[#06070C] text-white" dir={dir} lang={lang}>
       <Tracker
-        slug={page.slug}
-        projectSlug={page.projectSlug}
-        metaPixelId={page.pixels.metaPixelId}
-        googleTagId={page.pixels.googleTagId}
-        googleConversionId={page.pixels.googleConversionId}
-        tiktokPixelId={page.pixels.tiktokPixelId}
+        slug={localized.slug}
+        projectSlug={localized.projectSlug}
+        metaPixelId={localized.pixels.metaPixelId}
+        googleTagId={localized.pixels.googleTagId}
+        googleConversionId={localized.pixels.googleConversionId}
+        tiktokPixelId={localized.pixels.tiktokPixelId}
       />
-      <Topbar page={page} />
+      <Topbar page={localized} L={L} lang={lang} />
       <div className="pt-[52px]">
-        {page.sections.map((section, i) => (
-          <Section key={`${section.type}-${i}`} section={section} page={page} />
+        {localized.sections.map((section, i) => (
+          <Section key={`${section.type}-${i}`} section={section} page={localized} L={L} />
         ))}
-        <Footer page={page} />
+        <Footer page={localized} L={L} />
       </div>
-      <StickyLpCta price={price} ctaText={page.ctaText} slug={page.slug} />
+      <StickyLpCta price={price} ctaText={localized.ctaText} slug={localized.slug} L={L} />
     </div>
   )
 }

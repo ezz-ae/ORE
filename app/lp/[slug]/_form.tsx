@@ -8,6 +8,7 @@ interface LeadFormProps {
   propertyName: string
   slug: string
   ctaText?: string
+  L: Record<string, string>
   pixels?: {
     metaPixelId?: string
     googleTagId?: string
@@ -16,7 +17,8 @@ interface LeadFormProps {
   }
 }
 
-export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pricing', pixels = {} }: LeadFormProps) {
+export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFormProps) {
+  const submitLabel = ctaText || L['form.defaultCta']
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -43,11 +45,11 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
         }),
       })
       const payload = await res.json()
-      if (!res.ok) throw new Error(payload?.error || 'Unable to send your request.')
+      if (!res.ok) throw new Error(payload?.error || L['form.error'])
       trackConversion(slug, pixels)
       setSubmitted(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to send your request.')
+      setError(err instanceof Error ? err.message : L['form.error'])
     } finally {
       setSubmitting(false)
     }
@@ -59,9 +61,9 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
           <Check className="h-7 w-7 text-[#D4AF37]" />
         </div>
-        <div className="text-[20px] font-semibold text-white mb-2">Request received</div>
+        <div className="text-[20px] font-semibold text-white mb-2">{L['form.successTitle']}</div>
         <div className="text-[14px] text-white/50 leading-relaxed">
-          Our team will send you the brochure and pricing for <span className="text-white/80">{propertyName}</span> within a few hours.
+          {L['form.successPrefix']} <span className="text-white/80">{propertyName}</span> {L['form.successSuffix']}
         </div>
       </div>
     )
@@ -71,12 +73,12 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
     <form onSubmit={submit} className="space-y-4">
       <div>
         <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
-          Full Name <span className="text-[#D4AF37]">*</span>
+          {L['form.name']} <span className="text-[#D4AF37]">*</span>
         </label>
         <input
           type="text"
           required
-          placeholder="Your full name"
+          placeholder={L['form.namePlaceholder']}
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3.5 text-[14px] text-white placeholder-white/20 outline-none transition-all focus:border-[#D4AF37]/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#D4AF37]/20"
@@ -84,7 +86,7 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
       </div>
       <div>
         <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
-          Phone / WhatsApp <span className="text-[#D4AF37]">*</span>
+          {L['form.phone']} <span className="text-[#D4AF37]">*</span>
         </label>
         <input
           type="tel"
@@ -97,7 +99,7 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
       </div>
       <div>
         <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
-          Email
+          {L['form.email']}
         </label>
         <input
           type="email"
@@ -113,10 +115,10 @@ export function LeadForm({ propertyName, slug, ctaText = 'Request Brochure & Pri
         disabled={submitting}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98] disabled:opacity-60"
       >
-        {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</> : ctaText}
+        {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {L['form.sending']}</> : submitLabel}
       </button>
       <p className="text-center text-[11px] text-white/20 leading-relaxed">
-        By submitting, you agree to be contacted by Freehold Property UAE. No spam, ever.
+        {L['form.disclaimer']}
       </p>
     </form>
   )
