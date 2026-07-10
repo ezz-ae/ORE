@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -27,6 +27,9 @@ type Landing = {
   updatedAt: string | null
 }
 
+type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
+type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
+
 export default function LandingEditorPage() {
   const t = useT()
   const { dir } = useI18n()
@@ -39,6 +42,8 @@ export default function LandingEditorPage() {
   const [regen, setRegen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
   const [notFound, setNotFound] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [test, setTest] = useState<TestReport | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -91,6 +96,18 @@ export default function LandingEditorPage() {
     finally { setRegen(false) }
   }
 
+  // Landing pre-flight — real server-side checks against the live /lp/<slug>.
+  async function runTest() {
+    setTesting(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}/test`, { method: 'POST' })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error || t('lpe.test.failed')); return }
+      setTest(d as TestReport)
+    } catch { toast.error(t('lpe.test.failed')) }
+    finally { setTesting(false) }
+  }
+
   if (loading) return <div className="flex items-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
   if (notFound || !form) return (
     <div className="mx-auto max-w-md p-10 text-center">
@@ -111,6 +128,9 @@ export default function LandingEditorPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={runTest} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+            {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
+          </button>
           <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
             {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
           </button>
@@ -122,6 +142,36 @@ export default function LandingEditorPage() {
           </button>
         </div>
       </div>
+
+      {test && (
+        <div className="mb-5 rounded-2xl border border-line bg-surface-2/60 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+              <FlaskConical className="h-4 w-4 text-gold" /> {t('lpe.test.title')}
+              <span className="text-xs font-normal text-slate-500">
+                {t('lpe.test.summary')
+                  .replace('{pass}', String(test.passed ?? 0))
+                  .replace('{warn}', String(test.warned ?? 0))
+                  .replace('{fail}', String(test.failed ?? 0))}
+              </span>
+            </div>
+            <button type="button" onClick={() => setTest(null)} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {test.checks.map((c) => (
+              <li key={c.id} className="flex items-start gap-2 rounded-lg bg-surface/60 px-3 py-2">
+                {c.status === 'pass' ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  : c.status === 'warn' ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-200">{c.label}</p>
+                  <p className="truncate text-[11px] text-slate-500">{c.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[1fr_1.05fr]">
         {/* Editor */}
