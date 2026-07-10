@@ -310,7 +310,7 @@ export default function ContractsPage() {
                       </button>
                     )}
                     <a
-                      href={`mailto:legal@freeholdproperty.ae?subject=Contract document request — ${c.id}`}
+                      href={`mailto:${process.env.NEXT_PUBLIC_LEGAL_EMAIL || 'legal@freeholdproperty.ae'}?subject=${encodeURIComponent(t('finance.contracts.docRequestSubject', { id: c.id }))}`}
                       className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition ml-auto">
                       <ExternalLink className="h-3.5 w-3.5" /> {t('finance.contracts.requestDocument')}
                     </a>
