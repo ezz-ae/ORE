@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -210,6 +210,17 @@ export default function LandingEditorPage() {
   const [expanded, setExpanded] = useState<number | null>(null)
   // Content sections the marketer can add to a page (hero is intentionally omitted).
   const ADD_TYPES = ['description', 'key-facts', 'payment-plan', 'roi', 'why-dubai', 'golden-visa', 'amenities', 'location', 'developer-profile', 'social-proof', 'neighborhood', 'faq', 'download-brochure', 'lead-form']
+  // Native HTML5 drag-and-drop reorder (arrows stay for touch / a11y).
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+  function onDropSection() {
+    if (dragIndex === null || overIndex === null || dragIndex === overIndex || !form?.sections) { setDragIndex(null); setOverIndex(null); return }
+    const next = [...form.sections]
+    const [moved] = next.splice(dragIndex, 1)
+    next.splice(overIndex, 0, moved)
+    setSections(next)
+    setDragIndex(null); setOverIndex(null)
+  }
   async function saveLayout() {
     if (!form?.sections) return
     setLayoutSaving(true)
@@ -369,8 +380,17 @@ export default function LandingEditorPage() {
                   const hidden = s.data?._hidden === true
                   const open = expanded === i
                   return (
-                    <li key={`${s.type}-${i}`} className={`rounded-lg border px-2.5 py-1.5 ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'}`}>
+                    <li key={`${s.type}-${i}`}
+                      onDragOver={(e) => { e.preventDefault(); if (overIndex !== i) setOverIndex(i) }}
+                      onDrop={onDropSection}
+                      className={`rounded-lg border px-2.5 py-1.5 transition ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'} ${dragIndex !== null && overIndex === i && dragIndex !== i ? 'ring-1 ring-gold/50' : ''} ${dragIndex === i ? 'opacity-40' : ''}`}>
                       <div className="flex items-center gap-2">
+                        <span
+                          draggable
+                          onDragStart={() => setDragIndex(i)}
+                          onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                          title={t('lpe.layout.drag')}
+                          className="cursor-grab text-slate-600 hover:text-slate-300 active:cursor-grabbing"><GripVertical className="h-4 w-4" /></span>
                         <span className="flex flex-col">
                           <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
                           <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
