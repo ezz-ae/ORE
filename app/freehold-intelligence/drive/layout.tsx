@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { HardDrive, LayoutGrid, FolderOpen, BookOpen } from 'lucide-react'
+import { HardDrive, LayoutGrid, FolderOpen, BookOpen, Wand2 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
 
@@ -21,8 +21,15 @@ export default function DriveLayout({ children }: { children: React.ReactNode })
     </div>
   )
 
+  // The per-asset editor canvases bring their OWN full-height chrome
+  // (DriveEditorFrame), so they render full-bleed under the top spine — no
+  // Drive header/sidebar (the /drive/editor launcher keeps the shell).
+  const isCanvas = /^\/freehold-intelligence\/drive\/editor\/(doc|image|video|pdf)\//.test(pathname)
+  if (isCanvas) return <>{children}</>
+
   const items = [
     { label: t('drive.nav.all'),      href: '/freehold-intelligence/drive',          exact: true, Icon: LayoutGrid },
+    { label: t('drive.nav.editor'),   href: '/freehold-intelligence/drive/editor',                Icon: Wand2 },
     { label: t('drive.nav.library'),  href: '/freehold-intelligence/drive/library',               Icon: FolderOpen },
     // Notebook lives under Drive — links out to its existing route (not moved).
     { label: t('drive.nav.notebook'), href: '/freehold-intelligence/notebook',                    Icon: BookOpen },
