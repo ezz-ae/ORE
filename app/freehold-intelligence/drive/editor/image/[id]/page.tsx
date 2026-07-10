@@ -6,10 +6,12 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
-  AlignLeft, AlignCenter, AlignRight, Bold, Move, Sparkles, Wand2,
+  AlignLeft, AlignCenter, AlignRight, Bold, Move,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
+import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
+import { type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -40,7 +42,12 @@ const PRESET_ORDER: PresetKey[] = ['1_1', '4_5', '9_16', '16_9', 'link']
 const PRESET_ASPECT: Record<PresetKey, string> = {
   '1_1': '1:1', '4_5': '4:5', '9_16': '9:16', '16_9': '16:9', 'link': '16:9',
 }
-const AI_CHIPS = ['ed.image.ai.chipEvening', 'ed.image.ai.chipWhiteBg', 'ed.image.ai.chipSkyline'] as const
+// Quick-edit chips for the co-editor rail → prefill the composer.
+const IMAGE_PRESETS: PresetChip[] = [
+  { labelKey: 'ed.image.ai.chipEvening', instructionKey: 'ed.image.ai.chipEvening' },
+  { labelKey: 'ed.image.ai.chipWhiteBg', instructionKey: 'ed.image.ai.chipWhiteBg' },
+  { labelKey: 'ed.image.ai.chipSkyline', instructionKey: 'ed.image.ai.chipSkyline' },
+]
 const FONT = '"Segoe UI", "Noto Sans Arabic", "Noto Kufi Arabic", Tahoma, system-ui, sans-serif'
 const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
 const isArabic = (s: string) => AR_RE.test(s)
@@ -108,8 +115,11 @@ export default function DriveImageEditor() {
   const [permitInput, setPermitInput] = useState('')
   const [qrBusy, setQrBusy] = useState(false)
   const [frame, setFrame] = useState<BrandFrame>({ on: false, color: '#D4AF37', width: 24 })
-  const [aiPrompt, setAiPrompt] = useState('')
-  const [aiBusy, setAiBusy] = useState<null | 'gen' | 'edit'>(null)
+  // Source-layer URL is the reversible unit for the AI co-editor (undo swaps the
+  // photo back). `revision` bumps on manual edits only, so the rail can warn
+  // before an undo discards edits made after an AI turn.
+  const [sourceUrl, setSourceUrl] = useState('')
+  const [revision, setRevision] = useState(0)
 
   const { w: W, h: H } = PRESETS[preset]
 
@@ -117,7 +127,7 @@ export default function DriveImageEditor() {
   const applySource = useCallback(async (src: string, opts?: { title?: string; cross?: boolean }) => {
     try {
       const im = await loadImage(src, opts?.cross ?? false)
-      setImg(im); setPan({ x: 0, y: 0 }); setZoom(1); setDirty(true)
+      setImg(im); setSourceUrl(src); setPan({ x: 0, y: 0 }); setZoom(1); setDirty(true)
       if (opts?.title) setTitle((prev) => prev || opts.title!)
     } catch {
       toast.error(t('ed.image.exportFailed'))
@@ -319,7 +329,7 @@ export default function DriveImageEditor() {
       const mx = (img.naturalWidth * s - W) / 2, my = (img.naturalHeight * s - H) / 2
       setPan({ x: clamp(d.startPanX + (px - d.startPx), -mx, mx), y: clamp(d.startPanY + (py - d.startPy), -my, my) })
     }
-    setDirty(true)
+    setDirty(true); setRevision((r) => r + 1)
   }
 
   function onPointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -328,7 +338,7 @@ export default function DriveImageEditor() {
   }
 
   // ── Layer ops ────────────────────────────────────────────────────────────────
-  const mark = () => setDirty(true)
+  const mark = () => { setDirty(true); setRevision((r) => r + 1) }
   function addText() {
     const l: TextLayer = { id: `t-${Date.now()}`, text: t('ed.image.textSeed'), x: 0.5, y: 0.5, size: Math.round(W * 0.07), color: '#ffffff', align: 'auto', weight: 700 }
     setTexts((p) => [...p, l]); setSelText(l.id); mark()
@@ -368,6 +378,7 @@ export default function DriveImageEditor() {
     reader.onload = () => {
       const name = file.name.replace(/\.[^.]+$/, '')
       applySource(String(reader.result || ''), { title: name })
+      setRevision((r) => r + 1) // manual re-upload = a manual edit
     }
     reader.readAsDataURL(file)
   }
@@ -403,40 +414,6 @@ export default function DriveImageEditor() {
       setDirty(false); toast.success(t('ed.image.savedToLibrary'))
       router.replace(`/freehold-intelligence/drive/editor/image/${d.item.id}`)
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
-  }
-
-  // ── AI generate / edit ─────────────────────────────────────────────────────────
-  // 'gen'  → text-to-image; loads the result as a fresh editable source layer.
-  // 'edit' → image→image; exports the CURRENT canvas (source + overlays baked)
-  //          and sends it as the reference for a prompt-driven edit.
-  async function aiRun(mode: 'gen' | 'edit') {
-    const prompt = aiPrompt.trim()
-    if (!prompt || aiBusy) return
-    let imageUrl: string | undefined
-    if (mode === 'edit') {
-      const dataUrl = exportPng()
-      if (!dataUrl) return
-      imageUrl = dataUrl
-    }
-    setAiBusy(mode)
-    try {
-      const res = await fetch('/api/freehold/drive/gen-image', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, aspectRatio: PRESET_ASPECT[preset], imageUrl }),
-      })
-      const d = await res.json().catch(() => ({})) as { url?: string; error?: string }
-      if (!res.ok || !d.url) {
-        toast.error(typeof d.error === 'string' && d.error ? d.error : t('ed.image.ai.failed'))
-        return
-      }
-      // Load onto the canvas as the new source — same path the upload flow uses,
-      // so every existing tool (crop/pan/zoom, text/logo/QR, frame) keeps working.
-      await applySource(d.url, { cross: /^https?:/.test(d.url) })
-    } catch {
-      toast.error(t('ed.image.ai.failed'))
-    } finally {
-      setAiBusy(null)
-    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -600,36 +577,39 @@ export default function DriveImageEditor() {
     </div>
   )
 
+  // Image adapter: the reversible unit is the source-layer URL (undo swaps the
+  // photo back). The AI edit reference is the full flattened canvas (exportPng),
+  // faithful to the previous image→image flow. Text/logo/QR/frame stay on their
+  // own tool-rail controls (see the flatten note).
+  const imageAdapter: ArtifactAdapter<string> = {
+    kind: 'image',
+    snapshot: () => sourceUrl,
+    restore: (url) => {
+      if (url) applySource(url, { cross: /^https?:/.test(url) })
+      else { setImg(null); setSourceUrl(''); setDirty(true) }
+    },
+    apply: async ({ instruction, signal }) => {
+      const ref = hasSource ? exportPng() : undefined
+      if (hasSource && !ref) throw new Error(t('ed.ai.err.tainted')) // toDataURL failed → honest, no network
+      const res = await fetch('/api/freehold/drive/gen-image', {
+        method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: instruction, aspectRatio: PRESET_ASPECT[preset], imageUrl: ref ?? undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.url) throw new Error(d.error || t('ed.image.ai.failed')) // real provider message
+      await applySource(d.url, { cross: /^https?:/.test(d.url) })
+      return { after: d.url as string, summary: t(ref ? 'ed.ai.summary.image.edit' : 'ed.ai.summary.image.gen') }
+    },
+  }
+
   const aiRail = (
-    <div className="space-y-3.5">
-      <div className={sectionH}><Sparkles className="h-3.5 w-3.5" /> {t('ed.image.ai.title')}</div>
-      <textarea
-        value={aiPrompt}
-        onChange={(e) => setAiPrompt(e.target.value)}
-        placeholder={t('ed.image.ai.promptPh')}
-        dir="auto"
-        rows={4}
-        className="w-full resize-none rounded-xl border border-line bg-surface px-2.5 py-2 text-xs leading-snug text-white outline-none placeholder:text-slate-600 focus:border-gold/30"
-      />
-      <div className="flex flex-wrap gap-1.5">
-        {AI_CHIPS.map((k) => (
-          <button key={k} type="button" onClick={() => setAiPrompt(t(k))}
-            className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/30 hover:text-gold">
-            {t(k)}
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={() => aiRun('gen')} disabled={aiBusy !== null || !aiPrompt.trim()}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-2.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
-        {aiBusy === 'gen' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('ed.image.ai.generate')}
-      </button>
-      <button type="button" onClick={() => aiRun('edit')} disabled={aiBusy !== null || !aiPrompt.trim() || !hasSource}
-        className={`${rowBtn} flex w-full items-center justify-center gap-1.5 disabled:opacity-50`}>
-        {aiBusy === 'edit' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />} {t('ed.image.ai.edit')}
-      </button>
-      <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.editHint')}</p>
-      <p className="border-t border-white/[0.07] pt-3 text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
-    </div>
+    <AiEditorRail
+      adapter={imageAdapter}
+      revision={revision}
+      presets={IMAGE_PRESETS}
+      placeholderKey="ed.ai.placeholder.image"
+      footNoteKey="ed.ai.imageFlattenNote"
+    />
   )
 
   return (

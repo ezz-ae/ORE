@@ -5,9 +5,11 @@ import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type Mode = 'rewrite' | 'shorten' | 'expand' | 'professional' | 'translate_ar' | 'translate_ru' | 'translate_en'
+type Mode = 'rewrite' | 'shorten' | 'expand' | 'professional' | 'translate_ar' | 'translate_ru' | 'translate_en' | 'instruct'
 
-const INSTRUCTION: Record<Mode, string> = {
+const LIMIT = 40_000
+
+const INSTRUCTION: Record<Exclude<Mode, 'instruct'>, string> = {
   rewrite:      'Rewrite this to be clearer and more compelling while keeping the same meaning, facts, and structure.',
   shorten:      'Make this significantly more concise while keeping every key fact.',
   expand:       'Expand this with more useful detail and supporting points, without inventing facts.',
@@ -31,19 +33,26 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return NextResponse.json({ unavailable: true, content: '' })
 
   const mode = body.mode as Mode | undefined
-  const directive = (mode && INSTRUCTION[mode]) || (typeof body.instruction === 'string' && body.instruction.trim()) || INSTRUCTION.rewrite
+  // Free-form 'instruct' (and any unknown mode) falls through to the caller's
+  // instruction string — the co-editor rail's natural-language edits.
+  const directive = (mode && mode !== 'instruct' && INSTRUCTION[mode]) ||
+    (typeof body.instruction === 'string' && body.instruction.trim()) ||
+    INSTRUCTION.rewrite
+  const truncated = content.length > LIMIT
   const prompt = `You are a senior real-estate marketing editor. ${directive}
 Return ONLY the resulting text — no preamble, no markdown fences, no commentary. Preserve any existing HTML tags if the input contains them.
 
 INPUT:
-${content.slice(0, 40_000)}`
+${content.slice(0, LIMIT)}`
 
   try {
     const data = await geminiGenerate(apiKey, [{ role: 'user', parts: [{ text: prompt }] }], { temperature: 0.6, maxOutputTokens: 4096 })
     const out = geminiText(data).replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim()
     if (!out) return NextResponse.json({ error: 'The AI returned nothing. Try again.' }, { status: 502 })
-    return NextResponse.json({ content: out })
-  } catch {
-    return NextResponse.json({ error: 'The AI request failed. Try again.' }, { status: 502 })
+    return NextResponse.json({ content: out, truncated })
+  } catch (err) {
+    // Surface the REAL provider error (quota / key / model) — matches gen-image.
+    const message = err instanceof Error ? err.message : 'The AI request failed. Try again.'
+    return NextResponse.json({ error: message }, { status: 502 })
   }
 }
