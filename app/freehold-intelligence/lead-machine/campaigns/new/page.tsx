@@ -398,6 +398,9 @@ export default function NewCampaignPage() {
   // Set when a link source turns out to be our own landing page — powers the
   // "auto-filled from your source" note + Edit-on-canvas in the destination.
   const [sourceLandingSlug, setSourceLandingSlug] = useState('')
+  // Which language version of our own landing the ad points to. Appends ?lang=
+  // to the destination so an Arabic/Russian audience lands on the localised page.
+  const [landingLang, setLandingLang] = useState<'en' | 'ar' | 'ru'>('en')
   const [linkInput, setLinkInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [fileBusy, setFileBusy] = useState(false)
@@ -580,6 +583,12 @@ export default function NewCampaignPage() {
     const listing = listings.find((l) => l.id === form.listingId)
     const interests = UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id))
 
+    // Point the ad at the chosen language version of our own landing. Only for
+    // /lp/ URLs (our trilingual page) and only when not English (the default).
+    const landingUrlWithLang = (landingLang !== 'en' && landingSlugFromUrl(form.landingUrl))
+      ? `${form.landingUrl}${form.landingUrl.includes('?') ? '&' : '?'}lang=${landingLang}`
+      : form.landingUrl
+
     const payload: LaunchCampaignPayload = {
       campaignName:   form.campaignName,
       objective:      form.objective,
@@ -605,7 +614,7 @@ export default function NewCampaignPage() {
           ? `https://wa.me/${form.whatsappNumber.replace(/[^\d]/g, '')}`
           : activeObjective.dest === 'phone' && form.phoneNumber
             ? `tel:${form.phoneNumber.replace(/[^\d+]/g, '')}`
-            : form.landingUrl,
+            : landingUrlWithLang,
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
@@ -1350,6 +1359,17 @@ export default function NewCampaignPage() {
                           <Link href="/freehold-intelligence/lead-machine/landings" className="rounded-full border border-line px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-200">{t('lm.newCampaign.dest.pickLanding')}</Link>
                           {editSlug && <Link href={`/freehold-intelligence/lead-machine/landings/${encodeURIComponent(editSlug)}/edit`} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold hover:bg-gold/20">{t('lm.newCampaign.dest.editCanvas')} <ArrowRight className="h-3 w-3" /></Link>}
                         </div>
+                        {landingSlugFromUrl(form.landingUrl) && (
+                          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                            <span className="text-[11px] text-slate-500">{t('lm.newCampaign.dest.langLabel')}</span>
+                            {(['en', 'ar', 'ru'] as const).map((lng) => (
+                              <button key={lng} type="button" onClick={() => setLandingLang(lng)}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${landingLang === lng ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
+                                {t(`lm.newCampaign.dest.lang.${lng}`)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </>
                     )
                   })()}
