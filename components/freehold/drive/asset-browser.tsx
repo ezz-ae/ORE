@@ -9,7 +9,7 @@ import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type E
 
 // Editors that have shipped — grows one PR at a time (progressive enablement).
 // An "Edit" action never appears for a type before its editor exists.
-const SHIPPED_EDITORS: EditorType[] = ['doc']
+const SHIPPED_EDITORS: EditorType[] = ['doc', 'image']
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; createdBy: string; createdAt: string }
 
