@@ -22,6 +22,7 @@ import type {
   MetaAdCreativeDetail,
   MetaPixel,
   MetaAdFormat,
+  MetaLocale,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -319,6 +320,9 @@ export async function createAdSet(params: {
     ...(params.targeting.interests.length > 0
       ? { interests: params.targeting.interests }
       : {}),
+    ...(params.targeting.locales && params.targeting.locales.length > 0
+      ? { locales: params.targeting.locales }
+      : {}),
     targeting_automation: { advantage_audience: advantageAudience },
   }
 
@@ -546,6 +550,21 @@ export async function listPixels(): Promise<MetaPixel[]> {
     name: p.name || p.id,
     lastFiredTime: p.last_fired_time ?? null,
   }))
+}
+
+// Language (locale) targeting vocabulary. Meta's adlocale keys are numeric and
+// stable, but we resolve them LIVE from Graph search rather than hardcoding
+// guesses — so a selected "Arabic" is exactly Meta's Arabic locale key.
+export async function searchAdLocales(q: string): Promise<MetaLocale[]> {
+  const term = q.trim()
+  if (!term) return []
+  const res = await apiFetch<{ data: { key: number; name: string }[] }>(
+    `/search`, undefined,
+    { type: 'adlocale', q: term, limit: '25' },
+  )
+  return (res.data ?? [])
+    .filter((l) => typeof l.key === 'number' && l.name)
+    .map((l) => ({ key: l.key, name: l.name }))
 }
 
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {

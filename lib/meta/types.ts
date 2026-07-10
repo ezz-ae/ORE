@@ -116,6 +116,14 @@ export interface CampaignTargeting {
   interests: { id: string; name: string }[]
   /** Meta gender codes: 1 = men, 2 = women. Omitted / empty = all genders. */
   genders?: number[]
+  /** Meta locale (language) keys from the adlocale vocabulary. Empty = all. */
+  locales?: number[]
+}
+
+/** A Meta ad locale (language) from the live adlocale search vocabulary. */
+export interface MetaLocale {
+  key: number
+  name: string
 }
 
 export interface CampaignCreative {
