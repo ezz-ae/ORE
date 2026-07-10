@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -25,7 +25,10 @@ type Landing = {
   googleConversionId: string
   tiktokPixelId: string
   updatedAt: string | null
+  sections?: LpSection[]
 }
+
+type LpSection = { type: string; data: Record<string, unknown> }
 
 type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
 type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
@@ -148,6 +151,42 @@ export default function LandingEditorPage() {
       toast.success(t('lpe.ai.applied').replace('{count}', String(applied.length)))
     } catch { toast.error(t('lpe.ai.failed')) }
     finally { setAiBusy(false) }
+  }
+
+  // ── Layout canvas — reorder / show-hide the page's real section blocks ──────
+  const [layoutSaving, setLayoutSaving] = useState(false)
+  function sectionLabel(type: string) {
+    return type.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  }
+  function setSections(next: LpSection[]) { setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
+  function moveSection(i: number, dir: -1 | 1) {
+    if (!form?.sections) return
+    const j = i + dir
+    if (j < 0 || j >= form.sections.length) return
+    const next = [...form.sections]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    setSections(next)
+  }
+  function toggleSection(i: number) {
+    if (!form?.sections) return
+    const next = form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, _hidden: !s.data?._hidden } } : s))
+    setSections(next)
+  }
+  async function saveLayout() {
+    if (!form?.sections) return
+    setLayoutSaving(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: form.sections }),
+      })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error || t('lpe.saveFailed')); return }
+      if (d.landing?.sections) setSections(d.landing.sections as LpSection[])
+      setPreviewKey((k) => k + 1)
+      toast.success(t('lpe.layout.saved'))
+    } catch { toast.error(t('lpe.saveFailed')) }
+    finally { setLayoutSaving(false) }
   }
 
   if (loading) return <div className="flex items-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
@@ -275,6 +314,38 @@ export default function LandingEditorPage() {
               </div>
             )}
           </div>
+
+          {/* Layout canvas — reorder / show-hide the page's real section blocks */}
+          {form.sections && form.sections.length > 0 && (
+            <div className="rounded-2xl border border-line bg-surface-2/40 p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Layers className="h-4 w-4" /> {t('lpe.layout.title')}
+                </span>
+                <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                  {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
+                </button>
+              </div>
+              <ul className="space-y-1.5">
+                {form.sections.map((s, i) => {
+                  const hidden = s.data?._hidden === true
+                  return (
+                    <li key={`${s.type}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'}`}>
+                      <span className="flex flex-col">
+                        <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{sectionLabel(s.type)}</span>
+                      <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
+                        {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="mt-2 text-[11px] text-slate-500">{t('lpe.layout.hint')}</p>
+            </div>
+          )}
 
           <Section title={t('lpe.grp.content')}>
             <Field label={t('lpe.f.headline')}><input className="fld" value={form.headline} onChange={(e) => set('headline', e.target.value)} /></Field>

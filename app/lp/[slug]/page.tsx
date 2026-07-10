@@ -910,6 +910,8 @@ function DownloadBrochureSection({ d, page, L, p }: { d: Record<string, unknown>
 
 function Section({ section, page, L, p }: { section: LandingSection; page: LandingPageData; L: Dict; p: LpPalette }) {
   const d = section.data
+  // Layout canvas: a section hidden in the editor is skipped on the live page.
+  if (d && (d as Record<string, unknown>)._hidden === true) return null
   switch (section.type) {
     case 'hero': return <HeroSection d={d} page={page} L={L} p={p} />
     case 'description': return <DescriptionSection d={d} page={page} L={L} p={p} />
