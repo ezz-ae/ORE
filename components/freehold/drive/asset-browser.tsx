@@ -2,9 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone, Trash2, ExternalLink, Plus, Loader2, X } from 'lucide-react'
+import Link from 'next/link'
+import { Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone, Trash2, ExternalLink, Plus, Loader2, X, Pencil } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
-import { KIND_META, type DriveKind } from '@/lib/freehold/drive'
+import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
+
+// Editors that have shipped — grows one PR at a time (progressive enablement).
+// An "Edit" action never appears for a type before its editor exists.
+const SHIPPED_EDITORS: EditorType[] = ['doc']
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; createdBy: string; createdAt: string }
 
@@ -140,9 +145,15 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
                 <div className="flex flex-1 flex-col gap-2 p-3">
                   <p className="line-clamp-2 text-xs font-medium text-slate-200">{item.title}</p>
                   <div className="mt-auto flex items-center gap-1.5">
-                    <button type="button" onClick={() => (item.url ? window.open(item.url, '_blank', 'noopener') : setPreview(item))} className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[11px] text-slate-300 transition hover:text-white">
-                      <ExternalLink className="h-3 w-3" /> {t('drive.open')}
-                    </button>
+                    {SHIPPED_EDITORS.includes(editorTypeForKind(item.kind, !!item.url)) ? (
+                      <Link href={editorHrefForItem(item)} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
+                        <Pencil className="h-3 w-3" /> {t('drive.edit')}
+                      </Link>
+                    ) : (
+                      <button type="button" onClick={() => (item.url ? window.open(item.url, '_blank', 'noopener') : setPreview(item))} className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[11px] text-slate-300 transition hover:text-white">
+                        <ExternalLink className="h-3 w-3" /> {t('drive.open')}
+                      </button>
+                    )}
                     <button type="button" onClick={() => remove(item)} title={t('drive.delete')} className="ms-auto text-slate-500 transition hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
