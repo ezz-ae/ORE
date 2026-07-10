@@ -51,6 +51,8 @@ interface WizardState {
   ageMax:        number
   genders:       number[]
   interestIds:   string[]
+  /** Meta locale keys + names for language targeting (buyer language). */
+  locales:       { key: number; name: string }[]
   publisherPlatforms: string[]
   // Step 3
   primaryText:   string
@@ -183,6 +185,7 @@ export default function NewCampaignPage() {
     ageMax:       65,
     genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
+    locales:      [],
     publisherPlatforms: ['facebook', 'instagram'],
     primaryText:  '',
     headline:     '',
@@ -448,6 +451,28 @@ export default function NewCampaignPage() {
     freq[field][v] = (freq[field][v] || 0) + 1
     saveAccountMemory({ adSmartDefaults: freq })
   }
+  // Buyer-language (locale) targeting — resolved live from Meta's adlocale
+  // vocabulary, so a picked language is exactly Meta's real locale key.
+  const [localeQuery, setLocaleQuery] = useState('')
+  const [localeResults, setLocaleResults] = useState<{ key: number; name: string }[]>([])
+  const [localeSearching, setLocaleSearching] = useState(false)
+  async function searchLocales(q: string) {
+    setLocaleQuery(q)
+    if (q.trim().length < 2) { setLocaleResults([]); return }
+    setLocaleSearching(true)
+    try {
+      const res = await fetch(`/api/meta/locales?q=${encodeURIComponent(q)}`)
+      const d = await res.json()
+      setLocaleResults(Array.isArray(d.locales) ? d.locales : [])
+    } catch { setLocaleResults([]) } finally { setLocaleSearching(false) }
+  }
+  function addLocale(l: { key: number; name: string }) {
+    setForm((prev) => (prev.locales.some((x) => x.key === l.key) ? prev : { ...prev, locales: [...prev.locales, l] }))
+    setLocaleQuery(''); setLocaleResults([])
+  }
+  function removeLocale(key: number) {
+    setForm((prev) => ({ ...prev, locales: prev.locales.filter((l) => l.key !== key) }))
+  }
   const [linkInput, setLinkInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [fileBusy, setFileBusy] = useState(false)
@@ -651,6 +676,7 @@ export default function NewCampaignPage() {
         ageMin:             form.ageMin,
         ageMax:             form.ageMax,
         genders:            form.genders,
+        locales:            form.locales.map((l) => l.key),
         publisherPlatforms: form.publisherPlatforms,
         interests,
       },
@@ -1140,6 +1166,33 @@ export default function NewCampaignPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Buyer language — real Meta locale targeting (live adlocale search) */}
+            <div>
+              <Label>{t('lm.newCampaign.s2.label.language')}</Label>
+              {form.locales.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {form.locales.map((l) => (
+                    <span key={l.key} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] text-gold">
+                      {l.name}
+                      <button type="button" onClick={() => removeLocale(l.key)} className="text-gold/70 hover:text-gold"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="relative">
+                <input value={localeQuery} onChange={(e) => searchLocales(e.target.value)} className={inputCls()} placeholder={t('lm.newCampaign.s2.languagePh')} />
+                {(localeSearching || localeResults.length > 0) && (
+                  <div className="absolute z-20 mt-1 max-h-52 w-full overflow-auto rounded-xl border border-line bg-surface-2 shadow-xl">
+                    {localeSearching && <div className="px-3 py-2 text-[11px] text-slate-500">{t('common.loading')}</div>}
+                    {localeResults.map((l) => (
+                      <button key={l.key} type="button" onClick={() => addLocale(l)} className="block w-full px-3 py-2 text-start text-xs text-slate-200 hover:bg-gold/10 hover:text-gold">{l.name}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.languageHint')}</p>
             </div>
 
             <div>
