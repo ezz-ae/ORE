@@ -149,7 +149,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
             {/* Persona presets */}
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.pres.persona")}</Label>

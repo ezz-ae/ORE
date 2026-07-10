@@ -113,7 +113,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] text-muted-foreground">{t("pcsn.script.voiceover")}</Label>
