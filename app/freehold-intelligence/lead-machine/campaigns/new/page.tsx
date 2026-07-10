@@ -184,6 +184,31 @@ export default function NewCampaignPage() {
   const [uploadingImg, setUploadingImg] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
 
+  // Data Quality Test — verify the listing's info before it becomes an ad/landing.
+  type DataQuality = {
+    listing: { slug: string; name: string; editUrl: string }
+    score: number
+    readyToBuild: boolean
+    requiredMissing: string[]
+    checks: { key: string; present: boolean; value: string | null; severity: 'required' | 'recommended'; editable: boolean }[]
+  }
+  const [dqOpen, setDqOpen] = useState(false)
+  const [dqData, setDqData] = useState<DataQuality | null>(null)
+  const [dqLoading, setDqLoading] = useState(false)
+  async function runDataQuality() {
+    if (!form.listingId) return
+    setDqOpen(true); setDqLoading(true); setDqData(null)
+    try {
+      const res = await fetch('/api/freehold/ads/data-quality', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingSlug: form.listingId }),
+      })
+      const d = await res.json()
+      if (!d.error) setDqData(d as DataQuality)
+    } catch { /* popup shows the empty/again state */ }
+    finally { setDqLoading(false) }
+  }
+
   const GENDER_OPTIONS: { key: string; val: number[] }[] = [
     { key: 'all', val: [] }, { key: 'men', val: [1] }, { key: 'women', val: [2] },
   ]
@@ -613,6 +638,12 @@ export default function NewCampaignPage() {
                   <option key={l.id} value={l.id}>{l.projectName} · {l.area}</option>
                 ))}
               </select>
+              {form.listingId && (
+                <button type="button" onClick={runDataQuality}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('dq.run')}
+                </button>
+              )}
             </div>
 
             <div>
@@ -911,6 +942,48 @@ export default function NewCampaignPage() {
               </div>
             </div>
           </div>
+        </TabPopup>
+
+        {/* Data Quality Test — verify the listing before it becomes an ad/landing */}
+        <TabPopup
+          open={dqOpen}
+          onClose={() => setDqOpen(false)}
+          title={t('dq.title')}
+          subtitle={dqData?.listing.name}
+          maxWidth="max-w-lg"
+          footer={dqData ? (
+            <>
+              <Link href={dqData.listing.editUrl} className="rounded-full border border-line px-4 py-2 text-sm text-slate-300 transition hover:text-white">{t('dq.editListing')}</Link>
+              <button type="button" onClick={() => setDqOpen(false)} className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('dq.close')}</button>
+            </>
+          ) : undefined}
+        >
+          {dqLoading ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('dq.running')}</div>
+          ) : dqData ? (
+            <div className="space-y-4">
+              <div className={`flex items-center gap-3 rounded-xl border p-3 ${dqData.readyToBuild ? 'border-emerald-400/25 bg-emerald-400/[0.06]' : 'border-amber-400/25 bg-amber-400/[0.06]'}`}>
+                <div className={`text-[26px] font-semibold ${dqData.readyToBuild ? 'text-emerald-400' : 'text-amber-400'}`}>{dqData.score}%</div>
+                <div className="text-xs leading-relaxed text-slate-300">{dqData.readyToBuild ? t('dq.ready') : t('dq.notReady')}</div>
+              </div>
+              <div className="space-y-1.5">
+                {dqData.checks.map((c) => (
+                  <div key={c.key} className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
+                    {c.present
+                      ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                      : <AlertCircle className={`h-4 w-4 shrink-0 ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`} />}
+                    <span className="flex-1 text-sm text-slate-200">{t(`dq.check.${c.key}`)}</span>
+                    {c.present
+                      ? <span className="truncate text-xs text-slate-500">{c.value}</span>
+                      : <span className={`text-[11px] font-medium ${c.severity === 'required' ? 'text-red-400' : 'text-amber-400'}`}>{c.severity === 'required' ? t('dq.missing') : t('dq.optional')}</span>}
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-600">{t('dq.editHint')}</p>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-slate-500">{t('dq.failed')}</p>
+          )}
         </TabPopup>
 
         {/* ── Step 3: Creative ──────────────────────────────────────────── */}
