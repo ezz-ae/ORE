@@ -10,7 +10,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus, Target,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -376,6 +376,21 @@ export default function NewCampaignPage() {
       .finally(() => setLeadFormsLoading(false))
   }, [form.productObjective])
 
+  // Conversion pixel — the ad set optimizes on it, so leads/purchases are
+  // measured on real signal. Loaded from the connected ad account (real pixels
+  // only); when none exist the picker stays hidden rather than showing a stub.
+  type PixelLite = { id: string; name: string; lastFiredTime?: string | null }
+  const [pixels, setPixels] = useState<PixelLite[]>([])
+  const [pixelId, setPixelId] = useState('')
+  const [pixelsLoaded, setPixelsLoaded] = useState(false)
+  useEffect(() => {
+    fetch('/api/meta/pixels', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.pixels)) setPixels(d.pixels as PixelLite[]) })
+      .catch(() => {})
+      .finally(() => setPixelsLoaded(true))
+  }, [])
+
   // Campaign sources — inventory / link / brochure / note. They feed the creative
   // copy and targeting; they are NOT the ad destination. Multiple allowed.
   type Source = { id: string; kind: 'inventory' | 'link' | 'file' | 'note'; label: string; value: string }
@@ -596,6 +611,7 @@ export default function NewCampaignPage() {
         imageHash:   form.imageHash || undefined,
       },
       launchStatus: form.launchStatus,
+      pixelId:      pixelId || undefined,
     }
 
     try {
@@ -1337,6 +1353,24 @@ export default function NewCampaignPage() {
                       </>
                     )
                   })()}
+                </div>
+              )}
+
+              {/* Conversion pixel — real pixels from the connected account. Only
+                  for web destinations (landing/form); calls & chats have no
+                  on-site conversion to measure. Hidden entirely when none exist. */}
+              {pixelsLoaded && pixels.length > 0 && (activeObjective.dest === 'landing' || activeObjective.dest === 'form') && (
+                <div className="mt-3 border-t border-gold/15 pt-3">
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <Target className="h-3 w-3" /> {t('lm.newCampaign.pixel.label')}
+                  </label>
+                  <select value={pixelId} onChange={(e) => setPixelId(e.target.value)} className={`${inputCls()} mt-1.5 max-w-sm`}>
+                    <option value="">{t('lm.newCampaign.pixel.default')}</option>
+                    {pixels.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}{p.lastFiredTime ? '' : ` — ${t('lm.newCampaign.pixel.noEvents')}`}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.pixel.hint')}</p>
                 </div>
               )}
             </div>

@@ -127,8 +127,18 @@ export interface LaunchCampaignPayload {
   targeting: CampaignTargeting
   creative: CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
+  /** Optional conversion pixel to optimize on. Overrides the account default. */
+  pixelId?: string
   /** Set automatically by the server when a broker creates a campaign */
   brokerId?: string
+}
+
+/** A Meta conversion pixel on the connected ad account. */
+export interface MetaPixel {
+  id: string
+  name: string
+  /** ISO timestamp of the last event the pixel received, if any. */
+  lastFiredTime?: string | null
 }
 
 export interface LaunchCampaignResult {

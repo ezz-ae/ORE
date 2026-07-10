@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
       targeting:      body.targeting,
       creative:       body.creative,
       launchStatus:   body.launchStatus ?? 'PAUSED',
+      pixelId:        body.pixelId || undefined,
     })
 
     await recordBrokerSpend(result.campaignId)

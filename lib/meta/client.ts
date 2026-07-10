@@ -20,6 +20,7 @@ import type {
   MetaFormLead,
   CreateLeadFormPayload,
   MetaAdCreativeDetail,
+  MetaPixel,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -270,8 +271,11 @@ export async function createAdSet(params: {
   dailyBudgetAED: number
   targeting: CampaignTargeting
   status: 'ACTIVE' | 'PAUSED'
+  /** Conversion pixel override — falls back to the account default. */
+  pixelId?: string
 }): Promise<{ id: string }> {
-  const { adAccountId, pixelId } = await creds()
+  const { adAccountId, pixelId: accountPixel } = await creds()
+  const pixelId = params.pixelId || accountPixel
   const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId)
 
   // Placements: an EMPTY platform list means Advantage+ placements (fully
@@ -475,6 +479,22 @@ export async function listLeadForms(): Promise<MetaLeadForm[]> {
   return res.data ?? []
 }
 
+// Conversion pixels on the ad account. Powers the campaign wizard's pixel
+// picker so a campaign can optimize on a specific pixel instead of only the
+// account default.
+export async function listPixels(): Promise<MetaPixel[]> {
+  const { adAccountId } = await creds()
+  const res = await apiFetch<{ data: { id: string; name?: string; last_fired_time?: string }[] }>(
+    `/${adAccountId}/adspixels`, undefined,
+    { fields: 'id,name,last_fired_time', limit: '25' },
+  )
+  return (res.data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name || p.id,
+    lastFiredTime: p.last_fired_time ?? null,
+  }))
+}
+
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
   return apiFetch<MetaLeadForm>(`/${formId}`, undefined, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions',
@@ -572,8 +592,11 @@ export async function launchFullCampaign(params: {
   targeting:    CampaignTargeting
   creative:     CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
+  /** Conversion pixel override — falls back to the account default. */
+  pixelId?:     string
 }): Promise<LaunchCampaignResult> {
-  const { adAccountId, pixelId } = await creds()
+  const { adAccountId, pixelId: accountPixel } = await creds()
+  const pixelId = params.pixelId || accountPixel
 
   // 1 — Campaign (ODAX objective — v20 rejects the legacy names)
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
@@ -609,6 +632,7 @@ export async function launchFullCampaign(params: {
     dailyBudgetAED: params.dailyBudgetAED,
     targeting:      { ...params.targeting, interests: validatedInterests },
     status:         params.launchStatus,
+    pixelId:        pixelId ?? undefined,
   }))
 
   // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad
