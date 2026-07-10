@@ -10,7 +10,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus, Target,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus, Target, Eye,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -286,6 +286,32 @@ export default function NewCampaignPage() {
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
   const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
   const [genLoading, setGenLoading] = useState(false)
+  // Real Meta-rendered preview (Graph generatepreviews). Distinct from the
+  // local mockup above — this is exactly how Meta will render the ad.
+  const [metaPreview, setMetaPreview] = useState<string | null>(null)
+  const [metaPreviewState, setMetaPreviewState] = useState<'idle' | 'loading' | 'demo' | 'error'>('idle')
+  async function loadMetaPreview() {
+    if (!form.headline && !form.primaryText) { toast.error(t('lm.newCampaign.metaPreview.needCopy')); return }
+    setMetaPreviewState('loading'); setMetaPreview(null)
+    try {
+      const adFormat = previewPlacement === 'story' ? 'INSTAGRAM_STORY' : 'MOBILE_FEED_STANDARD'
+      const res = await fetch('/api/meta/preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adFormat,
+          creative: {
+            primaryText: form.primaryText, headline: form.headline, description: form.description,
+            landingUrl: form.landingUrl, cta: form.cta,
+            imageUrl: form.imageUrl || undefined, imageHash: form.imageHash || undefined,
+          },
+        }),
+      })
+      const d = await res.json()
+      if (d?.demo) { setMetaPreviewState('demo'); return }
+      if (!res.ok || !d?.body) { setMetaPreviewState('error'); toast.error(d?.error || t('lm.newCampaign.metaPreview.failed')); return }
+      setMetaPreview(String(d.body)); setMetaPreviewState('idle')
+    } catch { setMetaPreviewState('error'); toast.error(t('lm.newCampaign.metaPreview.failed')) }
+  }
   const CREATIVE_ANGLES = ['investor', 'urgency', 'lifestyle', 'yield', 'golden_visa', 'end_user'] as const
   async function generateCopy() {
     const listing = listings.find((l) => l.id === form.listingId)
@@ -401,6 +427,27 @@ export default function NewCampaignPage() {
   // Which language version of our own landing the ad points to. Appends ?lang=
   // to the destination so an Arabic/Russian audience lands on the localised page.
   const [landingLang, setLandingLang] = useState<'en' | 'ar' | 'ru'>('en')
+  // Smart defaults — an honest usage-frequency memory (not an ML model). Values
+  // the marketer reuses across campaigns (their WhatsApp / phone number) are
+  // counted; once a value has been used repeatedly we offer it as a one-tap
+  // fill on the next campaign. Persisted in account memory.
+  type TopDefault = { value: string; count: number }
+  const smartFreq = useRef<Record<string, Record<string, number>>>({})
+  const [smartDefaults, setSmartDefaults] = useState<{ whatsappNumber?: TopDefault; phoneNumber?: TopDefault }>({})
+  function topDefault(freq: Record<string, number> | undefined): TopDefault | undefined {
+    if (!freq) return undefined
+    let best: TopDefault | undefined
+    for (const [value, count] of Object.entries(freq)) if (!best || count > best.count) best = { value, count }
+    return best && best.count >= 2 ? best : undefined
+  }
+  function recordSmartDefault(field: 'whatsappNumber' | 'phoneNumber', value: string) {
+    const v = value.trim()
+    if (!v) return
+    const freq = smartFreq.current
+    freq[field] = freq[field] || {}
+    freq[field][v] = (freq[field][v] || 0) + 1
+    saveAccountMemory({ adSmartDefaults: freq })
+  }
   const [linkInput, setLinkInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [fileBusy, setFileBusy] = useState(false)
@@ -471,6 +518,9 @@ export default function NewCampaignPage() {
       if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
         setForm((prev) => ({ ...prev, ...(acctDraft as Partial<WizardState>) }))
       }
+      const freq = (m.adSmartDefaults && typeof m.adSmartDefaults === 'object' ? m.adSmartDefaults : {}) as Record<string, Record<string, number>>
+      smartFreq.current = freq
+      setSmartDefaults({ whatsappNumber: topDefault(freq.whatsappNumber), phoneNumber: topDefault(freq.phoneNumber) })
       draftRestored.current = true
     })
   }, [])
@@ -639,6 +689,9 @@ export default function NewCampaignPage() {
       }
 
       setLaunched({ campaignId: data.campaignId, status: data.status })
+      // Learn the contact values this marketer reuses, for one-tap fill next time.
+      if (activeObjective.dest === 'whatsapp') recordSmartDefault('whatsappNumber', form.whatsappNumber)
+      if (activeObjective.dest === 'phone') recordSmartDefault('phoneNumber', form.phoneNumber)
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
       saveAccountMemory({ campaignDraft: null }) // launched — clear the draft everywhere
     } catch {
@@ -1248,6 +1301,21 @@ export default function NewCampaignPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Real Meta-rendered preview — exactly how Meta will show it */}
+                <button type="button" onClick={loadMetaPreview} disabled={metaPreviewState === 'loading'}
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+                  {metaPreviewState === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />} {t('lm.newCampaign.metaPreview.button')}
+                </button>
+                {metaPreviewState === 'demo' && (
+                  <p className="mt-1.5 text-[11px] text-amber-400/90">{t('lm.newCampaign.metaPreview.demo')}</p>
+                )}
+                {metaPreview && (
+                  <div className="mt-2 overflow-hidden rounded-xl border border-line bg-white">
+                    {/* Trusted iframe HTML returned by Meta's Graph API */}
+                    <div className="[&_iframe]:w-full [&_iframe]:border-0" dangerouslySetInnerHTML={{ __html: metaPreview }} />
+                  </div>
+                )}
               </div>
 
               {/* AI copy generation — real Gemini variants (existing generator) */}
@@ -1334,11 +1402,21 @@ export default function NewCampaignPage() {
               ) : activeObjective.dest === 'whatsapp' ? (
                 <div className="mt-3">
                   <input className={inputCls(!form.whatsappNumber)} value={form.whatsappNumber} onChange={(e) => update('whatsappNumber', e.target.value)} placeholder={t('lm.newCampaign.dest.whatsappPh')} inputMode="tel" />
+                  {!form.whatsappNumber && smartDefaults.whatsappNumber && (
+                    <button type="button" onClick={() => update('whatsappNumber', smartDefaults.whatsappNumber!.value)} className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold hover:bg-gold/20">
+                      <Sparkles className="h-3 w-3" /> {t('lm.newCampaign.smart.use').replace('{val}', smartDefaults.whatsappNumber.value).replace('{n}', String(smartDefaults.whatsappNumber.count))}
+                    </button>
+                  )}
                   <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.dest.whatsappHint')}</p>
                 </div>
               ) : activeObjective.dest === 'phone' ? (
                 <div className="mt-3">
                   <input className={inputCls(!form.phoneNumber)} value={form.phoneNumber} onChange={(e) => update('phoneNumber', e.target.value)} placeholder={t('lm.newCampaign.dest.phonePh')} inputMode="tel" />
+                  {!form.phoneNumber && smartDefaults.phoneNumber && (
+                    <button type="button" onClick={() => update('phoneNumber', smartDefaults.phoneNumber!.value)} className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold hover:bg-gold/20">
+                      <Sparkles className="h-3 w-3" /> {t('lm.newCampaign.smart.use').replace('{val}', smartDefaults.phoneNumber.value).replace('{n}', String(smartDefaults.phoneNumber.count))}
+                    </button>
+                  )}
                   <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.dest.phoneHint')}</p>
                 </div>
               ) : (
