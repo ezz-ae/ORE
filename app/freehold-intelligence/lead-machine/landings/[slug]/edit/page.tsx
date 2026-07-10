@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -159,7 +159,7 @@ export default function LandingEditorPage() {
           .map((s, i) => ({ s, i }))
           .sort((a, b) => (order.length ? idx(a.s.type) - idx(b.s.type) || a.i - b.i : a.i - b.i))
           .map(({ s }) => (hide.has(s.type) ? { ...s, data: { ...s.data, _hidden: true } } : show.has(s.type) ? { ...s, data: { ...s.data, _hidden: false } } : s))
-        setSections(next)
+        applySections(next)
       }
       setAiTurns((prev) => [...prev, { instruction, note: String(d.note || ''), fields: applied }].slice(-5))
       setAiInstruction('')
@@ -174,22 +174,45 @@ export default function LandingEditorPage() {
     return type.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   }
   function setSections(next: LpSection[]) { setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
+  // Undo / redo — structural canvas changes (reorder, add, remove, hide, AI) push
+  // the prior state; text edits stay untracked to avoid per-keystroke history.
+  const [past, setPast] = useState<LpSection[][]>([])
+  const [futureStack, setFutureStack] = useState<LpSection[][]>([])
+  function applySections(next: LpSection[]) {
+    setPast((p) => [...p.slice(-29), form?.sections ?? []])
+    setFutureStack([])
+    setSections(next)
+  }
+  function undoLayout() {
+    if (!past.length || !form) return
+    const prev = past[past.length - 1]
+    setFutureStack((f) => [form.sections ?? [], ...f].slice(0, 30))
+    setPast((p) => p.slice(0, -1))
+    setSections(prev)
+  }
+  function redoLayout() {
+    if (!futureStack.length || !form) return
+    const nextState = futureStack[0]
+    setPast((p) => [...p.slice(-29), form.sections ?? []])
+    setFutureStack((f) => f.slice(1))
+    setSections(nextState)
+  }
   function moveSection(i: number, dir: -1 | 1) {
     if (!form?.sections) return
     const j = i + dir
     if (j < 0 || j >= form.sections.length) return
     const next = [...form.sections]
     ;[next[i], next[j]] = [next[j], next[i]]
-    setSections(next)
+    applySections(next)
   }
   function toggleSection(i: number) {
     if (!form?.sections) return
     const next = form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, _hidden: !s.data?._hidden } } : s))
-    setSections(next)
+    applySections(next)
   }
   function removeSection(i: number) {
     if (!form?.sections) return
-    setSections(form.sections.filter((_, k) => k !== i))
+    applySections(form.sections.filter((_, k) => k !== i))
     setExpanded(null)
   }
   function duplicateSection(i: number) {
@@ -197,11 +220,11 @@ export default function LandingEditorPage() {
     const copy = { type: form.sections[i].type, data: { ...form.sections[i].data } }
     const next = [...form.sections]
     next.splice(i + 1, 0, copy)
-    setSections(next)
+    applySections(next)
   }
   function addSection(type: string) {
     if (!form?.sections || !type) return
-    setSections([...form.sections, { type, data: { title: '', subtitle: '' } }])
+    applySections([...form.sections, { type, data: { title: '', subtitle: '' } }])
   }
   function setSectionField(i: number, key: string, value: string) {
     if (!form?.sections) return
@@ -218,7 +241,7 @@ export default function LandingEditorPage() {
     const next = [...form.sections]
     const [moved] = next.splice(dragIndex, 1)
     next.splice(overIndex, 0, moved)
-    setSections(next)
+    applySections(next)
     setDragIndex(null); setOverIndex(null)
   }
   async function saveLayout() {
@@ -371,9 +394,13 @@ export default function LandingEditorPage() {
                 <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
                   <Layers className="h-4 w-4" /> {t('lpe.layout.title')}
                 </span>
-                <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
-                  {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button type="button" onClick={undoLayout} disabled={past.length === 0} title={t('lpe.layout.undo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Undo2 className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={redoLayout} disabled={futureStack.length === 0} title={t('lpe.layout.redo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Redo2 className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                    {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
+                  </button>
+                </div>
               </div>
               <ul className="space-y-1.5">
                 {form.sections.map((s, i) => {
