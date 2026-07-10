@@ -21,6 +21,7 @@ import type {
   CreateLeadFormPayload,
   MetaAdCreativeDetail,
   MetaPixel,
+  MetaAdFormat,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -425,6 +426,58 @@ export async function createAdCreative(params: {
     // deprecated (Meta error subcode 3858504) — it must not be sent. We omit it
     // and let the account's default creative-enhancement settings apply.
   })
+}
+
+/**
+ * Render a real Meta ad preview via the Graph `generatepreviews` endpoint.
+ * Meta returns the exact iframe HTML Ads Manager would show for the given
+ * placement — no mock markup. The `creative` object mirrors the
+ * `object_story_spec` that `createAdCreative` builds, so the preview matches
+ * what actually launches. Prefer a native image_hash; ingest an external
+ * imageUrl first (same path launch uses) so previews aren't blank.
+ */
+export async function generateAdPreview(params: {
+  creative: CampaignCreative
+  adFormat?: MetaAdFormat
+}): Promise<{ body: string }> {
+  const { adAccountId, pageId } = await creds()
+
+  // Native image_hash is Meta's reliable path; ingest an external URL first so
+  // the rendered preview shows the real hero photo instead of a blank frame.
+  const creativeInput = { ...params.creative }
+  if (!creativeInput.imageHash && creativeInput.imageUrl) {
+    const hash = await ingestImageFromUrl(creativeInput.imageUrl)
+    if (hash) creativeInput.imageHash = hash
+  }
+
+  const linkData: Record<string, unknown> = {
+    link:        creativeInput.landingUrl,
+    message:     creativeInput.primaryText,
+    name:        creativeInput.headline,
+    description: creativeInput.description,
+    call_to_action: { type: creativeInput.cta, value: { link: creativeInput.landingUrl } },
+  }
+  if (creativeInput.imageHash) {
+    linkData.image_hash = creativeInput.imageHash
+  } else if (creativeInput.imageUrl) {
+    linkData.picture = creativeInput.imageUrl
+  }
+
+  const creativeSpec = { object_story_spec: { page_id: pageId, link_data: linkData } }
+  const adFormat: MetaAdFormat = params.adFormat ?? 'MOBILE_FEED_STANDARD'
+
+  const res = await apiPost<{ data?: Array<{ body?: string }> }>(
+    `/${adAccountId}/generatepreviews`,
+    {
+      ad_format: adFormat,
+      // Graph requires the creative spec as a JSON-encoded string param.
+      creative: JSON.stringify(creativeSpec),
+    },
+  )
+
+  const body = res.data?.[0]?.body
+  if (!body) throw new MetaApiError('Meta returned no ad preview for this creative', 0, 'preview')
+  return { body }
 }
 
 /**

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -30,6 +30,11 @@ type Landing = {
 type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
 type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
 
+// Fields the AI edit panel is allowed to touch — must match the ai-edit route.
+const AI_FIELDS = ['headline', 'subheadline', 'ctaText', 'seoTitle', 'seoDescription'] as const
+type AiField = (typeof AI_FIELDS)[number]
+type AiTurn = { instruction: string; note: string; fields: AiField[] }
+
 export default function LandingEditorPage() {
   const t = useT()
   const { dir } = useI18n()
@@ -44,6 +49,10 @@ export default function LandingEditorPage() {
   const [notFound, setNotFound] = useState(false)
   const [testing, setTesting] = useState(false)
   const [test, setTest] = useState<TestReport | null>(null)
+  const [aiOpen, setAiOpen] = useState(true)
+  const [aiInstruction, setAiInstruction] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiTurns, setAiTurns] = useState<AiTurn[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -106,6 +115,39 @@ export default function LandingEditorPage() {
       setTest(d as TestReport)
     } catch { toast.error(t('lpe.test.failed')) }
     finally { setTesting(false) }
+  }
+
+  // AI chat-to-edit — instruction → Gemini → concrete field edits applied live.
+  async function askAi(raw?: string) {
+    const instruction = (raw ?? aiInstruction).trim()
+    if (!instruction || !form || aiBusy) return
+    setAiBusy(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}/ai-edit`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          current: {
+            headline: form.headline,
+            subheadline: form.subheadline,
+            ctaText: form.ctaText,
+            seoTitle: form.seoTitle,
+            seoDescription: form.seoDescription,
+          },
+        }),
+      })
+      const d = await res.json()
+      if (res.status !== 200) { toast.error(d.error || t('lpe.ai.failed')); return }
+      if (d.unavailable) { toast.error(t('lpe.ai.unavailable')); return }
+      const changes = (d.changes ?? {}) as Partial<Record<AiField, string>>
+      const applied = AI_FIELDS.filter((f) => typeof changes[f] === 'string' && changes[f])
+      if (applied.length === 0) { toast.error(t('lpe.ai.noChanges')); return }
+      for (const f of applied) set(f, changes[f] as string)
+      setAiTurns((prev) => [...prev, { instruction, note: String(d.note || ''), fields: applied }].slice(-5))
+      setAiInstruction('')
+      toast.success(t('lpe.ai.applied').replace('{count}', String(applied.length)))
+    } catch { toast.error(t('lpe.ai.failed')) }
+    finally { setAiBusy(false) }
   }
 
   if (loading) return <div className="flex items-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
@@ -176,6 +218,64 @@ export default function LandingEditorPage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_1.05fr]">
         {/* Editor */}
         <div className="space-y-5">
+          {/* AI chat-to-edit */}
+          <div className="rounded-2xl border border-gold/25 bg-gold/[0.04] p-4">
+            <button type="button" onClick={() => setAiOpen((o) => !o)} className="flex w-full items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/90">
+                <Wand2 className="h-4 w-4" /> {t('lpe.ai.title')}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-gold/70 transition ${aiOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {aiOpen && (
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] leading-relaxed text-slate-400">{t('lpe.ai.hint')}</p>
+                <div className="flex items-start gap-2">
+                  <textarea
+                    rows={2}
+                    className="fld resize-none"
+                    value={aiInstruction}
+                    onChange={(e) => setAiInstruction(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); askAi() } }}
+                    placeholder={t('lpe.ai.placeholder')}
+                    disabled={aiBusy}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => askAi()}
+                    disabled={aiBusy || !aiInstruction.trim()}
+                    className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-xl bg-gold px-3.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+                  >
+                    {aiBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {t('lpe.ai.send')}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[t('lpe.ai.chip.punchier'), t('lpe.ai.chip.arabic'), t('lpe.ai.chip.seo')].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => askAi(chip)}
+                      disabled={aiBusy}
+                      className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/40 hover:text-white disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                {aiTurns.length > 0 && (
+                  <ul className="space-y-1.5 border-t border-line/60 pt-3">
+                    {aiTurns.map((turn, i) => (
+                      <li key={i} className="rounded-lg bg-surface/60 px-3 py-2">
+                        <p className="flex items-start gap-1.5 text-[11px] text-slate-400"><Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-gold/70" /> {turn.instruction}</p>
+                        {turn.note && <p className="mt-1 text-[11px] text-slate-300">{turn.note}</p>}
+                        <p className="mt-1 text-[10px] text-slate-500">{t('lpe.ai.updated')}: {turn.fields.map((f) => t(`lpe.f.${f === 'ctaText' ? 'cta' : f === 'seoDescription' ? 'seoDesc' : f}`)).join(', ')}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
           <Section title={t('lpe.grp.content')}>
             <Field label={t('lpe.f.headline')}><input className="fld" value={form.headline} onChange={(e) => set('headline', e.target.value)} /></Field>
             <Field label={t('lpe.f.subheadline')}><textarea rows={2} className="fld resize-none" value={form.subheadline} onChange={(e) => set('subheadline', e.target.value)} /></Field>

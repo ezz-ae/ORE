@@ -17,6 +17,18 @@ export type MetaOptimizationGoal =
   | 'REACH'
   | 'OFFSITE_CONVERSIONS'
 
+/**
+ * Meta ad_format values accepted by the Graph `generatepreviews` endpoint —
+ * the placements we render a live preview for. A subset of Meta's full list,
+ * covering the surfaces this app targets.
+ */
+export type MetaAdFormat =
+  | 'MOBILE_FEED_STANDARD'
+  | 'INSTAGRAM_STANDARD'
+  | 'INSTAGRAM_STORY'
+  | 'FACEBOOK_STORY_MOBILE'
+  | 'DESKTOP_FEED_STANDARD'
+
 export type MetaCta =
   | 'LEARN_MORE'
   | 'SIGN_UP'
