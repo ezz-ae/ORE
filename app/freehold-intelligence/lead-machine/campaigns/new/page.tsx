@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
@@ -9,7 +10,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -270,6 +271,7 @@ export default function NewCampaignPage() {
           listingId: listing.id, listingName: listing.projectName, area: listing.area,
           developer: 'Freehold', startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
           angle: genAngle, tone: 'direct', cta: form.cta,
+          sources: sources.map((s) => s.value).filter(Boolean),
         }),
       })
       const d = await res.json()
@@ -346,6 +348,50 @@ export default function NewCampaignPage() {
       .catch(() => {})
       .finally(() => setLeadFormsLoading(false))
   }, [form.productObjective])
+
+  // Campaign sources — inventory / link / brochure / note. They feed the creative
+  // copy and targeting; they are NOT the ad destination. Multiple allowed.
+  type Source = { id: string; kind: 'inventory' | 'link' | 'file' | 'note'; label: string; value: string }
+  const [sources, setSources] = useState<Source[]>([])
+  const [linkInput, setLinkInput] = useState('')
+  const [noteInput, setNoteInput] = useState('')
+  const [fileBusy, setFileBusy] = useState(false)
+  const srcFileRef = useRef<HTMLInputElement>(null)
+  const addSource = (s: Omit<Source, 'id'>) => setSources((prev) => (prev.some((x) => x.kind === s.kind && x.value === s.value) ? prev : [...prev, { ...s, id: `${s.kind}-${prev.length}-${s.value.slice(0, 12)}` }]))
+  const removeSource = (id: string) => setSources((prev) => prev.filter((s) => s.id !== id))
+  function addInventorySource() {
+    const l = listings.find((x) => x.id === form.listingId)
+    if (!l) { toast.error(t('lm.newCampaign.src.needListing')); return }
+    addSource({ kind: 'inventory', label: l.projectName, value: `${l.projectName}${l.area ? `, ${l.area}` : ''}${l.startingPrice ? `, from AED ${l.startingPrice.toLocaleString()}` : ''}` })
+  }
+  function addLinkSource() {
+    const v = linkInput.trim()
+    if (!v) return
+    addSource({ kind: 'link', label: v.replace(/^https?:\/\//, '').slice(0, 40), value: v })
+    setLinkInput('')
+  }
+  function addNoteSource() {
+    const v = noteInput.trim()
+    if (!v) return
+    addSource({ kind: 'note', label: v.slice(0, 40), value: v })
+    setNoteInput('')
+  }
+  async function addFileSource(file: File | null) {
+    if (!file) return
+    setFileBusy(true)
+    try {
+      if (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)) {
+        const fd = new FormData(); fd.append('file', file)
+        const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
+        const d = await res.json()
+        if (res.ok && d) addSource({ kind: 'file', label: file.name, value: `${file.name}: ${JSON.stringify(d).slice(0, 600)}` })
+        else { addSource({ kind: 'file', label: file.name, value: file.name }); toast.message(t('lm.newCampaign.src.fileNoText')) }
+      } else {
+        addSource({ kind: 'file', label: file.name, value: file.name })
+      }
+    } catch { addSource({ kind: 'file', label: file.name, value: file.name }) }
+    finally { setFileBusy(false); if (srcFileRef.current) srcFileRef.current.value = '' }
+  }
 
   // Everything the user types is saved: restore the last draft on mount
   // (this device first, then the ACCOUNT — so a draft started on the laptop
@@ -730,6 +776,44 @@ export default function NewCampaignPage() {
                 )}
               </div>
             )}
+
+            {/* Campaign sources — feed the creative + targeting (not the destination) */}
+            <div className="rounded-[14px] border border-line bg-surface-2 p-4">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300"><FileText className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.src.hint')}</p>
+
+              {sources.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {sources.map((s) => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-slate-300">
+                      <span className="text-slate-500">{t(`lm.newCampaign.src.kind.${s.kind}`)}:</span>
+                      <span className="max-w-[160px] truncate">{s.label}</span>
+                      <button type="button" onClick={() => removeSource(s.id)} className="text-slate-500 hover:text-white"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 space-y-2">
+                {form.listingId && (
+                  <button type="button" onClick={addInventorySource} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:text-white">
+                    <Plus className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.addInventory')}
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  <input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLinkSource() } }} placeholder={t('lm.newCampaign.src.linkPh')} className={inputCls()} />
+                  <button type="button" onClick={addLinkSource} className="shrink-0 rounded-full border border-line bg-surface px-3 text-xs text-slate-300 transition hover:text-white">{t('lm.newCampaign.src.add')}</button>
+                </div>
+                <div className="flex gap-2">
+                  <input value={noteInput} onChange={(e) => setNoteInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNoteSource() } }} placeholder={t('lm.newCampaign.src.notePh')} className={inputCls()} />
+                  <button type="button" onClick={addNoteSource} className="shrink-0 rounded-full border border-line bg-surface px-3 text-xs text-slate-300 transition hover:text-white">{t('lm.newCampaign.src.add')}</button>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-line-strong bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/40">
+                  {fileBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.newCampaign.src.addFile')}
+                  <input ref={srcFileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden" disabled={fileBusy} onChange={(e) => addFileSource(e.target.files?.[0] ?? null)} />
+                </label>
+              </div>
+            </div>
 
             <div>
               <Label>{t('lm.newCampaign.s1.label.name')}</Label>

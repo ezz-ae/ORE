@@ -244,6 +244,8 @@ export interface GenerateCreativePayload {
   angle: CreativeAngle
   tone: CreativeTone
   cta: MetaCta
+  /** Extra source material (links, brochure text, notes) to ground the copy. */
+  sources?: string[]
 }
 
 export interface GeneratedCreativeVariant {
