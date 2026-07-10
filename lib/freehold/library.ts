@@ -106,6 +106,40 @@ export async function saveLibraryItem(
   }
 }
 
+/**
+ * In-place update of a text asset (report/note/creative copy) — powers the
+ * Drive doc editor's Save. Returns the updated row, or null when the id is not
+ * a library row the caller may edit (e.g. a read-only Notebook output — the
+ * caller then saves a copy instead). Owner-or-management scoped.
+ */
+export async function updateLibraryItem(
+  id: string,
+  email: string,
+  role: Role | string | null | undefined,
+  patch: { title?: string; content?: string | null; url?: string | null },
+): Promise<LibraryItem | null> {
+  try {
+    await ensureOnce()
+    const sets: string[] = []
+    const params: unknown[] = []
+    if (patch.title !== undefined)   { params.push(patch.title.slice(0, 200)); sets.push(`title = $${params.length}`) }
+    if (patch.content !== undefined) { params.push(patch.content == null ? null : String(patch.content).slice(0, 100_000)); sets.push(`content = $${params.length}`) }
+    if (patch.url !== undefined)     { params.push(patch.url); sets.push(`url = $${params.length}`) }
+    if (!sets.length) return null
+    params.push(id)
+    let where = `id = $${params.length}`
+    if (!isMgmt(role)) { params.push(email); where += ` AND user_email = $${params.length}` }
+    const rows = await query<Record<string, unknown>>(
+      `UPDATE freehold_site_library SET ${sets.join(', ')} WHERE ${where}
+       RETURNING id, user_email, kind, title, content, url, created_at::text`,
+      params,
+    )
+    return rows[0] ? mapRow(rows[0]) : null
+  } catch {
+    return null
+  }
+}
+
 export async function deleteLibraryItem(id: string, email: string, role?: Role | string | null): Promise<boolean> {
   try {
     await ensureOnce()

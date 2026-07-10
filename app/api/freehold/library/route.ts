@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
-import { listLibrary, saveLibraryItem, deleteLibraryItem, LIBRARY_KINDS, type LibraryKind } from '@/lib/freehold/library'
+import { listLibrary, saveLibraryItem, updateLibraryItem, deleteLibraryItem, LIBRARY_KINDS, type LibraryKind } from '@/lib/freehold/library'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,6 +30,24 @@ export async function POST(req: NextRequest) {
   const item = await saveLibraryItem(auth.user.email, { kind, title, content, url })
   if (!item) return NextResponse.json({ error: 'Could not save' }, { status: 500 })
   return NextResponse.json({ item }, { status: 201 })
+}
+
+/** In-place edit of a text asset: PATCH { id, title?, content? }. Returns the
+ *  updated item, or 404 when the id isn't an editable library row (e.g. a
+ *  read-only Notebook output — the client then saves a copy via POST). */
+export async function PATCH(req: NextRequest) {
+  const auth = await requireSession()
+  if ('res' in auth) return auth.res
+  const body = await req.json().catch(() => ({})) as { id?: string; title?: string; content?: string }
+  const id = String(body.id ?? '').trim()
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+  const patch: { title?: string; content?: string } = {}
+  if (typeof body.title === 'string') patch.title = body.title
+  if (typeof body.content === 'string') patch.content = body.content
+  if (!('title' in patch) && !('content' in patch)) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+  const item = await updateLibraryItem(id, auth.user.email, auth.user.role, patch)
+  if (!item) return NextResponse.json({ error: 'not_editable' }, { status: 404 })
+  return NextResponse.json({ item })
 }
 
 /** Remove an asset: DELETE /api/freehold/library?id=… (owner or management). */
