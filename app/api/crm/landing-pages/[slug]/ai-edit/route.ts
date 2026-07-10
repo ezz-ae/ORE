@@ -45,6 +45,14 @@ export async function POST(
     seoDescription: toText(currentRaw.seoDescription),
   }
 
+  // The page's current section types (in order) — lets the AI also rearrange or
+  // show/hide sections on the canvas. Only these known types are ever acted on.
+  const sectionTypesRaw = (body as { sections?: unknown })?.sections
+  const sectionTypes = Array.isArray(sectionTypesRaw)
+    ? sectionTypesRaw.map((s) => toText(s)).filter(Boolean)
+    : []
+  const knownTypes = new Set(sectionTypes)
+
   // Honest failure handling: without a key we can't do anything real, so tell
   // the UI the feature is unavailable rather than faking an answer.
   const apiKey = process.env.GEMINI_API_KEY
@@ -56,16 +64,20 @@ export async function POST(
     (f) => `- ${f} (${FIELD_GUIDANCE[f]})\n  current: ${JSON.stringify(current[f] || "")}`,
   ).join("\n")
 
+  const layoutBlock = sectionTypes.length
+    ? `\n\nThe page currently has these sections, in order:\n${sectionTypes.map((t, i) => `${i + 1}. ${t}`).join("\n")}\nIf the instruction asks to reorder, add, or hide sections, you MAY return a "layout" object using ONLY these exact section-type strings:\n- "order": the full desired order of section types (include every current type, moved as needed)\n- "hide": section types to hide\n- "show": section types to show\nOmit "layout" entirely if the instruction is only about copy.`
+    : ""
+
   const prompt = `You are a senior conversion copywriter editing a Dubai freehold real-estate landing page.
 You may ONLY change these editable fields — never invent other fields:
-${fieldsBlock}
+${fieldsBlock}${layoutBlock}
 
 The user's instruction:
 """${instruction}"""
 
 Apply the instruction with natural, high-converting marketing copy. Respect field length norms (headline short and punchy, seoTitle MAX 60 characters, seoDescription MAX 160 characters). Only include the fields you actually want to change — leave everything else out.
 Return ONLY JSON, no markdown:
-{"changes":{"<field>":"<newValue>"},"note":"<one short line describing what you changed>"}`
+{"changes":{"<field>":"<newValue>"},"note":"<one short line describing what you changed>","layout":{"order":["<type>"],"hide":["<type>"],"show":["<type>"]}}`
 
   let data
   try {
@@ -80,7 +92,7 @@ Return ONLY JSON, no markdown:
   }
 
   const raw = geminiText(data).replace(/^```(?:json)?/i, "").replace(/```$/, "").trim()
-  let parsed: { changes?: Record<string, unknown>; note?: unknown }
+  let parsed: { changes?: Record<string, unknown>; note?: unknown; layout?: Record<string, unknown> }
   try {
     parsed = JSON.parse(raw)
   } catch (error) {
@@ -96,5 +108,15 @@ Return ONLY JSON, no markdown:
     if (next) changes[field] = next
   }
 
-  return NextResponse.json({ changes, note: toText(parsed.note) })
+  // Layout ops — validated against the real section types only. Anything the
+  // model invents (unknown types) is dropped, so it can't break the page.
+  const layoutSrc = parsed.layout && typeof parsed.layout === "object" ? parsed.layout : {}
+  const filterTypes = (v: unknown) =>
+    Array.isArray(v) ? v.map((x) => toText(x)).filter((x) => knownTypes.has(x)) : []
+  const order = filterTypes((layoutSrc as Record<string, unknown>).order)
+  const hide = filterTypes((layoutSrc as Record<string, unknown>).hide)
+  const show = filterTypes((layoutSrc as Record<string, unknown>).show)
+  const layout = order.length || hide.length || show.length ? { order, hide, show } : undefined
+
+  return NextResponse.json({ changes, note: toText(parsed.note), ...(layout ? { layout } : {}) })
 }

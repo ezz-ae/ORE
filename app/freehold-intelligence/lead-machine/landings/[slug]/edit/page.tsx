@@ -137,6 +137,7 @@ export default function LandingEditorPage() {
             seoTitle: form.seoTitle,
             seoDescription: form.seoDescription,
           },
+          sections: form.sections?.map((s) => s.type) ?? [],
         }),
       })
       const d = await res.json()
@@ -144,11 +145,25 @@ export default function LandingEditorPage() {
       if (d.unavailable) { toast.error(t('lpe.ai.unavailable')); return }
       const changes = (d.changes ?? {}) as Partial<Record<AiField, string>>
       const applied = AI_FIELDS.filter((f) => typeof changes[f] === 'string' && changes[f])
-      if (applied.length === 0) { toast.error(t('lpe.ai.noChanges')); return }
+      // Layout ops (reorder / show-hide sections) the AI proposed on the canvas.
+      const layout = d.layout as { order?: string[]; hide?: string[]; show?: string[] } | undefined
+      const layoutTouched = !!layout && ((layout.order?.length ?? 0) + (layout.hide?.length ?? 0) + (layout.show?.length ?? 0) > 0)
+      if (applied.length === 0 && !layoutTouched) { toast.error(t('lpe.ai.noChanges')); return }
       for (const f of applied) set(f, changes[f] as string)
+      if (layoutTouched && form.sections) {
+        const order = layout!.order ?? []
+        const hide = new Set(layout!.hide ?? [])
+        const show = new Set(layout!.show ?? [])
+        const idx = (ty: string) => { const k = order.indexOf(ty); return k === -1 ? 999 : k }
+        const next = [...form.sections]
+          .map((s, i) => ({ s, i }))
+          .sort((a, b) => (order.length ? idx(a.s.type) - idx(b.s.type) || a.i - b.i : a.i - b.i))
+          .map(({ s }) => (hide.has(s.type) ? { ...s, data: { ...s.data, _hidden: true } } : show.has(s.type) ? { ...s, data: { ...s.data, _hidden: false } } : s))
+        setSections(next)
+      }
       setAiTurns((prev) => [...prev, { instruction, note: String(d.note || ''), fields: applied }].slice(-5))
       setAiInstruction('')
-      toast.success(t('lpe.ai.applied').replace('{count}', String(applied.length)))
+      toast.success(layoutTouched && applied.length === 0 ? t('lpe.ai.layoutApplied') : t('lpe.ai.applied').replace('{count}', String(applied.length)))
     } catch { toast.error(t('lpe.ai.failed')) }
     finally { setAiBusy(false) }
   }
@@ -311,7 +326,7 @@ export default function LandingEditorPage() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {[t('lpe.ai.chip.punchier'), t('lpe.ai.chip.arabic'), t('lpe.ai.chip.seo')].map((chip) => (
+                  {[t('lpe.ai.chip.punchier'), t('lpe.ai.chip.arabic'), t('lpe.ai.chip.seo'), t('lpe.ai.chip.layout')].map((chip) => (
                     <button
                       key={chip}
                       type="button"
