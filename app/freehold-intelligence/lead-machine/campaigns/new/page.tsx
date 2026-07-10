@@ -473,6 +473,29 @@ export default function NewCampaignPage() {
   function removeLocale(key: number) {
     setForm((prev) => ({ ...prev, locales: prev.locales.filter((l) => l.key !== key) }))
   }
+  // Lookalike audience from the company's OWN closed buyers. Building it uploads
+  // buyers' HASHED contacts to Meta, so it is gated behind an explicit confirm.
+  const [lookalike, setLookalike] = useState<{ count: number; min: number; ready: boolean; metaConnected: boolean } | null>(null)
+  const [llBuilding, setLlBuilding] = useState(false)
+  const [llConfirm, setLlConfirm] = useState(false)
+  const [llResult, setLlResult] = useState<{ lookalikeAudienceId: string; uploaded: number } | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/ads/lookalike').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) setLookalike(d) }).catch(() => {})
+  }, [])
+  async function buildLookalike() {
+    setLlBuilding(true)
+    try {
+      const res = await fetch('/api/freehold/ads/lookalike', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true, country: form.countries[0] || 'AE', ratio: 0.03, label: form.campaignName || 'Freehold' }),
+      })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error === 'not_enough' ? t('lm.newCampaign.lookalike.need').replace('{n}', String(d.count)).replace('{min}', String(d.min)) : (d.error || t('lm.newCampaign.lookalike.failed'))); return }
+      setLlResult(d)
+      toast.success(t('lm.newCampaign.lookalike.done'))
+    } catch { toast.error(t('lm.newCampaign.lookalike.failed')) }
+    finally { setLlBuilding(false); setLlConfirm(false) }
+  }
   const [linkInput, setLinkInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [fileBusy, setFileBusy] = useState(false)
@@ -1194,6 +1217,42 @@ export default function NewCampaignPage() {
               </div>
               <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.languageHint')}</p>
             </div>
+
+            {/* Lookalike from closed buyers — real Meta custom+lookalike audience.
+                Gated: building it uploads hashed buyer contacts to Meta. */}
+            {lookalike && (
+              <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
+                  <Users className="h-3.5 w-3.5" /> {t('lm.newCampaign.lookalike.title')}
+                </div>
+                {llResult ? (
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" /> {t('lm.newCampaign.lookalike.created').replace('{n}', String(llResult.uploaded))}
+                  </p>
+                ) : !lookalike.metaConnected ? (
+                  <p className="mt-2 text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.connect')}</p>
+                ) : lookalike.count < lookalike.min ? (
+                  <p className="mt-2 text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.need').replace('{n}', String(lookalike.count)).replace('{min}', String(lookalike.min))}</p>
+                ) : llConfirm ? (
+                  <div className="mt-2">
+                    <p className="text-[12px] leading-relaxed text-slate-300">{t('lm.newCampaign.lookalike.confirmBody').replace('{n}', String(lookalike.count))}</p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <button type="button" onClick={buildLookalike} disabled={llBuilding} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                        {llBuilding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('lm.newCampaign.lookalike.confirmCta')}
+                      </button>
+                      <button type="button" onClick={() => setLlConfirm(false)} disabled={llBuilding} className="rounded-full border border-line px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">{t('common.cancel')}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    <p className="text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.ready').replace('{n}', String(lookalike.count))}</p>
+                    <button type="button" onClick={() => setLlConfirm(true)} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                      <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.lookalike.build')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <Label>{t('lm.newCampaign.s2.label.cities')}</Label>

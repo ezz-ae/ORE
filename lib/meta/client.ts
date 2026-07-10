@@ -3,6 +3,7 @@
  * All calls are server-side only — token is never exposed to the browser.
  */
 
+import { createHash } from 'crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
 import type {
   MetaCampaign,
@@ -652,6 +653,99 @@ export async function listAdCreatives(): Promise<MetaAdCreativeDetail[]> {
     limit:  '50',
   })
   return res.data ?? []
+}
+
+// ─── Custom & Lookalike Audiences (from the company's own closed buyers) ──────
+//
+// Meta requires every identifier to be normalized and SHA-256 hashed BEFORE it
+// leaves our server — raw customer emails/phones are never sent. We build a
+// source Custom Audience from the hashed contacts, then create a Lookalike from
+// it. This is a consequential outward action (buyer data → Meta), so the caller
+// must gate it behind an explicit user confirmation.
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+// Meta's normalization rules: email lowercased/trimmed; phone digits only with
+// country code, no leading +. Empty input → '' (Meta treats it as "no value").
+function hashEmail(email: string): string {
+  const e = email.trim().toLowerCase()
+  return e ? sha256(e) : ''
+}
+function hashPhone(phone: string): string {
+  const p = phone.replace(/[^\d]/g, '').replace(/^0+/, '')
+  return p ? sha256(p) : ''
+}
+
+export interface BuyerContact { email?: string | null; phone?: string | null }
+
+export async function createCustomAudience(name: string, description: string): Promise<{ id: string }> {
+  const { adAccountId } = await creds()
+  return apiPost(`/${adAccountId}/customaudiences`, {
+    name,
+    description,
+    subtype: 'CUSTOM',
+    customer_file_source: 'USER_PROVIDED_ONLY',
+  })
+}
+
+// Upload hashed identifiers to a custom audience. Rows missing both a usable
+// email and phone are skipped. Returns how many rows were sent.
+export async function addHashedBuyers(audienceId: string, contacts: BuyerContact[]): Promise<number> {
+  const rows = contacts
+    .map((c) => [hashEmail(c.email || ''), hashPhone(c.phone || '')])
+    .filter(([e, p]) => e || p)
+  if (!rows.length) return 0
+  // Meta accepts up to 10k rows per call; batch to be safe.
+  for (let i = 0; i < rows.length; i += 5000) {
+    const batch = rows.slice(i, i + 5000)
+    await apiPost(`/${audienceId}/users`, {
+      payload: { schema: ['EMAIL', 'PHONE'], data: batch },
+    })
+  }
+  return rows.length
+}
+
+export async function createLookalikeAudience(params: {
+  name: string
+  sourceAudienceId: string
+  country: string
+  /** 0.01–0.20 — the top X% most-similar people in the country. */
+  ratio: number
+}): Promise<{ id: string }> {
+  const { adAccountId } = await creds()
+  return apiPost(`/${adAccountId}/customaudiences`, {
+    name: params.name,
+    subtype: 'LOOKALIKE',
+    origin_audience_id: params.sourceAudienceId,
+    lookalike_spec: JSON.stringify({
+      type: 'similarity',
+      country: params.country,
+      ratio: Math.min(0.2, Math.max(0.01, params.ratio)),
+    }),
+  })
+}
+
+// Orchestrate: seed Custom Audience from hashed buyers → Lookalike. Returns the
+// ids + how many buyers were uploaded. Raw PII never leaves this function.
+export async function buildLookalikeFromBuyers(params: {
+  contacts: BuyerContact[]
+  label: string
+  country: string
+  ratio: number
+}): Promise<{ sourceAudienceId: string; lookalikeAudienceId: string; uploaded: number }> {
+  const source = await createCustomAudience(
+    `${params.label} — Closed Buyers`,
+    'Seed audience built from the company’s own closed buyers (hashed).',
+  )
+  const uploaded = await addHashedBuyers(source.id, params.contacts)
+  const lookalike = await createLookalikeAudience({
+    name: `${params.label} — Lookalike (${params.country}, ${Math.round(params.ratio * 100)}%)`,
+    sourceAudienceId: source.id,
+    country: params.country,
+    ratio: params.ratio,
+  })
+  return { sourceAudienceId: source.id, lookalikeAudienceId: lookalike.id, uploaded }
 }
 
 // ─── Full Campaign Launch (atomic) ───────────────────────────────────────────
