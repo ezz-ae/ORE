@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
-  AlignLeft, AlignCenter, AlignRight, Bold, Move,
+  AlignLeft, AlignCenter, AlignRight, Bold, Move, Sparkles, Wand2,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -35,6 +35,12 @@ const PRESETS: Record<PresetKey, { w: number; h: number; key: string }> = {
   'link': { w: 1200, h: 628,  key: 'ed.image.preset.link' },
 }
 const PRESET_ORDER: PresetKey[] = ['1_1', '4_5', '9_16', '16_9', 'link']
+// Maps the current placement preset to the aspect-ratio string the gen-image
+// endpoint understands. The 1200×628 link banner is closest to a 16:9 frame.
+const PRESET_ASPECT: Record<PresetKey, string> = {
+  '1_1': '1:1', '4_5': '4:5', '9_16': '9:16', '16_9': '16:9', 'link': '16:9',
+}
+const AI_CHIPS = ['ed.image.ai.chipEvening', 'ed.image.ai.chipWhiteBg', 'ed.image.ai.chipSkyline'] as const
 const FONT = '"Segoe UI", "Noto Sans Arabic", "Noto Kufi Arabic", Tahoma, system-ui, sans-serif'
 const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
 const isArabic = (s: string) => AR_RE.test(s)
@@ -102,6 +108,8 @@ export default function DriveImageEditor() {
   const [permitInput, setPermitInput] = useState('')
   const [qrBusy, setQrBusy] = useState(false)
   const [frame, setFrame] = useState<BrandFrame>({ on: false, color: '#D4AF37', width: 24 })
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiBusy, setAiBusy] = useState<null | 'gen' | 'edit'>(null)
 
   const { w: W, h: H } = PRESETS[preset]
 
@@ -397,6 +405,40 @@ export default function DriveImageEditor() {
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
   }
 
+  // ── AI generate / edit ─────────────────────────────────────────────────────────
+  // 'gen'  → text-to-image; loads the result as a fresh editable source layer.
+  // 'edit' → image→image; exports the CURRENT canvas (source + overlays baked)
+  //          and sends it as the reference for a prompt-driven edit.
+  async function aiRun(mode: 'gen' | 'edit') {
+    const prompt = aiPrompt.trim()
+    if (!prompt || aiBusy) return
+    let imageUrl: string | undefined
+    if (mode === 'edit') {
+      const dataUrl = exportPng()
+      if (!dataUrl) return
+      imageUrl = dataUrl
+    }
+    setAiBusy(mode)
+    try {
+      const res = await fetch('/api/freehold/drive/gen-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, aspectRatio: PRESET_ASPECT[preset], imageUrl }),
+      })
+      const d = await res.json().catch(() => ({})) as { url?: string; error?: string }
+      if (!res.ok || !d.url) {
+        toast.error(typeof d.error === 'string' && d.error ? d.error : t('ed.image.ai.failed'))
+        return
+      }
+      // Load onto the canvas as the new source — same path the upload flow uses,
+      // so every existing tool (crop/pan/zoom, text/logo/QR, frame) keeps working.
+      await applySource(d.url, { cross: /^https?:/.test(d.url) })
+    } catch {
+      toast.error(t('ed.image.ai.failed'))
+    } finally {
+      setAiBusy(null)
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex h-[calc(100vh-56px)] items-center justify-center text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
@@ -545,7 +587,7 @@ export default function DriveImageEditor() {
         <button type="button" onClick={save} disabled={saving} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-2.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('ed.image.saveToLibrary')}
         </button>
-        <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.boundary')}</p>
+        <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
       </section>
     </div>
   ) : (
@@ -554,7 +596,39 @@ export default function DriveImageEditor() {
       <button type="button" onClick={() => fileRef.current?.click()} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
         <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
       </button>
-      <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.boundary')}</p>
+      <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
+    </div>
+  )
+
+  const aiRail = (
+    <div className="space-y-3.5">
+      <div className={sectionH}><Sparkles className="h-3.5 w-3.5" /> {t('ed.image.ai.title')}</div>
+      <textarea
+        value={aiPrompt}
+        onChange={(e) => setAiPrompt(e.target.value)}
+        placeholder={t('ed.image.ai.promptPh')}
+        dir="auto"
+        rows={4}
+        className="w-full resize-none rounded-xl border border-line bg-surface px-2.5 py-2 text-xs leading-snug text-white outline-none placeholder:text-slate-600 focus:border-gold/30"
+      />
+      <div className="flex flex-wrap gap-1.5">
+        {AI_CHIPS.map((k) => (
+          <button key={k} type="button" onClick={() => setAiPrompt(t(k))}
+            className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/30 hover:text-gold">
+            {t(k)}
+          </button>
+        ))}
+      </div>
+      <button type="button" onClick={() => aiRun('gen')} disabled={aiBusy !== null || !aiPrompt.trim()}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-2.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+        {aiBusy === 'gen' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('ed.image.ai.generate')}
+      </button>
+      <button type="button" onClick={() => aiRun('edit')} disabled={aiBusy !== null || !aiPrompt.trim() || !hasSource}
+        className={`${rowBtn} flex w-full items-center justify-center gap-1.5 disabled:opacity-50`}>
+        {aiBusy === 'edit' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />} {t('ed.image.ai.edit')}
+      </button>
+      <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.editHint')}</p>
+      <p className="border-t border-white/[0.07] pt-3 text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
     </div>
   )
 
@@ -562,11 +636,12 @@ export default function DriveImageEditor() {
     <DriveEditorFrame
       type="image"
       title={title || t('ed.type.image')}
-      statusNote={t('ed.image.boundary')}
+      statusNote={t('ed.image.ai.boundary')}
       dirty={dirty}
       saving={saving}
       onSave={hasSource ? save : undefined}
       toolRail={toolRail}
+      aiRail={aiRail}
       actions={hasSource ? (
         <button type="button" onClick={download} title={t('ed.download')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white">
           <Download className="h-3.5 w-3.5" />
@@ -607,7 +682,7 @@ export default function DriveImageEditor() {
             <button type="button" onClick={() => fileRef.current?.click()} className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
               <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
             </button>
-            <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.boundary')}</p>
+            <p className="mt-2 text-[10px] leading-snug text-slate-600">{t('ed.image.ai.boundary')}</p>
           </div>
         </div>
       )}
