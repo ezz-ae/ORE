@@ -231,7 +231,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                     </Link>
                   )}
 
-                  <Link href={`/freehold-intelligence/inventory/${p.id}/generate`}
+                  <Link href={p.landingStatus === 'missing' ? `/freehold-intelligence/inventory/${p.id}/generate` : `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(p.slug)}/edit`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
                     <Pencil className="h-3 w-3" /> {t('lm.landings.edit')}
                   </Link>

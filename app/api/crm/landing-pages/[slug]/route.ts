@@ -23,6 +23,20 @@ const toIsoOrNull = (value: unknown) => {
 const hasKey = (body: unknown, key: string) =>
   Boolean(body && typeof body === "object" && Object.prototype.hasOwnProperty.call(body, key))
 
+// Load a landing page for the editor (the fields PATCH below can update).
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const user = await getSessionUser()
+  if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
+  if (!isAdminRole(user.role)) return NextResponse.json({ error: "Admins only." }, { status: 403 })
+  const { slug } = await params
+  const data = await getLandingPageForEditor(slug)
+  if (!data) return NextResponse.json({ error: "Landing page not found." }, { status: 404 })
+  return NextResponse.json({ landing: data })
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
