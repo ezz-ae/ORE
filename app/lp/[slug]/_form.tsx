@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { trackConversion } from './_tracker'
+import type { LpPalette } from '@/lib/landing-theme'
 
 interface LeadFormProps {
   propertyName: string
   slug: string
   ctaText?: string
   L: Record<string, string>
+  palette: LpPalette
   pixels?: {
     metaPixelId?: string
     googleTagId?: string
@@ -17,7 +19,7 @@ interface LeadFormProps {
   }
 }
 
-export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFormProps) {
+export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} }: LeadFormProps) {
   const submitLabel = ctaText || L['form.defaultCta']
   const [form, setForm] = useState({ name: '', phone: '', email: '' })
   const [submitted, setSubmitted] = useState(false)
@@ -55,15 +57,20 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
     }
   }
 
+  const labelStyle = { color: palette.textFaint }
+  const inputClass =
+    'lp-input w-full rounded-xl border px-4 py-3.5 text-[14px] outline-none transition-all focus:border-[#D4AF37]/40 focus:ring-1 focus:ring-[#D4AF37]/20'
+  const inputStyle = { borderColor: palette.surfaceBorder, background: palette.inputBg, color: palette.textPrimary }
+
   if (submitted) {
     return (
       <div className="rounded-2xl border border-[#D4AF37]/30 bg-[#D4AF37]/[0.08] p-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#D4AF37]/15 ring-1 ring-[#D4AF37]/30">
           <Check className="h-7 w-7 text-[#D4AF37]" />
         </div>
-        <div className="text-[20px] font-semibold text-white mb-2">{L['form.successTitle']}</div>
-        <div className="text-[14px] text-white/50 leading-relaxed">
-          {L['form.successPrefix']} <span className="text-white/80">{propertyName}</span> {L['form.successSuffix']}
+        <div className="text-[20px] font-semibold mb-2" style={{ color: palette.textPrimary }}>{L['form.successTitle']}</div>
+        <div className="text-[14px] leading-relaxed" style={{ color: palette.textMuted }}>
+          {L['form.successPrefix']} <span style={{ color: palette.textPrimary }}>{propertyName}</span> {L['form.successSuffix']}
         </div>
       </div>
     )
@@ -71,8 +78,10 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      {/* Theme-aware placeholder color (inline styles can't target ::placeholder). */}
+      <style>{`.lp-input::placeholder{color:${palette.placeholder};}`}</style>
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
+        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
           {L['form.name']} <span className="text-[#D4AF37]">*</span>
         </label>
         <input
@@ -81,11 +90,12 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
           placeholder={L['form.namePlaceholder']}
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3.5 text-[14px] text-white placeholder-white/20 outline-none transition-all focus:border-[#D4AF37]/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#D4AF37]/20"
+          className={inputClass}
+          style={inputStyle}
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
+        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
           {L['form.phone']} <span className="text-[#D4AF37]">*</span>
         </label>
         <input
@@ -94,11 +104,12 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
           placeholder="+971 __ ___ ____"
           value={form.phone}
           onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-          className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3.5 text-[14px] text-white placeholder-white/20 outline-none transition-all focus:border-[#D4AF37]/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#D4AF37]/20"
+          className={inputClass}
+          style={inputStyle}
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/35">
+        <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest" style={labelStyle}>
           {L['form.email']}
         </label>
         <input
@@ -106,7 +117,8 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
           placeholder="your@email.com"
           value={form.email}
           onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-          className="w-full rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3.5 text-[14px] text-white placeholder-white/20 outline-none transition-all focus:border-[#D4AF37]/40 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#D4AF37]/20"
+          className={inputClass}
+          style={inputStyle}
         />
       </div>
       {error && <p className="text-[13px] text-red-400">{error}</p>}
@@ -117,7 +129,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, pixels = {} }: LeadFo
       >
         {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> {L['form.sending']}</> : submitLabel}
       </button>
-      <p className="text-center text-[11px] text-white/20 leading-relaxed">
+      <p className="text-center text-[11px] leading-relaxed" style={{ color: palette.textFaint }}>
         {L['form.disclaimer']}
       </p>
     </form>

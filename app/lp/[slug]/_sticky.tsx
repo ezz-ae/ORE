@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { MessageCircle, ChevronRight } from 'lucide-react'
+import type { LpPalette } from '@/lib/landing-theme'
 
 interface Props {
   price: string
   ctaText: string
   slug: string
   L: Record<string, string>
+  palette: LpPalette
 }
 
-export function StickyLpCta({ price, ctaText, slug, L }: Props) {
+export function StickyLpCta({ price, ctaText, slug, L, palette }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -37,13 +39,14 @@ export function StickyLpCta({ price, ctaText, slug, L }: Props) {
 
       {/* Mobile sticky bar */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-40 border-t border-white/[0.08] bg-[#07080D]/95 backdrop-blur-lg px-4 py-3 transition-all duration-300 sm:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-lg px-4 py-3 transition-all duration-300 sm:hidden ${
           visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
+        style={{ borderTopColor: palette.surfaceBorder, background: palette.topbarBg }}
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] text-white/40 uppercase tracking-widest">{L['sticky.startingFrom']}</div>
+            <div className="text-[10px] uppercase tracking-widest" style={{ color: palette.textFaint }}>{L['sticky.startingFrom']}</div>
             <div className="text-[16px] font-bold text-[#D4AF37]">{price}</div>
           </div>
           <div className="flex gap-2">
