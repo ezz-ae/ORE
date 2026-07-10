@@ -103,6 +103,14 @@ const PRODUCT_OBJECTIVES: {
 // the GCC + the key expat/investor source markets for Dubai real estate.
 const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
 
+// A campaign source that IS a landing page (our own /lp/<slug> URL) can double
+// as the ad destination. Extract the slug so we can auto-fill the destination
+// and open that exact landing on the editor canvas.
+function landingSlugFromUrl(url: string): string | null {
+  const m = url.match(/\/lp\/([A-Za-z0-9._~-]+)/)
+  return m ? decodeURIComponent(m[1]) : null
+}
+
 const CTA_OPTIONS: { value: MetaCta; label: string }[] = [
   { value: 'LEARN_MORE',   label: 'Learn More' },
   { value: 'GET_QUOTE',    label: 'Get Quote' },
@@ -372,6 +380,9 @@ export default function NewCampaignPage() {
   // copy and targeting; they are NOT the ad destination. Multiple allowed.
   type Source = { id: string; kind: 'inventory' | 'link' | 'file' | 'note'; label: string; value: string }
   const [sources, setSources] = useState<Source[]>([])
+  // Set when a link source turns out to be our own landing page — powers the
+  // "auto-filled from your source" note + Edit-on-canvas in the destination.
+  const [sourceLandingSlug, setSourceLandingSlug] = useState('')
   const [linkInput, setLinkInput] = useState('')
   const [noteInput, setNoteInput] = useState('')
   const [fileBusy, setFileBusy] = useState(false)
@@ -388,6 +399,15 @@ export default function NewCampaignPage() {
     if (!v) return
     addSource({ kind: 'link', label: v.replace(/^https?:\/\//, '').slice(0, 40), value: v })
     setLinkInput('')
+    // If the link is one of our own landing pages, it can be the ad's
+    // destination too. Auto-fill it (only for landing-type objectives) so the
+    // marketer doesn't retype it — and remember the slug for Edit-on-canvas.
+    const slug = landingSlugFromUrl(v)
+    if (slug && (activeObjective.dest === 'landing')) {
+      setForm((prev) => ({ ...prev, landingUrl: v }))
+      setSourceLandingSlug(slug)
+      toast.success(t('lm.newCampaign.src.landingAutofill'))
+    }
   }
   function addNoteSource() {
     const v = noteInput.trim()
@@ -1299,10 +1319,24 @@ export default function NewCampaignPage() {
               ) : (
                 <div className="mt-3">
                   <input className={inputCls(!form.landingUrl)} value={form.landingUrl} onChange={(e) => update('landingUrl', e.target.value)} placeholder={t('lm.landingUrlPlaceholder')} />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Link href="/freehold-intelligence/lead-machine/landings" className="rounded-full border border-line px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-200">{t('lm.newCampaign.dest.pickLanding')}</Link>
-                    {form.listingId && <Link href={`/freehold-intelligence/lead-machine/landings/${encodeURIComponent(form.listingId)}/edit`} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold hover:bg-gold/20">{t('lm.newCampaign.dest.editCanvas')} <ArrowRight className="h-3 w-3" /></Link>}
-                  </div>
+                  {(() => {
+                    // Prefer the slug the destination URL actually points to, so
+                    // "Edit on canvas" opens the exact landing (source-provided
+                    // or listing-default), not just the picked listing.
+                    const editSlug = landingSlugFromUrl(form.landingUrl) || sourceLandingSlug || form.listingId
+                    const fromSource = !!sourceLandingSlug && form.landingUrl.includes(`/lp/${sourceLandingSlug}`)
+                    return (
+                      <>
+                        {fromSource && (
+                          <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-emerald-400"><Sparkles className="h-3 w-3" /> {t('lm.newCampaign.dest.autofilledFromSource')}</p>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Link href="/freehold-intelligence/lead-machine/landings" className="rounded-full border border-line px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-200">{t('lm.newCampaign.dest.pickLanding')}</Link>
+                          {editSlug && <Link href={`/freehold-intelligence/lead-machine/landings/${encodeURIComponent(editSlug)}/edit`} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold hover:bg-gold/20">{t('lm.newCampaign.dest.editCanvas')} <ArrowRight className="h-3 w-3" /></Link>}
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               )}
             </div>
