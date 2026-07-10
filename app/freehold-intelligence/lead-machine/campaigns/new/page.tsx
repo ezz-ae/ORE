@@ -260,6 +260,21 @@ export default function NewCampaignPage() {
 
   // ── Creative: real ad preview + AI copy generation (existing generator) ──
   const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
+  // Trakhees QR — overlaid on the creative in the scan-safe bottom corner.
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  function onUploadQr(file: File | null) {
+    if (!file) return
+    const r = new FileReader()
+    r.onload = () => setQrDataUrl(String(r.result))
+    r.readAsDataURL(file)
+  }
+  const QrOverlay = () => qrDataUrl ? (
+    <div className="pointer-events-none flex flex-col items-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={qrDataUrl} alt="Trakhees QR" className="h-11 w-11 rounded bg-white p-0.5 object-contain shadow-lg ring-1 ring-black/20" />
+      <span className="mt-0.5 rounded bg-black/70 px-1 text-[7px] font-medium text-white">{t('lm.newCampaign.qr.badge')}</span>
+    </div>
+  ) : null
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
   const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
   const [genLoading, setGenLoading] = useState(false)
@@ -1161,11 +1176,12 @@ export default function NewCampaignPage() {
                         <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
                       </div>
                       {form.primaryText && <div className="px-3 pb-2 text-[11px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
-                      <div className="aspect-square w-full bg-surface-2">
+                      <div className="relative aspect-square w-full bg-surface-2">
                         {form.imageUrl
                           // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
                           : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                        <div className="absolute bottom-2 end-2 z-10"><QrOverlay /></div>
                       </div>
                       <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
                         <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[10px] text-slate-500">{form.description}</div></div>
@@ -1183,6 +1199,7 @@ export default function NewCampaignPage() {
                         <div className="mt-0.5 line-clamp-2 text-[10px] text-slate-300">{form.primaryText}</div>
                         <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
                       </div>
+                      <div className="absolute end-2 top-2 z-10"><QrOverlay /></div>
                     </div>
                   )}
                 </div>
@@ -1313,6 +1330,21 @@ export default function NewCampaignPage() {
                   <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
                 )}
               </div>
+            </div>
+
+            {/* Trakhees QR — overlays the creative in the scan-safe corner */}
+            <div>
+              <Label>{t('lm.newCampaign.qr.label')}</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
+                  <Plus className="h-3.5 w-3.5" /> {qrDataUrl ? t('lm.newCampaign.qr.replace') : t('lm.newCampaign.qr.upload')}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => onUploadQr(e.target.files?.[0] ?? null)} />
+                </label>
+                {qrDataUrl && (
+                  <button type="button" onClick={() => setQrDataUrl('')} className="text-xs text-slate-500 hover:text-white">{t('lm.newCampaign.qr.remove')}</button>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.qr.hint')}</p>
             </div>
 
             <div>
