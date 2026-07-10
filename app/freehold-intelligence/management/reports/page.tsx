@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
-  FileBarChart2, Sparkles, Download, Eye, AlertTriangle,
-  CheckCircle2, TrendingUp, Calendar, Clock, ChevronDown,
-  FileText, Users, Megaphone, DollarSign, ArrowUpRight, Zap,
+  FileBarChart2, Sparkles, Download, ChevronDown, CheckCircle2,
+  FileText, Users, Megaphone, DollarSign, Zap,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+import { useSession } from '@/lib/freehold/use-session'
 
 function fmtAedShort(n: number): string {
   if (!n || n <= 0) return 'AED 0'
@@ -23,67 +23,18 @@ const ZERO_SUMMARY: Record<'leads' | 'deals' | 'revenue' | 'spend' | 'cpl' | 'ro
   spend: { value: 'AED 0' }, cpl: { value: 'AED 0' }, roi: { value: '—' },
 }
 
-type ReportStatus = 'ready' | 'generating' | 'scheduled'
-
+// One-tap report templates — each exports a real CSV from live analytics.
 const AUTOMATED_REPORTS = [
-  { id: 1, nameKey: 'mgmt.reports.rpt.weeklyName',   icon: FileBarChart2, descKey: 'mgmt.reports.rpt.weeklyDesc',   lastGenerated: '02 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
-  { id: 2, nameKey: 'mgmt.reports.rpt.monthlyName',  icon: DollarSign,    descKey: 'mgmt.reports.rpt.monthlyDesc',  lastGenerated: '01 Jun 2026', scheduleKey: 'mgmt.reports.firstOfMonth' },
-  { id: 3, nameKey: 'mgmt.reports.rpt.campaignName', icon: Megaphone,     descKey: 'mgmt.reports.rpt.campaignDesc', lastGenerated: '01 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
-  { id: 4, nameKey: 'mgmt.reports.rpt.teamName',     icon: Users,         descKey: 'mgmt.reports.rpt.teamDesc',     lastGenerated: '02 Jun 2026', scheduleKey: 'mgmt.reports.everyMonday' },
+  { id: 1, nameKey: 'mgmt.reports.rpt.weeklyName',   icon: FileBarChart2, descKey: 'mgmt.reports.rpt.weeklyDesc' },
+  { id: 2, nameKey: 'mgmt.reports.rpt.monthlyName',  icon: DollarSign,    descKey: 'mgmt.reports.rpt.monthlyDesc' },
+  { id: 3, nameKey: 'mgmt.reports.rpt.campaignName', icon: Megaphone,     descKey: 'mgmt.reports.rpt.campaignDesc' },
+  { id: 4, nameKey: 'mgmt.reports.rpt.teamName',     icon: Users,         descKey: 'mgmt.reports.rpt.teamDesc' },
 ]
 
-const AI_INSIGHTS = [
-  {
-    type: 'opportunity',
-    icon: TrendingUp,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/5',
-    borderColor: 'border-emerald-500/20',
-    titleKey: 'mgmt.reports.insight.oppTitle',
-    bodyKey: 'mgmt.reports.insight.oppBody',
-    actionKey: 'mgmt.reports.insight.oppAction',
-    href: '/freehold-intelligence/analytics',
-  },
-  {
-    type: 'warning',
-    icon: AlertTriangle,
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/5',
-    borderColor: 'border-amber-500/20',
-    titleKey: 'mgmt.reports.insight.warnTitle',
-    bodyKey: 'mgmt.reports.insight.warnBody',
-    actionKey: 'mgmt.reports.insight.warnAction',
-    href: '/freehold-intelligence/management/deals',
-  },
-  {
-    type: 'success',
-    icon: CheckCircle2,
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/5',
-    borderColor: 'border-teal-500/20',
-    titleKey: 'mgmt.reports.insight.successTitle',
-    bodyKey: 'mgmt.reports.insight.successBody',
-    actionKey: 'mgmt.reports.insight.successAction',
-    href: '/freehold-intelligence/finance',
-  },
-]
-
-const REPORT_HISTORY: { id: string; typeKey: string; date: string; status: ReportStatus; size: string; generatedBy: string | null }[] = [
-  { id: 'RPT-2026-088', typeKey: 'mgmt.reports.histType.weeklyPerf',       date: '02 Jun 2026 09:00', status: 'ready',     size: '2.4 MB', generatedBy: null },
-  { id: 'RPT-2026-087', typeKey: 'mgmt.reports.histType.campaignAnalysis', date: '02 Jun 2026 09:00', status: 'ready',     size: '1.8 MB', generatedBy: null },
-  { id: 'RPT-2026-086', typeKey: 'mgmt.reports.histType.monthlyRevenue',   date: '01 Jun 2026 00:01', status: 'ready',     size: '3.1 MB', generatedBy: null },
-  { id: 'RPT-2026-085', typeKey: 'mgmt.reports.histType.teamProd',         date: '26 May 2026 09:00', status: 'ready',     size: '1.2 MB', generatedBy: null },
-  { id: 'RPT-2026-084', typeKey: 'mgmt.reports.histType.weeklyPerf',       date: '26 May 2026 09:00', status: 'ready',     size: '2.3 MB', generatedBy: null },
-  { id: 'RPT-2026-083', typeKey: 'mgmt.reports.histType.customRoi',        date: '24 May 2026 14:32', status: 'ready',     size: '4.7 MB', generatedBy: 'M. Ezz' },
-  { id: 'RPT-2026-082', typeKey: 'mgmt.reports.histType.monthlyRevenue',   date: '01 May 2026 00:01', status: 'ready',     size: '2.9 MB', generatedBy: null },
-  { id: 'RPT-2026-081', typeKey: 'mgmt.reports.histType.campaignAnalysis', date: '28 Apr 2026 09:00', status: 'ready',     size: '1.6 MB', generatedBy: null },
-]
-
-const STATUS_STYLES: Record<ReportStatus, string> = {
-  ready:      'bg-emerald-500/15 text-emerald-400',
-  generating: 'bg-amber-500/15 text-amber-400',
-  scheduled:  'bg-surface-3 text-slate-400',
-}
+// Real report-history log: an entry is written ONLY when a report is actually
+// generated on this device (persisted to localStorage). No fabricated rows.
+type HistItem = { id: string; typeValue: string; date: string; size: string; by: string | null }
+const HISTORY_KEY = 'fi-mgmt-report-history'
 
 const REPORT_TYPES: { value: string; labelKey: string }[] = [
   { value: 'Weekly Performance Report',  labelKey: 'mgmt.reports.type.weekly' },
@@ -105,14 +56,19 @@ interface Analytics {
   conversion: { totalLeads: number; closedDeals: number; conversionPct: number }
 }
 
-function downloadCsv(filename: string, rows: (string | number)[][]) {
-  const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
+function csvString(rows: (string | number)[][]): string {
+  return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+}
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url; a.download = filename
   document.body.appendChild(a); a.click(); a.remove()
   URL.revokeObjectURL(url)
+}
+function fmtSize(bytes: number): string {
+  return bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
 export default function ReportsPage() {
@@ -125,6 +81,12 @@ export default function ReportsPage() {
   const [format,     setFormat]     = useState('CSV')
   const [analytics,  setAnalytics]  = useState<Analytics | null>(null)
   const [summary,    setSummary]    = useState(ZERO_SUMMARY)
+  const { user } = useSession()
+  const [history, setHistory] = useState<HistItem[]>([])
+
+  useEffect(() => {
+    try { const raw = localStorage.getItem(HISTORY_KEY); if (raw) setHistory(JSON.parse(raw)) } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => {
     fetch('/api/freehold/management/analytics', { cache: 'no-store' })
@@ -161,13 +123,38 @@ export default function ReportsPage() {
     return rows
   }
 
+  // One place that actually generates a report: builds the CSV from live
+  // analytics, downloads it, and writes a REAL history entry.
+  function runExport(typeValue: string, filename: string) {
+    const csv = csvString(buildReportRows())
+    downloadText(filename, csv)
+    setHistory((prev) => {
+      const item: HistItem = {
+        id: `RPT-${new Date().getFullYear()}-${String(prev.length + 1).padStart(3, '0')}`,
+        typeValue,
+        date: new Date().toISOString(),
+        size: fmtSize(new Blob([csv]).size),
+        by: user?.name ?? null,
+      }
+      const next = [item, ...prev].slice(0, 100)
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }
+  function typeLabel(value: string): string {
+    const rt = REPORT_TYPES.find((r) => r.value === value)
+    return rt ? t(rt.labelKey) : value
+  }
+  function fmtDate(iso: string): string {
+    try { return new Date(iso).toLocaleString() } catch { return iso }
+  }
+
   function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
     setGenerating(true)
     setGenerated(false)
-    // Build a real export from live analytics.
     setTimeout(() => {
-      downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}.csv`, buildReportRows())
+      runExport(reportType, `${reportType.replace(/\s+/g, '-').toLowerCase()}-${dateFrom}_to_${dateTo}.csv`)
       setGenerating(false)
       setGenerated(true)
       toast.success(t('mgmt.reports.generatedToast'))
@@ -217,18 +204,10 @@ export default function ReportsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-100">{t(report.nameKey)}</p>
                       <p className="text-xs text-slate-500 mt-0.5">{t(report.descKey)}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <Clock className="h-3 w-3" /> {t(report.scheduleKey)}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-slate-600">
-                          <Calendar className="h-3 w-3" /> {t('mgmt.reports.lastLabel', { date: report.lastGenerated })}
-                        </span>
-                      </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => { downloadCsv(`${t(report.nameKey).replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(t('mgmt.reports.downloaded', { name: t(report.nameKey) })) }}
+                        onClick={() => { runExport(t(report.nameKey), `${t(report.nameKey).replace(/\s+/g, '-').toLowerCase()}.csv`); toast.success(t('mgmt.reports.downloaded', { name: t(report.nameKey) })) }}
                         className="flex items-center gap-1.5 rounded-lg border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition-colors">
                         <Download className="h-3.5 w-3.5" />
                         CSV
@@ -343,7 +322,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-500">{t('mgmt.reports.reportReadyHint')}</p>
                   </div>
                   <button
-                    onClick={() => { downloadCsv(`${reportType.replace(/\s+/g, '-').toLowerCase()}.csv`, buildReportRows()); toast.success(t('mgmt.reports.downloadedToast')) }}
+                    onClick={() => { downloadText(`${reportType.replace(/\s+/g, '-').toLowerCase()}.csv`, csvString(buildReportRows())); toast.success(t('mgmt.reports.downloadedToast')) }}
                     className="ml-auto flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                     <Download className="h-3.5 w-3.5" />
                     {t('mgmt.reports.download')}
@@ -359,10 +338,13 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-white">{t('mgmt.reports.history')}</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.historyHint', { count: REPORT_HISTORY.length })}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('mgmt.reports.historyHint', { count: history.length })}</p>
             </div>
             <FileText className="h-4 w-4 text-slate-500" />
           </div>
+          {history.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-slate-500">{t('mgmt.reports.historyEmpty')}</div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -373,22 +355,20 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {REPORT_HISTORY.map((report) => (
+                {history.map((report) => (
                   <tr key={report.id} className="hover:bg-surface-2 transition-colors">
                     <td className="px-4 py-3 text-xs font-mono text-slate-500">{report.id}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-100 whitespace-nowrap">{t(report.typeKey)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.date}</td>
-                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.generatedBy ?? t('mgmt.reports.automatedBy')}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-100 whitespace-nowrap">{typeLabel(report.typeValue)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{fmtDate(report.date)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-400 whitespace-nowrap">{report.by ?? t('mgmt.reports.automatedBy')}</td>
                     <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{report.size}</td>
                     <td className="px-4 py-3">
-                      <span className={['rounded-full px-2.5 py-1 text-xs font-medium', STATUS_STYLES[report.status]].join(' ')}>
-                        {t(`mgmt.reports.status.${report.status}`)}
-                      </span>
+                      <span className="rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-500/15 text-emerald-400">{t('mgmt.reports.status.ready')}</span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => { downloadCsv(`${report.id}.csv`, buildReportRows()); toast.success(t('mgmt.reports.idDownloaded', { id: report.id })) }}
+                          onClick={() => { downloadText(`${report.id}.csv`, csvString(buildReportRows())); toast.success(t('mgmt.reports.idDownloaded', { id: report.id })) }}
                           className="flex items-center gap-1 text-xs font-medium text-gold hover:opacity-80 transition-opacity">
                           <Download className="h-3.5 w-3.5" />
                           CSV
@@ -400,6 +380,7 @@ export default function ReportsPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
       </div>
