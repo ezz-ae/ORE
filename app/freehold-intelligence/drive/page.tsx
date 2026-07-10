@@ -1,9 +1,15 @@
 'use client'
 
 import { AssetBrowser } from '@/components/freehold/drive/asset-browser'
+import { LandingsStrip } from '@/components/freehold/drive/landings-strip'
 
-// Drive Home — the unified asset browser. Rides on the real Library store
-// (/api/freehold/library). Landing + notebook aggregation is a fast-follow.
+// Drive Home — everything you make: landing pages (their own editor) + the
+// Library store, each opening in the right editor.
 export default function DriveHomePage() {
-  return <AssetBrowser scope="all" />
+  return (
+    <>
+      <LandingsStrip />
+      <AssetBrowser scope="all" />
+    </>
+  )
 }
