@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
+import { computeOverlaps } from '@/lib/meta/audience-overlap'
 import type { MetaCampaign, MetaAdSet, MetaInsights } from '@/lib/meta/types'
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
@@ -18,6 +19,7 @@ type RuleMatch = { ruleId: string; name: string; metric: RuleMetric; operator: R
 
 const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
 const scoreColor = (s: number) => (s >= 80 ? '#34D399' : s >= 60 ? '#D4AF37' : s >= 40 ? '#FBBF24' : '#F87171')
+const overlapColor = (s: number) => (s >= 70 ? '#F87171' : s >= 55 ? '#FBBF24' : '#94A3B8')
 
 // Client-safe rule vocab (the shared module pulls in the DB layer, so we inline
 // the option lists here and import only its TYPES).
@@ -95,6 +97,7 @@ export default function CampaignCommandPage() {
     }
   }, [data])
 
+  const overlaps = useMemo(() => (data ? computeOverlaps(data.adSets) : []), [data])
   const active = data?.campaign.status === 'ACTIVE'
 
   async function setStatus(next: 'ACTIVE' | 'PAUSED'): Promise<boolean> {
@@ -368,6 +371,49 @@ export default function CampaignCommandPage() {
           <div className="space-y-2.5">
             {ads.map((ad) => <AdPreviewCard key={ad.id} ad={ad} />)}
           </div>
+        </section>
+      )}
+
+      {/* Audience overlap — which ad sets may be competing (estimated from targeting) */}
+      {data.adSets.length >= 2 && (
+        <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Users className="h-4 w-4 text-gold" /></div>
+            <div>
+              <div className="text-sm font-semibold text-white">{t('lm.cmd.overlapTitle')}</div>
+              <div className="text-xs text-slate-400">{t('lm.cmd.overlapSub')}</div>
+            </div>
+          </div>
+          {overlaps.length === 0 ? (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-3.5 py-2.5 text-xs text-emerald-200/90">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t('lm.cmd.overlapNone')}
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2.5">
+              {overlaps.map((o) => (
+                <div key={`${o.aId}-${o.bId}`} className="rounded-xl border border-line bg-surface p-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-slate-100">
+                      <span className="truncate">{o.aName}</span><span className="text-slate-500">⇄</span><span className="truncate">{o.bName}</span>
+                    </div>
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: `${overlapColor(o.score)}22`, color: overlapColor(o.score) }}>
+                      {o.score}%{o.score >= 70 ? ` · ${t('lm.cmd.overlapCompeting')}` : ''}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+                    <div className="h-full rounded-full" style={{ width: `${o.score}%`, background: overlapColor(o.score) }} />
+                  </div>
+                  {(o.countries.length > 0 || o.interests.length > 0 || o.ageOverlap) && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {o.countries.map((c) => <span key={c} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">{c}</span>)}
+                      {o.interests.map((i) => <span key={i} className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">{i}</span>)}
+                      {o.ageOverlap && <span className="rounded-full border border-line-strong bg-surface-2 px-2 py-0.5 text-[10px] text-slate-400">{t('lm.cmd.overlapAge')}</span>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
