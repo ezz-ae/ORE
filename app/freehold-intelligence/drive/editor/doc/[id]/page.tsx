@@ -3,23 +3,27 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2, Wand2, Languages, Download, Printer, Eye, Pencil } from 'lucide-react'
+import { Loader2, Download, Printer, Eye, Pencil } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
+import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
+import { AiUnavailable, DOC_LIMIT, type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
 
-const AI_ACTIONS: { mode: string; key: string; Icon: typeof Wand2 }[] = [
-  { mode: 'rewrite',      key: 'ed.doc.ai.rewrite',      Icon: Wand2 },
-  { mode: 'professional', key: 'ed.doc.ai.professional', Icon: Wand2 },
-  { mode: 'shorten',      key: 'ed.doc.ai.shorten',      Icon: Wand2 },
-  { mode: 'expand',       key: 'ed.doc.ai.expand',       Icon: Wand2 },
-]
-const TRANSLATE: { mode: string; label: string }[] = [
-  { mode: 'translate_en', label: 'EN' },
-  { mode: 'translate_ar', label: 'ع' },
-  { mode: 'translate_ru', label: 'RU' },
+// Quick-edit chips → prefill the co-editor composer (never auto-sent). Labels reuse
+// the existing action strings; instructions are the full ed.ai.preset.doc.* prompts.
+const DOC_PRESETS: PresetChip[] = [
+  { labelKey: 'ed.doc.ai.rewrite',                 instructionKey: 'ed.ai.preset.doc.rewrite' },
+  { labelKey: 'ed.doc.ai.professional',            instructionKey: 'ed.ai.preset.doc.professional' },
+  { labelKey: 'ed.doc.ai.shorten',                 instructionKey: 'ed.ai.preset.doc.shorten' },
+  { labelKey: 'ed.doc.ai.expand',                  instructionKey: 'ed.ai.preset.doc.expand' },
+  { labelKey: 'ed.ai.preset.doc.luxuryLabel',      instructionKey: 'ed.ai.preset.doc.luxury' },
+  { labelKey: 'ed.ai.preset.doc.whatsappLabel',    instructionKey: 'ed.ai.preset.doc.whatsapp' },
+  { labelKey: 'ed.ai.preset.doc.translateArLabel', instructionKey: 'ed.ai.preset.doc.translateAr' },
+  { labelKey: 'ed.ai.preset.doc.translateRuLabel', instructionKey: 'ed.ai.preset.doc.translateRu' },
+  { labelKey: 'ed.ai.preset.doc.translateEnLabel', instructionKey: 'ed.ai.preset.doc.translateEn' },
 ]
 
 export default function DriveDocEditor() {
@@ -35,8 +39,10 @@ export default function DriveDocEditor() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [aiBusy, setAiBusy] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  // Bumped on every MANUAL textarea edit (never on an AI turn) so the co-editor
+  // rail can detect edits made after an AI change and confirm before undoing them.
+  const [revision, setRevision] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,21 +79,6 @@ export default function DriveDocEditor() {
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
   }
 
-  async function runAi(mode: string) {
-    if (!content.trim() || aiBusy) return
-    setAiBusy(mode)
-    try {
-      const res = await fetch('/api/freehold/drive/doc-ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, mode }),
-      })
-      const d = await res.json()
-      if (d.unavailable) { toast.error(t('ed.doc.aiUnavailable')); return }
-      if (!res.ok || !d.content) { toast.error(d.error || t('ed.doc.aiFailed')); return }
-      setContent(d.content); setDirty(true); toast.success(t('ed.doc.aiApplied'))
-    } catch { toast.error(t('ed.doc.aiFailed')) } finally { setAiBusy('') }
-  }
-
   function download() {
     const isHtml = item?.kind === 'report'
     const blob = new Blob([content], { type: isHtml ? 'text/html' : 'text/plain' })
@@ -112,31 +103,39 @@ export default function DriveDocEditor() {
   )
 
   const isReport = item.kind === 'report'
+
+  // Doc adapter: the reversible unit is the textarea content. AI edits apply
+  // directly; on failure the endpoint throws and the text is left untouched.
+  const docAdapter: ArtifactAdapter<string> = {
+    kind: 'doc',
+    snapshot: () => content,
+    restore: (s) => { setContent(s); setDirty(true) },
+    preflight: (_i, before) =>
+      before.length > DOC_LIMIT ? t('ed.ai.err.tooLong', { n: before.length, limit: DOC_LIMIT }) : null,
+    apply: async ({ instruction, before, signal }) => {
+      const res = await fetch('/api/freehold/drive/doc-ai', {
+        method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: before, mode: 'instruct', instruction }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d.unavailable) throw new AiUnavailable()
+      if (!res.ok || typeof d.content !== 'string' || !d.content) throw new Error(d.error || t('ed.doc.aiFailed'))
+      if (d.truncated) return { after: before, summary: '', truncated: true }
+      if (d.content === before) return { after: before, summary: '', noop: true }
+      setContent(d.content); setDirty(true)
+      return { after: d.content, summary: t('ed.ai.summary.doc', { before: before.length, after: d.content.length }) }
+    },
+  }
+
   const aiRail = (
-    <div className="space-y-4">
-      <div>
-        <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold"><Wand2 className="h-3.5 w-3.5" /> {t('ed.doc.aiTitle')}</div>
-        <div className="space-y-1.5">
-          {AI_ACTIONS.map((a) => (
-            <button key={a.mode} type="button" onClick={() => runAi(a.mode)} disabled={!!aiBusy}
-              className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-start text-xs text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
-              {aiBusy === a.mode ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gold" /> : <a.Icon className="h-3.5 w-3.5 text-gold/70" />} {t(a.key)}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400"><Languages className="h-3.5 w-3.5" /> {t('ed.doc.translate')}</div>
-        <div className="flex gap-1.5">
-          {TRANSLATE.map((tr) => (
-            <button key={tr.mode} type="button" onClick={() => runAi(tr.mode)} disabled={!!aiBusy}
-              className="flex-1 rounded-lg border border-line bg-surface px-2 py-2 text-xs font-medium text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
-              {aiBusy === tr.mode ? <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" /> : tr.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <AiEditorRail
+      adapter={docAdapter}
+      revision={revision}
+      presets={DOC_PRESETS}
+      placeholderKey="ed.ai.placeholder.doc"
+      disabled={isReport && showPreview}
+      disabledHintKey="ed.ai.disabled.docPreview"
+    />
   )
 
   return (
@@ -156,7 +155,7 @@ export default function DriveDocEditor() {
         {isReport && showPreview ? (
           <div className="prose prose-invert prose-sm max-w-none rounded-xl border border-line bg-surface-2/40 p-4 text-slate-200" dangerouslySetInnerHTML={{ __html: content }} />
         ) : (
-          <textarea value={content} onChange={(e) => { setContent(e.target.value); setDirty(true) }}
+          <textarea value={content} onChange={(e) => { setContent(e.target.value); setDirty(true); setRevision((r) => r + 1) }}
             className="min-h-[60vh] w-full resize-y rounded-xl border border-line bg-surface-2/40 p-4 text-sm leading-relaxed text-slate-100 outline-none focus:border-gold/30"
             dir="auto" placeholder={t('ed.doc.placeholder')} />
         )}
