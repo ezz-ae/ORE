@@ -8,6 +8,7 @@ import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
+import { useT } from "@/lib/i18n/provider"
 
 const VIDEO_FORMATS = CREATIVE_FORMATS.filter((f) => f.kind === "video")
 
@@ -23,18 +24,19 @@ export type VideoGenerationNodeData = {
 }
 
 const ASPECT_RATIOS = [
-  { value: "9:16", label: "9:16 (Vertical/Stories)" },
-  { value: "16:9", label: "16:9 (Horizontal)" },
-  { value: "1:1", label: "1:1 (Square -> 9:16)" },
+  { value: "9:16", descKey: "pcsn.vid.arVertical" },
+  { value: "16:9", descKey: "pcsn.vid.arHorizontal" },
+  { value: "1:1", descKey: "pcsn.vid.arSquare" },
 ]
 
 const DURATIONS = [
-  { value: "4s", label: "4 seconds" },
-  { value: "6s", label: "6 seconds" },
-  { value: "8s", label: "8 seconds" },
+  { value: "4s", sec: 4 },
+  { value: "6s", sec: 6 },
+  { value: "8s", sec: 8 },
 ]
 
 function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationNodeData>>) {
+  const t = useT()
   const status = data.status || "idle"
   const isExpanded = data.isExpanded || false
 
@@ -51,7 +53,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
 
   const currentAspectRatio = data.aspectRatio || "9:16"
   const currentFormat = data.format || "reels"
-  const formatLabel = VIDEO_FORMATS.find((f) => f.value === currentFormat)?.label || "Reels"
+  const formatLabel = VIDEO_FORMATS.find((f) => f.value === currentFormat)?.label || t("pcsn.vid.reelsFallback")
 
   const selectFormat = (value: string) => {
     if (!data.onUpdate) return
@@ -67,7 +69,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
       <div className="p-3">
         <div className="flex items-center gap-2">
           <Video className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-foreground">Video</span>
+          <span className="text-[11px] font-medium text-foreground">{t("pcsn.node.video")}</span>
           <span className="ml-auto text-[10px] text-muted-foreground font-mono">{currentAspectRatio}</span>
         </div>
 
@@ -80,7 +82,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
         {isExpanded && (
           <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-foreground font-medium">Format</Label>
+              <Label className="text-[10px] text-foreground font-medium">{t("pcsn.vid.format")}</Label>
               <Select value={currentFormat} onValueChange={selectFormat}>
                 <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -96,10 +98,10 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[9px] text-muted-foreground">Video needs a video provider key in your environment. Image formats work by default.</p>
+              <p className="text-[9px] text-muted-foreground">{t("pcsn.vid.providerNote")}</p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Aspect Ratio</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.aspect")}</Label>
               <Select value={currentAspectRatio} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -107,7 +109,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
                 <SelectContent>
                   {ASPECT_RATIOS.map((ratio) => (
                     <SelectItem key={ratio.value} value={ratio.value} className="text-xs py-1.5">
-                      {ratio.label}
+                      {ratio.value} ({t(ratio.descKey)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -115,7 +117,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Duration</Label>
+              <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.duration")}</Label>
               <Select value={data.duration?.toString() || "8s"} onValueChange={(value) => handleUpdate("duration", value)}>
                 <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
                   <SelectValue />
@@ -123,7 +125,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
                 <SelectContent>
                   {DURATIONS.map((dur) => (
                     <SelectItem key={dur.value} value={dur.value} className="text-xs py-1.5">
-                      {dur.label}
+                      {t("pcsn.vid.seconds", { sec: dur.sec })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -131,17 +133,17 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
             </div>
 
             <div className="bg-muted/50 rounded p-2 space-y-1">
-              <p className="text-[9px] text-muted-foreground font-medium">Inputs (connect in order):</p>
+              <p className="text-[9px] text-muted-foreground font-medium">{t("pcsn.vid.inputsTitle")}</p>
               <ul className="text-[9px] text-muted-foreground list-disc list-inside space-y-0.5">
-                <li>Top: Presenter image (Presenter/Image)</li>
-                <li>Middle: Property image (optional)</li>
-                <li>Bottom: Voiceover (Listing Script node)</li>
+                <li>{t("pcsn.vid.inputTop")}</li>
+                <li>{t("pcsn.vid.inputMiddle")}</li>
+                <li>{t("pcsn.vid.inputBottom")}</li>
               </ul>
             </div>
 
             <div className="bg-amber-500/10 border border-amber-500/20 rounded p-2">
               <p className="text-[9px] text-amber-600 dark:text-amber-400">
-                Requires FAL_KEY environment variable for Fal AI.
+                {t("pcsn.vid.falKeyNote")}
               </p>
             </div>
 
@@ -163,7 +165,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
         {status === "running" && (
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
-            generating video
+            {t("pcsn.processing")}
           </div>
         )}
       </div>

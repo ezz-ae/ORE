@@ -240,13 +240,15 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             </div>
             </>)}
 
-            {isLocked && data.lockedImageUrl && (
+            {/* The Presenter output is a TEXT persona, not an image — only show a
+                preview when a real image URL was locked, so we never render a broken <img>. */}
+            {isLocked && /^(data:image\/|https?:\/\/)/.test(String(data.lockedImageUrl)) && (
               <div className="space-y-1.5">
                 <Label className="text-[10px] text-amber-500">{t("pcsn.pres.lockedPreview")}</Label>
                 <div className="rounded border border-amber-500/30 overflow-hidden">
-                  <img 
-                    src={data.lockedImageUrl || "/placeholder.svg"} 
-                    alt="Locked model" 
+                  <img
+                    src={data.lockedImageUrl}
+                    alt="Locked model"
                     className="w-full h-auto"
                   />
                 </div>

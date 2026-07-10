@@ -466,7 +466,7 @@ export default function GoogleKeywordsPage() {
                 UAE Real Estate keyword themes
               </div>
               <p className="mt-1.5 text-sm text-slate-500">
-                Curated keyword groups optimised for UAE real estate campaigns. Select a campaign first to add a theme.
+                Curated keyword groups optimised for UAE real estate campaigns.
               </p>
             </div>
 
@@ -521,21 +521,14 @@ export default function GoogleKeywordsPage() {
                     )}
                   </div>
 
-                  {/* Add to campaign button with tooltip */}
-                  <div className="relative mt-1 flex justify-end">
-                    <div className="group relative">
-                      <button
-                        disabled
-                        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-500"
-                      >
-                        Add to campaign
-                      </button>
-                      {/* Tooltip */}
-                      <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden whitespace-nowrap rounded-[8px] border border-line bg-surface px-2.5 py-1.5 text-sm text-slate-400 shadow-xl group-hover:block">
-                        Select campaign first
-                        <div className="absolute -bottom-1 right-3 h-2 w-2 rotate-45 border-b border-r border-line bg-surface" />
-                      </div>
-                    </div>
+                  {/* Add to campaign */}
+                  <div className="mt-1 flex justify-end">
+                    <Link
+                      href="/freehold-intelligence/lead-machine/google/campaigns/new"
+                      className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-1.5 text-xs text-slate-400 transition hover:border-[#4285F4]/30 hover:text-white"
+                    >
+                      Add to campaign <ArrowUpRight className="h-3 w-3" />
+                    </Link>
                   </div>
                 </div>
               ))}

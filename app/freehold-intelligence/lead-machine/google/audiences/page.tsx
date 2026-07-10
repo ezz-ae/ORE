@@ -185,8 +185,8 @@ export default function GoogleAudiencesPage() {
   const [newName, setNewName]       = useState('')
   const [adding, setAdding]         = useState(false)
 
-  async function addAudience() {
-    const name = newName.trim()
+  async function addAudience(explicitName?: string) {
+    const name = (explicitName ?? newName).trim()
     if (!name || adding) return
     setAdding(true)
     try {
@@ -195,7 +195,7 @@ export default function GoogleAudiencesPage() {
         body: JSON.stringify({ name }),
       })
       if (!res.ok) throw new Error()
-      setNewName('')
+      if (!explicitName) setNewName('')
       toast.success(t('lm.google.audiences.added'))
       fetchData(true)
     } catch {
@@ -366,7 +366,7 @@ export default function GoogleAudiencesPage() {
               className="min-w-[200px] flex-1 rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#4285F4]/50"
             />
             <button
-              onClick={addAudience}
+              onClick={() => addAudience()}
               disabled={adding || !newName.trim()}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
             >
@@ -403,12 +403,12 @@ export default function GoogleAudiencesPage() {
               <p className="mt-2 text-sm text-slate-500">
                 Upload your CRM database to re-engage existing leads and find similar audiences on Google.
               </p>
-              <button
-                disabled
-                className="mt-5 inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-5 py-2.5 text-sm font-medium text-[#F8E7AE]/60"
+              <Link
+                href="/freehold-intelligence/integrations/hubspot"
+                className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-5 py-2.5 text-sm font-medium text-[#F8E7AE] transition hover:bg-gold/15"
               >
                 <Upload className="h-4 w-4" /> Upload CRM data
-              </button>
+              </Link>
             </div>
           )}
 
@@ -440,9 +440,13 @@ export default function GoogleAudiencesPage() {
                       {item.description}
                     </p>
                   </div>
-                  <span className="mt-1 shrink-0 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-sm font-medium text-slate-500">
-                    Add
-                  </span>
+                  <button
+                    onClick={() => addAudience(item.name)}
+                    disabled={adding}
+                    className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-sm font-medium text-slate-400 transition hover:border-[#4285F4]/30 hover:text-white disabled:opacity-40"
+                  >
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
                 </div>
               ))}
             </div>
