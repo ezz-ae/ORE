@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -172,6 +172,29 @@ export default function LandingEditorPage() {
     const next = form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, _hidden: !s.data?._hidden } } : s))
     setSections(next)
   }
+  function removeSection(i: number) {
+    if (!form?.sections) return
+    setSections(form.sections.filter((_, k) => k !== i))
+    setExpanded(null)
+  }
+  function duplicateSection(i: number) {
+    if (!form?.sections) return
+    const copy = { type: form.sections[i].type, data: { ...form.sections[i].data } }
+    const next = [...form.sections]
+    next.splice(i + 1, 0, copy)
+    setSections(next)
+  }
+  function addSection(type: string) {
+    if (!form?.sections || !type) return
+    setSections([...form.sections, { type, data: { title: '', subtitle: '' } }])
+  }
+  function setSectionField(i: number, key: string, value: string) {
+    if (!form?.sections) return
+    setSections(form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, [key]: value } } : s)))
+  }
+  const [expanded, setExpanded] = useState<number | null>(null)
+  // Content sections the marketer can add to a page (hero is intentionally omitted).
+  const ADD_TYPES = ['description', 'key-facts', 'payment-plan', 'roi', 'why-dubai', 'golden-visa', 'amenities', 'location', 'developer-profile', 'social-proof', 'neighborhood', 'faq', 'download-brochure', 'lead-form']
   async function saveLayout() {
     if (!form?.sections) return
     setLayoutSaving(true)
@@ -329,20 +352,37 @@ export default function LandingEditorPage() {
               <ul className="space-y-1.5">
                 {form.sections.map((s, i) => {
                   const hidden = s.data?._hidden === true
+                  const open = expanded === i
                   return (
-                    <li key={`${s.type}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'}`}>
-                      <span className="flex flex-col">
-                        <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
-                        <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{sectionLabel(s.type)}</span>
-                      <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
-                        {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                    <li key={`${s.type}-${i}`} className={`rounded-lg border px-2.5 py-1.5 ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="flex flex-col">
+                          <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                          <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                        </span>
+                        <button type="button" onClick={() => setExpanded(open ? null : i)} className="min-w-0 flex-1 truncate text-start text-xs text-slate-200 hover:text-white">{sectionLabel(s.type)}</button>
+                        <button type="button" onClick={() => duplicateSection(i)} title={t('lpe.layout.duplicate')} className="text-slate-500 hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
+                          {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        <button type="button" onClick={() => removeSection(i)} title={t('lpe.layout.remove')} className="text-slate-500 hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                      {open && (
+                        <div className="mt-2 space-y-2 border-t border-line pt-2">
+                          <input className="fld" value={typeof s.data?.title === 'string' ? s.data.title : ''} onChange={(e) => setSectionField(i, 'title', e.target.value)} placeholder={t('lpe.layout.fTitle')} />
+                          <textarea rows={2} className="fld resize-none" value={typeof s.data?.subtitle === 'string' ? s.data.subtitle : ''} onChange={(e) => setSectionField(i, 'subtitle', e.target.value)} placeholder={t('lpe.layout.fSubtitle')} />
+                        </div>
+                      )}
                     </li>
                   )
                 })}
               </ul>
+              <div className="mt-2.5 flex items-center gap-2">
+                <select value="" onChange={(e) => { addSection(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs">
+                  <option value="">{t('lpe.layout.add')}</option>
+                  {ADD_TYPES.map((ty) => <option key={ty} value={ty}>{sectionLabel(ty)}</option>)}
+                </select>
+              </div>
               <p className="mt-2 text-[11px] text-slate-500">{t('lpe.layout.hint')}</p>
             </div>
           )}
