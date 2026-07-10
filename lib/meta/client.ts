@@ -526,6 +526,47 @@ export async function listAds(adSetId: string): Promise<MetaAd[]> {
   return res.data ?? []
 }
 
+/**
+ * Real rendered previews of a LIVE ad across placements. Meta returns the exact
+ * iframe HTML Ads Manager shows — no mock markup — so the team sees the ad
+ * "everywhere" it runs. A placement Meta can't render is skipped, not faked.
+ */
+export async function getAdPreviews(adId: string): Promise<{ format: MetaAdFormat; body: string }[]> {
+  const formats: MetaAdFormat[] = ['MOBILE_FEED_STANDARD', 'INSTAGRAM_STANDARD', 'FACEBOOK_STORY_MOBILE']
+  const out: { format: MetaAdFormat; body: string }[] = []
+  for (const format of formats) {
+    try {
+      const res = await apiFetch<{ data?: Array<{ body?: string }> }>(`/${adId}/previews`, undefined, { ad_format: format })
+      const body = res.data?.[0]?.body
+      if (body) out.push({ format, body })
+    } catch { /* skip a placement Meta declines to render */ }
+  }
+  return out
+}
+
+/**
+ * Live engagement on the ACTUAL post behind an ad — likes, comments, shares.
+ * Real social proof from the running creative that the spend/leads KPIs don't
+ * capture. Returns null when the ad has no organic post to read.
+ */
+export async function getAdEngagement(adId: string): Promise<{ likes: number; comments: number; shares: number } | null> {
+  const ad = await apiFetch<{ creative?: { effective_object_story_id?: string; object_story_id?: string } }>(
+    `/${adId}`, undefined, { fields: 'creative{effective_object_story_id,object_story_id}' },
+  )
+  const postId = ad.creative?.effective_object_story_id || ad.creative?.object_story_id
+  if (!postId) return null
+  const post = await apiFetch<{
+    likes?: { summary?: { total_count?: number } }
+    comments?: { summary?: { total_count?: number } }
+    shares?: { count?: number }
+  }>(`/${postId}`, undefined, { fields: 'likes.summary(true),comments.summary(true),shares' })
+  return {
+    likes: post.likes?.summary?.total_count ?? 0,
+    comments: post.comments?.summary?.total_count ?? 0,
+    shares: post.shares?.count ?? 0,
+  }
+}
+
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
 export async function listLeadForms(): Promise<MetaLeadForm[]> {

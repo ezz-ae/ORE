@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import type { MetaCampaign, MetaAdSet, MetaInsights } from '@/lib/meta/types'
@@ -258,6 +258,7 @@ export default function CampaignCommandPage() {
   )
 
   const c = data.campaign
+  const ads = data.adSets.flatMap((a) => a.ads ?? [])
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
@@ -357,6 +358,18 @@ export default function CampaignCommandPage() {
           </div>
         )}
       </section>
+
+      {/* Real ad previews (Meta-rendered, across placements) + live post engagement */}
+      {ads.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+            <Eye className="h-3.5 w-3.5" /> {t('lm.cmd.previewTitle')}
+          </div>
+          <div className="space-y-2.5">
+            {ads.map((ad) => <AdPreviewCard key={ad.id} ad={ad} />)}
+          </div>
+        </section>
+      )}
 
       {/* Live lead-quality — computed from OUR CRM funnel, not Meta */}
       <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
@@ -534,6 +547,75 @@ function RefineCol({ icon, title, items }: { icon: React.ReactNode; title: strin
           {items.map((s, i) => <li key={i} dir="auto" className="text-xs leading-snug text-slate-300">{s}</li>)}
         </ul>
       ) : <p className="text-xs text-slate-600">—</p>}
+    </div>
+  )
+}
+
+// Lazily fetches the REAL Meta-rendered previews (across placements) + the live
+// post engagement for one ad. The preview `body` is Meta's own iframe HTML — the
+// exact markup Ads Manager renders — injected as-is; a placement Meta declines is
+// simply absent (never mocked).
+function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string } }) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [pdata, setPdata] = useState<{ previews: { format: string; body: string }[]; engagement: { likes: number; comments: number; shares: number } | null; demo?: boolean } | null>(null)
+  const [fmt, setFmt] = useState(0)
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next && !pdata && !loading) {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/meta/ads/${encodeURIComponent(ad.id)}/preview`)
+        const d = await res.json().catch(() => ({}))
+        setPdata({ previews: Array.isArray(d.previews) ? d.previews : [], engagement: d.engagement ?? null, demo: !!d.demo })
+      } catch { setPdata({ previews: [], engagement: null }) } finally { setLoading(false) }
+    }
+  }
+
+  const eng = pdata?.engagement
+  const preview = pdata?.previews[fmt]
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
+      <button type="button" onClick={toggle} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start transition hover:bg-white/[0.03]">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-slate-100">{ad.name}</div>
+          {eng && (
+            <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
+              <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 text-rose-400" /> {eng.likes.toLocaleString()}</span>
+              <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3 text-sky-400" /> {eng.comments.toLocaleString()}</span>
+              <span className="inline-flex items-center gap-1"><Share2 className="h-3 w-3 text-emerald-400" /> {eng.shares.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="border-t border-line p-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('lm.cmd.previewLoading')}</div>
+          ) : pdata?.demo ? (
+            <p className="text-xs text-slate-500">{t('lm.cmd.previewDemo')}</p>
+          ) : pdata && pdata.previews.length > 0 ? (
+            <>
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {pdata.previews.map((p, i) => (
+                  <button key={p.format} type="button" onClick={() => setFmt(i)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${i === fmt ? 'border border-gold/40 bg-gold/10 text-gold' : 'border border-line-strong text-slate-400 hover:text-slate-200'}`}>
+                    {t(`lm.cmd.fmt.${p.format}`)}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-center overflow-x-auto" dangerouslySetInnerHTML={{ __html: preview?.body ?? '' }} />
+            </>
+          ) : (
+            <p className="text-xs text-slate-500">{t('lm.cmd.previewNone')}</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
