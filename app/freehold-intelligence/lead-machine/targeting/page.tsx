@@ -57,6 +57,38 @@ export default function TargetingPage() {
     finally { setLoopLoading(false) }
   }
 
+  // Real per-listing Buyer Match — pick a listing, see who actually buys it
+  // (from our own deals) + a live Meta reach estimate. Same engine as the wizard.
+  type BM = {
+    band: { label: string }
+    buyers: { deals: number; avgValue: number; closeRate: number | null; topSources: { source: string; count: number }[]; hasData: boolean }
+    recommendation: { ageMin: number; ageMax: number; interestNames: string[] }
+    estimate: { lower: number; upper: number } | null
+    metaConnected: boolean
+  }
+  const [listings, setListings] = useState<{ id: string; name: string; area: string }[]>([])
+  const [pickedId, setPickedId] = useState('')
+  const [bm, setBm] = useState<BM | null>(null)
+  const [bmLoading, setBmLoading] = useState(false)
+  useEffect(() => {
+    fetch('/api/freehold/inventory')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setListings((d?.properties || []).map((p: Record<string, unknown>) => ({ id: String(p.slug || ''), name: String(p.name || ''), area: String(p.area || '') })).filter((l: { id: string; name: string }) => l.id && l.name)))
+      .catch(() => {})
+  }, [])
+  async function runBM(id: string) {
+    setPickedId(id)
+    if (!id) { setBm(null); return }
+    setBmLoading(true); setBm(null)
+    try {
+      const res = await fetch('/api/freehold/ads/buyer-match', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listingSlug: id }) })
+      const d = await res.json()
+      if (!d.error) setBm(d as BM)
+    } catch { /* keep empty */ }
+    finally { setBmLoading(false) }
+  }
+  const fmtK = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n))
+
   const filtered = useMemo(() => {
     let items = TARGETING_TEMPLATES
     if (useCaseFilter !== 'All') {
@@ -74,6 +106,48 @@ export default function TargetingPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+
+      {/* Buyer Match — the real tool: who actually buys THIS listing, + live reach */}
+      <section className="mb-8 rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold"><Target className="h-4 w-4" /> {t('bm.title')}</div>
+        <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-400">{t('lm.targeting.bmHint')}</p>
+        <select value={pickedId} onChange={(e) => runBM(e.target.value)}
+          className="mt-3 w-full max-w-md rounded-xl border border-line bg-surface-2 px-4 py-2.5 text-sm text-white outline-none focus:border-gold/40">
+          <option value="">{t('lm.targeting.bmPick')}</option>
+          {listings.map((l) => <option key={l.id} value={l.id}>{l.name}{l.area ? ` · ${l.area}` : ''}</option>)}
+        </select>
+
+        {bmLoading ? (
+          <div className="mt-4 flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('bm.loading')}</div>
+        ) : bm ? (
+          <div className="mt-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-gold">{bm.band.label}</span>
+              {bm.estimate
+                ? <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] text-slate-200">{fmtK(bm.estimate.lower)}–{fmtK(bm.estimate.upper)} · {t('bm.liveReach')}</span>
+                : <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] text-slate-400">{bm.metaConnected ? t('bm.reachWarming') : t('bm.connectMeta')}</span>}
+            </div>
+            {bm.buyers.hasData ? (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl border border-line bg-surface p-2.5"><div className="text-[17px] font-semibold text-gold">{bm.buyers.deals}</div><div className="text-[10px] text-slate-500">{t('bm.closedDeals')}</div></div>
+                <div className="rounded-xl border border-line bg-surface p-2.5"><div className="text-[17px] font-semibold text-white">{bm.buyers.avgValue >= 1e6 ? `${(bm.buyers.avgValue / 1e6).toFixed(1)}M` : bm.buyers.avgValue ? `${Math.round(bm.buyers.avgValue / 1000)}K` : '—'}</div><div className="text-[10px] text-slate-500">{t('bm.avgValue')}</div></div>
+                <div className="rounded-xl border border-line bg-surface p-2.5"><div className="text-[17px] font-semibold text-emerald-400">{bm.buyers.closeRate != null ? `${bm.buyers.closeRate}%` : '—'}</div><div className="text-[10px] text-slate-500">{t('bm.closeRate')}</div></div>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-line bg-surface/40 p-3 text-xs leading-relaxed text-slate-400">{t('bm.noData')}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-slate-500">{t('bm.recommended')}:</span>
+              <span className="text-slate-200">{bm.recommendation.ageMin}–{bm.recommendation.ageMax}</span>
+              {bm.recommendation.interestNames.map((n) => <span key={n} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-gold">{n}</span>)}
+            </div>
+            <Link href={`/freehold-intelligence/lead-machine/campaigns/new?project=${pickedId}`} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90">
+              {t('lm.targeting.bmUse')} <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+            <p className="text-[10px] text-slate-600">{t('bm.provenance')}</p>
+          </div>
+        ) : null}
+      </section>
 
       {/* Learning loop — leads → analysis → better targeting every round */}
       <section className="mb-8 rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">

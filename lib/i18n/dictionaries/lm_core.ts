@@ -153,6 +153,9 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Targeting page ──
     'lm.targeting.eyebrow': 'Targeting',
+    'lm.targeting.bmHint': 'Pick a listing and see who actually buys it — from your own closed deals — with a live Meta reach estimate. Not interests from a book.',
+    'lm.targeting.bmPick': 'Choose a listing…',
+    'lm.targeting.bmUse': 'Build a campaign with this',
     'lm.targeting.title': 'Audience templates',
     'lm.targeting.titleSub': '{n} presets ready.',
     'lm.targeting.desc': 'Pre-built audience configurations for UAE real estate. Apply one to a new campaign — all parameters pre-filled. Customise before launch.',
@@ -1021,6 +1024,9 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Targeting ──
     'lm.targeting.eyebrow': 'الاستهداف',
+    'lm.targeting.bmHint': 'اختر عقارًا وشاهد من يشتريه فعليًا — من صفقاتك المغلقة — مع تقدير وصول حي من ميتا. ليست اهتمامات من كتاب.',
+    'lm.targeting.bmPick': 'اختر عقارًا…',
+    'lm.targeting.bmUse': 'أنشئ حملة بهذا',
     'lm.targeting.title': 'قوالب الجمهور',
     'lm.targeting.titleSub': '{n} إعداد مسبق جاهز.',
     'lm.targeting.desc': 'إعدادات جمهور مبنية مسبقاً للعقارات في الإمارات. طبّق إعداداً على حملة جديدة — كل المعاملات محشوّة مسبقاً. خصّص قبل الإطلاق.',
@@ -1853,6 +1859,9 @@ export const lm_core: Record<Locale, Dict> = {
 
     // ── Targeting ──
     'lm.targeting.eyebrow': 'Таргетинг',
+    'lm.targeting.bmHint': 'Выберите объект и увидите, кто его реально покупает — по вашим закрытым сделкам — с живой оценкой охвата Meta. Не интересы из учебника.',
+    'lm.targeting.bmPick': 'Выберите объект…',
+    'lm.targeting.bmUse': 'Создать кампанию по этому',
     'lm.targeting.title': 'Шаблоны аудиторий',
     'lm.targeting.titleSub': '{n} готовых пресетов.',
     'lm.targeting.desc': 'Готовые конфигурации аудиторий для недвижимости ОАЭ. Примените к новой кампании — все параметры предзаполнены. Настройте перед запуском.',
