@@ -144,7 +144,7 @@ function LeadCard({
             </span>
           </div>
           <div className="mt-1 text-xs text-slate-400">{lead.source}</div>
-          <p className="mt-2 max-w-lg text-xs leading-relaxed text-slate-300">{lead.aiNote}</p>
+          <p className="mt-2 max-w-lg text-xs leading-relaxed text-slate-300">{t(lead.aiNote)}</p>
         </div>
 
         <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col sm:items-end">

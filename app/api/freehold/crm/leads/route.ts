@@ -44,8 +44,14 @@ interface DbLead {
   duplicate_dismissed_at: string | null
 }
 
-function dbLeadToCRM(row: DbLead) {
+function dbLeadToCRM(row: DbLead, phoneCounts?: Map<string, number>) {
   const stage = (row.status as string | null) ?? 'new'
+  // Real risk signals (were hardcoded false): a too-short phone is a likely
+  // wrong number; a phone shared with another active lead is a likely duplicate
+  // (unless already dismissed on the row).
+  const nphone = (row.phone ?? '').replace(/\D/g, '')
+  const wrongNumberRisk = nphone.length > 0 && nphone.length < 7
+  const duplicateRisk = !row.duplicate_dismissed_at && nphone.length >= 7 && (phoneCounts?.get(nphone) ?? 0) > 1
   const stageMap: Record<string, string> = {
     new: 'new', contacted: 'contacted', qualified: 'qualified',
     viewing: 'viewing', negotiation: 'negotiation', closed: 'closed', lost: 'lost',
@@ -70,11 +76,12 @@ function dbLeadToCRM(row: DbLead) {
     projectInterest: row.interest ?? row.project_slug ?? 'General enquiry',
     intentScore: temperature === 'priority' ? 90 : temperature === 'hot' ? 75 : temperature === 'warm' ? 55 : 30,
     urgency: temperature === 'priority' ? 'critical' : temperature === 'hot' ? 'high' : 'medium',
-    duplicateRisk: false,
-    wrongNumberRisk: false,
+    duplicateRisk,
+    wrongNumberRisk,
     assignedAgent: row.assigned_broker_id ?? '',
     lastContactAt: row.last_contact_at ?? row.created_at,
-    nextBestAction: stage === 'new' ? 'Reach out and qualify' : 'Follow up',
+    // i18n key resolved on the client (was hardcoded English shown as "AI").
+    nextBestAction: stage === 'new' ? 'crm.nba.firstContact' : 'crm.nba.followUp',
     suggestedMessage: '',
     aiSummary: row.message ?? '',
     hasViewingScheduled: stage === 'viewing',
@@ -114,7 +121,14 @@ export async function GET() {
     sql += ` ORDER BY created_at DESC LIMIT 200`
 
     const rows = await query<DbLead>(sql, params)
-    return NextResponse.json({ leads: rows.map(dbLeadToCRM), source: 'db' })
+    // Count active-lead phones once so duplicateRisk is real, not hardcoded.
+    const phoneCounts = new Map<string, number>()
+    for (const r of rows) {
+      const active = r.status !== 'closed' && r.status !== 'lost' && r.status !== 'converted'
+      const n = (r.phone ?? '').replace(/\D/g, '')
+      if (active && n.length >= 7) phoneCounts.set(n, (phoneCounts.get(n) ?? 0) + 1)
+    }
+    return NextResponse.json({ leads: rows.map((r) => dbLeadToCRM(r, phoneCounts)), source: 'db' })
   } catch (err) {
     console.error('[crm/leads] query failed', err)
     return NextResponse.json({ leads: [], source: 'error' }, { status: 500 })
