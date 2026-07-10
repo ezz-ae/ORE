@@ -4,15 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import type { MetaCampaign, MetaAdSet, MetaInsights } from '@/lib/meta/types'
+import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 
 type AdSetRow = MetaAdSet & { ads?: { id: string; name: string; status: string }[] }
 type Detail = { campaign: MetaCampaign; insights: MetaInsights | null; adSets: AdSetRow[]; demo?: boolean }
+type Analysis = { working: string[]; blocking: string[]; actions: string[] }
 
 const fmtAED = (n: number) => `AED ${n.toLocaleString()}`
+const scoreColor = (s: number) => (s >= 80 ? '#34D399' : s >= 60 ? '#D4AF37' : s >= 40 ? '#FBBF24' : '#F87171')
 
 function leadsFrom(insights: MetaInsights | null): number {
   if (!insights?.actions) return 0
@@ -36,6 +39,10 @@ export default function CampaignCommandPage() {
   const [data, setData] = useState<Detail | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
   const [budgetBusy, setBudgetBusy] = useState<string | null>(null)
+  const [quality, setQuality] = useState<CampaignQuality | null>(null)
+  const [analysis, setAnalysis] = useState<Analysis | null>(null)
+  const [analysisText, setAnalysisText] = useState('')
+  const [refineBusy, setRefineBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,6 +52,9 @@ export default function CampaignCommandPage() {
       const d = await res.json()
       if (!res.ok || !d.campaign) { setNotFound(true); return }
       setData({ campaign: d.campaign, insights: d.insights ?? null, adSets: Array.isArray(d.adSets) ? d.adSets : [], demo: !!d.demo })
+      // Lead-quality is computed from OUR CRM funnel (independent of Meta's connection).
+      fetch(`/api/freehold/ads/campaign-quality?id=${encodeURIComponent(id)}&name=${encodeURIComponent(String(d.campaign.name ?? ''))}`, { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null)).then((q) => { if (q?.quality) setQuality(q.quality) }).catch(() => {})
     } catch { setNotFound(true) } finally { setLoading(false) }
   }, [id])
   useEffect(() => { if (id) load() }, [id, load])
@@ -103,9 +113,29 @@ export default function CampaignCommandPage() {
     } finally { setBudgetBusy(null) }
   }
 
-  function refine() {
+  function openInExpert() {
     if (!data) return
     sendToExpert(t('lm.cmd.refinePrompt', { name: data.campaign.name }))
+  }
+
+  async function runRefine() {
+    if (!data || refineBusy) return
+    setRefineBusy(true); setAnalysis(null); setAnalysisText('')
+    try {
+      const res = await fetch('/api/freehold/ads/refine', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignName: data.campaign.name,
+          objective: data.campaign.objective,
+          metrics: kpis,
+          quality: quality ? { score: quality.score, attributed: quality.attributed, reached: quality.reached, qualified: quality.qualified, won: quality.won, junk: quality.junk } : undefined,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d.analysis) setAnalysis(d.analysis)
+      else if (d.text) setAnalysisText(String(d.text))
+      else toast.error(t('lm.cmd.refineFailed'))
+    } catch { toast.error(t('lm.cmd.refineFailed')) } finally { setRefineBusy(false) }
   }
 
   if (loading) return (
@@ -219,20 +249,89 @@ export default function CampaignCommandPage() {
         )}
       </section>
 
-      {/* Refiner — ask the single docked Expert to analyse this campaign (incl. the landing) */}
-      <section className="mt-8 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
+      {/* Live lead-quality — computed from OUR CRM funnel, not Meta */}
+      <section className="mt-8 rounded-2xl border border-line bg-surface-2 p-5">
         <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Sparkles className="h-4 w-4 text-gold" /></div>
+          <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Gauge className="h-4 w-4 text-gold" /></div>
           <div>
-            <div className="text-sm font-semibold text-white">{t('lm.cmd.refineTitle')}</div>
-            <div className="text-xs text-slate-400">{t('lm.cmd.refineSubtitle')}</div>
+            <div className="text-sm font-semibold text-white">{t('lm.cmd.qualityTitle')}</div>
+            <div className="text-xs text-slate-400">{t('lm.cmd.qualitySub')}</div>
           </div>
         </div>
-        <button type="button" onClick={refine}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90">
-          <Sparkles className="h-4 w-4" /> {t('lm.cmd.refineCta')}
-        </button>
+        {quality && quality.score !== null ? (
+          <>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="text-4xl font-bold leading-none tabular-nums" style={{ color: scoreColor(quality.score) }}>{quality.score}</div>
+              <div className="min-w-0 flex-1">
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-3">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${quality.score}%`, background: scoreColor(quality.score) }} />
+                </div>
+                <div className="mt-1.5 text-[11px] text-slate-500">{t('lm.cmd.attributedLeads', { n: quality.attributed })}</div>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { key: 'fReached', v: quality.reached, pct: quality.funnel.find((f) => f.key === 'reached')?.pct ?? 0 },
+                { key: 'fQualified', v: quality.qualified, pct: quality.funnel.find((f) => f.key === 'qualified')?.pct ?? 0 },
+                { key: 'fWon', v: quality.won, pct: quality.funnel.find((f) => f.key === 'won')?.pct ?? 0, tone: 'gold' as const },
+                { key: 'fJunk', v: quality.junk, pct: quality.funnel.find((f) => f.key === 'junk')?.pct ?? 0, tone: 'warn' as const },
+              ].map((f) => (
+                <div key={f.key} className="rounded-xl border border-line bg-surface px-3 py-2">
+                  <div className="text-[10px] uppercase tracking-wider text-slate-500">{t(`lm.cmd.${f.key}`)}</div>
+                  <div className={`mt-1 text-base font-semibold ${f.tone === 'warn' ? 'text-amber-300' : f.tone === 'gold' ? 'text-gold' : 'text-white'}`}>
+                    {f.v} <span className="text-[11px] font-normal text-slate-500">· {f.pct}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="mt-4 text-sm text-slate-400">{t('lm.cmd.qualityNone')}</p>
+        )}
       </section>
+
+      {/* Refiner — real AI analysis grounded in Meta metrics + our funnel + the landing */}
+      <section className="mt-6 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] via-gold/[0.02] to-transparent p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-lg border border-gold/25 bg-gold/10"><Sparkles className="h-4 w-4 text-gold" /></div>
+            <div>
+              <div className="text-sm font-semibold text-white">{t('lm.cmd.refineTitle')}</div>
+              <div className="text-xs text-slate-400">{t('lm.cmd.refineSubtitle')}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={openInExpert} className="text-xs text-slate-400 transition hover:text-white">{t('lm.cmd.openInExpert')}</button>
+            <button type="button" onClick={runRefine} disabled={refineBusy}
+              className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+              {refineBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {refineBusy ? t('lm.cmd.refining') : t('lm.cmd.refineCta')}
+            </button>
+          </div>
+        </div>
+        {analysis && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <RefineCol icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} title={t('lm.cmd.refineWorking')} items={analysis.working} />
+            <RefineCol icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-400" />} title={t('lm.cmd.refineBlocking')} items={analysis.blocking} />
+            <RefineCol icon={<ArrowRight className="h-3.5 w-3.5 text-gold" />} title={t('lm.cmd.refineActions')} items={analysis.actions} />
+          </div>
+        )}
+        {!analysis && analysisText && (
+          <p className="mt-4 whitespace-pre-wrap rounded-xl border border-line bg-surface px-4 py-3 text-sm leading-relaxed text-slate-300">{analysisText}</p>
+        )}
+      </section>
+    </div>
+  )
+}
+
+function RefineCol({ icon, title, items }: { icon: React.ReactNode; title: string; items: string[] }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface p-3">
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">{icon} {title}</div>
+      {items.length ? (
+        <ul className="space-y-1.5">
+          {items.map((s, i) => <li key={i} dir="auto" className="text-xs leading-snug text-slate-300">{s}</li>)}
+        </ul>
+      ) : <p className="text-xs text-slate-600">—</p>}
     </div>
   )
 }
