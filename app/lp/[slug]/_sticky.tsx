@@ -7,9 +7,10 @@ interface Props {
   price: string
   ctaText: string
   slug: string
+  L: Record<string, string>
 }
 
-export function StickyLpCta({ price, ctaText, slug }: Props) {
+export function StickyLpCta({ price, ctaText, slug, L }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function StickyLpCta({ price, ctaText, slug }: Props) {
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] text-white/40 uppercase tracking-widest">Starting from</div>
+            <div className="text-[10px] text-white/40 uppercase tracking-widest">{L['sticky.startingFrom']}</div>
             <div className="text-[16px] font-bold text-[#D4AF37]">{price}</div>
           </div>
           <div className="flex gap-2">
@@ -52,7 +53,7 @@ export function StickyLpCta({ price, ctaText, slug }: Props) {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2.5 text-[13px] font-bold text-white"
             >
-              <MessageCircle className="h-4 w-4" /> WhatsApp
+              <MessageCircle className="h-4 w-4" /> {L['sticky.whatsapp']}
             </a>
             <a
               href="#lead-form"
