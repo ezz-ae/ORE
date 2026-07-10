@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Save, Scissors, Captions, Megaphone, Camera,
-  ArrowUpToLine, ArrowDownToLine, Info,
+  ArrowUpToLine, ArrowDownToLine, Info, Download,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -32,6 +32,45 @@ const fmt = (s: number) => {
   const m = Math.floor(s / 60)
   const sec = Math.floor(s % 60)
   return `${m}:${String(sec).padStart(2, '0')}`
+}
+
+// ── Real WebM export helpers ─────────────────────────────────────────────────
+/** First WebM codec the platform's MediaRecorder actually supports, else null. */
+function pickWebmMime(): string | null {
+  if (typeof MediaRecorder === 'undefined') return null
+  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+  for (const m of candidates) {
+    try { if (MediaRecorder.isTypeSupported(m)) return m } catch { continue }
+  }
+  return null
+}
+
+/** Rounded-rect path with a manual fallback for engines without ctx.roundRect. */
+function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2))
+  ctx.beginPath()
+  if (typeof ctx.roundRect === 'function') { ctx.roundRect(x, y, w, h, rr); return }
+  ctx.moveTo(x + rr, y)
+  ctx.arcTo(x + w, y, x + w, y + h, rr)
+  ctx.arcTo(x + w, y + h, x, y + h, rr)
+  ctx.arcTo(x, y + h, x, y, rr)
+  ctx.arcTo(x, y, x + w, y, rr)
+  ctx.closePath()
+}
+
+/** Greedy word-wrap against the current ctx.font. Returns [] for blank text. */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean)
+  if (!words.length) return []
+  const lines: string[] = []
+  let line = ''
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word
+    if (line && ctx.measureText(test).width > maxWidth) { lines.push(line); line = word }
+    else line = test
+  }
+  if (line) lines.push(line)
+  return lines
 }
 
 function parseRecipe(raw: string | null): Partial<Recipe> | null {
@@ -64,11 +103,13 @@ export default function DriveVideoEditor() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const endActiveRef = useRef(false)
+  const exportingRef = useRef(false)
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [saving, setSaving] = useState(false)
   const [capturing, setCapturing] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [dirty, setDirty] = useState(false)
 
   const [item, setItem] = useState<LibRow | null>(null)
@@ -144,7 +185,7 @@ export default function DriveVideoEditor() {
 
   function onTimeUpdate() {
     const v = videoRef.current
-    if (!v || endActiveRef.current) return
+    if (!v || endActiveRef.current || exportingRef.current) return
     const cur = v.currentTime
     const end = trimEnd > 0 ? trimEnd : duration
     if (cur < trimStart - 0.05) { v.currentTime = trimStart; return }
@@ -167,9 +208,11 @@ export default function DriveVideoEditor() {
 
   // If the user manually plays/seeks during the end-card, dismiss it.
   function onNativePlay() {
+    if (exportingRef.current) return
     if (endActiveRef.current) { resetEnd(); const v = videoRef.current; if (v) v.currentTime = trimStart }
   }
   function onNativeSeeked() {
+    if (exportingRef.current) return
     const v = videoRef.current
     if (!v) return
     const end = trimEnd > 0 ? trimEnd : duration
@@ -228,6 +271,205 @@ export default function DriveVideoEditor() {
       if (!res.ok) { toast.error(t('ed.saveFailed')); return }
       setDirty(false); toast.success(t('ed.saved'))
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
+  }
+
+  // ── Real burned WebM export ──────────────────────────────────────────────────
+  // Draws the trimmed video + caption + end-card onto an offscreen canvas and
+  // records that canvas (plus the source audio track, if any) with MediaRecorder.
+  // Honestly bounded: WebM only, and same-origin / CORS-clean sources only —
+  // captureStream() throws on a tainted (cross-origin) frame, which we catch.
+  async function exportWebm() {
+    const v = videoRef.current
+    // Guards, honest first.
+    const mimeType = pickWebmMime()
+    if (!mimeType) { toast.error(t('ed.video.exportUnsupported')); return }
+    if (!v || !url) { toast.error(t('ed.video.exportTainted')); return }
+
+    setExporting(true)
+    exportingRef.current = true
+    resetEnd()
+    try {
+      const w = v.videoWidth || 1080
+      const h = v.videoHeight || 1920
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { toast.error(t('ed.video.exportUnsupported')); return }
+
+      // Build the recorded stream. captureStream() on either element throws for a
+      // tainted (cross-origin) source — the outer catch turns that into a toast.
+      const cstream = canvas.captureStream(30)
+      const vCap = v as unknown as {
+        captureStream?: () => MediaStream
+        mozCaptureStream?: () => MediaStream
+      }
+      const vstream = vCap.captureStream?.() ?? vCap.mozCaptureStream?.()
+      const audioTrack = vstream?.getAudioTracks()[0]
+      if (audioTrack) cstream.addTrack(audioTrack) // no audio track → video-only export is fine
+
+      const rec = new MediaRecorder(cstream, { mimeType })
+      const chunks: Blob[] = []
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data) }
+
+      const end = clamp(trimEnd > 0 ? trimEnd : duration, 0.1, duration || Number.MAX_SAFE_INTEGER)
+      const start = clamp(trimStart, 0, Math.max(0, end - 0.05))
+
+      // Overlay painters mirror the on-screen caption + end-card, scaled to the
+      // intrinsic video resolution.
+      const paintCaption = () => {
+        const text = caption.trim()
+        if (!text) return
+        const fontSize = Math.max(16, Math.round(h * 0.042))
+        const font = `600 ${fontSize}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
+        ctx.font = font
+        const padX = Math.round(fontSize * 0.7)
+        const padY = Math.round(fontSize * 0.45)
+        const gap = Math.round(fontSize * 0.28)
+        const lines = wrapText(ctx, text, w * 0.9 - padX * 2)
+        if (!lines.length) return
+        let maxLineW = 0
+        for (const ln of lines) maxLineW = Math.max(maxLineW, ctx.measureText(ln).width)
+        const barW = Math.min(w * 0.9, maxLineW + padX * 2)
+        const barH = padY * 2 + lines.length * fontSize + (lines.length - 1) * gap
+        const barX = (w - barW) / 2
+        const margin = Math.round(h * 0.04)
+        const barY = captionPos === 'top' ? margin : h - margin - barH
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'
+        roundRectPath(ctx, barX, barY, barW, barH, Math.round(fontSize * 0.4))
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        let ty = barY + padY + fontSize / 2
+        for (const ln of lines) { ctx.fillText(ln, w / 2, ty); ty += fontSize + gap }
+      }
+
+      const paintEndCard = () => {
+        // Brand-gold panel, ink text — mirrors the on-screen end-card.
+        ctx.fillStyle = '#D4AF37'
+        ctx.fillRect(0, 0, w, h)
+        const cta = endCta.trim()
+        const phone = endPhone.trim()
+        const logoSize = Math.round(Math.min(w, h) * 0.14)
+        const ctaFont = Math.max(18, Math.round(h * 0.05))
+        const phoneFont = Math.max(15, Math.round(h * 0.038))
+        const gap = Math.round(h * 0.03)
+        const ctaLineH = ctaFont + Math.round(ctaFont * 0.2)
+
+        ctx.font = `700 ${ctaFont}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
+        const ctaLines = cta ? wrapText(ctx, cta, w * 0.82) : []
+
+        let total = logoSize
+        if (ctaLines.length) total += gap + ctaLines.length * ctaLineH - (ctaLineH - ctaFont)
+        if (phone) total += gap + phoneFont
+        let y = Math.max(gap, (h - total) / 2)
+
+        // logo tile (ink/10) + glyph
+        const logoX = (w - logoSize) / 2
+        ctx.fillStyle = 'rgba(18,17,16,0.10)'
+        roundRectPath(ctx, logoX, y, logoSize, logoSize, Math.round(logoSize * 0.28))
+        ctx.fill()
+        ctx.fillStyle = '#121110'
+        ctx.font = `900 ${Math.round(logoSize * 0.55)}px system-ui, -apple-system, sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('ف', w / 2, y + logoSize / 2)
+        y += logoSize
+
+        if (ctaLines.length) {
+          y += gap
+          ctx.fillStyle = '#121110'
+          ctx.font = `700 ${ctaFont}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
+          let ty = y + ctaFont / 2
+          for (const ln of ctaLines) { ctx.fillText(ln, w / 2, ty); ty += ctaLineH }
+          y += ctaLines.length * ctaLineH - (ctaLineH - ctaFont)
+        }
+        if (phone) {
+          y += gap
+          ctx.fillStyle = '#121110'
+          ctx.font = `600 ${phoneFont}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`
+          ctx.fillText(phone, w / 2, y + phoneFont / 2)
+        }
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        let rafId = 0
+        let inEndCard = false
+        let endCardStart = 0
+        let done = false
+
+        const stop = () => {
+          if (done) return
+          done = true
+          cancelAnimationFrame(rafId)
+          try { rec.stop() } catch { resolve() }
+        }
+
+        const draw = () => {
+          try {
+            ctx.drawImage(v, 0, 0, w, h)
+          } catch (err) {
+            // Tainted frame — captureStream may have passed but drawImage taints.
+            done = true
+            cancelAnimationFrame(rafId)
+            try { rec.stop() } catch { /* ignore */ }
+            reject(err)
+            return
+          }
+          if (!inEndCard) {
+            paintCaption()
+            if (v.currentTime >= end) {
+              try { v.pause() } catch { /* ignore */ }
+              if (endConfigured) { inEndCard = true; endCardStart = performance.now() }
+              else { stop(); return }
+            }
+          } else {
+            paintEndCard()
+            if (performance.now() - endCardStart >= Math.max(0.3, endSecs) * 1000) { stop(); return }
+          }
+          rafId = requestAnimationFrame(draw)
+        }
+
+        rec.onstop = () => {
+          const blob = new Blob(chunks, { type: mimeType })
+          if (blob.size === 0) { reject(new Error('empty recording')); return }
+          const objUrl = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          const base = (title || item?.title || 'video').trim() || 'video'
+          a.href = objUrl
+          a.download = `${base}-edit.webm`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(objUrl)
+          resolve()
+        }
+        rec.onerror = () => reject(new Error('recorder error'))
+
+        const begin = () => {
+          v.play()
+            .then(() => { rec.start(); rafId = requestAnimationFrame(draw) })
+            .catch(reject)
+        }
+        if (Math.abs(v.currentTime - start) < 0.08) begin()
+        else {
+          const onSeeked = () => { v.removeEventListener('seeked', onSeeked); begin() }
+          v.addEventListener('seeked', onSeeked)
+          v.currentTime = start
+        }
+      })
+
+      toast.success(t('ed.video.exportDone'))
+    } catch {
+      toast.error(t('ed.video.exportTainted'))
+    } finally {
+      exportingRef.current = false
+      setExporting(false)
+      const vid = videoRef.current
+      if (vid) { try { vid.pause() } catch { /* ignore */ } vid.currentTime = trimStart }
+      resetEnd()
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -302,10 +544,19 @@ export default function DriveVideoEditor() {
         </button>
       </section>
 
+      {/* Export — real burned WebM */}
+      <section className="space-y-2">
+        <div className={sectionH}><Download className="h-3.5 w-3.5" /> {t('ed.video.exportWebm')}</div>
+        <button type="button" onClick={exportWebm} disabled={!url || exporting} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
+          {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          {exporting ? t('ed.video.exporting') : t('ed.video.exportWebm')}
+        </button>
+      </section>
+
       {/* Honest scope */}
       <section className="space-y-2 border-t border-white/[0.07] pt-4">
         <div className="flex items-start gap-1.5 text-[10px] leading-snug text-slate-500">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> <span>{t('ed.video.exportDeferred')}</span>
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> <span>{t('ed.video.exportNote')}</span>
         </div>
       </section>
     </div>
@@ -315,13 +566,20 @@ export default function DriveVideoEditor() {
     <DriveEditorFrame
       type="video"
       title={title || item.title}
-      statusNote={t('ed.video.exportDeferred')}
+      statusNote={t('ed.video.exportNote')}
       toolRail={toolRail}
       actions={
-        <button type="button" onClick={save} disabled={saving || !dirty}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('ed.video.savePreview')}
-        </button>
+        <>
+          <button type="button" onClick={exportWebm} disabled={!url || exporting}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-surface px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:border-gold/70 disabled:opacity-50">
+            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            {exporting ? t('ed.video.exporting') : t('ed.video.exportWebm')}
+          </button>
+          <button type="button" onClick={save} disabled={saving || !dirty}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('ed.video.savePreview')}
+          </button>
+        </>
       }
     >
       {/* Hidden canvas for cover capture */}
