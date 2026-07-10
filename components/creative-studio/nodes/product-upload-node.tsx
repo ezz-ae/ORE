@@ -168,7 +168,7 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3" onClick={stop}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stop}>
             {/* Selected property preview */}
             {data.productName && (
               <div className="rounded border border-border overflow-hidden bg-muted/20">
