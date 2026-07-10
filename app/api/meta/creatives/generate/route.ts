@@ -105,9 +105,12 @@ async function geminiCreatives(p: GenerateCreativePayload): Promise<GeneratedCre
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return null
   const price = fmtPrice(p.startingPrice)
+  const sourceBlock = Array.isArray(p.sources) && p.sources.length
+    ? `\n\nGround the copy in this source material the marketer provided (links, brochure text, notes) — use real facts from it, do not contradict it:\n${p.sources.map((s) => `- ${String(s).slice(0, 700)}`).join('\n')}`
+    : ''
   const prompt = `You are a senior Meta (Facebook/Instagram) ads copywriter for Dubai freehold real estate.
 Write ad creative for: "${p.listingName}" by ${p.developer} in ${p.area}, Dubai.
-Angle: ${p.angle}. Tone: ${p.tone}. Starting price ${price}.${p.paymentPlan ? ` Payment plan: ${p.paymentPlan}.` : ''}
+Angle: ${p.angle}. Tone: ${p.tone}. Starting price ${price}.${p.paymentPlan ? ` Payment plan: ${p.paymentPlan}.` : ''}${sourceBlock}
 Produce exactly 3 distinct variants. Each: primaryText (1-3 short sentences, line breaks ok), headline (MAX 40 characters), description (MAX 30 characters).
 Return ONLY JSON, no markdown:
 {"variants":[{"primaryText":"...","headline":"...","description":"..."}]}`
