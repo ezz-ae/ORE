@@ -18,7 +18,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Users, Megaphone, DollarSign, TrendingUp, Bot, Package,
-  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard, CalendarDays,
+  ShieldCheck, Settings, BookOpen, BarChart3, UserCircle, Clapperboard, CalendarDays, HardDrive,
 } from 'lucide-react'
 import type { Role } from './session-types'
 import { MANAGEMENT_ROLES } from './session-types'
@@ -49,6 +49,8 @@ export interface AppDef {
   roles?: Role[]
   /** show in the persistent top spine (defaults true) */
   spine?: boolean
+  /** extra path prefixes that light this tab active (e.g. Drive lit while in Notebook) */
+  match?: string[]
 }
 
 // Canonical role lists reused by both nav visibility and route guards.
@@ -112,12 +114,25 @@ export const APPS: AppDef[] = [
     card: 'border-amber-500/15 hover:border-amber-500/30',
     icon: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
   },
+  // Drive — the one home for everything you make + one Editor that opens any
+  // asset. Takes Notebook's spine slot; Notebook now lives inside Drive.
+  {
+    id: 'drive', label: 'Drive', sub: 'Assets · Editor · Notebook',
+    href: '/freehold-intelligence/drive', Icon: HardDrive,
+    metric: 'Everything you create & edit', badge: 0, accent: '#2DD4BF',
+    card: 'border-teal-400/15 hover:border-teal-400/30',
+    icon: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+    // Light the Drive tab while the user is anywhere under Notebook (it lives here now).
+    match: ['/freehold-intelligence/drive', '/freehold-intelligence/notebook'],
+  },
   {
     id: 'notebook', label: 'Notebook', sub: 'Research · Offers · Exports',
     href: '/freehold-intelligence/notebook', Icon: BookOpen,
     metric: 'AI research workspace', badge: 0, accent: '#F472B6',
     card: 'border-pink-400/15 hover:border-pink-400/30',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+    // Notebook now lives under Drive — off the top spine, still routable + hub card.
+    spine: false,
   },
   {
     id: 'creative-studio', label: 'Creative Studio', sub: 'Agentic · Video · Landings · Ads',
