@@ -319,7 +319,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
       <section className="mt-8">
         <div className="rounded-[20px] border border-line bg-surface-2 p-5">
           <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-            <Globe className="h-3.5 w-3.5" /> Landing Page
+            <Globe className="h-3.5 w-3.5" /> {t('inv.detail.landingSection')}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${landingBadge(prop.landingStatus)}`}>
@@ -331,29 +331,39 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 {prop.landingUrl} <ArrowUpRight className="h-3 w-3" />
               </a>
             ) : prop.landingUrl ? (
-              <span className="text-xs text-slate-500">{prop.landingUrl} · not published yet</span>
+              <span className="text-xs text-slate-500">{prop.landingUrl} · {t('inv.detail.notPublished')}</span>
             ) : null}
           </div>
 
           <div className="mt-4 flex items-center gap-2 text-xs">
             <ImageIcon className="h-3.5 w-3.5 text-slate-500" />
             {prop.hasImages ? (
-              <span className="text-slate-400">{prop.imageCount} image{prop.imageCount !== 1 ? 's' : ''} available</span>
+              <span className="text-slate-400">{t(prop.imageCount === 1 ? 'inv.detail.imagesAvailable.one' : 'inv.detail.imagesAvailable.many', { count: prop.imageCount })}</span>
             ) : (
-              <span className="text-slate-400/70">No images</span>
+              <span className="text-slate-400/70">{t('inv.detail.noImages')}</span>
             )}
           </div>
 
-          {prop.landingStatus === 'missing' && (
+          {prop.landingStatus === 'missing' ? (
             <div className="mt-4">
               <Link
                 href={`/freehold-intelligence/inventory/${prop.id}/generate`}
                 className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2 text-xs text-gold transition hover:bg-gold/[0.12]"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Generate landing page now
+                <Sparkles className="h-3.5 w-3.5" /> {t('inv.detail.generateNow')}
               </Link>
             </div>
-          )}
+          ) : prop.landingUrl ? (
+            /* One canonical editor — same destination as Ads → Landing pages and Drive. */
+            <div className="mt-4">
+              <Link
+                href={`/freehold-intelligence/lead-machine/landings/${prop.landingUrl.replace('/lp/', '')}/edit`}
+                className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2 text-xs text-gold transition hover:bg-gold/[0.12]"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> {t('inv.detail.editLanding')}
+              </Link>
+            </div>
+          ) : null}
         </div>
       </section>
 

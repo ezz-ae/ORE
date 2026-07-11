@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Sparkles, Check, ArrowLeft, Eye, Globe, ChevronDown, ChevronUp,
-  RotateCcw, Phone, Loader2, ExternalLink,
+  RotateCcw, Phone, Loader2, ExternalLink, PenLine,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
@@ -337,6 +337,16 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
               freeholdproperty.ae{publishedUrl}
             </a>
           </div>
+          {/* Hand off to the ONE canonical landing editor (Ads → Landing pages)
+              instead of dead-ending here — this quick builder is the on-ramp,
+              the full editor (sections, layout canvas, SEO, pixels, test) is
+              where deep editing lives. */}
+          <Link
+            href={`/freehold-intelligence/lead-machine/landings/${publishedSlug}/edit`}
+            className="shrink-0 flex items-center gap-1 rounded-full bg-gold px-3 py-1 text-xs font-medium text-ink transition hover:bg-[#F0CB67]"
+          >
+            <PenLine className="h-3 w-3" /> {t('inv.gen.openFullEditor')}
+          </Link>
           <button
             onClick={regenerateAi}
             disabled={aiGenerating}
