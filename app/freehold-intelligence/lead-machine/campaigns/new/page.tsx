@@ -1596,13 +1596,13 @@ export default function NewCampaignPage() {
               {/* Upload your own ad image → Meta ad account (image_hash) */}
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
-                  {uploadingImg ? 'Uploading…' : 'Upload image'}
+                  {uploadingImg ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingImg}
                     onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
                 </label>
                 {form.imageHash
-                  ? <span className="text-xs text-emerald-400">✓ Uploaded to Meta — this image will be used</span>
-                  : <span className="text-xs text-slate-500">or paste an image URL above (defaults to the listing photo)</span>}
+                  ? <span className="text-xs text-emerald-400">{t('lm.newCampaign.s3.upload.uploaded')}</span>
+                  : <span className="text-xs text-slate-500">{t('lm.newCampaign.s3.upload.orPaste')}</span>}
                 {form.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
