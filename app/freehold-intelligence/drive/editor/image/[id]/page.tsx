@@ -396,14 +396,17 @@ export default function DriveImageEditor() {
     const dataUrl = exportPng(); if (!dataUrl) return
     setSaving(true)
     try {
+      // Editing an existing library image updates it IN PLACE — saving must
+      // not fork a duplicate row on every click. A read-only source (or a
+      // brand-new canvas) still becomes a new row server-side.
       const res = await fetch('/api/freehold/drive/save-image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title || 'Untitled image', dataUrl }),
+        body: JSON.stringify({ title: title || 'Untitled image', dataUrl, id: id && id !== 'new' ? id : undefined }),
       })
       const d = await res.json().catch(() => ({}))
       if (!res.ok || !d.item) { toast.error(t('ed.saveFailed')); return }
       setDirty(false); toast.success(t('ed.image.savedToLibrary'))
-      router.replace(`/freehold-intelligence/drive/editor/image/${d.item.id}`)
+      if (d.item.id !== id) router.replace(`/freehold-intelligence/drive/editor/image/${d.item.id}`)
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
   }
 

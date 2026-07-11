@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   const url = typeof body.url === 'string' && /^https?:\/\//.test(body.url) ? body.url.slice(0, 2000) : null
   const content = typeof body.content === 'string' ? body.content.slice(0, 100_000) : null
-  if (!url && !content) return NextResponse.json({ error: 'Provide content or a URL' }, { status: 400 })
+  // An explicit empty string is a deliberate BLANK document (the editor's
+  // "New document" flow) — only reject when neither field was provided at all.
+  if (url === null && content === null) return NextResponse.json({ error: 'Provide content or a URL' }, { status: 400 })
   const item = await saveLibraryItem(auth.user.email, { kind, title, content, url })
   if (!item) return NextResponse.json({ error: 'Could not save' }, { status: 500 })
   return NextResponse.json({ item }, { status: 201 })

@@ -149,7 +149,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
 
             {data.output && (
               <div className="space-y-1.5">
-                <Label className="text-[10px] text-muted-foreground">Generated Video</Label>
+                <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.generatedVideo")}</Label>
                 <div className="relative rounded border border-border overflow-hidden bg-black">
                   <video 
                     src={data.output} 
@@ -166,6 +166,12 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
           <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/50" />
             {t("pcsn.processing")}
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className="mt-2 text-[10px] text-red-600 dark:text-red-400 font-mono">
+            {t("pcsn.vid.genFailed")}
           </div>
         )}
       </div>

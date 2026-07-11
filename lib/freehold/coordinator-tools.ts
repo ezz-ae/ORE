@@ -318,7 +318,16 @@ export async function runCoordinatorTool(
     // Audit trail: unconfirmed destructive executions are recorded where the
     // manager already looks (the Library) — the L2/L3 "system alert".
     if (tool.destructive && !confirmed && ctx.autonomy >= 2) {
-      const summary = JSON.stringify({ tool: tool.name, args: call.args, result }).slice(0, 4000)
+      // Readable audit note — a manager skims this in the Library, so it's
+      // plain lines, not a JSON blob.
+      const argLines = Object.entries(call.args ?? {})
+        .filter(([k]) => k !== 'confirm')
+        .map(([k, v]) => `• ${k.replace(/[_-]+/g, ' ')}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`)
+        .join('\n')
+      const outcome = result && typeof result === 'object' && 'error' in (result as Record<string, unknown>)
+        ? `Failed: ${String((result as Record<string, unknown>).error)}`
+        : 'Completed successfully.'
+      const summary = `The AI assistant ran "${tool.name}" automatically (autonomy level ${ctx.autonomy}).\n\n${argLines || '(no parameters)'}\n\n${outcome}`.slice(0, 4000)
       await saveLibraryItem(ctx.email, {
         kind: 'note',
         title: `Agent action (L${ctx.autonomy}): ${tool.name}`,

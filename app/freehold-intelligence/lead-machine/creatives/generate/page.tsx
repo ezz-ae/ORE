@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { ArrowLeft, Wand2, Copy, Check, ChevronDown, Sparkles, Building2 } from 'lucide-react'
 import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/lib/meta/types'
@@ -82,7 +83,8 @@ export default function GenerateCreativePage() {
       })
       if (!res.ok) throw new Error('save failed')
       setSavedIds((prev) => new Set([...prev, v.id]))
-    } catch { /* toast-free: the button state simply doesn't flip */ }
+      toast.success(t('lm.creatives.generate.saveOk'))
+    } catch { toast.error(t('lm.creatives.generate.saveFailed')) }
   }
   // Real-project override: arriving with ?project=&name=&area=&price= from a
   // project page pre-fills the generator without waiting for the picker.
@@ -130,17 +132,21 @@ export default function GenerateCreativePage() {
         }),
       })
       const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Generation failed')
+      if (!res.ok) throw new Error('generation failed')
       setVariants(json.variants ?? [])
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unexpected error')
+    } catch {
+      setError(t('lm.creatives.generate.failed'))
     } finally {
       setLoading(false)
     }
   }
 
   const angleConfig    = ANGLES.find((a) => a.value === angle)!
-  const campaignNewUrl = `/freehold-intelligence/lead-machine/campaigns/new?listingId=${listingId}`
+  // In override mode the campaign link must carry the OVERRIDDEN project —
+  // not the picker's default — or "Use in campaign" targets the wrong listing.
+  const campaignNewUrl = override
+    ? `/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(override.slug || override.name)}&name=${encodeURIComponent(override.name)}${override.price ? `&price=${override.price}` : ''}`
+    : `/freehold-intelligence/lead-machine/campaigns/new?listingId=${listingId}`
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -388,7 +394,6 @@ export default function GenerateCreativePage() {
                   </div>
 
                   <div className="mt-4 border-t border-line pt-3 flex justify-between items-center">
-                    <code className="text-xs font-mono text-slate-600">{v.id}</code>
                     <button
                       onClick={() => {
                         const full = `HEADLINE:\n${v.headline}\n\nPRIMARY TEXT:\n${v.primaryText}\n\nDESCRIPTION:\n${v.description}\n\nCTA: ${v.cta}`

@@ -19,6 +19,7 @@ import {
 import "@xyflow/react/dist/style.css"
 import { Button } from "@/components/ui/button"
 import { Play, Clock, ChevronDown, StopCircle } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,7 @@ const handleClearCanvas = () => {
 }
 
 export default function AgentBuilder() {
+  const t = useT()
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null)
@@ -227,21 +229,21 @@ export default function AgentBuilder() {
   const runnableNodes = nodes.filter(n => n.type !== "start" && n.type !== "end")
 
   const NODE_LABELS: Record<string, string> = {
-    textModel: "Text Model",
-    prompt: "Prompt",
-    conditional: "Condition",
-    httpRequest: "HTTP Request",
-    imageGeneration: "Image Generation",
-    javascript: "JavaScript",
-    audio: "Audio",
-    embeddingModel: "Embedding",
-    tool: "Tool",
-    structuredOutput: "Structured Output",
-    memory: "Memory",
-    ugcModel: "Presenter",
-    productUpload: "Property",
-    script: "Listing Script",
-    videoGeneration: "Video Generation",
+    textModel: t("pcsn.node.textModel"),
+    prompt: t("pcsn.node.prompt"),
+    conditional: t("pcsn.node.condition"),
+    httpRequest: t("pcsn.node.http"),
+    imageGeneration: t("pcsn.node.imageGen"),
+    javascript: t("pcsn.node.javascript"),
+    audio: t("pcsn.node.audio"),
+    embeddingModel: t("pcsn.node.embedding"),
+    tool: t("pcsn.node.tool"),
+    structuredOutput: t("pcsn.node.structured"),
+    memory: t("pcsn.node.memory"),
+    ugcModel: t("pcsn.node.presenter"),
+    productUpload: t("pcsn.node.property"),
+    script: t("pcsn.node.listingScript"),
+    videoGeneration: t("pcsn.node.videoGeneration"),
   }
 
   const nodesWithState = nodes.map((node) => ({
@@ -323,7 +325,7 @@ export default function AgentBuilder() {
                     <Clock className="h-5 w-5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Run history</TooltipContent>
+                <TooltipContent>{t("pcs.run.history")}</TooltipContent>
               </Tooltip>
             </div>
 
@@ -333,10 +335,10 @@ export default function AgentBuilder() {
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-10 px-3 rounded-r-none" onClick={() => handleRun(null)}>
                     <Play className="h-4 w-4 mr-1.5" />
-                    <span className="text-xs">Run All</span>
+                    <span className="text-xs">{t("pcs.run.runAll")}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Run full workflow</TooltipContent>
+                <TooltipContent>{t("pcs.run.runFull")}</TooltipContent>
               </Tooltip>
               <div className="w-px h-6 bg-border" />
               <DropdownMenu>
@@ -346,7 +348,7 @@ export default function AgentBuilder() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Run up to specific node</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">{t("pcs.run.runUpTo")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {runnableNodes.length > 0 ? (
                     runnableNodes.map((node) => (
@@ -362,7 +364,7 @@ export default function AgentBuilder() {
                     ))
                   ) : (
                     <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                      No nodes to run to
+                      {t("pcs.run.noRunTargets")}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

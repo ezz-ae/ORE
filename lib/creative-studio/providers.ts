@@ -7,13 +7,16 @@
 // a fake result.
 
 // Accept the common env-var name variants so a key set under any of them works.
-const GEMINI_KEY = () =>
+// Exported so every Google-AI route resolves the key the SAME way — a client
+// who set GOOGLE_API_KEY must not get image generation but broken text buttons.
+export const googleAiKey = () =>
   process.env.GEMINI_API_KEY ||
   process.env.Gemini_API_KEY ||
   process.env.GOOGLE_API_KEY ||
   process.env.google_api_key ||
   process.env.GEMINI_KEY ||
   ""
+const GEMINI_KEY = googleAiKey
 const FAL_KEY = () => process.env.FAL_KEY || ""
 
 export interface TextOptions { temperature?: number; maxTokens?: number; system?: string }
@@ -186,7 +189,7 @@ export async function genImage(prompt: string, opts: ImageOptions = {}): Promise
   throw new Error("Image generation needs GEMINI_API_KEY (Google, default) or FAL_KEY. Add one in your environment (Integrations → AI).")
 }
 
-export interface VideoOptions { imageUrl?: string; model?: string; duration?: number }
+export interface VideoOptions { imageUrl?: string; model?: string; duration?: number; aspectRatio?: string }
 
 /** Video generation: fal.ai (Veo) when configured, otherwise an honest instruction. */
 export async function genVideo(prompt: string, opts: VideoOptions = {}): Promise<{ url: string; provider: string }> {
@@ -196,6 +199,14 @@ export async function genVideo(prompt: string, opts: VideoOptions = {}): Promise
     const model = opts.model || "fal-ai/veo3/image-to-video"
     const input: Record<string, unknown> = { prompt }
     if (opts.imageUrl) input.image_url = opts.imageUrl
+    // The node's Duration and Aspect selectors are REAL controls — Veo accepts
+    // duration as "Ns" and a 16:9 / 9:16 / 1:1 aspect ratio.
+    if (typeof opts.duration === "number" && Number.isFinite(opts.duration) && opts.duration > 0) {
+      input.duration = `${Math.round(opts.duration)}s`
+    }
+    if (opts.aspectRatio && /^(16:9|9:16|1:1)$/.test(opts.aspectRatio)) {
+      input.aspect_ratio = opts.aspectRatio
+    }
     const result = (await fal.subscribe(model, { input })) as { data?: { video?: { url?: string } } }
     const url = result?.data?.video?.url
     if (!url) throw new Error("fal.ai returned no video.")

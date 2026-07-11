@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
+import { googleAiKey } from "@/lib/creative-studio/providers"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -23,12 +24,15 @@ export async function POST(req: NextRequest) {
   const system = String(body.system || "You are a senior Dubai real-estate content writer for Freehold Property UAE. Write clear, specific, publication-ready copy. No placeholders.")
   if (!prompt) return NextResponse.json({ error: "prompt is required" }, { status: 400 })
 
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = googleAiKey()
   if (!apiKey) {
-    return NextResponse.json({
-      text: `${prompt}\n\n(Connect GEMINI_API_KEY to generate live AI content.)`,
-      source: "fallback",
-    })
+    // Honest refusal — NEVER echo the prompt back as "generated" content and
+    // never surface env-var names to end users. Clients branch on
+    // `unavailable` and show their own translated message.
+    return NextResponse.json(
+      { unavailable: true, error: "AI generation is not configured on this workspace." },
+      { status: 503 },
+    )
   }
 
   try {

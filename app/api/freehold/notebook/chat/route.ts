@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
-import { appendTurn } from '@/lib/freehold/notebook-conversations'
+import { appendTurn, getConversation } from '@/lib/freehold/notebook-conversations'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { buildNotebookContext, type NotebookSources, type NotebookUpload } from '@/lib/freehold/notebook-context'
 
@@ -49,10 +49,29 @@ Rules:
 
   // Ground the answer in the sources the user selected in the left panel
   // (real inventory / CRM pipeline / attached links) instead of ignoring them.
-  const sourceContext = await buildNotebookContext(body.sources, body.uploads ?? [])
+  const sourceContext = await buildNotebookContext(body.sources, body.uploads ?? [], user.email)
+
+  // Thread memory: replay the conversation's stored turns so the model
+  // actually remembers this thread. The sessionId is scoped per user AND per
+  // conversation — never the shared anonymous bucket, which would bleed one
+  // user's turns into another's context on a warm instance.
+  let history: Array<{ role: 'user' | 'model'; text: string }> | undefined
+  if (body.conversationId) {
+    const stored = await getConversation(body.conversationId, user.email, user.role)
+    if (stored?.messages.length) {
+      history = stored.messages.slice(-20).map((m) => ({
+        role: m.role === 'user' ? ('user' as const) : ('model' as const),
+        text: m.content,
+      })).filter((h) => h.text)
+    }
+  }
 
   try {
-    const answer = await queryServerAgent(message, { systemPrompt: systemPrompt + sourceContext })
+    const answer = await queryServerAgent(message, {
+      systemPrompt: systemPrompt + sourceContext,
+      sessionId: `notebook-${user.email}-${conversationId}`,
+      history,
+    })
     // Persist the turn so the thread is real and reloadable (best-effort).
     const savedId = await appendTurn(conversationId, user.email, message, answer)
     return NextResponse.json({
@@ -64,11 +83,14 @@ Rules:
       source: 'ai',
     })
   } catch {
+    // `unavailable` lets the client render its TRANSLATED offline message —
+    // a hardcoded English sentence here would leak into AR/RU threads.
     return NextResponse.json({
       conversationId,
       role,
       prompt: message,
-      answer: 'The AI is currently unavailable. Your note has been saved locally — retry in a moment.',
+      answer: '',
+      unavailable: true,
       cards: [],
       source: 'fallback',
     })
