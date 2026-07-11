@@ -17,6 +17,18 @@ export type MetaOptimizationGoal =
   | 'REACH'
   | 'OFFSITE_CONVERSIONS'
 
+/**
+ * Meta ad_format values accepted by the Graph `generatepreviews` endpoint —
+ * the placements we render a live preview for. A subset of Meta's full list,
+ * covering the surfaces this app targets.
+ */
+export type MetaAdFormat =
+  | 'MOBILE_FEED_STANDARD'
+  | 'INSTAGRAM_STANDARD'
+  | 'INSTAGRAM_STORY'
+  | 'FACEBOOK_STORY_MOBILE'
+  | 'DESKTOP_FEED_STANDARD'
+
 export type MetaCta =
   | 'LEARN_MORE'
   | 'SIGN_UP'
@@ -104,6 +116,14 @@ export interface CampaignTargeting {
   interests: { id: string; name: string }[]
   /** Meta gender codes: 1 = men, 2 = women. Omitted / empty = all genders. */
   genders?: number[]
+  /** Meta locale (language) keys from the adlocale vocabulary. Empty = all. */
+  locales?: number[]
+}
+
+/** A Meta ad locale (language) from the live adlocale search vocabulary. */
+export interface MetaLocale {
+  key: number
+  name: string
 }
 
 export interface CampaignCreative {
@@ -127,8 +147,18 @@ export interface LaunchCampaignPayload {
   targeting: CampaignTargeting
   creative: CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
+  /** Optional conversion pixel to optimize on. Overrides the account default. */
+  pixelId?: string
   /** Set automatically by the server when a broker creates a campaign */
   brokerId?: string
+}
+
+/** A Meta conversion pixel on the connected ad account. */
+export interface MetaPixel {
+  id: string
+  name: string
+  /** ISO timestamp of the last event the pixel received, if any. */
+  lastFiredTime?: string | null
 }
 
 export interface LaunchCampaignResult {
@@ -244,6 +274,8 @@ export interface GenerateCreativePayload {
   angle: CreativeAngle
   tone: CreativeTone
   cta: MetaCta
+  /** Extra source material (links, brochure text, notes) to ground the copy. */
+  sources?: string[]
 }
 
 export interface GeneratedCreativeVariant {
