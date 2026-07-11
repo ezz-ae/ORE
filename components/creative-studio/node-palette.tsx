@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { MessageSquare, Layers, Wrench, FileText, ImageIcon, Code, Play, Flag, GitBranch, Globe, User, Building2, Video } from "lucide-react"
+import { MessageSquare, FileText, ImageIcon, Code, Play, Flag, GitBranch, Globe, User, Building2, Video } from "lucide-react"
 import { useT } from "@/lib/i18n/provider"
 
 // Node type → i18n key for its display name.
@@ -31,8 +31,6 @@ const nodeTypes: NodeType[] = [
   { type: "httpRequest", label: "HTTP", icon: <Globe className="h-3.5 w-3.5" /> },
   { type: "conditional", label: "Condition", icon: <GitBranch className="h-3.5 w-3.5" /> },
   { type: "javascript", label: "JavaScript", icon: <Code className="h-3.5 w-3.5" /> },
-  { type: "embeddingModel", label: "Embedding", icon: <Layers className="h-3.5 w-3.5" /> },
-  { type: "tool", label: "Tool", icon: <Wrench className="h-3.5 w-3.5" /> },
   { type: "end", label: "End", icon: <Flag className="h-3.5 w-3.5" /> },
 ]
 
