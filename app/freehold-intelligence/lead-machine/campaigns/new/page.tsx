@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
+import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
@@ -100,14 +101,8 @@ const PRODUCT_OBJECTIVES: {
 // the GCC + the key expat/investor source markets for Dubai real estate.
 const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
 
-const CTA_OPTIONS: { value: MetaCta; label: string }[] = [
-  { value: 'LEARN_MORE',   label: 'Learn More' },
-  { value: 'GET_QUOTE',    label: 'Get Quote' },
-  { value: 'SIGN_UP',      label: 'Sign Up' },
-  { value: 'CONTACT_US',   label: 'Contact Us' },
-  { value: 'BOOK_NOW',     label: 'Book Now' },
-  { value: 'APPLY_NOW',    label: 'Apply Now' },
-]
+// Labels resolve through i18n (lm.creatives.generate.cta.<value>) at render.
+const CTA_OPTIONS: MetaCta[] = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
 
 const STEPS: { n: number; labelKey: string; icon: typeof Megaphone }[] = [
   { n: 1, labelKey: 'lm.newCampaign.step.campaign',  icon: Megaphone },
@@ -410,9 +405,27 @@ export default function NewCampaignPage() {
   }, [])
 
   // Prefill from a real inventory project when arriving via the Inventory
-  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>).
+  // "Create Ad Campaign" link (?project=<slug>&name=<name>&price=<aed>),
+  // and/or from a targeting template (?template=<id> — the "Use this
+  // template" buttons in the targeting gallery).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
+    const templateId = p.get('template')
+    if (templateId) {
+      const tmpl = TARGETING_TEMPLATES.find((x) => x.id === templateId)
+      if (tmpl) {
+        setForm((prev) => ({
+          ...prev,
+          countries: tmpl.targeting.countries.length ? tmpl.targeting.countries : prev.countries,
+          cityKeys: tmpl.targeting.cityKeys.length ? tmpl.targeting.cityKeys : prev.cityKeys,
+          ageMin: tmpl.targeting.ageMin,
+          ageMax: tmpl.targeting.ageMax,
+          genders: tmpl.targeting.genders ?? prev.genders,
+          interestIds: tmpl.targeting.interests.map((i) => i.id),
+          publisherPlatforms: tmpl.targeting.publisherPlatforms.length ? tmpl.targeting.publisherPlatforms : prev.publisherPlatforms,
+        }))
+      }
+    }
     const project = p.get('project')
     const name = p.get('name')
     const price = p.get('price')
@@ -567,7 +580,13 @@ export default function NewCampaignPage() {
       // now actually reach the launch (previously leadFormId was UI-only).
       destination:      dest,
       leadFormId:       dest === 'form' ? leadFormId : undefined,
-      destinationPhone: dest === 'phone' || dest === 'whatsapp' ? destinationPhone.trim() || undefined : undefined,
+      destinationPhone: dest === 'phone' ? destinationPhone.trim() || undefined : undefined,
+      // Money guardrails — real Meta controls, not decorative fields:
+      // spend_cap on the campaign, COST_CAP bid on the ad set.
+      lifetimeCapAED:   form.lifetimeCapAED > 0 ? form.lifetimeCapAED : undefined,
+      cplCapAED:        form.cplCapAED > 0 ? form.cplCapAED : undefined,
+      // Persisted per campaign — the autopilot pass enforces it.
+      autoEnhance:      form.autoEnhance,
     }
 
     try {
@@ -661,7 +680,7 @@ export default function NewCampaignPage() {
     { labelKey: 'lm.newCampaign.s4.tileLabel.budget',     value: `AED ${form.dailyBudgetAED.toLocaleString()}` },
     { labelKey: 'lm.newCampaign.s4.tileLabel.audience',   value: t('lm.newCampaign.s4.audienceValue', { min: String(form.ageMin), max: String(form.ageMax) }) },
     { labelKey: 'lm.newCampaign.s4.tileLabel.platforms',  value: form.publisherPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' + ') },
-    { labelKey: 'lm.newCampaign.s4.tileLabel.cta',        value: CTA_OPTIONS.find((c) => c.value === form.cta)?.label ?? form.cta },
+    { labelKey: 'lm.newCampaign.s4.tileLabel.cta',        value: t(`lm.creatives.generate.cta.${form.cta}`) },
   ]
 
   return (
@@ -794,16 +813,17 @@ export default function NewCampaignPage() {
               </div>
             )}
 
-            {/* Call / WhatsApp → the destination number the ad actually dials or messages. */}
-            {(form.productObjective === 'call' || form.productObjective === 'whatsapp') && (
+            {/* Call ads dial the number typed here. Click-to-WhatsApp ads
+                always message the WhatsApp number CONNECTED TO THE PAGE —
+                Meta does not accept an arbitrary number on the creative, so
+                we say that honestly instead of collecting a number we'd drop. */}
+            {form.productObjective === 'call' && (
               <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
                 <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
-                  {form.productObjective === 'call' ? <Phone className="h-3.5 w-3.5" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                  <Phone className="h-3.5 w-3.5" />
                   {t('lm.newCampaign.destPhone.title')}
                 </div>
-                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                  {form.productObjective === 'call' ? t('lm.newCampaign.destPhone.hintCall') : t('lm.newCampaign.destPhone.hintWa')}
-                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.destPhone.hintCall')}</p>
                 <input
                   className={`${inputCls()} mt-3 max-w-xs`}
                   dir="ltr"
@@ -812,6 +832,15 @@ export default function NewCampaignPage() {
                   onChange={(e) => setDestinationPhone(e.target.value)}
                   placeholder="+971 5x xxx xxxx"
                 />
+              </div>
+            )}
+            {form.productObjective === 'whatsapp' && (
+              <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  {t('lm.newCampaign.destPhone.title')}
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.destPhone.hintWa')}</p>
               </div>
             )}
 
@@ -1159,7 +1188,7 @@ export default function NewCampaignPage() {
                       </div>
                       <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
                         <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[10px] text-slate-500">{form.description}</div></div>
-                        <span className="shrink-0 rounded-md bg-gold/90 px-2 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
+                        <span className="shrink-0 rounded-md bg-gold/90 px-2 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                       </div>
                     </div>
                   ) : (
@@ -1171,7 +1200,7 @@ export default function NewCampaignPage() {
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-3">
                         <div className="text-[12px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
                         <div className="mt-0.5 line-clamp-2 text-[10px] text-slate-300">{form.primaryText}</div>
-                        <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
+                        <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                       </div>
                     </div>
                   )}
@@ -1331,7 +1360,7 @@ export default function NewCampaignPage() {
                 onChange={(e) => update('cta', e.target.value as MetaCta)}
               >
                 {CTA_OPTIONS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c} value={c}>{t(`lm.creatives.generate.cta.${c}`)}</option>
                 ))}
               </select>
             </div>
@@ -1360,7 +1389,7 @@ export default function NewCampaignPage() {
               <div className="text-[14px] font-semibold text-white">{form.headline}</div>
               <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
               <div className="mt-2 inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs text-gold">
-                {CTA_OPTIONS.find((c) => c.value === form.cta)?.label}
+                {t(`lm.creatives.generate.cta.${form.cta}`)}
               </div>
             </div>
 

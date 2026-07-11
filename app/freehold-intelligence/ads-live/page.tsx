@@ -10,6 +10,7 @@ type Platform = 'All' | 'Meta' | 'Google'
 
 // Normalized campaign shape across Meta + Google, derived from the live APIs.
 interface LiveCampaign {
+  id: string
   name: string
   platform: 'meta' | 'google'
   status: string
@@ -67,7 +68,7 @@ export default function AdsLivePage() {
             const spend = Number(c?.insights?.spend) || 0
             const leads = metaLeads(c?.insights)
             list.push({
-              name: c.name, platform: 'meta', status: c.status ?? 'PAUSED',
+              id: String(c.id ?? ''), name: c.name, platform: 'meta', status: c.status ?? 'PAUSED',
               spendAED: spend, leads, cpl: leads > 0 ? spend / leads : null,
             })
           }
@@ -84,7 +85,7 @@ export default function AdsLivePage() {
             const spend = Number(c?.metrics?.costAed ?? c?.metrics?.cost) || 0
             const leads = Number(c?.metrics?.conversions ?? c?.metrics?.leads) || 0
             list.push({
-              name: c.name, platform: 'google', status: c.status ?? 'PAUSED',
+              id: String(c.id ?? ''), name: c.name, platform: 'google', status: c.status ?? 'PAUSED',
               spendAED: spend, leads, cpl: leads > 0 ? spend / leads : null,
             })
           }
@@ -242,7 +243,13 @@ export default function AdsLivePage() {
                     return (
                       <Link
                         key={`${c.platform}-${c.name}`}
-                        href="/freehold-intelligence/lead-machine/campaigns/attribution"
+                        href={
+                          // A Meta row opens ITS campaign command page; Google
+                          // rows go to the Google dashboard (no per-id page yet).
+                          isMeta && c.id
+                            ? `/freehold-intelligence/ads-live/meta/${encodeURIComponent(c.id)}`
+                            : '/freehold-intelligence/ads-live/google'
+                        }
                         className="group flex flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4 transition hover:bg-surface-2"
                       >
                         <span className="relative flex h-1.5 w-1.5 shrink-0">

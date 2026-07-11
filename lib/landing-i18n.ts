@@ -190,6 +190,9 @@ const EN: Record<string, string> = {
   "footer.cert3": "Dubai Chamber Member",
   "footer.legal":
     "Freehold Property UAE. All rights reserved. Prices, yields, and availability subject to change without notice. Projected returns are estimates only and do not constitute financial advice. Regulated by the Dubai Land Department.",
+  "footer.privacy": "Privacy Policy",
+
+  "price.onRequest": "Price on request",
 
   "notFound.title": "Page not found",
   "notFound.desc": "This property page is not available or has been removed.",
@@ -365,6 +368,9 @@ const AR: Record<string, string> = {
   "footer.cert3": "عضو غرفة تجارة دبي",
   "footer.legal":
     "عقارات فريهولد الإمارات. جميع الحقوق محفوظة. الأسعار والعوائد والتوفر عرضة للتغيير دون إشعار. العوائد المتوقعة تقديرية فقط ولا تُعد نصيحة مالية. خاضعة لتنظيم دائرة الأراضي والأملاك في دبي.",
+  "footer.privacy": "سياسة الخصوصية",
+
+  "price.onRequest": "السعر عند الطلب",
 
   "notFound.title": "الصفحة غير موجودة",
   "notFound.desc": "صفحة هذا العقار غير متاحة أو تمت إزالتها.",
@@ -540,6 +546,9 @@ const RU: Record<string, string> = {
   "footer.cert3": "Член Торговой палаты Дубая",
   "footer.legal":
     "Freehold Property UAE. Все права защищены. Цены, доходность и наличие могут изменяться без уведомления. Прогнозируемая доходность является лишь оценкой и не является финансовой консультацией. Регулируется Земельным департаментом Дубая.",
+  "footer.privacy": "Политика конфиденциальности",
+
+  "price.onRequest": "Цена по запросу",
 
   "notFound.title": "Страница не найдена",
   "notFound.desc": "Эта страница объекта недоступна или была удалена.",

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
-import { trackConversion } from './_tracker'
+import { trackConversion, collectUtm } from './_tracker'
 import type { LpPalette } from '@/lib/landing-theme'
 
 interface LeadFormProps {
@@ -44,6 +44,10 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
           landingSlug: slug,
           projectSlug: slug,
           message: `Requested brochure & pricing for ${propertyName} via landing page.`,
+          // Campaign attribution — first-touch UTM captured by the tracker,
+          // so the CRM lead links back to the ad that produced it.
+          utm: collectUtm(),
+          referrer: typeof document !== 'undefined' ? document.referrer : '',
         }),
       })
       const payload = await res.json()

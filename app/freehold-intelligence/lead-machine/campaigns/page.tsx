@@ -102,16 +102,11 @@ export default async function CampaignsPage() {
         title={t('lm.campaigns.title')}
         subtitle={isConfigError ? t('lm.campaigns.subtitleNotConnected') : t('lm.campaigns.subtitle', { n: String(n), plural: n !== 1 ? 's' : '' })}
         actions={
-          <>
-            {!isBroker && (
-              <Link href="/freehold-intelligence/lead-machine/campaigns/launch" className={buttonClass('primary', 'md')}>
-                <Zap className="h-3.5 w-3.5" /> {t('lm.campaigns.launch')}
-              </Link>
-            )}
-            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass(isBroker ? 'primary' : 'secondary', 'md')}>
-              <Plus className="h-3.5 w-3.5" /> {isBroker ? t('lm.campaigns.newCampaign') : t('lm.campaigns.manual')}
-            </Link>
-          </>
+          // ONE launch entry — /campaigns/launch was only a redirect to /new,
+          // so two side-by-side buttons led to the same wizard.
+          <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass('primary', 'md')}>
+            <Plus className="h-3.5 w-3.5" /> {t('lm.campaigns.newCampaign')}
+          </Link>
         }
       />
 

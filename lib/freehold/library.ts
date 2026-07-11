@@ -106,12 +106,62 @@ export async function saveLibraryItem(
   }
 }
 
+/**
+ * Update an owned library row (title/content/url). Returns the updated item,
+ * or null when the id is not a library row the caller may edit — e.g. a
+ * Notebook-output report (bare UUID) surfaced read-only on the shelf. The
+ * route maps null → 404 so editors can fall back to "save a copy".
+ */
+export async function updateLibraryItem(
+  id: string,
+  email: string,
+  role: Role | string | null | undefined,
+  patch: { title?: string; content?: string | null; url?: string | null },
+): Promise<LibraryItem | null> {
+  try {
+    await ensureOnce()
+    const sets: string[] = []
+    const params: unknown[] = [id]
+    if (typeof patch.title === 'string' && patch.title.trim()) {
+      params.push(patch.title.trim().slice(0, 200)); sets.push(`title = $${params.length}`)
+    }
+    if (patch.content !== undefined) { params.push(patch.content); sets.push(`content = $${params.length}`) }
+    if (patch.url !== undefined) { params.push(patch.url); sets.push(`url = $${params.length}`) }
+    if (!sets.length) return null
+    let owner = ''
+    if (!isMgmt(role)) { params.push(email); owner = ` AND user_email = $${params.length}` }
+    const rows = await query<Record<string, unknown>>(
+      `UPDATE freehold_site_library SET ${sets.join(', ')} WHERE id = $1${owner}
+       RETURNING id, user_email, kind, title, content, url, created_at::text`,
+      params,
+    )
+    return rows[0] ? mapRow(rows[0]) : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Delete a shelf item. Returns true only when a row was actually removed —
+ * covering both the library table and the Notebook outputs that the shelf
+ * unions in (their ids are bare UUIDs, not `lib-…`).
+ */
 export async function deleteLibraryItem(id: string, email: string, role?: Role | string | null): Promise<boolean> {
   try {
     await ensureOnce()
-    if (isMgmt(role)) await query(`DELETE FROM freehold_site_library WHERE id = $1`, [id])
-    else await query(`DELETE FROM freehold_site_library WHERE id = $1 AND user_email = $2`, [id, email])
-    return true
+    const owner = isMgmt(role) ? '' : ' AND user_email = $2'
+    const params = isMgmt(role) ? [id] : [id, email]
+    const lib = await query<{ id: string }>(
+      `DELETE FROM freehold_site_library WHERE id = $1${owner} RETURNING id`, params,
+    )
+    if (lib.length > 0) return true
+    // Notebook outputs surface on the shelf too — delete them for real, not
+    // just from the UI, so the tile doesn't reappear on the next load.
+    const outOwner = isMgmt(role) ? '' : ' AND created_by = $2'
+    const outs = await query<{ id: string }>(
+      `DELETE FROM freehold_site_notebook_outputs WHERE id = $1${outOwner} RETURNING id`, params,
+    ).catch(() => [])
+    return outs.length > 0
   } catch {
     return false
   }

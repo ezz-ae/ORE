@@ -86,8 +86,8 @@ export default function AdRequestsPage() {
                       {(r.platform || 'Meta')} · {new Date(r.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short', timeZone: 'Asia/Dubai' })}
                     </div>
                   </div>
-                  <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusTone(r.status ?? 'Draft')}`}>
-                    {r.status ?? 'Draft'}
+                  <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusTone(r.status ?? 'draft')}`}>
+                    {r.status ?? t('lm.adreq.statusDraft')}
                   </span>
                 </div>
               ))}

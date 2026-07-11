@@ -163,6 +163,12 @@ export interface LaunchCampaignPayload {
   leadFormId?: string
   /** E.164 phone number — required for 'whatsapp' / 'phone' destinations. */
   destinationPhone?: string
+  /** Lifetime spend ceiling in AED — becomes the Meta campaign spend_cap. */
+  lifetimeCapAED?: number
+  /** Cost-per-result ceiling in AED — becomes a COST_CAP bid on the ad set. */
+  cplCapAED?: number
+  /** Autopilot policy for THIS campaign: act / record-for-approval / skip. */
+  autoEnhance?: 'on' | 'approval' | 'off'
 }
 
 /** A Meta conversion pixel on the connected ad account. */

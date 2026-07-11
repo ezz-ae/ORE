@@ -191,16 +191,25 @@ const normalizeLandingStatus = (value: unknown): "draft" | "published" => {
   return ["published", "active", "live"].includes(normalized) ? "published" : "draft"
 }
 
+// Returns undefined when the project carries no real plan numbers — a public
+// page must never advertise an invented payment structure.
 const normalizePaymentPlan = (plan?: {
   downPayment?: number
   duringConstruction?: number
   onHandover?: number
   postHandover?: number
 }) => {
+  const hasReal =
+    typeof plan?.downPayment === "number" ||
+    typeof plan?.duringConstruction === "number" ||
+    typeof plan?.onHandover === "number" ||
+    typeof plan?.postHandover === "number"
+  if (!hasReal) return undefined
+
   const normalized = {
-    downPayment: Math.max(0, plan?.downPayment ?? 20),
-    duringConstruction: Math.max(0, plan?.duringConstruction ?? 50),
-    onHandover: Math.max(0, plan?.onHandover ?? 30),
+    downPayment: Math.max(0, plan?.downPayment ?? 0),
+    duringConstruction: Math.max(0, plan?.duringConstruction ?? 0),
+    onHandover: Math.max(0, plan?.onHandover ?? 0),
     postHandover: Math.max(0, plan?.postHandover ?? 0),
   }
 
@@ -210,10 +219,7 @@ const normalizePaymentPlan = (plan?: {
     normalized.onHandover +
     normalized.postHandover
 
-  if (total > 0 && total < 100) {
-    normalized.postHandover += 100 - total
-  }
-
+  if (total <= 0) return undefined
   return normalized
 }
 
@@ -394,10 +400,11 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
         ],
       },
     },
-    {
-      type: "payment-plan",
-      data: normalizePaymentPlan(project?.paymentPlan),
-    },
+    // Payment plan renders only from real numbers — no invented 20/50/30.
+    ...(() => {
+      const plan = normalizePaymentPlan(project?.paymentPlan)
+      return plan ? [{ type: "payment-plan", data: plan } as LandingSection] : []
+    })(),
     {
       type: "roi",
       data: {

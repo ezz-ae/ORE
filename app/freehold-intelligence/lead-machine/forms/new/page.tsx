@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLiveProjects } from '@/lib/freehold/use-live-projects'
 import type { MetaFormQuestion, MetaFormQuestionType, CreateLeadFormPayload } from '@/lib/meta/types'
+import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
 import { useT } from '@/lib/i18n/provider'
 
 type WizardStep = 1 | 2 | 3 | 4
@@ -158,7 +159,8 @@ export default function NewFormPage() {
       if (!res.ok) throw new Error(data.error ?? t('pforms.error.createFailed'))
       setCreated(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('pforms.error.unexpected'))
+      const msg = e instanceof Error ? e.message : ''
+      setError(isMetaConfigErrorMessage(msg) ? t('lm.meta.notConnectedHint') : msg || t('pforms.error.unexpected'))
     } finally {
       setSubmitting(false)
     }

@@ -40,11 +40,20 @@ const toNumber = (value: unknown) => {
   return null
 }
 
+// Returns undefined when the project record has no real plan numbers — the
+// public page must never advertise an invented 20/50/30 structure.
 const normalizePaymentPlan = (plan: Record<string, unknown>) => {
+  const hasReal =
+    toNumber(plan.downPayment) !== null ||
+    toNumber(plan.duringConstruction) !== null ||
+    toNumber(plan.onHandover) !== null ||
+    toNumber(plan.postHandover) !== null
+  if (!hasReal) return undefined
+
   const normalized = {
-    downPayment: Math.max(0, toNumber(plan.downPayment) ?? 20),
-    duringConstruction: Math.max(0, toNumber(plan.duringConstruction) ?? 50),
-    onHandover: Math.max(0, toNumber(plan.onHandover) ?? 30),
+    downPayment: Math.max(0, toNumber(plan.downPayment) ?? 0),
+    duringConstruction: Math.max(0, toNumber(plan.duringConstruction) ?? 0),
+    onHandover: Math.max(0, toNumber(plan.onHandover) ?? 0),
     postHandover: Math.max(0, toNumber(plan.postHandover) ?? 0),
   }
 
@@ -54,10 +63,7 @@ const normalizePaymentPlan = (plan: Record<string, unknown>) => {
     normalized.onHandover +
     normalized.postHandover
 
-  if (total > 0 && total < 100) {
-    normalized.postHandover += 100 - total
-  }
-
+  if (total <= 0) return undefined
   return normalized
 }
 
@@ -245,10 +251,11 @@ export async function POST(req: NextRequest) {
           ],
         },
       },
-      {
-        type: "payment-plan",
-        data: normalizePaymentPlan(toObject(payload.paymentPlan)),
-      },
+      // Included only when the project record carries real plan numbers.
+      ...(() => {
+        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        return plan ? [{ type: "payment-plan", data: plan }] : []
+      })(),
       {
         type: "roi",
         data: {
