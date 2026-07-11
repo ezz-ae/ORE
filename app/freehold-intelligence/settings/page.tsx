@@ -302,6 +302,9 @@ export default function SettingsPage() {
             <p className="mt-3 text-xs text-slate-500">
               {t('settings.ai.count', { enabled: aiActions.filter((a) => a.enabled).length, total: aiActions.length })}
             </p>
+            <p className="mt-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-500">
+              {t('settings.ai.notEnforcedNote')}
+            </p>
           </section>
         )}
 
@@ -380,6 +383,9 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+            <p className="mt-3 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-500">
+              {t('settings.thresholds.notEnforcedNote')}
+            </p>
           </section>
         )}
 
