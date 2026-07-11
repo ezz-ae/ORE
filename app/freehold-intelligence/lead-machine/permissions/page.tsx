@@ -1,8 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { CheckCircle, Lock, ChevronDown, ChevronUp, Shield, Loader2 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
+
+// Tier is DERIVED from how many permissions are actually granted (was hardcoded
+// 'Bronze' for everyone), so the badge reflects real access.
+function deriveTier(n: number): 'Bronze' | 'Silver' | 'Gold' {
+  return n >= 8 ? 'Gold' : n >= 4 ? 'Silver' : 'Bronze'
+}
 
 type Permission =
   | 'view_campaigns'
@@ -20,7 +27,6 @@ type AgentPerms = {
   id: string
   name: string
   initials: string
-  tier: string
   perms: Record<Permission, boolean>
 }
 
@@ -97,24 +103,26 @@ export default function PermissionsPage() {
   const [saved, setSaved]       = useState<string[]>([])
 
   useEffect(() => {
-    fetch('/api/freehold/team')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.members) {
-          const brokers = data.members
-            .filter((m: any) => m.dbRole === 'broker')
-            .map((m: any): AgentPerms => ({
-              id:       m.id,
-              name:     m.name,
-              initials: m.initials,
-              tier:     'Bronze',
-              perms:    { ...DEFAULT_BRONZE },
-            }))
-          setAgents(brokers)
-          if (brokers.length > 0) setExpanded(brokers[0].id)
-        }
-      })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/freehold/team').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/freehold/lead-machine/permissions').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(([teamData, permData]) => {
+      const stored: Record<string, Record<string, boolean>> = permData?.perms ?? {}
+      if (teamData?.members) {
+        const brokers = teamData.members
+          .filter((m: any) => m.dbRole === 'broker')
+          .map((m: any): AgentPerms => ({
+            id: m.id,
+            name: m.name,
+            initials: m.initials,
+            // Real stored permissions, merged over the Bronze defaults for any
+            // permission the stored map doesn't yet carry.
+            perms: { ...DEFAULT_BRONZE, ...(stored[m.id] ?? {}) } as Record<Permission, boolean>,
+          }))
+        setAgents(brokers)
+        if (brokers.length > 0) setExpanded(brokers[0].id)
+      }
+    }).finally(() => setLoading(false))
   }, [])
 
   function toggle(agentId: string, perm: Permission) {
@@ -125,9 +133,20 @@ export default function PermissionsPage() {
     )
   }
 
-  function saveAgent(agentId: string) {
-    setSaved((prev) => [...prev, agentId])
-    setTimeout(() => setSaved((prev) => prev.filter((x) => x !== agentId)), 2000)
+  async function saveAgent(agentId: string) {
+    const agent = agents.find((a) => a.id === agentId)
+    if (!agent) return
+    try {
+      const res = await fetch('/api/freehold/lead-machine/permissions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brokerId: agentId, perms: agent.perms }),
+      })
+      if (!res.ok) throw new Error()
+      setSaved((prev) => [...prev, agentId])
+      setTimeout(() => setSaved((prev) => prev.filter((x) => x !== agentId)), 2000)
+    } catch {
+      toast.error(t('lm.permissions.saveFailed'))
+    }
   }
 
   return (
@@ -151,9 +170,10 @@ export default function PermissionsPage() {
       {/* Agent list */}
       <div className="space-y-3">
         {!loading && agents.map((agent) => {
-          const tc = TIER_COLOR[agent.tier] ?? TIER_COLOR.Bronze
           const isOpen = expanded === agent.id
           const permCount = Object.values(agent.perms).filter(Boolean).length
+          const tier = deriveTier(permCount)
+          const tc = TIER_COLOR[tier]
           const isSaved = saved.includes(agent.id)
 
           return (
@@ -173,7 +193,7 @@ export default function PermissionsPage() {
                   <div className="text-[14px] font-semibold text-white">{agent.name}</div>
                   <div className="mt-0.5 flex items-center gap-2">
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${tc}`}>
-                      {agent.tier}
+                      {tier}
                     </span>
                     <span className="text-xs text-slate-600">{t('lm.permissions.permActive', { n: String(permCount) })}</span>
                   </div>
