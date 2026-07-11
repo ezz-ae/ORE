@@ -1,6 +1,11 @@
 import { getVertexAuthHeaders, resolveVertexProject, VERTEX_LOCATION, vertexConfigured } from '@/lib/google/vertex-auth'
+import { googleAiKey } from '@/lib/creative-studio/providers'
 
 const MODEL = 'gemini-2.5-flash'
+// Gemini API (key-based) model ladder — first available wins. Lets the ONE
+// chat run at full intelligence on deployments that have GEMINI_API_KEY but
+// no Vertex service account (the common white-label setup).
+const API_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
 
 const GEMINI_URL = () =>
   `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${resolveVertexProject()}` +
@@ -107,36 +112,38 @@ export async function queryServerAgent(
   message: string,
   opts: ServerQueryOptions = {},
 ): Promise<string> {
-  // Graceful degradation: never hard-fail an AI surface because credentials
-  // aren't wired up. Fall back to a grounded, context-aware summary instead.
-  if (!vertexConfigured()) {
-    return buildFallbackAnswer(message, opts.context)
+  // Transport ladder: Vertex (service account) → Gemini API (GEMINI_API_KEY)
+  // → grounded offline summary. Before the API-key rung existed, a deployment
+  // with only GEMINI_API_KEY got the canned fallback on EVERY chat turn —
+  // the whole platform read like a FAQ bot instead of a live agent.
+  if (vertexConfigured()) {
+    try {
+      return await callVertex(message, opts)
+    } catch { /* fall through to the API key, then offline */ }
   }
-  try {
-    return await callVertex(message, opts)
-  } catch {
-    return buildFallbackAnswer(message, opts.context)
+  if (googleAiKey()) {
+    try {
+      return await callGeminiApi(message, opts)
+    } catch { /* fall through to offline */ }
   }
+  return buildFallbackAnswer(message, opts.context)
 }
 
-async function callVertex(
+/** Shared request assembly for both transports (history, context, config). */
+function buildRequest(
   message: string,
-  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature, history: durableHistory }: ServerQueryOptions = {},
-): Promise<string> {
-  const authHeaders = await getVertexAuthHeaders()
-  const sid     = sessionId ?? 'server-anon'
+  { sessionId, context, systemPrompt, responseMimeType, maxOutputTokens, temperature, history: durableHistory }: ServerQueryOptions,
+) {
+  const sid = sessionId ?? 'server-anon'
   const history = _history.get(sid) ?? durableHistory ?? []
-
   const inputText =
     context && history.length === 0
       ? `Server context:\n${JSON.stringify(context, null, 2)}\n\nQuestion: ${message}`
       : message
-
   const contents = [
     ...history.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
     { role: 'user', parts: [{ text: inputText }] },
   ]
-
   const generationConfig: Record<string, unknown> = {
     temperature: temperature ?? 0.4,
     maxOutputTokens: maxOutputTokens ?? 1024,
@@ -145,12 +152,52 @@ async function callVertex(
     thinkingConfig: { thinkingBudget: 0 },
   }
   if (responseMimeType) generationConfig.responseMimeType = responseMimeType
+  const remember = (text: string) =>
+    _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
+  return { contents, generationConfig, system: systemPrompt ?? SYSTEM_PROMPT, remember }
+}
+
+/** Gemini API transport (key-based) — same brain, no service account needed. */
+async function callGeminiApi(message: string, opts: ServerQueryOptions = {}): Promise<string> {
+  const key = googleAiKey()
+  const { contents, generationConfig, system, remember } = buildRequest(message, opts)
+  let lastErr = ''
+  for (const model of API_MODELS) {
+    // thinkingConfig is a 2.5-family knob — older models reject it with 400.
+    const config = model.startsWith('gemini-2.5')
+      ? generationConfig
+      : Object.fromEntries(Object.entries(generationConfig).filter(([k]) => k !== 'thinkingConfig'))
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: config }),
+      },
+    )
+    if (res.ok) {
+      const data = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
+      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+      if (!text) throw new Error('Gemini returned no content')
+      remember(text)
+      return text
+    }
+    lastErr = await res.text().catch(() => `HTTP ${res.status}`)
+    // 404 = model unknown on this key → try the next; other errors are fatal.
+    if (res.status !== 404 && !/NOT_FOUND/i.test(lastErr)) break
+  }
+  throw new Error(`Gemini API error: ${lastErr.slice(0, 300)}`)
+}
+
+async function callVertex(message: string, opts: ServerQueryOptions = {}): Promise<string> {
+  const authHeaders = await getVertexAuthHeaders()
+  const { contents, generationConfig, system, remember } = buildRequest(message, opts)
 
   const res = await fetch(GEMINI_URL(), {
     method:  'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt ?? SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: system }] },
       contents,
       generationConfig,
     }),
@@ -168,7 +215,7 @@ async function callVertex(
     data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ??
     '(no response)'
 
-  _history.set(sid, [...history, { role: 'user' as const, text: message }, { role: 'model' as const, text }].slice(-20))
+  remember(text)
 
   return text
 }
