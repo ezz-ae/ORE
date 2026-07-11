@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Globe, Search, Loader2, ExternalLink, ChevronDown, ChevronUp, Plus } from 'lucide-react'
 import type { MicrositeListItem } from '@/lib/microsites'
@@ -71,6 +72,17 @@ export function MicrositesClient() {
           <h1 className="text-2xl font-semibold text-white">{t('paim.micro.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {t('paim.micro.subtitle', { path: '/site/<slug>' })}
+          </p>
+          {/* Disambiguation: microsites (SEO, /site/) are NOT the ad landing
+              pages (/lp/). One canonical landing home lives under Ads. */}
+          <p className="mt-2 text-xs text-slate-600">
+            {t('paim.micro.notLandings')}{' '}
+            <Link
+              href="/freehold-intelligence/lead-machine/landings"
+              className="text-teal-400/80 underline underline-offset-2 transition hover:text-teal-300"
+            >
+              {t('paim.micro.goToLandings')}
+            </Link>
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface-2 px-4 py-2 text-sm text-slate-300">
