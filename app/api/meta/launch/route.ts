@@ -40,6 +40,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Minimum daily budget is AED 50' }, { status: 400 })
   }
 
+  // Destination integrity — fail closed rather than launch a half-wired ad.
+  if (body.destination === 'form' && !body.leadFormId) {
+    return NextResponse.json({ error: 'A Meta instant form is required for a lead-form campaign.' }, { status: 400 })
+  }
+  if (body.destination === 'phone' && !body.destinationPhone) {
+    return NextResponse.json({ error: 'A phone number is required for a call campaign.' }, { status: 400 })
+  }
+
   // Identify the creating broker (if any) from the verified session.
   const sessionUser = __auth.user
   const brokerId    = sessionUser.role === 'broker'
@@ -84,13 +92,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await launchFullCampaign({
-      campaignName:   body.campaignName,
-      objective:      body.objective,
-      listingName:    body.listingName,
-      dailyBudgetAED: body.dailyBudgetAED,
-      targeting:      body.targeting,
-      creative:       body.creative,
-      launchStatus:   body.launchStatus ?? 'PAUSED',
+      campaignName:     body.campaignName,
+      objective:        body.objective,
+      listingName:      body.listingName,
+      dailyBudgetAED:   body.dailyBudgetAED,
+      targeting:        body.targeting,
+      creative:         body.creative,
+      launchStatus:     body.launchStatus ?? 'PAUSED',
+      destination:      body.destination,
+      leadFormId:       body.leadFormId,
+      destinationPhone: body.destinationPhone,
     })
 
     await recordBrokerSpend(result.campaignId)

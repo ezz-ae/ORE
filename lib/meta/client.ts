@@ -24,6 +24,7 @@ import type {
   MetaPixel,
   MetaAdFormat,
   MetaLocale,
+  AdDestination,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -247,7 +248,9 @@ export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
 // error 100. The wizard keeps its familiar vocabulary; we translate here.
 // Website-lead campaigns need a pixel to optimize for leads; without one the
 // honest fallback is a traffic campaign optimized for landing-page views.
-function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean): string {
+function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean, destination?: AdDestination): string {
+  // Instant-form lead ads collect ON Meta — no pixel needed for OUTCOME_LEADS.
+  if (destination === 'form') return 'OUTCOME_LEADS'
   switch (obj) {
     case 'LEAD_GENERATION': return hasPixel ? 'OUTCOME_LEADS' : 'OUTCOME_TRAFFIC'
     case 'CONVERSIONS':     return hasPixel ? 'OUTCOME_SALES' : 'OUTCOME_TRAFFIC'
@@ -255,7 +258,10 @@ function toOdaxObjective(obj: MetaCampaignObjective, hasPixel: boolean): string 
   }
 }
 
-function objectiveToOptimizationGoal(obj: MetaCampaignObjective, hasPixel: boolean): MetaOptimizationGoal {
+function objectiveToOptimizationGoal(obj: MetaCampaignObjective, hasPixel: boolean, destination?: AdDestination): MetaOptimizationGoal {
+  // On-ad instant form optimizes on the form itself; call ads on call quality.
+  if (destination === 'form')  return 'LEAD_GENERATION'
+  if (destination === 'phone') return 'QUALITY_CALL'
   switch (obj) {
     case 'LEAD_GENERATION':
     case 'CONVERSIONS':
@@ -276,10 +282,12 @@ export async function createAdSet(params: {
   status: 'ACTIVE' | 'PAUSED'
   /** Conversion pixel override — falls back to the account default. */
   pixelId?: string
+  /** Where a click/submit goes — shapes destination_type + promoted_object. */
+  destination?: AdDestination
 }): Promise<{ id: string }> {
-  const { adAccountId, pixelId: accountPixel } = await creds()
+  const { adAccountId, pageId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
-  const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId)
+  const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId, params.destination)
 
   // Placements: an EMPTY platform list means Advantage+ placements (fully
   // automatic — Meta's recommendation). Explicit platforms get the complete
@@ -338,8 +346,21 @@ export async function createAdSet(params: {
     status:            params.status,
   }
 
-  // Website destination + pixel signal for lead/conversion campaigns.
-  if (params.objective === 'CONVERSIONS' || params.objective === 'LEAD_GENERATION') {
+  // Destination wiring — where a click/submit actually goes.
+  if (params.destination === 'form') {
+    // Meta instant form: the lead is captured ON the ad, promoted via the Page.
+    body.destination_type = 'ON_AD'
+    body.promoted_object  = { page_id: pageId }
+  } else if (params.destination === 'whatsapp') {
+    // Click-to-WhatsApp: uses the Page's connected WhatsApp number.
+    body.destination_type = 'WHATSAPP'
+    body.promoted_object  = { page_id: pageId }
+  } else if (params.destination === 'phone') {
+    // Call ads: the CTA dials the number carried on the creative.
+    body.destination_type = 'PHONE_CALL'
+    body.promoted_object  = { page_id: pageId }
+  } else if (params.objective === 'CONVERSIONS' || params.objective === 'LEAD_GENERATION') {
+    // Website destination + pixel signal for lead/conversion campaigns.
     body.destination_type = 'WEBSITE'
     if (pixelId) {
       body.promoted_object = {
@@ -402,15 +423,37 @@ export async function validateInterests(
 export async function createAdCreative(params: {
   name: string
   creative: CampaignCreative
+  /** Where the CTA goes; defaults to the landing URL. */
+  destination?: AdDestination
+  /** Meta instant-form id — attached to the CTA when destination is 'form'. */
+  leadFormId?: string
+  /** E.164 number for 'whatsapp' / 'phone' destinations. */
+  destinationPhone?: string
 }): Promise<{ id: string }> {
   const { adAccountId, pageId } = await creds()
+
+  // CTA shaping per destination. The instant form rides ON the CTA
+  // (lead_gen_form_id) — this is the wiring that makes a picked Meta form
+  // actually reach the launched ad.
+  let callToAction: Record<string, unknown>
+  if (params.destination === 'form' && params.leadFormId) {
+    const formCta = params.creative.cta === 'WHATSAPP_MESSAGE' || params.creative.cta === 'CALL_NOW'
+      ? 'SIGN_UP' : params.creative.cta
+    callToAction = { type: formCta, value: { lead_gen_form_id: params.leadFormId } }
+  } else if (params.destination === 'whatsapp') {
+    callToAction = { type: 'WHATSAPP_MESSAGE', value: { app_destination: 'WHATSAPP' } }
+  } else if (params.destination === 'phone' && params.destinationPhone) {
+    callToAction = { type: 'CALL_NOW', value: { link: `tel:${params.destinationPhone.replace(/\s+/g, '')}` } }
+  } else {
+    callToAction = { type: params.creative.cta, value: { link: params.creative.landingUrl } }
+  }
 
   const linkData: Record<string, unknown> = {
     link:        params.creative.landingUrl,
     message:     params.creative.primaryText,
     name:        params.creative.headline,
     description: params.creative.description,
-    call_to_action: { type: params.creative.cta, value: { link: params.creative.landingUrl } },
+    call_to_action: callToAction,
   }
 
   // Prefer an uploaded image (image_hash) — Meta's native, most reliable path.
@@ -801,6 +844,12 @@ export async function launchFullCampaign(params: {
   launchStatus: 'ACTIVE' | 'PAUSED'
   /** Conversion pixel override — falls back to the account default. */
   pixelId?:     string
+  /** Where a click/submit goes; default 'landing' (the landingUrl). */
+  destination?: AdDestination
+  /** Meta instant-form id — REQUIRED when destination is 'form'. */
+  leadFormId?:  string
+  /** E.164 number for 'whatsapp' / 'phone' destinations. */
+  destinationPhone?: string
 }): Promise<LaunchCampaignResult> {
   const { adAccountId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -808,7 +857,7 @@ export async function launchFullCampaign(params: {
   // 1 — Campaign (ODAX objective — v20 rejects the legacy names)
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
     name:                  params.campaignName,
-    objective:             toOdaxObjective(params.objective, !!pixelId),
+    objective:             toOdaxObjective(params.objective, !!pixelId, params.destination),
     status:                params.launchStatus,
     special_ad_categories: [],
     // Budgets live on the ad set (not CBO) — Meta now requires this flag to
@@ -840,6 +889,7 @@ export async function launchFullCampaign(params: {
     targeting:      { ...params.targeting, interests: validatedInterests },
     status:         params.launchStatus,
     pixelId:        pixelId ?? undefined,
+    destination:    params.destination,
   }))
 
   // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad
@@ -850,8 +900,11 @@ export async function launchFullCampaign(params: {
     if (hash) creativeInput.imageHash = hash
   }
   const creative = await step('creative', () => createAdCreative({
-    name:     `${params.listingName} — Creative`,
-    creative: creativeInput,
+    name:             `${params.listingName} — Creative`,
+    creative:         creativeInput,
+    destination:      params.destination,
+    leadFormId:       params.leadFormId,
+    destinationPhone: params.destinationPhone,
   }))
 
   // 4 — Ad

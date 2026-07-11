@@ -16,6 +16,7 @@ export type MetaOptimizationGoal =
   | 'IMPRESSIONS'
   | 'REACH'
   | 'OFFSITE_CONVERSIONS'
+  | 'QUALITY_CALL'
 
 /**
  * Meta ad_format values accepted by the Graph `generatepreviews` endpoint —
@@ -37,6 +38,11 @@ export type MetaCta =
   | 'BOOK_NOW'
   | 'APPLY_NOW'
   | 'DOWNLOAD'
+  | 'WHATSAPP_MESSAGE'
+  | 'CALL_NOW'
+
+/** Where a click/submit on the ad goes. 'form' = Meta instant form (on-ad). */
+export type AdDestination = 'landing' | 'form' | 'whatsapp' | 'phone'
 
 export interface MetaCampaign {
   id: string
@@ -151,6 +157,12 @@ export interface LaunchCampaignPayload {
   pixelId?: string
   /** Set automatically by the server when a broker creates a campaign */
   brokerId?: string
+  /** Where a click/submit goes. Defaults to 'landing' (the landingUrl). */
+  destination?: AdDestination
+  /** Meta instant-form id — REQUIRED when destination is 'form' (lead ads). */
+  leadFormId?: string
+  /** E.164 phone number — required for 'whatsapp' / 'phone' destinations. */
+  destinationPhone?: string
 }
 
 /** A Meta conversion pixel on the connected ad account. */
