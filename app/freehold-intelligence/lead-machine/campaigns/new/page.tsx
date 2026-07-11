@@ -337,6 +337,8 @@ export default function NewCampaignPage() {
   const [leadForms, setLeadForms] = useState<LeadFormLite[]>([])
   const [leadFormId, setLeadFormId] = useState('')
   const [leadFormsLoading, setLeadFormsLoading] = useState(false)
+  // Destination number for call / WhatsApp objectives (E.164, e.g. +9715…).
+  const [destinationPhone, setDestinationPhone] = useState('')
   useEffect(() => {
     if (form.productObjective !== 'meta_lead') return
     setLeadFormsLoading(true)
@@ -477,6 +479,20 @@ export default function NewCampaignPage() {
     setLoading(true)
     setApiError(null)
 
+    // Destination integrity — the chosen objective must be fully wired before
+    // any money moves (a picked instant form MUST reach the launched ad).
+    const dest: LaunchCampaignPayload['destination'] =
+      activeObjective.dest === 'form' ? 'form'
+      : activeObjective.dest === 'whatsapp' ? 'whatsapp'
+      : activeObjective.dest === 'phone' ? 'phone'
+      : 'landing'
+    if (dest === 'form' && !leadFormId) {
+      setApiError(t('lm.newCampaign.err.needForm')); setLoading(false); setStep(1); return
+    }
+    if (dest === 'phone' && !destinationPhone.trim()) {
+      setApiError(t('lm.newCampaign.err.needPhone')); setLoading(false); setStep(1); return
+    }
+
     const listing = listings.find((l) => l.id === form.listingId)
     const interests = UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id))
 
@@ -505,6 +521,11 @@ export default function NewCampaignPage() {
         imageHash:   form.imageHash || undefined,
       },
       launchStatus: form.launchStatus,
+      // The wiring that was missing: the picked instant form + destination
+      // now actually reach the launch (previously leadFormId was UI-only).
+      destination:      dest,
+      leadFormId:       dest === 'form' ? leadFormId : undefined,
+      destinationPhone: dest === 'phone' || dest === 'whatsapp' ? destinationPhone.trim() || undefined : undefined,
     }
 
     try {
@@ -728,6 +749,27 @@ export default function NewCampaignPage() {
                 {!leadFormsLoading && leadForms.length === 0 && (
                   <p className="mt-2 text-[11px] text-slate-500">{t('lm.newCampaign.leadForm.empty')}</p>
                 )}
+              </div>
+            )}
+
+            {/* Call / WhatsApp → the destination number the ad actually dials or messages. */}
+            {(form.productObjective === 'call' || form.productObjective === 'whatsapp') && (
+              <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
+                  {form.productObjective === 'call' ? <Phone className="h-3.5 w-3.5" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                  {t('lm.newCampaign.destPhone.title')}
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                  {form.productObjective === 'call' ? t('lm.newCampaign.destPhone.hintCall') : t('lm.newCampaign.destPhone.hintWa')}
+                </p>
+                <input
+                  className={`${inputCls()} mt-3 max-w-xs`}
+                  dir="ltr"
+                  inputMode="tel"
+                  value={destinationPhone}
+                  onChange={(e) => setDestinationPhone(e.target.value)}
+                  placeholder="+971 5x xxx xxxx"
+                />
               </div>
             )}
 
