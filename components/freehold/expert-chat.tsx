@@ -10,7 +10,10 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
-import { EXPERT_SEND, EXPERT_OPEN } from '@/lib/freehold/expert-bus'
+import {
+  EXPERT_SEND, EXPERT_OPEN, EXPERT_EDITOR_CHANGED,
+  getExpertEditor, type ExpertEditorSurface,
+} from '@/lib/freehold/expert-bus'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
 
@@ -381,9 +384,41 @@ export function ExpertChat() {
     } catch { toast.error(t('expert.ingestFailed')) } finally { setShotBusy(false) }
   }
 
+  // ── ONE chat: when a Drive editor is open it registers here, and typing in
+  //    this chat EDITS the open artifact (reversible in the editor strip).
+  const [editor, setEditor] = useState<ExpertEditorSurface | null>(null)
+  const [editMode, setEditMode] = useState(true)
+  const [editUndoTick, setEditUndoTick] = useState(0) // re-render after undo
+  useEffect(() => {
+    const sync = () => { setEditor(getExpertEditor()); setEditMode(true) }
+    sync()
+    window.addEventListener(EXPERT_EDITOR_CHANGED, sync)
+    return () => window.removeEventListener(EXPERT_EDITOR_CHANGED, sync)
+  }, [])
+
   const send = useCallback(async (text?: string) => {
     const message = (text ?? value).trim()
     if (!message || pending) return
+
+    // Editor lane: apply the instruction to the OPEN artifact via its
+    // registered state machine (same real endpoint, undo preserved there).
+    // These turns are local to the editing session — not persisted server-side.
+    if (editor && editMode) {
+      setMessages((m) => [...m, { role: 'user', content: message }])
+      setValue('')
+      setPending(true)
+      try {
+        const r = await editor.apply(message)
+        setMessages((m) => [...m, { role: 'assistant', blocks: [{ type: 'text', content: r.summary || t('expert.editNoResult') }] }])
+      } catch {
+        setMessages((m) => [...m, { role: 'assistant', blocks: [{ type: 'text', content: t('expert.fallbackErr') }] }])
+      } finally {
+        setPending(false)
+        setEditUndoTick((n) => n + 1)
+      }
+      return
+    }
+
     setMessages((m) => [...m, { role: 'user', content: message }])
     setValue('')
     setPending(true)
@@ -417,7 +452,7 @@ export function ExpertChat() {
     } finally {
       setPending(false)
     }
-  }, [value, pending, pathname, t, mode, attachment])
+  }, [value, pending, pathname, t, mode, attachment, editor, editMode])
 
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
@@ -671,8 +706,31 @@ export function ExpertChat() {
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
               </button>
             </div>
-            {/* Superpowers: mode chip · voice note · file · screenshot */}
+            {/* Editing lane: quick-edit presets for the OPEN artifact */}
+            {editor && editMode && editor.presets().length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 px-2 pb-1" onClick={(e) => e.stopPropagation()}>
+                {editor.presets().slice(0, 6).map((p) => (
+                  <button key={p.label} type="button" onClick={() => { setValue(p.instruction); taRef.current?.focus() }}
+                    className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10px] text-slate-300 transition hover:border-gold/30 hover:text-gold">
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Superpowers: editing chip · mode chip · voice note · file · screenshot */}
             <div className="flex flex-wrap items-center gap-1.5 px-2 pb-1 pt-0.5" onClick={(e) => e.stopPropagation()}>
+              {editor && (
+                <button type="button" onClick={() => setEditMode((v) => !v)} title={t('expert.editToggleTitle')}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition ${editMode ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-500 hover:text-slate-300'}`}>
+                  <Pencil className="h-3 w-3" /> {t('expert.editingChip', { title: editor.title })}
+                </button>
+              )}
+              {editor && editMode && editUndoTick >= 0 && editor.canUndo() && (
+                <button type="button" onClick={() => { editor.undo(); setEditUndoTick((n) => n + 1) }}
+                  className="rounded-full border border-line px-2.5 py-1 text-[10px] text-slate-400 transition hover:text-slate-200">
+                  {t('expert.editUndo')}
+                </button>
+              )}
               <button type="button" onClick={cycleMode} title={t('expert.modeTitle')}
                 className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition ${mode === 'auto' ? 'border-line text-slate-500 hover:text-slate-300' : 'border-gold/40 bg-gold/10 text-gold'}`}>
                 {t(`expert.mode.${mode}`)}

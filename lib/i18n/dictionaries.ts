@@ -153,6 +153,7 @@ const en: Dict = {
   'ed.doc.ai.rewrite': 'Rewrite clearer',
   // ── Drive AI co-editor rail (ed.ai.*) ──
   'ed.ai.title': 'Edit with AI',
+  'ed.ai.chatHint': 'Type your edit instructions in the Expert chat — this file is registered there. Every change can be undone here.',
   'ed.ai.artifact.doc': 'document',
   'ed.ai.artifact.image': 'image',
   'ed.ai.emptyThread': 'Type an instruction — every change applies to your {artifact} and can be undone.',
@@ -568,6 +569,7 @@ const ar: Dict = {
   'ed.doc.ai.rewrite': 'إعادة صياغة أوضح',
   // ── Drive AI co-editor rail (ed.ai.*) ──
   'ed.ai.title': 'التعديل بالذكاء الاصطناعي',
+  'ed.ai.chatHint': 'اكتب تعليمات التعديل في محادثة الخبير — هذا الملف مسجّل هناك. كل تغيير يمكن التراجع عنه هنا.',
   'ed.ai.artifact.doc': 'المستند',
   'ed.ai.artifact.image': 'الصورة',
   'ed.ai.emptyThread': 'اكتب تعليمة — كل تغيير يُطبَّق على {artifact} ويمكن التراجع عنه.',
@@ -974,6 +976,7 @@ const ru: Dict = {
   'ed.doc.ai.rewrite': 'Переписать яснее',
   // ── Drive AI co-editor rail (ed.ai.*) ──
   'ed.ai.title': 'Редактировать с ИИ',
+  'ed.ai.chatHint': 'Пишите инструкции по правке в чате Эксперта — этот файл зарегистрирован там. Каждое изменение можно отменить здесь.',
   'ed.ai.artifact.doc': 'документ',
   'ed.ai.artifact.image': 'изображение',
   'ed.ai.emptyThread': 'Введите инструкцию — каждое изменение применяется к вашему {artifact} и может быть отменено.',
