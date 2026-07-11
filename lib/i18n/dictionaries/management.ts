@@ -396,6 +396,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.reports.type.marketTrends': 'Market Trends Report',
     // report history
     'mgmt.reports.history': 'Report History',
+    'mgmt.reports.historyEmpty': 'No reports generated yet — create one above and it appears here.',
     'mgmt.reports.historyHint': 'Last {count} generated reports',
     'mgmt.reports.col.reportId': 'Report ID',
     'mgmt.reports.col.reportType': 'Report Type',
@@ -791,6 +792,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.reports.type.agentPerf': 'تقرير أداء الوكلاء',
     'mgmt.reports.type.marketTrends': 'تقرير اتجاهات السوق',
     'mgmt.reports.history': 'سجل التقارير',
+    'mgmt.reports.historyEmpty': 'لم يتم إنشاء أي تقارير بعد — أنشئ واحداً بالأعلى وسيظهر هنا.',
     'mgmt.reports.historyHint': 'آخر {count} تقارير مُولّدة',
     'mgmt.reports.col.reportId': 'معرّف التقرير',
     'mgmt.reports.col.reportType': 'نوع التقرير',
@@ -1185,6 +1187,7 @@ export const management: Record<Locale, Dict> = {
     'mgmt.reports.type.agentPerf': 'Отчёт об эффективности агентов',
     'mgmt.reports.type.marketTrends': 'Отчёт о рыночных трендах',
     'mgmt.reports.history': 'История отчётов',
+    'mgmt.reports.historyEmpty': 'Отчёты ещё не создавались — создайте выше, и он появится здесь.',
     'mgmt.reports.historyHint': 'Последние {count} сгенерированных отчётов',
     'mgmt.reports.col.reportId': 'ID отчёта',
     'mgmt.reports.col.reportType': 'Тип отчёта',
