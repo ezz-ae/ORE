@@ -282,12 +282,13 @@ export default function MetaAdsPage() {
             {/* Rows */}
             <div className="divide-y divide-line">
               {visibleCampaigns.map((c) => (
-                <div
+                <Link
                   key={c.id}
-                  className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4"
+                  href={`/freehold-intelligence/ads-live/meta/${c.id}`}
+                  className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4 transition hover:bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
                     <span className="truncate text-sm font-semibold text-slate-100">{c.name}</span>
                   </div>
                   <div>
@@ -313,7 +314,7 @@ export default function MetaAdsPage() {
                   <div className="text-xs text-slate-300">
                     {c.cpl > 0 ? `AED ${c.cpl}` : '—'}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
