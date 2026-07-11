@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2 } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -37,6 +37,54 @@ type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number;
 const AI_FIELDS = ['headline', 'subheadline', 'ctaText', 'seoTitle', 'seoDescription'] as const
 type AiField = (typeof AI_FIELDS)[number]
 type AiTurn = { instruction: string; note: string; fields: AiField[] }
+
+// ── Per-type block fields ─────────────────────────────────────────────────────
+// Mirrors EXACTLY what the live page renders per section (app/lp/[slug]/page.tsx)
+// so every visible word of every content block is editable here. `alt` lists the
+// alternate data keys the renderer also accepts — we edit whichever one the
+// section already stores.
+type FieldDef =
+  | { kind: 'text' | 'long' | 'number' | 'lines'; key: string; alt?: string[] }
+  | { kind: 'pairs'; key: string; alt?: string[]; a: string; b: string; bAlt?: string[]; bLong?: boolean }
+
+const TITLE: FieldDef = { kind: 'text', key: 'title' }
+const SUBTITLE: FieldDef = { kind: 'long', key: 'subtitle' }
+
+const SECTION_FIELDS: Record<string, FieldDef[]> = {
+  hero: [TITLE, SUBTITLE, { kind: 'text', key: 'eyebrow' }, { kind: 'lines', key: 'chips' }],
+  description: [TITLE, { kind: 'long', key: 'body', alt: ['description', 'content'] }, { kind: 'lines', key: 'highlights' }],
+  gallery: [TITLE, { kind: 'lines', key: 'labels', alt: ['rooms', 'views'] }, { kind: 'lines', key: 'images', alt: ['photos', 'gallery'] }],
+  units: [TITLE],
+  'key-facts': [{ kind: 'pairs', key: 'items', a: 'label', b: 'value' }],
+  'payment-plan': [
+    { kind: 'number', key: 'downPayment' }, { kind: 'number', key: 'duringConstruction' },
+    { kind: 'number', key: 'onHandover' }, { kind: 'number', key: 'postHandover' },
+  ],
+  roi: [{ kind: 'number', key: 'rentalYield', alt: ['expectedRoi'] }, { kind: 'number', key: 'startPriceAed' }],
+  location: [
+    { kind: 'text', key: 'area' }, TITLE, SUBTITLE,
+    { kind: 'pairs', key: 'distances', alt: ['landmarks'], a: 'label', b: 'time', bAlt: ['distance', 'value'] },
+    { kind: 'lines', key: 'highlights' },
+  ],
+  'why-dubai': [], // fully standard, pre-translated content — nothing to edit
+  'golden-visa': [{ kind: 'lines', key: 'benefits' }, { kind: 'text', key: 'threshold' }],
+  amenities: [{ kind: 'lines', key: 'items' }],
+  'developer-profile': [
+    { kind: 'text', key: 'name', alt: ['developer'] },
+    { kind: 'long', key: 'description', alt: ['about'] },
+    { kind: 'pairs', key: 'stats', a: 'label', b: 'value' },
+  ],
+  'social-proof': [{ kind: 'pairs', key: 'testimonials', alt: ['items'], a: 'name', b: 'quote', bLong: true }],
+  neighborhood: [{ kind: 'text', key: 'area' }, { kind: 'long', key: 'description', alt: ['body', 'about'] }, { kind: 'lines', key: 'highlights' }],
+  'market-intelligence': [{ kind: 'long', key: 'summary' }, { kind: 'lines', key: 'bullets' }],
+  'ai-concierge': [TITLE, SUBTITLE, { kind: 'lines', key: 'prompts' }],
+  faq: [{ kind: 'pairs', key: 'items', a: 'question', b: 'answer', bLong: true }],
+  'download-brochure': [TITLE, SUBTITLE],
+  'lead-form': [TITLE, SUBTITLE],
+}
+const DEFAULT_FIELDS: FieldDef[] = [TITLE, SUBTITLE]
+const fieldsFor = (type: string): FieldDef[] => SECTION_FIELDS[type] ?? DEFAULT_FIELDS
+const asStr = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v))
 
 export default function LandingEditorPage() {
   const t = useT()
@@ -226,11 +274,76 @@ export default function LandingEditorPage() {
     if (!form?.sections || !type) return
     applySections([...form.sections, { type, data: { title: '', subtitle: '' } }])
   }
-  function setSectionField(i: number, key: string, value: string) {
+  function setSectionField(i: number, key: string, value: unknown) {
     if (!form?.sections) return
     setSections(form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, [key]: value } } : s)))
   }
   const [expanded, setExpanded] = useState<number | null>(null)
+
+  // Schema-driven block editor — renders the exact fields the live page shows
+  // for this section type. Kept inside the component so the `.fld` styles apply.
+  function renderBlockField(i: number, data: Record<string, unknown>, def: FieldDef) {
+    const key = [def.key, ...(def.alt ?? [])].find((k) => data[k] !== undefined && data[k] !== null) ?? def.key
+    const raw = data[key]
+    const label = t(`lpe.fld.${def.key}`)
+    const lbl = 'mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500'
+    if (def.kind === 'text' || def.kind === 'number') {
+      return (
+        <div key={def.key}>
+          <label className={lbl}>{label}</label>
+          <input type={def.kind === 'number' ? 'number' : 'text'} className="fld" value={asStr(raw)}
+            onChange={(e) => setSectionField(i, key, def.kind === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)} />
+        </div>
+      )
+    }
+    if (def.kind === 'long') {
+      return (
+        <div key={def.key}>
+          <label className={lbl}>{label}</label>
+          <textarea rows={2} className="fld resize-none" value={asStr(raw)} onChange={(e) => setSectionField(i, key, e.target.value)} />
+        </div>
+      )
+    }
+    if (def.kind === 'lines') {
+      const lines = Array.isArray(raw) ? (raw as unknown[]).map(asStr) : []
+      return (
+        <div key={def.key}>
+          <label className={lbl}>{label} <span className="normal-case tracking-normal text-slate-600">· {t('lpe.fld.linesHint')}</span></label>
+          <textarea rows={3} className="fld resize-none" value={lines.join('\n')} onChange={(e) => setSectionField(i, key, e.target.value.split('\n'))} />
+        </div>
+      )
+    }
+    // pairs — rows of two linked texts (label/value, question/answer, name/quote)
+    if (def.kind !== 'pairs') return null
+    const rows = Array.isArray(raw) ? (raw as unknown[]).filter((r): r is Record<string, unknown> => !!r && typeof r === 'object') : []
+    const setRows = (next: Record<string, unknown>[]) => setSectionField(i, key, next)
+    return (
+      <div key={def.key}>
+        <label className={lbl}>{label}</label>
+        <div className="space-y-1.5">
+          {rows.map((row, r) => {
+            const bKey = [def.b, ...(def.bAlt ?? [])].find((k) => row[k] !== undefined) ?? def.b
+            const edit = (k: string, v: string) => setRows(rows.map((x, n) => (n === r ? { ...x, [k]: v } : x)))
+            return (
+              <div key={r} className="flex items-start gap-1.5">
+                <input className="fld shrink-0" style={{ width: '38%' }} placeholder={t(`lpe.fld.${def.a}`)} value={asStr(row[def.a])} onChange={(e) => edit(def.a, e.target.value)} />
+                {def.bLong ? (
+                  <textarea rows={2} className="fld resize-none" placeholder={t(`lpe.fld.${def.b}`)} value={asStr(row[bKey])} onChange={(e) => edit(bKey, e.target.value)} />
+                ) : (
+                  <input className="fld" placeholder={t(`lpe.fld.${def.b}`)} value={asStr(row[bKey])} onChange={(e) => edit(bKey, e.target.value)} />
+                )}
+                <button type="button" onClick={() => setRows(rows.filter((_, n) => n !== r))} title={t('lpe.layout.remove')} className="mt-2.5 shrink-0 text-slate-500 hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            )
+          })}
+          <button type="button" onClick={() => setRows([...rows, { [def.a]: '', [def.b]: '' }])}
+            className="rounded-lg border border-line px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/40 hover:text-white">
+            + {t('lpe.fld.addRow')}
+          </button>
+        </div>
+      </div>
+    )
+  }
   // Content sections the marketer can add to a page (hero is intentionally omitted).
   const ADD_TYPES = ['description', 'key-facts', 'payment-plan', 'roi', 'why-dubai', 'golden-visa', 'amenities', 'location', 'developer-profile', 'social-proof', 'neighborhood', 'faq', 'download-brochure', 'lead-form']
   // Native HTML5 drag-and-drop reorder (arrows stay for touch / a11y).
@@ -422,7 +535,10 @@ export default function LandingEditorPage() {
                           <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
                           <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
                         </span>
-                        <button type="button" onClick={() => setExpanded(open ? null : i)} className="min-w-0 flex-1 truncate text-start text-xs text-slate-200 hover:text-white">{sectionLabel(s.type)}</button>
+                        <button type="button" onClick={() => setExpanded(open ? null : i)} title={t('lpe.layout.editContent')} className="group flex min-w-0 flex-1 items-center gap-1.5 text-start text-xs text-slate-200 hover:text-white">
+                          <span className="truncate">{sectionLabel(s.type)}</span>
+                          <Pencil className={`h-3 w-3 shrink-0 transition ${open ? 'text-gold' : 'text-slate-600 group-hover:text-gold'}`} />
+                        </button>
                         <button type="button" onClick={() => duplicateSection(i)} title={t('lpe.layout.duplicate')} className="text-slate-500 hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
                           {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -430,9 +546,10 @@ export default function LandingEditorPage() {
                         <button type="button" onClick={() => removeSection(i)} title={t('lpe.layout.remove')} className="text-slate-500 hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                       {open && (
-                        <div className="mt-2 space-y-2 border-t border-line pt-2">
-                          <input className="fld" value={typeof s.data?.title === 'string' ? s.data.title : ''} onChange={(e) => setSectionField(i, 'title', e.target.value)} placeholder={t('lpe.layout.fTitle')} />
-                          <textarea rows={2} className="fld resize-none" value={typeof s.data?.subtitle === 'string' ? s.data.subtitle : ''} onChange={(e) => setSectionField(i, 'subtitle', e.target.value)} placeholder={t('lpe.layout.fSubtitle')} />
+                        <div className="mt-2 space-y-2.5 border-t border-line pt-2.5">
+                          {fieldsFor(s.type).length === 0
+                            ? <p className="text-[11px] leading-relaxed text-slate-500">{t('lpe.fld.builtIn')}</p>
+                            : fieldsFor(s.type).map((f) => renderBlockField(i, s.data ?? {}, f))}
                         </div>
                       )}
                     </li>

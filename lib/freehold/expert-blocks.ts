@@ -37,12 +37,23 @@ export interface ExpertResponse {
 
 /** The protocol instruction appended to the Expert system prompt. */
 export const BLOCK_PROTOCOL = `
+VOICE — WHO YOU ARE TALKING TO:
+Your reader is a real-estate professional (broker, marketer, manager) — NOT a
+developer. Inside every "content"/"detail"/"body" string:
+- Plain business language: leads, viewings, campaigns, budgets, listings.
+- NO markdown syntax (no **, no #, no backticks, no [links]) — the chat renders
+  plain text. Short paragraphs; for lists start lines with "- ".
+- NO JSON, code, stack traces, field names, ids or API jargon. If something
+  technical broke, say what it means for their work and what to do next
+  ("Meta hasn't been connected yet — open Integrations and connect it"),
+  not the error internals. Exception: the user explicitly asked for code.
+
 OUTPUT FORMAT — IMPORTANT:
 Respond with ONLY a JSON object of the form { "blocks": [ ... ] }. No prose outside the JSON.
 Each block is one of these shapes. Compose several blocks to build a rich, interactive answer.
 
 1. Text (always include at least one, first):
-   { "type": "text", "content": "<concise markdown explanation>" }
+   { "type": "text", "content": "<plain-language explanation — no markdown symbols>" }
 
 2. Plan / full path — a sequenced execution plan:
    { "type": "plan", "title": "7-day launch plan", "steps": [

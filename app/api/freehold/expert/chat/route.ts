@@ -142,27 +142,63 @@ async function crmPipelineSnapshot(): Promise<Record<string, number> | null> {
 
 /** Parse the model's JSON into blocks; fall back to a single text block. */
 const BLOCK_TYPES = new Set(['text', 'plan', 'actions', 'color', 'landing', 'media', 'path'])
+const REPHRASE_FALLBACK: ExpertBlock[] = [{ type: 'text', content: 'I lost my train of thought there — ask me that once more and I’ll answer properly.' }]
+
+function blocksFromParsed(parsed: unknown): ExpertBlock[] | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const obj = parsed as { blocks?: ExpertBlock[]; type?: string }
+  if (Array.isArray(obj.blocks) && obj.blocks.length > 0) {
+    const arr = obj.blocks.filter((b) => b && typeof b === 'object' && 'type' in b)
+    if (arr.length > 0) return arr
+  }
+  // Tolerate a BARE block (`{"type":"landing",…}`) or a bare array — models
+  // sometimes skip the {"blocks":[…]} envelope; without this the user sees
+  // raw JSON as text.
+  if (Array.isArray(parsed)) {
+    const arr = (parsed as ExpertBlock[]).filter((b) => b && typeof b === 'object' && 'type' in b && BLOCK_TYPES.has((b as { type: string }).type))
+    if (arr.length > 0) return arr
+  }
+  if (typeof obj.type === 'string' && BLOCK_TYPES.has(obj.type)) {
+    return [parsed as ExpertBlock]
+  }
+  // Unknown object shape (e.g. {"answer": "..."} / a stray tool_call): salvage
+  // any human-readable strings rather than dumping JSON on a non-developer.
+  const texts = Object.entries(obj as Record<string, unknown>)
+    .filter(([k, v]) => typeof v === 'string' && (v as string).trim().length > 0 && k !== 'type' && k !== 'thinking')
+    .map(([, v]) => (v as string).trim())
+  if (texts.length > 0) return [{ type: 'text', content: texts.join('\n\n') }]
+  return null
+}
+
 function parseBlocks(raw: string): ExpertBlock[] {
   const trimmed = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   try {
-    const parsed = JSON.parse(trimmed) as { blocks?: ExpertBlock[]; type?: string }
-    if (Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
-      return parsed.blocks.filter((b) => b && typeof b === 'object' && 'type' in b)
-    }
-    // Tolerate a BARE block (`{"type":"landing",…}`) or a bare array — models
-    // sometimes skip the {"blocks":[…]} envelope; without this the user sees
-    // raw JSON as text.
-    if (Array.isArray(parsed)) {
-      const arr = (parsed as unknown as ExpertBlock[]).filter((b) => b && typeof b === 'object' && 'type' in b && BLOCK_TYPES.has((b as { type: string }).type))
-      if (arr.length > 0) return arr
-    }
-    if (parsed && typeof parsed === 'object' && typeof parsed.type === 'string' && BLOCK_TYPES.has(parsed.type)) {
-      return [parsed as unknown as ExpertBlock]
-    }
+    const found = blocksFromParsed(JSON.parse(trimmed))
+    if (found) return found
+    return REPHRASE_FALLBACK
   } catch {
-    // fall through
+    // Not clean JSON. Models sometimes wrap the JSON in prose — try the first
+    // balanced {...} region before giving up.
+    const start = trimmed.indexOf('{')
+    if (start !== -1) {
+      let depth = 0
+      for (let i = start; i < trimmed.length; i++) {
+        const ch = trimmed[i]
+        if (ch === '{') depth++
+        else if (ch === '}' && --depth === 0) {
+          try {
+            const found = blocksFromParsed(JSON.parse(trimmed.slice(start, i + 1)))
+            if (found) return found
+          } catch { /* keep falling through */ }
+          break
+        }
+      }
+    }
   }
-  return [{ type: 'text', content: raw.trim() || 'I could not format a response. Try rephrasing.' }]
+  // Plain prose is fine to show; anything that still looks like JSON/code is not.
+  const text = raw.trim()
+  if (!text || text.startsWith('{') || text.startsWith('[')) return REPHRASE_FALLBACK
+  return [{ type: 'text', content: text }]
 }
 
 export async function POST(request: NextRequest) {
@@ -316,15 +352,17 @@ Your tools:${renderToolDocs(tools)}`
     return NextResponse.json(response)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
+    // The chat bubble is read by real-estate people — keep it human. The raw
+    // error stays in `warnings` for operators reading the network response.
     return NextResponse.json(
       {
         requestId: crypto.randomUUID(),
         layer: 'expert',
         status: 'error',
-        data: { blocks: [{ type: 'text', content: `Expert error: ${msg}` }] },
+        data: { blocks: [{ type: 'text', content: 'I couldn’t finish that one — give it another try in a moment. If it keeps happening, ask your admin to check the AI connection under Integrations.' }] },
         evidence: ['Request processing failed'],
         warnings: [msg],
-        nextActions: ['Check VERTEX_AI_SERVICE_ACCOUNT_JSON environment variable'],
+        nextActions: ['Retry the question'],
         generatedAt,
       },
       { status: 500 },
