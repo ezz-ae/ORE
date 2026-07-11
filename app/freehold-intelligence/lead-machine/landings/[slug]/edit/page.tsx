@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -25,7 +25,18 @@ type Landing = {
   googleConversionId: string
   tiktokPixelId: string
   updatedAt: string | null
+  sections?: LpSection[]
 }
+
+type LpSection = { type: string; data: Record<string, unknown> }
+
+type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
+type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
+
+// Fields the AI edit panel is allowed to touch — must match the ai-edit route.
+const AI_FIELDS = ['headline', 'subheadline', 'ctaText', 'seoTitle', 'seoDescription'] as const
+type AiField = (typeof AI_FIELDS)[number]
+type AiTurn = { instruction: string; note: string; fields: AiField[] }
 
 export default function LandingEditorPage() {
   const t = useT()
@@ -39,6 +50,12 @@ export default function LandingEditorPage() {
   const [regen, setRegen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
   const [notFound, setNotFound] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [test, setTest] = useState<TestReport | null>(null)
+  const [aiOpen, setAiOpen] = useState(true)
+  const [aiInstruction, setAiInstruction] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiTurns, setAiTurns] = useState<AiTurn[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -91,6 +108,159 @@ export default function LandingEditorPage() {
     finally { setRegen(false) }
   }
 
+  // Landing pre-flight — real server-side checks against the live /lp/<slug>.
+  async function runTest() {
+    setTesting(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}/test`, { method: 'POST' })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error || t('lpe.test.failed')); return }
+      setTest(d as TestReport)
+    } catch { toast.error(t('lpe.test.failed')) }
+    finally { setTesting(false) }
+  }
+
+  // AI chat-to-edit — instruction → Gemini → concrete field edits applied live.
+  async function askAi(raw?: string) {
+    const instruction = (raw ?? aiInstruction).trim()
+    if (!instruction || !form || aiBusy) return
+    setAiBusy(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}/ai-edit`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          current: {
+            headline: form.headline,
+            subheadline: form.subheadline,
+            ctaText: form.ctaText,
+            seoTitle: form.seoTitle,
+            seoDescription: form.seoDescription,
+          },
+          sections: form.sections?.map((s) => s.type) ?? [],
+        }),
+      })
+      const d = await res.json()
+      if (res.status !== 200) { toast.error(d.error || t('lpe.ai.failed')); return }
+      if (d.unavailable) { toast.error(t('lpe.ai.unavailable')); return }
+      const changes = (d.changes ?? {}) as Partial<Record<AiField, string>>
+      const applied = AI_FIELDS.filter((f) => typeof changes[f] === 'string' && changes[f])
+      // Layout ops (reorder / show-hide sections) the AI proposed on the canvas.
+      const layout = d.layout as { order?: string[]; hide?: string[]; show?: string[] } | undefined
+      const layoutTouched = !!layout && ((layout.order?.length ?? 0) + (layout.hide?.length ?? 0) + (layout.show?.length ?? 0) > 0)
+      if (applied.length === 0 && !layoutTouched) { toast.error(t('lpe.ai.noChanges')); return }
+      for (const f of applied) set(f, changes[f] as string)
+      if (layoutTouched && form.sections) {
+        const order = layout!.order ?? []
+        const hide = new Set(layout!.hide ?? [])
+        const show = new Set(layout!.show ?? [])
+        const idx = (ty: string) => { const k = order.indexOf(ty); return k === -1 ? 999 : k }
+        const next = [...form.sections]
+          .map((s, i) => ({ s, i }))
+          .sort((a, b) => (order.length ? idx(a.s.type) - idx(b.s.type) || a.i - b.i : a.i - b.i))
+          .map(({ s }) => (hide.has(s.type) ? { ...s, data: { ...s.data, _hidden: true } } : show.has(s.type) ? { ...s, data: { ...s.data, _hidden: false } } : s))
+        applySections(next)
+      }
+      setAiTurns((prev) => [...prev, { instruction, note: String(d.note || ''), fields: applied }].slice(-5))
+      setAiInstruction('')
+      toast.success(layoutTouched && applied.length === 0 ? t('lpe.ai.layoutApplied') : t('lpe.ai.applied').replace('{count}', String(applied.length)))
+    } catch { toast.error(t('lpe.ai.failed')) }
+    finally { setAiBusy(false) }
+  }
+
+  // ── Layout canvas — reorder / show-hide the page's real section blocks ──────
+  const [layoutSaving, setLayoutSaving] = useState(false)
+  function sectionLabel(type: string) {
+    return type.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  }
+  function setSections(next: LpSection[]) { setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
+  // Undo / redo — structural canvas changes (reorder, add, remove, hide, AI) push
+  // the prior state; text edits stay untracked to avoid per-keystroke history.
+  const [past, setPast] = useState<LpSection[][]>([])
+  const [futureStack, setFutureStack] = useState<LpSection[][]>([])
+  function applySections(next: LpSection[]) {
+    setPast((p) => [...p.slice(-29), form?.sections ?? []])
+    setFutureStack([])
+    setSections(next)
+  }
+  function undoLayout() {
+    if (!past.length || !form) return
+    const prev = past[past.length - 1]
+    setFutureStack((f) => [form.sections ?? [], ...f].slice(0, 30))
+    setPast((p) => p.slice(0, -1))
+    setSections(prev)
+  }
+  function redoLayout() {
+    if (!futureStack.length || !form) return
+    const nextState = futureStack[0]
+    setPast((p) => [...p.slice(-29), form.sections ?? []])
+    setFutureStack((f) => f.slice(1))
+    setSections(nextState)
+  }
+  function moveSection(i: number, dir: -1 | 1) {
+    if (!form?.sections) return
+    const j = i + dir
+    if (j < 0 || j >= form.sections.length) return
+    const next = [...form.sections]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    applySections(next)
+  }
+  function toggleSection(i: number) {
+    if (!form?.sections) return
+    const next = form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, _hidden: !s.data?._hidden } } : s))
+    applySections(next)
+  }
+  function removeSection(i: number) {
+    if (!form?.sections) return
+    applySections(form.sections.filter((_, k) => k !== i))
+    setExpanded(null)
+  }
+  function duplicateSection(i: number) {
+    if (!form?.sections) return
+    const copy = { type: form.sections[i].type, data: { ...form.sections[i].data } }
+    const next = [...form.sections]
+    next.splice(i + 1, 0, copy)
+    applySections(next)
+  }
+  function addSection(type: string) {
+    if (!form?.sections || !type) return
+    applySections([...form.sections, { type, data: { title: '', subtitle: '' } }])
+  }
+  function setSectionField(i: number, key: string, value: string) {
+    if (!form?.sections) return
+    setSections(form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, [key]: value } } : s)))
+  }
+  const [expanded, setExpanded] = useState<number | null>(null)
+  // Content sections the marketer can add to a page (hero is intentionally omitted).
+  const ADD_TYPES = ['description', 'key-facts', 'payment-plan', 'roi', 'why-dubai', 'golden-visa', 'amenities', 'location', 'developer-profile', 'social-proof', 'neighborhood', 'faq', 'download-brochure', 'lead-form']
+  // Native HTML5 drag-and-drop reorder (arrows stay for touch / a11y).
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+  function onDropSection() {
+    if (dragIndex === null || overIndex === null || dragIndex === overIndex || !form?.sections) { setDragIndex(null); setOverIndex(null); return }
+    const next = [...form.sections]
+    const [moved] = next.splice(dragIndex, 1)
+    next.splice(overIndex, 0, moved)
+    applySections(next)
+    setDragIndex(null); setOverIndex(null)
+  }
+  async function saveLayout() {
+    if (!form?.sections) return
+    setLayoutSaving(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: form.sections }),
+      })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error || t('lpe.saveFailed')); return }
+      if (d.landing?.sections) setSections(d.landing.sections as LpSection[])
+      setPreviewKey((k) => k + 1)
+      toast.success(t('lpe.layout.saved'))
+    } catch { toast.error(t('lpe.saveFailed')) }
+    finally { setLayoutSaving(false) }
+  }
+
   if (loading) return <div className="flex items-center gap-2 p-10 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
   if (notFound || !form) return (
     <div className="mx-auto max-w-md p-10 text-center">
@@ -111,6 +281,9 @@ export default function LandingEditorPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={runTest} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+            {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
+          </button>
           <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
             {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
           </button>
@@ -123,9 +296,159 @@ export default function LandingEditorPage() {
         </div>
       </div>
 
+      {test && (
+        <div className="mb-5 rounded-2xl border border-line bg-surface-2/60 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+              <FlaskConical className="h-4 w-4 text-gold" /> {t('lpe.test.title')}
+              <span className="text-xs font-normal text-slate-500">
+                {t('lpe.test.summary')
+                  .replace('{pass}', String(test.passed ?? 0))
+                  .replace('{warn}', String(test.warned ?? 0))
+                  .replace('{fail}', String(test.failed ?? 0))}
+              </span>
+            </div>
+            <button type="button" onClick={() => setTest(null)} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {test.checks.map((c) => (
+              <li key={c.id} className="flex items-start gap-2 rounded-lg bg-surface/60 px-3 py-2">
+                {c.status === 'pass' ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  : c.status === 'warn' ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                  : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-slate-200">{c.label}</p>
+                  <p className="truncate text-[11px] text-slate-500">{c.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid gap-5 lg:grid-cols-[1fr_1.05fr]">
         {/* Editor */}
         <div className="space-y-5">
+          {/* AI chat-to-edit */}
+          <div className="rounded-2xl border border-gold/25 bg-gold/[0.04] p-4">
+            <button type="button" onClick={() => setAiOpen((o) => !o)} className="flex w-full items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/90">
+                <Wand2 className="h-4 w-4" /> {t('lpe.ai.title')}
+              </span>
+              <ChevronDown className={`h-4 w-4 text-gold/70 transition ${aiOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {aiOpen && (
+              <div className="mt-3 space-y-3">
+                <p className="text-[11px] leading-relaxed text-slate-400">{t('lpe.ai.hint')}</p>
+                <div className="flex items-start gap-2">
+                  <textarea
+                    rows={2}
+                    className="fld resize-none"
+                    value={aiInstruction}
+                    onChange={(e) => setAiInstruction(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); askAi() } }}
+                    placeholder={t('lpe.ai.placeholder')}
+                    disabled={aiBusy}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => askAi()}
+                    disabled={aiBusy || !aiInstruction.trim()}
+                    className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-xl bg-gold px-3.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
+                  >
+                    {aiBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {t('lpe.ai.send')}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[t('lpe.ai.chip.punchier'), t('lpe.ai.chip.arabic'), t('lpe.ai.chip.seo'), t('lpe.ai.chip.layout')].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => askAi(chip)}
+                      disabled={aiBusy}
+                      className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/40 hover:text-white disabled:opacity-50"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                {aiTurns.length > 0 && (
+                  <ul className="space-y-1.5 border-t border-line/60 pt-3">
+                    {aiTurns.map((turn, i) => (
+                      <li key={i} className="rounded-lg bg-surface/60 px-3 py-2">
+                        <p className="flex items-start gap-1.5 text-[11px] text-slate-400"><Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-gold/70" /> {turn.instruction}</p>
+                        {turn.note && <p className="mt-1 text-[11px] text-slate-300">{turn.note}</p>}
+                        <p className="mt-1 text-[10px] text-slate-500">{t('lpe.ai.updated')}: {turn.fields.map((f) => t(`lpe.f.${f === 'ctaText' ? 'cta' : f === 'seoDescription' ? 'seoDesc' : f}`)).join(', ')}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Layout canvas — reorder / show-hide the page's real section blocks */}
+          {form.sections && form.sections.length > 0 && (
+            <div className="rounded-2xl border border-line bg-surface-2/40 p-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Layers className="h-4 w-4" /> {t('lpe.layout.title')}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button type="button" onClick={undoLayout} disabled={past.length === 0} title={t('lpe.layout.undo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Undo2 className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={redoLayout} disabled={futureStack.length === 0} title={t('lpe.layout.redo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Redo2 className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                    {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
+                  </button>
+                </div>
+              </div>
+              <ul className="space-y-1.5">
+                {form.sections.map((s, i) => {
+                  const hidden = s.data?._hidden === true
+                  const open = expanded === i
+                  return (
+                    <li key={`${s.type}-${i}`}
+                      onDragOver={(e) => { e.preventDefault(); if (overIndex !== i) setOverIndex(i) }}
+                      onDrop={onDropSection}
+                      className={`rounded-lg border px-2.5 py-1.5 transition ${hidden ? 'border-line/60 bg-surface/40 opacity-60' : 'border-line bg-surface/70'} ${dragIndex !== null && overIndex === i && dragIndex !== i ? 'ring-1 ring-gold/50' : ''} ${dragIndex === i ? 'opacity-40' : ''}`}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          draggable
+                          onDragStart={() => setDragIndex(i)}
+                          onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                          title={t('lpe.layout.drag')}
+                          className="cursor-grab text-slate-600 hover:text-slate-300 active:cursor-grabbing"><GripVertical className="h-4 w-4" /></span>
+                        <span className="flex flex-col">
+                          <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
+                          <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
+                        </span>
+                        <button type="button" onClick={() => setExpanded(open ? null : i)} className="min-w-0 flex-1 truncate text-start text-xs text-slate-200 hover:text-white">{sectionLabel(s.type)}</button>
+                        <button type="button" onClick={() => duplicateSection(i)} title={t('lpe.layout.duplicate')} className="text-slate-500 hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
+                          {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        <button type="button" onClick={() => removeSection(i)} title={t('lpe.layout.remove')} className="text-slate-500 hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                      {open && (
+                        <div className="mt-2 space-y-2 border-t border-line pt-2">
+                          <input className="fld" value={typeof s.data?.title === 'string' ? s.data.title : ''} onChange={(e) => setSectionField(i, 'title', e.target.value)} placeholder={t('lpe.layout.fTitle')} />
+                          <textarea rows={2} className="fld resize-none" value={typeof s.data?.subtitle === 'string' ? s.data.subtitle : ''} onChange={(e) => setSectionField(i, 'subtitle', e.target.value)} placeholder={t('lpe.layout.fSubtitle')} />
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="mt-2.5 flex items-center gap-2">
+                <select value="" onChange={(e) => { addSection(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs">
+                  <option value="">{t('lpe.layout.add')}</option>
+                  {ADD_TYPES.map((ty) => <option key={ty} value={ty}>{sectionLabel(ty)}</option>)}
+                </select>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500">{t('lpe.layout.hint')}</p>
+            </div>
+          )}
+
           <Section title={t('lpe.grp.content')}>
             <Field label={t('lpe.f.headline')}><input className="fld" value={form.headline} onChange={(e) => set('headline', e.target.value)} /></Field>
             <Field label={t('lpe.f.subheadline')}><textarea rows={2} className="fld resize-none" value={form.subheadline} onChange={(e) => set('subheadline', e.target.value)} /></Field>
