@@ -6,8 +6,10 @@ import { query } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  // Company-wide lead analytics — management roles only (brokers excluded).
-  const auth = await requireSession(MANAGEMENT_ROLES)
+  // Company-wide lead analytics (aggregate counts, no PII) — management PLUS
+  // marketing, so the Marketing analytics tab's Channels block can load. Brokers
+  // are still excluded. (Was management-only, which left Marketing spinning.)
+  const auth = await requireSession([...MANAGEMENT_ROLES, 'marketing'])
   if ('res' in auth) return auth.res
 
   try {

@@ -84,7 +84,7 @@ export function EventDialog({ open, editing, defaultDate, meEmail, onClose, onSa
 
   // Default the vehicle name when switching to a car booking.
   useEffect(() => {
-    if (kind === "car" && !resource) setResource("Company Car")
+    if (kind === "car" && !resource) setResource(t("pcal.field.vehiclePh"))
   }, [kind, resource])
 
   // Load the internal directory once when the dialog first opens.
