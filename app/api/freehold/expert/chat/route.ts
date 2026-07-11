@@ -8,6 +8,10 @@ import { BLOCK_PROTOCOL, type ExpertBlock } from '@/lib/freehold/expert-blocks'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { appendExpertTurn, getExpertSession, blocksToText } from '@/lib/freehold/expert-sessions'
+import {
+  toolsForRole, renderToolDocs, parseToolCall, runCoordinatorTool,
+  type CoordinatorRole, type ToolCtx,
+} from '@/lib/freehold/coordinator-tools'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
@@ -208,15 +212,59 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const raw = await queryServerAgent(message, {
+    // ── Coordinator tools (Vertex-ADK style): the one chat can CALL REAL
+    //    specialist tools — ads / landing / crm / creative / research. Only
+    //    authenticated users get tools; the toolset is role-gated server-side.
+    const tools = sessionUser ? toolsForRole(role as CoordinatorRole) : []
+    const toolCtx: ToolCtx = { role: role as CoordinatorRole, email: sessionUser?.email ?? '', brokerId }
+    const toolProtocol = tools.length === 0 ? '' : `
+
+YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
+{"tool_call": {"name": "<tool_name>", "args": { ... }}}
+After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 3 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result.
+Tools marked ⚠destructive change live campaigns/money/content: set "confirm": true ONLY when the user's own latest message explicitly requests or confirms that exact action. Otherwise first answer with blocks that ask for confirmation (an "actions" block whose prompt states the exact action, e.g. "Yes — pause campaign X").
+The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
+Your tools:${renderToolDocs(tools)}`
+
+    const systemPrompt = `${skill.systemPrompt}${roleGuidance}${toolProtocol}\n${BLOCK_PROTOCOL}`
+
+    let loopHistory = durableHistory
+    let raw = await queryServerAgent(message, {
       sessionId,
       context: fullContext,
-      systemPrompt: `${skill.systemPrompt}${roleGuidance}\n${BLOCK_PROTOCOL}`,
+      systemPrompt,
       responseMimeType: 'application/json',
       maxOutputTokens: 4096,
       temperature: 0.5,
-      history: durableHistory,
+      history: loopHistory,
     })
+
+    // Tool loop: execute → feed the observation back → let the model continue.
+    const toolsUsed: string[] = []
+    for (let i = 0; i < 4 && tools.length > 0; i++) {
+      const call = parseToolCall(raw)
+      if (!call) break
+      if (toolsUsed.length >= 3) {
+        raw = JSON.stringify({ blocks: [{ type: 'text', content: 'I hit the tool limit for one turn — here is what I have so far. Ask me to continue.' }] })
+        break
+      }
+      const result = await runCoordinatorTool(tools, call, toolCtx)
+      toolsUsed.push(call.name)
+      loopHistory = [
+        ...(loopHistory ?? []),
+        { role: 'model' as const, text: JSON.stringify({ tool_call: call }) },
+        { role: 'user' as const, text: `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}` },
+      ]
+      raw = await queryServerAgent(message, {
+        sessionId,
+        context: fullContext,
+        systemPrompt,
+        responseMimeType: 'application/json',
+        maxOutputTokens: 4096,
+        temperature: 0.5,
+        history: loopHistory,
+      })
+    }
 
     const blocks = parseBlocks(raw)
     // Persist the turn to the account's session so nothing is lost on reload —
@@ -235,6 +283,7 @@ export async function POST(request: NextRequest) {
         `Role: ${role}`,
         'Skill: expert (full-system)',
         `Context: ${Object.entries(systemContext).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}`,
+        ...(toolsUsed.length ? [`Tools executed: ${toolsUsed.join(', ')}`] : []),
       ],
       warnings: [],
       nextActions: ['Act on a button', 'Ask a follow-up'],
