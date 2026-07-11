@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       campaignId,
       status,
-      link: `/freehold-intelligence/lead-machine/campaigns/${campaignId}`,
+      link: `/freehold-intelligence/ads-live/meta/${campaignId}`,
     })
   } catch (e) {
     console.error("[roadshow-launch] failed", e)

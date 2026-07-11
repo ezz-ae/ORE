@@ -53,11 +53,12 @@ export default function ApiPage() {
       </section>
 
       {/* Quick links */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        {/* No /api/openapi.json exists — the dead quick-link was removed rather
+            than pointing users at a 404. */}
         {[
           { Icon: Book, labelKey: 'settings.api.quick.fullDocs', color: 'text-violet-400', href: 'https://docs.freeholdproperty.ae' },
           { Icon: Zap,  labelKey: 'settings.api.quick.zapier',   color: 'text-amber-400',  href: 'https://zapier.com/apps/freehold-intelligence' },
-          { Icon: Globe,labelKey: 'settings.api.quick.openapi',  color: 'text-teal-400',    href: '/api/openapi.json' },
         ].map(({ Icon, labelKey, color, href }) => (
           <a key={labelKey} href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-[12px] border border-line bg-surface px-4 py-3 text-sm font-medium text-slate-400 transition hover:border-line-strong hover:text-slate-100">
             <Icon className={`h-4 w-4 shrink-0 ${color}`} />
