@@ -474,6 +474,48 @@ export default function NewCampaignPage() {
     }
   }
 
+  // ── Library / Drive media picker ────────────────────────────────────────────
+  // Use anything you made in Drive (QR-stamped permits, edited renders) as the
+  // ad image. Drive exports are data: URLs — ingest them natively into the Meta
+  // ad account (image_hash) through the same adimages endpoint uploads use.
+  type LibImage = { id: string; title: string; url: string | null }
+  const [libOpen, setLibOpen] = useState(false)
+  const [libLoading, setLibLoading] = useState(false)
+  const [libImages, setLibImages] = useState<LibImage[]>([])
+  const [libApplying, setLibApplying] = useState('')
+
+  async function toggleLibrary() {
+    const next = !libOpen
+    setLibOpen(next)
+    if (!next || libImages.length || libLoading) return
+    setLibLoading(true)
+    try {
+      const r = await fetch('/api/freehold/library?kind=image', { cache: 'no-store' })
+      const d = await r.json().catch(() => ({}))
+      if (Array.isArray(d?.items)) setLibImages((d.items as LibImage[]).filter((i) => i.url))
+    } finally { setLibLoading(false) }
+  }
+
+  async function useLibraryImage(item: LibImage) {
+    if (!item.url) return
+    if (item.url.startsWith('data:')) {
+      setLibApplying(item.id); setApiError(null)
+      try {
+        const res = await fetch('/api/meta/adimages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: item.url }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !d.hash) { setApiError(d?.error || t('lm.newCampaign.s3.libFailed')); return }
+        setForm((prev) => ({ ...prev, imageHash: d.hash, imageUrl: d.url || prev.imageUrl }))
+        setLibOpen(false)
+      } finally { setLibApplying('') }
+    } else {
+      setForm((prev) => ({ ...prev, imageUrl: item.url as string, imageHash: '' }))
+      setLibOpen(false)
+    }
+  }
+
   // ── Launch ─────────────────────────────────────────────────────────────────
   async function handleLaunch() {
     setLoading(true)
@@ -1219,21 +1261,66 @@ export default function NewCampaignPage() {
                 onChange={(e) => { update('imageUrl', e.target.value); update('imageHash', '') }}
                 placeholder={t('lm.imageUrlPlaceholder')}
               />
-              {/* Upload your own ad image → Meta ad account (image_hash) */}
-              <div className="mt-2 flex flex-wrap items-center gap-3">
+              {/* Media sources: upload → Meta (image_hash), pick from the
+                  Library (incl. Drive-edited/QR-stamped images), or open the
+                  Drive editor to stamp QR/permit/text and save back. */}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
-                  {uploadingImg ? 'Uploading…' : 'Upload image'}
+                  {uploadingImg ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingImg}
                     onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
                 </label>
+                <button
+                  type="button"
+                  onClick={toggleLibrary}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${libOpen ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface-2 text-slate-200 hover:border-gold/40'}`}
+                >
+                  {t('lm.newCampaign.s3.pickLibrary')}
+                </button>
+                <Link
+                  href="/freehold-intelligence/drive/editor/image/new"
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40"
+                >
+                  {t('lm.newCampaign.s3.editInDrive')} <ArrowRight className="h-3 w-3" />
+                </Link>
                 {form.imageHash
-                  ? <span className="text-xs text-emerald-400">✓ Uploaded to Meta — this image will be used</span>
-                  : <span className="text-xs text-slate-500">or paste an image URL above (defaults to the listing photo)</span>}
+                  ? <span className="text-xs text-emerald-400">{t('lm.newCampaign.s3.upload.uploaded')}</span>
+                  : <span className="text-xs text-slate-500">{t('lm.newCampaign.s3.upload.orPaste')}</span>}
                 {form.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
                 )}
               </div>
+              {libOpen && (
+                <div className="mt-3 rounded-[14px] border border-line bg-surface-2 p-3">
+                  <p className="mb-2 text-[11px] text-slate-500">{t('lm.newCampaign.s3.libHint')}</p>
+                  {libLoading ? (
+                    <p className="py-3 text-xs text-slate-500">{t('common.loading')}</p>
+                  ) : libImages.length === 0 ? (
+                    <p className="py-3 text-xs text-slate-500">{t('lm.newCampaign.s3.libEmpty')}</p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      {libImages.slice(0, 15).map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => useLibraryImage(item)}
+                          disabled={!!libApplying}
+                          className={`group relative overflow-hidden rounded-lg border transition ${libApplying === item.id ? 'border-gold' : 'border-line hover:border-gold/50'}`}
+                          title={item.title}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.url ?? ''} alt={item.title} className="h-16 w-full object-cover" />
+                          <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-1.5 py-0.5 text-start text-[10px] text-white/90">
+                            {libApplying === item.id ? t('common.loading') : item.title}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
