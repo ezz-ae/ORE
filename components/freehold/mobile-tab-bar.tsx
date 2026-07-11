@@ -14,6 +14,7 @@ const HOME_HREF = '/freehold-intelligence'
 const NAV_KEYS: Record<string, string> = {
   crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
   'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
+  drive: 'nav.drive',
   integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
   agent: 'nav.agent',
 }
@@ -34,6 +35,9 @@ export function MobileTabBar() {
   const label = (id: string, fallback: string) => (NAV_KEYS[id] ? t(NAV_KEYS[id]) : fallback)
   const isActive = (href: string, exact = false) =>
     exact ? pathname === href : pathname === href || pathname.startsWith(href + '/')
+  // `match` prefixes keep a tab lit across relocated routes (Drive ↔ Notebook).
+  const appActive = (app: { href: string; match?: string[] }) =>
+    app.match ? app.match.some((p) => isActive(p)) : isActive(app.href)
 
   // Direct slots: Home (non-broker) + the first apps of the role's spine.
   const direct = role === 'broker' ? apps.slice(0, 3) : apps.slice(0, 2)
@@ -55,7 +59,7 @@ export function MobileTabBar() {
             </div>
             <div className="grid grid-cols-4 gap-2 p-4">
               {apps.map((app) => {
-                const active = isActive(app.href)
+                const active = appActive(app)
                 return (
                   <Link
                     key={app.id}
