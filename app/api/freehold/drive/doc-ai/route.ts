@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
+import { userSafeAiError } from '@/lib/freehold/ai-errors'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -51,8 +52,7 @@ ${content.slice(0, LIMIT)}`
     if (!out) return NextResponse.json({ error: 'The AI returned nothing. Try again.' }, { status: 502 })
     return NextResponse.json({ content: out, truncated })
   } catch (err) {
-    // Surface the REAL provider error (quota / key / model) — matches gen-image.
-    const message = err instanceof Error ? err.message : 'The AI request failed. Try again.'
-    return NextResponse.json({ error: message }, { status: 502 })
+    // Raw provider detail goes to the server log; the user sees plain language.
+    return NextResponse.json({ error: userSafeAiError(err) }, { status: 502 })
   }
 }

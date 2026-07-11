@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { genImage } from '@/lib/creative-studio/providers'
+import { userSafeAiError } from '@/lib/freehold/ai-errors'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,12 +26,11 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json({ url, provider })
   } catch (err) {
-    let message = err instanceof Error ? err.message : 'Image generation failed'
-    // A Google 403 means the key exists but is rejected — say so usefully
-    // instead of a bare "Forbidden".
-    if (/403|forbidden|permission/i.test(message)) {
-      message = 'AI access denied by Google (403) — check GEMINI_API_KEY in the deployment and that the Generative Language API is enabled for that key’s project.'
-    }
-    return NextResponse.json({ error: message }, { status: 502 })
+    // Raw provider detail goes to the server log; the user gets a plain,
+    // actionable sentence (no env-var names or deployment instructions).
+    return NextResponse.json(
+      { error: userSafeAiError(err, 'Image generation failed — try a different instruction or try again shortly.') },
+      { status: 502 },
+    )
   }
 }

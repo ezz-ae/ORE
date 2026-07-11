@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Pin, BookOpen, Sparkles } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles } from 'lucide-react'
 import { getConversation } from '@/lib/freehold/notebook-conversations'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getServerT } from '@/lib/i18n/server'
@@ -32,7 +32,7 @@ export default async function NotebookConversationPage({ params }: { params: Pro
           {conversation.title}
         </h1>
         <p className="mt-3 text-sm text-slate-500">
-          {t('pnbk.meta', { messages: conversation.messages.length, outputs: conversation.savedOutputs.length })}
+          {t('pnbk.msgMeta', { messages: conversation.messages.length })}
         </p>
       </section>
 
@@ -64,43 +64,6 @@ export default async function NotebookConversationPage({ params }: { params: Pro
           ))}
         </div>
       </section>
-
-      {/* Saved outputs */}
-      {conversation.savedOutputs.length > 0 && (
-        <section className="mt-16">
-          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t('pnbk.savedOutputs')}</div>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">{t('pnbk.fromThisConversation')}</h2>
-
-          <div className="mt-6 grid gap-4">
-            {conversation.savedOutputs.map((output) => (
-              <article
-                key={output.id}
-                className="rounded-[22px] border border-line bg-surface p-6 transition hover:border-gold/25"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    {output.type.replace(/_/g, ' ')}
-                  </span>
-                  {output.pinned && (
-                    <span className="flex items-center gap-1 text-sm text-gold/70">
-                      <Pin className="h-3 w-3" /> {t('pnbk.pinned')}
-                    </span>
-                  )}
-                </div>
-                <h3 className="mt-4 text-base font-semibold tracking-tight text-white">{output.title}</h3>
-                <p className="mt-3 line-clamp-4 text-sm leading-[1.7] text-slate-300">{output.content}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {output.tags.slice(0, 5).map((t) => (
-                    <span key={t} className="rounded-full border border-line-strong bg-surface-2 px-2.5 py-0.5 text-xs text-slate-400">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
 
     </div>
   )

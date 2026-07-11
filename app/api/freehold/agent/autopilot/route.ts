@@ -132,12 +132,24 @@ export async function POST() {
     throw err
   }
 
-  // The manager-visible audit record of this pass.
+  // The manager-visible audit record of this pass — readable lines, not JSON.
   if (actions.length > 0) {
+    const lines = actions.map((a) => {
+      const name = String(a.campaign ?? 'campaign')
+      if (a.error) return `• ${name}: action failed — ${String(a.error)}`
+      if (a.action === 'skipped') return `• ${name}: skipped (${String(a.reason ?? 'auto-enhancement off')})`
+      if (a.needsApproval) return `• ${name}: "${String(a.action)}" matched but is WAITING FOR YOUR APPROVAL (metric ${String(a.metric)} = ${String(a.value)})`
+      if (a.action === 'budget_up' || a.action === 'budget_down') {
+        return `• ${name} / ${String(a.adSet ?? 'ad set')}: budget ${a.action === 'budget_up' ? 'increased' : 'decreased'} AED ${String(a.fromAED)} → AED ${String(a.toAED)} (${String(a.appliedPct)}% applied)`
+      }
+      if (a.action === 'pause') return `• ${name}: paused (metric ${String(a.metric)} = ${String(a.value)})`
+      if (a.action === 'resume') return `• ${name}: resumed (metric ${String(a.metric)} = ${String(a.value)})`
+      return `• ${name}: ${String(a.action)} (metric ${String(a.metric)} = ${String(a.value)})`
+    })
     await saveLibraryItem(auth.user.email, {
       kind: 'note',
       title: `Autopilot pass — ${actions.length} action${actions.length === 1 ? '' : 's'}`,
-      content: JSON.stringify(actions, null, 2).slice(0, 8000),
+      content: `The autopilot reviewed your active campaigns and did the following:\n\n${lines.join('\n')}`.slice(0, 8000),
     }).catch(() => null)
   }
 

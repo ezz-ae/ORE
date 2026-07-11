@@ -1,5 +1,6 @@
 import { query } from '@/lib/db'
 import { getInventoryPropertiesFromDB } from '@/lib/inventory-data'
+import { listConversations } from '@/lib/freehold/notebook-conversations'
 
 /**
  * Build a grounding-context string for the Notebook AI from the sources the user
@@ -59,6 +60,23 @@ async function leadsBlock(): Promise<string | null> {
   }
 }
 
+// "All Conversations" — the panel's default-on source. Injects the user's
+// recent thread titles + last exchange so the AI can reference earlier work.
+async function conversationsBlock(email: string): Promise<string | null> {
+  try {
+    const convs = await listConversations(email)
+    if (!convs.length) return null
+    const lines = convs.slice(0, 8).map((c) => {
+      const last = c.messages[c.messages.length - 1]
+      const snippet = last ? ` — last: ${last.content.replace(/\s+/g, ' ').slice(0, 140)}` : ''
+      return `- "${c.title}" (${c.messages.length} messages)${snippet}`
+    })
+    return `EARLIER NOTEBOOK THREADS (the user's own, most recent first):\n${lines.join('\n')}`
+  } catch {
+    return null
+  }
+}
+
 export type NotebookUpload = { name: string; content?: string }
 
 function uploadsBlock(uploads: NotebookUpload[]): string | null {
@@ -81,15 +99,18 @@ function uploadsBlock(uploads: NotebookUpload[]): string | null {
 export async function buildNotebookContext(
   sources: NotebookSources | undefined,
   uploads: NotebookUpload[] = [],
+  userEmail?: string,
 ): Promise<string> {
   if (!sources) return ''
   const blocks: string[] = []
-  const [proj, leads] = await Promise.all([
+  const [proj, leads, convs] = await Promise.all([
     sources.live_projects ? projectsBlock() : Promise.resolve(null),
     sources.crm_leads ? leadsBlock() : Promise.resolve(null),
+    sources.all_conversations && userEmail ? conversationsBlock(userEmail) : Promise.resolve(null),
   ])
   if (proj) blocks.push(proj)
   if (leads) blocks.push(leads)
+  if (convs) blocks.push(convs)
   if (sources.uploads) {
     const up = uploadsBlock(uploads)
     if (up) blocks.push(up)

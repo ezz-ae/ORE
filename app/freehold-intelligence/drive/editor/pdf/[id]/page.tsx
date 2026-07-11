@@ -279,9 +279,12 @@ export default function DrivePdfSurface() {
           <dl className="space-y-3 rounded-2xl border border-line bg-surface-2/40 p-4">
             {Object.entries(parsed).map(([k, v]) => {
               const val = Array.isArray(v) ? v.filter(Boolean).join(' · ') : (v == null || v === '' ? '—' : String(v))
+              // Humanize machine field names (developer_name → Developer Name)
+              // — a marketer must never read snake_case labels.
+              const label = k.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2')
               return (
                 <div key={k} className="border-b border-white/[0.05] pb-2 last:border-0 last:pb-0">
-                  <dt className="text-[11px] uppercase tracking-wide text-slate-500">{k}</dt>
+                  <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
                   <dd dir="auto" className="mt-0.5 whitespace-pre-wrap text-sm leading-relaxed text-slate-100">{val || '—'}</dd>
                 </div>
               )

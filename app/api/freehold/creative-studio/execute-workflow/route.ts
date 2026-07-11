@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 type Node = { id: string; type?: string; data?: Record<string, unknown> }
-type Edge = { source: string; target: string }
+type Edge = { source: string; target: string; targetHandle?: string | null }
 
 const str = (v: unknown) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v))
 
@@ -24,6 +24,14 @@ const findUrl = (inputs: string[]): string | undefined => {
   return undefined
 }
 
+// The human-readable part of the inputs: every input with URLs stripped and
+// empty/`{}` husks dropped, joined so multi-input nodes (property + presenter)
+// keep ALL their context instead of silently using only inputs[0].
+const textOf = (input: string): string =>
+  String(input).replace(/(https?:\/\/[^\s"']+|data:[a-z/+.-]+;base64,[^\s"']+)/gi, "").replace(/\s+/g, " ").trim()
+const combinedText = (inputs: string[]): string =>
+  inputs.map(textOf).filter((t) => t && t !== "{}").join("\n\n")
+
 // Interpolate $input1/$input2/$input into a template.
 function interpolate(template: string, inputs: string[]): string {
   let out = template.replace(/\$input(\d+)/g, (_, n) => inputs[Number(n) - 1] ?? "")
@@ -32,7 +40,9 @@ function interpolate(template: string, inputs: string[]): string {
 }
 
 // Run one node given its resolved inputs (outputs of its source nodes).
-async function runNode(node: Node, inputs: string[]): Promise<unknown> {
+// `byHandle` maps a labeled input handle (e.g. 'script-input') → the outputs
+// wired into it, so nodes with named ports route data the way the canvas shows.
+async function runNode(node: Node, inputs: string[], byHandle: Map<string, string[]>): Promise<unknown> {
   const d = node.data || {}
   const primary = inputs[0] ?? ""
   switch (node.type) {
@@ -42,9 +52,22 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
       return primary
     case "prompt":
       return interpolate(str(d.content) || "", inputs)
+    case "script": {
+      // The node's own script IS its product — the user wrote or generated it
+      // in the card. Only fall back to generating when the card is empty.
+      const written = str(d.script).trim()
+      if (written) return written
+      const brief = combinedText(inputs) || str(d.content)
+      return genText(
+        `Write a punchy, spoken voiceover for a Dubai real-estate reel.${brief ? `\n\nContext:\n${brief}` : ""}\nReturn only the voiceover text.`,
+        {
+          temperature: typeof d.temperature === "number" ? d.temperature : undefined,
+          maxTokens: typeof d.maxTokens === "number" ? d.maxTokens : undefined,
+        },
+      )
+    }
     case "textModel":
-    case "script":
-      return genText(primary || str(d.content) || "Write engaging copy.", {
+      return genText(combinedText(inputs) || str(d.content) || "Write engaging copy.", {
         temperature: typeof d.temperature === "number" ? d.temperature : undefined,
         maxTokens: typeof d.maxTokens === "number" ? d.maxTokens : undefined,
       })
@@ -70,7 +93,8 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
     case "imageGeneration": {
       // Honor the node's LOCK: reuse the frozen image instead of regenerating.
       if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
-      const r = await genImage(primary || "A cinematic Dubai real-estate hero image.", {
+      // ALL text inputs feed the prompt (property + presenter persona together).
+      const r = await genImage(combinedText(inputs) || "A cinematic Dubai real-estate hero image.", {
         aspectRatio: str(d.aspectRatio) || undefined,
         imageUrl: findUrl(inputs),
       })
@@ -79,8 +103,15 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
     case "videoGeneration": {
       // Honor the node's LOCK: reuse the frozen output instead of regenerating.
       if (d.isLocked && typeof d.lockedImageUrl === "string" && d.lockedImageUrl) return d.lockedImageUrl
-      const r = await genVideo(primary || "A cinematic property walkthrough.", {
-        imageUrl: findUrl(inputs),
+      // Named handles route data the way the canvas shows: the script port is
+      // the motion/voiceover prompt; product/model ports carry the reference
+      // image. Without handle wiring, fall back to the combined text — never
+      // a base64 data-URL as the "prompt".
+      const scriptIn = combinedText(byHandle.get("script-input") ?? [])
+      const refIn = findUrl([...(byHandle.get("product-input") ?? []), ...(byHandle.get("model-input") ?? [])])
+      const r = await genVideo(scriptIn || combinedText(inputs) || "A cinematic property walkthrough.", {
+        imageUrl: refIn ?? findUrl(inputs),
+        aspectRatio: str(d.aspectRatio) || undefined,
         // Wire the Duration dropdown through to the generator (value may be '8s' or a number).
         duration:
           typeof d.duration === "string"
@@ -157,8 +188,21 @@ export async function POST(req: NextRequest) {
       const executionLog: Array<{ nodeId: string; type: string; output: unknown; error?: string }> = []
       const done = new Set<string>()
 
-      const incoming = (id: string) => edges.filter((e) => e.target === id).map((e) => e.source)
+      const incomingEdges = (id: string) => edges.filter((e) => e.target === id)
+      const incoming = (id: string) => incomingEdges(id).map((e) => e.source)
       const ready = (id: string) => incoming(id).every((s) => done.has(s))
+      // Group resolved inputs by the labeled handle they were wired into, so
+      // nodes with named ports (video: script/product/model) route correctly.
+      const inputsByHandle = (id: string): Map<string, string[]> => {
+        const map = new Map<string, string[]>()
+        for (const e of incomingEdges(id)) {
+          const key = typeof e.targetHandle === "string" && e.targetHandle ? e.targetHandle : "default"
+          const list = map.get(key) ?? []
+          list.push(str(outputs.get(e.source)))
+          map.set(key, list)
+        }
+        return map
+      }
 
       try {
         // Execute in dependency order: repeatedly run any node whose inputs are ready.
@@ -171,7 +215,7 @@ export async function POST(req: NextRequest) {
             send({ type: "node_start", nodeId: node.id, nodeType: node.type })
             try {
               const inputs = incoming(node.id).map((s) => str(outputs.get(s)))
-              const output = await runNode(node, inputs)
+              const output = await runNode(node, inputs, inputsByHandle(node.id))
               outputs.set(node.id, output)
               done.add(node.id)
               executionLog.push({ nodeId: node.id, type: node.type || "unknown", output })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { geminiGenerate, geminiText } from "@/lib/gemini-rest"
+import { googleAiKey } from "@/lib/creative-studio/providers"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,8 +15,8 @@ export async function POST(req: NextRequest) {
   const user = await verifySession((await cookies()).get(SESSION_COOKIE)?.value)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: "AI prompt writing needs GEMINI_API_KEY." }, { status: 400 })
+  const apiKey = googleAiKey()
+  if (!apiKey) return NextResponse.json({ unavailable: true, error: "AI prompt writing isn’t configured on this workspace yet." }, { status: 503 })
 
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }

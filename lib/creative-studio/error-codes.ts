@@ -25,7 +25,22 @@ export function toStudioErrorCode(raw: string | undefined | null): string {
   return "CS-01"
 }
 
-/** The neutral one-line label shown to the client (code included, no jargon). */
+/**
+ * The one-line label shown to the client. Still no provider/model names
+ * (that's the point of the codes), but each category carries the ACTION the
+ * user can take — a white-label client who just needs to add their AI key
+ * must be told that, not handed an opaque support code.
+ */
 export function studioErrorLabel(raw: string | undefined | null): string {
-  return `Couldn’t finish this step — code ${toStudioErrorCode(raw)}. Tap retry, or send this code to support.`
+  const code = toStudioErrorCode(raw)
+  const hint: Record<string, string> = {
+    'CS-17': 'The AI service is at its usage limit — try again in a few minutes, or upgrade the AI plan under Integrations → AI.',
+    'CS-04': 'The AI key isn’t valid — update it under Integrations → AI.',
+    'CS-22': 'Image generation isn’t enabled on this workspace yet — add an AI media key under Integrations → AI.',
+    'CS-23': 'Video generation needs a video-capable AI key — add one under Integrations → AI.',
+    'CS-08': 'Couldn’t reach the AI service — check the connection and tap retry.',
+    'CS-11': 'The AI returned an unusable result — tap retry.',
+  }
+  const action = hint[code] ?? 'Tap retry, or send this code to support.'
+  return `${action} (code ${code})`
 }

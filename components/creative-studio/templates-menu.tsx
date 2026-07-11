@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LayoutTemplate, Video, FileText, ImageIcon, Zap } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
 import { WORKFLOW_TEMPLATES } from "@/lib/creative-studio/constants"
 import type { Node, Edge } from "@xyflow/react"
 
@@ -27,6 +28,7 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 }
 
 export function TemplatesMenu({ onLoadTemplate }: TemplatesMenuProps) {
+  const t = useT()
   const [open, setOpen] = useState(false)
 
   const handleSelectTemplate = (templateId: string) => {
@@ -46,7 +48,7 @@ export function TemplatesMenu({ onLoadTemplate }: TemplatesMenuProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wide py-1.5 px-2">
-          Ready sets
+          {t("pcs.tpl.readySets")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {WORKFLOW_TEMPLATES.map((template) => (

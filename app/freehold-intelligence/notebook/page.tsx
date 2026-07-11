@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   BookOpen, Pin, Sparkles, MessageSquare, FileText, Megaphone, GitBranch,
-  Search, X, Hash, Plus, CheckSquare, Square, Upload, Pencil, Send,
+  Search, X, Plus, CheckSquare, Square, Upload, Pencil, Send,
   Users, Building2, FolderOpen, ChevronRight, ArrowUp, Loader2,
   BarChart2, Mail, Phone, Globe, FileImage, Layers, Newspaper, History, Trash2,
   Library as LibraryIcon, Image as ImageIcon2, Video, FileDown, Download,
 } from 'lucide-react'
-import { saveAccountMemory } from '@/lib/freehold/account-memory'
+import { saveAccountMemory, loadAccountMemory } from '@/lib/freehold/account-memory'
 import type { ExpertBlock } from '@/lib/freehold/expert-blocks'
-import { useT } from '@/lib/i18n/provider'
+import { useT, useI18n } from '@/lib/i18n/provider'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -22,13 +22,6 @@ function outputTypeIcon(type: string, className = 'h-3.5 w-3.5') {
   if (type === 'comparison') return <GitBranch className={className} />
   if (type === 'brochure' || type === 'pdf') return <FileText className={className} />
   return <MessageSquare className={className} />
-}
-
-function statusTone(status: string) {
-  if (status === 'approved') return 'text-gold border-gold/20 bg-gold/10'
-  if (status === 'sent_for_review') return 'text-[#F8E7AE] border-gold/20 bg-gold/10'
-  if (status === 'saved') return 'text-teal-200 border-teal-400/20 bg-teal-400/10'
-  return 'text-slate-400 border-line-strong bg-surface-2'
 }
 
 function relativeTime(iso: string, t: (k: string, v?: Record<string, string | number>) => string) {
@@ -42,12 +35,7 @@ function relativeTime(iso: string, t: (k: string, v?: Record<string, string | nu
 // ── data ─────────────────────────────────────────────────────────────────────
 
 // Demo saved-outputs previews are gone — the notebook shows only real,
-// DB-persisted outputs (dbOutputs) and real conversation threads.
-type DemoOutput = {
-  id: string; type: string; title: string; content: string; pinned: boolean
-  tags: string[]; status: string; conversationId: string
-}
-const pinnedOutputs: DemoOutput[] = []
+// DB-persisted outputs (dbOutputs); pinning is a real per-account preference.
 
 type CenterTab = 'chat' | 'expert' | 'library' | 'saved' | 'pinned'
 
@@ -190,18 +178,24 @@ export default function NotebookPage() {
         body: JSON.stringify({ kind: libForm.kind, title: libForm.title.trim(), url: libForm.url.trim() }),
       })
       const d = await res.json()
-      if (!res.ok) throw new Error(d?.error || 'save failed')
+      if (!res.ok) throw new Error('save failed')
       setLibItems((prev) => [d.item, ...prev])
       setLibForm({ kind: 'image', title: '', url: '' })
       toast.success(t('nb.lib.saved'))
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t('nb.lib.saveFailed'))
+    } catch {
+      toast.error(t('nb.lib.saveFailed'))
     } finally { setLibSaving(false) }
   }
 
   async function deleteLibItem(id: string) {
-    try { await fetch(`/api/freehold/library?id=${encodeURIComponent(id)}`, { method: 'DELETE' }) } catch {}
-    setLibItems((prev) => prev.filter((i) => i.id !== id))
+    // Honest delete — only remove the tile when the server confirms the row
+    // is gone, otherwise it would silently reappear on the next load.
+    try {
+      const res = await fetch(`/api/freehold/library?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.ok) { toast.error(t('nb.lib.deleteFailed')); return }
+      setLibItems((prev) => prev.filter((i) => i.id !== id))
+    } catch { toast.error(t('nb.lib.deleteFailed')) }
   }
   // left panel
   const [sourceQuery, setSourceQuery] = useState('')
@@ -233,6 +227,16 @@ export default function NotebookPage() {
   // Persisted outputs (saved tables / reports) from the DB.
   type SavedOutput = { id: string; title: string; type: string; content: string; created_at: string }
   const [dbOutputs, setDbOutputs] = useState<SavedOutput[]>([])
+  // Pins are a real per-ACCOUNT preference — they follow the user anywhere.
+  const [pinnedIds, setPinnedIds] = useState<string[]>([])
+  function togglePin(id: string) {
+    setPinnedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      saveAccountMemory({ nbPinned: next })
+      return next
+    })
+  }
+  const pinnedOutputs = dbOutputs.filter((o) => pinnedIds.includes(o.id))
   const [openOutput, setOpenOutput] = useState<string | null>(null)
   useEffect(() => {
     fetch('/api/freehold/notebook/save-output')
@@ -276,6 +280,8 @@ export default function NotebookPage() {
   const [genSaving, setGenSaving] = useState(false)
   // Lead context: when the Notebook is opened from a CRM lead (?lead=<id>),
   // "Send to CRM" attaches the output to that lead's timeline (a real edge).
+  const { locale } = useI18n()
+  const dateLocale = locale === 'ar' ? 'ar-AE' : locale === 'ru' ? 'ru-RU' : 'en-AE'
   const [leadCtx, setLeadCtx] = useState<string | null>(null)
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get('lead')
@@ -309,11 +315,12 @@ export default function NotebookPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: `Generate a ${t(type.labelKey)} for a Dubai real-estate workspace. ${genInput || ''}`.trim() }),
       })
-      const data = await res.json()
-      if (!res.ok || !data.text) throw new Error(data?.error || t('nb.generationFailed'))
+      const data = await res.json().catch(() => ({}))
+      if (data?.unavailable) { toast.error(t('nb.gen.unavailable')); return }
+      if (!res.ok || !data.text) throw new Error('generation failed')
       setGenResult(data.text)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('nb.generationFailed'))
+    } catch {
+      toast.error(t('nb.generationFailed'))
     } finally { setGenLoading(false) }
   }
 
@@ -373,11 +380,16 @@ export default function NotebookPage() {
             uploads: !!checkedSources.uploads,
             all_conversations: !!checkedSources.all_conversations,
           },
-          uploads: checkedSources.uploads ? customSources.map((s) => ({ name: s.name, content: s.content })) : [],
+          // Per-file checkboxes are real filters: only ticked files travel.
+          uploads: checkedSources.uploads
+            ? customSources.filter((s) => checkedSources[s.id] !== false).map((s) => ({ name: s.name, content: s.content }))
+            : [],
         }),
       })
       const data = await res.json()
-      const answer = data?.answer || data?.message || t('nb.chatFallback')
+      // `unavailable` means the AI is down — render the translated notice,
+      // never the server's hardcoded English.
+      const answer = data?.unavailable ? t('nb.chatError') : (data?.answer || data?.message || t('nb.chatFallback'))
       if (data?.conversationId) setConversationId(data.conversationId)
       setChatMessages(m => [...m, { role: 'assistant', content: answer }])
       loadConversations()
@@ -401,16 +413,48 @@ export default function NotebookPage() {
         if (Array.isArray(parsed)) setCustomSources(parsed)
       }
     } catch {}
+    loadAccountMemory().then((m) => {
+      if (typeof m.nbTitle === 'string' && m.nbTitle.trim()) setNotebookTitle(m.nbTitle)
+      if (Array.isArray(m.nbPinned)) setPinnedIds(m.nbPinned.filter((x: unknown): x is string => typeof x === 'string'))
+    }).catch(() => {})
     setPrefsHydrated(true)
   }, [])
   useEffect(() => {
     if (!prefsHydrated) return
     try { localStorage.setItem('nb.title', notebookTitle) } catch {}
+    saveAccountMemory({ nbTitle: notebookTitle })
   }, [notebookTitle, prefsHydrated])
   useEffect(() => {
     if (!prefsHydrated) return
     try { localStorage.setItem('nb.customSources', JSON.stringify(customSources)) } catch {}
   }, [customSources, prefsHydrated])
+  // The active thread survives a reload: remember its id and rehydrate the
+  // chat from the persisted conversation once the list arrives.
+  useEffect(() => {
+    if (!prefsHydrated || !conversationId) return
+    try { localStorage.setItem('nb.activeConversation', conversationId) } catch {}
+  }, [conversationId, prefsHydrated])
+  const resumedRef = useRef(false)
+  useEffect(() => {
+    if (resumedRef.current || !prefsHydrated || conversations.length === 0) return
+    if (conversationId || chatMessages.length > 0) { resumedRef.current = true; return }
+    let storedId: string | null = null
+    try { storedId = localStorage.getItem('nb.activeConversation') } catch {}
+    if (!storedId) { resumedRef.current = true; return }
+    const conv = conversations.find((c) => c.id === storedId)
+    if (conv) {
+      setConversationId(conv.id)
+      setChatMessages(conv.messages.map((m) => ({ role: m.role, content: m.content })))
+    }
+    resumedRef.current = true
+  }, [prefsHydrated, conversations, conversationId, chatMessages.length])
+
+  /** Load a stored thread into the live chat so it can be continued. */
+  function resumeConversation(conv: { id: string; messages: { role: 'user' | 'assistant'; content: string }[] }) {
+    setConversationId(conv.id)
+    setChatMessages(conv.messages.map((m) => ({ role: m.role, content: m.content })))
+    setCenterTab('chat')
+  }
 
   // Accept dropped / picked files: read text for text-like files (so the AI can
   // actually use them), keep binaries as named pointers. Both persist as sources.
@@ -469,6 +513,7 @@ export default function NotebookPage() {
               const url = addSourceInput.trim()
               if (!url) return
               setCustomSources((prev) => [...prev, { id: `src_${Date.now()}`, name: url }])
+              setCheckedSources((prev) => ({ ...prev, uploads: true }))
               toast.success(t('nb.sourceAdded'))
               setAddSourceInput('')
               setShowAddSource(false)
@@ -984,6 +1029,16 @@ export default function NotebookPage() {
                             <span>{relativeTime(o.created_at, t)}</span>
                           </div>
                         </div>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          title={pinnedIds.includes(o.id) ? t('nb.unpin') : t('nb.pin')}
+                          onClick={(e) => { e.stopPropagation(); togglePin(o.id) }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); togglePin(o.id) } }}
+                          className={`shrink-0 rounded-md p-1 transition ${pinnedIds.includes(o.id) ? 'text-gold' : 'text-slate-600 hover:text-gold'}`}
+                        >
+                          <Pin className="h-3.5 w-3.5" />
+                        </span>
                         <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                       </button>
                       {isOpen && (
@@ -1009,12 +1064,12 @@ export default function NotebookPage() {
             <div className="space-y-2">
               {filteredConvs.map(conv => {
                 const lastMsg = conv.messages[conv.messages.length - 1]
-                const outputCount = conv.savedOutputs.length
                 return (
-                  <Link
+                  <button
                     key={conv.id}
-                    href={`/freehold-intelligence/notebook/${conv.id}`}
-                    className="group flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4 transition hover:border-gold/20"
+                    type="button"
+                    onClick={() => resumeConversation(conv)}
+                    className="group flex w-full items-start gap-3.5 rounded-xl border border-line bg-surface p-4 text-start transition hover:border-gold/20"
                   >
                     <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line-strong bg-surface-2">
                       <Sparkles className="h-3.5 w-3.5 text-slate-400" />
@@ -1029,10 +1084,10 @@ export default function NotebookPage() {
                       </p>
                       <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
                         <span>{t('nb.msgCount', { count: conv.messages.length })}</span>
-                        {outputCount > 0 && <span className="text-gold/60">{t('nb.outputCount', { count: outputCount })}</span>}
+                        <span className="text-gold/60">{t('nb.tapToContinue')}</span>
                       </div>
                     </div>
-                  </Link>
+                  </button>
                 )
               })}
             </div>
@@ -1049,33 +1104,34 @@ export default function NotebookPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pinnedOutputs.map(output => (
-                  <Link
-                    key={output.id}
-                    href={`/freehold-intelligence/notebook/${output.conversationId}`}
-                    className="group block rounded-xl border border-gold/15 bg-gold/[0.03] p-4 transition hover:border-gold/30"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-gold/70">
-                        {outputTypeIcon(output.type)}
-                        <span className="capitalize">{output.type.replace(/_/g, ' ')}</span>
+                {pinnedOutputs.map(output => {
+                  const isHtml = output.type === 'comparison' || output.type === 'report' || output.content.trimStart().startsWith('<')
+                  return (
+                    <div key={output.id} className="rounded-xl border border-gold/15 bg-gold/[0.03] p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-gold/70">
+                          {outputTypeIcon(output.type)}
+                          <span className="capitalize">{output.type.replace(/_/g, ' ')}</span>
+                        </div>
+                        <button type="button" onClick={() => togglePin(output.id)} title={t('nb.unpin')} className="shrink-0 text-gold transition hover:opacity-70">
+                          <Pin className="h-3 w-3" />
+                        </button>
                       </div>
-                      <Pin className="h-3 w-3 shrink-0 text-gold" />
+                      <h3 className="mt-2 text-sm font-semibold text-white">{output.title}</h3>
+                      {isHtml ? (
+                        <iframe
+                          title={output.title}
+                          sandbox=""
+                          srcDoc={`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#181613;padding:12px">${output.content}</body>`}
+                          className="mt-2 h-48 w-full rounded-lg border border-line bg-surface"
+                        />
+                      ) : (
+                        <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-app p-3 text-xs leading-relaxed text-slate-300">{output.content}</pre>
+                      )}
+                      <div className="mt-2 text-xs text-slate-500">{relativeTime(output.created_at, t)}</div>
                     </div>
-                    <h3 className="mt-2 text-sm font-semibold text-white">{output.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-xs leading-[1.6] text-slate-400">{output.content}</p>
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusTone(output.status)}`}>
-                        {output.status.replace(/_/g, ' ')}
-                      </span>
-                      {output.tags.slice(0, 3).map(t => (
-                        <span key={t} className="flex items-center gap-0.5 text-xs text-slate-500">
-                          <Hash className="h-2.5 w-2.5" />{t}
-                        </span>
-                      ))}
-                    </div>
-                  </Link>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1176,7 +1232,7 @@ export default function NotebookPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-slate-100">{output.title}</span>
-                    <span className="mt-0.5 block text-[10px] text-slate-500">{new Date(output.created_at).toLocaleDateString('en-AE', { day: 'numeric', month: 'short' })}</span>
+                    <span className="mt-0.5 block text-[10px] text-slate-500">{new Date(output.created_at).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })}</span>
                   </div>
                   <button
                     onClick={() => setActiveSendOutput(activeSendOutput === output.id ? null : output.id)}

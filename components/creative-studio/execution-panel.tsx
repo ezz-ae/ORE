@@ -287,7 +287,6 @@ export function ExecutionPanel({
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('pcs.run.title')}</h2>
-          <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">Durable</span>
         </div>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -479,7 +478,7 @@ export function ExecutionPanel({
         {executionLog.length === 0 && !error && !isExecuting && !currentNodeId && (
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">{t('pcs.run.clickToRun')}</p>
-            <p className="text-xs text-muted-foreground/70 mt-2">Powered by Vercel Workflow</p>
+
           </div>
         )}
       </div>
