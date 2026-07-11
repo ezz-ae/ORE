@@ -3,6 +3,10 @@
 type Dict = Record<string, string>
 
 const en: Dict = {
+  "expert.editingChip": "Editing: {title}",
+  "expert.editToggleTitle": "Toggle — messages edit the open file, or chat normally",
+  "expert.editUndo": "Undo last edit",
+  "expert.editNoResult": "Nothing was changed.",
   "expert.mode.auto": "Auto",
   "expert.mode.code": "Code",
   "expert.mode.marketing": "Marketing",
@@ -56,6 +60,10 @@ const en: Dict = {
 }
 
 const ar: Dict = {
+  "expert.editingChip": "تحرير: {title}",
+  "expert.editToggleTitle": "تبديل — الرسائل تحرّر الملف المفتوح، أو محادثة عادية",
+  "expert.editUndo": "تراجع عن آخر تعديل",
+  "expert.editNoResult": "لم يتغيّر شيء.",
   "expert.mode.auto": "تلقائي",
   "expert.mode.code": "تقني",
   "expert.mode.marketing": "تسويق",
@@ -109,6 +117,10 @@ const ar: Dict = {
 }
 
 const ru: Dict = {
+  "expert.editingChip": "Правка: {title}",
+  "expert.editToggleTitle": "Переключить — сообщения редактируют открытый файл или обычный чат",
+  "expert.editUndo": "Отменить последнюю правку",
+  "expert.editNoResult": "Ничего не изменилось.",
   "expert.mode.auto": "Авто",
   "expert.mode.code": "Код",
   "expert.mode.marketing": "Маркетинг",

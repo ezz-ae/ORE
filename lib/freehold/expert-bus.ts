@@ -24,3 +24,44 @@ export function openExpert() {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(EXPERT_OPEN))
 }
+
+// ─── Editor surface registry ─────────────────────────────────────────────────
+// When a Drive editor is open it registers itself here, and the ONE Expert
+// side chat becomes its instruction box — no second chat rail next to it.
+// The editor keeps ownership of the artifact + undo history; the chat only
+// forwards instructions and reports factual summaries.
+
+export const EXPERT_EDITOR_CHANGED = 'freehold:expert-editor-changed'
+
+export interface ExpertEditorSurface {
+  /** 'doc' | 'image' | … — display only. */
+  kind: string
+  /** Localized artifact label for the chat chip. */
+  title: string
+  /** Localized quick-edit chips (label + the instruction it prefills). */
+  presets: () => { label: string; instruction: string }[]
+  /** Apply an instruction to the OPEN artifact. Returns a factual summary. */
+  apply: (instruction: string) => Promise<{ ok: boolean; summary: string }>
+  canUndo: () => boolean
+  /** Undo the last AI edit. False = blocked (manual edits since — use the
+   *  editor's own undo button, which asks for confirmation). */
+  undo: () => boolean
+}
+
+let activeEditor: ExpertEditorSurface | null = null
+
+export function registerExpertEditor(surface: ExpertEditorSurface) {
+  activeEditor = surface
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EXPERT_EDITOR_CHANGED))
+}
+
+export function unregisterExpertEditor(surface: ExpertEditorSurface) {
+  if (activeEditor === surface) {
+    activeEditor = null
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EXPERT_EDITOR_CHANGED))
+  }
+}
+
+export function getExpertEditor(): ExpertEditorSurface | null {
+  return activeEditor
+}
