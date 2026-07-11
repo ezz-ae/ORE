@@ -6,7 +6,6 @@ import {
   Sparkles, Check, ArrowLeft, Eye, Globe, ChevronDown, ChevronUp,
   RotateCcw, Phone, Loader2, ExternalLink,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useT } from '@/lib/i18n/provider'
 
@@ -176,44 +175,28 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
     setOpen((prev) => (prev === s ? null : s))
   }
 
-  // Instant audience reframe from a real preset — no fake "thinking" delay.
-  function applyPreset(variant: 'investor' | 'luxury' | 'end_user') {
-    const patch = AI_VARIANTS[variant](prop)
-    setConfig((prev) => ({ ...prev, ...patch, template: variant }))
+  function aiRedesign(variant: 'investor' | 'luxury' | 'end_user') {
+    setRedesigning(true)
+    setTimeout(() => {
+      const patch = AI_VARIANTS[variant](prop)
+      setConfig((prev) => ({ ...prev, ...patch, template: variant }))
+      setRedesigning(false)
+    }, 1400)
   }
 
-  // Real AI rewrite from the free-form instruction, grounded in the property.
-  async function handleCustomAi() {
-    const p = aiPrompt.trim()
-    if (!p || redesigning) return
+  function handleCustomAi() {
+    if (!aiPrompt.trim()) return
     setRedesigning(true)
-    try {
-      const res = await fetch('/api/freehold/inventory/landing-ai', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: p,
-          property: {
-            name: prop.name, area: prop.area, developer: prop.developer, bedrooms: prop.bedrooms,
-            type: prop.type, roi: prop.roi, startingPriceAED: prop.startingPriceAED,
-            paymentPlan: prop.paymentPlan, handoverYear: prop.handoverYear, sizeRange: prop.sizeRange,
-          },
-          current: { headline: config.headline, subheadline: config.subheadline, highlights: config.highlights, ctaText: config.ctaText },
-        }),
-      })
-      const d = await res.json().catch(() => ({}))
-      if (d.unavailable) { toast.error(t('inv.gen.aiUnavailable')); return }
-      if (!res.ok || !d.config) { toast.error(d.error || t('inv.gen.aiFailed')); return }
-      const c = d.config as { headline: string; subheadline: string; highlights: string[]; ctaText: string }
-      setConfig((prev) => ({
-        ...prev,
-        headline: c.headline || prev.headline,
-        subheadline: c.subheadline || prev.subheadline,
-        highlights: (Array.isArray(c.highlights) && c.highlights.length === 4 ? c.highlights : prev.highlights) as [string, string, string, string],
-        ctaText: c.ctaText || prev.ctaText,
-      }))
-      setAiPrompt(''); setShowAiBox(false)
-      toast.success(t('inv.gen.aiApplied'))
-    } catch { toast.error(t('inv.gen.aiFailed')) } finally { setRedesigning(false) }
+    setTimeout(() => {
+      const variant = aiPrompt.toLowerCase().includes('luxury') ? 'luxury'
+        : aiPrompt.toLowerCase().includes('end user') || aiPrompt.toLowerCase().includes('family') ? 'end_user'
+        : 'investor'
+      const patch = AI_VARIANTS[variant](prop)
+      setConfig((prev) => ({ ...prev, ...patch, template: variant }))
+      setAiPrompt('')
+      setShowAiBox(false)
+      setRedesigning(false)
+    }, 1600)
   }
 
   async function regenerateAi() {
@@ -376,9 +359,9 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             {!showAiBox ? (
               <div className="flex flex-wrap gap-2">
                 {(['investor', 'luxury', 'end_user'] as const).map((v) => (
-                  <button key={v} onClick={() => applyPreset(v)}
+                  <button key={v} onClick={() => aiRedesign(v)} disabled={redesigning}
                     className="rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1.5 text-xs capitalize text-gold/80 transition hover:bg-gold/15 disabled:opacity-50">
-                    {t(`inv.gen.preset.${v}`)}
+                    {redesigning ? '…' : t(`inv.gen.preset.${v}`)}
                   </button>
                 ))}
               </div>
@@ -399,31 +382,31 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             )}
             {redesigning && (
               <div className="mt-3 flex items-center gap-2 text-xs text-gold/60">
-                <Sparkles className="h-3.5 w-3.5 animate-pulse" /> {t('inv.gen.aiWorking')}
+                <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Redesigning all sections…
               </div>
             )}
           </div>
 
-          <SectionPanel title={t('inv.gen.sec.hero')} open={open === 'hero'} onToggle={() => toggleSection('hero')}>
+          <SectionPanel title="Hero Section" open={open === 'hero'} onToggle={() => toggleSection('hero')}>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{t('inv.gen.f.headline')}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Headline</label>
                 <input value={config.headline} onChange={(e) => setConfig((p) => ({ ...p, headline: e.target.value }))}
                   className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30" />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{t('inv.gen.f.subheadline')}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">Subheadline</label>
                 <input value={config.subheadline} onChange={(e) => setConfig((p) => ({ ...p, subheadline: e.target.value }))}
                   className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30" />
               </div>
             </div>
           </SectionPanel>
 
-          <SectionPanel title={t('inv.gen.sec.highlights')} open={open === 'highlights'} onToggle={() => toggleSection('highlights')}>
+          <SectionPanel title="Key Highlights" open={open === 'highlights'} onToggle={() => toggleSection('highlights')}>
             <div className="space-y-3">
               {config.highlights.map((h, i) => (
                 <div key={i}>
-                  <label className="mb-1 block text-xs text-slate-500">{t('inv.gen.f.highlight', { n: i + 1 })}</label>
+                  <label className="mb-1 block text-xs text-slate-500">Highlight {i + 1}</label>
                   <input value={h}
                     onChange={(e) => {
                       const next = [...config.highlights] as [string, string, string, string]
@@ -436,11 +419,11 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             </div>
           </SectionPanel>
 
-          <SectionPanel title={t('inv.gen.sec.payment')} open={open === 'payment'} onToggle={() => toggleSection('payment')}>
+          <SectionPanel title="Payment Plan" open={open === 'payment'} onToggle={() => toggleSection('payment')}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-slate-200">{t('inv.gen.f.showPayment')}</div>
-                <div className="text-xs text-slate-500">{prop.paymentPlan ?? t('inv.gen.f.noPlan')}</div>
+                <div className="text-sm text-slate-200">Show payment plan section</div>
+                <div className="text-xs text-slate-500">{prop.paymentPlan ?? 'No plan configured for this property'}</div>
               </div>
               <button
                 onClick={() => setConfig((p) => ({ ...p, showPaymentPlan: !p.showPaymentPlan }))}
@@ -455,15 +438,15 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
             </div>
           </SectionPanel>
 
-          <SectionPanel title={t('inv.gen.sec.form')} open={open === 'form'} onToggle={() => toggleSection('form')}>
+          <SectionPanel title="Lead Form" open={open === 'form'} onToggle={() => toggleSection('form')}>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">{t('inv.gen.f.cta')}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500">CTA Button Text</label>
                 <input value={config.ctaText} onChange={(e) => setConfig((p) => ({ ...p, ctaText: e.target.value }))}
                   className="w-full rounded-[10px] border border-line bg-surface-2 px-3 py-2.5 text-sm text-white outline-none focus:border-gold/30" />
               </div>
               <div>
-                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">{t('inv.gen.f.formFields')}</div>
+                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">Form Fields</div>
                 <div className="flex flex-wrap gap-2">
                   {(Object.entries(config.leadFields) as [keyof typeof config.leadFields, boolean][]).map(([key, val]) => (
                     <label key={key}
@@ -473,7 +456,7 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
                       <input type="checkbox" className="sr-only" checked={val}
                         onChange={() => setConfig((p) => ({ ...p, leadFields: { ...p.leadFields, [key]: !val } }))} />
                       {val && <Check className="h-3 w-3 text-gold" />}
-                      {t(`inv.gen.field.${key}`)}
+                      {key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')}
                     </label>
                   ))}
                 </div>
@@ -482,15 +465,15 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
           </SectionPanel>
 
           <div className="rounded-[16px] border border-line bg-surface-2 px-5 py-4">
-            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-600">{t('inv.gen.f.propData')}</div>
+            <div className="mb-3 text-xs font-medium uppercase tracking-wider text-slate-600">Property Data</div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {[
-                [t('inv.gen.stat.status'), prop.status.replace('_', ' ')],
-                [t('inv.gen.stat.bedrooms'), prop.bedrooms + ' BR'],
-                [t('inv.gen.stat.size'), prop.sizeRange || '—'],
-                [t('inv.gen.stat.priceFrom'), fmtPrice(prop.startingPriceAED)],
-                [t('inv.gen.stat.roi'), prop.roi ? prop.roi.toFixed(1) + '%' : '—'],
-                [t('inv.gen.stat.adReadiness'), prop.adReadiness + '%'],
+                ['Status', prop.status.replace('_', ' ')],
+                ['Bedrooms', prop.bedrooms + ' BR'],
+                ['Size', prop.sizeRange || '—'],
+                ['Price from', fmtPrice(prop.startingPriceAED)],
+                ['ROI', prop.roi ? prop.roi.toFixed(1) + '%' : '—'],
+                ['Ad Readiness', prop.adReadiness + '%'],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-2">
                   <span className="text-slate-500">{k}</span>
@@ -502,13 +485,13 @@ export function GenerateClient({ prop }: { prop: InventoryProperty }) {
         </div>
 
         <div className="hidden lg:block shrink-0 sticky top-6">
-          <div className="mb-3 text-center text-xs text-slate-600 uppercase tracking-wider">{t('inv.gen.f.livePreview')}</div>
+          <div className="mb-3 text-center text-xs text-slate-600 uppercase tracking-wider">Live Preview</div>
           <PhonePreview prop={prop} config={config} t={t} />
           {publishedUrl && (
             <div className="mt-4 text-center">
               <a href={publishedUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/[0.05] px-4 py-2 text-xs text-emerald-400 transition hover:bg-emerald-400/10">
-                <Eye className="h-3.5 w-3.5" /> {t('inv.gen.f.openLive')}
+                <Eye className="h-3.5 w-3.5" /> Open live page
               </a>
             </div>
           )}

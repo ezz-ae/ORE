@@ -122,8 +122,6 @@ export interface LandingPageEditorData {
   googleConversionId: string
   tiktokPixelId: string
   updatedAt: string | null
-  /** The page's section blocks, in render order — powers the layout canvas. */
-  sections: LandingSection[]
 }
 
 const formatAed = (value: number) =>
@@ -754,19 +752,9 @@ export async function getLandingPageForEditor(slug: string): Promise<LandingPage
   const publishFrom = row.publish_from ? new Date(String(row.publish_from)).toISOString().slice(0, 16) : ""
   const publishTo = row.publish_to ? new Date(String(row.publish_to)).toISOString().slice(0, 16) : ""
 
-  // The exact section blocks the public page will render (stored, else generated)
-  // — so the layout canvas shows and reorders what actually ships.
-  const projectSlug = pickString(row.project_slug, row.projectSlug)
-  const project = await getProjectSummary(projectSlug)
-  const sectionsRaw: JsonValue =
-    (row.sections_json as JsonValue) ??
-    (row.sections as JsonValue) ??
-    (row.content_json as JsonValue) ??
-    {}
-
   return {
     slug: pickString(row.slug) || normalizedSlug,
-    projectSlug,
+    projectSlug: pickString(row.project_slug, row.projectSlug),
     headline,
     subheadline,
     heroImage,
@@ -782,7 +770,6 @@ export async function getLandingPageForEditor(slug: string): Promise<LandingPage
     googleConversionId: pickString(row.google_conversion_id, row.googleConversionId),
     tiktokPixelId: pickString(row.tiktok_pixel_id, row.tiktokPixelId),
     updatedAt: pickString(row.updated_at, row.created_at) || null,
-    sections: normalizeSections(sectionsRaw, project, row),
   }
 }
 

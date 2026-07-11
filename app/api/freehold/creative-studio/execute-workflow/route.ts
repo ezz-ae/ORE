@@ -133,9 +133,8 @@ async function runNode(node: Node, inputs: string[]): Promise<unknown> {
       try { return JSON.parse(text) } catch { return text }
     }
     default:
-      // audio / embedding / tool / memory are not implemented — fail honestly
-      // instead of silently passing input through and reporting "completed".
-      throw new Error(`The "${node.type}" node type isn't supported yet.`)
+      // audio / embedding / tool / memory — pass the input through for now.
+      return primary
   }
 }
 

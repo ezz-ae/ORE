@@ -444,7 +444,7 @@ export default function WhatsAppPage({ params }: { params: Promise<{ id: string 
             <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-gold/60">
               <Brain className="h-3 w-3" /> {t('crm.aiNextAction')}
             </div>
-            <p className="text-xs leading-relaxed text-slate-400">{t(lead.nextBestAction)}</p>
+            <p className="text-xs leading-relaxed text-slate-400">{lead.nextBestAction}</p>
           </div>
 
           {/* Inventory matches */}

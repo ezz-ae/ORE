@@ -183,7 +183,7 @@ export default function CampaignAttributionPage() {
             {t(labelKey)}
           </button>
         ))}
-        <span className="ml-2 text-xs text-slate-600">{t('lm.attribution.campaignCount', { n: campaigns.length, plural: campaigns.length !== 1 ? 's' : '' })}</span>
+        <span className="ml-2 text-xs text-slate-600">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</span>
       </div>
 
       {/* Campaign cards — live campaigns matched to the CRM leads they produced */}
@@ -274,7 +274,7 @@ export default function CampaignAttributionPage() {
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                           <Users className="h-3 w-3" />
-                          {t('lm.attribution.crmAttribution')} — {t('lm.attribution.leadCount', { n: campaign.crmLeads.length, plural: campaign.crmLeads.length !== 1 ? 's' : '' })}
+                          {t('lm.attribution.crmAttribution')} — {campaign.crmLeads.length} lead{campaign.crmLeads.length !== 1 ? 's' : ''}
                         </div>
                         <Link
                           href="/freehold-intelligence/crm"

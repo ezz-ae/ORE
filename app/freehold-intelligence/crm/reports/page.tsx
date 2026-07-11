@@ -150,12 +150,6 @@ export default function CrmReportsPage() {
   }, [leads])
   const maxMonthly = Math.max(...monthlyLeads.map((m) => m.leads), 1)
 
-  // Real Golden-Visa cohort: leads whose budget clears the AED 2M visa threshold.
-  const gvCohort = useMemo(() => leads.reduce((n, l) => {
-    const budget = Number(String(l.budgetAED).replace(/[^0-9.]/g, '')) || 0
-    return budget >= 2_000_000 ? n + 1 : n
-  }, 0), [leads])
-
   // Live stats from real data — call counts come from the real activity log.
   const [activity, setActivity] = useState<Array<{ activity_type: string; created_at: string }>>([])
   useEffect(() => {
@@ -412,7 +406,7 @@ export default function CrmReportsPage() {
               <PanelHeader title={t('crm.cohortWatch')} icon={<Users className="h-3.5 w-3.5" />} />
               <div className="mt-3 text-[14px] font-semibold text-white">{t('crm.goldenVisaBuyers')}</div>
               <div className="mt-2 text-xs leading-relaxed text-slate-400">
-                {gvCohort > 0 ? t('crm.cohortDesc', { count: gvCohort }) : t('crm.cohortEmpty')}
+                {t('crm.cohortDesc')}
               </div>
             </Panel>
 
@@ -434,6 +428,11 @@ export default function CrmReportsPage() {
               </div>
             </Panel>
 
+            <Panel className="p-5">
+              <PanelHeader title={t('crm.nextReport')} />
+              <div className="mt-3 text-[14px] text-slate-300">{t('crm.nextReportSchedule')}</div>
+              <div className="mt-1 text-xs text-slate-400">{t('crm.nextReportTo')}</div>
+            </Panel>
           </div>
         </aside>
       </div>

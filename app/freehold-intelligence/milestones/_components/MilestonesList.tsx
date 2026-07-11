@@ -117,19 +117,13 @@ export function MilestonesList({ milestones }: { milestones: Milestone[] }) {
       <ol className="mt-6 grid gap-3">
         {filtered.length === 0 ? (
           <li className="rounded-2xl border border-line bg-surface px-6 py-10 text-center text-sm text-slate-400">
-            {milestones.length === 0 ? (
-              t('pmile.emptyRoadmap')
-            ) : (
-              <>
-                {t('pmile.noMatch')}{' '}
-                <button
-                  onClick={() => { setHealthFilter('All'); setStatusFilter('All') }}
-                  className="ml-1 text-gold/60 transition hover:text-gold"
-                >
-                  {t('pmile.clear')}
-                </button>
-              </>
-            )}
+            {t('pmile.noMatch')}{' '}
+            <button
+              onClick={() => { setHealthFilter('All'); setStatusFilter('All') }}
+              className="ml-1 text-gold/60 transition hover:text-gold"
+            >
+              {t('pmile.clear')}
+            </button>
           </li>
         ) : (
           filtered.map((m) => {

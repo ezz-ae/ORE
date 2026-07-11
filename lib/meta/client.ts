@@ -3,7 +3,6 @@
  * All calls are server-side only — token is never exposed to the browser.
  */
 
-import { createHash } from 'crypto'
 import { getStoredMetaCreds } from '@/lib/freehold/integration-credentials'
 import type {
   MetaCampaign,
@@ -21,9 +20,6 @@ import type {
   MetaFormLead,
   CreateLeadFormPayload,
   MetaAdCreativeDetail,
-  MetaPixel,
-  MetaAdFormat,
-  MetaLocale,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -274,11 +270,8 @@ export async function createAdSet(params: {
   dailyBudgetAED: number
   targeting: CampaignTargeting
   status: 'ACTIVE' | 'PAUSED'
-  /** Conversion pixel override — falls back to the account default. */
-  pixelId?: string
 }): Promise<{ id: string }> {
-  const { adAccountId, pixelId: accountPixel } = await creds()
-  const pixelId = params.pixelId || accountPixel
+  const { adAccountId, pixelId } = await creds()
   const optimizationGoal = objectiveToOptimizationGoal(params.objective, !!pixelId)
 
   // Placements: an EMPTY platform list means Advantage+ placements (fully
@@ -320,9 +313,6 @@ export async function createAdSet(params: {
       : {}),
     ...(params.targeting.interests.length > 0
       ? { interests: params.targeting.interests }
-      : {}),
-    ...(params.targeting.locales && params.targeting.locales.length > 0
-      ? { locales: params.targeting.locales }
       : {}),
     targeting_automation: { advantage_audience: advantageAudience },
   }
@@ -434,58 +424,6 @@ export async function createAdCreative(params: {
 }
 
 /**
- * Render a real Meta ad preview via the Graph `generatepreviews` endpoint.
- * Meta returns the exact iframe HTML Ads Manager would show for the given
- * placement — no mock markup. The `creative` object mirrors the
- * `object_story_spec` that `createAdCreative` builds, so the preview matches
- * what actually launches. Prefer a native image_hash; ingest an external
- * imageUrl first (same path launch uses) so previews aren't blank.
- */
-export async function generateAdPreview(params: {
-  creative: CampaignCreative
-  adFormat?: MetaAdFormat
-}): Promise<{ body: string }> {
-  const { adAccountId, pageId } = await creds()
-
-  // Native image_hash is Meta's reliable path; ingest an external URL first so
-  // the rendered preview shows the real hero photo instead of a blank frame.
-  const creativeInput = { ...params.creative }
-  if (!creativeInput.imageHash && creativeInput.imageUrl) {
-    const hash = await ingestImageFromUrl(creativeInput.imageUrl)
-    if (hash) creativeInput.imageHash = hash
-  }
-
-  const linkData: Record<string, unknown> = {
-    link:        creativeInput.landingUrl,
-    message:     creativeInput.primaryText,
-    name:        creativeInput.headline,
-    description: creativeInput.description,
-    call_to_action: { type: creativeInput.cta, value: { link: creativeInput.landingUrl } },
-  }
-  if (creativeInput.imageHash) {
-    linkData.image_hash = creativeInput.imageHash
-  } else if (creativeInput.imageUrl) {
-    linkData.picture = creativeInput.imageUrl
-  }
-
-  const creativeSpec = { object_story_spec: { page_id: pageId, link_data: linkData } }
-  const adFormat: MetaAdFormat = params.adFormat ?? 'MOBILE_FEED_STANDARD'
-
-  const res = await apiPost<{ data?: Array<{ body?: string }> }>(
-    `/${adAccountId}/generatepreviews`,
-    {
-      ad_format: adFormat,
-      // Graph requires the creative spec as a JSON-encoded string param.
-      creative: JSON.stringify(creativeSpec),
-    },
-  )
-
-  const body = res.data?.[0]?.body
-  if (!body) throw new MetaApiError('Meta returned no ad preview for this creative', 0, 'preview')
-  return { body }
-}
-
-/**
  * Upload an image to the connected Meta ad account and return its hash + URL.
  * The client sends raw base64 (no data-URL prefix). Used so agents can upload
  * their own ad media instead of only using a listing's hero photo.
@@ -526,47 +464,6 @@ export async function listAds(adSetId: string): Promise<MetaAd[]> {
   return res.data ?? []
 }
 
-/**
- * Real rendered previews of a LIVE ad across placements. Meta returns the exact
- * iframe HTML Ads Manager shows — no mock markup — so the team sees the ad
- * "everywhere" it runs. A placement Meta can't render is skipped, not faked.
- */
-export async function getAdPreviews(adId: string): Promise<{ format: MetaAdFormat; body: string }[]> {
-  const formats: MetaAdFormat[] = ['MOBILE_FEED_STANDARD', 'INSTAGRAM_STANDARD', 'FACEBOOK_STORY_MOBILE']
-  const out: { format: MetaAdFormat; body: string }[] = []
-  for (const format of formats) {
-    try {
-      const res = await apiFetch<{ data?: Array<{ body?: string }> }>(`/${adId}/previews`, undefined, { ad_format: format })
-      const body = res.data?.[0]?.body
-      if (body) out.push({ format, body })
-    } catch { /* skip a placement Meta declines to render */ }
-  }
-  return out
-}
-
-/**
- * Live engagement on the ACTUAL post behind an ad — likes, comments, shares.
- * Real social proof from the running creative that the spend/leads KPIs don't
- * capture. Returns null when the ad has no organic post to read.
- */
-export async function getAdEngagement(adId: string): Promise<{ likes: number; comments: number; shares: number } | null> {
-  const ad = await apiFetch<{ creative?: { effective_object_story_id?: string; object_story_id?: string } }>(
-    `/${adId}`, undefined, { fields: 'creative{effective_object_story_id,object_story_id}' },
-  )
-  const postId = ad.creative?.effective_object_story_id || ad.creative?.object_story_id
-  if (!postId) return null
-  const post = await apiFetch<{
-    likes?: { summary?: { total_count?: number } }
-    comments?: { summary?: { total_count?: number } }
-    shares?: { count?: number }
-  }>(`/${postId}`, undefined, { fields: 'likes.summary(true),comments.summary(true),shares' })
-  return {
-    likes: post.likes?.summary?.total_count ?? 0,
-    comments: post.comments?.summary?.total_count ?? 0,
-    shares: post.shares?.count ?? 0,
-  }
-}
-
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
 export async function listLeadForms(): Promise<MetaLeadForm[]> {
@@ -576,37 +473,6 @@ export async function listLeadForms(): Promise<MetaLeadForm[]> {
     limit:  '50',
   })
   return res.data ?? []
-}
-
-// Conversion pixels on the ad account. Powers the campaign wizard's pixel
-// picker so a campaign can optimize on a specific pixel instead of only the
-// account default.
-export async function listPixels(): Promise<MetaPixel[]> {
-  const { adAccountId } = await creds()
-  const res = await apiFetch<{ data: { id: string; name?: string; last_fired_time?: string }[] }>(
-    `/${adAccountId}/adspixels`, undefined,
-    { fields: 'id,name,last_fired_time', limit: '25' },
-  )
-  return (res.data ?? []).map((p) => ({
-    id: p.id,
-    name: p.name || p.id,
-    lastFiredTime: p.last_fired_time ?? null,
-  }))
-}
-
-// Language (locale) targeting vocabulary. Meta's adlocale keys are numeric and
-// stable, but we resolve them LIVE from Graph search rather than hardcoding
-// guesses — so a selected "Arabic" is exactly Meta's Arabic locale key.
-export async function searchAdLocales(q: string): Promise<MetaLocale[]> {
-  const term = q.trim()
-  if (!term) return []
-  const res = await apiFetch<{ data: { key: number; name: string }[] }>(
-    `/search`, undefined,
-    { type: 'adlocale', q: term, limit: '25' },
-  )
-  return (res.data ?? [])
-    .filter((l) => typeof l.key === 'number' && l.name)
-    .map((l) => ({ key: l.key, name: l.name }))
 }
 
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
@@ -696,99 +562,6 @@ export async function listAdCreatives(): Promise<MetaAdCreativeDetail[]> {
   return res.data ?? []
 }
 
-// ─── Custom & Lookalike Audiences (from the company's own closed buyers) ──────
-//
-// Meta requires every identifier to be normalized and SHA-256 hashed BEFORE it
-// leaves our server — raw customer emails/phones are never sent. We build a
-// source Custom Audience from the hashed contacts, then create a Lookalike from
-// it. This is a consequential outward action (buyer data → Meta), so the caller
-// must gate it behind an explicit user confirmation.
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex')
-}
-// Meta's normalization rules: email lowercased/trimmed; phone digits only with
-// country code, no leading +. Empty input → '' (Meta treats it as "no value").
-function hashEmail(email: string): string {
-  const e = email.trim().toLowerCase()
-  return e ? sha256(e) : ''
-}
-function hashPhone(phone: string): string {
-  const p = phone.replace(/[^\d]/g, '').replace(/^0+/, '')
-  return p ? sha256(p) : ''
-}
-
-export interface BuyerContact { email?: string | null; phone?: string | null }
-
-export async function createCustomAudience(name: string, description: string): Promise<{ id: string }> {
-  const { adAccountId } = await creds()
-  return apiPost(`/${adAccountId}/customaudiences`, {
-    name,
-    description,
-    subtype: 'CUSTOM',
-    customer_file_source: 'USER_PROVIDED_ONLY',
-  })
-}
-
-// Upload hashed identifiers to a custom audience. Rows missing both a usable
-// email and phone are skipped. Returns how many rows were sent.
-export async function addHashedBuyers(audienceId: string, contacts: BuyerContact[]): Promise<number> {
-  const rows = contacts
-    .map((c) => [hashEmail(c.email || ''), hashPhone(c.phone || '')])
-    .filter(([e, p]) => e || p)
-  if (!rows.length) return 0
-  // Meta accepts up to 10k rows per call; batch to be safe.
-  for (let i = 0; i < rows.length; i += 5000) {
-    const batch = rows.slice(i, i + 5000)
-    await apiPost(`/${audienceId}/users`, {
-      payload: { schema: ['EMAIL', 'PHONE'], data: batch },
-    })
-  }
-  return rows.length
-}
-
-export async function createLookalikeAudience(params: {
-  name: string
-  sourceAudienceId: string
-  country: string
-  /** 0.01–0.20 — the top X% most-similar people in the country. */
-  ratio: number
-}): Promise<{ id: string }> {
-  const { adAccountId } = await creds()
-  return apiPost(`/${adAccountId}/customaudiences`, {
-    name: params.name,
-    subtype: 'LOOKALIKE',
-    origin_audience_id: params.sourceAudienceId,
-    lookalike_spec: JSON.stringify({
-      type: 'similarity',
-      country: params.country,
-      ratio: Math.min(0.2, Math.max(0.01, params.ratio)),
-    }),
-  })
-}
-
-// Orchestrate: seed Custom Audience from hashed buyers → Lookalike. Returns the
-// ids + how many buyers were uploaded. Raw PII never leaves this function.
-export async function buildLookalikeFromBuyers(params: {
-  contacts: BuyerContact[]
-  label: string
-  country: string
-  ratio: number
-}): Promise<{ sourceAudienceId: string; lookalikeAudienceId: string; uploaded: number }> {
-  const source = await createCustomAudience(
-    `${params.label} — Closed Buyers`,
-    'Seed audience built from the company’s own closed buyers (hashed).',
-  )
-  const uploaded = await addHashedBuyers(source.id, params.contacts)
-  const lookalike = await createLookalikeAudience({
-    name: `${params.label} — Lookalike (${params.country}, ${Math.round(params.ratio * 100)}%)`,
-    sourceAudienceId: source.id,
-    country: params.country,
-    ratio: params.ratio,
-  })
-  return { sourceAudienceId: source.id, lookalikeAudienceId: lookalike.id, uploaded }
-}
-
 // ─── Full Campaign Launch (atomic) ───────────────────────────────────────────
 
 export async function launchFullCampaign(params: {
@@ -799,11 +572,8 @@ export async function launchFullCampaign(params: {
   targeting:    CampaignTargeting
   creative:     CampaignCreative
   launchStatus: 'ACTIVE' | 'PAUSED'
-  /** Conversion pixel override — falls back to the account default. */
-  pixelId?:     string
 }): Promise<LaunchCampaignResult> {
-  const { adAccountId, pixelId: accountPixel } = await creds()
-  const pixelId = params.pixelId || accountPixel
+  const { adAccountId, pixelId } = await creds()
 
   // 1 — Campaign (ODAX objective — v20 rejects the legacy names)
   const campaign = await apiPost<{ id: string }>(`/${adAccountId}/campaigns`, {
@@ -839,7 +609,6 @@ export async function launchFullCampaign(params: {
     dailyBudgetAED: params.dailyBudgetAED,
     targeting:      { ...params.targeting, interests: validatedInterests },
     status:         params.launchStatus,
-    pixelId:        pixelId ?? undefined,
   }))
 
   // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad

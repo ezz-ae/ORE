@@ -71,7 +71,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.ai.enabled': 'Enabled',
     'settings.ai.off': 'Off',
     'settings.ai.count': '{enabled} of {total} actions enabled',
-    'settings.ai.notEnforcedNote': 'These are saved preferences. AI-action gating is rolling out and is not enforced yet — treat them as your intended policy, not a live guarantee.',
     'settings.ai.send_whatsapp.label': 'Send WhatsApp messages',
     'settings.ai.send_whatsapp.desc': 'AI can send WhatsApp messages to leads on your behalf',
     'settings.ai.post_social.label': 'Post to social channels',
@@ -105,7 +104,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.crm.tgt.agent_assignment': 'Agent assignment',
     // Thresholds
     'settings.thresholds.head.title': 'Lead Machine Thresholds',
-    'settings.thresholds.notEnforcedNote': 'These are saved preferences. Automatic enforcement of these thresholds is rolling out and is not active yet.',
     'settings.thresholds.head.sub': 'Minimum bars for landing generation, ad requests, and campaign launch',
     'settings.thresholds.min_ad_readiness.label': 'Minimum ad readiness',
     'settings.thresholds.min_ad_readiness.desc': 'Required before allowing campaign launch',
@@ -273,8 +271,6 @@ export const settings: Record<Locale, Dict> = {
     // ── Security page ──
     'settings.security.title': 'Security',
     'settings.security.2fa.title': 'Two-factor authentication',
-    'settings.security.2fa.comingSoon': 'Coming soon',
-    'settings.security.2fa.notYet': 'Two-factor enrollment isn’t available yet — this toggle won’t protect your account until it ships.',
     'settings.security.2fa.sub': 'Require 2FA for all team members',
     'settings.security.2fa.warning': 'Disabling 2FA reduces account security. All active sessions will remain valid.',
     'settings.security.2fa.enabled': 'Two-factor authentication enabled',
@@ -426,7 +422,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.ai.enabled': 'مفعّل',
     'settings.ai.off': 'معطّل',
     'settings.ai.count': 'تم تفعيل {enabled} من {total} إجراء',
-    'settings.ai.notEnforcedNote': 'هذه تفضيلات محفوظة. لم يُفعّل تقييد إجراءات الذكاء الاصطناعي بعد — اعتبرها سياستك المقصودة، وليست ضماناً فعلياً.',
     'settings.ai.send_whatsapp.label': 'إرسال رسائل WhatsApp',
     'settings.ai.send_whatsapp.desc': 'يمكن للذكاء الاصطناعي إرسال رسائل WhatsApp إلى العملاء المحتملين نيابة عنك',
     'settings.ai.post_social.label': 'النشر على قنوات التواصل الاجتماعي',
@@ -460,7 +455,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.crm.tgt.agent_assignment': 'إسناد الوكيل',
     // Thresholds
     'settings.thresholds.head.title': 'حدود محرّك العملاء المحتملين',
-    'settings.thresholds.notEnforcedNote': 'هذه تفضيلات محفوظة. لم يُفعّل التطبيق التلقائي لهذه الحدود بعد.',
     'settings.thresholds.head.sub': 'الحدود الدنيا لإنشاء صفحات الهبوط وطلبات الإعلانات وإطلاق الحملات',
     'settings.thresholds.min_ad_readiness.label': 'الحد الأدنى لجاهزية الإعلان',
     'settings.thresholds.min_ad_readiness.desc': 'مطلوب قبل السماح بإطلاق الحملة',
@@ -628,8 +622,6 @@ export const settings: Record<Locale, Dict> = {
     // ── Security page ──
     'settings.security.title': 'الأمان',
     'settings.security.2fa.title': 'المصادقة الثنائية',
-    'settings.security.2fa.comingSoon': 'قريباً',
-    'settings.security.2fa.notYet': 'تسجيل المصادقة الثنائية غير متاح بعد — لن يحمي هذا الزر حسابك حتى يتم إطلاقه.',
     'settings.security.2fa.sub': 'اشتراط المصادقة الثنائية لجميع أعضاء الفريق',
     'settings.security.2fa.warning': 'تعطيل المصادقة الثنائية يقلّل من أمان الحساب. ستظل جميع الجلسات النشطة صالحة.',
     'settings.security.2fa.enabled': 'تم تفعيل المصادقة الثنائية',
@@ -781,7 +773,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.ai.enabled': 'Включено',
     'settings.ai.off': 'Выкл',
     'settings.ai.count': 'Включено {enabled} из {total} действий',
-    'settings.ai.notEnforcedNote': 'Это сохранённые настройки. Ограничение действий ИИ ещё внедряется и пока не применяется — считайте их желаемой политикой, а не действующей гарантией.',
     'settings.ai.send_whatsapp.label': 'Отправка сообщений WhatsApp',
     'settings.ai.send_whatsapp.desc': 'ИИ может отправлять сообщения WhatsApp лидам от вашего имени',
     'settings.ai.post_social.label': 'Публикация в соцсетях',
@@ -815,7 +806,6 @@ export const settings: Record<Locale, Dict> = {
     'settings.crm.tgt.agent_assignment': 'Назначение агента',
     // Thresholds
     'settings.thresholds.head.title': 'Пороги Lead Machine',
-    'settings.thresholds.notEnforcedNote': 'Это сохранённые настройки. Автоматическое применение этих порогов ещё внедряется и пока не активно.',
     'settings.thresholds.head.sub': 'Минимальные планки для генерации лендингов, рекламных запросов и запуска кампаний',
     'settings.thresholds.min_ad_readiness.label': 'Минимальная готовность к рекламе',
     'settings.thresholds.min_ad_readiness.desc': 'Требуется перед разрешением запуска кампании',
@@ -983,8 +973,6 @@ export const settings: Record<Locale, Dict> = {
     // ── Security page ──
     'settings.security.title': 'Безопасность',
     'settings.security.2fa.title': 'Двухфакторная аутентификация',
-    'settings.security.2fa.comingSoon': 'Скоро',
-    'settings.security.2fa.notYet': 'Подключение двухфакторной аутентификации пока недоступно — этот переключатель не защитит аккаунт до запуска функции.',
     'settings.security.2fa.sub': 'Требовать 2FA для всех участников команды',
     'settings.security.2fa.warning': 'Отключение 2FA снижает безопасность аккаунта. Все активные сессии останутся действительными.',
     'settings.security.2fa.enabled': 'Двухфакторная аутентификация включена',

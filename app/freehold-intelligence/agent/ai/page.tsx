@@ -35,10 +35,10 @@ const CATEGORY_META: Record<IntegrationCategory, { labelKey: string; color: stri
 
 type Route = 'apps' | 'inventory' | 'frontend'
 
-const ROUTES: { id: Route; href: string; labelKey: string; Icon: React.ElementType; descKey: string; color: string }[] = [
-  { id: 'apps',      href: '/freehold-intelligence',                     labelKey: 'agent.routeApps',      Icon: Zap,      descKey: 'agent.routeAppsDesc',      color: 'text-gold' },
-  { id: 'inventory', href: '/freehold-intelligence/inventory',           labelKey: 'agent.routeInventory', Icon: BookOpen, descKey: 'agent.routeInventoryDesc', color: 'text-violet-400' },
-  { id: 'frontend',  href: '/freehold-intelligence/ai-manager/listings', labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-teal-400'    },
+const ROUTES: { id: Route; labelKey: string; Icon: React.ElementType; descKey: string; color: string }[] = [
+  { id: 'apps',      labelKey: 'agent.routeApps',      Icon: Zap,      descKey: 'agent.routeAppsDesc',      color: 'text-gold' },
+  { id: 'inventory', labelKey: 'agent.routeInventory', Icon: BookOpen, descKey: 'agent.routeInventoryDesc', color: 'text-violet-400' },
+  { id: 'frontend',  labelKey: 'agent.routeListings',  Icon: Globe,    descKey: 'agent.routeListingsDesc',  color: 'text-teal-400'    },
 ]
 
 export default function AgentAIPage() {
@@ -46,6 +46,7 @@ export default function AgentAIPage() {
   const { t } = useI18n()
   const [summary, setSummary] = useState<AgentSummary | null>(null)
   const [inventoryCount, setInventoryCount] = useState<number | null>(null)
+  const [activeRoute, setActiveRoute] = useState<Route>('apps')
   const [loadFailed, setLoadFailed] = useState(false)
 
   useEffect(() => {
@@ -117,16 +118,23 @@ export default function AgentAIPage() {
       <section className="mt-6">
         <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('agent.agentRoutes')}</div>
         <div className="grid grid-cols-3 gap-3">
-          {ROUTES.map(({ id, href, labelKey, Icon, descKey, color }) => (
-            <Link
+          {ROUTES.map(({ id, labelKey, Icon, descKey, color }) => (
+            <button
               key={id}
-              href={href}
-              className="group flex flex-col rounded-[18px] border border-line bg-surface-2 p-4 text-start transition hover:border-line-strong hover:bg-surface-3"
+              onClick={() => setActiveRoute(id)}
+              className={`flex flex-col rounded-[18px] border p-4 text-start transition ${
+                activeRoute === id
+                  ? 'border-line-strong bg-surface-2'
+                  : 'border-line bg-surface-2 hover:bg-surface-2'
+              }`}
             >
               <Icon className={`h-5 w-5 ${color}`} />
-              <div className="mt-2 text-sm font-semibold text-slate-300 transition group-hover:text-white">{t(labelKey)}</div>
+              <div className={`mt-2 text-sm font-semibold ${activeRoute === id ? 'text-white' : 'text-slate-400'}`}>{t(labelKey)}</div>
               <div className="mt-0.5 text-xs text-slate-500 leading-relaxed">{t(descKey)}</div>
-            </Link>
+              {activeRoute === id && (
+                <div className={`mt-2 text-xs font-medium ${color}`}>{t('agent.activeDot')}</div>
+              )}
+            </button>
           ))}
         </div>
       </section>

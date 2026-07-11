@@ -31,6 +31,7 @@ export default function SecurityPage() {
   const [revealed, setRevealed] = useState<string | null>(null)
   const [newSecret, setNewSecret] = useState<string | null>(null)
   const [copied, setCopied]   = useState<string | null>(null)
+  const [twoFaOn, setTwoFaOn] = useState(false)
   const [audit, setAudit]     = useState<AuditRow[]>([])
 
   function loadKeys() {
@@ -47,6 +48,10 @@ export default function SecurityPage() {
   }
   useEffect(() => {
     loadKeys()
+    fetch('/api/freehold/settings', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.settings && typeof d.settings.twoFa === 'boolean') setTwoFaOn(d.settings.twoFa) })
+      .catch(() => {})
     // Real audit trail from the shared activity log (same source the Security
     // dashboard uses) — no fabricated logins/IPs.
     fetch('/api/freehold/crm/activity', { cache: 'no-store' })
@@ -93,6 +98,22 @@ export default function SecurityPage() {
     setKeys((prev) => prev.filter((k) => k.id !== id))
   }
 
+  function setTwoFa(v: boolean) {
+    setTwoFaOn(v)
+    fetch('/api/freehold/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ twoFa: v }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error()
+        toast.success(v ? t('settings.security.2fa.enabled') : t('settings.security.2fa.disabled'))
+      })
+      .catch(() => {
+        setTwoFaOn(!v) // revert optimistic toggle on failure
+        toast.error(t('settings.security.2fa.error'))
+      })
+  }
+
   function toggleScope(scope: string) {
     setNewScopes((prev) => prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope])
   }
@@ -122,14 +143,19 @@ export default function SecurityPage() {
               <div className="mt-0.5 text-xs text-slate-500">{t('settings.security.2fa.sub')}</div>
             </div>
           </div>
-          <span className="shrink-0 rounded-full border border-line-strong bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-slate-400">
-            {t('settings.security.2fa.comingSoon')}
-          </span>
+          <button
+            onClick={() => setTwoFa(!twoFaOn)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${twoFaOn ? 'bg-emerald-400' : 'bg-surface-3'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${twoFaOn ? 'left-[22px]' : 'left-0.5'}`} />
+          </button>
         </div>
-        <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-500">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-          {t('settings.security.2fa.notYet')}
-        </div>
+        {!twoFaOn && (
+          <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2 text-xs text-amber-400/80">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            {t('settings.security.2fa.warning')}
+          </div>
+        )}
       </section>
 
       {/* One-time secret reveal */}

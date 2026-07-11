@@ -8,28 +8,30 @@ import type { CreativeAngle, CreativeTone, GeneratedCreativeVariant } from '@/li
 import type { MetaCta } from '@/lib/meta/types'
 import { useT } from '@/lib/i18n/provider'
 
-const ANGLES: { value: CreativeAngle; label: string; desc: string }[] = [
-  { value: 'investor',    label: 'Investor ROI',    desc: 'Net yield, capital appreciation, rental demand' },
-  { value: 'yield',       label: 'Yield-first',     desc: 'Specific % return, rental income numbers' },
-  { value: 'golden_visa', label: 'Golden Visa',      desc: 'Residency eligibility, 10-year visa benefit' },
-  { value: 'end_user',    label: 'End User',         desc: 'Lifestyle, family living, community benefits' },
-  { value: 'urgency',     label: 'Urgency / FOMO',   desc: 'Limited units, phase close, price lock-in' },
-  { value: 'lifestyle',   label: 'Lifestyle',        desc: 'Views, amenities, neighbourhood feel' },
+// Labels/descriptions live in i18n (lm.creatives.generate.angle|tone|cta.*) so
+// the option list is fully trilingual; the array carries the stable value keys.
+const ANGLES: { value: CreativeAngle; labelKey: string; descKey: string }[] = [
+  { value: 'investor',    labelKey: 'lm.creatives.generate.angle.investor.label',    descKey: 'lm.creatives.generate.angle.investor.desc' },
+  { value: 'yield',       labelKey: 'lm.creatives.generate.angle.yield.label',       descKey: 'lm.creatives.generate.angle.yield.desc' },
+  { value: 'golden_visa', labelKey: 'lm.creatives.generate.angle.golden_visa.label', descKey: 'lm.creatives.generate.angle.golden_visa.desc' },
+  { value: 'end_user',    labelKey: 'lm.creatives.generate.angle.end_user.label',    descKey: 'lm.creatives.generate.angle.end_user.desc' },
+  { value: 'urgency',     labelKey: 'lm.creatives.generate.angle.urgency.label',     descKey: 'lm.creatives.generate.angle.urgency.desc' },
+  { value: 'lifestyle',   labelKey: 'lm.creatives.generate.angle.lifestyle.label',   descKey: 'lm.creatives.generate.angle.lifestyle.desc' },
 ]
 
-const TONES: { value: CreativeTone; label: string; desc: string }[] = [
-  { value: 'direct',       label: 'Direct',       desc: 'Clear, factual, numbers-first' },
-  { value: 'aspirational', label: 'Aspirational', desc: 'Elevated, dream-lifestyle tone' },
-  { value: 'premium',      label: 'Premium',      desc: 'Luxury, exclusivity, discretion' },
+const TONES: { value: CreativeTone; labelKey: string; descKey: string }[] = [
+  { value: 'direct',       labelKey: 'lm.creatives.generate.tone.direct.label',       descKey: 'lm.creatives.generate.tone.direct.desc' },
+  { value: 'aspirational', labelKey: 'lm.creatives.generate.tone.aspirational.label', descKey: 'lm.creatives.generate.tone.aspirational.desc' },
+  { value: 'premium',      labelKey: 'lm.creatives.generate.tone.premium.label',      descKey: 'lm.creatives.generate.tone.premium.desc' },
 ]
 
-const CTAS: { value: MetaCta; label: string }[] = [
-  { value: 'LEARN_MORE',  label: 'Learn More'  },
-  { value: 'GET_QUOTE',   label: 'Get Quote'   },
-  { value: 'SIGN_UP',     label: 'Sign Up'     },
-  { value: 'CONTACT_US',  label: 'Contact Us'  },
-  { value: 'BOOK_NOW',    label: 'Book Now'    },
-  { value: 'APPLY_NOW',   label: 'Apply Now'   },
+const CTAS: { value: MetaCta; labelKey: string }[] = [
+  { value: 'LEARN_MORE',  labelKey: 'lm.creatives.generate.cta.LEARN_MORE'  },
+  { value: 'GET_QUOTE',   labelKey: 'lm.creatives.generate.cta.GET_QUOTE'   },
+  { value: 'SIGN_UP',     labelKey: 'lm.creatives.generate.cta.SIGN_UP'     },
+  { value: 'CONTACT_US',  labelKey: 'lm.creatives.generate.cta.CONTACT_US'  },
+  { value: 'BOOK_NOW',    labelKey: 'lm.creatives.generate.cta.BOOK_NOW'    },
+  { value: 'APPLY_NOW',   labelKey: 'lm.creatives.generate.cta.APPLY_NOW'   },
 ]
 
 function CopyButton({ text }: { text: string }) {
@@ -225,8 +227,8 @@ export default function GenerateCreativePage() {
                       : 'border-line bg-surface text-slate-400 hover:border-white/20 hover:text-slate-300',
                   ].join(' ')}
                 >
-                  <div className="text-xs font-semibold">{a.label}</div>
-                  <div className="mt-0.5 text-xs leading-tight opacity-60">{a.desc}</div>
+                  <div className="text-xs font-semibold">{t(a.labelKey)}</div>
+                  <div className="mt-0.5 text-xs leading-tight opacity-60">{t(a.descKey)}</div>
                 </button>
               ))}
             </div>
@@ -249,7 +251,7 @@ export default function GenerateCreativePage() {
                       : 'border-line bg-surface text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
-                  {tn.label}
+                  {t(tn.labelKey)}
                 </button>
               ))}
             </div>
@@ -267,7 +269,7 @@ export default function GenerateCreativePage() {
                 className="w-full appearance-none rounded-[14px] border border-line bg-surface px-4 py-3 pe-10 text-sm text-white focus:border-gold/40 focus:outline-none"
               >
                 {CTAS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
                 ))}
               </select>
               <ChevronDown className="pointer-events-none absolute end-3 top-3.5 h-4 w-4 text-slate-500" />
@@ -325,8 +327,8 @@ export default function GenerateCreativePage() {
                     {t('lm.creatives.generate.variantLabel', {
                       n: String(variants.length),
                       plural: variants.length !== 1 ? 's' : '',
-                      angle: angleConfig.label,
-                      tone,
+                      angle: t(angleConfig.labelKey),
+                      tone: t(TONES.find((tn) => tn.value === tone)!.labelKey),
                     })}
                   </div>
                 </div>

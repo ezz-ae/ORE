@@ -118,11 +118,10 @@ export default function ListingsClient({ initialProperties }: { initialPropertie
     else toast.error(t('paim.listings.toast.bulkFailed', { label }))
   }
 
-  // One honest bulk action: every listing has a single copy field, so the three
-  // former buttons (Meta / SEO / Summary) all rewrote the same body — collapsed
-  // into one truthful "Rewrite listing copy" action.
   const bulkActions = [
-    { kind: 'copy', idle: t('paim.listings.bulk.copyIdle'), busy: t('paim.listings.bulk.copyBusy'), label: t('paim.listings.bulk.copyLabel') },
+    { kind: 'meta',    idle: t('paim.listings.bulk.metaIdle'),    busy: t('paim.listings.bulk.metaBusy'),    label: t('paim.listings.bulk.metaLabel') },
+    { kind: 'seo',     idle: t('paim.listings.bulk.seoIdle'),     busy: t('paim.listings.bulk.seoBusy'),     label: t('paim.listings.bulk.seoLabel') },
+    { kind: 'summary', idle: t('paim.listings.bulk.summaryIdle'), busy: t('paim.listings.bulk.summaryBusy'), label: t('paim.listings.bulk.summaryLabel') },
   ]
 
   return (

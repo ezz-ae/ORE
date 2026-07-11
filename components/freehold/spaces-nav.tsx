@@ -23,7 +23,6 @@ const HOME_HREF = '/freehold-intelligence'
 const NAV_KEYS: Record<string, string> = {
   crm: 'nav.crm', ads: 'nav.ads', inventory: 'nav.inventory', finance: 'nav.finance',
   'ai-manager': 'nav.ai-manager', analytics: 'nav.analytics', notebook: 'nav.notebook',
-  drive: 'nav.drive',
   integrations: 'nav.integrations', settings: 'nav.settings', management: 'nav.management',
   agent: 'nav.agent', calendar: 'nav.calendar',
 }
@@ -101,9 +100,7 @@ export function SpacesNav() {
           )}
 
           {apps.map((app) => {
-            // `match` prefixes let a tab stay lit across relocated routes
-            // (e.g. Drive while inside Notebook).
-            const active = app.match ? app.match.some((p) => isActive(p)) : isActive(app.href)
+            const active = isActive(app.href)
             const key = NAV_KEYS[app.id]
             return (
               <Link

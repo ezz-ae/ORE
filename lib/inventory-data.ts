@@ -179,14 +179,10 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     // non-clickable badge instead of a dead "Live ↗" link.
     landingUrl: landing?.published ? `/lp/${landing.slug}` : null,
     hasImages,
-    // We only track the hero image on freehold_site_projects (no gallery table),
-    // so this is honestly 1 when a hero exists — not a fabricated gallery count.
     imageCount: hasImages ? 1 : 0,
     dataQuality,
     adReadiness,
-    // A published landing page is the project's real campaign asset; count it
-    // (was hardcoded 0, which flagged every project as having no campaigns).
-    linkedCampaigns: landing?.published ? 1 : 0,
+    linkedCampaigns: 0,
     leads30d,
     // No real web-analytics source — do not fabricate a views figure from
     // leads. Consumers show 0 / an em-dash until a real analytics feed exists.

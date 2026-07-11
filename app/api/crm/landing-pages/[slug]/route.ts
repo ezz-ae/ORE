@@ -149,20 +149,8 @@ export async function PATCH(
       ],
     )
 
-    // Layout canvas: persist a reordered / show-hidden section list when sent.
-    // Stored as-is to the sections column; the public page renders from it.
-    if (hasKey(body, "sections") && Array.isArray(body.sections)) {
-      const clean = (body.sections as unknown[])
-        .filter((s): s is Record<string, unknown> => !!s && typeof s === "object" && typeof (s as Record<string, unknown>).type === "string")
-        .map((s) => ({ type: String(s.type), data: s.data && typeof s.data === "object" ? s.data : {} }))
-      await query(
-        `UPDATE freehold_site_project_landing_pages SET sections = $2::jsonb, updated_at = now() WHERE lower(slug) = $1`,
-        [slug.trim().toLowerCase(), JSON.stringify(clean)],
-      )
-    }
-
     const updated = await getLandingPageForEditor(slug)
-    return NextResponse.json({ ok: true, landing: updated, landingPage: updated, pendingPublish: effectiveStatus === "pending_publish" })
+    return NextResponse.json({ ok: true, landingPage: updated, pendingPublish: effectiveStatus === "pending_publish" })
   } catch (error) {
     console.error("[crm-landing-pages] update error", error)
     return NextResponse.json({ error: "Failed to update landing page." }, { status: 500 })

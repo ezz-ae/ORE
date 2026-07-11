@@ -23,6 +23,7 @@ function QualityBand({ value, t }: { value: number; t: TFn }) {
 
 const ISSUE_TYPES = [
   { key: 'noImages',        labelKey: 'inv.dq.issue.noImages',      check: (p: InventoryProperty) => !p.hasImages },
+  { key: 'lowImageCount',   labelKey: 'inv.dq.issue.lowImageCount', check: (p: InventoryProperty) => p.hasImages && p.imageCount < 5 },
   { key: 'noLanding',       labelKey: 'inv.dq.issue.noLanding',     check: (p: InventoryProperty) => p.landingStatus === 'missing' },
   { key: 'lowQuality',      labelKey: 'inv.dq.issue.lowQuality',    check: (p: InventoryProperty) => p.dataQuality < 60 },
   { key: 'noCampaigns',     labelKey: 'inv.dq.issue.noCampaigns',   check: (p: InventoryProperty) => p.linkedCampaigns === 0 },

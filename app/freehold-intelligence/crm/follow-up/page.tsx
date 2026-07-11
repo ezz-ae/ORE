@@ -285,7 +285,7 @@ export default function FollowUpQueuePage() {
                           <span className="text-slate-700">·</span>
                           <span>{item.assignedAgent}</span>
                         </div>
-                        <p className="mt-3 text-sm leading-relaxed text-slate-300">{t(item.nextBestAction)}</p>
+                        <p className="mt-3 text-sm leading-relaxed text-slate-300">{item.nextBestAction}</p>
                         {(item.duplicateRisk || item.wrongNumberRisk) && (
                           <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-200/70">
                             <AlertCircle className="h-3.5 w-3.5 shrink-0" />

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
@@ -10,7 +9,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone, X, Plus, Target, Eye,
+  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -51,16 +50,12 @@ interface WizardState {
   ageMax:        number
   genders:       number[]
   interestIds:   string[]
-  /** Meta locale keys + names for language targeting (buyer language). */
-  locales:       { key: number; name: string }[]
   publisherPlatforms: string[]
   // Step 3
   primaryText:   string
   headline:      string
   description:   string
   landingUrl:    string
-  whatsappNumber: string
-  phoneNumber:   string
   cta:           MetaCta
   imageUrl:      string
   imageHash:     string
@@ -104,14 +99,6 @@ const PRODUCT_OBJECTIVES: {
 // Countries the ad can be delivered in. AE is the home market; the rest cover
 // the GCC + the key expat/investor source markets for Dubai real estate.
 const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE'] as const
-
-// A campaign source that IS a landing page (our own /lp/<slug> URL) can double
-// as the ad destination. Extract the slug so we can auto-fill the destination
-// and open that exact landing on the editor canvas.
-function landingSlugFromUrl(url: string): string | null {
-  const m = url.match(/\/lp\/([A-Za-z0-9._~-]+)/)
-  return m ? decodeURIComponent(m[1]) : null
-}
 
 const CTA_OPTIONS: { value: MetaCta; label: string }[] = [
   { value: 'LEARN_MORE',   label: 'Learn More' },
@@ -185,14 +172,11 @@ export default function NewCampaignPage() {
     ageMax:       65,
     genders:      [],
     interestIds:  [UAE_INTERESTS[0].id, UAE_INTERESTS[3].id],
-    locales:      [],
     publisherPlatforms: ['facebook', 'instagram'],
     primaryText:  '',
     headline:     '',
     description:  'Request the investor summary now.',
     landingUrl:   'https://www.freeholdproperty.ae',
-    whatsappNumber: '',
-    phoneNumber:  '',
     cta:          'LEARN_MORE',
     imageUrl:     '',
     imageHash:    '',
@@ -271,50 +255,9 @@ export default function NewCampaignPage() {
 
   // ── Creative: real ad preview + AI copy generation (existing generator) ──
   const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
-  // Trakhees QR — overlaid on the creative in the scan-safe bottom corner.
-  const [qrDataUrl, setQrDataUrl] = useState('')
-  function onUploadQr(file: File | null) {
-    if (!file) return
-    const r = new FileReader()
-    r.onload = () => setQrDataUrl(String(r.result))
-    r.readAsDataURL(file)
-  }
-  const QrOverlay = () => qrDataUrl ? (
-    <div className="pointer-events-none flex flex-col items-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={qrDataUrl} alt="Trakhees QR" className="h-11 w-11 rounded bg-white p-0.5 object-contain shadow-lg ring-1 ring-black/20" />
-      <span className="mt-0.5 rounded bg-black/70 px-1 text-[7px] font-medium text-white">{t('lm.newCampaign.qr.badge')}</span>
-    </div>
-  ) : null
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
   const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
   const [genLoading, setGenLoading] = useState(false)
-  // Real Meta-rendered preview (Graph generatepreviews). Distinct from the
-  // local mockup above — this is exactly how Meta will render the ad.
-  const [metaPreview, setMetaPreview] = useState<string | null>(null)
-  const [metaPreviewState, setMetaPreviewState] = useState<'idle' | 'loading' | 'demo' | 'error'>('idle')
-  async function loadMetaPreview() {
-    if (!form.headline && !form.primaryText) { toast.error(t('lm.newCampaign.metaPreview.needCopy')); return }
-    setMetaPreviewState('loading'); setMetaPreview(null)
-    try {
-      const adFormat = previewPlacement === 'story' ? 'INSTAGRAM_STORY' : 'MOBILE_FEED_STANDARD'
-      const res = await fetch('/api/meta/preview', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          adFormat,
-          creative: {
-            primaryText: form.primaryText, headline: form.headline, description: form.description,
-            landingUrl: form.landingUrl, cta: form.cta,
-            imageUrl: form.imageUrl || undefined, imageHash: form.imageHash || undefined,
-          },
-        }),
-      })
-      const d = await res.json()
-      if (d?.demo) { setMetaPreviewState('demo'); return }
-      if (!res.ok || !d?.body) { setMetaPreviewState('error'); toast.error(d?.error || t('lm.newCampaign.metaPreview.failed')); return }
-      setMetaPreview(String(d.body)); setMetaPreviewState('idle')
-    } catch { setMetaPreviewState('error'); toast.error(t('lm.newCampaign.metaPreview.failed')) }
-  }
   const CREATIVE_ANGLES = ['investor', 'urgency', 'lifestyle', 'yield', 'golden_visa', 'end_user'] as const
   async function generateCopy() {
     const listing = listings.find((l) => l.id === form.listingId)
@@ -327,7 +270,6 @@ export default function NewCampaignPage() {
           listingId: listing.id, listingName: listing.projectName, area: listing.area,
           developer: 'Freehold', startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
           angle: genAngle, tone: 'direct', cta: form.cta,
-          sources: sources.map((s) => s.value).filter(Boolean),
         }),
       })
       const d = await res.json()
@@ -405,146 +347,6 @@ export default function NewCampaignPage() {
       .finally(() => setLeadFormsLoading(false))
   }, [form.productObjective])
 
-  // Conversion pixel — the ad set optimizes on it, so leads/purchases are
-  // measured on real signal. Loaded from the connected ad account (real pixels
-  // only); when none exist the picker stays hidden rather than showing a stub.
-  type PixelLite = { id: string; name: string; lastFiredTime?: string | null }
-  const [pixels, setPixels] = useState<PixelLite[]>([])
-  const [pixelId, setPixelId] = useState('')
-  const [pixelsLoaded, setPixelsLoaded] = useState(false)
-  useEffect(() => {
-    fetch('/api/meta/pixels', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (Array.isArray(d?.pixels)) setPixels(d.pixels as PixelLite[]) })
-      .catch(() => {})
-      .finally(() => setPixelsLoaded(true))
-  }, [])
-
-  // Campaign sources — inventory / link / brochure / note. They feed the creative
-  // copy and targeting; they are NOT the ad destination. Multiple allowed.
-  type Source = { id: string; kind: 'inventory' | 'link' | 'file' | 'note'; label: string; value: string }
-  const [sources, setSources] = useState<Source[]>([])
-  // Set when a link source turns out to be our own landing page — powers the
-  // "auto-filled from your source" note + Edit-on-canvas in the destination.
-  const [sourceLandingSlug, setSourceLandingSlug] = useState('')
-  // Which language version of our own landing the ad points to. Appends ?lang=
-  // to the destination so an Arabic/Russian audience lands on the localised page.
-  const [landingLang, setLandingLang] = useState<'en' | 'ar' | 'ru'>('en')
-  // Smart defaults — an honest usage-frequency memory (not an ML model). Values
-  // the marketer reuses across campaigns (their WhatsApp / phone number) are
-  // counted; once a value has been used repeatedly we offer it as a one-tap
-  // fill on the next campaign. Persisted in account memory.
-  type TopDefault = { value: string; count: number }
-  const smartFreq = useRef<Record<string, Record<string, number>>>({})
-  const [smartDefaults, setSmartDefaults] = useState<{ whatsappNumber?: TopDefault; phoneNumber?: TopDefault }>({})
-  function topDefault(freq: Record<string, number> | undefined): TopDefault | undefined {
-    if (!freq) return undefined
-    let best: TopDefault | undefined
-    for (const [value, count] of Object.entries(freq)) if (!best || count > best.count) best = { value, count }
-    return best && best.count >= 2 ? best : undefined
-  }
-  function recordSmartDefault(field: 'whatsappNumber' | 'phoneNumber', value: string) {
-    const v = value.trim()
-    if (!v) return
-    const freq = smartFreq.current
-    freq[field] = freq[field] || {}
-    freq[field][v] = (freq[field][v] || 0) + 1
-    saveAccountMemory({ adSmartDefaults: freq })
-  }
-  // Buyer-language (locale) targeting — resolved live from Meta's adlocale
-  // vocabulary, so a picked language is exactly Meta's real locale key.
-  const [localeQuery, setLocaleQuery] = useState('')
-  const [localeResults, setLocaleResults] = useState<{ key: number; name: string }[]>([])
-  const [localeSearching, setLocaleSearching] = useState(false)
-  async function searchLocales(q: string) {
-    setLocaleQuery(q)
-    if (q.trim().length < 2) { setLocaleResults([]); return }
-    setLocaleSearching(true)
-    try {
-      const res = await fetch(`/api/meta/locales?q=${encodeURIComponent(q)}`)
-      const d = await res.json()
-      setLocaleResults(Array.isArray(d.locales) ? d.locales : [])
-    } catch { setLocaleResults([]) } finally { setLocaleSearching(false) }
-  }
-  function addLocale(l: { key: number; name: string }) {
-    setForm((prev) => (prev.locales.some((x) => x.key === l.key) ? prev : { ...prev, locales: [...prev.locales, l] }))
-    setLocaleQuery(''); setLocaleResults([])
-  }
-  function removeLocale(key: number) {
-    setForm((prev) => ({ ...prev, locales: prev.locales.filter((l) => l.key !== key) }))
-  }
-  // Lookalike audience from the company's OWN closed buyers. Building it uploads
-  // buyers' HASHED contacts to Meta, so it is gated behind an explicit confirm.
-  const [lookalike, setLookalike] = useState<{ count: number; min: number; ready: boolean; metaConnected: boolean } | null>(null)
-  const [llBuilding, setLlBuilding] = useState(false)
-  const [llConfirm, setLlConfirm] = useState(false)
-  const [llResult, setLlResult] = useState<{ lookalikeAudienceId: string; uploaded: number } | null>(null)
-  useEffect(() => {
-    fetch('/api/freehold/ads/lookalike').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) setLookalike(d) }).catch(() => {})
-  }, [])
-  async function buildLookalike() {
-    setLlBuilding(true)
-    try {
-      const res = await fetch('/api/freehold/ads/lookalike', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: true, country: form.countries[0] || 'AE', ratio: 0.03, label: form.campaignName || 'Freehold' }),
-      })
-      const d = await res.json()
-      if (!res.ok) { toast.error(d.error === 'not_enough' ? t('lm.newCampaign.lookalike.need').replace('{n}', String(d.count)).replace('{min}', String(d.min)) : (d.error || t('lm.newCampaign.lookalike.failed'))); return }
-      setLlResult(d)
-      toast.success(t('lm.newCampaign.lookalike.done'))
-    } catch { toast.error(t('lm.newCampaign.lookalike.failed')) }
-    finally { setLlBuilding(false); setLlConfirm(false) }
-  }
-  const [linkInput, setLinkInput] = useState('')
-  const [noteInput, setNoteInput] = useState('')
-  const [fileBusy, setFileBusy] = useState(false)
-  const srcFileRef = useRef<HTMLInputElement>(null)
-  const addSource = (s: Omit<Source, 'id'>) => setSources((prev) => (prev.some((x) => x.kind === s.kind && x.value === s.value) ? prev : [...prev, { ...s, id: `${s.kind}-${prev.length}-${s.value.slice(0, 12)}` }]))
-  const removeSource = (id: string) => setSources((prev) => prev.filter((s) => s.id !== id))
-  function addInventorySource() {
-    const l = listings.find((x) => x.id === form.listingId)
-    if (!l) { toast.error(t('lm.newCampaign.src.needListing')); return }
-    addSource({ kind: 'inventory', label: l.projectName, value: `${l.projectName}${l.area ? `, ${l.area}` : ''}${l.startingPrice ? `, from AED ${l.startingPrice.toLocaleString()}` : ''}` })
-  }
-  function addLinkSource() {
-    const v = linkInput.trim()
-    if (!v) return
-    addSource({ kind: 'link', label: v.replace(/^https?:\/\//, '').slice(0, 40), value: v })
-    setLinkInput('')
-    // If the link is one of our own landing pages, it can be the ad's
-    // destination too. Auto-fill it (only for landing-type objectives) so the
-    // marketer doesn't retype it — and remember the slug for Edit-on-canvas.
-    const slug = landingSlugFromUrl(v)
-    if (slug && (activeObjective.dest === 'landing')) {
-      setForm((prev) => ({ ...prev, landingUrl: v }))
-      setSourceLandingSlug(slug)
-      toast.success(t('lm.newCampaign.src.landingAutofill'))
-    }
-  }
-  function addNoteSource() {
-    const v = noteInput.trim()
-    if (!v) return
-    addSource({ kind: 'note', label: v.slice(0, 40), value: v })
-    setNoteInput('')
-  }
-  async function addFileSource(file: File | null) {
-    if (!file) return
-    setFileBusy(true)
-    try {
-      if (/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)) {
-        const fd = new FormData(); fd.append('file', file)
-        const res = await fetch('/api/dashboard/projects/parse-brochure', { method: 'POST', body: fd })
-        const d = await res.json()
-        if (res.ok && d) addSource({ kind: 'file', label: file.name, value: `${file.name}: ${JSON.stringify(d).slice(0, 600)}` })
-        else { addSource({ kind: 'file', label: file.name, value: file.name }); toast.message(t('lm.newCampaign.src.fileNoText')) }
-      } else {
-        addSource({ kind: 'file', label: file.name, value: file.name })
-      }
-    } catch { addSource({ kind: 'file', label: file.name, value: file.name }) }
-    finally { setFileBusy(false); if (srcFileRef.current) srcFileRef.current.value = '' }
-  }
-
   // Everything the user types is saved: restore the last draft on mount
   // (this device first, then the ACCOUNT — so a draft started on the laptop
   // resumes on the phone), and persist every change locally + to the account.
@@ -566,9 +368,6 @@ export default function NewCampaignPage() {
       if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
         setForm((prev) => ({ ...prev, ...(acctDraft as Partial<WizardState>) }))
       }
-      const freq = (m.adSmartDefaults && typeof m.adSmartDefaults === 'object' ? m.adSmartDefaults : {}) as Record<string, Record<string, number>>
-      smartFreq.current = freq
-      setSmartDefaults({ whatsappNumber: topDefault(freq.whatsappNumber), phoneNumber: topDefault(freq.phoneNumber) })
       draftRestored.current = true
     })
   }, [])
@@ -681,12 +480,6 @@ export default function NewCampaignPage() {
     const listing = listings.find((l) => l.id === form.listingId)
     const interests = UAE_INTERESTS.filter((i) => form.interestIds.includes(i.id))
 
-    // Point the ad at the chosen language version of our own landing. Only for
-    // /lp/ URLs (our trilingual page) and only when not English (the default).
-    const landingUrlWithLang = (landingLang !== 'en' && landingSlugFromUrl(form.landingUrl))
-      ? `${form.landingUrl}${form.landingUrl.includes('?') ? '&' : '?'}lang=${landingLang}`
-      : form.landingUrl
-
     const payload: LaunchCampaignPayload = {
       campaignName:   form.campaignName,
       objective:      form.objective,
@@ -699,7 +492,6 @@ export default function NewCampaignPage() {
         ageMin:             form.ageMin,
         ageMax:             form.ageMax,
         genders:            form.genders,
-        locales:            form.locales.map((l) => l.key),
         publisherPlatforms: form.publisherPlatforms,
         interests,
       },
@@ -707,19 +499,12 @@ export default function NewCampaignPage() {
         primaryText: form.primaryText,
         headline:    form.headline,
         description: form.description,
-        // Destination resolves from the objective: WhatsApp → wa.me, Call →
-        // tel:, everything else → the landing URL. Keeps Meta's link valid.
-        landingUrl:  activeObjective.dest === 'whatsapp' && form.whatsappNumber
-          ? `https://wa.me/${form.whatsappNumber.replace(/[^\d]/g, '')}`
-          : activeObjective.dest === 'phone' && form.phoneNumber
-            ? `tel:${form.phoneNumber.replace(/[^\d+]/g, '')}`
-            : landingUrlWithLang,
+        landingUrl:  form.landingUrl,
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
       },
       launchStatus: form.launchStatus,
-      pixelId:      pixelId || undefined,
     }
 
     try {
@@ -738,9 +523,6 @@ export default function NewCampaignPage() {
       }
 
       setLaunched({ campaignId: data.campaignId, status: data.status })
-      // Learn the contact values this marketer reuses, for one-tap fill next time.
-      if (activeObjective.dest === 'whatsapp') recordSmartDefault('whatsappNumber', form.whatsappNumber)
-      if (activeObjective.dest === 'phone') recordSmartDefault('phoneNumber', form.phoneNumber)
       try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
       saveAccountMemory({ campaignDraft: null }) // launched — clear the draft everywhere
     } catch {
@@ -949,44 +731,6 @@ export default function NewCampaignPage() {
               </div>
             )}
 
-            {/* Campaign sources — feed the creative + targeting (not the destination) */}
-            <div className="rounded-[14px] border border-line bg-surface-2 p-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-300"><FileText className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.src.hint')}</p>
-
-              {sources.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {sources.map((s) => (
-                    <span key={s.id} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] text-slate-300">
-                      <span className="text-slate-500">{t(`lm.newCampaign.src.kind.${s.kind}`)}:</span>
-                      <span className="max-w-[160px] truncate">{s.label}</span>
-                      <button type="button" onClick={() => removeSource(s.id)} className="text-slate-500 hover:text-white"><X className="h-3 w-3" /></button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-3 space-y-2">
-                {form.listingId && (
-                  <button type="button" onClick={addInventorySource} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:text-white">
-                    <Plus className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.addInventory')}
-                  </button>
-                )}
-                <div className="flex gap-2">
-                  <input value={linkInput} onChange={(e) => setLinkInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLinkSource() } }} placeholder={t('lm.newCampaign.src.linkPh')} className={inputCls()} />
-                  <button type="button" onClick={addLinkSource} className="shrink-0 rounded-full border border-line bg-surface px-3 text-xs text-slate-300 transition hover:text-white">{t('lm.newCampaign.src.add')}</button>
-                </div>
-                <div className="flex gap-2">
-                  <input value={noteInput} onChange={(e) => setNoteInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNoteSource() } }} placeholder={t('lm.newCampaign.src.notePh')} className={inputCls()} />
-                  <button type="button" onClick={addNoteSource} className="shrink-0 rounded-full border border-line bg-surface px-3 text-xs text-slate-300 transition hover:text-white">{t('lm.newCampaign.src.add')}</button>
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-dashed border-line-strong bg-surface px-3 py-1.5 text-xs text-slate-300 transition hover:border-gold/40">
-                  {fileBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('lm.newCampaign.src.addFile')}
-                  <input ref={srcFileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden" disabled={fileBusy} onChange={(e) => addFileSource(e.target.files?.[0] ?? null)} />
-                </label>
-              </div>
-            </div>
-
             <div>
               <Label>{t('lm.newCampaign.s1.label.name')}</Label>
               <input
@@ -1191,69 +935,6 @@ export default function NewCampaignPage() {
               </div>
             </div>
 
-            {/* Buyer language — real Meta locale targeting (live adlocale search) */}
-            <div>
-              <Label>{t('lm.newCampaign.s2.label.language')}</Label>
-              {form.locales.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {form.locales.map((l) => (
-                    <span key={l.key} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] text-gold">
-                      {l.name}
-                      <button type="button" onClick={() => removeLocale(l.key)} className="text-gold/70 hover:text-gold"><X className="h-3 w-3" /></button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="relative">
-                <input value={localeQuery} onChange={(e) => searchLocales(e.target.value)} className={inputCls()} placeholder={t('lm.newCampaign.s2.languagePh')} />
-                {(localeSearching || localeResults.length > 0) && (
-                  <div className="absolute z-20 mt-1 max-h-52 w-full overflow-auto rounded-xl border border-line bg-surface-2 shadow-xl">
-                    {localeSearching && <div className="px-3 py-2 text-[11px] text-slate-500">{t('common.loading')}</div>}
-                    {localeResults.map((l) => (
-                      <button key={l.key} type="button" onClick={() => addLocale(l)} className="block w-full px-3 py-2 text-start text-xs text-slate-200 hover:bg-gold/10 hover:text-gold">{l.name}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">{t('lm.newCampaign.s2.languageHint')}</p>
-            </div>
-
-            {/* Lookalike from closed buyers — real Meta custom+lookalike audience.
-                Gated: building it uploads hashed buyer contacts to Meta. */}
-            {lookalike && (
-              <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
-                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
-                  <Users className="h-3.5 w-3.5" /> {t('lm.newCampaign.lookalike.title')}
-                </div>
-                {llResult ? (
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" /> {t('lm.newCampaign.lookalike.created').replace('{n}', String(llResult.uploaded))}
-                  </p>
-                ) : !lookalike.metaConnected ? (
-                  <p className="mt-2 text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.connect')}</p>
-                ) : lookalike.count < lookalike.min ? (
-                  <p className="mt-2 text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.need').replace('{n}', String(lookalike.count)).replace('{min}', String(lookalike.min))}</p>
-                ) : llConfirm ? (
-                  <div className="mt-2">
-                    <p className="text-[12px] leading-relaxed text-slate-300">{t('lm.newCampaign.lookalike.confirmBody').replace('{n}', String(lookalike.count))}</p>
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      <button type="button" onClick={buildLookalike} disabled={llBuilding} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
-                        {llBuilding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('lm.newCampaign.lookalike.confirmCta')}
-                      </button>
-                      <button type="button" onClick={() => setLlConfirm(false)} disabled={llBuilding} className="rounded-full border border-line px-3.5 py-1.5 text-xs text-slate-400 hover:text-slate-200">{t('common.cancel')}</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2">
-                    <p className="text-[12px] text-slate-400">{t('lm.newCampaign.lookalike.ready').replace('{n}', String(lookalike.count))}</p>
-                    <button type="button" onClick={() => setLlConfirm(true)} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
-                      <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.lookalike.build')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div>
               <Label>{t('lm.newCampaign.s2.label.cities')}</Label>
               <div className="flex flex-wrap gap-2">
@@ -1386,12 +1067,11 @@ export default function NewCampaignPage() {
                         <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
                       </div>
                       {form.primaryText && <div className="px-3 pb-2 text-[11px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
-                      <div className="relative aspect-square w-full bg-surface-2">
+                      <div className="aspect-square w-full bg-surface-2">
                         {form.imageUrl
                           // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
                           : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
-                        <div className="absolute bottom-2 end-2 z-10"><QrOverlay /></div>
                       </div>
                       <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
                         <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[10px] text-slate-500">{form.description}</div></div>
@@ -1409,25 +1089,9 @@ export default function NewCampaignPage() {
                         <div className="mt-0.5 line-clamp-2 text-[10px] text-slate-300">{form.primaryText}</div>
                         <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{CTA_OPTIONS.find((c) => c.value === form.cta)?.label}</span>
                       </div>
-                      <div className="absolute end-2 top-2 z-10"><QrOverlay /></div>
                     </div>
                   )}
                 </div>
-
-                {/* Real Meta-rendered preview — exactly how Meta will show it */}
-                <button type="button" onClick={loadMetaPreview} disabled={metaPreviewState === 'loading'}
-                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
-                  {metaPreviewState === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />} {t('lm.newCampaign.metaPreview.button')}
-                </button>
-                {metaPreviewState === 'demo' && (
-                  <p className="mt-1.5 text-[11px] text-amber-400/90">{t('lm.newCampaign.metaPreview.demo')}</p>
-                )}
-                {metaPreview && (
-                  <div className="mt-2 overflow-hidden rounded-xl border border-line bg-white">
-                    {/* Trusted iframe HTML returned by Meta's Graph API */}
-                    <div className="[&_iframe]:w-full [&_iframe]:border-0" dangerouslySetInnerHTML={{ __html: metaPreview }} />
-                  </div>
-                )}
               </div>
 
               {/* AI copy generation — real Gemini variants (existing generator) */}
@@ -1495,94 +1159,14 @@ export default function NewCampaignPage() {
               />
             </div>
 
-            {/* Destination — driven by the objective so Meta submissions don't break. */}
-            <div className="rounded-[14px] border border-gold/20 bg-gold/[0.04] p-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
-                {activeObjective.dest === 'form' ? <FileText className="h-3.5 w-3.5" /> : activeObjective.dest === 'whatsapp' ? <MessageCircle className="h-3.5 w-3.5" /> : activeObjective.dest === 'phone' ? <Phone className="h-3.5 w-3.5" /> : <Monitor className="h-3.5 w-3.5" />}
-                {t('lm.newCampaign.dest.title')} · {t(`lm.newCampaign.dest.kind.${activeObjective.dest}`)}
-              </div>
-
-              {activeObjective.dest === 'form' ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <select value={leadFormId} onChange={(e) => setLeadFormId(e.target.value)} className={`${inputCls()} max-w-xs`}>
-                    <option value="">{leadFormsLoading ? t('common.loading') : t('lm.newCampaign.leadForm.pick')}</option>
-                    {leadForms.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                  </select>
-                  {leadFormId && <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} className="rounded-full border border-line px-3 py-2 text-xs text-slate-300 hover:text-white">{t('lm.newCampaign.leadForm.edit')}</Link>}
-                  <Link href="/freehold-intelligence/lead-machine/forms/new" className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/20"><Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.create')}</Link>
-                </div>
-              ) : activeObjective.dest === 'whatsapp' ? (
-                <div className="mt-3">
-                  <input className={inputCls(!form.whatsappNumber)} value={form.whatsappNumber} onChange={(e) => update('whatsappNumber', e.target.value)} placeholder={t('lm.newCampaign.dest.whatsappPh')} inputMode="tel" />
-                  {!form.whatsappNumber && smartDefaults.whatsappNumber && (
-                    <button type="button" onClick={() => update('whatsappNumber', smartDefaults.whatsappNumber!.value)} className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold hover:bg-gold/20">
-                      <Sparkles className="h-3 w-3" /> {t('lm.newCampaign.smart.use').replace('{val}', smartDefaults.whatsappNumber.value).replace('{n}', String(smartDefaults.whatsappNumber.count))}
-                    </button>
-                  )}
-                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.dest.whatsappHint')}</p>
-                </div>
-              ) : activeObjective.dest === 'phone' ? (
-                <div className="mt-3">
-                  <input className={inputCls(!form.phoneNumber)} value={form.phoneNumber} onChange={(e) => update('phoneNumber', e.target.value)} placeholder={t('lm.newCampaign.dest.phonePh')} inputMode="tel" />
-                  {!form.phoneNumber && smartDefaults.phoneNumber && (
-                    <button type="button" onClick={() => update('phoneNumber', smartDefaults.phoneNumber!.value)} className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold hover:bg-gold/20">
-                      <Sparkles className="h-3 w-3" /> {t('lm.newCampaign.smart.use').replace('{val}', smartDefaults.phoneNumber.value).replace('{n}', String(smartDefaults.phoneNumber.count))}
-                    </button>
-                  )}
-                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.dest.phoneHint')}</p>
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <input className={inputCls(!form.landingUrl)} value={form.landingUrl} onChange={(e) => update('landingUrl', e.target.value)} placeholder={t('lm.landingUrlPlaceholder')} />
-                  {(() => {
-                    // Prefer the slug the destination URL actually points to, so
-                    // "Edit on canvas" opens the exact landing (source-provided
-                    // or listing-default), not just the picked listing.
-                    const editSlug = landingSlugFromUrl(form.landingUrl) || sourceLandingSlug || form.listingId
-                    const fromSource = !!sourceLandingSlug && form.landingUrl.includes(`/lp/${sourceLandingSlug}`)
-                    return (
-                      <>
-                        {fromSource && (
-                          <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-emerald-400"><Sparkles className="h-3 w-3" /> {t('lm.newCampaign.dest.autofilledFromSource')}</p>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Link href="/freehold-intelligence/lead-machine/landings" className="rounded-full border border-line px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-200">{t('lm.newCampaign.dest.pickLanding')}</Link>
-                          {editSlug && <Link href={`/freehold-intelligence/lead-machine/landings/${encodeURIComponent(editSlug)}/edit`} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold hover:bg-gold/20">{t('lm.newCampaign.dest.editCanvas')} <ArrowRight className="h-3 w-3" /></Link>}
-                        </div>
-                        {landingSlugFromUrl(form.landingUrl) && (
-                          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] text-slate-500">{t('lm.newCampaign.dest.langLabel')}</span>
-                            {(['en', 'ar', 'ru'] as const).map((lng) => (
-                              <button key={lng} type="button" onClick={() => setLandingLang(lng)}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${landingLang === lng ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>
-                                {t(`lm.newCampaign.dest.lang.${lng}`)}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              )}
-
-              {/* Conversion pixel — real pixels from the connected account. Only
-                  for web destinations (landing/form); calls & chats have no
-                  on-site conversion to measure. Hidden entirely when none exist. */}
-              {pixelsLoaded && pixels.length > 0 && (activeObjective.dest === 'landing' || activeObjective.dest === 'form') && (
-                <div className="mt-3 border-t border-gold/15 pt-3">
-                  <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    <Target className="h-3 w-3" /> {t('lm.newCampaign.pixel.label')}
-                  </label>
-                  <select value={pixelId} onChange={(e) => setPixelId(e.target.value)} className={`${inputCls()} mt-1.5 max-w-sm`}>
-                    <option value="">{t('lm.newCampaign.pixel.default')}</option>
-                    {pixels.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}{p.lastFiredTime ? '' : ` — ${t('lm.newCampaign.pixel.noEvents')}`}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.pixel.hint')}</p>
-                </div>
-              )}
+            <div>
+              <Label>{t('lm.newCampaign.s3.label.landingUrl')}</Label>
+              <input
+                className={inputCls(!form.landingUrl)}
+                value={form.landingUrl}
+                onChange={(e) => update('landingUrl', e.target.value)}
+                placeholder={t('lm.landingUrlPlaceholder')}
+              />
             </div>
 
             <div data-coach="wiz-creative">
@@ -1596,33 +1180,18 @@ export default function NewCampaignPage() {
               {/* Upload your own ad image → Meta ad account (image_hash) */}
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
-                  {uploadingImg ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
+                  {uploadingImg ? 'Uploading…' : 'Upload image'}
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingImg}
                     onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
                 </label>
                 {form.imageHash
-                  ? <span className="text-xs text-emerald-400">{t('lm.newCampaign.s3.upload.uploaded')}</span>
-                  : <span className="text-xs text-slate-500">{t('lm.newCampaign.s3.upload.orPaste')}</span>}
+                  ? <span className="text-xs text-emerald-400">✓ Uploaded to Meta — this image will be used</span>
+                  : <span className="text-xs text-slate-500">or paste an image URL above (defaults to the listing photo)</span>}
                 {form.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={form.imageUrl} alt="ad preview" className="h-10 w-16 rounded object-cover" />
                 )}
               </div>
-            </div>
-
-            {/* Trakhees QR — overlays the creative in the scan-safe corner */}
-            <div>
-              <Label>{t('lm.newCampaign.qr.label')}</Label>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line-strong bg-surface-2 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-gold/40">
-                  <Plus className="h-3.5 w-3.5" /> {qrDataUrl ? t('lm.newCampaign.qr.replace') : t('lm.newCampaign.qr.upload')}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => onUploadQr(e.target.files?.[0] ?? null)} />
-                </label>
-                {qrDataUrl && (
-                  <button type="button" onClick={() => setQrDataUrl('')} className="text-xs text-slate-500 hover:text-white">{t('lm.newCampaign.qr.remove')}</button>
-                )}
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500">{t('lm.newCampaign.qr.hint')}</p>
             </div>
 
             <div>
