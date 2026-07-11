@@ -4,6 +4,7 @@ import { queryServerAgent } from '@/lib/freehold/server-ai'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { appendTurn } from '@/lib/freehold/notebook-conversations'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
+import { buildNotebookContext, type NotebookSources, type NotebookUpload } from '@/lib/freehold/notebook-context'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     message?: string
     conversationId?: string
     role?: string
+    sources?: NotebookSources
+    uploads?: NotebookUpload[]
   }
   const message = body.message?.trim()
   if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 })
@@ -39,13 +42,17 @@ export async function POST(request: Request) {
 You help with: property research, brochure drafts, market summaries, WhatsApp message templates, and investment narratives for Dubai real estate.
 
 Rules:
-- Only use facts explicitly provided in the conversation. Do not invent project names, prices, handover dates, or yields.
-- If asked for verified project data, respond: "I don't have live project data in this session — use the Inventory tab to retrieve it."
+- Only use facts explicitly provided in the conversation or the workspace-sources block below. Do not invent project names, prices, handover dates, or yields.
+- If asked for verified project data and no sources are attached, respond: "I don't have live project data in this session — tick 'Live Projects' in the Sources panel."
 - When drafting copy, mark any unfilled detail as [VERIFY BEFORE SENDING].
 - Keep responses focused and professional.`
 
+  // Ground the answer in the sources the user selected in the left panel
+  // (real inventory / CRM pipeline / attached links) instead of ignoring them.
+  const sourceContext = await buildNotebookContext(body.sources, body.uploads ?? [])
+
   try {
-    const answer = await queryServerAgent(message, { systemPrompt })
+    const answer = await queryServerAgent(message, { systemPrompt: systemPrompt + sourceContext })
     // Persist the turn so the thread is real and reloadable (best-effort).
     const savedId = await appendTurn(conversationId, user.email, message, answer)
     return NextResponse.json({

@@ -268,7 +268,8 @@ export default function NotebookPage() {
   const [activeGenerate, setActiveGenerate] = useState<string | null>(null)
   const [activeSendDest, setActiveSendDest] = useState<string | null>(null)
   const [activeSendOutput, setActiveSendOutput] = useState<string | null>(null)
-  const [customSources, setCustomSources] = useState<{ id: string; name: string }[]>([])
+  const [customSources, setCustomSources] = useState<{ id: string; name: string; content?: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [genInput, setGenInput] = useState('')
   const [genResult, setGenResult] = useState('')
   const [genLoading, setGenLoading] = useState(false)
@@ -362,7 +363,18 @@ export default function NotebookPage() {
       const res = await fetch('/api/freehold/notebook/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, conversationId: conversationId ?? undefined }),
+        body: JSON.stringify({
+          message,
+          conversationId: conversationId ?? undefined,
+          // Send the selected sources so the AI grounds on real workspace data.
+          sources: {
+            live_projects: !!checkedSources.live_projects,
+            crm_leads: !!checkedSources.crm_leads,
+            uploads: !!checkedSources.uploads,
+            all_conversations: !!checkedSources.all_conversations,
+          },
+          uploads: checkedSources.uploads ? customSources.map((s) => ({ name: s.name, content: s.content })) : [],
+        }),
       })
       const data = await res.json()
       const answer = data?.answer || data?.message || t('nb.chatFallback')
@@ -374,6 +386,48 @@ export default function NotebookPage() {
     } finally {
       setChatPending(false)
     }
+  }
+
+  // ── Persist the notebook title + attached sources (per browser) so a rename
+  //    and dropped/added files survive reload instead of resetting. ──────────
+  const [prefsHydrated, setPrefsHydrated] = useState(false)
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem('nb.title')
+      if (t) setNotebookTitle(t)
+      const s = localStorage.getItem('nb.customSources')
+      if (s) {
+        const parsed = JSON.parse(s)
+        if (Array.isArray(parsed)) setCustomSources(parsed)
+      }
+    } catch {}
+    setPrefsHydrated(true)
+  }, [])
+  useEffect(() => {
+    if (!prefsHydrated) return
+    try { localStorage.setItem('nb.title', notebookTitle) } catch {}
+  }, [notebookTitle, prefsHydrated])
+  useEffect(() => {
+    if (!prefsHydrated) return
+    try { localStorage.setItem('nb.customSources', JSON.stringify(customSources)) } catch {}
+  }, [customSources, prefsHydrated])
+
+  // Accept dropped / picked files: read text for text-like files (so the AI can
+  // actually use them), keep binaries as named pointers. Both persist as sources.
+  async function addFiles(files: FileList | null) {
+    if (!files || !files.length) return
+    const TEXT_RE = /\.(txt|md|markdown|csv|json|html?|xml|log|yml|yaml|tsv)$/i
+    const additions: { id: string; name: string; content?: string }[] = []
+    for (const file of Array.from(files)) {
+      let content: string | undefined
+      if ((file.type.startsWith('text/') || TEXT_RE.test(file.name)) && file.size < 400_000) {
+        try { content = (await file.text()).slice(0, 8000) } catch {}
+      }
+      additions.push({ id: `src_${Date.now()}_${additions.length}`, name: file.name, content })
+    }
+    setCustomSources((prev) => [...prev, ...additions])
+    setCheckedSources((prev) => ({ ...prev, uploads: true }))
+    toast.success(t('nb.sourceAdded'))
   }
 
   return (
@@ -565,10 +619,18 @@ export default function NotebookPage() {
         </div>
 
         {/* drop zone */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={e => { addFiles(e.target.files); e.target.value = '' }}
+        />
         <div
+          onClick={() => fileInputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
           onDragLeave={() => setIsDragOver(false)}
-          onDrop={e => { e.preventDefault(); setIsDragOver(false) }}
+          onDrop={e => { e.preventDefault(); setIsDragOver(false); addFiles(e.dataTransfer.files) }}
           className={[
             'mx-3 mb-3 flex flex-col items-center gap-1.5 rounded-xl border-2 border-dashed px-3 py-4 text-center transition cursor-pointer',
             isDragOver
@@ -594,8 +656,8 @@ export default function NotebookPage() {
                 autoFocus
                 value={notebookTitle}
                 onChange={e => setNotebookTitle(e.target.value)}
-                onBlur={() => setEditingTitle(false)}
-                onKeyDown={e => { if (e.key === 'Enter') setEditingTitle(false) }}
+                onBlur={() => { if (!notebookTitle.trim()) setNotebookTitle('Freehold Intelligence'); setEditingTitle(false) }}
+                onKeyDown={e => { if (e.key === 'Enter') { if (!notebookTitle.trim()) setNotebookTitle('Freehold Intelligence'); setEditingTitle(false) } }}
                 className="rounded border border-gold/30 bg-transparent px-2 py-0.5 text-sm font-semibold text-white outline-none"
               />
             ) : (
