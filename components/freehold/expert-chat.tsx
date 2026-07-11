@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   Sparkles, ArrowUp, Loader2, X, Plus, PanelRightClose, PanelRightOpen,
   Check, Rocket, Pencil, Eye, ThumbsUp, ArrowRight, ImageIcon, Copy, ListChecks,
-  BookmarkPlus, History, Trash2, ChevronDown,
+  BookmarkPlus, History, Trash2, ChevronDown, Mic, Paperclip, Camera, Square,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
@@ -233,17 +233,174 @@ export function ExpertChat() {
     })
   }, [])
 
+  // ── Composer superpowers: mode / voice note / file / screenshot ────────────
+  const [mode, setMode] = useState<'auto' | 'code' | 'marketing' | 'sales'>('auto')
+  useEffect(() => {
+    const saved = localStorage.getItem('fi-expert-mode')
+    if (saved === 'code' || saved === 'marketing' || saved === 'sales') setMode(saved)
+  }, [])
+  function cycleMode() {
+    const order = ['auto', 'code', 'marketing', 'sales'] as const
+    setMode((m) => {
+      const next = order[(order.indexOf(m) + 1) % order.length]
+      localStorage.setItem('fi-expert-mode', next)
+      return next
+    })
+  }
+
+  // Attachment (any extension): text-like files carry their content to the
+  // model; binaries travel as a named pointer. One slot, clearable.
+  const [attachment, setAttachment] = useState<{ name: string; content?: string } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  async function onPickFile(file: File | null) {
+    if (!file) return
+    const TEXT_RE = /\.(txt|md|markdown|csv|json|html?|xml|log|yml|yaml|tsv|ts|tsx|js|jsx|css)$/i
+    let content: string | undefined
+    if ((file.type.startsWith('text/') || TEXT_RE.test(file.name)) && file.size < 400_000) {
+      try { content = (await file.text()).slice(0, 8000) } catch { /* pointer only */ }
+    }
+    setAttachment({ name: file.name, content })
+  }
+
+  // Voice note → REAL server-side transcription (Gemini audio).
+  const [recording, setRecording] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
+  const recRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  async function toggleRecord() {
+    if (recording) { recRef.current?.stop(); return }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const rec = new MediaRecorder(stream)
+      recRef.current = rec
+      chunksRef.current = []
+      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data) }
+      rec.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop())
+        setRecording(false)
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || 'audio/webm' })
+        if (!blob.size) return
+        setTranscribing(true)
+        try {
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error); r.readAsDataURL(blob)
+          })
+          const res = await fetch('/api/freehold/expert/ingest', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 'audio', data: dataUrl }),
+          })
+          const d = await res.json().catch(() => ({}))
+          if (d.unavailable) { toast.error(t('expert.ingestUnavailable')); return }
+          if (!res.ok || !d.text) { toast.error(d.error || t('expert.ingestFailed')); return }
+          setValue((v) => (v ? `${v} ${d.text}` : d.text))
+          taRef.current?.focus()
+        } catch { toast.error(t('expert.ingestFailed')) } finally { setTranscribing(false) }
+      }
+      rec.start()
+      setRecording(true)
+    } catch { toast.error(t('expert.micDenied')) }
+  }
+
+  // Screenshot → capture a frame, let the user MARK an area (red box) + add a
+  // note, then a REAL vision pass describes it for the coordinator.
+  const [shot, setShot] = useState<string | null>(null)
+  const [shotNote, setShotNote] = useState('')
+  const [shotBusy, setShotBusy] = useState(false)
+  const shotCanvasRef = useRef<HTMLCanvasElement>(null)
+  const shotImgRef = useRef<HTMLImageElement | null>(null)
+  const shotRect = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
+  const shotDragging = useRef(false)
+
+  const drawShot = useCallback(() => {
+    const canvas = shotCanvasRef.current, img = shotImgRef.current
+    if (!canvas || !img) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    const r = shotRect.current
+    if (r) {
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3
+      ctx.strokeRect(Math.min(r.x0, r.x1), Math.min(r.y0, r.y1), Math.abs(r.x1 - r.x0), Math.abs(r.y1 - r.y0))
+    }
+  }, [])
+  useEffect(() => {
+    if (!shot) return
+    const img = new Image()
+    img.onload = () => {
+      shotImgRef.current = img
+      const canvas = shotCanvasRef.current
+      if (canvas) { canvas.width = img.width; canvas.height = img.height }
+      drawShot()
+    }
+    img.src = shot
+  }, [shot, drawShot])
+
+  async function captureScreenshot() {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const track = stream.getVideoTracks()[0]
+      const video = document.createElement('video')
+      video.srcObject = stream
+      await video.play()
+      await new Promise((r) => setTimeout(r, 250)) // let the first frame settle
+      const scale = Math.min(1, 1280 / (video.videoWidth || 1280))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round((video.videoWidth || 1280) * scale)
+      canvas.height = Math.round((video.videoHeight || 720) * scale)
+      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
+      track.stop(); stream.getTracks().forEach((tr) => tr.stop())
+      shotRect.current = null
+      setShotNote('')
+      setShot(canvas.toDataURL('image/jpeg', 0.85))
+    } catch { /* user cancelled the share picker — nothing to do */ }
+  }
+
+  function shotPoint(e: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = shotCanvasRef.current as HTMLCanvasElement
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+    }
+  }
+
+  async function attachScreenshot() {
+    const canvas = shotCanvasRef.current
+    if (!canvas) return
+    setShotBusy(true)
+    try {
+      const res = await fetch('/api/freehold/expert/ingest', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'image', data: canvas.toDataURL('image/jpeg', 0.85), note: shotNote.trim() || undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d.unavailable) { toast.error(t('expert.ingestUnavailable')); return }
+      if (!res.ok || !d.text) { toast.error(d.error || t('expert.ingestFailed')); return }
+      setAttachment({ name: t('expert.screenshotName'), content: d.text })
+      setShot(null)
+    } catch { toast.error(t('expert.ingestFailed')) } finally { setShotBusy(false) }
+  }
+
   const send = useCallback(async (text?: string) => {
     const message = (text ?? value).trim()
     if (!message || pending) return
     setMessages((m) => [...m, { role: 'user', content: message }])
     setValue('')
     setPending(true)
+    // The attachment travels with THIS message, then the slot clears.
+    const att = attachment
+    setAttachment(null)
     try {
       const res = await fetch('/api/freehold/expert/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, sessionId: sessionId.current, page: pathname }),
+        body: JSON.stringify({
+          message, sessionId: sessionId.current, page: pathname,
+          context: {
+            ...(mode !== 'auto' ? { chatMode: mode } : {}),
+            ...(att ? { attachment: att } : {}),
+          },
+        }),
       })
       const data = await res.json()
       const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: t('expert.fallbackOk') }]
@@ -260,7 +417,7 @@ export function ExpertChat() {
     } finally {
       setPending(false)
     }
-  }, [value, pending, pathname, t])
+  }, [value, pending, pathname, t, mode, attachment])
 
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
@@ -465,6 +622,37 @@ export function ExpertChat() {
           )}
         </div>
 
+        {/* Screenshot marker — capture arrived; let the user box an area + note. */}
+        {shot && (
+          <div className="shrink-0 border-t border-line bg-surface p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-300">{t('expert.shotMarkTitle')}</span>
+              <button onClick={() => setShot(null)} className="text-slate-500 hover:text-slate-300"><X className="h-4 w-4" /></button>
+            </div>
+            <canvas
+              ref={shotCanvasRef}
+              className="w-full cursor-crosshair touch-none rounded-lg border border-line"
+              onPointerDown={(e) => { const p = shotPoint(e); shotRect.current = { x0: p.x, y0: p.y, x1: p.x, y1: p.y }; shotDragging.current = true; drawShot() }}
+              onPointerMove={(e) => { if (!shotDragging.current || !shotRect.current) return; const p = shotPoint(e); shotRect.current = { ...shotRect.current, x1: p.x, y1: p.y }; drawShot() }}
+              onPointerUp={() => { shotDragging.current = false }}
+            />
+            <input
+              value={shotNote} onChange={(e) => setShotNote(e.target.value)}
+              placeholder={t('expert.shotNotePh')}
+              className="mt-2 w-full rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-gold/40"
+            />
+            <div className="mt-2 flex items-center gap-2">
+              <button onClick={attachScreenshot} disabled={shotBusy}
+                className="flex items-center gap-1.5 rounded-full bg-gold px-3.5 py-1.5 text-xs font-semibold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-50">
+                {shotBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />} {t('expert.shotAttach')}
+              </button>
+              <button onClick={() => setShot(null)} className="rounded-full border border-line px-3.5 py-1.5 text-xs text-slate-400 transition hover:text-slate-200">
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Composer */}
         <div className="shrink-0 border-t border-line p-3">
           <div
@@ -482,6 +670,36 @@ export function ExpertChat() {
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold text-[#06080A] transition hover:bg-[#E8C657] disabled:opacity-30">
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
               </button>
+            </div>
+            {/* Superpowers: mode chip · voice note · file · screenshot */}
+            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-1 pt-0.5" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={cycleMode} title={t('expert.modeTitle')}
+                className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider transition ${mode === 'auto' ? 'border-line text-slate-500 hover:text-slate-300' : 'border-gold/40 bg-gold/10 text-gold'}`}>
+                {t(`expert.mode.${mode}`)}
+              </button>
+              <button type="button" onClick={toggleRecord} disabled={transcribing} title={t('expert.voiceTitle')}
+                className={`grid h-7 w-7 place-items-center rounded-full transition ${recording ? 'animate-pulse bg-red-500/20 text-red-400' : 'text-slate-500 hover:bg-surface-3 hover:text-slate-200'}`}>
+                {transcribing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recording ? <Square className="h-3 w-3" /> : <Mic className="h-3.5 w-3.5" />}
+              </button>
+              <button type="button" onClick={() => fileRef.current?.click()} title={t('expert.attachTitle')}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-500 transition hover:bg-surface-3 hover:text-slate-200">
+                <Paperclip className="h-3.5 w-3.5" />
+              </button>
+              <button type="button" onClick={captureScreenshot} title={t('expert.shotTitle')}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-500 transition hover:bg-surface-3 hover:text-slate-200">
+                <Camera className="h-3.5 w-3.5" />
+              </button>
+              <input ref={fileRef} type="file" className="hidden"
+                onChange={(e) => { onPickFile(e.target.files?.[0] ?? null); e.target.value = '' }} />
+              {attachment && (
+                <span className="flex min-w-0 items-center gap-1 rounded-full border border-gold/30 bg-gold/[0.08] px-2 py-0.5 text-[10px] text-gold">
+                  <Paperclip className="h-3 w-3 shrink-0" />
+                  <span className="max-w-[120px] truncate">{attachment.name}</span>
+                  <button type="button" onClick={() => setAttachment(null)} className="ms-0.5 text-gold/70 hover:text-gold">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
             </div>
           </div>
         </div>

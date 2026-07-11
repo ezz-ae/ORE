@@ -199,6 +199,16 @@ export async function POST(request: NextRequest) {
         ? `\n\nYou are advising MARKETING: focus on campaigns, ads, landing pages, content and attribution. Infrastructure/integration fixes are in scope only when they block ad delivery.`
         : `\n\nYou are advising an OPERATOR (owner/admin/manager): full-system scope is appropriate.`
 
+    // Composer mode chip (Code / Marketing / Sales) — the user's chosen lens.
+    const chatMode = String((body.context as Record<string, unknown> | undefined)?.chatMode ?? '')
+    const modeGuidance = chatMode === 'code'
+      ? '\n\nMODE: CODE — the user wants technical help (integrations, pixels, tracking, APIs, web setup). Be precise, give exact values/steps/snippets, skip marketing framing.'
+      : chatMode === 'marketing'
+        ? '\n\nMODE: MARKETING — the user wants campaign/creative/landing help. Think angles, audiences, budgets, copy; propose concrete campaign actions and use the ads/landing/creative tools.'
+        : chatMode === 'sales'
+          ? '\n\nMODE: SALES — the user wants help closing: follow-ups, call/WhatsApp scripts, objection handling, viewings. Be practical, personal, and lead-specific (use crm tools).'
+          : ''
+
     // Durable session memory: replay the conversation's recent turns from the
     // DB so a resumed chat (new device, cold instance) still remembers itself.
     let durableHistory: Array<{ role: 'user' | 'model'; text: string }> | undefined
@@ -226,7 +236,7 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}${roleGuidance}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}${roleGuidance}${modeGuidance}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     let loopHistory = durableHistory
     let raw = await queryServerAgent(message, {
