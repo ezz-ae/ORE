@@ -1,7 +1,8 @@
 import {
   listCampaigns, getCampaign, getCampaignInsights,
-  updateCampaignStatus, updateAdSet, listAdSets,
+  updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
 } from '@/lib/meta/client'
+import type { AutonomyLevel } from '@/lib/freehold/agent-router'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import {
   listRules, createRule,
@@ -37,6 +38,8 @@ export interface ToolCtx {
   /** Verified account email (tool ownership scoping — e.g. rules, library). */
   email: string
   brokerId: string | null
+  /** Server-stored guardrail: 1 advisory · 2 semi-autonomous · 3 autopilot. */
+  autonomy: AutonomyLevel
 }
 
 export interface CoordinatorTool {
@@ -263,7 +266,20 @@ export function parseToolCall(raw: string): { name: string; args: Record<string,
   return null
 }
 
-/** Execute one tool call with role + confirm enforcement. Never throws. */
+/** At level 2, actions that ACTIVATE spend still need an explicit human yes. */
+const L2_STILL_CONFIRM = new Set(['ads_resume_campaign'])
+
+/**
+ * Execute one tool call with role + autonomy enforcement. Never throws.
+ *
+ * Autonomy policy (server-enforced — the model only sees a description):
+ *  L1 advisory        destructive requires args.confirm === true (the model
+ *                     proposes an action card first).
+ *  L2 semi-autonomous destructive runs unconfirmed EXCEPT spend-activating
+ *                     tools; budget deltas clamped to ±15%; every unconfirmed
+ *                     destructive action is written to the audit log.
+ *  L3 autopilot       destructive runs unconfirmed; same clamp + audit.
+ */
 export async function runCoordinatorTool(
   tools: CoordinatorTool[],
   call: { name: string; args: Record<string, unknown> },
@@ -271,14 +287,45 @@ export async function runCoordinatorTool(
 ): Promise<unknown> {
   const tool = tools.find((t) => t.name === call.name)
   if (!tool) return { error: `Unknown tool "${call.name}" — use only the tools listed for you.` }
-  if (tool.destructive && call.args.confirm !== true) {
-    return {
-      error: 'confirmation_required',
-      hint: 'This action changes live campaigns/money. Ask the user to confirm explicitly, then retry with "confirm": true.',
+
+  const confirmed = call.args.confirm === true
+  if (tool.destructive && !confirmed) {
+    const allowed = ctx.autonomy >= 2 && !(ctx.autonomy === 2 && L2_STILL_CONFIRM.has(tool.name))
+    if (!allowed) {
+      return {
+        error: 'confirmation_required',
+        hint: 'This action changes live campaigns/money. Ask the user to confirm explicitly, then retry with "confirm": true.',
+      }
+    }
+    // Semi-autonomous budget safety: clamp to ±15% of the CURRENT budget.
+    if (tool.name === 'ads_set_adset_budget') {
+      try {
+        const current = await getAdSet(s(call.args.adSetId))
+        const cur = current.daily_budget ? Math.round(Number(current.daily_budget) / 100) : null
+        if (cur && cur > 0) {
+          const requested = n(call.args.dailyBudgetAED)
+          const min = Math.max(50, Math.round(cur * 0.85))
+          const max = Math.round(cur * 1.15)
+          const clamped = Math.min(max, Math.max(min, requested))
+          if (clamped !== requested) call.args = { ...call.args, dailyBudgetAED: clamped, clampedFrom: requested }
+        }
+      } catch { /* clamp is best-effort; the tool itself still validates */ }
     }
   }
+
   try {
-    return await tool.run(call.args, ctx)
+    const result = await tool.run(call.args, ctx)
+    // Audit trail: unconfirmed destructive executions are recorded where the
+    // manager already looks (the Library) — the L2/L3 "system alert".
+    if (tool.destructive && !confirmed && ctx.autonomy >= 2) {
+      const summary = JSON.stringify({ tool: tool.name, args: call.args, result }).slice(0, 4000)
+      await saveLibraryItem(ctx.email, {
+        kind: 'note',
+        title: `Agent action (L${ctx.autonomy}): ${tool.name}`,
+        content: summary,
+      }).catch(() => null)
+    }
+    return result
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Tool failed' }
   }

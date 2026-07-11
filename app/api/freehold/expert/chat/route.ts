@@ -12,6 +12,8 @@ import {
   toolsForRole, renderToolDocs, parseToolCall, runCoordinatorTool,
   type CoordinatorRole, type ToolCtx,
 } from '@/lib/freehold/coordinator-tools'
+import { MASTER_SYSTEM_PROMPT, detectMode, laneGuidance, autonomyGuidance, stripThinking } from '@/lib/freehold/agent-router'
+import { getAutonomyLevel } from '@/lib/freehold/agent-autonomy'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
 import { query } from '@/lib/db'
@@ -139,12 +141,23 @@ async function crmPipelineSnapshot(): Promise<Record<string, number> | null> {
 }
 
 /** Parse the model's JSON into blocks; fall back to a single text block. */
+const BLOCK_TYPES = new Set(['text', 'plan', 'actions', 'color', 'landing', 'media', 'path'])
 function parseBlocks(raw: string): ExpertBlock[] {
   const trimmed = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
   try {
-    const parsed = JSON.parse(trimmed) as { blocks?: ExpertBlock[] }
+    const parsed = JSON.parse(trimmed) as { blocks?: ExpertBlock[]; type?: string }
     if (Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
       return parsed.blocks.filter((b) => b && typeof b === 'object' && 'type' in b)
+    }
+    // Tolerate a BARE block (`{"type":"landing",…}`) or a bare array — models
+    // sometimes skip the {"blocks":[…]} envelope; without this the user sees
+    // raw JSON as text.
+    if (Array.isArray(parsed)) {
+      const arr = (parsed as unknown as ExpertBlock[]).filter((b) => b && typeof b === 'object' && 'type' in b && BLOCK_TYPES.has((b as { type: string }).type))
+      if (arr.length > 0) return arr
+    }
+    if (parsed && typeof parsed === 'object' && typeof parsed.type === 'string' && BLOCK_TYPES.has(parsed.type)) {
+      return [parsed as unknown as ExpertBlock]
     }
   } catch {
     // fall through
@@ -199,15 +212,15 @@ export async function POST(request: NextRequest) {
         ? `\n\nYou are advising MARKETING: focus on campaigns, ads, landing pages, content and attribution. Infrastructure/integration fixes are in scope only when they block ad delivery.`
         : `\n\nYou are advising an OPERATOR (owner/admin/manager): full-system scope is appropriate.`
 
-    // Composer mode chip (Code / Marketing / Sales) — the user's chosen lens.
+    // Supervisor-Worker router: the composer's explicit mode chip wins;
+    // otherwise the supervisor detects the lane from the message's intent
+    // verbs (sync/nurture/debug/…) and swaps in that worker's prompt.
     const chatMode = String((body.context as Record<string, unknown> | undefined)?.chatMode ?? '')
-    const modeGuidance = chatMode === 'code'
-      ? '\n\nMODE: CODE — the user wants technical help (integrations, pixels, tracking, APIs, web setup). Be precise, give exact values/steps/snippets, skip marketing framing.'
-      : chatMode === 'marketing'
-        ? '\n\nMODE: MARKETING — the user wants campaign/creative/landing help. Think angles, audiences, budgets, copy; propose concrete campaign actions and use the ads/landing/creative tools.'
-        : chatMode === 'sales'
-          ? '\n\nMODE: SALES — the user wants help closing: follow-ups, call/WhatsApp scripts, objection handling, viewings. Be practical, personal, and lead-specific (use crm tools).'
-          : ''
+    const lane = detectMode(message, chatMode || null)
+    // Tripartite guardrail — stored server-side, management-set; the model
+    // only receives a description of what it may attempt.
+    const autonomy = sessionUser ? await getAutonomyLevel() : 1
+    const modeGuidance = laneGuidance(lane)
 
     // Durable session memory: replay the conversation's recent turns from the
     // DB so a resumed chat (new device, cold instance) still remembers itself.
@@ -226,7 +239,7 @@ export async function POST(request: NextRequest) {
     //    specialist tools — ads / landing / crm / creative / research. Only
     //    authenticated users get tools; the toolset is role-gated server-side.
     const tools = sessionUser ? toolsForRole(role as CoordinatorRole) : []
-    const toolCtx: ToolCtx = { role: role as CoordinatorRole, email: sessionUser?.email ?? '', brokerId }
+    const toolCtx: ToolCtx = { role: role as CoordinatorRole, email: sessionUser?.email ?? '', brokerId, autonomy }
     const toolProtocol = tools.length === 0 ? '' : `
 
 YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
@@ -236,10 +249,10 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}${roleGuidance}${modeGuidance}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     let loopHistory = durableHistory
-    let raw = await queryServerAgent(message, {
+    let raw = stripThinking(await queryServerAgent(message, {
       sessionId,
       context: fullContext,
       systemPrompt,
@@ -247,7 +260,7 @@ Your tools:${renderToolDocs(tools)}`
       maxOutputTokens: 4096,
       temperature: 0.5,
       history: loopHistory,
-    })
+    }))
 
     // Tool loop: execute → feed the observation back → let the model continue.
     const toolsUsed: string[] = []
@@ -265,7 +278,7 @@ Your tools:${renderToolDocs(tools)}`
         { role: 'model' as const, text: JSON.stringify({ tool_call: call }) },
         { role: 'user' as const, text: `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}` },
       ]
-      raw = await queryServerAgent(message, {
+      raw = stripThinking(await queryServerAgent(message, {
         sessionId,
         context: fullContext,
         systemPrompt,
@@ -273,7 +286,7 @@ Your tools:${renderToolDocs(tools)}`
         maxOutputTokens: 4096,
         temperature: 0.5,
         history: loopHistory,
-      })
+      }))
     }
 
     const blocks = parseBlocks(raw)
