@@ -787,6 +787,30 @@ function CanvasAccordion({ label, children }: { label: string; children: React.R
 
 // ─── Block renderer ───────────────────────────────────────────────────────────
 
+// The Expert is instructed to write plain business language, but models still
+// slip in markdown tokens. Render bold + bullets properly and swallow the rest
+// so the reader never sees ** / # / backticks.
+function PlainText({ content }: { content: string }) {
+  const lines = content.replace(/`+/g, '').split('\n')
+  return (
+    <div className="space-y-1">
+      {lines.map((raw, i) => {
+        const line = raw.replace(/^#{1,4}\s+/, '')
+        if (!line.trim()) return <div key={i} className="h-1.5" />
+        const bullet = line.match(/^\s*[-*•]\s+(.*)$/)
+        const body = bullet ? bullet[1] : line
+        const segs = body.split(/\*\*([^*]+)\*\*/g)
+        const nodes = segs.map((s, j) => (j % 2 === 1 ? <strong key={j} className="font-semibold text-white">{s}</strong> : s))
+        return bullet ? (
+          <div key={i} className="flex gap-2"><span className="shrink-0 text-gold">•</span><span className="min-w-0 flex-1">{nodes}</span></div>
+        ) : (
+          <div key={i}>{nodes}</div>
+        )
+      })}
+    </div>
+  )
+}
+
 function BlockView({
   block, idx, onAction, onCopy, copied,
 }: {

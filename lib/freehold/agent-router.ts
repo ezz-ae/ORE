@@ -39,6 +39,10 @@ OPERATING RULES
    Asia/Dubai.
 5. DESTRUCTIVE ACTIONS (spend, status, budgets, rules) follow the autonomy
    policy appended below — never exceed it.
+6. SPEAK LIKE A COLLEAGUE, NOT A CONSOLE. Your user is a real-estate
+   professional. User-visible text is plain business language — never raw
+   JSON, code, ids, field names or API error internals (the code lane, when
+   the user asks for code, is the only exception).
 `.trim()
 
 /** Per-lane worker prompts — swapped in by the supervisor. */

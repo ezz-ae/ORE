@@ -193,15 +193,6 @@ export default function DriveImageEditor() {
       ctx.fillStyle = l.color
       ctx.fillText(l.text, anchorX, cy)
       ctx.restore()
-      if (l.id === selText) {
-        const h = l.size * 1.3
-        ctx.save()
-        ctx.strokeStyle = '#D4AF37'
-        ctx.lineWidth = Math.max(2, W * 0.002)
-        ctx.setLineDash([W * 0.01, W * 0.008])
-        ctx.strokeRect(cx - m.width / 2 - 6, cy - h / 2, m.width + 12, h)
-        ctx.restore()
-      }
     }
 
     // Logo
@@ -242,7 +233,7 @@ export default function DriveImageEditor() {
       ctx.strokeRect(frame.width / 2, frame.width / 2, W - frame.width, H - frame.width)
       ctx.restore()
     }
-  }, [W, H, img, zoom, pan, texts, selText, logo, qr, frame])
+  }, [W, H, img, zoom, pan, texts, logo, qr, frame])
 
   useEffect(() => { redraw() }, [redraw])
 
@@ -567,15 +558,7 @@ export default function DriveImageEditor() {
         <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
       </section>
     </div>
-  ) : (
-    <div className="space-y-3">
-      <div className={sectionH}><Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadTitle')}</div>
-      <button type="button" onClick={() => fileRef.current?.click()} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
-        <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
-      </button>
-      <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
-    </div>
-  )
+  ) : undefined // no source yet → the canvas dropzone is the single upload surface
 
   // Image adapter: the reversible unit is the source-layer URL (undo swaps the
   // photo back). The AI edit reference is the full flattened canvas (exportPng),
