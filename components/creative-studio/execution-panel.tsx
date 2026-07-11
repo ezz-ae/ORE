@@ -24,6 +24,8 @@ type ExecutionResult = {
   type: string
   output: any
   error?: string
+  /** Set when the output was persisted to the Library — deep link to its Drive editor. */
+  editorPath?: string
 }
 
 type IterationLog = {
@@ -190,7 +192,7 @@ export function ExecutionPanel({
                   const node = nodes.find((n) => n.id === update.nodeId)
                   setExecutionLog((prev) => [
                     ...prev,
-                    { nodeId: update.nodeId, type: node?.type || "unknown", output: update.output },
+                    { nodeId: update.nodeId, type: node?.type || "unknown", output: update.output, editorPath: update.editorPath },
                   ])
                   setCurrentNodeId(null)
                   const stepIndex = runSteps.findIndex((s) => s.nodeId === update.nodeId)
@@ -284,7 +286,7 @@ export function ExecutionPanel({
     <aside className="absolute right-0 top-0 z-10 h-full w-96 border-l border-border bg-card md:relative">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Run</h2>
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('pcs.run.title')}</h2>
           <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary">Durable</span>
         </div>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
@@ -295,14 +297,14 @@ export function ExecutionPanel({
       <div className="p-4 space-y-3">
         {/* Run to here selector */}
         <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground">Run up to</label>
+          <label className="text-xs text-muted-foreground">{t('pcs.run.runUpTo')}</label>
           <Select value={stopAtNodeId} onValueChange={setStopAtNodeId} disabled={isExecuting}>
             <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Select node to stop at" />
+              <SelectValue placeholder={t('pcs.run.selectNode')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__full__" className="text-xs">
-                Full workflow (run all)
+                {t('pcs.run.fullWorkflow')}
               </SelectItem>
               {stoppableNodes.map((node) => (
                 <SelectItem key={node.id} value={node.id} className="text-xs">
@@ -328,12 +330,12 @@ export function ExecutionPanel({
             {isExecuting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Running{stopAtNodeId !== "__full__" ? ` to ${getNodeLabel(stopAtNodeId)}` : ""}
+                {stopAtNodeId !== "__full__" ? t('pcs.run.runningTo', { node: getNodeLabel(stopAtNodeId) }) : t('pcs.run.runningAll')}
               </>
             ) : (
               <>
                 <Play className="mr-2 h-4 w-4" />
-                {stopAtNodeId !== "__full__" ? `Run to ${getNodeLabel(stopAtNodeId)}` : "Run All"}
+                {stopAtNodeId !== "__full__" ? t('pcs.run.runTo', { node: getNodeLabel(stopAtNodeId) }) : t('pcs.run.runAll')}
               </>
             )}
           </Button>
@@ -345,10 +347,10 @@ export function ExecutionPanel({
               <StopCircle className="h-4 w-4 text-amber-500 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-                  Stopped at {getNodeLabel(stoppedAt)}
+                  {t('pcs.run.stoppedAt', { node: getNodeLabel(stoppedAt) })}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Review the output above. If satisfied, lock the result and run the full workflow.
+                  {t('pcs.run.stoppedHint')}
                 </p>
                 <Button
                   size="sm"
@@ -360,7 +362,7 @@ export function ExecutionPanel({
                   }}
                 >
                   <Play className="mr-1.5 h-3 w-3" />
-                  Run Full Workflow
+                  {t('pcs.run.runFull')}
                 </Button>
               </div>
             </div>
@@ -406,10 +408,10 @@ export function ExecutionPanel({
                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                               )}
                               <span className="text-xs font-medium text-muted-foreground font-mono">
-                                Iteration {iter.iteration}
+                                {t('pcs.run.iteration', { n: String(iter.iteration) })}
                               </span>
                               {index === iterations.length - 1 && (
-                                <span className="text-xs text-primary ml-auto">latest</span>
+                                <span className="text-xs text-primary ml-auto">{t('pcs.run.latest')}</span>
                               )}
                             </button>
                             {expandedIterations.has(index) && (
@@ -452,8 +454,18 @@ export function ExecutionPanel({
                         )}
                         {result.output?.iterations && (
                           <p className="text-xs text-muted-foreground mt-1.5 pt-1.5 border-t border-border/50 font-mono">
-                            Completed in {result.output.iterations} iteration{result.output.iterations > 1 ? "s" : ""}
+                            {t('pcs.run.completedIn', { n: String(result.output.iterations), plural: result.output.iterations > 1 ? 's' : '' })}
                           </p>
+                        )}
+                        {result.editorPath && (
+                          <a
+                            href={result.editorPath}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1.5 inline-block text-xs text-primary underline underline-offset-2 hover:opacity-80"
+                          >
+                            {t('pcs.run.savedOpenEditor')}
+                          </a>
                         )}
                       </div>
                     </div>
@@ -466,7 +478,7 @@ export function ExecutionPanel({
 
         {executionLog.length === 0 && !error && !isExecuting && !currentNodeId && (
           <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">Click Run to execute</p>
+            <p className="text-sm text-muted-foreground">{t('pcs.run.clickToRun')}</p>
             <p className="text-xs text-muted-foreground/70 mt-2">Powered by Vercel Workflow</p>
           </div>
         )}

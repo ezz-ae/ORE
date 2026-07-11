@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { cookies } from "next/headers"
 import { verifySession, SESSION_COOKIE } from "@/lib/freehold/auth-edge"
 import { genText, genImage, genVideo } from "@/lib/creative-studio/providers"
+import { saveLibraryItem } from "@/lib/freehold/library"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -174,7 +175,28 @@ export async function POST(req: NextRequest) {
               outputs.set(node.id, output)
               done.add(node.id)
               executionLog.push({ nodeId: node.id, type: node.type || "unknown", output })
-              send({ type: "node_complete", nodeId: node.id, nodeType: node.type, output })
+              // Persist generated media: studio outputs used to evaporate with
+              // the canvas. Fresh image/video generations now land in the
+              // Library (→ Drive editors → ad media). Locked reuses don't
+              // re-save — the original Library row already exists.
+              let libraryId: string | null = null
+              let editorPath: string | null = null
+              const isMediaNode = node.type === "imageGeneration" || node.type === "videoGeneration"
+              const isFreshMedia = isMediaNode && !(node.data?.isLocked) &&
+                typeof output === "string" && /^(https?:\/\/|data:)/.test(output)
+              if (isFreshMedia) {
+                const kind = node.type === "imageGeneration" ? ("image" as const) : ("video" as const)
+                const label = str(node.data?.label) || (kind === "image" ? "Studio image" : "Studio video")
+                const item = await saveLibraryItem(user.email, { kind, title: `Studio — ${label}`, url: output as string }).catch(() => null)
+                if (item) {
+                  libraryId = item.id
+                  editorPath = `/freehold-intelligence/drive/editor/${kind}/${item.id}`
+                }
+              }
+              send({
+                type: "node_complete", nodeId: node.id, nodeType: node.type, output,
+                ...(libraryId ? { libraryId, editorPath } : {}),
+              })
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err)
               done.add(node.id)
