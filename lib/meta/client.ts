@@ -284,6 +284,8 @@ export async function createAdSet(params: {
   pixelId?: string
   /** Where a click/submit goes — shapes destination_type + promoted_object. */
   destination?: AdDestination
+  /** Cost-per-result ceiling in AED → COST_CAP bid strategy on the ad set. */
+  cplCapAED?: number
 }): Promise<{ id: string }> {
   const { adAccountId, pageId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -335,12 +337,16 @@ export async function createAdSet(params: {
     targeting_automation: { advantage_audience: advantageAudience },
   }
 
+  // The wizard's CPL cap is a REAL Meta COST_CAP: the algorithm keeps the
+  // average cost per result at or under bid_amount (fils). No cap → lowest cost.
+  const useCostCap = !!params.cplCapAED && params.cplCapAED > 0
   const body: Record<string, unknown> = {
     name:              params.name,
     campaign_id:       params.campaignId,
     billing_event:     'IMPRESSIONS',
     optimization_goal: optimizationGoal,
-    bid_strategy:      'LOWEST_COST_WITHOUT_CAP',
+    bid_strategy:      useCostCap ? 'COST_CAP' : 'LOWEST_COST_WITHOUT_CAP',
+    ...(useCostCap ? { bid_amount: Math.round(params.cplCapAED! * 100) } : {}),
     daily_budget:      params.dailyBudgetAED * 100, // AED → fils (smallest unit)
     targeting:         targetingSpec,
     status:            params.status,
@@ -850,6 +856,10 @@ export async function launchFullCampaign(params: {
   leadFormId?:  string
   /** E.164 number for 'whatsapp' / 'phone' destinations. */
   destinationPhone?: string
+  /** Lifetime spend ceiling in AED → Meta campaign spend_cap. */
+  lifetimeCapAED?: number
+  /** Cost-per-result ceiling in AED → ad set COST_CAP bid strategy. */
+  cplCapAED?: number
 }): Promise<LaunchCampaignResult> {
   const { adAccountId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -863,6 +873,11 @@ export async function launchFullCampaign(params: {
     // Budgets live on the ad set (not CBO) — Meta now requires this flag to
     // be explicit (subcode 4834011). False = classic per-ad-set budgets.
     is_adset_budget_sharing_enabled: false,
+    // The wizard's lifetime cap is a REAL Meta spend_cap (fils) — the
+    // campaign stops delivering once total spend reaches it.
+    ...(params.lifetimeCapAED && params.lifetimeCapAED > 0
+      ? { spend_cap: Math.round(params.lifetimeCapAED * 100) }
+      : {}),
   })
 
   // From here on, a failure must not leave a headless campaign behind.
@@ -890,6 +905,7 @@ export async function launchFullCampaign(params: {
     status:         params.launchStatus,
     pixelId:        pixelId ?? undefined,
     destination:    params.destination,
+    cplCapAED:      params.cplCapAED,
   }))
 
   // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad

@@ -3,6 +3,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { launchFullCampaign } from '@/lib/meta/client'
 import { MetaApiError, MetaConfigError } from '@/lib/meta/client'
 import { createLocalCampaign } from '@/lib/meta/local-store'
+import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { deductCreditsForCampaign, getCreditBalance } from '@/lib/freehold/credits-db'
@@ -102,9 +103,15 @@ export async function POST(req: NextRequest) {
       destination:      body.destination,
       leadFormId:       body.leadFormId,
       destinationPhone: body.destinationPhone,
+      lifetimeCapAED:   typeof body.lifetimeCapAED === 'number' && body.lifetimeCapAED > 0 ? body.lifetimeCapAED : undefined,
+      cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
     })
 
     await recordBrokerSpend(result.campaignId)
+    // Persist the wizard's autopilot policy — the autopilot pass reads it.
+    if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
+      await setCampaignAutoEnhance(result.campaignId, body.autoEnhance)
+    }
 
     return NextResponse.json({ ...result, brokerId }, { status: 201 })
   } catch (err) {
@@ -113,6 +120,9 @@ export async function POST(req: NextRequest) {
       // the wizard's success screen + detail page work end to end.
       const local = await createLocalCampaign(body, brokerId)
       await recordBrokerSpend(local.campaignId)
+      if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
+        await setCampaignAutoEnhance(local.campaignId, body.autoEnhance)
+      }
       return NextResponse.json({ ...local, brokerId, demo: true }, { status: 201 })
     }
     if (err instanceof MetaApiError) {

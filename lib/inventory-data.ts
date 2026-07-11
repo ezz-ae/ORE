@@ -43,12 +43,15 @@ function mapStatus(raw: string | null): PropertyStatus {
 // looks up) plus whether it is published right now. The project slug a page is
 // attached to is NOT what the public route resolves by, so we must carry the
 // page's own slug to build a link that won't 404.
-type LandingInfo = { slug: string; published: boolean }
+type LandingInfo = { slug: string; published: boolean; pendingReview: boolean }
 
 function mapLandingStatus(landing: LandingInfo | undefined): LandingStatus {
   if (!landing) return 'missing'
   // Reflect the real publish state — never infer "live" from a heuristic score.
-  return landing.published ? 'live' : 'pending_review'
+  // "Pending review" means someone actually requested publish authorization;
+  // a plain draft (or a scheduled/expired page) is a draft, not an approval queue.
+  if (landing.published) return 'live'
+  return landing.pendingReview ? 'pending_review' : 'draft'
 }
 
 function extractPaymentPlan(payload: Record<string, unknown> | null): string | null {
@@ -278,10 +281,11 @@ async function getLandingMap(): Promise<Map<string, LandingInfo>> {
         statusOk &&
         (from === null || now >= from) &&
         (to === null || now <= to)
+      const pendingReview = rawStatus.toLowerCase() === 'pending_publish'
       const existing = map.get(projectSlug)
       // Prefer a published page over a draft for the same project.
       if (!existing || (published && !existing.published)) {
-        map.set(projectSlug, { slug, published })
+        map.set(projectSlug, { slug, published, pendingReview })
       }
     }
     return map

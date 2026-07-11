@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import {
   Phone, MapPin, Check, TrendingUp, Shield, Star, Building2, Globe, Wifi,
   ChevronRight, MessageCircle, Sparkles, Clock, Award, Users, Car, Plane,
   ShoppingBag, GraduationCap, Coffee, Dumbbell, Trees, Waves, Sun, Moon,
 } from 'lucide-react'
+import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
 import {
   LP_CHROME, normalizeLpLang, lpDir, lpFill, translateLandingContent, type LpLang,
@@ -20,8 +22,11 @@ type Dict = Record<string, string>
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmtAed(n: number | null | undefined): string {
-  if (!n || n <= 0) return 'Price on request'
+function fmtAed(n: number | null | undefined, L?: Dict): string {
+  // The "on request" fallback is chrome text — translate it when a dict is
+  // at hand (render-time call sites); the EN literal only remains for
+  // server-side content that translateLandingContent localizes later.
+  if (!n || n <= 0) return L?.['price.onRequest'] ?? 'Price on request'
   if (n >= 1_000_000) return `AED ${(n / 1_000_000).toFixed(1)}M`
   return `AED ${(n / 1_000).toFixed(0)}K`
 }
@@ -55,11 +60,26 @@ function toObj(v: unknown): Record<string, unknown> {
 // When no landing page row exists yet, build the page from the LIVE inventory
 // project (never from seed data).
 
+// Inventory stores the plan as free text ("60/40", "20/50/30"). Only strict
+// numeric splits summing ≈100 are rendered as stages — anything else means we
+// don't know the structure, so the section is omitted rather than invented.
+function parsePaymentPlanText(text: string | null): Record<string, number> | null {
+  if (!text) return null
+  const nums = (text.match(/\d{1,3}/g) ?? []).map(Number).filter((n) => n > 0 && n <= 100)
+  const sum = nums.reduce((a, b) => a + b, 0)
+  if (sum < 95 || sum > 105) return null
+  if (nums.length === 2) return { downPayment: 0, duringConstruction: nums[0], onHandover: nums[1], postHandover: 0 }
+  if (nums.length === 3) return { downPayment: nums[0], duringConstruction: nums[1], onHandover: nums[2], postHandover: 0 }
+  if (nums.length === 4) return { downPayment: nums[0], duringConstruction: nums[1], onHandover: nums[2], postHandover: nums[3] }
+  return null
+}
+
 function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData | null {
   if (!prop) return null
 
   const priceText = fmtAed(prop.startingPriceAED)
   const yieldText = prop.roi ? `${prop.roi.toFixed(1)}% annual yield` : 'Strong returns'
+  const parsedPlan = parsePaymentPlanText(prop.paymentPlan)
 
   const sections: LandingSection[] = [
     {
@@ -82,7 +102,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
         ],
       },
     },
-    ...(prop.paymentPlan ? [{ type: 'payment-plan' as const, data: { downPayment: 20, duringConstruction: 50, onHandover: 30, postHandover: 0 } }] : []),
+    ...(parsedPlan ? [{ type: 'payment-plan' as const, data: parsedPlan }] : []),
     ...(prop.roi ? [{ type: 'roi' as const, data: { rentalYield: prop.roi, expectedRoi: prop.roi, startPriceAed: prop.startingPriceAED ?? 0 } }] : []),
     { type: 'golden-visa' as const, data: {} },
     { type: 'why-dubai' as const, data: {} },
@@ -111,6 +131,19 @@ async function getPage(slug: string): Promise<LandingPageData | null> {
   return inventoryToLandingPage(prop)
 }
 
+// Drafts, pending-authorization and out-of-schedule pages are staff-preview
+// only: the editor's iframe shares the workspace session cookie, so previews
+// keep working, while an anonymous visitor gets a 404 — the publish window
+// (publishFrom/publishTo) and the authorization gate are actually enforced.
+async function canPreviewDrafts(): Promise<boolean> {
+  try {
+    const token = (await cookies()).get(SESSION_COOKIE)?.value
+    return !!(await verifySession(token))
+  } catch {
+    return false
+  }
+}
+
 // ─── Section components ───────────────────────────────────────────────────────
 
 function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: LandingPageData; L: Dict; p: LpPalette }) {
@@ -119,7 +152,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
   const eyebrow = pick(d, 'eyebrow')
   const chips = pickArr(d, 'chips').map(toStr).filter(Boolean)
   const hasImage = page.heroImage && !page.heroImage.endsWith('/logo.png')
-  const price = chips[1] || fmtAed(page.project?.priceFromAed)
+  const price = chips[1] || fmtAed(page.project?.priceFromAed, L)
   const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in ${title} — please send me more info.`)}`
 
   return (
@@ -383,10 +416,12 @@ function KeyFactsSection({ d, p }: { d: Record<string, unknown>; p: LpPalette })
 }
 
 function PaymentPlanSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpPalette }) {
-  const down = Number(pick(d, 'downPayment')) || 20
-  const during = Number(pick(d, 'duringConstruction')) || 50
-  const onHand = Number(pick(d, 'onHandover')) || 30
+  // Only real numbers render — a missing plan must not become an invented one.
+  const down = Number(pick(d, 'downPayment')) || 0
+  const during = Number(pick(d, 'duringConstruction')) || 0
+  const onHand = Number(pick(d, 'onHandover')) || 0
   const post = Number(pick(d, 'postHandover')) || 0
+  if (down + during + onHand + post <= 0) return null
   const stages = [
     { label: L['payment.stage.down'], pct: down, sub: L['payment.stage.downSub'], color: '#D4AF37' },
     { label: L['payment.stage.during'], pct: during, sub: L['payment.stage.duringSub'], color: '#9B8020' },
@@ -736,12 +771,8 @@ function NeighborhoodSection({ d, page, L, p }: { d: Record<string, unknown>; pa
   const description = pick(d, 'description', 'body', 'about')
   const highlights = pickArr(d, 'highlights').map(toStr).filter(Boolean)
 
-  const defaultHighlights = [
-    lpFill(L['neighborhood.default1'], { area }),
-    L['neighborhood.default2'],
-    L['neighborhood.default3'],
-    L['neighborhood.default4'],
-  ]
+  // Only real, page-authored claims render — no invented area claims.
+  if (!description && !highlights.length) return null
 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
@@ -755,7 +786,7 @@ function NeighborhoodSection({ d, page, L, p }: { d: Record<string, unknown>; pa
             )}
           </div>
           <div className="space-y-3">
-            {(highlights.length ? highlights : defaultHighlights).map((h, i) => (
+            {highlights.map((h, i) => (
               <div key={i} className="flex items-start gap-3 rounded-xl border px-5 py-4" style={{ borderColor: p.surfaceBorder, background: p.surface }}>
                 <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/15">
                   <Check className="h-3 w-3 text-[#D4AF37]" />
@@ -943,7 +974,7 @@ function Section({ section, page, L, p }: { section: LandingSection; page: Landi
                 <h2 className="text-[34px] font-bold" style={{ color: p.textPrimary }}>{L['faq.title']}</h2>
                 <p className="mt-3 text-[14px] leading-relaxed" style={{ color: p.textFaint }}>{L['faq.subtitle']}</p>
               </div>
-              <FaqAccordion items={items} />
+              <FaqAccordion items={items} palette={p} />
             </div>
           </div>
         </section>
@@ -1003,13 +1034,14 @@ function ThemeToggle({ lang, theme, p }: { lang: LpLang; theme: LpTheme; p: LpPa
 }
 
 function Topbar({ page, L, lang, theme, p }: { page: LandingPageData; L: Dict; lang: LpLang; theme: LpTheme; p: LpPalette }) {
-  const price = fmtAed(page.project?.priceFromAed)
+  const hasPrice = !!page.project?.priceFromAed && page.project.priceFromAed > 0
+  const price = fmtAed(page.project?.priceFromAed, L)
   const waUrl = `https://wa.me/971504173622?text=${encodeURIComponent(`Hi, I'm interested in ${page.title}`)}`
   return (
     <div className="fixed left-0 right-0 top-0 z-50 border-b backdrop-blur-md" style={{ borderBottomColor: p.divider, background: p.topbarBg }}>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
         <div className="text-[13px] font-bold tracking-wider text-[#D4AF37]">FREEHOLD <span className="font-normal" style={{ color: p.textFaint }}>{L['topbar.brandSuffix']}</span></div>
-        {price !== 'Price on request' && <div className="hidden text-[12px] sm:block" style={{ color: p.textFaint }}>{L['topbar.from']} <span className="font-semibold" style={{ color: p.textMuted }}>{price}</span></div>}
+        {hasPrice && <div className="hidden text-[12px] sm:block" style={{ color: p.textFaint }}>{L['topbar.from']} <span className="font-semibold" style={{ color: p.textMuted }}>{price}</span></div>}
         <div className="flex items-center gap-2">
           <LangSwitcher lang={lang} theme={theme} />
           <ThemeToggle lang={lang} theme={theme} p={p} />
@@ -1058,6 +1090,9 @@ function Footer({ page, L, p }: { page: LandingPageData; L: Dict; p: LpPalette }
         </div>
         <div className="mt-8 border-t pt-6 text-center text-[10px] leading-relaxed" style={{ borderTopColor: p.divider, color: p.textFaint }}>
           © {new Date().getFullYear()} {L['footer.legal']}
+          {' · '}
+          {/* Required for Meta lead ads — the pre-flight test checks for it. */}
+          <a href="/privacy" className="underline decoration-dotted underline-offset-2 hover:text-[#D4AF37]">{L['footer.privacy']}</a>
         </div>
       </div>
     </footer>
@@ -1081,6 +1116,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const page = await getPage(slug)
   if (!page) return { title: 'Property | Freehold UAE' }
+  if (page.isDraft && !(await canPreviewDrafts())) return { title: 'Property | Freehold UAE' }
   return {
     title: page.seo.title || page.title,
     description: page.seo.description || page.subtitle,
@@ -1105,9 +1141,10 @@ export default async function LandingPage({
 
   const page = await getPage(slug)
   if (!page) return <NotFound L={L} p={palette} />
+  if (page.isDraft && !(await canPreviewDrafts())) return <NotFound L={L} p={palette} />
 
   const localized = await translateLandingContent(page, lang)
-  const price = fmtAed(localized.project?.priceFromAed)
+  const price = fmtAed(localized.project?.priceFromAed, L)
 
   return (
     <div className="min-h-screen" dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary }}>

@@ -77,8 +77,8 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
     setGeneratingId(p.id)
     const ok = await generateFor(p)
     setGeneratingId(null)
-    if (ok) toast.success(`Landing page generated for ${p.name}`)
-    else toast.error(`Could not generate a landing page for ${p.name}`)
+    if (ok) toast.success(t('lm.landings.genOk', { name: p.name }))
+    else toast.error(t('lm.landings.genFailed', { name: p.name }))
   }
 
   async function bulkCreate() {
@@ -90,8 +90,8 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
       if (await generateFor(p)) ok++
     }
     setBulkCreating(false)
-    if (ok) toast.success(`Generated ${ok} landing page${ok === 1 ? '' : 's'}`)
-    if (ok < targets.length) toast.error(`${targets.length - ok} could not be generated`)
+    if (ok) toast.success(t('lm.landings.genBulkOk', { n: String(ok) }))
+    if (ok < targets.length) toast.error(t('lm.landings.genBulkFailed', { n: String(targets.length - ok) }))
   }
 
   return (

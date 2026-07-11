@@ -129,6 +129,14 @@ export function AiEditorRail<S extends Snapshot = Snapshot>({
   const tRef = useRef(t); tRef.current = t
   const presetsRef = useRef(presets); presetsRef.current = presets
   const artifactRef = useRef(artifact); artifactRef.current = artifact
+  // Manual-edit warning state for CHAT-initiated undo: the rail (and its
+  // inline confirm box) is hidden below xl, so the chat path must resolve the
+  // warning with a native confirm — never strand the action invisibly.
+  const undoTopRef = useRef('')
+  undoTopRef.current = undoStack[undoStack.length - 1]?.instruction ?? ''
+  const undoNeedsWarnRef = useRef(false)
+  undoNeedsWarnRef.current =
+    undoStack.length > 0 && revision !== undoStack[undoStack.length - 1].revisionAtCommit
 
   useEffect(() => {
     const surface: ExpertEditorSurface = {
@@ -140,7 +148,14 @@ export function AiEditorRail<S extends Snapshot = Snapshot>({
       })),
       apply: (instruction) => runRef.current(instruction),
       canUndo: () => undoLenRef.current > 0,
-      undo: () => undoRef.current(false),
+      undo: () => {
+        if (undoNeedsWarnRef.current) {
+          const ok = typeof window !== 'undefined' &&
+            window.confirm(tRef.current('ed.ai.undoWarnManual', { instruction: undoTopRef.current }))
+          return ok ? undoRef.current(true) : false
+        }
+        return undoRef.current(false)
+      },
     }
     registerExpertEditor(surface)
     return () => unregisterExpertEditor(surface)

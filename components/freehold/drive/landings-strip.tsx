@@ -26,6 +26,8 @@ export function LandingsStrip() {
   if (!loaded || landings.length === 0) return null
 
   const statusColor = (s: string) => (s === 'published' ? '#34D399' : s === 'pending' ? '#FBBF24' : '#94A3B8')
+  const statusLabel = (s: string) =>
+    s === 'published' ? t('drive.landings.published') : s === 'pending' ? t('drive.landings.pending') : t('drive.landings.draft')
 
   return (
     <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
@@ -39,7 +41,7 @@ export function LandingsStrip() {
           <div key={l.slug} className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-2/60 p-3">
             <div className="flex items-start justify-between gap-2">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-teal-400/15 text-teal-400"><Monitor className="h-4 w-4" /></span>
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: `${statusColor(l.status)}22`, color: statusColor(l.status) }}>{l.status}</span>
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: `${statusColor(l.status)}22`, color: statusColor(l.status) }}>{statusLabel(l.status)}</span>
             </div>
             <p className="line-clamp-2 text-xs font-medium text-slate-200">{l.title}</p>
             <div className="mt-auto flex items-center gap-1.5">

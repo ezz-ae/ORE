@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Clock, Download, RefreshCw, AlertCircle, FileText } from 'lucide-react'
+import { isMetaConfigErrorMessage } from '@/lib/meta/error-messages'
 import { useT } from '@/lib/i18n/provider'
 
 interface FormQuestion { type: string; label: string; id: string }
@@ -58,7 +59,8 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
       setForm(formData.form)
       setLeads(leadsData.leads ?? [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('pforms.error.unexpected'))
+      const msg = e instanceof Error ? e.message : ''
+      setError(isMetaConfigErrorMessage(msg) ? t('lm.meta.notConnectedHint') : msg || t('pforms.error.unexpected'))
     } finally {
       setLoading(false)
     }
@@ -129,6 +131,9 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
   if (!form) return null
 
   const statusColor = form.status === 'ACTIVE' ? 'text-gold' : 'text-slate-500'
+  // Same vocabulary as the forms list — never show raw Meta enums.
+  const statusLabel = form.status === 'ACTIVE' ? t('lm.forms.status.active')
+    : form.status === 'ARCHIVED' ? t('lm.forms.status.archived') : t('lm.forms.status.deleted')
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
@@ -148,7 +153,7 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
         <p className="mt-2 text-sm text-slate-500">
           {t('pforms.detail.created', { date: new Date(form.created_time).toLocaleDateString('en-AE', { dateStyle: 'medium' }) })}
           {' · '}
-          <span className={statusColor}>{form.status}</span>
+          <span className={statusColor}>{statusLabel}</span>
         </p>
       </section>
 
@@ -257,7 +262,6 @@ export default function FormDetailPage({ params }: { params: Promise<{ formId: s
                   <div key={q.id} className="flex items-center gap-2.5 text-xs">
                     <span className="text-slate-500 w-4 text-right shrink-0">{i + 1}.</span>
                     <span className="text-slate-300">{q.label ?? q.type}</span>
-                    <span className="ml-auto text-xs font-mono text-slate-500">{q.type}</span>
                   </div>
                 ))}
               </div>

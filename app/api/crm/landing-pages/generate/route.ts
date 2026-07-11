@@ -131,26 +131,15 @@ Target audience: ${audience}
     "title": "Residence Types & Pricing",
     "units": [
       {
-        "type": "<e.g. '1 Bedroom Apartment'>",
-        "size": "<realistic sqft range for ${project.area || "Dubai"}, e.g. '650–850 sqft'>",
-        "price": "<realistic AED price range based on project data, e.g. 'AED 1.2M – 1.6M'>",
-        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
-      },
-      {
-        "type": "<e.g. '2 Bedroom Apartment'>",
-        "size": "<realistic sqft range>",
-        "price": "<realistic AED price range>",
-        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
-      },
-      {
-        "type": "<e.g. '3 Bedroom Penthouse' or '3BR + Maid'>",
-        "size": "<realistic sqft range>",
-        "price": "<realistic AED price range>",
-        "features": ["<feature 1>", "<feature 2>", "<feature 3>"]
+        "type": "<unit type ONLY if named in PROJECT DATA, e.g. '1 Bedroom Apartment'>",
+        "size": "<sqft ONLY if present in PROJECT DATA — otherwise write null, never estimate>",
+        "price": "<AED price ONLY from PROJECT DATA (priceFrom/priceTo) — otherwise write null, never estimate>",
+        "features": ["<feature from PROJECT DATA or the area's verifiable positioning>"]
       }
     ]
   }
-}`,
+}
+(If PROJECT DATA names no unit types at all, OMIT the units section entirely.)`,
     "market-intelligence": `{
   "type": "market-intelligence",
   "data": {
@@ -314,6 +303,11 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 Rules:
 - Never invent financial guarantees or claim "guaranteed returns"
 - Use "projected" or "estimated" for yield/ROI figures
+- NUMBERS ARE SACRED: every price, size, percentage and date must come from
+  PROJECT DATA verbatim. If a number is not in the data, omit the field (null)
+  or omit the whole section — never estimate "realistic" figures.
+- payment-plan numbers must be copied exactly from PROJECT DATA; if the data
+  carries no payment plan, OMIT the payment-plan section entirely.
 - All copy must be publication-ready, zero placeholders
 - Write as Freehold's expert team, not as an AI
 - Headlines must be specific to ${project.name || "this property"}, not generic Dubai copy`

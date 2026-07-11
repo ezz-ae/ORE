@@ -150,13 +150,18 @@ export async function PATCH(
     )
 
     // Layout canvas: persist a reordered / show-hidden section list when sent.
-    // Stored as-is to the sections column; the public page renders from it.
+    // Written to BOTH sections_json and sections: every reader
+    // (getLandingPageBySlug / getLandingPageForEditor) prefers sections_json,
+    // which the create/generate routes populate — writing only `sections`
+    // would be silently shadowed by the stale sections_json.
     if (hasKey(body, "sections") && Array.isArray(body.sections)) {
       const clean = (body.sections as unknown[])
         .filter((s): s is Record<string, unknown> => !!s && typeof s === "object" && typeof (s as Record<string, unknown>).type === "string")
         .map((s) => ({ type: String(s.type), data: s.data && typeof s.data === "object" ? s.data : {} }))
       await query(
-        `UPDATE freehold_site_project_landing_pages SET sections = $2::jsonb, updated_at = now() WHERE lower(slug) = $1`,
+        `UPDATE freehold_site_project_landing_pages
+         SET sections_json = $2::jsonb, sections = $2::jsonb, updated_at = now()
+         WHERE lower(slug) = $1`,
         [slug.trim().toLowerCase(), JSON.stringify(clean)],
       )
     }

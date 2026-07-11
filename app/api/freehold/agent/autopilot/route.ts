@@ -8,6 +8,7 @@ import {
   listCampaigns, getCampaignInsights, updateCampaignStatus,
   listAdSets, updateAdSet, MetaConfigError,
 } from '@/lib/meta/client'
+import { getAutoEnhanceModes } from '@/lib/meta/campaign-prefs'
 import { saveLibraryItem } from '@/lib/freehold/library'
 
 export const runtime = 'nodejs'
@@ -48,8 +49,17 @@ export async function POST() {
   const actions: Array<Record<string, unknown>> = []
   try {
     const campaigns = (await listCampaigns()).filter((c) => c.status === 'ACTIVE').slice(0, 10)
+    // The wizard's per-campaign autopilot policy, persisted at launch:
+    // 'off' → skip, 'approval' → record matches without mutating, 'on' → act.
+    // Campaigns launched before the policy existed default to 'approval'.
+    const enhanceModes = await getAutoEnhanceModes(campaigns.map((c) => c.id))
 
     for (const campaign of campaigns) {
+      const mode = enhanceModes.get(campaign.id) ?? 'approval'
+      if (mode === 'off') {
+        actions.push({ campaign: campaign.name, action: 'skipped', reason: 'auto-enhancement is OFF for this campaign' })
+        continue
+      }
       const campaignRules = enabled.filter((r) => !r.campaignId || r.campaignId === campaign.id)
       if (campaignRules.length === 0) continue
 
@@ -74,6 +84,14 @@ export async function POST() {
       for (const match of evaluateRules(campaignRules, metrics)) {
         const rule = match.rule
         try {
+          if (mode === 'approval' && rule.action !== 'notify') {
+            // Approval mode: the match is real, the action waits for a human.
+            actions.push({
+              campaign: campaign.name, rule: rule.id, action: rule.action,
+              metric: rule.metric, value: match.currentValue, needsApproval: true,
+            })
+            continue
+          }
           if (rule.action === 'pause') {
             await updateCampaignStatus(campaign.id, 'PAUSED')
             actions.push({ campaign: campaign.name, rule: rule.id, action: 'pause', metric: rule.metric, value: match.currentValue })

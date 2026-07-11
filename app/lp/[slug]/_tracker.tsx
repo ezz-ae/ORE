@@ -11,17 +11,34 @@ interface TrackerProps {
   tiktokPixelId?: string
 }
 
+/**
+ * UTM attribution, first-touch per session. The lang/theme switchers rebuild
+ * the query string (wiping utm_*), so the values captured on arrival are kept
+ * in sessionStorage — the lead form reads them at submit time.
+ */
+export function collectUtm(): Record<string, string> {
+  try {
+    const utm: Record<string, string> = {}
+    const params = new URLSearchParams(window.location.search)
+    for (const key of ['source', 'medium', 'campaign', 'term', 'content', 'id']) {
+      const v = params.get(`utm_${key}`)
+      if (v) utm[key] = v
+    }
+    if (Object.keys(utm).length > 0) {
+      sessionStorage.setItem('_fp_utm', JSON.stringify(utm))
+      return utm
+    }
+    const stored = sessionStorage.getItem('_fp_utm')
+    return stored ? (JSON.parse(stored) as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function Tracker({ slug, projectSlug, metaPixelId, googleTagId, googleConversionId, tiktokPixelId }: TrackerProps) {
   useEffect(() => {
     // Internal page_view
-    const utm: Record<string, string> = {}
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      for (const key of ['source', 'medium', 'campaign', 'term', 'content', 'id']) {
-        const v = params.get(`utm_${key}`)
-        if (v) utm[key] = v
-      }
-    }
+    const utm = collectUtm()
     fetch('/api/lp-analytics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
