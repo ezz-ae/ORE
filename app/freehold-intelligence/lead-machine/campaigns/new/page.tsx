@@ -637,7 +637,7 @@ export default function NewCampaignPage() {
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
-            href={`/freehold-intelligence/lead-machine/campaigns/${launched.campaignId}`}
+            href={`/freehold-intelligence/ads-live/meta/${launched.campaignId}`}
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
           >
             {t('lm.newCampaign.success.openDashboard')}

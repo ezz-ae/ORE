@@ -107,7 +107,7 @@ export function CampaignList({ campaigns }: { campaigns: Campaign[] }) {
           return (
             <Link
               key={campaign.id}
-              href={`/freehold-intelligence/lead-machine/campaigns/${campaign.id}`}
+              href={`/freehold-intelligence/ads-live/meta/${campaign.id}`}
               className="group flex items-start justify-between gap-4 rounded-[20px] border border-line bg-surface p-5 transition hover:border-gold/25"
             >
               <div className="min-w-0 flex-1">

@@ -348,13 +348,8 @@ const SMOKE_TESTS: SmokeTest[] = [
       if (res.status === 404) throw new Error("/api/freehold/chat must not 404")
     }),
   },
-  {
-    name: "POST /api/freehold/ai/chat — alias resolves (not 404)",
-    critical: false,
-    run: () => hit("POST", "/api/freehold/ai/chat", { message: "What can you help with?" }, (res) => {
-      if (res.status === 404) throw new Error("/api/freehold/ai/chat must not 404")
-    }),
-  },
+  // (the /api/freehold/ai/chat alias was removed — /api/freehold/chat is the
+  //  single compat alias for the Expert chat)
 
   // ── Private routes remain 401 unauthenticated ────────────────────
   ...[
