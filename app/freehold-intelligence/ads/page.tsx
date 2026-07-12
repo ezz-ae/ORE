@@ -4,7 +4,7 @@ import Link from 'next/link'
 import {
   Megaphone, Facebook, Chrome, Activity, Rocket, FileText,
   ImageIcon, Sparkles, LayoutTemplate, Target, GitBranch,
-  TrendingUp, Inbox, ArrowUpRight,
+  TrendingUp, Inbox, ArrowUpRight, Users2,
 } from 'lucide-react'
 import { Section } from '@/components/freehold/ui'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
@@ -86,6 +86,13 @@ const META: SubApp[] = [
     metricKey: 'lm.ads.targeting.metric',
     accent: '#F472B6', card: 'border-pink-400/15 hover:border-pink-400/30',
     icon: 'text-pink-400 bg-pink-400/10 border-pink-400/20',
+  },
+  {
+    id: 'audiences', labelKey: 'lm.ads.audiences.label', subKey: 'lm.ads.audiences.sub',
+    href: '/freehold-intelligence/lead-machine/audiences', Icon: Users2,
+    metricKey: 'lm.ads.audiences.metric',
+    accent: '#34D399', card: 'border-emerald-400/15 hover:border-emerald-400/30',
+    icon: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
   },
 ]
 
