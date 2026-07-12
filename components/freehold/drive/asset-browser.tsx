@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
-  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput, Upload, Cloud,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput, Upload, Cloud, FilePlus,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
@@ -64,6 +64,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   // upload-from-device
   const fileInput = useRef<HTMLInputElement | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -96,6 +97,22 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   }, [items, filter, query, sort, activeFolder])
 
   const total = shelves.reduce((n, g) => n + g.rows.length, 0)
+
+  // Blank-start: create an empty document and open it in the doc editor (which
+  // offers one-click templates when empty). The Media Editor's "new" entry.
+  async function newDoc() {
+    if (creating) return
+    setCreating(true)
+    try {
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'note', title: t('drive.newDoc.title'), content: '', folder: activeFolder || undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.item?.id) { toast.error(t('drive.saveFailed')); return }
+      router.push(`/freehold-intelligence/drive/editor/doc/${d.item.id}`)
+    } catch { toast.error(t('drive.saveFailed')) } finally { setCreating(false) }
+  }
 
   async function addByUrl() {
     if (!aTitle.trim() || !/^https?:\/\//.test(aUrl.trim())) { toast.error(t('drive.needUrl')); return }
@@ -226,6 +243,10 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
         <input ref={fileInput} type="file" hidden
           accept="image/*,application/pdf,text/plain,text/markdown,text/csv,.txt,.md,.csv,.json"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(f); e.target.value = '' }} />
+        <button type="button" onClick={() => void newDoc()} disabled={creating}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+          {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FilePlus className="h-3.5 w-3.5" />} {t('drive.newDoc.btn')}
+        </button>
         <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading}
           className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
           {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {t('drive.upload.btn')}
