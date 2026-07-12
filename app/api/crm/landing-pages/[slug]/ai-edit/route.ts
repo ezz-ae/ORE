@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser, isAdminRole } from "@/lib/auth"
 import { geminiGenerate, geminiText } from "@/lib/gemini-rest"
+import { googleAiKey } from "@/lib/creative-studio/providers"
+import { userSafeAiError } from "@/lib/freehold/ai-errors"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -55,7 +57,7 @@ export async function POST(
 
   // Honest failure handling: without a key we can't do anything real, so tell
   // the UI the feature is unavailable rather than faking an answer.
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = googleAiKey()
   if (!apiKey) {
     return NextResponse.json({ changes: {}, note: "", unavailable: true })
   }
@@ -84,11 +86,15 @@ Return ONLY JSON, no markdown:
     data = await geminiGenerate(
       apiKey,
       [{ role: "user", parts: [{ text: prompt }] }],
-      { temperature: 0.8, maxOutputTokens: 1024, responseMimeType: "application/json" },
+      { temperature: 0.8, maxOutputTokens: 2048, responseMimeType: "application/json" },
     )
   } catch (error) {
-    console.error("[landing-ai-edit] gemini error", error)
-    return NextResponse.json({ error: "The AI request failed. Try again." }, { status: 502 })
+    // Raw provider detail (quota / key) goes to the log; the editor shows a
+    // plain sentence a marketer can act on.
+    return NextResponse.json(
+      { error: userSafeAiError(error, "The AI edit didn’t go through — try again in a moment.") },
+      { status: 502 },
+    )
   }
 
   const raw = geminiText(data).replace(/^```(?:json)?/i, "").replace(/```$/, "").trim()
