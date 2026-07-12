@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
-  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
@@ -15,6 +15,9 @@ import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type E
 const SHIPPED_EDITORS: EditorType[] = ['doc', 'image', 'video', 'pdf']
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; createdBy: string; createdAt: string }
+type Landing = { slug: string; title: string; status: string; heroImage: string; area: string; priceFromAed: number | null; leads: number; views: number; updatedAt: string | null }
+
+const fmtPrice = (n: number | null) => n && n >= 1_000_000 ? `AED ${(n / 1_000_000).toFixed(1)}M` : n && n >= 1000 ? `AED ${Math.round(n / 1000)}K` : n ? `AED ${n}` : ''
 
 const KINDS: DriveKind[] = ['image', 'video', 'pdf', 'creative', 'report', 'note']
 type SortKey = 'new' | 'old' | 'az'
@@ -45,8 +48,9 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const t = useT()
   const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
+  const [landings, setLandings] = useState<Landing[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<DriveKind | 'all'>('all')
+  const [filter, setFilter] = useState<DriveKind | 'all' | 'landing'>('all')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('new')
   const [preview, setPreview] = useState<Item | null>(null)
@@ -60,9 +64,12 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/freehold/library', { cache: 'no-store' })
-      const d = await res.json()
-      if (Array.isArray(d.items)) setItems(d.items as Item[])
+      const [assets, lps] = await Promise.all([
+        fetch('/api/freehold/library', { cache: 'no-store' }).then((r) => r.json()).catch(() => ({})),
+        fetch('/api/freehold/drive/landings', { cache: 'no-store' }).then((r) => r.json()).catch(() => ({})),
+      ])
+      if (Array.isArray(assets.items)) setItems(assets.items as Item[])
+      if (Array.isArray(lps.landings)) setLandings(lps.landings as Landing[])
     } catch { /* keep last */ } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
@@ -179,6 +186,11 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
       {/* Kind filter */}
       <div className="mb-6 flex flex-wrap gap-1.5">
         <button type="button" onClick={() => setFilter('all')} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filter === 'all' ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>{t('nb.lib.all')}</button>
+        {landings.length > 0 && (
+          <button type="button" onClick={() => setFilter(filter === 'landing' ? 'all' : 'landing')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${filter === 'landing' ? 'border-teal-400/40 bg-teal-400/15 text-teal-300' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+            <Monitor className="h-3 w-3" /> {t('drive.landings')}<span className="text-[10px] text-slate-500">{landings.length}</span>
+          </button>
+        )}
         {KINDS.map((k) => {
           const n = items.filter((i) => i.kind === k).length
           return (
@@ -191,11 +203,55 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
 
       {loading ? (
         <div className="flex items-center gap-2 py-16 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
-      ) : total === 0 ? (
+      ) : total === 0 && landings.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line py-16 text-center text-sm text-slate-500">{t('drive.empty')}</div>
       ) : (
         <div className="space-y-8">
-          {shelves.map(({ kind, rows }) => {
+          {(filter === 'all' || filter === 'landing') && landings.length > 0 && (() => {
+            const q = query.trim().toLowerCase()
+            const shown = q ? landings.filter((l) => l.title.toLowerCase().includes(q) || l.area.toLowerCase().includes(q)) : landings
+            if (!shown.length) return null
+            return (
+              <section>
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="grid h-6 w-6 place-items-center rounded-lg bg-teal-400/15 text-teal-300"><Monitor className="h-3.5 w-3.5" /></span>
+                  <h2 className="text-[13px] font-semibold text-slate-200">{t('drive.landings')}</h2>
+                  <span className="text-[11px] text-slate-500">{shown.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {shown.map((l) => (
+                    <div key={l.slug} role="button" tabIndex={0}
+                      onClick={() => router.push(`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`) }}
+                      className="group relative cursor-pointer overflow-hidden rounded-xl border border-line bg-surface transition hover:border-teal-400/30">
+                      <div className="relative aspect-[4/3] w-full bg-surface-2">
+                        {l.heroImage
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={l.heroImage} alt="" loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.02]" />
+                          : <div className="flex h-full items-center justify-center text-teal-300/50"><Monitor className="h-8 w-8" /></div>}
+                        <span className={`absolute end-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${l.status === 'published' ? 'bg-emerald-500/85 text-white' : l.status === 'pending' ? 'bg-amber-500/85 text-black' : 'bg-slate-700/85 text-slate-200'}`}>
+                          {t(`drive.lp.${l.status}`)}
+                        </span>
+                      </div>
+                      <div className="p-3">
+                        <p className="truncate text-[13px] font-semibold text-slate-100">{l.title}</p>
+                        <p className="mt-0.5 truncate text-[11px] text-slate-500">{[l.area, fmtPrice(l.priceFromAed)].filter(Boolean).join(' · ')}</p>
+                        <div className="mt-1.5 flex items-center gap-3 text-[10px] text-slate-500">
+                          <span>{t('drive.lp.leads', { n: l.leads })}</span>
+                          <span>{t('drive.lp.views', { n: l.views })}</span>
+                        </div>
+                      </div>
+                      <div className="pointer-events-none absolute inset-x-2 bottom-2 flex justify-end opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                        <Link href={`/freehold-intelligence/lead-machine/landings/${l.slug}/edit`} onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded-full bg-teal-400 px-2.5 py-1 text-[11px] font-semibold text-black shadow-lg"><Pencil className="h-3 w-3" /> {t('drive.edit')}</Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )
+          })()}
+          {filter !== 'landing' && shelves.map(({ kind, rows }) => {
             const meta = KIND_META[kind]
             const isMedia = kind === 'image' || kind === 'video'
             return (
