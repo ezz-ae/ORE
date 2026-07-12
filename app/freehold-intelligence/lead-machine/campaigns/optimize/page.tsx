@@ -132,7 +132,7 @@ export default function CampaignOptimizePage() {
                   <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${i === 0 ? 'bg-gold/15 text-gold' : 'bg-surface-2 text-slate-400'}`}>{i + 1}</span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-white">{c.name}</div>
-                    <div className="mt-0.5 text-xs text-slate-500 capitalize">{c.platform} · {c.leads} leads · AED {c.spendAED.toLocaleString()}</div>
+                    <div className="mt-0.5 text-xs text-slate-500 capitalize">{t('lm.optimize.rowMeta', { platform: c.platform, n: c.leads, spend: c.spendAED.toLocaleString() })}</div>
                   </div>
                   <div className={`flex shrink-0 items-center gap-1 text-sm font-semibold ${i === 0 ? 'text-emerald-400' : i === ranked.length - 1 ? 'text-red-300' : 'text-slate-300'}`}>
                     {i === 0 ? <TrendingDown className="h-3.5 w-3.5" /> : i === ranked.length - 1 ? <TrendingUp className="h-3.5 w-3.5" /> : null}

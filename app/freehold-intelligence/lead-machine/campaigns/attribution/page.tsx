@@ -183,7 +183,7 @@ export default function CampaignAttributionPage() {
             {t(labelKey)}
           </button>
         ))}
-        <span className="ml-2 text-xs text-slate-600">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</span>
+        <span className="ml-2 text-xs text-slate-600">{t('lm.attribution.campaignCount', { n: campaigns.length })}</span>
       </div>
 
       {/* Campaign cards — live campaigns matched to the CRM leads they produced */}
@@ -252,7 +252,7 @@ export default function CampaignAttributionPage() {
                   <div className="mt-4">
                     <div className="mb-1.5 flex items-center justify-between text-xs text-slate-600">
                       <span>{t('lm.attribution.cplTarget', { avg: avg.toFixed(0) })}</span>
-                      <span className={info.color}>{campaign.cpl < avg ? `AED ${(avg - campaign.cpl).toFixed(0)} below` : `AED ${(campaign.cpl - avg).toFixed(0)} above`}</span>
+                      <span className={info.color}>{campaign.cpl < avg ? t('lm.attribution.belowAvg', { n: (avg - campaign.cpl).toFixed(0) }) : t('lm.attribution.aboveAvg', { n: (campaign.cpl - avg).toFixed(0) })}</span>
                     </div>
                     <div className="relative h-1.5 overflow-hidden rounded-full bg-surface-2">
                       <div className="absolute top-0 h-full w-px bg-white/20" style={{ left: `${avgPct}%` }} />
@@ -274,7 +274,7 @@ export default function CampaignAttributionPage() {
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
                           <Users className="h-3 w-3" />
-                          {t('lm.attribution.crmAttribution')} — {campaign.crmLeads.length} lead{campaign.crmLeads.length !== 1 ? 's' : ''}
+                          {t('lm.attribution.crmAttribution')} — {t('lm.attribution.leadCount', { n: campaign.crmLeads.length })}
                         </div>
                         <Link
                           href="/freehold-intelligence/crm"
