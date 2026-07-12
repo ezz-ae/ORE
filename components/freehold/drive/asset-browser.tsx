@@ -304,6 +304,12 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
                   <span className="grid h-6 w-6 place-items-center rounded-lg bg-teal-400/15 text-teal-300"><Monitor className="h-3.5 w-3.5" /></span>
                   <h2 className="text-[13px] font-semibold text-slate-200">{t('drive.landings')}</h2>
                   <span className="text-[11px] text-slate-500">{shown.length}</span>
+                  {/* One system: the Drive shows your live pages; the manager
+                      creates them from inventory. Same store, same editor. */}
+                  <Link href="/freehold-intelligence/lead-machine/landings"
+                    className="ms-auto inline-flex items-center gap-1 text-[11px] font-medium text-teal-300/90 transition hover:text-teal-200">
+                    {t('drive.landings.manage')} <ExternalLink className="h-3 w-3" />
+                  </Link>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {shown.map((l) => (

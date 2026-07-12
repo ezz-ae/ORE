@@ -1,15 +1,10 @@
 'use client'
 
 import { AssetBrowser } from '@/components/freehold/drive/asset-browser'
-import { LandingsStrip } from '@/components/freehold/drive/landings-strip'
 
-// Drive Home — everything you make: landing pages (their own editor) + the
-// Library store, each opening in the right editor.
+// Drive Home — everything you make: landing pages (as real-estate cards that
+// open in their editor) alongside the Library store. Landings render inside
+// the AssetBrowser now; the standalone strip was a duplicate and was removed.
 export default function DriveHomePage() {
-  return (
-    <>
-      <LandingsStrip />
-      <AssetBrowser scope="all" />
-    </>
-  )
+  return <AssetBrowser scope="all" />
 }
