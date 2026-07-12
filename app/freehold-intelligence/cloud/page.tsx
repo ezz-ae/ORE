@@ -60,6 +60,7 @@ export default function CloudPage() {
   const [busyNames, setBusyNames] = useState<Set<string>>(new Set())
   const [callBusy, setCallBusy] = useState(false)
   const [callScript, setCallScript] = useState<string | null>(null)
+  const [offerBusy, setOfferBusy] = useState(false)
 
   const fileInput = useRef<HTMLInputElement | null>(null)
   const dragDepth = useRef(0)
@@ -166,6 +167,24 @@ export default function CloudPage() {
     } catch { toast.error(t('cloud.call.failed')) } finally { setCallBusy(false) }
   }
 
+  // Generate a watermarked DRAFT sales offer from the folder's brochures — a
+  // broker sends it to gauge whether a lead is serious. Saved into the folder.
+  async function generateOffer() {
+    const folder = activeFolder && activeFolder !== '' ? activeFolder : null
+    setOfferBusy(true)
+    try {
+      const res = await fetch('/api/freehold/cloud/broker-doc', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'offer', folder, projectName: folder ?? undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.file) { toast.error(d.error || t('cloud.offer.failed')); return }
+      toast.success(t('cloud.offer.done'))
+      await load()
+      if (d.file?.url) window.open(d.file.url as string, '_blank', 'noopener')
+    } catch { toast.error(t('cloud.offer.failed')) } finally { setOfferBusy(false) }
+  }
+
   async function moveFile(file: CloudFile) {
     const name = window.prompt(t('cloud.movePrompt'), file.folder ?? '')
     if (name === null) return
@@ -215,6 +234,10 @@ export default function CloudPage() {
           <button type="button" onClick={() => void generateCallScript()} disabled={callBusy} title={t('cloud.call.hint')}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
             {callBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PhoneCall className="h-3.5 w-3.5" />} {t('cloud.call.btn')}
+          </button>
+          <button type="button" onClick={() => void generateOffer()} disabled={offerBusy} title={t('cloud.offer.hint')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+            {offerBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileType2 className="h-3.5 w-3.5" />} {t('cloud.offer.btn')}
           </button>
           <button type="button" onClick={() => newFolder()}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
