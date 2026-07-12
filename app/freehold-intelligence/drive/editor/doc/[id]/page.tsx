@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Loader2, Download, Printer, Eye, Pencil } from 'lucide-react'
+import { Loader2, Download, Printer, Eye, Pencil, LayoutTemplate } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
@@ -26,13 +26,25 @@ const DOC_PRESETS: PresetChip[] = [
   { labelKey: 'ed.ai.preset.doc.translateEnLabel', instructionKey: 'ed.ai.preset.doc.translateEn' },
 ]
 
+const DOC_TEMPLATES = [
+  { key: 'brochure',   labelKey: 'ed.doc.tpl.brochure',   bodyKey: 'ed.doc.tpl.brochureBody' },
+  { key: 'offer',      labelKey: 'ed.doc.tpl.offer',      bodyKey: 'ed.doc.tpl.offerBody' },
+  { key: 'report',     labelKey: 'ed.doc.tpl.report',     bodyKey: 'ed.doc.tpl.reportBody' },
+  { key: 'whatsapp',   labelKey: 'ed.doc.tpl.whatsapp',   bodyKey: 'ed.doc.tpl.whatsappBody' },
+  { key: 'social',     labelKey: 'ed.doc.tpl.social',     bodyKey: 'ed.doc.tpl.socialBody' },
+]
+
 export default function DriveDocEditor() {
   const t = useT()
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const id = String(params?.id || '')
 
-  const [item, setItem] = useState<Item | null>(null)
+  // One-click document templates — a blank doc offers real-estate starters
+  // the broker can fill and then run the AI presets on. Structure only; no
+  // invented numbers (fields are [bracketed] to complete).
+  const applyTemplate = (body: string) => { setContent(body); setDirty(true); setRevision((r) => r + 1) }
+    const [item, setItem] = useState<Item | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [dirty, setDirty] = useState(false)
@@ -152,6 +164,19 @@ export default function DriveDocEditor() {
       <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6">
         <input value={title} onChange={(e) => { setTitle(e.target.value); setDirty(true) }} placeholder={t('drive.addTitlePh')}
           className="mb-3 w-full bg-transparent text-xl font-semibold text-white outline-none placeholder:text-slate-600" />
+        {!content.trim() && !(isReport && showPreview) && (
+          <div className="mb-3 rounded-xl border border-gold/20 bg-gold/[0.04] p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold"><LayoutTemplate className="h-3.5 w-3.5" /> {t('ed.doc.tpl.title')}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {DOC_TEMPLATES.map((tpl) => (
+                <button key={tpl.key} type="button" onClick={() => applyTemplate(t(tpl.bodyKey))}
+                  className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-gold/30 hover:text-white">
+                  {t(tpl.labelKey)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {isReport && showPreview ? (
           <div className="prose prose-invert prose-sm max-w-none rounded-xl border border-line bg-surface-2/40 p-4 text-slate-200" dangerouslySetInnerHTML={{ __html: content }} />
         ) : (
