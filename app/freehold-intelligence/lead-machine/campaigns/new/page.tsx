@@ -866,7 +866,7 @@ export default function NewCampaignPage() {
             {/* Campaign sources — brochure/link/file material that completes the
                 campaign when the project is a NEW LAUNCH with no landing page.
                 Feeds the AI copy generation on step 3. */}
-            <div className="rounded-2xl border border-line bg-surface p-4">
+            <div className="rounded-2xl border border-line bg-surface p-4" data-coach="wiz-sources">
               <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
                 <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
               </div>

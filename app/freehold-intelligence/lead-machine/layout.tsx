@@ -38,7 +38,7 @@ const MANAGER_NAV_SECTIONS = [
       { label: 'Creative',      href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
       { label: 'Lead forms',    href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
       { label: 'Targeting',     href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
-      { label: 'Audiences',     href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users       },
+      { label: 'Audiences',     href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users,       coach: 'lm-audiences' },
     ],
   },
   {
@@ -136,6 +136,7 @@ export default function LeadMachineLayout({ children }: { children: React.ReactN
                     return (
                       <Link
                         key={item.href}
+                        data-coach={(item as { coach?: string }).coach}
                         href={item.href}
                         className={[
                           'flex items-center rounded-lg px-[13px] py-2 text-sm font-medium transition-colors',

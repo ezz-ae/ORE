@@ -6,6 +6,7 @@ import { Sparkles, X, ArrowRight } from 'lucide-react'
 import { CHANGELOG, CHANGELOG_VERSION, getSeenVersion, hasUnseenChanges, markChangelogSeen } from '@/lib/freehold/changelog'
 import { loadAccountMemory, saveAccountMemory } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
+import { useSession } from '@/lib/freehold/use-session'
 
 const OPEN_EVENT = 'fh:whatsnew:open'
 
@@ -49,6 +50,10 @@ export function WhatsNewMenuButton({ onClick }: { onClick?: () => void }) {
  */
 export function WhatsNew() {
   const t = useT()
+  // Role-aware: entries carry optional per-item roles so everyone sees only
+  // what applies to them (a broker isn't teased with management-only tools).
+  const { user } = useSession()
+  const role = user?.role
   const [open, setOpen] = useState(false)     // full panel
   const [toast, setToast] = useState(false)   // corner nudge
   const [portalReady, setPortalReady] = useState(false)
@@ -150,7 +155,7 @@ export function WhatsNew() {
                     <span className="text-[11px] text-slate-500">{entry.date}</span>
                   </div>
                   <ul className="space-y-2.5">
-                    {entry.items.map((it, i) => (
+                    {entry.items.filter((it) => !it.roles || (role && it.roles.includes(role))).map((it, i) => (
                       <li key={i} className="rounded-xl border border-line bg-surface-2 p-3">
                         <div className="text-sm font-medium text-slate-100">{it.title}</div>
                         <div className="mt-0.5 text-xs text-slate-400 leading-relaxed">{it.body}</div>
