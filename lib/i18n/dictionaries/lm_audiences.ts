@@ -106,6 +106,11 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.attach.attached': 'attached',
     'lm.aud.attach.detach': 'Detach',
     'lm.aud.attach.overrides': 'This audience overrides the manual fields below — placements still apply.',
+
+    // Ads launcher card
+    'lm.ads.audiences.label': 'Audiences',
+    'lm.ads.audiences.sub': 'Lookalikes · behaviors · narrow rules',
+    'lm.ads.audiences.metric': 'Saved audiences · one-click attach',
   },
 
   ar: {
@@ -203,6 +208,10 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.attach.attached': 'مرفق',
     'lm.aud.attach.detach': 'فصل',
     'lm.aud.attach.overrides': 'هذا الجمهور يتجاوز الحقول اليدوية أدناه — المواضع تبقى سارية.',
+
+    'lm.ads.audiences.label': 'الجماهير',
+    'lm.ads.audiences.sub': 'جماهير مشابهة · سلوكيات · قواعد دقيقة',
+    'lm.ads.audiences.metric': 'جماهير محفوظة · إرفاق بنقرة واحدة',
   },
 
   ru: {
@@ -300,5 +309,9 @@ export const lm_audiences: Record<Locale, Dict> = {
     'lm.aud.attach.attached': 'прикреплена',
     'lm.aud.attach.detach': 'Открепить',
     'lm.aud.attach.overrides': 'Эта аудитория заменяет ручные поля ниже — плейсменты остаются в силе.',
+
+    'lm.ads.audiences.label': 'Аудитории',
+    'lm.ads.audiences.sub': 'Lookalike · поведение · узкие правила',
+    'lm.ads.audiences.metric': 'Сохранённые аудитории · подключение в один клик',
   },
 }

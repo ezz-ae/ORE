@@ -93,15 +93,16 @@ export async function POST(req: NextRequest) {
         searchInterests('property investment'),
         searchBehaviors('travel'),
       ])
-      const [luxury, expat] = await Promise.all([
+      const [luxury, expat, agents] = await Promise.all([
         searchInterests('luxury real estate'),
         searchBehaviors('expat'),
+        searchInterests('real estate agent'),
       ])
 
       const investInterests = [...pick(invest, 'property investment', 'real estate investing', 'investment'), ...pick(luxury, 'luxury real estate', 'luxury goods')]
       const travelBehaviors = pick(behaviors, 'frequent international travelers', 'frequent travelers')
       const expatBehaviors = pick(expat, 'expats (all)', 'expats')
-      const agentExclusion = pick(invest, 'real estate agent', 'estate agent')
+      const agentExclusion = pick(agents, 'real estate agent', 'estate agent')
 
       const premium = listing.price >= 2_000_000
 

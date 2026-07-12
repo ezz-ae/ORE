@@ -213,7 +213,12 @@ export default function AudiencesPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: s.name, description: s.description, kind: (s.spec.narrowing?.length ? 'narrow' : 'behavioral'), spec: s.spec }),
     })
-    if (res.ok) { await load(); setSuggestions((prev) => prev?.map((x) => (x === s ? { ...x, kind: 'saved', audienceId: undefined } : x)) ?? null) }
+    if (res.ok) {
+      const data = await res.json().catch(() => null)
+      await load()
+      // Carry the new id back onto the card so "Use in campaign" appears.
+      setSuggestions((prev) => prev?.map((x) => (x === s ? { ...x, kind: 'saved', audienceId: data?.audience?.id } : x)) ?? null)
+    }
   }
 
   // ── Builder ──

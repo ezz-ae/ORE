@@ -221,8 +221,13 @@ async function campaignsBlock(): Promise<string | null> {
          WHERE created_at > now() - interval '90 days'
          GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 8`,
       ).catch(() => []),
+      // The campaigns table stores the launch payload as a jsonb blob —
+      // (id, status, data, created_by, created_at); read fields from data.
       query<{ name: string; status: string | null; daily_budget_aed: number | null; created_at: string }>(
-        `SELECT name, status, daily_budget_aed::float, created_at::text
+        `SELECT COALESCE(data->>'campaignName', data->>'listingName', id) AS name,
+                status,
+                NULLIF(data->>'dailyBudgetAED','')::float AS daily_budget_aed,
+                created_at::text
          FROM freehold_site_meta_campaigns ORDER BY created_at DESC LIMIT 6`,
       ).catch(() => []),
       getNetworkBenchmarks(5).catch(() => []),
