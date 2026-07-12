@@ -1,12 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
-  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput, Upload,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
@@ -61,6 +61,9 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const [aUrl, setAUrl] = useState('')
   const [aKind, setAKind] = useState<DriveKind>('image')
   const [saving, setSaving] = useState(false)
+  // upload-from-device
+  const fileInput = useRef<HTMLInputElement | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -106,6 +109,37 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
       toast.success(t('drive.saved'))
       setATitle(''); setAUrl(''); setAddOpen(false); load()
     } catch { toast.error(t('drive.saveFailed')) } finally { setSaving(false) }
+  }
+
+  // Upload a file straight from the device — no external bucket. Text files go
+  // in as notes; small images inline as thumbnails; PDFs/large images are read
+  // by the AI into a report; other binaries are honestly refused by the route.
+  async function uploadFile(file: File) {
+    if (file.size > 5 * 1024 * 1024) { toast.error(t('drive.upload.tooBig')); return }
+    setUploading(true)
+    const tid = toast.loading(t('drive.upload.working', { name: file.name }))
+    try {
+      const isText = /^text\//.test(file.type) || /\.(txt|md|csv|json)$/i.test(file.name)
+      const payload: Record<string, unknown> = { name: file.name, mimeType: file.type, folder: activeFolder || undefined }
+      if (isText) {
+        payload.text = await file.text()
+      } else {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const fr = new FileReader()
+          fr.onload = () => resolve(String(fr.result))
+          fr.onerror = () => reject(fr.error)
+          fr.readAsDataURL(file)
+        })
+        payload.data = dataUrl.slice(dataUrl.indexOf(',') + 1)  // strip "data:...;base64,"
+      }
+      const res = await fetch('/api/freehold/drive/upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { toast.error(d.error || t('drive.upload.failed'), { id: tid }); return }
+      toast.success(t('drive.upload.done'), { id: tid })
+      load()
+    } catch { toast.error(t('drive.upload.failed'), { id: tid }) } finally { setUploading(false) }
   }
 
   async function remove(item: Item) {
@@ -189,6 +223,13 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
           <option value="old">{t('drive.sort.old')}</option>
           <option value="az">{t('drive.sort.az')}</option>
         </select>
+        <input ref={fileInput} type="file" hidden
+          accept="image/*,application/pdf,text/plain,text/markdown,text/csv,.txt,.md,.csv,.json"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(f); e.target.value = '' }} />
+        <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+          {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} {t('drive.upload.btn')}
+        </button>
         <button type="button" onClick={() => setAddOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
           <Plus className="h-3.5 w-3.5" /> {t('drive.save')}
         </button>
