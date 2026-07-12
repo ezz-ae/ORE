@@ -14,7 +14,9 @@ export const dynamic = 'force-dynamic'
  *    burned in + a note) → a precise description of what's on screen.
  * Honest when no key is configured: { unavailable: true }.
  *
- * POST { kind: 'audio'|'image', data: dataUrl, note?: string } → { text }
+ * POST { kind: 'audio'|'image'|'pdf', data: dataUrl, note?: string } → { text }
+ * 'pdf' extracts the key facts from a brochure/fact-sheet so campaign and
+ * notebook generation can ground on it.
  */
 export async function POST(req: NextRequest) {
   const auth = await requireSession()
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({})) as { kind?: string; data?: string; note?: string }
-  const kind = body.kind === 'audio' || body.kind === 'image' ? body.kind : null
+  const kind = body.kind === 'audio' || body.kind === 'image' || body.kind === 'pdf' ? body.kind : null
   const dataUrl = typeof body.data === 'string' ? body.data : ''
   const match = dataUrl.match(/^data:([a-zA-Z0-9/+.-]+);base64,(.+)$/)
   if (!kind || !match) return NextResponse.json({ error: 'kind and a base64 data URL are required' }, { status: 400 })
@@ -40,6 +42,8 @@ export async function POST(req: NextRequest) {
   const note = String(body.note ?? '').trim()
   const instruction = kind === 'audio'
     ? 'Transcribe this voice note EXACTLY as spoken (it may be English, Arabic or Russian — keep the original language). Return ONLY the transcript, no preamble.'
+    : kind === 'pdf'
+    ? `This is a real-estate brochure or fact sheet. Extract ONLY facts that are explicitly stated: project name, developer, location, unit types and sizes, prices, payment plan, handover date, amenities, and any unique selling points. Plain text, one fact per line, no invention — omit anything not stated.${note ? ` The user says: "${note}".` : ''}`
     : `This is a screenshot of the Freehold Intelligence real-estate marketing app. Describe precisely what is on screen — page/section, visible numbers, statuses, table rows, warnings — so an assistant that cannot see the image can act on it. If a red rectangle marks an area, focus on that area first.${note ? ` The user says: "${note}".` : ''} Be concrete and compact (under 200 words).`
 
   try {

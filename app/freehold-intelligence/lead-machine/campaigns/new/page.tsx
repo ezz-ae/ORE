@@ -11,6 +11,7 @@ import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
+  FolderOpen, Upload, X,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -182,6 +183,62 @@ export default function NewCampaignPage() {
     cplCapAED:    150,
     autoEnhance:  'approval',
   })
+  // Campaign source material — brochure extracts, listing/developer links,
+  // notes. THE input for new launches that have no landing page yet: copy
+  // generation grounds on it instead of guessing.
+  const [campaignSources, setCampaignSources] = useState<{ label: string; text: string }[]>([])
+  const [srcLink, setSrcLink] = useState('')
+  const [srcBusy, setSrcBusy] = useState(false)
+  const [srcError, setSrcError] = useState<string | null>(null)
+
+  async function addSourceFile(file: File | null) {
+    if (!file) return
+    setSrcError(null)
+    const name = file.name
+    // Plain text travels as-is; PDFs and images go through the multimodal
+    // ingest (real Gemini extraction); other formats are honest pointers.
+    if (/\.(txt|md|csv)$/i.test(name)) {
+      const text = (await file.text()).slice(0, 6000)
+      setCampaignSources((prev) => [...prev, { label: name, text: `${name}:\n${text}` }])
+      return
+    }
+    const isPdf = /\.pdf$/i.test(name) || file.type === 'application/pdf'
+    const isImage = file.type.startsWith('image/')
+    if (!isPdf && !isImage) {
+      setCampaignSources((prev) => [...prev, { label: name, text: `Attached file "${name}" (content not extracted — treat as a reference the operator can quote).` }])
+      return
+    }
+    if (file.size > 6_000_000) { setSrcError(t('lm.newCampaign.src.tooLarge')); return }
+    setSrcBusy(true)
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result))
+        r.onerror = reject
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/freehold/expert/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: isPdf ? 'pdf' : 'image', data: dataUrl, note: 'Campaign source for an ad campaign.' }),
+      })
+      const d = await res.json()
+      if (d?.text) setCampaignSources((prev) => [...prev, { label: name, text: `${name}:\n${String(d.text).slice(0, 6000)}` }])
+      else setSrcError(d?.error || t('lm.newCampaign.src.extractFailed'))
+    } catch {
+      setSrcError(t('lm.newCampaign.src.extractFailed'))
+    } finally {
+      setSrcBusy(false)
+    }
+  }
+
+  function addSourceLink() {
+    const url = srcLink.trim()
+    if (!/^https?:\/\//i.test(url)) { setSrcError(t('lm.newCampaign.src.badLink')); return }
+    setSrcError(null)
+    setCampaignSources((prev) => [...prev, { label: url.replace(/^https?:\/\//, '').slice(0, 60), text: `Reference link: ${url}` }])
+    setSrcLink('')
+  }
   const [uploadingImg, setUploadingImg] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
 
@@ -289,6 +346,9 @@ export default function NewCampaignPage() {
           listingId: listing.id, listingName: listing.projectName, area: listing.area,
           developer: 'Freehold', startingPrice: listing.startingPrice, paymentPlan: listing.paymentPlan,
           angle: genAngle, tone: 'direct', cta: form.cta,
+          // Ground the copy in the operator's source material (brochure
+          // extracts, links) — decisive for new launches with no landing page.
+          sources: campaignSources.map((s) => s.text),
         }),
       })
       const d = await res.json()
@@ -616,7 +676,10 @@ export default function NewCampaignPage() {
         primaryText: form.primaryText,
         headline:    form.headline,
         description: form.description,
-        landingUrl:  form.landingUrl,
+        // New launches often have no landing page yet — an empty URL falls
+        // back to the project's public page, which always exists for a
+        // listed project. Never block a launch on a missing LP.
+        landingUrl:  form.landingUrl || `https://www.freeholdproperty.ae/projects/${encodeURIComponent(form.listingId)}`,
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
@@ -795,6 +858,47 @@ export default function NewCampaignPage() {
                   className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
                   <CheckCircle2 className="h-3.5 w-3.5" /> {t('dq.run')}
                 </button>
+              )}
+            </div>
+
+            {/* Campaign sources — brochure/link/file material that completes the
+                campaign when the project is a NEW LAUNCH with no landing page.
+                Feeds the AI copy generation on step 3. */}
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold">
+                <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.title')}
+              </div>
+              <p className="mt-1 text-[12px] leading-relaxed text-slate-400">{t('lm.newCampaign.src.sub')}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
+                  <Upload className="h-3.5 w-3.5" /> {t('lm.newCampaign.src.upload')}
+                  <input type="file" accept=".pdf,.txt,.md,.csv,image/*" className="hidden"
+                    onChange={(e) => { void addSourceFile(e.target.files?.[0] ?? null); e.target.value = '' }} />
+                </label>
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <input value={srcLink} onChange={(e) => setSrcLink(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSourceLink() } }}
+                    placeholder={t('lm.newCampaign.src.linkPh')}
+                    className="min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-xs text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
+                  <button type="button" onClick={addSourceLink}
+                    className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
+                    {t('lm.newCampaign.src.addLink')}
+                  </button>
+                </div>
+                {srcBusy && <span className="flex items-center gap-1.5 text-[11px] text-slate-400"><Loader2 className="h-3 w-3 animate-spin" /> {t('lm.newCampaign.src.extracting')}</span>}
+              </div>
+              {srcError && <p className="mt-2 text-[11px] text-red-400">{srcError}</p>}
+              {campaignSources.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {campaignSources.map((src, i) => (
+                    <span key={`${src.label}-${i}`} className="inline-flex items-center gap-1.5 rounded-full border border-gold/25 bg-gold/10 px-2.5 py-1 text-[11px] font-medium text-gold">
+                      {src.label}
+                      <button type="button" onClick={() => setCampaignSources((prev) => prev.filter((_, j) => j !== i))} aria-label={`Remove ${src.label}`}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -1351,9 +1455,9 @@ export default function NewCampaignPage() {
             </div>
 
             <div>
-              <Label>{t('lm.newCampaign.s3.label.landingUrl')}</Label>
+              <Label>{t('lm.newCampaign.s3.label.landingUrl')} <span className="ms-1 font-normal text-slate-500">{t('lm.newCampaign.src.lpOptional')}</span></Label>
               <input
-                className={inputCls(!form.landingUrl)}
+                className={inputCls(!form.landingUrl && !form.listingId)}
                 value={form.landingUrl}
                 onChange={(e) => update('landingUrl', e.target.value)}
                 placeholder={t('lm.landingUrlPlaceholder')}
@@ -1563,7 +1667,7 @@ export default function NewCampaignPage() {
             disabled={
               (step === 1 && (!form.listingId || !form.campaignName)) ||
               (step === 2 && form.dailyBudgetAED < 50) ||
-              (step === 3 && (!form.primaryText || !form.headline || !form.landingUrl))
+              (step === 3 && (!form.primaryText || !form.headline || (!form.landingUrl && !form.listingId)))
             }
             className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-40 disabled:cursor-not-allowed"
           >
