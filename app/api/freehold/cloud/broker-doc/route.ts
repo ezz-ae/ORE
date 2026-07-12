@@ -4,7 +4,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { checkRateLimit } from '@/lib/freehold/rate-limit'
 import { geminiGenerate, geminiText } from '@/lib/gemini-rest'
 import { listCloudFiles, recordCloudFile, cloudConfigured, type CloudFile } from '@/lib/freehold/cloud'
-import { buildDraftOffer, type OfferData } from '@/lib/freehold/broker-pdf'
+import { buildDraftOffer, buildFactSheet, type OfferData } from '@/lib/freehold/broker-pdf'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return NextResponse.json({ error: 'Document generation needs the AI key — set it under Integrations → AI.' }, { status: 503 })
 
   const body = await req.json().catch(() => ({})) as { kind?: string; folder?: string; projectName?: string; notes?: string }
-  const kind = body.kind === 'offer' ? 'offer' : 'offer' // only offer today; extensible
+  const kind: 'offer' | 'factsheet' = body.kind === 'factsheet' ? 'factsheet' : 'offer'
   const folder = body.folder?.trim() ? body.folder.trim().slice(0, 80) : null
   const projectName = String(body.projectName ?? '').trim().slice(0, 160)
   const notes = String(body.notes ?? '').trim().slice(0, 1500)
@@ -91,18 +91,20 @@ Return ONLY this JSON (no prose):
 
   let pdfBytes: Uint8Array
   try {
-    pdfBytes = await buildDraftOffer(data)
+    pdfBytes = kind === 'factsheet' ? await buildFactSheet(data) : await buildDraftOffer(data)
   } catch {
     return NextResponse.json({ error: 'Could not build the document — try again.' }, { status: 502 })
   }
 
+  const prefix = kind === 'factsheet' ? 'fact-sheet' : 'draft-offer'
+  const label = kind === 'factsheet' ? 'Fact sheet' : 'DRAFT offer'
   let file: CloudFile | null = null
   if (cloudConfigured()) {
     try {
-      const safe = (data.project || 'offer').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)
-      const blob = await put(`cloud/draft-offer-${safe}.pdf`, Buffer.from(pdfBytes), { access: 'public', contentType: 'application/pdf', addRandomSuffix: true })
+      const safe = (data.project || kind).replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40)
+      const blob = await put(`cloud/${prefix}-${safe}.pdf`, Buffer.from(pdfBytes), { access: 'public', contentType: 'application/pdf', addRandomSuffix: true })
       file = await recordCloudFile(auth.user.email, {
-        name: `DRAFT offer — ${data.project}.pdf`,
+        name: `${label} — ${data.project}.pdf`,
         mime: 'application/pdf', url: blob.url, pathname: blob.pathname, size: pdfBytes.length, folder,
       })
     } catch { /* return the doc URL even if recording failed */ }

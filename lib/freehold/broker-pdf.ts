@@ -109,3 +109,67 @@ export async function buildDraftOffer(d: OfferData): Promise<Uint8Array> {
 
   return pdf.save()
 }
+
+// Clean, broker-branded fact sheet built from a brochure's extracted facts.
+// This is the "de-brand": a fresh document carrying ONLY the facts and the
+// broker's own contact — the developer's logo and contact never appear, so a
+// broker can share it and own the lead. No DRAFT watermark (it's shareable).
+export async function buildFactSheet(d: OfferData): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create()
+  const page = pdf.addPage([595, 842])
+  const font = await pdf.embedFont(StandardFonts.Helvetica)
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  const { width, height } = page.getSize()
+  const M = 48
+  let y = height
+
+  // Header
+  page.drawRectangle({ x: 0, y: height - 90, width, height: 90, color: INK })
+  page.drawText((d.brokerCompany || 'Freehold').toUpperCase(), { x: M, y: height - 44, size: 20, font: bold, color: GOLD })
+  page.drawText('PROJECT FACT SHEET', { x: M, y: height - 70, size: 11, font, color: rgb(0.8, 0.82, 0.85) })
+
+  y = height - 130
+  page.drawText(d.project || 'Project', { x: M, y, size: 24, font: bold, color: INK }); y -= 22
+  const sub = [d.area, d.developer].filter(Boolean).join('  ·  ')
+  if (sub) { page.drawText(sub, { x: M, y, size: 11, font, color: MUTE }); y -= 8 }
+  y -= 26
+
+  // Key facts + payment as a two-column list.
+  const rows: Array<[string, string]> = []
+  if (d.unit) rows.push(['Unit', d.unit])
+  if (d.priceAed) rows.push(['Starting price', d.priceAed])
+  if (d.deposit) rows.push(['Booking / Deposit', d.deposit])
+  if (d.monthly) rows.push(['Monthly installment', d.monthly])
+  if (d.onHandover) rows.push(['On handover', d.onHandover])
+  if (d.handoverDate) rows.push(['Handover', d.handoverDate])
+  for (const [label, value] of rows) {
+    page.drawLine({ start: { x: M, y: y + 16 }, end: { x: width - M, y: y + 16 }, thickness: 0.5, color: LINE })
+    page.drawText(label, { x: M, y, size: 11, font, color: MUTE })
+    page.drawText(value, { x: width - M - bold.widthOfTextAtSize(value, 12), y: y - 1, size: 12, font: bold, color: INK })
+    y -= 26
+  }
+  page.drawLine({ start: { x: M, y: y + 16 }, end: { x: width - M, y: y + 16 }, thickness: 0.5, color: LINE })
+  y -= 20
+
+  if (d.highlights && d.highlights.length) {
+    page.drawText('HIGHLIGHTS', { x: M, y, size: 9, font: bold, color: GOLD }); y -= 18
+    for (const h of d.highlights.slice(0, 8)) {
+      for (const ln of wrap(`•  ${h}`, font, 11, width - 2 * M)) {
+        page.drawText(ln, { x: M, y, size: 11, font, color: INK }); y -= 16
+      }
+    }
+    y -= 8
+  }
+
+  // Broker contact — the ONLY contact on the sheet.
+  page.drawText('Your consultant', { x: M, y, size: 9, font: bold, color: GOLD }); y -= 16
+  page.drawText(d.brokerName || 'Freehold', { x: M, y, size: 12, font: bold, color: INK }); y -= 15
+  if (d.brokerPhone) { page.drawText(d.brokerPhone, { x: M, y, size: 11, font, color: MUTE }); y -= 15 }
+
+  const foot = 'Prepared for information only. Figures and availability are subject to change and developer confirmation. Errors and omissions excepted.'
+  let fy = 66
+  for (const ln of wrap(foot, font, 7.5, width - 2 * M)) { page.drawText(ln, { x: M, y: fy, size: 7.5, font, color: MUTE }); fy -= 11 }
+  page.drawLine({ start: { x: M, y: 74 }, end: { x: width - M, y: 74 }, thickness: 0.5, color: LINE })
+
+  return pdf.save()
+}

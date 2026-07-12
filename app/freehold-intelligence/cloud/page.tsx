@@ -60,7 +60,7 @@ export default function CloudPage() {
   const [busyNames, setBusyNames] = useState<Set<string>>(new Set())
   const [callBusy, setCallBusy] = useState(false)
   const [callScript, setCallScript] = useState<string | null>(null)
-  const [offerBusy, setOfferBusy] = useState(false)
+  const [offerBusy, setOfferBusy] = useState<false | 'offer' | 'factsheet'>(false)
 
   const fileInput = useRef<HTMLInputElement | null>(null)
   const dragDepth = useRef(0)
@@ -167,22 +167,25 @@ export default function CloudPage() {
     } catch { toast.error(t('cloud.call.failed')) } finally { setCallBusy(false) }
   }
 
-  // Generate a watermarked DRAFT sales offer from the folder's brochures — a
-  // broker sends it to gauge whether a lead is serious. Saved into the folder.
-  async function generateOffer() {
+  // Broker PDF docs from the folder's brochures, saved back into the folder:
+  //  - offer     → watermarked DRAFT sales offer (gauge if a lead is serious)
+  //  - factsheet → clean broker-branded fact sheet (no developer contact/logo)
+  async function generateDoc(kind: 'offer' | 'factsheet') {
     const folder = activeFolder && activeFolder !== '' ? activeFolder : null
-    setOfferBusy(true)
+    setOfferBusy(kind)
+    const failKey = kind === 'factsheet' ? 'cloud.sheet.failed' : 'cloud.offer.failed'
+    const doneKey = kind === 'factsheet' ? 'cloud.sheet.done' : 'cloud.offer.done'
     try {
       const res = await fetch('/api/freehold/cloud/broker-doc', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: 'offer', folder, projectName: folder ?? undefined }),
+        body: JSON.stringify({ kind, folder, projectName: folder ?? undefined }),
       })
       const d = await res.json().catch(() => ({}))
-      if (!res.ok || !d.file) { toast.error(d.error || t('cloud.offer.failed')); return }
-      toast.success(t('cloud.offer.done'))
+      if (!res.ok || !d.file) { toast.error(d.error || t(failKey)); return }
+      toast.success(t(doneKey))
       await load()
       if (d.file?.url) window.open(d.file.url as string, '_blank', 'noopener')
-    } catch { toast.error(t('cloud.offer.failed')) } finally { setOfferBusy(false) }
+    } catch { toast.error(t(failKey)) } finally { setOfferBusy(false) }
   }
 
   async function moveFile(file: CloudFile) {
@@ -235,9 +238,13 @@ export default function CloudPage() {
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
             {callBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PhoneCall className="h-3.5 w-3.5" />} {t('cloud.call.btn')}
           </button>
-          <button type="button" onClick={() => void generateOffer()} disabled={offerBusy} title={t('cloud.offer.hint')}
+          <button type="button" onClick={() => void generateDoc('offer')} disabled={!!offerBusy} title={t('cloud.offer.hint')}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
-            {offerBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileType2 className="h-3.5 w-3.5" />} {t('cloud.offer.btn')}
+            {offerBusy === 'offer' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileType2 className="h-3.5 w-3.5" />} {t('cloud.offer.btn')}
+          </button>
+          <button type="button" onClick={() => void generateDoc('factsheet')} disabled={!!offerBusy} title={t('cloud.sheet.hint')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+            {offerBusy === 'factsheet' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} {t('cloud.sheet.btn')}
           </button>
           <button type="button" onClick={() => newFolder()}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
