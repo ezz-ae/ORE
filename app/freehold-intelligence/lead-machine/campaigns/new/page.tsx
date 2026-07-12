@@ -287,16 +287,33 @@ export default function NewCampaignPage() {
   async function fetchAiTargeting() {
     setAiTargetingLoading(true)
     try {
-      const res = await fetch('/api/freehold/ai/targeting', { cache: 'no-store' })
+      // Send the SELECTED listing so the recommendation is tailored to this
+      // asset and its price band — not a one-size-fits-the-account answer.
+      const listing = listings.find((l) => l.id === form.listingId)
+      const res = await fetch('/api/freehold/ai/targeting', {
+        method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing: listing
+            ? { name: listing.projectName, area: listing.area, price: listing.startingPrice ?? 0 }
+            : undefined,
+        }),
+      })
       const d = await res.json()
       if (res.ok && d?.recommendation) setAiTargeting(d.recommendation)
     } catch { /* panel simply stays collapsed */ }
     finally { setAiTargetingLoading(false) }
   }
+  // The learning loop loads ITSELF when targeting opens — the intelligence is
+  // the default view of step 2, not a hidden button.
+  useEffect(() => {
+    if (step === 2 && !aiTargeting && !aiTargetingLoading) fetchAiTargeting()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
   function applyAiTargeting() {
     if (!aiTargeting) return
     setForm((prev) => ({
       ...prev,
+      strategy: aiTargeting.strategy,
       interestIds: aiTargeting.interestIds,
       ageMin: aiTargeting.ageMin,
       ageMax: aiTargeting.ageMax,

@@ -15,24 +15,30 @@ export type GeminiResponse = { candidates?: Array<{ content?: { parts?: Array<{ 
 
 /**
  * POST to the Gemini REST generateContent endpoint, trying current models when
- * the configured one is retired (404 / NOT_FOUND). Returns the parsed response,
- * or throws with the last error detail.
+ * the configured one is retired (404) or rate-limited (429 — free-tier quota
+ * buckets are PER MODEL, so the next model usually still serves). Returns the
+ * parsed response, or throws with the last error detail.
  */
 export async function geminiGenerate(apiKey: string, contents: unknown, generationConfig?: unknown): Promise<GeminiResponse> {
   let last = ""
   for (const model of geminiModelCandidates()) {
+    // 2.5-family models think by default and can burn the whole token budget
+    // producing an EMPTY answer — pin thinking off for these text callers.
+    const config = model.startsWith("gemini-2.5")
+      ? { ...((generationConfig as Record<string, unknown>) ?? {}), thinkingConfig: { thinkingBudget: 0 } }
+      : generationConfig
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents, generationConfig }),
+        body: JSON.stringify({ contents, generationConfig: config }),
       },
     )
     if (res.ok) return (await res.json()) as GeminiResponse
     last = await res.text().catch(() => String(res.status))
-    // 404 = model retired/unknown → try the next candidate; other errors are fatal.
-    if (res.status !== 404 && !/NOT_FOUND/i.test(last)) break
+    const retryable = res.status === 404 || res.status === 429 || /NOT_FOUND|RESOURCE_EXHAUSTED/i.test(last)
+    if (!retryable) break
   }
   throw new Error(last || "Gemini request failed")
 }
