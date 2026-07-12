@@ -399,12 +399,15 @@ function CoachOverlay({
 
   return createPortal(
     <div dir={dir} className="fixed inset-0 z-[300]" aria-live="polite" role="dialog" aria-modal="true">
-      {/* Click-blocker: makes the tour modal without dimming (dim comes from the
-          spotlight's box-shadow, or a full backdrop when there's no anchor). */}
+      {/* Click-blocker: keeps the tour modal without dimming (dim comes from
+          the spotlight's box-shadow, or a full backdrop when there's no
+          anchor). Clicking ANYWHERE outside the card dismisses the tour —
+          a full-screen overlay that swallows clicks reads as "the app is
+          broken", which is worse than losing the tour. */}
       <div
         className="absolute inset-0"
         style={{ background: rect ? 'transparent' : 'rgba(2,6,12,0.72)' }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onClose() }}
       />
 
       {/* Spotlight — one box-shadow does it all: a strong page dim, a crisp gold
