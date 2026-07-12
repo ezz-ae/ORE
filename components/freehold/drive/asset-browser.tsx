@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
-  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
@@ -14,7 +14,7 @@ import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type E
 // Editors that have shipped — an "Edit" action never appears before its editor exists.
 const SHIPPED_EDITORS: EditorType[] = ['doc', 'image', 'video', 'pdf']
 
-type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; createdBy: string; createdAt: string }
+type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; folder: string | null; createdBy: string; createdAt: string }
 type Landing = { slug: string; title: string; status: string; heroImage: string; area: string; priceFromAed: number | null; leads: number; views: number; updatedAt: string | null }
 
 const fmtPrice = (n: number | null) => n && n >= 1_000_000 ? `AED ${(n / 1_000_000).toFixed(1)}M` : n && n >= 1000 ? `AED ${Math.round(n / 1000)}K` : n ? `AED ${n}` : ''
@@ -51,6 +51,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const [landings, setLandings] = useState<Landing[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<DriveKind | 'all' | 'landing'>('all')
+  const [activeFolder, setActiveFolder] = useState<string | null>(null)  // null = all folders
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SortKey>('new')
   const [preview, setPreview] = useState<Item | null>(null)
@@ -77,6 +78,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const shelves = useMemo(() => {
     const q = query.trim().toLowerCase()
     let pool = filter === 'all' ? items : items.filter((i) => i.kind === filter)
+    if (activeFolder !== null) pool = pool.filter((i) => (i.folder ?? '') === activeFolder)
     if (q) pool = pool.filter((i) => i.title.toLowerCase().includes(q) || (i.content && stripHtml(i.content).toLowerCase().includes(q)))
     const sorted = [...pool].sort((a, b) =>
       sort === 'az' ? a.title.localeCompare(b.title)
@@ -88,7 +90,7 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
       .filter((g) => g.rows.length > 0)
     if (sort === 'new') groups.sort((a, b) => b.rows[0].createdAt.localeCompare(a.rows[0].createdAt))
     return groups
-  }, [items, filter, query, sort])
+  }, [items, filter, query, sort, activeFolder])
 
   const total = shelves.reduce((n, g) => n + g.rows.length, 0)
 
@@ -116,6 +118,24 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
     } catch { toast.error(t('drive.deleteFailed')) }
   }
 
+  // Distinct folders present across the user's assets (for the sidebar).
+  const folders = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of items) if (i.folder) set.add(i.folder)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [items])
+
+  async function moveToFolder(item: Item, folder: string | null) {
+    // Optimistic; the Library PATCH persists the move.
+    setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, folder } : x)))
+    try {
+      await fetch('/api/freehold/library', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, folder }),
+      })
+    } catch { toast.error(t('drive.saveFailed')); load() }
+  }
+
   function openItem(item: Item) {
     if (SHIPPED_EDITORS.includes(editorTypeForKind(item.kind, !!item.url))) router.push(editorHrefForItem(item))
     else if (item.url) window.open(item.url, '_blank', 'noopener')
@@ -139,6 +159,10 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
           <ExternalLink className="h-3 w-3" />
         </button>
       )}
+      <button type="button" onClick={(e) => { e.stopPropagation(); const name = window.prompt(t('drive.moveTo'), item.folder ?? ''); if (name !== null) void moveToFolder(item, name.trim() || null) }}
+        title={t('drive.move')} className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-300 shadow-lg backdrop-blur hover:text-white">
+        <FolderInput className="h-3 w-3" />
+      </button>
       <button type="button" onClick={(e) => { e.stopPropagation(); void remove(item) }}
         title={t('drive.delete')} className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-300 shadow-lg backdrop-blur hover:text-rose-400">
         <Trash2 className="h-3 w-3" />
@@ -169,6 +193,28 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
           <Plus className="h-3.5 w-3.5" /> {t('drive.save')}
         </button>
       </div>
+
+      {/* Folder rail — the user's own folders + an Unfiled bucket */}
+      {(folders.length > 0 || items.some((i) => !i.folder)) && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={() => setActiveFolder(null)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === null ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+            <FolderOpen className="h-3 w-3" /> {t('drive.allFolders')}
+          </button>
+          {folders.map((f) => {
+            const n = items.filter((i) => i.folder === f).length
+            return (
+              <button key={f} type="button" onClick={() => setActiveFolder(activeFolder === f ? null : f)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === f ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+                <Folder className="h-3 w-3" /> {f}<span className="text-[10px] text-slate-500">{n}</span>
+              </button>
+            )
+          })}
+          {items.some((i) => !i.folder) && (
+            <button type="button" onClick={() => setActiveFolder(activeFolder === '' ? null : '')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${activeFolder === '' ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+              {t('drive.unfiled')}<span className="text-[10px] text-slate-500">{items.filter((i) => !i.folder).length}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {addOpen && (
         <div className="mb-4 grid gap-2 rounded-2xl border border-line bg-surface-2/50 p-3 sm:grid-cols-[1fr_1.4fr_auto_auto]">
