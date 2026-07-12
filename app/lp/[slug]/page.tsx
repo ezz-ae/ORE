@@ -118,6 +118,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     seo: { title: `${prop.name} | Freehold Property UAE`, description: `${prop.name} in ${prop.area}. From ${priceText}. ${yieldText}.`, ogImage: '/logo.png' },
     pixels: {},
     soldOut: false,
+    template: 'classic',
     sections,
     project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, amenities: [], faqs: [] },
   }

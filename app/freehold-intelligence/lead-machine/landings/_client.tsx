@@ -40,6 +40,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   const [query, setQuery] = useState('')
   const [bulkCreating, setBulkCreating] = useState(false)
   const [generatingId, setGeneratingId] = useState<string | null>(null)
+  const [template, setTemplate] = useState<'classic' | 'campaign'>('classic')
   const t = useT()
 
   const props = properties
@@ -57,7 +58,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   async function generateFor(p: InventoryProperty): Promise<boolean> {
     const res = await fetch('/api/crm/landing-pages', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectSlug: p.slug }),
+      body: JSON.stringify({ projectSlug: p.slug, template }),
     }).catch(() => null)
     if (!res || !res.ok) return false
     const data = await res.json().catch(() => null) as { slug?: string } | null
@@ -103,18 +104,32 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
         title={t('lm.landings.title')}
         subtitle={t('lm.landings.subtitle', { n: String(properties.length) })}
         actions={
-          <button
-            data-coach="lm-landing-create"
-            onClick={bulkCreate}
-            disabled={bulkCreating || missing === 0}
-            className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-60"
-          >
-            {bulkCreating ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.landings.creatingAll')}</>
-            ) : (
-              <><Plus className="h-3.5 w-3.5" /> {t('lm.landings.createAll')}</>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-slate-500">
+              <span className="text-slate-600">{t('lm.landings.tpl.label')}</span>
+              <select
+                value={template}
+                onChange={(e) => setTemplate(e.target.value as 'classic' | 'campaign')}
+                title={t('lm.landings.tpl.campaignHint')}
+                className="bg-transparent text-xs font-medium text-white outline-none"
+              >
+                <option value="classic" className="bg-surface text-white">{t('lm.landings.tpl.classic')}</option>
+                <option value="campaign" className="bg-surface text-white">{t('lm.landings.tpl.campaign')}</option>
+              </select>
+            </label>
+            <button
+              data-coach="lm-landing-create"
+              onClick={bulkCreate}
+              disabled={bulkCreating || missing === 0}
+              className="flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-medium text-ink transition hover:bg-[#F0CB67] disabled:opacity-60"
+            >
+              {bulkCreating ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.landings.creatingAll')}</>
+              ) : (
+                <><Plus className="h-3.5 w-3.5" /> {t('lm.landings.createAll')}</>
+              )}
+            </button>
+          </div>
         }
         className="mb-7"
       />

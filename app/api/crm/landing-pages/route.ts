@@ -122,6 +122,7 @@ const ensureLandingTable = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_at timestamptz`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_by text`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_at timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS template text`)
 }
 
 const getLandingColumns = async () => {
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
     const projectSlug = toText(body.projectSlug)
     const campaignName = toText(body.campaignName) || "campaign"
     const status = toText(body.status) || "draft"
+    const template = toText(body.template) === "campaign" ? "campaign" : "classic"
 
     if (!projectSlug) {
       return NextResponse.json({ error: "projectSlug is required" }, { status: 400 })
@@ -210,7 +212,7 @@ export async function POST(req: NextRequest) {
         ? `${project.rental_yield.toFixed(1)}% rental yield`
         : "Yield details on request"
 
-    const sections = [
+    const classicSections = [
       {
         type: "hero",
         data: {
@@ -325,6 +327,83 @@ export async function POST(req: NextRequest) {
       },
     ]
 
+    // Conversion-optimized arrangement for cold paid (Meta) traffic: lead capture
+    // high (right after hero), payment-plan hook + scarcity lead, closing CTA.
+    // Same section types/data shapes as classic so existing components render it.
+    const campaignSections = [
+      {
+        type: "hero",
+        data: {
+          title: headline,
+          subtitle: subheadline,
+          eyebrow: `Limited units · ${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
+          chips: [formattedPrice, "Direct payment plan", "No bank required"],
+        },
+      },
+      {
+        type: "lead-form",
+        data: {
+          title: "Register your interest",
+          subtitle: "Limited units — get the price list, floor plans and full payment plan.",
+        },
+      },
+      // Included only when the project record carries real plan numbers.
+      ...(() => {
+        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        return plan ? [{ type: "payment-plan", data: plan }] : []
+      })(),
+      {
+        type: "key-facts",
+        data: {
+          items: [
+            { label: "Project", value: toText(project.name) || finalProjectSlug },
+            { label: "Area", value: toText(project.area) || "Dubai" },
+            { label: "Developer", value: toText(toObject(payload.developer).name) || "Freehold" },
+            { label: "Starting Price", value: formattedPrice },
+          ],
+        },
+      },
+      {
+        type: "gallery",
+        data: {},
+      },
+      {
+        type: "amenities",
+        data: {
+          items: toArray(payload.amenities).filter((item) => typeof item === "string"),
+        },
+      },
+      {
+        type: "location",
+        data: {
+          area: toText(project.area) || "Dubai",
+          developer: toText(toObject(payload.developer).name) || "Freehold",
+          title: "Location & Positioning",
+          subtitle: "Use this page to qualify the buyer and frame the project quickly.",
+          highlights: [
+            `${toText(project.area) || "Dubai"} market focus`,
+            `Developer: ${toText(toObject(payload.developer).name) || "Freehold"}`,
+            `Starting price: ${formattedPrice}`,
+          ],
+        },
+      },
+      {
+        type: "faq",
+        data: {
+          items: [],
+        },
+      },
+      {
+        type: "lead-form",
+        data: {
+          title: "Speak to a specialist",
+          subtitle: "Our team will call you with live availability and the best unit for your budget.",
+        },
+      },
+    ]
+
+    const sections = template === "campaign" ? campaignSections : classicSections
+
     await ensureLandingTable()
     const columns = await getLandingColumns()
 
@@ -360,6 +439,7 @@ export async function POST(req: NextRequest) {
       cta_text: ctaText,
       status: effectiveStatus,
       publish_status: effectiveStatus,
+      template,
       ...publishAudit,
       sections_json: JSON.stringify(sections),
       sections: JSON.stringify(sections),

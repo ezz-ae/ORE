@@ -120,6 +120,10 @@ export const lm_core: Record<Locale, Dict> = {
     // ── Landing pages (_client.tsx) ──
     'lm.landings.title': 'Landing Pages',
     'lm.landings.subtitle': '{n} properties — each property has a dedicated ad landing page',
+    'lm.landings.tpl.label': 'Template',
+    'lm.landings.tpl.classic': 'Classic',
+    'lm.landings.tpl.campaign': 'Campaign',
+    'lm.landings.tpl.campaignHint': 'Conversion-optimized for cold paid (Meta) traffic — lead capture high, payment plan and scarcity lead.',
     'lm.landings.createAll': 'Create all missing',
     'lm.landings.creatingAll': 'Creating all…',
     'lm.landings.genOk': 'Landing page generated for {name}',
@@ -1216,6 +1220,10 @@ export const lm_core: Record<Locale, Dict> = {
     // ── Landing pages ──
     'lm.landings.title': 'صفحات الهبوط',
     'lm.landings.subtitle': '{n} عقار — لكل عقار صفحة هبوط إعلانية مخصصة',
+    'lm.landings.tpl.label': 'القالب',
+    'lm.landings.tpl.classic': 'كلاسيكي',
+    'lm.landings.tpl.campaign': 'حملة',
+    'lm.landings.tpl.campaignHint': 'مُحسَّن للتحويل لحركة الإعلانات المدفوعة الباردة (ميتا) — نموذج جذب العملاء في الأعلى، وخطة السداد والندرة في المقدمة.',
     'lm.landings.createAll': 'إنشاء الكل المفقود',
     'lm.landings.creatingAll': 'جارٍ الإنشاء…',
     'lm.landings.genOk': 'تم إنشاء صفحة الهبوط لـ {name}',
@@ -2276,6 +2284,10 @@ export const lm_core: Record<Locale, Dict> = {
     // ── Landing pages ──
     'lm.landings.title': 'Лендинги',
     'lm.landings.subtitle': '{n} объектов — у каждого объекта есть отдельный рекламный лендинг',
+    'lm.landings.tpl.label': 'Шаблон',
+    'lm.landings.tpl.classic': 'Классический',
+    'lm.landings.tpl.campaign': 'Кампания',
+    'lm.landings.tpl.campaignHint': 'Оптимизирован под конверсию для холодного платного трафика (Meta) — форма захвата вверху, план оплаты и дефицит в начале.',
     'lm.landings.createAll': 'Создать все отсутствующие',
     'lm.landings.creatingAll': 'Создаём…',
     'lm.landings.genOk': 'Лендинг для {name} создан',
