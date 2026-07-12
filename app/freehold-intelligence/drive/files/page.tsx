@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Search, Loader2, ExternalLink, Cloud as CloudIcon, Sparkles, Link2, Check,
+  Download, FolderInput, Trash2, Folder,
   Image as ImageIcon, Video, FileType2, FileSpreadsheet, FileText, StickyNote, Megaphone,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
@@ -17,10 +18,12 @@ import { editorTypeForKind, editorHrefForItem, type DriveKind } from '@/lib/free
 // in a new tab. Read-only browser — create/edit happens in the source room.
 type Unified = {
   id: string
+  rawId: string         // the store id without the lib-/cld- prefix (delete/move)
   name: string
   kind: string          // image | video | pdf | doc | sheet | note | creative | file
   url: string | null
   source: 'library' | 'cloud'
+  folder: string | null
   createdAt: string
   driveKind?: DriveKind  // library only — for opening the right editor
 }
@@ -56,6 +59,7 @@ export default function FilesManagerPage() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [source, setSource] = useState<'all' | 'library' | 'cloud'>('all')
+  const [activeFolder, setActiveFolder] = useState<string | null>(null) // null = all · '' = unfiled
   const [shared, setShared] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -68,14 +72,14 @@ export default function FilesManagerPage() {
       const out: Unified[] = []
       if (Array.isArray(lib.items)) {
         for (const it of lib.items) out.push({
-          id: `lib-${it.id}`, name: it.title || 'Untitled', kind: it.kind, url: it.url ?? null,
-          source: 'library', createdAt: it.createdAt || '', driveKind: it.kind,
+          id: `lib-${it.id}`, rawId: it.id, name: it.title || 'Untitled', kind: it.kind, url: it.url ?? null,
+          source: 'library', folder: it.folder ?? null, createdAt: it.createdAt || '', driveKind: it.kind,
         })
       }
       if (Array.isArray(cloud.files)) {
         for (const f of cloud.files) out.push({
-          id: `cld-${f.id}`, name: f.name, kind: cloudKind(f.mime, f.name), url: f.url,
-          source: 'cloud', createdAt: f.createdAt || '',
+          id: `cld-${f.id}`, rawId: f.id, name: f.name, kind: cloudKind(f.mime, f.name), url: f.url,
+          source: 'cloud', folder: f.folder ?? null, createdAt: f.createdAt || '',
         })
       }
       out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -84,12 +88,19 @@ export default function FilesManagerPage() {
   }, [])
   useEffect(() => { load() }, [load])
 
+  const folders = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of items) if (i.folder) set.add(i.folder)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [items])
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
     return items
       .filter((i) => source === 'all' || i.source === source)
+      .filter((i) => activeFolder === null || (i.folder ?? '') === activeFolder)
       .filter((i) => !q || i.name.toLowerCase().includes(q))
-  }, [items, query, source])
+  }, [items, query, source, activeFolder])
 
   function open(it: Unified) {
     if (it.source === 'library' && it.driveKind && SHIPPED.has(editorTypeForKind(it.driveKind, !!it.url))) {
@@ -117,6 +128,38 @@ export default function FilesManagerPage() {
     } catch { toast.error(t('fm.shareFailed')) }
   }
 
+  function download(it: Unified) {
+    if (!it.url) return
+    const a = document.createElement('a')
+    a.href = it.url; a.download = it.name; a.target = '_blank'; a.rel = 'noopener'
+    a.click()
+  }
+
+  async function move(it: Unified) {
+    const name = window.prompt(t('fm.movePrompt'), it.folder ?? '')
+    if (name === null) return
+    const folder = name.trim() || null
+    const url = it.source === 'library' ? '/api/freehold/library' : '/api/freehold/cloud/files'
+    setItems((prev) => prev.map((x) => (x.id === it.id ? { ...x, folder } : x)))
+    try {
+      await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: it.rawId, folder }) })
+      toast.success(t('fm.moved'))
+    } catch { toast.error(t('fm.moveFailed')); load() }
+  }
+
+  async function remove(it: Unified) {
+    if (!confirm(t('fm.confirmDelete'))) return
+    const url = it.source === 'library'
+      ? `/api/freehold/library?id=${encodeURIComponent(it.rawId)}`
+      : `/api/freehold/cloud/files?id=${encodeURIComponent(it.rawId)}`
+    try {
+      const res = await fetch(url, { method: 'DELETE' })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.ok) { setItems((prev) => prev.filter((x) => x.id !== it.id)); toast.success(t('fm.deleted')) }
+      else toast.error(t('fm.deleteFailed'))
+    } catch { toast.error(t('fm.deleteFailed')) }
+  }
+
   const chip = (active: boolean) =>
     `inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
       active ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
@@ -139,11 +182,25 @@ export default function FilesManagerPage() {
         </div>
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap gap-1.5">
         <button type="button" onClick={() => setSource('all')} className={chip(source === 'all')}>{t('fm.all')}</button>
         <button type="button" onClick={() => setSource('library')} className={chip(source === 'library')}><Sparkles className="h-3 w-3" /> {t('fm.generated')}</button>
         <button type="button" onClick={() => setSource('cloud')} className={chip(source === 'cloud')}><CloudIcon className="h-3 w-3" /> {t('fm.cloud')}</button>
       </div>
+
+      {/* Folder rail — folders across both stores + an Unfiled bucket */}
+      {(folders.length > 0 || items.some((i) => !i.folder)) && (
+        <div className="mb-5 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={() => setActiveFolder(null)} className={chip(activeFolder === null)}>{t('fm.folders.all')}</button>
+          {folders.map((fld) => (
+            <button key={fld} type="button" onClick={() => setActiveFolder(activeFolder === fld ? null : fld)} className={chip(activeFolder === fld)}>
+              <Folder className="h-3 w-3" /> {fld}
+              <span className="text-[10px] text-slate-500">{items.filter((i) => i.folder === fld).length}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setActiveFolder(activeFolder === '' ? null : '')} className={chip(activeFolder === '')}>{t('fm.unfiled')}</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 py-16 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
@@ -170,7 +227,17 @@ export default function FilesManagerPage() {
                     {shared === it.id ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Link2 className="h-3.5 w-3.5" />}
                   </button>
                 )}
-                {it.url && <ExternalLink className="absolute start-2 bottom-2 h-3.5 w-3.5 text-slate-400 opacity-0 transition group-hover:opacity-100" />}
+                {/* File options — download · move · delete (open = card click) */}
+                <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                  {it.url && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); download(it) }} title={t('fm.download')}
+                      className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-200 shadow-lg backdrop-blur hover:text-white"><Download className="h-3 w-3" /></button>
+                  )}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void move(it) }} title={t('fm.move')}
+                    className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-300 shadow-lg backdrop-blur hover:text-white"><FolderInput className="h-3 w-3" /></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void remove(it) }} title={t('fm.delete')}
+                    className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-300 shadow-lg backdrop-blur hover:text-rose-400"><Trash2 className="h-3 w-3" /></button>
+                </div>
               </div>
               <div className="p-2.5">
                 <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-slate-100"><KindIcon kind={it.kind} className="h-3 w-3 shrink-0 text-slate-500" /> {it.name}</p>
