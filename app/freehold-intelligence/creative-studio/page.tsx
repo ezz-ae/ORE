@@ -18,7 +18,8 @@ import {
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { Button } from "@/components/ui/button"
-import { Play, Clock, ChevronDown, StopCircle } from "lucide-react"
+import { Play, Clock, ChevronDown, StopCircle, Wand2 } from "lucide-react"
+import Link from "next/link"
 import { useT } from "@/lib/i18n/provider"
 import {
   DropdownMenu,
@@ -302,6 +303,14 @@ export default function AgentBuilder() {
   return (
     <div className="flex h-[calc(100vh-56px)] w-full flex-col bg-background">
       <div className="relative flex flex-1 overflow-hidden">
+        {/* Smart-form shortcut — the one-screen alternative to this canvas */}
+        <Link
+          href="/freehold-intelligence/creative-studio/quick"
+          className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/95 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-sm transition hover:text-foreground/80"
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          {t("cs.quick.link")}
+        </Link>
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
           <TooltipProvider delayDuration={300}>
             {/* Templates */}
