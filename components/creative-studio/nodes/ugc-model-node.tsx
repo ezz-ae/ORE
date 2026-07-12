@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { memo } from "react"
+import { memo, useState, useEffect, useCallback } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
-import { User, Lock, Unlock, Play } from "lucide-react"
+import { User, Lock, Unlock, Play, Loader2, Sparkles, CheckCircle2 } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { NodeSelect } from "./node-select"
@@ -57,6 +57,24 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
   const isExpanded = data.isExpanded || false
   const isLocked = data.isLocked || false
 
+  // Presenter memory: the account's saved face per persona. Picking a persona
+  // reuses its face (locking it as the reference), so every video shows the
+  // SAME presenter — generated once, not per video.
+  const [faces, setFaces] = useState<Record<string, string>>({})
+  const [genning, setGenning] = useState(false)
+  useEffect(() => {
+    fetch("/api/freehold/creative-studio/presenters", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.presenters)) {
+          const map: Record<string, string> = {}
+          for (const p of d.presenters) if (p.faceUrl) map[p.id] = p.faceUrl
+          setFaces(map)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const handleUpdate = (field: string, value: any) => {
     if (data.onUpdate) {
       const { isExpanded, onUpdate, ...restData } = data
@@ -96,8 +114,36 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
       return
     }
     const p = PRESENTER_PERSONAS.find((x) => x.id === idValue)
-    if (p) data.onUpdate({ ...rest, persona: p.id, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange, description: p.description })
+    if (p) {
+      const face = faces[p.id]
+      data.onUpdate({
+        ...rest, persona: p.id, gender: p.gender, ethnicity: p.ethnicity, ageRange: p.ageRange, description: p.description,
+        // Reuse the saved face for this presenter → same face every video.
+        ...(face ? { isLocked: true, lockedImageUrl: face } : {}),
+      })
+    }
   }
+
+  // Generate this persona's face ONCE for the account; reused thereafter.
+  const generateFace = useCallback(async () => {
+    if (!personaObj || genning) return
+    setGenning(true)
+    try {
+      const res = await fetch("/api/freehold/creative-studio/presenters", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personaId: personaObj.id }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (res.ok && d.presenter?.faceUrl) {
+        const url = d.presenter.faceUrl as string
+        setFaces((f) => ({ ...f, [personaObj.id]: url }))
+        if (data.onUpdate) {
+          const { isExpanded: _e, onUpdate: _o, ...rest } = data
+          data.onUpdate({ ...rest, isLocked: true, lockedImageUrl: url })
+        }
+      }
+    } catch { /* surfaced as no face saved */ } finally { setGenning(false) }
+  }, [personaObj, genning, data])
 
   return (
     <div
@@ -175,6 +221,26 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             {!isCustom && personaObj && (
               <div className="rounded border border-border bg-muted/20 p-2 text-[10px] leading-relaxed text-muted-foreground">
                 {personaObj.description}
+              </div>
+            )}
+
+            {/* Presenter memory: reuse the saved face, or generate it once. */}
+            {!isCustom && personaObj && (
+              <div className="flex items-center gap-2">
+                {faces[personaObj.id] ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={faces[personaObj.id]} alt="" className="h-11 w-9 rounded object-cover border border-border" />
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-500">
+                      <CheckCircle2 className="h-3 w-3" /> {t("pcsn.pres.reusable")}
+                    </span>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" disabled={genning} onClick={generateFace}>
+                    {genning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    {t("pcsn.pres.genFace")}
+                  </Button>
+                )}
               </div>
             )}
 
