@@ -283,18 +283,44 @@ export function ExpertChat() {
     })
   }
 
-  // Attachment (any extension): text-like files carry their content to the
-  // model; binaries travel as a named pointer. One slot, clearable.
+  // Attachment (any extension): text-like files carry their content; images
+  // and PDFs are READ by real vision/extraction (same Gemini path the
+  // screenshot button uses) so the model can act on them; other binaries
+  // travel as a named pointer. One slot, clearable.
   const [attachment, setAttachment] = useState<{ name: string; content?: string } | null>(null)
+  const [attaching, setAttaching] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   async function onPickFile(file: File | null) {
     if (!file) return
     const TEXT_RE = /\.(txt|md|markdown|csv|json|html?|xml|log|yml|yaml|tsv|ts|tsx|js|jsx|css)$/i
-    let content: string | undefined
+    // Text: carry the content straight to the model.
     if ((file.type.startsWith('text/') || TEXT_RE.test(file.name)) && file.size < 400_000) {
-      try { content = (await file.text()).slice(0, 8000) } catch { /* pointer only */ }
+      try { setAttachment({ name: file.name, content: (await file.text()).slice(0, 8000) }); return } catch { /* fall through to pointer */ }
     }
-    setAttachment({ name: file.name, content })
+    // Image / PDF: run REAL Gemini vision (image) or fact-extraction (pdf) so
+    // "make an ad from this" or "use these figures" actually works.
+    const isImage = file.type.startsWith('image/')
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+    if ((isImage || isPdf) && file.size < 8_000_000) {
+      setAttaching(true)
+      try {
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error); r.readAsDataURL(file)
+        })
+        const res = await fetch('/api/freehold/expert/ingest', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind: isPdf ? 'pdf' : 'image', data: dataUrl }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (d.unavailable) { toast.error(t('expert.ingestUnavailable')); setAttachment({ name: file.name }); return }
+        if (!res.ok || !d.text) { toast.error(d.error || t('expert.ingestFailed')); setAttachment({ name: file.name }); return }
+        setAttachment({ name: file.name, content: d.text })
+      } catch { toast.error(t('expert.ingestFailed')); setAttachment({ name: file.name }) }
+      finally { setAttaching(false) }
+      return
+    }
+    // Other binaries: honest name-only pointer.
+    setAttachment({ name: file.name })
   }
 
   // Voice note → REAL server-side transcription (Gemini audio).
@@ -784,9 +810,9 @@ export function ExpertChat() {
                 className={`grid h-7 w-7 place-items-center rounded-full transition ${recording ? 'animate-pulse bg-red-500/20 text-red-400' : 'text-slate-500 hover:bg-surface-3 hover:text-slate-200'}`}>
                 {transcribing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : recording ? <Square className="h-3 w-3" /> : <Mic className="h-3.5 w-3.5" />}
               </button>
-              <button type="button" onClick={() => fileRef.current?.click()} title={t('expert.attachTitle')}
-                className="grid h-7 w-7 place-items-center rounded-full text-slate-500 transition hover:bg-surface-3 hover:text-slate-200">
-                <Paperclip className="h-3.5 w-3.5" />
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={attaching} title={t('expert.attachTitle')}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-500 transition hover:bg-surface-3 hover:text-slate-200 disabled:opacity-50">
+                {attaching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
               </button>
               <button type="button" onClick={captureScreenshot} title={t('expert.shotTitle')}
                 className="grid h-7 w-7 place-items-center rounded-full text-slate-500 transition hover:bg-surface-3 hover:text-slate-200">
