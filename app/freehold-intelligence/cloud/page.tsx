@@ -6,6 +6,7 @@ import { upload } from '@vercel/blob/client'
 import {
   Cloud, Upload, FolderPlus, Folder, FolderOpen, Loader2, Trash2,
   FolderInput, ExternalLink, FileText, FileSpreadsheet, FileType2, File as FileIcon,
+  PhoneCall, Copy, X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -57,6 +58,8 @@ export default function CloudPage() {
   const [dragging, setDragging] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [busyNames, setBusyNames] = useState<Set<string>>(new Set())
+  const [callBusy, setCallBusy] = useState(false)
+  const [callScript, setCallScript] = useState<string | null>(null)
 
   const fileInput = useRef<HTMLInputElement | null>(null)
   const dragDepth = useRef(0)
@@ -146,6 +149,23 @@ export default function CloudPage() {
     } catch { toast.error(t('cloud.folderFailed')) }
   }
 
+  // Generate a cold-call script grounded on the active folder's brochures, and
+  // save it back into the folder as a .txt (the broker's prep pack for lead calls).
+  async function generateCallScript() {
+    const folder = activeFolder && activeFolder !== '' ? activeFolder : null
+    setCallBusy(true)
+    try {
+      const res = await fetch('/api/freehold/cloud/call-scenario', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder, projectName: folder ?? undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.script) { toast.error(d.error || t('cloud.call.failed')); return }
+      setCallScript(d.script as string)
+      if (d.file) await load()  // the saved .txt now lives in the folder
+    } catch { toast.error(t('cloud.call.failed')) } finally { setCallBusy(false) }
+  }
+
   async function moveFile(file: CloudFile) {
     const name = window.prompt(t('cloud.movePrompt'), file.folder ?? '')
     if (name === null) return
@@ -192,6 +212,10 @@ export default function CloudPage() {
         <div className="ms-auto flex flex-wrap items-center gap-2.5">
           <input ref={fileInput} type="file" multiple hidden
             onChange={(e) => { const list = Array.from(e.target.files || []); if (list.length) void uploadFiles(list); e.target.value = '' }} />
+          <button type="button" onClick={() => void generateCallScript()} disabled={callBusy} title={t('cloud.call.hint')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+            {callBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PhoneCall className="h-3.5 w-3.5" />} {t('cloud.call.btn')}
+          </button>
           <button type="button" onClick={() => newFolder()}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
             <FolderPlus className="h-3.5 w-3.5" /> {t('cloud.newFolder')}
@@ -312,6 +336,27 @@ export default function CloudPage() {
           </div>
         )}
       </div>
+
+      {/* Call-script result — the broker's prep pack (also saved into the folder) */}
+      {callScript !== null && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onClick={() => setCallScript(null)}>
+          <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <span className="flex items-center gap-2 text-sm font-semibold text-white"><PhoneCall className="h-4 w-4 text-teal-400" /> {t('cloud.call.title')}</span>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(callScript); toast.success(t('cloud.call.copied')) }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1 text-xs text-slate-300 transition hover:text-white">
+                  <Copy className="h-3.5 w-3.5" /> {t('cloud.call.copy')}
+                </button>
+                <button type="button" onClick={() => setCallScript(null)} className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-surface-2 hover:text-white"><X className="h-4 w-4" /></button>
+              </div>
+            </div>
+            <div className="overflow-y-auto px-5 py-4">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-200">{callScript}</pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
