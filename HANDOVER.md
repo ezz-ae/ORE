@@ -69,19 +69,35 @@ app shows honest fallbacks instead of the real feature:
 
 ---
 
-## 3. NOT DONE YET — product work still open
+## 3. Product work — task board fully closed (final verification 2026-07-12)
 
-From the task board (everything else — ~147 items — is completed):
+Every task on the 150-item board is now completed. The four items previously
+listed as open were re-verified against the code and turned out to be shipped
+by later PRs (the board had lagged behind the code):
 
-- **MB Phase 3: Smart Landing flow** (microsite builder) — pending, never started.
-- **MB Phase 5: Creative + Landing test** — in progress, not finished.
-- **LP-1 remnants** — landing pages are trilingual and the WhatsApp duplication
-  was fixed, but the **day/night (theme) toggle on public landing pages** was
-  never explicitly verified end-to-end; check before calling LP-1 done.
-- **ADS-2 remnants** — targeting builder, templates, placements, pixel selection
-  and multi-copy shipped (#179/#180); an **audience reach estimate** in the
-  wizard was part of the original ask and was not built.
-- ADS-3 (AI as builder/agent) **is done** — delivered by PR #180 (board lagged).
+- **LP-1** ✓ — public landing pages have the trilingual `LangSwitcher` AND the
+  day/night `ThemeToggle` (`app/lp/[slug]/page.tsx`, `lib/landing-theme.ts`).
+- **ADS-2** ✓ — targeting builder (location/language/gender default-all,
+  deselectable), templates, placements, pixel, AI multi-copy, and a **live Meta
+  reach estimate** in wizard step 2 (`getReachEstimate` via
+  `/api/freehold/ads/buyer-match`, honest "connect for a live estimate" state).
+- **MB Phase 3 (Smart Landing flow)** ✓ — audience basics are first-class on
+  step 2; **Data Quality Test** button on step 1
+  (`/api/freehold/ads/data-quality`); generate → landing edit canvas (AI rail)
+  → handoff to ad setup (`campaigns/new?project=…&lp=…` from the landings list).
+- **MB Phase 5 (Creative + Landing test)** ✓ — creative via upload-to-Meta
+  (`image_hash`), Library picker, Drive QR-stamp (#168); AI copy samples;
+  **Landing Test** button running real pre-flight checks
+  (`/api/crm/landing-pages/[slug]/test`); Meta instant lead-form variant (#167).
+
+**Future enhancements — explicitly NOT built (by decision, not oversight):**
+
+- **Carousel and video ad formats** — the Meta launch path is single-image link
+  ads (+ instant form / WhatsApp / call destinations). Carousel
+  (`child_attachments`) and video (advideos upload + processing poll) were left
+  out rather than shipped unverified into the money path right before handover.
+- **"Instant experience"** ad format and launch-time per-placement auto-resize
+  (Creative Studio format presets cover resizing at design time).
 
 Data-side gaps (also encoded in `hex-agent.md`, jobs H1–H7 — to be built in the
 external Hex notebook, not in this repo):
