@@ -6,7 +6,7 @@ import { upload } from '@vercel/blob/client'
 import {
   Cloud, Upload, FolderPlus, Folder, FolderOpen, Loader2, Trash2,
   FolderInput, ExternalLink, FileText, FileSpreadsheet, FileType2, File as FileIcon,
-  PhoneCall, Copy, X,
+  PhoneCall, Copy, X, RefreshCw,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
@@ -61,6 +61,7 @@ export default function CloudPage() {
   const [callBusy, setCallBusy] = useState(false)
   const [callScript, setCallScript] = useState<string | null>(null)
   const [offerBusy, setOfferBusy] = useState<false | 'offer' | 'factsheet'>(false)
+  const [syncing, setSyncing] = useState(false)
 
   const fileInput = useRef<HTMLInputElement | null>(null)
   const dragDepth = useRef(0)
@@ -123,6 +124,19 @@ export default function CloudPage() {
     setDragging(false)
     const dropped = Array.from(e.dataTransfer.files || [])
     if (dropped.length) void uploadFiles(dropped)
+  }
+
+  // Import files added straight to the Blob store (dashboard uploads) so they
+  // appear in the Cloud — they have the object but no metadata row until now.
+  async function syncBlob() {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/freehold/cloud/sync', { method: 'POST' })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { toast.error(d.error || t('cloud.sync.failed')); return }
+      toast.success(t('cloud.sync.done', { n: String(d.imported ?? 0) }))
+      if (d.imported > 0) await load()
+    } catch { toast.error(t('cloud.sync.failed')) } finally { setSyncing(false) }
   }
 
   async function newFolder() {
@@ -245,6 +259,10 @@ export default function CloudPage() {
           <button type="button" onClick={() => void generateDoc('factsheet')} disabled={!!offerBusy} title={t('cloud.sheet.hint')}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
             {offerBusy === 'factsheet' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} {t('cloud.sheet.btn')}
+          </button>
+          <button type="button" onClick={() => void syncBlob()} disabled={syncing} title={t('cloud.sync.hint')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-50">
+            {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} {t('cloud.sync.btn')}
           </button>
           <button type="button" onClick={() => newFolder()}
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { del } from '@vercel/blob'
+import { del, list } from '@vercel/blob'
 import { query } from '@/lib/db'
 
 // ─── Cloud — account-level file storage ───────────────────────────────────────
@@ -159,6 +159,49 @@ export async function deleteCloudFolder(email: string, name: string): Promise<bo
     await query(`DELETE FROM freehold_cloud_folders WHERE user_email = $1 AND name = $2`, [email, clean])
     return true
   } catch { return false }
+}
+
+const mimeFromName = (name: string): string | null => {
+  const ext = (name.split('.').pop() || '').toLowerCase()
+  const map: Record<string, string> = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
+    pdf: 'application/pdf', csv: 'text/csv', txt: 'text/plain',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', doc: 'application/msword',
+    mp4: 'video/mp4', mov: 'video/quicktime', zip: 'application/zip',
+  }
+  return map[ext] ?? null
+}
+
+/**
+ * Import any Blob objects that aren't yet indexed in the Cloud — e.g. files
+ * added straight to the Vercel Blob dashboard (which creates the object but no
+ * metadata row). Skips app-internal generated assets (presenter faces) and
+ * anything already tracked by anyone. New files are filed to the syncing user.
+ */
+export async function syncFromBlob(email: string): Promise<{ imported: number; scanned: number }> {
+  if (!cloudConfigured()) return { imported: 0, scanned: 0 }
+  await ensureOnce()
+  // URLs already tracked (by any user) — so a re-sync never duplicates.
+  const rows = await query<{ url: string }>(`SELECT url FROM freehold_cloud_files`)
+  const known = new Set(rows.map((r) => r.url))
+  let cursor: string | undefined
+  let imported = 0
+  let scanned = 0
+  do {
+    const res = await list({ cursor, limit: 1000 })
+    cursor = res.hasMore ? res.cursor : undefined
+    for (const b of res.blobs) {
+      scanned++
+      if (b.pathname.startsWith('presenters/')) continue // internal generated faces
+      if (known.has(b.url)) continue
+      const name = b.pathname.split('/').pop() || b.pathname
+      await recordCloudFile(email, { name, url: b.url, pathname: b.pathname, size: b.size, mime: mimeFromName(name), folder: null })
+      known.add(b.url)
+      imported++
+    }
+  } while (cursor)
+  return { imported, scanned }
 }
 
 /** Move a file to another folder (null = root). Owner-scoped. */
