@@ -12,7 +12,6 @@ const tabs = [
   { labelKey: 'lm.live.nav.overview', href: '/freehold-intelligence/ads-live',         exact: true },
   { labelKey: 'lm.live.nav.meta',     href: '/freehold-intelligence/ads-live/meta' },
   { labelKey: 'lm.live.nav.google',   href: '/freehold-intelligence/ads-live/google' },
-  { labelKey: 'lm.live.nav.preview',  href: '/freehold-intelligence/ads-live/preview' },
   { labelKey: 'lm.live.nav.build',    href: '/freehold-intelligence/lead-machine', divider: true },
 ]
 

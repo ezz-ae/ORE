@@ -330,8 +330,9 @@ Your tools:${renderToolDocs(tools)}`
         }],
       })
 
+    const toolNames = tools.map((tl) => tl.name)
     for (let i = 0; i <= MAX_TOOLS_PER_TURN && tools.length > 0; i++) {
-      const call = parseToolCall(raw)
+      const call = parseToolCall(raw, toolNames)
       if (!call) break
       if (toolsUsed.length >= MAX_TOOLS_PER_TURN) {
         raw = limitReply()
@@ -366,7 +367,7 @@ Your tools:${renderToolDocs(tools)}`
 
     // Never let a dangling tool_call escape the loop — it would render as
     // gibberish AND corrupt the saved session for every later turn.
-    if (tools.length > 0 && parseToolCall(raw)) raw = limitReply()
+    if (tools.length > 0 && parseToolCall(raw, toolNames)) raw = limitReply()
 
     const blocks = parseBlocks(raw)
     // Persist the turn to the account's session so nothing is lost on reload —

@@ -1,7 +1,7 @@
 import {
   listCampaigns, getCampaign, getCampaignInsights,
   updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
-  launchFullCampaign,
+  launchFullCampaign, listLeadForms, createLeadForm,
 } from '@/lib/meta/client'
 import { UAE_INTERESTS } from '@/lib/meta/targeting-catalog'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
@@ -216,6 +216,52 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     },
   },
   {
+    name: 'forms_list', agent: 'ads_agent',
+    description: 'READ the Meta instant lead forms on the connected account: name, status, lead counts. Use before creating a form (reuse beats duplication) and when wiring a Meta Lead campaign.',
+    params: '{}',
+    roles: ADS_READERS,
+    run: async () => {
+      const forms = await listLeadForms()
+      return {
+        forms: forms.slice(0, 15).map((f) => ({
+          id: f.id, name: f.name, status: f.status, leads: f.leads_count,
+          manageUrl: `/freehold-intelligence/lead-machine/forms/${f.id}`,
+        })),
+        formsUrl: '/freehold-intelligence/lead-machine/forms',
+      }
+    },
+  },
+  {
+    name: 'forms_create', agent: 'ads_agent', destructive: true,
+    description: 'CREATE a real Meta instant lead form on the connected account with the standard fields (full name, email, phone). Leads collected by it sync into the CRM. Use when the user asks for a lead form — do NOT tell them to build it in Ads Manager.',
+    params: '{ "formName": string, "listingName": string, "listingSlug"?: string, "landingUrl"?: string, "confirm": true }',
+    roles: OPERATORS,
+    run: async (args) => {
+      const formName = s(args.formName)
+      const listingName = s(args.listingName)
+      if (!formName || !listingName) return { error: 'formName and listingName are required' }
+      const slug = s(args.listingSlug)
+      const landingUrl = s(args.landingUrl)
+        || (slug ? `https://www.freeholdproperty.ae/lp/${slug}` : 'https://www.freeholdproperty.ae')
+      const created = await createLeadForm({
+        name: formName,
+        listingId: slug || listingName,
+        listingName,
+        landingUrl,
+        questions: [{ type: 'FULL_NAME' }, { type: 'EMAIL' }, { type: 'PHONE' }],
+        privacyPolicyUrl: 'https://www.freeholdproperty.ae/privacy',
+        thankYouTitle: `Thank you — ${listingName}`,
+        thankYouBody: 'Our advisor will contact you shortly with the full details.',
+      })
+      return {
+        ok: true,
+        formId: created.id,
+        manageUrl: `/freehold-intelligence/lead-machine/forms/${created.id}`,
+        note: 'The form is live on the ad account and its leads sync into the CRM. To run ads on it: campaign wizard → objective "Meta Lead" → pick this form, or ads_launch_campaign later.',
+      }
+    },
+  },
+  {
     name: 'audiences_list', agent: 'ads_agent',
     description: 'READ the saved audiences (Audiences tab): behavioral/narrow definitions and lookalikes seeded from real lead lists, with their composition and one-click attach links. Use before planning a campaign so a real audience gets attached instead of guessed interests.',
     params: '{}',
@@ -412,14 +458,51 @@ export function renderToolDocs(tools: CoordinatorTool[]): string {
 }
 
 /** Parse a model turn that is a tool call: {"tool_call":{"name","args"}}. */
-export function parseToolCall(raw: string): { name: string; args: Record<string, unknown> } | null {
+export function parseToolCall(
+  raw: string,
+  knownNames: string[] = [],
+): { name: string; args: Record<string, unknown> } | null {
   const trimmed = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+
+  // 1 — the documented protocol: {"tool_call": {name, args}}
   try {
     const parsed = JSON.parse(trimmed) as { tool_call?: { name?: string; args?: Record<string, unknown> } }
     if (parsed.tool_call?.name) {
       return { name: String(parsed.tool_call.name), args: parsed.tool_call.args ?? {} }
     }
-  } catch { /* not a tool call */ }
+  } catch { /* fall through to the recovery parsers */ }
+
+  // Models drift from the protocol under pressure — recover the obvious
+  // shapes instead of leaking tool syntax to the user as a "reply".
+  if (knownNames.length) {
+    // 2 — protocol JSON embedded in prose
+    const embedded = trimmed.match(/\{\s*"tool_call"\s*:\s*\{[\s\S]*?\}\s*\}/)
+    if (embedded) {
+      try {
+        const parsed = JSON.parse(embedded[0]) as { tool_call?: { name?: string; args?: Record<string, unknown> } }
+        if (parsed.tool_call?.name && knownNames.includes(String(parsed.tool_call.name))) {
+          return { name: String(parsed.tool_call.name), args: parsed.tool_call.args ?? {} }
+        }
+      } catch { /* keep going */ }
+    }
+
+    // 3 — python/function style: tool_name(arg='v', n=3) — optionally print(...)
+    const fn = trimmed.match(/^(?:print\s*\(\s*)?([a-z][a-z0-9_]*)\s*\(([^)]*)\)/i)
+    if (fn && knownNames.includes(fn[1])) {
+      const args: Record<string, unknown> = {}
+      for (const m of fn[2].matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:'([^']*)'|"([^"]*)"|(true|false)|(-?\d+(?:\.\d+)?))/g)) {
+        const key = m[1]
+        args[key] = m[2] ?? m[3] ?? (m[4] !== undefined ? m[4] === 'true' : Number(m[5]))
+      }
+      return { name: fn[1], args }
+    }
+
+    // 4 — a bare tool name on its own (possibly repeated on multiple lines)
+    const firstLine = trimmed.split(/\n/)[0].trim()
+    if (knownNames.includes(firstLine) && trimmed.split(/\s+/).every((w) => knownNames.includes(w))) {
+      return { name: firstLine, args: {} }
+    }
+  }
   return null
 }
 

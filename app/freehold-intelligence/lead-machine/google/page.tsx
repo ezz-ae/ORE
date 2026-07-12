@@ -61,7 +61,7 @@ export default function GoogleOverviewPage() {
       setCampaigns(cData.campaigns ?? [])
       setReport(rData.report ?? null)
     } catch {
-      setError('Network error — could not reach Google Ads API')
+      setError(t('lm.google.err.network'))
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -110,7 +110,7 @@ export default function GoogleOverviewPage() {
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-100">
             Google Ads<br />
             <span className="text-slate-500">
-              {loading ? '…' : configErr ? 'not connected.' : `${campaigns.length} campaigns.`}
+              {loading ? '…' : configErr ? t('lm.google.sub.notConnected') : t('lm.google.sub.campaigns', { n: campaigns.length })}
             </span>
           </h1>
         </section>
@@ -217,9 +217,9 @@ export default function GoogleOverviewPage() {
                         <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${CAMPAIGN_TYPE_COLOR[type] ?? 'bg-surface-2 text-slate-400 border-line'}`}>
                           {type.replace('_', ' ')}
                         </span>
-                        <span className="flex-1 text-sm font-semibold text-white">{rows.length} campaign{rows.length !== 1 ? 's' : ''}</span>
-                        <span className="text-xs text-slate-400">{clicks.toLocaleString()} clicks</span>
-                        <span className="text-xs text-slate-400">{Math.round(convs)} conv.</span>
+                        <span className="flex-1 text-sm font-semibold text-white">{t('lm.attribution.campaignCount', { n: rows.length })}</span>
+                        <span className="text-xs text-slate-400">{t('lm.google.row.clicks', { n: clicks.toLocaleString() })}</span>
+                        <span className="text-xs text-slate-400">{t('lm.google.row.conv', { n: Math.round(convs) })}</span>
                         <span className="text-sm font-medium text-white">{fmtMicros(spend)}</span>
                       </div>
                     )
@@ -260,8 +260,8 @@ export default function GoogleOverviewPage() {
                         {c.name}
                       </span>
                       <div className="flex shrink-0 items-center gap-4 text-xs">
-                        <span className="text-slate-400">{c.metrics?.clicks.toLocaleString() ?? 0} clicks</span>
-                        <span className="text-slate-400">{Math.round(c.metrics?.conversions ?? 0)} conv.</span>
+                        <span className="text-slate-400">{t('lm.google.row.clicks', { n: c.metrics?.clicks.toLocaleString() ?? 0 })}</span>
+                        <span className="text-slate-400">{t('lm.google.row.conv', { n: Math.round(c.metrics?.conversions ?? 0) })}</span>
                         <span className="font-medium text-white">{fmtMicros(c.metrics?.costMicros ?? 0)}</span>
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.status === 'ENABLED' ? 'bg-gold' : 'bg-white/20'}`} />
                       </div>
@@ -275,12 +275,12 @@ export default function GoogleOverviewPage() {
           {/* Quick nav */}
           <section className="mt-10 grid gap-3 sm:grid-cols-3">
             {[
-              { href: '/freehold-intelligence/lead-machine/google/keywords',   icon: Search,   title: 'Keywords',   body: 'Manage keywords, match types, and negatives across all campaigns.' },
-              { href: '/freehold-intelligence/lead-machine/google/ads',        icon: Monitor,  title: 'Ads',        body: 'View RSA ad copy, ad strength scores, and performance.' },
-              { href: '/freehold-intelligence/lead-machine/google/reports',    icon: BarChart2, title: 'Reports',   body: 'Search terms, auction insights, device breakdown.' },
-              { href: '/freehold-intelligence/lead-machine/google/audiences',  icon: TrendingUp, title: 'Audiences', body: 'Customer match lists, in-market and remarketing audiences.' },
-              { href: '/freehold-intelligence/lead-machine/google/extensions', icon: Zap,       title: 'Extensions', body: 'Sitelinks, callouts, call extensions, and lead form assets.' },
-              { href: '/freehold-intelligence/lead-machine/google/ads/generate', icon: Zap,    title: 'RSA Generator', body: 'AI-generated headlines and descriptions for Responsive Search Ads.' },
+              { href: '/freehold-intelligence/lead-machine/google/keywords',   icon: Search,   title: t('lm.google.nav.keywords'),   body: t('lm.google.nav.keywordsBody') },
+              { href: '/freehold-intelligence/lead-machine/google/ads',        icon: Monitor,  title: t('lm.google.nav.ads'),        body: t('lm.google.nav.adsBody') },
+              { href: '/freehold-intelligence/lead-machine/google/reports',    icon: BarChart2, title: t('lm.google.nav.reports'),   body: t('lm.google.nav.reportsBody') },
+              { href: '/freehold-intelligence/lead-machine/google/audiences',  icon: TrendingUp, title: t('lm.google.nav.audiences'), body: t('lm.google.nav.audiencesBody') },
+              { href: '/freehold-intelligence/lead-machine/google/extensions', icon: Zap,       title: t('lm.google.nav.extensions'), body: t('lm.google.nav.extensionsBody') },
+              { href: '/freehold-intelligence/lead-machine/google/ads/generate', icon: Zap,    title: t('lm.google.nav.rsa'), body: t('lm.google.nav.rsaBody') },
             ].map(({ href, icon: Icon, title, body }) => (
               <Link
                 key={href}

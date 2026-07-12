@@ -109,7 +109,9 @@ export default function GenerateCreativePage() {
     const ctx = override
       ? { id: override.slug || override.name, name: override.name, area: override.area, developer: override.developer, price: override.price, paymentPlan: '' }
       : listing
-        ? { id: listing.id, name: listing.name, area: listing.area, developer: '', price: listing.priceAED ?? 0, paymentPlan: listing.paymentPlan ?? '' }
+        // The API requires a non-empty developer — '' made EVERY picker-path
+        // generation fail with a 400. Fall back to the brand when unknown.
+        ? { id: listing.id, name: listing.name, area: listing.area, developer: 'Freehold', price: listing.priceAED ?? 0, paymentPlan: listing.paymentPlan ?? '' }
         : null
     if (!ctx) return
     setLoading(true)
