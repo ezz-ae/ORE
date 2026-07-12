@@ -4,42 +4,40 @@ import Link from 'next/link'
 import { Sparkles, Wand2, Monitor, FolderOpen, Cloud, ArrowRight } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
-// The Drive home as five clear rooms — each opens the real surface behind it.
-// Generation lives in the Studio, editing in the Media Editor, landing pages in
-// the Web Designer, your generated files in the Files Manager, and account-level
-// raw files in the Cloud. One map instead of a crowded wall of tiles.
-type Room = { key: string; href: string; Icon: React.ElementType; accent: string }
+// The Drive home = five ROOMS. These are the top level, so they read as big,
+// distinct entrances (icon tile + a soft accent glow) — deliberately unlike the
+// compact app tiles inside a room (HubGrid) and the thumbnail file cards.
+type Room = { key: string; href: string; Icon: React.ElementType; icon: string; glow: string; ring: string }
 
 const ROOMS: Room[] = [
-  { key: 'studio',   href: '/freehold-intelligence/drive/studio',           Icon: Sparkles,   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
-  { key: 'editor',   href: '/freehold-intelligence/drive/library',          Icon: Wand2,      accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
-  { key: 'web',      href: '/freehold-intelligence/drive/web',              Icon: Monitor,    accent: 'text-teal-300 border-teal-400/25 bg-teal-400/[0.06]' },
-  { key: 'files',    href: '/freehold-intelligence/drive/files',            Icon: FolderOpen, accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
-  { key: 'cloud',    href: '/freehold-intelligence/cloud',                  Icon: Cloud,      accent: 'text-emerald-300 border-emerald-400/25 bg-emerald-400/[0.06]' },
+  { key: 'studio', href: '/freehold-intelligence/drive/studio',  Icon: Sparkles,   icon: 'text-gold',        glow: 'from-gold/15',        ring: 'ring-gold/25' },
+  { key: 'editor', href: '/freehold-intelligence/drive/library', Icon: Wand2,      icon: 'text-violet-300',  glow: 'from-violet-500/15',  ring: 'ring-violet-400/25' },
+  { key: 'web',    href: '/freehold-intelligence/drive/web',     Icon: Monitor,    icon: 'text-teal-300',    glow: 'from-teal-500/15',    ring: 'ring-teal-400/25' },
+  { key: 'files',  href: '/freehold-intelligence/drive/files',   Icon: FolderOpen, icon: 'text-sky-300',     glow: 'from-sky-500/15',     ring: 'ring-sky-400/25' },
+  { key: 'cloud',  href: '/freehold-intelligence/cloud',         Icon: Cloud,      icon: 'text-emerald-300', glow: 'from-emerald-500/15', ring: 'ring-emerald-400/25' },
 ]
 
 export function DriveRooms() {
   const t = useT()
   return (
     <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-      <div className="mb-1 flex items-baseline gap-2">
-        <h1 className="text-lg font-semibold text-white">{t('drive.rooms.title')}</h1>
-      </div>
-      <p className="mb-4 text-xs text-slate-500">{t('drive.rooms.subtitle')}</p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {ROOMS.map(({ key, href, Icon, accent }) => (
+      <h1 className="text-xl font-semibold text-white">{t('drive.rooms.title')}</h1>
+      <p className="mb-5 mt-0.5 text-sm text-slate-500">{t('drive.rooms.subtitle')}</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {ROOMS.map(({ key, href, Icon, icon, glow, ring }) => (
           <Link key={key} href={href}
-            className="group relative flex items-start gap-3 rounded-2xl border border-line bg-surface-2/60 p-4 transition hover:border-line-strong hover:bg-surface-2">
-            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border ${accent}`}>
-              <Icon className="h-5 w-5" />
+            className="group relative min-h-[168px] overflow-hidden rounded-3xl border border-line bg-surface-2/40 p-6 transition hover:border-line-strong hover:bg-surface-2">
+            <div className={`pointer-events-none absolute -end-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${glow} to-transparent blur-2xl opacity-70 transition group-hover:opacity-100`} />
+            <span className={`relative grid h-14 w-14 place-items-center rounded-2xl bg-surface-3/80 ring-1 ${ring} ${icon}`}>
+              <Icon className="h-7 w-7" />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 text-[15px] font-semibold text-slate-100">
+            <div className="relative mt-5">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
                 {t(`drive.room.${key}.title`)}
-                <ArrowRight className="h-3.5 w-3.5 -translate-x-1 text-slate-600 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100 rtl:-scale-x-100" />
-              </span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-slate-500">{t(`drive.room.${key}.desc`)}</span>
-            </span>
+                <ArrowRight className="h-4 w-4 -translate-x-1 text-slate-500 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100 rtl:-scale-x-100" />
+              </h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-slate-400">{t(`drive.room.${key}.desc`)}</p>
+            </div>
           </Link>
         ))}
       </div>
