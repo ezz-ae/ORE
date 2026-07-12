@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOf
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
+import { useAutosaveDraft } from '@/lib/freehold/use-autosave-draft'
 
 type Landing = {
   slug: string
@@ -108,13 +109,21 @@ export default function LandingEditorPage() {
   const [aiTurns, setAiTurns] = useState<AiTurn[]>([])
   // One-level snapshot so an AI edit driven from the side chat is reversible.
   const [aiUndo, setAiUndo] = useState<{ fields: Record<AiField, string>; sections: LpSection[] } | null>(null)
+  // Draft-everything: true once the user touches anything (fields or layout).
+  const [edited, setEdited] = useState(false)
+  // Unsaved landing edits autosave (and flush on tab close) → resumable from
+  // the Drive "Continue editing" shelf. Cleared on Save/Publish.
+  const { clearDraft } = useAutosaveDraft({
+    kind: 'landing', refKey: slug, href: `/freehold-intelligence/lead-machine/landings/${slug}/edit`,
+    title: form?.headline, active: edited, data: form ?? {},
+  })
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(`/api/crm/landing-pages/${slug}`, { cache: 'no-store' })
       const d = await res.json()
-      if (res.ok && d.landing) setForm(d.landing as Landing)
+      if (res.ok && d.landing) { setForm(d.landing as Landing); setEdited(false) }
       else setNotFound(true)
     } catch { setNotFound(true) }
     finally { setLoading(false) }
@@ -123,6 +132,7 @@ export default function LandingEditorPage() {
   useEffect(() => { if (slug) load() }, [slug, load])
 
   function set<K extends keyof Landing>(k: K, v: Landing[K]) {
+    setEdited(true)
     setForm((prev) => (prev ? { ...prev, [k]: v } : prev))
   }
 
@@ -137,6 +147,7 @@ export default function LandingEditorPage() {
       const d = await res.json()
       if (!res.ok) { toast.error(d.error || t('lpe.saveFailed')); return }
       if (d.landing) setForm(d.landing as Landing)
+      setEdited(false); clearDraft()
       setPreviewKey((k) => k + 1)
       toast.success(d.landing?.status === 'pending_publish' ? t('lpe.pendingPublish') : t('lpe.saved'))
     } catch { toast.error(t('lpe.saveFailed')) }
@@ -288,7 +299,7 @@ export default function LandingEditorPage() {
   function sectionLabel(type: string) {
     return type.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   }
-  function setSections(next: LpSection[]) { setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
+  function setSections(next: LpSection[]) { setEdited(true); setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
   // Undo / redo — structural canvas changes (reorder, add, remove, hide, AI) push
   // the prior state; text edits stay untracked to avoid per-keystroke history.
   const [past, setPast] = useState<LpSection[][]>([])
