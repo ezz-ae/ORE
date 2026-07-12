@@ -1,19 +1,23 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone, Trash2, ExternalLink, Plus, Loader2, X, Pencil } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import {
+  Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search,
+} from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
 
-// Editors that have shipped — grows one PR at a time (progressive enablement).
-// An "Edit" action never appears for a type before its editor exists.
+// Editors that have shipped — an "Edit" action never appears before its editor exists.
 const SHIPPED_EDITORS: EditorType[] = ['doc', 'image', 'video', 'pdf']
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null; createdBy: string; createdAt: string }
 
-const KINDS: DriveKind[] = ['report', 'note', 'creative', 'image', 'video', 'pdf']
+const KINDS: DriveKind[] = ['image', 'video', 'pdf', 'creative', 'report', 'note']
+type SortKey = 'new' | 'old' | 'az'
 
 function KindIcon({ kind, className }: { kind: DriveKind; className?: string }) {
   const cls = className ?? 'h-4 w-4'
@@ -30,16 +34,21 @@ function KindIcon({ kind, className }: { kind: DriveKind; className?: string }) 
 const stripHtml = (s: string) => s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
 /**
- * The Drive asset browser — the single grid rendered by both /drive (scope=all)
- * and /drive/library (scope=library). Real: reads /api/freehold/library, filters
- * by kind, opens media, adds media by URL, deletes. Open-in-Editor lights up per
- * type as each editor ships (progressive enablement) — not wired here yet.
+ * The Drive library. One organized surface instead of a crowded wall of
+ * identical tiles: assets group into kind shelves (images, videos, PDFs,
+ * creatives, reports, notes), each with a card design that matches what it
+ * holds — media as thumbnails with hover actions, documents as paper cards
+ * with a text preview. Search and sort work across everything; clicking a
+ * card opens its editor as a full-screen app.
  */
 export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   const t = useT()
+  const router = useRouter()
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<DriveKind | 'all'>('all')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<SortKey>('new')
   const [preview, setPreview] = useState<Item | null>(null)
   // add-by-url
   const [addOpen, setAddOpen] = useState(false)
@@ -58,7 +67,23 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
   }, [])
   useEffect(() => { load() }, [load])
 
-  const shown = filter === 'all' ? items : items.filter((i) => i.kind === filter)
+  const shelves = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    let pool = filter === 'all' ? items : items.filter((i) => i.kind === filter)
+    if (q) pool = pool.filter((i) => i.title.toLowerCase().includes(q) || (i.content && stripHtml(i.content).toLowerCase().includes(q)))
+    const sorted = [...pool].sort((a, b) =>
+      sort === 'az' ? a.title.localeCompare(b.title)
+      : sort === 'old' ? a.createdAt.localeCompare(b.createdAt)
+      : b.createdAt.localeCompare(a.createdAt))
+    // Kind shelves, ordered by their freshest item so active work floats up.
+    const groups = KINDS
+      .map((k) => ({ kind: k, rows: sorted.filter((i) => i.kind === k) }))
+      .filter((g) => g.rows.length > 0)
+    if (sort === 'new') groups.sort((a, b) => b.rows[0].createdAt.localeCompare(a.rows[0].createdAt))
+    return groups
+  }, [items, filter, query, sort])
+
+  const total = shelves.reduce((n, g) => n + g.rows.length, 0)
 
   async function addByUrl() {
     if (!aTitle.trim() || !/^https?:\/\//.test(aUrl.trim())) { toast.error(t('drive.needUrl')); return }
@@ -84,13 +109,55 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
     } catch { toast.error(t('drive.deleteFailed')) }
   }
 
+  function openItem(item: Item) {
+    if (SHIPPED_EDITORS.includes(editorTypeForKind(item.kind, !!item.url))) router.push(editorHrefForItem(item))
+    else if (item.url) window.open(item.url, '_blank', 'noopener')
+    else setPreview(item)
+  }
+
+  const canEdit = (item: Item) => SHIPPED_EDITORS.includes(editorTypeForKind(item.kind, !!item.url))
+
+  // Hover action bar shared by every card style.
+  const Actions = ({ item }: { item: Item }) => (
+    <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center justify-end gap-1.5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+      {canEdit(item) && (
+        <Link href={editorHrefForItem(item)} onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 rounded-full bg-gold px-2.5 py-1 text-[11px] font-semibold text-ink shadow-lg">
+          <Pencil className="h-3 w-3" /> {t('drive.edit')}
+        </Link>
+      )}
+      {item.url && (
+        <button type="button" onClick={(e) => { e.stopPropagation(); window.open(item.url!, '_blank', 'noopener') }}
+          title={t('drive.open')} className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-200 shadow-lg backdrop-blur hover:text-white">
+          <ExternalLink className="h-3 w-3" />
+        </button>
+      )}
+      <button type="button" onClick={(e) => { e.stopPropagation(); void remove(item) }}
+        title={t('drive.delete')} className="grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-300 shadow-lg backdrop-blur hover:text-rose-400">
+        <Trash2 className="h-3 w-3" />
+      </button>
+    </div>
+  )
+
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      {/* Toolbar: search · sort · add */}
+      <div className="mb-5 flex flex-wrap items-center gap-2.5">
         <div>
           <h1 className="text-lg font-semibold text-white">{t(scope === 'library' ? 'drive.libraryTitle' : 'drive.homeTitle')}</h1>
-          {!loading && <p className="mt-0.5 text-xs text-slate-500">{items.length} {t('drive.count')}</p>}
+          {!loading && <p className="mt-0.5 text-xs text-slate-500">{total} {t('drive.count')}</p>}
         </div>
+        <div className="relative ms-auto min-w-[180px] flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('drive.searchPh')}
+            className="w-full rounded-full border border-line bg-surface-2 py-2 ps-9 pe-3 text-xs text-white outline-none placeholder:text-slate-600 focus:border-gold/40" />
+        </div>
+        <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}
+          className="rounded-full border border-line bg-surface-2 px-3 py-2 text-xs text-slate-300 outline-none">
+          <option value="new">{t('drive.sort.new')}</option>
+          <option value="old">{t('drive.sort.old')}</option>
+          <option value="az">{t('drive.sort.az')}</option>
+        </select>
         <button type="button" onClick={() => setAddOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
           <Plus className="h-3.5 w-3.5" /> {t('drive.save')}
         </button>
@@ -110,60 +177,87 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
       )}
 
       {/* Kind filter */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="mb-6 flex flex-wrap gap-1.5">
         <button type="button" onClick={() => setFilter('all')} className={`rounded-full border px-3 py-1 text-xs font-medium transition ${filter === 'all' ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>{t('nb.lib.all')}</button>
-        {KINDS.map((k) => (
-          <button key={k} type="button" onClick={() => setFilter(k)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${filter === k ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
-            <KindIcon kind={k} className="h-3 w-3" /> {t(KIND_META[k].i18nKey)}
-          </button>
-        ))}
+        {KINDS.map((k) => {
+          const n = items.filter((i) => i.kind === k).length
+          return (
+            <button key={k} type="button" onClick={() => setFilter(filter === k ? 'all' : k)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${filter === k ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+              <KindIcon kind={k} className="h-3 w-3" /> {t(KIND_META[k].i18nKey)}{n > 0 && <span className="text-[10px] text-slate-500">{n}</span>}
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
         <div className="flex items-center gap-2 py-16 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
-      ) : shown.length === 0 ? (
+      ) : total === 0 ? (
         <div className="rounded-2xl border border-dashed border-line py-16 text-center text-sm text-slate-500">{t('drive.empty')}</div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {shown.map((item) => {
-            const meta = KIND_META[item.kind]
-            const isImg = item.kind === 'image' && item.url
+        <div className="space-y-8">
+          {shelves.map(({ kind, rows }) => {
+            const meta = KIND_META[kind]
+            const isMedia = kind === 'image' || kind === 'video'
             return (
-              <div key={item.id} className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-2/60">
-                <div className="relative aspect-[4/3] w-full bg-surface">
-                  {isImg
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={item.url!} alt="" className="h-full w-full object-cover" />
-                    : (
-                      <div className="flex h-full flex-col items-center justify-center gap-2 p-3 text-center">
-                        <span className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: `${meta.accent}18`, color: meta.accent }}><KindIcon kind={item.kind} className="h-5 w-5" /></span>
-                        {!meta.media && item.content && <p className="line-clamp-3 text-[11px] leading-snug text-slate-500">{stripHtml(item.content).slice(0, 120)}</p>}
+              <section key={kind}>
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="grid h-6 w-6 place-items-center rounded-lg" style={{ background: `${meta.accent}18`, color: meta.accent }}>
+                    <KindIcon kind={kind} className="h-3.5 w-3.5" />
+                  </span>
+                  <h2 className="text-[13px] font-semibold text-slate-200">{t(meta.i18nKey)}</h2>
+                  <span className="text-[11px] text-slate-500">{rows.length}</span>
+                </div>
+
+                {isMedia ? (
+                  /* Media shelf: thumbnails, actions on hover only */
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {rows.map((item) => (
+                      <div key={item.id} role="button" tabIndex={0} onClick={() => openItem(item)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') openItem(item) }}
+                        className="group relative cursor-pointer overflow-hidden rounded-xl border border-line bg-surface transition hover:border-white/20">
+                        <div className="aspect-video w-full bg-surface-2">
+                          {item.kind === 'image' && item.url
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={item.url} alt="" loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.02]" />
+                            : (
+                              <div className="flex h-full items-center justify-center" style={{ color: meta.accent }}>
+                                <KindIcon kind={item.kind} className="h-8 w-8 opacity-60" />
+                              </div>
+                            )}
+                        </div>
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2.5 pb-2 pt-6">
+                          <p className="truncate text-[11px] font-medium text-white">{item.title}</p>
+                        </div>
+                        <Actions item={item} />
                       </div>
-                    )}
-                  <span className="absolute start-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: `${meta.accent}22`, color: meta.accent }}>{t(meta.i18nKey)}</span>
-                </div>
-                <div className="flex flex-1 flex-col gap-2 p-3">
-                  <p className="line-clamp-2 text-xs font-medium text-slate-200">{item.title}</p>
-                  <div className="mt-auto flex items-center gap-1.5">
-                    {SHIPPED_EDITORS.includes(editorTypeForKind(item.kind, !!item.url)) ? (
-                      <Link href={editorHrefForItem(item)} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
-                        <Pencil className="h-3 w-3" /> {t('drive.edit')}
-                      </Link>
-                    ) : (
-                      <button type="button" onClick={() => (item.url ? window.open(item.url, '_blank', 'noopener') : setPreview(item))} className="inline-flex items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[11px] text-slate-300 transition hover:text-white">
-                        <ExternalLink className="h-3 w-3" /> {t('drive.open')}
-                      </button>
-                    )}
-                    <button type="button" onClick={() => remove(item)} title={t('drive.delete')} className="ms-auto text-slate-500 transition hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    ))}
                   </div>
-                </div>
-              </div>
+                ) : (
+                  /* Document shelf: paper cards with a real text preview */
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {rows.map((item) => (
+                      <div key={item.id} role="button" tabIndex={0} onClick={() => openItem(item)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') openItem(item) }}
+                        className="group relative cursor-pointer overflow-hidden rounded-xl border border-line bg-surface-2/60 transition hover:border-white/20">
+                        <div className="h-1 w-full" style={{ background: `${meta.accent}66` }} />
+                        <div className="p-3.5 pb-9">
+                          <p className="truncate text-[13px] font-semibold text-slate-100">{item.title}</p>
+                          {item.content
+                            ? <p className="mt-1.5 line-clamp-3 text-[11px] leading-relaxed text-slate-500">{stripHtml(item.content).slice(0, 200)}</p>
+                            : <p className="mt-1.5 text-[11px] italic text-slate-600">{t('drive.noPreview')}</p>}
+                        </div>
+                        <Actions item={item} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             )
           })}
         </div>
       )}
 
-      {/* Text preview */}
+      {/* Text preview (types without a shipped editor) */}
       {preview && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 p-4" onClick={() => setPreview(null)}>
           <div className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
