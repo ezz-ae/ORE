@@ -57,7 +57,7 @@ function ConditionalNode({ data, selected }: NodeProps<Node<ConditionalNodeData>
                 placeholder="input1 === 'US'"
                 rows={3}
                 className="font-mono text-xs resize-none nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
               <p className="text-[10px] text-muted-foreground">JavaScript expression using input1, input2, etc.</p>
             </div>

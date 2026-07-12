@@ -57,13 +57,13 @@ function StructuredOutputNode({ data, selected }: NodeProps<Node<StructuredOutpu
                 onChange={(e) => handleUpdate("schemaName", e.target.value)}
                 placeholder="Schema"
                 className="h-8 text-xs font-mono"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Mode</Label>
               <Select value={data.mode || "object"} onValueChange={(value) => handleUpdate("mode", value)}>
-                <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

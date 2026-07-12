@@ -59,7 +59,7 @@ function JavaScriptNode({ data, selected }: NodeProps<Node<JavaScriptNodeData>>)
                 placeholder="// Access inputs as input1, input2, etc."
                 rows={8}
                 className="font-mono text-xs resize-none nodrag max-h-48"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
               <p className="text-[10px] text-muted-foreground">Access inputs as input1, input2, etc.</p>
             </div>

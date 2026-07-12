@@ -57,7 +57,7 @@ function PromptNode({ data, selected }: NodeProps<Node<PromptNodeData>>) {
                 placeholder="Enter your prompt..."
                 rows={4}
                 className="text-xs resize-none font-mono nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                 onFocus={(e) => e.stopPropagation()}
               />
               <p className="text-[10px] text-muted-foreground">Use $input1, $input2 for variables</p>

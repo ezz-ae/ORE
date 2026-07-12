@@ -80,11 +80,11 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.vid.format")}</Label>
               <Select value={currentFormat} onValueChange={selectFormat}>
-                <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,7 +103,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.aspect")}</Label>
               <Select value={currentAspectRatio} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,7 +119,7 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.duration")}</Label>
               <Select value={data.duration?.toString() || "8s"} onValueChange={(value) => handleUpdate("duration", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

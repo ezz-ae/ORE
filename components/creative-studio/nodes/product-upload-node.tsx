@@ -178,7 +178,7 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3 nodrag nopan" onClick={stop}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stop} onPointerDown={stop}>
             {/* Selected property preview */}
             {data.productName && (
               <div className="rounded border border-border overflow-hidden bg-muted/20">
@@ -208,7 +208,7 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.prop.pick")}</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input value={q} onChange={(e) => setQ(e.target.value)} onMouseDown={stop} placeholder={t("pcsn.prop.search")} className="h-8 pl-7 text-xs" />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} onPointerDown={stop} onMouseDown={stop} placeholder={t("pcsn.prop.search")} className="h-8 pl-7 text-xs" />
               </div>
               <div className="max-h-[160px] overflow-y-auto rounded border border-border divide-y divide-border">
                 {loading && <div className="flex items-center gap-2 p-2 text-[10px] text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t("pcsn.prop.loading")}</div>}
@@ -254,9 +254,9 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
                 </Button>
               </div>
 
-              <Input value={data.link || ""} onChange={(e) => handleUpdate({ link: e.target.value })} onMouseDown={stop}
+              <Input value={data.link || ""} onChange={(e) => handleUpdate({ link: e.target.value })} onPointerDown={stop} onMouseDown={stop}
                 placeholder={t("pcsn.prop.linkPh")} className="h-8 text-xs" />
-              <Textarea value={data.notes || ""} onChange={(e) => handleUpdate({ notes: e.target.value })} onMouseDown={stop}
+              <Textarea value={data.notes || ""} onChange={(e) => handleUpdate({ notes: e.target.value })} onPointerDown={stop} onMouseDown={stop}
                 placeholder={t("pcsn.prop.notesPh")} className="min-h-[48px] text-xs resize-none" />
 
               <Button className="w-full h-8 gap-1.5 text-[10px]" disabled={writing} onClick={(e) => { e.stopPropagation(); handleWritePrompt() }}>
@@ -267,7 +267,7 @@ function ProductUploadNode({ data, selected }: NodeProps<Node<ProductUploadNodeD
               {data.brief && (
                 <div className="space-y-1">
                   <Label className="text-[9px] text-emerald-500">{t("pcsn.prop.brief")}</Label>
-                  <Textarea value={data.brief} onChange={(e) => handleUpdate({ brief: e.target.value })} onMouseDown={stop}
+                  <Textarea value={data.brief} onChange={(e) => handleUpdate({ brief: e.target.value })} onPointerDown={stop} onMouseDown={stop}
                     className="min-h-[64px] text-xs resize-none border-emerald-500/30" />
                 </div>
               )}

@@ -107,7 +107,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] text-muted-foreground">{t("pcsn.script.voiceover")}</Label>
@@ -118,7 +118,7 @@ function ScriptNode({ data, selected }: NodeProps<Node<ScriptNodeData>>) {
               <Textarea
                 value={script}
                 onChange={(e) => handleScriptChange(e.target.value)}
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                 placeholder={t("pcsn.script.ph")}
                 className={`min-h-[100px] text-xs font-mono resize-none ${isOverLimit ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />

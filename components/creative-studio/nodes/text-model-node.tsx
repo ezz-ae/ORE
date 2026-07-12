@@ -57,7 +57,7 @@ function TextModelNode({ data, selected }: NodeProps<Node<TextModelNodeData>>) {
 
         {isExpanded && (
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
-            <div className="space-y-1.5" onMouseDown={stopPropagation}>
+            <div className="space-y-1.5" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
               <Label className="text-xs text-muted-foreground">Temperature: {data.temperature || 0.7}</Label>
               <Slider
                 min={0}
@@ -76,7 +76,7 @@ function TextModelNode({ data, selected }: NodeProps<Node<TextModelNodeData>>) {
                 value={data.maxTokens || 2000}
                 onChange={(e) => handleUpdate("maxTokens", Number.parseInt(e.target.value))}
                 className="h-8 text-xs font-mono nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
           </div>
