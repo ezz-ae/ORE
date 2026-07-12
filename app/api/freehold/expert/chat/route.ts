@@ -13,6 +13,7 @@ import {
   type CoordinatorRole, type ToolCtx,
 } from '@/lib/freehold/coordinator-tools'
 import { MASTER_SYSTEM_PROMPT, detectMode, laneGuidance, autonomyGuidance, stripThinking } from '@/lib/freehold/agent-router'
+import { runExpertSdk } from '@/lib/freehold/expert-agent-run'
 import { getAutonomyLevel } from '@/lib/freehold/agent-autonomy'
 import { gatherTeamMetrics } from '@/lib/freehold/team-metrics'
 import { getFinanceTotals } from '@/lib/deals'
@@ -299,61 +300,30 @@ Your tools:${renderToolDocs(tools)}`
 
     const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
-    let loopHistory = durableHistory
-    let raw = stripThinking(await queryServerAgent(message, {
-      sessionId,
-      context: fullContext,
-      systemPrompt,
-      responseMimeType: 'application/json',
-      maxOutputTokens: 4096,
-      temperature: 0.5,
-      history: loopHistory,
-    }))
+    // Behind EXPERT_USE_AI_SDK: the same guidance, but tools are called
+    // natively by the AI SDK (no JSON tool_call protocol). The confirm rule and
+    // block-output contract are unchanged.
+    const sdkToolGuidance = tools.length === 0 ? '' : `
 
-    // Tool loop: execute → feed the observation back → let the model continue.
-    // Guards: a per-turn budget; a duplicate-call breaker (a model re-issuing
-    // the identical call would burn the whole budget on one action); and a
-    // hard rule that raw tool_call JSON never becomes the reply — leaked call
-    // JSON was being persisted into the session and poisoning the next turn
-    // (the "repeated tool call without TOOL_RESULT" failure on "continue").
-    const MAX_TOOLS_PER_TURN = 5
+YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
+Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
+The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
+    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
+
+    let raw: string
     const toolsUsed: string[] = []
-    const resultNotes: string[] = []
-    const seenCalls = new Set<string>()
-    const limitReply = () =>
-      JSON.stringify({
-        blocks: [{
-          type: 'text',
-          content: resultNotes.length
-            ? `I hit this turn's tool limit. Done so far:\n${resultNotes.join('\n')}\nSay "continue" and I'll pick up from here.`
-            : `I hit this turn's tool limit before finishing — say "continue" and I'll pick up from here.`,
-        }],
-      })
 
-    const toolNames = tools.map((tl) => tl.name)
-    for (let i = 0; i <= MAX_TOOLS_PER_TURN && tools.length > 0; i++) {
-      const call = parseToolCall(raw, toolNames)
-      if (!call) break
-      if (toolsUsed.length >= MAX_TOOLS_PER_TURN) {
-        raw = limitReply()
-        break
-      }
-      const callKey = `${call.name}:${JSON.stringify(call.args)}`
-      let observation: string
-      if (seenCalls.has(callKey)) {
-        observation = `DUPLICATE_CALL ${call.name}: you already ran this exact call this turn — its TOOL_RESULT is above. Use it, or give your final answer now.`
-      } else {
-        seenCalls.add(callKey)
-        const result = await runCoordinatorTool(tools, call, toolCtx)
-        toolsUsed.push(call.name)
-        resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
-        observation = `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}`
-      }
-      loopHistory = [
-        ...(loopHistory ?? []),
-        { role: 'model' as const, text: JSON.stringify({ tool_call: call }) },
-        { role: 'user' as const, text: observation },
-      ]
+    if (process.env.EXPERT_USE_AI_SDK === '1' && sessionUser) {
+      // ── AI SDK path (native multi-step tool-calling) ──────────────────────
+      const sdk = await runExpertSdk({
+        message, systemPrompt: sdkSystemPrompt, context: fullContext,
+        history: durableHistory, toolCtx, hasTools: tools.length > 0,
+      })
+      raw = stripThinking(sdk.raw)
+      toolsUsed.push(...sdk.toolsUsed)
+    } else {
+      // ── Legacy path: hand-rolled JSON tool_call loop ──────────────────────
+      let loopHistory = durableHistory
       raw = stripThinking(await queryServerAgent(message, {
         sessionId,
         context: fullContext,
@@ -363,11 +333,65 @@ Your tools:${renderToolDocs(tools)}`
         temperature: 0.5,
         history: loopHistory,
       }))
-    }
 
-    // Never let a dangling tool_call escape the loop — it would render as
-    // gibberish AND corrupt the saved session for every later turn.
-    if (tools.length > 0 && parseToolCall(raw, toolNames)) raw = limitReply()
+      // Tool loop: execute → feed the observation back → let the model continue.
+      // Guards: a per-turn budget; a duplicate-call breaker (a model re-issuing
+      // the identical call would burn the whole budget on one action); and a
+      // hard rule that raw tool_call JSON never becomes the reply — leaked call
+      // JSON was being persisted into the session and poisoning the next turn
+      // (the "repeated tool call without TOOL_RESULT" failure on "continue").
+      const MAX_TOOLS_PER_TURN = 5
+      const resultNotes: string[] = []
+      const seenCalls = new Set<string>()
+      const limitReply = () =>
+        JSON.stringify({
+          blocks: [{
+            type: 'text',
+            content: resultNotes.length
+              ? `I hit this turn's tool limit. Done so far:\n${resultNotes.join('\n')}\nSay "continue" and I'll pick up from here.`
+              : `I hit this turn's tool limit before finishing — say "continue" and I'll pick up from here.`,
+          }],
+        })
+
+      const toolNames = tools.map((tl) => tl.name)
+      for (let i = 0; i <= MAX_TOOLS_PER_TURN && tools.length > 0; i++) {
+        const call = parseToolCall(raw, toolNames)
+        if (!call) break
+        if (toolsUsed.length >= MAX_TOOLS_PER_TURN) {
+          raw = limitReply()
+          break
+        }
+        const callKey = `${call.name}:${JSON.stringify(call.args)}`
+        let observation: string
+        if (seenCalls.has(callKey)) {
+          observation = `DUPLICATE_CALL ${call.name}: you already ran this exact call this turn — its TOOL_RESULT is above. Use it, or give your final answer now.`
+        } else {
+          seenCalls.add(callKey)
+          const result = await runCoordinatorTool(tools, call, toolCtx)
+          toolsUsed.push(call.name)
+          resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
+          observation = `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}`
+        }
+        loopHistory = [
+          ...(loopHistory ?? []),
+          { role: 'model' as const, text: JSON.stringify({ tool_call: call }) },
+          { role: 'user' as const, text: observation },
+        ]
+        raw = stripThinking(await queryServerAgent(message, {
+          sessionId,
+          context: fullContext,
+          systemPrompt,
+          responseMimeType: 'application/json',
+          maxOutputTokens: 4096,
+          temperature: 0.5,
+          history: loopHistory,
+        }))
+      }
+
+      // Never let a dangling tool_call escape the loop — it would render as
+      // gibberish AND corrupt the saved session for every later turn.
+      if (tools.length > 0 && parseToolCall(raw, toolNames)) raw = limitReply()
+    }
 
     const blocks = parseBlocks(raw)
     // Persist the turn to the account's session so nothing is lost on reload —
