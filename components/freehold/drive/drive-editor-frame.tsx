@@ -30,7 +30,9 @@ export function DriveEditorFrame({
   const statusColor = status === 'real' ? '#34D399' : status === 'scoped' ? '#FBBF24' : '#94A3B8'
 
   return (
-    <div className="flex h-[calc(100vh-56px)] flex-col">
+    // A true application window: the editor overlays the whole platform
+    // (nav spine included) instead of rendering as a page with a file in it.
+    <div className="fixed inset-0 z-[90] flex flex-col bg-ink">
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-white/[0.07] bg-chrome/97 px-4 backdrop-blur-xl sm:px-5">
         <Link href="/freehold-intelligence/drive" className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white">
