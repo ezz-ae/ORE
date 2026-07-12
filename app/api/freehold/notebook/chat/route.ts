@@ -47,9 +47,14 @@ Rules:
 - When drafting copy, mark any unfilled detail as [VERIFY BEFORE SENDING].
 - Keep responses focused and professional.`
 
-  // Ground the answer in the sources the user selected in the left panel
-  // (real inventory / CRM pipeline / attached links) instead of ignoring them.
-  const sourceContext = await buildNotebookContext(body.sources, body.uploads ?? [], user.email)
+  // Ground the answer in the sources the user selected in the left panel.
+  // The message drives project retrieval (matching projects' llm_context);
+  // the session role scopes the pipeline (brokers see their own book only).
+  const sourceContext = await buildNotebookContext(body.sources, body.uploads ?? [], user.email, {
+    message,
+    role: user.role,
+    brokerId: user.brokerId ?? user.email,
+  })
 
   // Thread memory: replay the conversation's stored turns so the model
   // actually remembers this thread. The sessionId is scoped per user AND per

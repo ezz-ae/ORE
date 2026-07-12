@@ -201,10 +201,14 @@ export default function NotebookPage() {
   const [sourceQuery, setSourceQuery] = useState('')
   const [showAddSource, setShowAddSource] = useState(false)
   const [addSourceInput, setAddSourceInput] = useState('')
+  // Data sources default ON — a fresh notebook must answer from the live
+  // workspace, not open as an ungrounded chat that refuses questions.
   const [checkedSources, setCheckedSources] = useState<Record<string, boolean>>({
     all_conversations: true,
-    live_projects: false,
-    crm_leads: false,
+    live_projects: true,
+    crm_leads: true,
+    market_intel: true,
+    campaigns: true,
     uploads: false,
   })
   const [isDragOver, setIsDragOver] = useState(false)
@@ -377,6 +381,8 @@ export default function NotebookPage() {
           sources: {
             live_projects: !!checkedSources.live_projects,
             crm_leads: !!checkedSources.crm_leads,
+            market_intel: !!checkedSources.market_intel,
+            campaigns: !!checkedSources.campaigns,
             uploads: !!checkedSources.uploads,
             all_conversations: !!checkedSources.all_conversations,
           },
@@ -622,6 +628,32 @@ export default function NotebookPage() {
                   </Link>
                 </div>
                 <p className="mt-0.5 text-[10px] text-slate-500 truncate">{leadCount == null ? '—' : t('nb.activeLeads', { count: leadCount })}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Market intelligence */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
+            onClick={() => toggleSource('market_intel')}>
+            <SourceCheckbox checked={!!checkedSources.market_intel} onChange={() => toggleSource('market_intel')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <BarChart2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <span className="text-xs font-medium text-slate-100">{t('nb.marketIntel')}</span>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.marketIntelSub')}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Campaign performance */}
+          <div className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-2 transition cursor-pointer"
+            onClick={() => toggleSource('campaigns')}>
+            <SourceCheckbox checked={!!checkedSources.campaigns} onChange={() => toggleSource('campaigns')} />
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div className="min-w-0">
+                <span className="text-xs font-medium text-slate-100">{t('nb.campaignPerf')}</span>
+                <p className="mt-0.5 text-[10px] text-slate-500 truncate">{t('nb.campaignPerfSub')}</p>
               </div>
             </div>
           </div>
