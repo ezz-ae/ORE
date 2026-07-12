@@ -28,6 +28,8 @@ export async function POST(request: Request) {
     role?: string
     sources?: NotebookSources
     uploads?: NotebookUpload[]
+    /** One-off generator calls: grounded like chat, but not saved as a thread turn. */
+    ephemeral?: boolean
   }
   const message = body.message?.trim()
   if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 })
@@ -78,7 +80,11 @@ Rules:
       history,
     })
     // Persist the turn so the thread is real and reloadable (best-effort).
-    const savedId = await appendTurn(conversationId, user.email, message, answer)
+    // Generator calls are ephemeral — they ground the same way but must not
+    // pollute the user's conversation threads.
+    const savedId = body.ephemeral === true
+      ? conversationId
+      : await appendTurn(conversationId, user.email, message, answer)
     return NextResponse.json({
       conversationId: savedId,
       role,

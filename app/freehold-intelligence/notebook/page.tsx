@@ -94,6 +94,21 @@ const SEND_DESTINATIONS = [
 
 // Uploads are user-added sources only — no sample files.
 
+// Per-type generator instructions. The generator runs through the SAME
+// grounded pipeline as the chat (live projects, market intel, campaigns,
+// uploads), so outputs are built from real workspace data — the instruction
+// only sets the deliverable's structure.
+const GEN_PROMPTS: Record<string, string> = {
+  brochure: 'Produce a complete property BROCHURE draft: a headline, a 2-3 sentence intro, "Key facts" bullets (location, developer, unit mix, prices, handover), "Payment plan" if known, "Amenities", an investment angle paragraph with real numbers from the sources, and a closing call to action. Use [VERIFY BEFORE SENDING] for anything not in the data.',
+  ad_copy: 'Produce 3 distinct Meta AD COPY variants. Each: primary text (1-3 short punchy sentences), headline (max 40 chars), description (max 30 chars). Ground every claim in the real data; no invented numbers.',
+  whatsapp: 'Produce 3 short WHATSAPP MESSAGES a broker can send: (1) first touch after a lead form, (2) follow-up with one concrete number from the data, (3) viewing invitation. Warm, human, no corporate speak, under 60 words each.',
+  comparison: 'Produce a COMPARISON of the most relevant projects from the data: a markdown table (project, area, price from, yield, handover, score) followed by a 3-4 sentence "which one for whom" verdict grounded in the numbers.',
+  offer_letter: 'Produce a formal OFFER LETTER draft: buyer/seller placeholders in [brackets], the property details from the data, offer amount placeholder, payment structure, validity period, and standard Dubai conveyancing next steps. Mark every placeholder clearly.',
+  script: 'Produce a 30-45 second VIDEO SCRIPT: hook (first 3 seconds), 3 value beats grounded in real numbers from the data, and a call to action. Format as SCENE / VOICEOVER / ON-SCREEN TEXT rows.',
+  market_report: 'Produce a MARKET REPORT: headline summary, area-by-area numbers from the market intelligence (yields, median prices), below-market opportunities if present, demand signals from the pipeline data, and a 3-bullet outlook. Every number must come from the provided data.',
+  social_post: 'Produce 3 SOCIAL POSTS (Instagram/LinkedIn tone): each with a hook line, 2-3 sentences grounded in a real number from the data, 3-5 relevant hashtags. No generic fluff.',
+}
+
 const CHAT_SUGGESTIONS = [
   'nb.suggestion.whatsappHotLead',
   'nb.suggestion.palmVsHills',
@@ -315,17 +330,56 @@ export default function NotebookPage() {
     if (!type) return
     setGenLoading(true); setGenResult('')
     try {
-      const res = await fetch('/api/freehold/ai/generate', {
+      // The generator uses the SAME grounded pipeline as the chat — live
+      // projects, market intelligence, campaign data and the user's uploads —
+      // so a brochure or market report is built from real workspace numbers.
+      const langName = locale === 'ar' ? 'Arabic' : locale === 'ru' ? 'Russian' : 'English'
+      const res = await fetch('/api/freehold/notebook/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: `Generate a ${t(type.labelKey)} for a Dubai real-estate workspace. ${genInput || ''}`.trim() }),
+        body: JSON.stringify({
+          ephemeral: true,
+          message: `${GEN_PROMPTS[type.key] ?? `Produce a ${t(type.labelKey)}.`}${genInput ? `\n\nOperator brief: ${genInput}` : ''}\n\nWrite the deliverable in ${langName}.`,
+          sources: {
+            live_projects: !!checkedSources.live_projects,
+            crm_leads: !!checkedSources.crm_leads,
+            market_intel: !!checkedSources.market_intel,
+            campaigns: !!checkedSources.campaigns,
+            uploads: !!checkedSources.uploads,
+            all_conversations: false,
+          },
+          uploads: checkedSources.uploads
+            ? customSources.filter((src) => checkedSources[src.id] !== false).map((src) => ({ name: src.name, content: src.content }))
+            : [],
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (data?.unavailable) { toast.error(t('nb.gen.unavailable')); return }
-      if (!res.ok || !data.text) throw new Error('generation failed')
-      setGenResult(data.text)
+      const text = data?.answer || data?.message
+      if (!res.ok || !text) throw new Error('generation failed')
+      setGenResult(text)
     } catch {
       toast.error(t('nb.generationFailed'))
     } finally { setGenLoading(false) }
+  }
+
+  // Save the generated output as a Drive doc and jump straight into the
+  // editor — brochures and reports become editable documents, not dead text.
+  async function saveAndEdit() {
+    if (!genResult.trim()) return
+    const type = GENERATE_TYPES.find((g) => g.key === activeGenerate)
+    setGenSaving(true)
+    try {
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'report', title: type ? t(type.labelKey) : t('nb.notebookOutput'), content: genResult }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok || !d?.item?.id) throw new Error('failed')
+      router.push(`/freehold-intelligence/drive/editor/doc/${encodeURIComponent(d.item.id)}`)
+    } catch {
+      toast.error(t('nb.saveFailed'))
+      setGenSaving(false)
+    }
   }
 
   // auto-resize textarea
@@ -1233,6 +1287,13 @@ export default function NotebookPage() {
                         className="text-[10px] font-medium text-gold/80 hover:text-gold disabled:opacity-50"
                       >
                         {genSaving ? t('nb.saving') : t('nb.saveToLibrary')}
+                      </button>
+                      <button
+                        onClick={saveAndEdit}
+                        disabled={genSaving}
+                        className="text-[10px] font-medium text-gold/80 hover:text-gold disabled:opacity-50"
+                      >
+                        {t('nb.editInDrive')}
                       </button>
                       <button
                         onClick={() => { navigator.clipboard.writeText(genResult).catch(() => {}); toast.success(t('nb.copied')) }}
