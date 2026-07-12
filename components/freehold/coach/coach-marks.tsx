@@ -85,6 +85,11 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   const role = user?.role
   const pathname = usePathname() ?? ''
   const appId = appIdForPath(pathname)
+  // Full-canvas tools (Creative Studio, the Drive editor canvases) own the
+  // whole viewport — a modal tour thrown over them on load reads as a frozen
+  // app and blocks every control underneath. NEVER auto-start there; the
+  // "Take a tour" button still works on demand.
+  const suppressAutoTour = /\/creative-studio(\/|$)|\/drive\/editor\//.test(pathname)
 
   const [active, setActive] = useState(false)
   const [index, setIndex] = useState(0)
@@ -151,7 +156,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   // a quieter experience; the "Take a tour" button still replays on demand.
   useEffect(() => {
     if (!ready || !memReady || !role || active) return
-    if (autoTourSuppressed()) return
+    if (suppressAutoTour || autoTourSuppressed()) return
     const seen = (k: string) => { try { return !!localStorage.getItem(k) } catch { return true } }
 
     const roleSteps = tourForRole(role)
@@ -166,7 +171,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
         return () => clearTimeout(id)
       }
     }
-  }, [ready, memReady, role, appId, active, startTour])
+  }, [ready, memReady, role, appId, active, startTour, suppressAutoTour])
 
   // Close via skip / dismiss. Marks the tour seen (so it won't reappear next
   // session) and, when it was auto-started, counts toward the session skip cap.
@@ -406,9 +411,13 @@ function CoachOverlay({
           broken", which is worse than losing the tour. */}
       <div
         className="absolute inset-0"
-        style={{ background: rect ? 'transparent' : 'rgba(2,6,12,0.72)' }}
+        style={{ background: rect ? 'transparent' : 'rgba(2,6,12,0.72)', pointerEvents: rect ? 'none' : 'auto' }}
         onClick={(e) => { e.stopPropagation(); onClose() }}
       />
+      {/* When a spotlight is showing, the dim comes from the box-shadow and
+          the backdrop is click-through — so a click both dismisses the tour
+          AND reaches the control beneath. Only the anchorless (centred) step
+          uses a real blocking backdrop, and Escape/anywhere-click closes it. */}
 
       {/* Spotlight — one box-shadow does it all: a strong page dim, a crisp gold
           ring tight to the element, a soft halo, and an outer glow. (Explicit
