@@ -31,11 +31,16 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
     if (!form.name || !form.phone) return
     setError('')
     setSubmitting(true)
+    // One id for both conversion events (browser pixel + server CAPI) so Meta
+    // deduplicates them instead of counting the lead twice.
+    const eventId =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `lead-${Date.now()}`
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          eventId,
           name: form.name,
           phone: form.phone,
           email: form.email,
@@ -52,7 +57,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
       })
       const payload = await res.json()
       if (!res.ok) throw new Error(payload?.error || L['form.error'])
-      trackConversion(slug, pixels)
+      trackConversion(slug, pixels, eventId)
       setSubmitted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : L['form.error'])

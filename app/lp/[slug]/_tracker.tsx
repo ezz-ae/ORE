@@ -111,8 +111,10 @@ function getSessionId(): string {
   }
 }
 
-// Exported so the lead form can fire a conversion event
-export function trackConversion(slug: string, pixelIds: { metaPixelId?: string; googleTagId?: string; googleConversionId?: string; tiktokPixelId?: string }) {
+// Exported so the lead form can fire a conversion event. `eventId` is shared
+// with the server-side Meta CAPI event (fired by /api/leads) so Meta dedups
+// the browser/server pair instead of counting the same lead twice.
+export function trackConversion(slug: string, pixelIds: { metaPixelId?: string; googleTagId?: string; googleConversionId?: string; tiktokPixelId?: string }, eventId?: string) {
   // Internal analytics
   fetch('/api/lp-analytics', {
     method: 'POST',
@@ -126,7 +128,7 @@ export function trackConversion(slug: string, pixelIds: { metaPixelId?: string; 
 
   // Meta Pixel conversion
   if (pixelIds.metaPixelId && typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).fbq) {
-    (window as unknown as Record<string, (...args: unknown[]) => void>).fbq('track', 'Lead')
+    (window as unknown as Record<string, (...args: unknown[]) => void>).fbq('track', 'Lead', {}, eventId ? { eventID: eventId } : undefined)
   }
 
   // Google Ads conversion
