@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { ensureLeadActivityTable, ensureLeadsTable, getProjectBySlug } from "@/lib/data"
 import { handleNewLead } from "@/lib/automation/engine"
+import { sendLeadConversion } from "@/lib/meta/capi"
 import {
   getLeadershipLeadRecipients,
   sendInternalLeadAlertEmail,
@@ -171,6 +172,24 @@ export async function POST(req: NextRequest) {
 
     const leadershipRecipients = await getLeadershipLeadRecipients()
     const notificationTasks: Array<Promise<unknown>> = []
+
+    // Server-side Meta conversion (CAPI) — same event_id as the browser
+    // pixel's Lead event so Meta dedups the pair; survives ad blockers and
+    // iOS privacy where the browser event is dropped. Fire-and-forget: ad
+    // plumbing must never block or fail lead intake.
+    notificationTasks.push(
+      sendLeadConversion({
+        eventId: toText(body.eventId) || leadId,
+        email,
+        phone,
+        sourceUrl: landingSlug ? `${baseUrl}/lp/${landingSlug}` : toText(body.referrer) || undefined,
+        clientIp: toText(req.headers.get("x-forwarded-for")).split(",")[0].trim() || undefined,
+        userAgent: toText(req.headers.get("user-agent")) || undefined,
+        fbp: req.cookies.get("_fbp")?.value,
+        fbc: req.cookies.get("_fbc")?.value,
+        contentName: project?.name || projectSlug || landingSlug || undefined,
+      }),
+    )
 
     if (email) {
       notificationTasks.push(
