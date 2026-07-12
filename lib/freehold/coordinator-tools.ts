@@ -16,6 +16,7 @@ import {
 import { getLandingPagesForDashboard, getLandingPageForEditor } from '@/lib/landing-pages'
 import { searchCrmLeads } from '@/lib/data'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
+import { listAudiences, type SavedAudience } from '@/lib/freehold/audiences'
 import { genImage } from '@/lib/creative-studio/providers'
 
 /**
@@ -58,6 +59,22 @@ export interface CoordinatorTool {
   destructive?: boolean
   roles: CoordinatorRole[]
   run: (args: Record<string, unknown>, ctx: ToolCtx) => Promise<unknown>
+}
+
+// Compact, chat-friendly view of a saved audience (Audiences tab entity).
+function audienceSummary(a: SavedAudience) {
+  return {
+    id: a.id,
+    name: a.name,
+    kind: a.kind,
+    seededFromContacts: a.uploadedCount || undefined,
+    interests: a.spec.interests.map((i) => i.name),
+    behaviors: (a.spec.behaviors ?? []).map((b) => b.name),
+    narrowed: (a.spec.narrowing ?? []).length > 0,
+    excludes: [...(a.spec.exclusions?.interests ?? []), ...(a.spec.exclusions?.behaviors ?? [])].map((e) => e.name),
+    countries: a.spec.countries,
+    attachUrl: `/freehold-intelligence/lead-machine/campaigns/new?audience=${encodeURIComponent(a.id)}`,
+  }
 }
 
 const OPERATORS: CoordinatorRole[] = ['owner', 'admin', 'marketing']
@@ -195,6 +212,51 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         metaConnected: connected,
         wizardUrl: `/freehold-intelligence/lead-machine/campaigns/new?${qs.toString()}`,
         note: 'Present the plan in plain language. Offer BOTH follow-ups: open the prefilled wizard (navigate to wizardUrl) or launch it paused via ads_launch_campaign after the user confirms.',
+      }
+    },
+  },
+  {
+    name: 'audiences_list', agent: 'ads_agent',
+    description: 'READ the saved audiences (Audiences tab): behavioral/narrow definitions and lookalikes seeded from real lead lists, with their composition and one-click attach links. Use before planning a campaign so a real audience gets attached instead of guessed interests.',
+    params: '{}',
+    roles: ADS_READERS,
+    run: async () => {
+      const audiences = await listAudiences()
+      if (!audiences.length) {
+        return {
+          audiences: [],
+          audiencesUrl: '/freehold-intelligence/lead-machine/audiences',
+          note: 'No saved audiences yet — the user can build behavioral/narrow audiences or upload a lead list for a lookalike on the Audiences tab.',
+        }
+      }
+      return { audiences: audiences.slice(0, 10).map(audienceSummary), audiencesUrl: '/freehold-intelligence/lead-machine/audiences' }
+    },
+  },
+  {
+    name: 'audiences_best_match', agent: 'ads_agent',
+    description: 'RANK the best-match audiences for a listing: saved lookalikes first (seeded from real lead contacts), then narrow behavioral definitions, grounded by the learning loop’s call on our own outcomes. Returns attach links so the campaign starts with a real audience in one click. Non-destructive.',
+    params: '{ "listingName": string, "area"?: string, "priceAED"?: number }',
+    roles: ADS_READERS,
+    run: async (args, ctx) => {
+      const name = s(args.listingName)
+      const listing = name ? { name, area: s(args.area), price: n(args.priceAED) || 0 } : null
+      const [audiences, loop] = await Promise.all([
+        listAudiences(),
+        recommendTargeting(listing, `chat-audiences:${ctx.email}`),
+      ])
+      const weight = (x: SavedAudience) => (x.kind === 'lookalike' ? 0 : x.kind === 'narrow' ? 1 : 2)
+      const ranked = [...audiences].sort((a, b) => weight(a) - weight(b)).slice(0, 5)
+      return {
+        ranked: ranked.map(audienceSummary),
+        learningLoop: {
+          strategy: loop.recommendation.strategy,
+          rationale: loop.recommendation.rationale,
+          dailyBudgetAED: loop.recommendation.dailyBudgetAED,
+        },
+        audiencesUrl: '/freehold-intelligence/lead-machine/audiences',
+        note: ranked.length
+          ? 'Recommend the top audience by name and offer its attachUrl to start the campaign with it attached.'
+          : 'No saved audiences yet — suggest building a lookalike from the lead list or a behavioral audience on the Audiences tab, then plan with ads_plan_campaign.',
       }
     },
   },

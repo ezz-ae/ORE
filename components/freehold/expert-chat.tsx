@@ -39,7 +39,7 @@ function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
   return { html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0">${parts.join('') || '<p>(empty)</p>'}</div>`, title }
 }
 
-type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[] }
+type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[] }
 
 type SessionSummary = { id: string; title: string; messageCount: number; updatedAt: string }
 
@@ -439,7 +439,8 @@ export function ExpertChat() {
       })
       const data = await res.json()
       const blocks: ExpertBlock[] = data?.data?.blocks ?? [{ type: 'text', content: t('expert.fallbackOk') }]
-      setMessages((m) => [...m, { role: 'assistant', blocks }])
+      const toolsUsed: string[] = Array.isArray(data?.data?.toolsUsed) ? data.data.toolsUsed : []
+      setMessages((m) => [...m, { role: 'assistant', blocks, toolsUsed }])
       // Adopt the durable session id the server persisted this turn under —
       // and remember it on the ACCOUNT so the conversation follows the user.
       const sid = data?.data?.sessionId
@@ -626,6 +627,18 @@ export function ExpertChat() {
                   </div>
                 ) : (
                   <div key={i} className="grid gap-2.5">
+                    {/* Real tool activity — the agent's actual work this turn,
+                        visible instead of buried in the response envelope. */}
+                    {m.toolsUsed && m.toolsUsed.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('expert.toolsRan')}</span>
+                        {m.toolsUsed.map((name, k) => (
+                          <span key={`${name}-${k}`} className="rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[10px] font-medium text-gold">
+                            {name.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {m.blocks.map((b, j) => {
                       const view = <BlockView key={j} block={b} idx={`${i}-${j}`} onAction={send} onCopy={copy} copied={copied} />
                       // Canvas accordion: big outputs (plans, landing drafts)
