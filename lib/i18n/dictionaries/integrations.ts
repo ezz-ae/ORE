@@ -37,6 +37,17 @@ const en: Dict = {
   'integrations.cat.analytics': 'Analytics',
   'integrations.cat.infrastructure': 'Infrastructure',
   'integrations.cat.other': 'Other',
+  'track.title': 'Tracking pixels',
+  'track.sub': 'Set once — applied to every landing page.',
+  'track.back': 'Integrations',
+  'track.metaPixel': 'Meta Pixel ID',
+  'track.tiktokPixel': 'TikTok Pixel ID',
+  'track.googleTag': 'Google Tag ID (GA4 / GTM)',
+  'track.googleConv': 'Google Conversion ID',
+  'track.hint': 'A landing page can still override an individual id, but blank falls back to these.',
+  'track.save': 'Save pixels',
+  'track.saved': 'Tracking pixels saved.',
+  'track.saveFailed': 'Could not save the pixels.',
 }
 
 const ar: Dict = {
@@ -73,6 +84,17 @@ const ar: Dict = {
   'integrations.cat.analytics': 'التحليلات',
   'integrations.cat.infrastructure': 'البنية التحتية',
   'integrations.cat.other': 'أخرى',
+  'track.title': 'بكسلات التتبّع',
+  'track.sub': 'اضبطها مرة واحدة — تُطبَّق على كل صفحات الهبوط.',
+  'track.back': 'التكاملات',
+  'track.metaPixel': 'معرّف Meta Pixel',
+  'track.tiktokPixel': 'معرّف TikTok Pixel',
+  'track.googleTag': 'معرّف Google Tag (GA4 / GTM)',
+  'track.googleConv': 'معرّف تحويل Google',
+  'track.hint': 'يمكن لصفحة هبوط تجاوز معرّف مفرد، لكن الفراغ يرجع إلى هذه القيم.',
+  'track.save': 'حفظ البكسلات',
+  'track.saved': 'تم حفظ بكسلات التتبّع.',
+  'track.saveFailed': 'تعذّر حفظ البكسلات.',
 }
 
 const ru: Dict = {
@@ -109,6 +131,17 @@ const ru: Dict = {
   'integrations.cat.analytics': 'Аналитика',
   'integrations.cat.infrastructure': 'Инфраструктура',
   'integrations.cat.other': 'Другое',
+  'track.title': 'Пиксели отслеживания',
+  'track.sub': 'Задайте один раз — применяется ко всем посадочным.',
+  'track.back': 'Интеграции',
+  'track.metaPixel': 'Meta Pixel ID',
+  'track.tiktokPixel': 'TikTok Pixel ID',
+  'track.googleTag': 'Google Tag ID (GA4 / GTM)',
+  'track.googleConv': 'Google Conversion ID',
+  'track.hint': 'Посадочная может переопределить отдельный id, но пустое поле берёт эти значения.',
+  'track.save': 'Сохранить пиксели',
+  'track.saved': 'Пиксели сохранены.',
+  'track.saveFailed': 'Не удалось сохранить пиксели.',
 }
 
 export const integrations = { en, ar, ru }

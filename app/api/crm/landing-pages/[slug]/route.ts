@@ -166,10 +166,49 @@ export async function PATCH(
       )
     }
 
+    // Smart flags: until-sold-out auto-unpublish + auto price-from-market.
+    if (hasKey(body, "unpublishOnSoldOut") || hasKey(body, "autoUpdatePricing")) {
+      await query(
+        `UPDATE freehold_site_project_landing_pages
+         SET unpublish_on_sold_out = COALESCE($2, unpublish_on_sold_out),
+             auto_update_pricing = COALESCE($3, auto_update_pricing),
+             updated_at = now()
+         WHERE lower(slug) = $1`,
+        [
+          slug.trim().toLowerCase(),
+          hasKey(body, "unpublishOnSoldOut") ? !!body.unpublishOnSoldOut : null,
+          hasKey(body, "autoUpdatePricing") ? !!body.autoUpdatePricing : null,
+        ],
+      )
+    }
+
     const updated = await getLandingPageForEditor(slug)
     return NextResponse.json({ ok: true, landing: updated, landingPage: updated, pendingPublish: effectiveStatus === "pending_publish" })
   } catch (error) {
     console.error("[crm-landing-pages] update error", error)
     return NextResponse.json({ error: "Failed to update landing page." }, { status: 500 })
+  }
+}
+
+// DELETE — remove a landing page. Admins only; the editor gates it behind a
+// typed "delete" confirmation before ever calling this.
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  try {
+    const user = await getSessionUser()
+    if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
+    if (!isAdminRole(user.role)) return NextResponse.json({ error: "Only admins can delete landing pages." }, { status: 403 })
+    const { slug } = await params
+    const rows = await query<{ slug: string }>(
+      `DELETE FROM freehold_site_project_landing_pages WHERE lower(slug) = $1 RETURNING slug`,
+      [slug.trim().toLowerCase()],
+    )
+    if (!rows.length) return NextResponse.json({ error: "Landing page not found." }, { status: 404 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("[crm-landing-pages] delete error", error)
+    return NextResponse.json({ error: "Failed to delete landing page." }, { status: 500 })
   }
 }
