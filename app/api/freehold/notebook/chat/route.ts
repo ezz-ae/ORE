@@ -25,7 +25,6 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({})) as {
     message?: string
     conversationId?: string
-    role?: string
     sources?: NotebookSources
     uploads?: NotebookUpload[]
     /** One-off generator calls: grounded like chat, but not saved as a thread turn. */
@@ -35,9 +34,9 @@ export async function POST(request: Request) {
   if (!message) return NextResponse.json({ error: 'message is required' }, { status: 400 })
 
   const conversationId = body.conversationId ?? `notebook-${crypto.randomUUID()}`
-  // Cosmetic only (echoed in the envelope, never used for authorization).
-  // Default to least privilege — avoid the pre-P0 'owner' default pattern.
-  const role = body.role ?? 'viewer'
+  // The client-supplied role parameter is GONE (S0.5): it mirrored the exact
+  // pre-lockdown bug pattern. The envelope echoes the SESSION role only.
+  const role = user.role
 
   const systemPrompt = `You are the Freehold Notebook AI — a private research and drafting assistant for the Freehold team.
 
