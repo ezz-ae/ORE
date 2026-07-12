@@ -88,6 +88,8 @@ export interface LandingPageData {
   }
   pixels: CampaignPixelIds
   sections: LandingSection[]
+  /** Layout template the page was created with: "classic" (default) or "campaign". */
+  template: string
   project: LandingProjectSummary | null
   /** True when the project has no available units — the page stays live and
       shows an honest "Sold Out" state instead of coming down. */
@@ -475,6 +477,100 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
   ]
 }
 
+// Conversion-optimized arrangement for cold paid (Meta) traffic: lead capture
+// sits high (right after the hero), the payment-plan hook + scarcity lead, and a
+// closing CTA. Reuses the SAME section types/data shapes as buildDefaultSections
+// so it renders with the existing components.
+export const buildCampaignSections = (
+  project: LandingProjectSummary | null,
+  row: LandingPageRow,
+): LandingSection[] => {
+  const title = pickString(row.headline, row.title, project?.name) || "Dubai Project Campaign"
+  const subtitle =
+    pickString(row.subheadline, row.subtitle) ||
+    (project
+      ? `Discover ${project.name} in ${project.area} with curated investment insights and live availability.`
+      : "Discover premium Dubai investment opportunities.")
+  const area = project?.area || "Dubai"
+  const developer = project?.developerName || "Freehold"
+  const startPrice =
+    typeof project?.priceFromAed === "number" && project.priceFromAed > 0
+      ? formatAed(project.priceFromAed)
+      : "Price on request"
+
+  return [
+    {
+      type: "hero",
+      data: {
+        title,
+        subtitle,
+        eyebrow: `Limited units · ${area} · ${developer}`,
+        chips: [startPrice, "Direct payment plan", "No bank required"],
+      },
+    },
+    {
+      type: "lead-form",
+      data: {
+        title: "Register your interest",
+        subtitle: "Limited units — get the price list, floor plans and full payment plan.",
+      },
+    },
+    // Payment plan renders only from real numbers — no invented 20/50/30.
+    ...(() => {
+      const plan = normalizePaymentPlan(project?.paymentPlan)
+      return plan ? [{ type: "payment-plan", data: plan } as LandingSection] : []
+    })(),
+    {
+      type: "key-facts",
+      data: {
+        items: [
+          { label: "Project", value: project?.name || "On request" },
+          { label: "Area", value: area },
+          { label: "Developer", value: developer },
+          { label: "Starting Price", value: startPrice },
+        ],
+      },
+    },
+    {
+      type: "gallery",
+      data: {},
+    },
+    {
+      type: "amenities",
+      data: {
+        items: project?.amenities || [],
+      },
+    },
+    {
+      type: "location",
+      data: {
+        area,
+        developer,
+        title: "Location & Positioning",
+        subtitle: "The commercial frame brokers can use immediately in a client conversation.",
+        highlights: [
+          `${area} demand corridor`,
+          `Developer: ${developer}`,
+          `Entry point: ${startPrice}`,
+        ],
+      },
+    },
+    {
+      type: "faq",
+      data: {
+        items: [],
+      },
+    },
+    {
+      type: "lead-form",
+      data: {
+        title: "Speak to a specialist",
+        subtitle: "Our team will call you with live availability and the best unit for your budget.",
+      },
+    },
+  ]
+}
+
 const ensureLandingPagesSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_project_landing_pages (
@@ -534,6 +630,7 @@ const ensureLandingPagesSchema = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_requested_at timestamptz`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_by text`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS authorized_at timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS template text`)
 }
 
 const ensureLandingPagesSchemaOnce = async () => {
@@ -762,6 +859,7 @@ export async function getLandingPageBySlug(
     },
     pixels: mergePixels(await getGlobalPixels(), readPixels(row)),
     sections: normalizeSections(sectionsRaw, project, row),
+    template: row.template ? String(row.template) : "classic",
     project,
     soldOut,
   }
