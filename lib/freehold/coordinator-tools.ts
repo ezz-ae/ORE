@@ -1,7 +1,11 @@
 import {
   listCampaigns, getCampaign, getCampaignInsights,
   updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
+  launchFullCampaign,
 } from '@/lib/meta/client'
+import { UAE_INTERESTS } from '@/lib/meta/targeting-catalog'
+import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
+import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { AutonomyLevel } from '@/lib/freehold/agent-router'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import {
@@ -153,6 +157,97 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         actionValue: args.actionValue == null ? null : n(args.actionValue),
       })
       return rule ?? { error: 'Invalid rule — check metric/operator/action values.' }
+    },
+  },
+
+  {
+    name: 'ads_plan_campaign', agent: 'ads_agent',
+    description: 'BUILD a data-driven campaign plan for a listing: the learning loop reads real campaign/CRM outcomes + network benchmarks and returns strategy, audience (ages, cities, interests), daily budget, creative angle, and a prefilled wizard link. Non-destructive — nothing launches.',
+    params: '{ "listingName": string, "area"?: string, "priceAED"?: number }',
+    roles: OPERATORS,
+    run: async (args, ctx) => {
+      const name = s(args.listingName)
+      if (!name) return { error: 'listingName is required' }
+      const listing = { name, area: s(args.area), price: n(args.priceAED) || 0 }
+      const { recommendation, connected } = await recommendTargeting(listing, ctx.email)
+      const interestNames = recommendation.interestIds
+        .map((id) => UAE_INTERESTS.find((i) => i.id === id)?.name)
+        .filter(Boolean)
+      const qs = new URLSearchParams({ name, ...(listing.price ? { price: String(listing.price) } : {}) })
+      return {
+        plan: {
+          strategy: recommendation.strategy,
+          analysis: recommendation.analysis,
+          rationale: recommendation.rationale,
+          audience: {
+            ageMin: recommendation.ageMin,
+            ageMax: recommendation.ageMax,
+            cityKeys: recommendation.cityKeys,
+            interests: interestNames,
+            lookalikeSeed: recommendation.lookalikeSeed,
+            exclusions: recommendation.exclusions,
+          },
+          dailyBudgetAED: recommendation.dailyBudgetAED,
+          creativeAngle: recommendation.creativeAngle,
+          signalPlan: recommendation.signalPlan,
+          learningPhase: recommendation.learningPhase,
+        },
+        metaConnected: connected,
+        wizardUrl: `/freehold-intelligence/lead-machine/campaigns/new?${qs.toString()}`,
+        note: 'Present the plan in plain language. Offer BOTH follow-ups: open the prefilled wizard (navigate to wizardUrl) or launch it paused via ads_launch_campaign after the user confirms.',
+      }
+    },
+  },
+  {
+    name: 'ads_launch_campaign', agent: 'ads_agent', destructive: true,
+    description: 'LAUNCH a Meta campaign (always PAUSED — spend never starts until someone resumes it). Builds campaign + ad set + creative + ad on the connected account. Use after ads_plan_campaign and the user’s explicit go-ahead.',
+    params: '{ "campaignName": string, "listingName": string, "dailyBudgetAED": number, "ageMin": number, "ageMax": number, "interestIds"?: string[], "headline": string, "primaryText": string, "landingUrl": string, "cityKeys"?: string[], "confirm": true }',
+    roles: OPERATORS,
+    run: async (args, ctx) => {
+      const campaignName = s(args.campaignName)
+      const listingName = s(args.listingName)
+      const budget = n(args.dailyBudgetAED)
+      const headline = s(args.headline)
+      const primaryText = s(args.primaryText)
+      const landingUrl = s(args.landingUrl)
+      if (!campaignName || !listingName) return { error: 'campaignName and listingName are required' }
+      if (!Number.isFinite(budget) || budget < 50) return { error: 'dailyBudgetAED must be ≥ 50' }
+      if (!headline || !primaryText) return { error: 'headline and primaryText are required — generate them first if needed' }
+      if (!/^https?:\/\//.test(landingUrl)) return { error: 'landingUrl must be a full https URL (use landing_list to find the page)' }
+      const ids = Array.isArray(args.interestIds) ? args.interestIds.map(String) : []
+      const interests = UAE_INTERESTS.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, name: i.name }))
+      const cityKeys = Array.isArray(args.cityKeys) && args.cityKeys.length ? args.cityKeys.map(String) : ['297928']
+      const result = await launchFullCampaign({
+        campaignName,
+        objective: 'LEAD_GENERATION',
+        listingName,
+        dailyBudgetAED: budget,
+        targeting: {
+          countries: ['AE'],
+          cityKeys,
+          ageMin: Math.min(60, Math.max(18, n(args.ageMin) || 28)),
+          ageMax: Math.min(65, Math.max(25, n(args.ageMax) || 60)),
+          publisherPlatforms: ['facebook', 'instagram'],
+          interests,
+        },
+        creative: {
+          primaryText, headline,
+          description: 'Request the investor summary now.',
+          landingUrl,
+          cta: 'LEARN_MORE',
+        },
+        // HARD safety: the agent can never start spend. A human resumes it
+        // (which is itself a separately confirmed destructive tool).
+        launchStatus: 'PAUSED',
+      })
+      await setCampaignAutoEnhance(result.campaignId, 'approval')
+      return {
+        ok: true,
+        campaignId: result.campaignId,
+        status: 'PAUSED',
+        reviewUrl: `/freehold-intelligence/ads-live/meta/${result.campaignId}`,
+        note: 'Created PAUSED. Tell the user to review it and that resuming (starting spend) needs their separate confirmation.',
+      }
     },
   },
 
