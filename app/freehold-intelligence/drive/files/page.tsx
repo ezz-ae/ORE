@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
-  ArrowLeft, Search, Loader2, ExternalLink, Cloud as CloudIcon, Sparkles,
+  ArrowLeft, Search, Loader2, ExternalLink, Cloud as CloudIcon, Sparkles, Link2, Check,
   Image as ImageIcon, Video, FileType2, FileSpreadsheet, FileText, StickyNote, Megaphone,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
@@ -55,6 +56,7 @@ export default function FilesManagerPage() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [source, setSource] = useState<'all' | 'library' | 'cloud'>('all')
+  const [shared, setShared] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,6 +99,24 @@ export default function FilesManagerPage() {
     if (it.url) window.open(it.url, '_blank', 'noopener')
   }
 
+  // Create a public share link and copy it — the "global sharing center".
+  async function share(it: Unified) {
+    if (!it.url) { toast.error(t('fm.cantShare')); return }
+    try {
+      const res = await fetch('/api/freehold/shares', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: it.name, url: it.url, kind: it.kind, source: it.source, refId: it.id }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.path) { toast.error(d.error || t('fm.shareFailed')); return }
+      const link = `${window.location.origin}${d.path}`
+      try { await navigator.clipboard?.writeText(link) } catch { /* clipboard may be blocked */ }
+      setShared(it.id)
+      setTimeout(() => setShared((s) => (s === it.id ? null : s)), 2000)
+      toast.success(t('fm.shared'))
+    } catch { toast.error(t('fm.shareFailed')) }
+  }
+
   const chip = (active: boolean) =>
     `inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
       active ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'
@@ -132,8 +152,9 @@ export default function FilesManagerPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {shown.map((it) => (
-            <button key={it.id} type="button" onClick={() => open(it)}
-              className="group relative overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-line-strong">
+            <div key={it.id} role="button" tabIndex={0} onClick={() => open(it)}
+              onKeyDown={(e) => { if (e.key === 'Enter') open(it) }}
+              className="group relative cursor-pointer overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-line-strong">
               <div className="relative aspect-[4/3] w-full bg-surface-2">
                 {it.kind === 'image' && it.url
                   // eslint-disable-next-line @next/next/no-img-element
@@ -142,12 +163,19 @@ export default function FilesManagerPage() {
                 <span className="absolute end-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-slate-300" title={it.source}>
                   {it.source === 'cloud' ? <CloudIcon className="h-3 w-3" /> : <Sparkles className="h-3 w-3 text-gold" />}
                 </span>
+                {/* Share — the sharing center: public link, copied to clipboard */}
+                {it.url && (
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void share(it) }} title={t('fm.share')}
+                    className="absolute start-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-slate-200 opacity-0 shadow-lg backdrop-blur transition hover:text-white group-hover:opacity-100">
+                    {shared === it.id ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Link2 className="h-3.5 w-3.5" />}
+                  </button>
+                )}
                 {it.url && <ExternalLink className="absolute start-2 bottom-2 h-3.5 w-3.5 text-slate-400 opacity-0 transition group-hover:opacity-100" />}
               </div>
               <div className="p-2.5">
                 <p className="flex items-center gap-1.5 truncate text-[13px] font-medium text-slate-100"><KindIcon kind={it.kind} className="h-3 w-3 shrink-0 text-slate-500" /> {it.name}</p>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       )}
