@@ -11,10 +11,10 @@ import { useT } from '@/lib/i18n/provider'
 type Room = { key: string; href: string; Icon: React.ElementType; accent: string }
 
 const ROOMS: Room[] = [
-  { key: 'studio',   href: '/freehold-intelligence/creative-studio',        Icon: Sparkles,   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
+  { key: 'studio',   href: '/freehold-intelligence/drive/studio',           Icon: Sparkles,   accent: 'text-gold border-gold/25 bg-gold/[0.06]' },
   { key: 'editor',   href: '/freehold-intelligence/drive/library',          Icon: Wand2,      accent: 'text-violet-300 border-violet-400/25 bg-violet-400/[0.06]' },
-  { key: 'web',      href: '/freehold-intelligence/lead-machine/landings',  Icon: Monitor,    accent: 'text-teal-300 border-teal-400/25 bg-teal-400/[0.06]' },
-  { key: 'files',    href: '/freehold-intelligence/drive/library',          Icon: FolderOpen, accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
+  { key: 'web',      href: '/freehold-intelligence/drive/web',              Icon: Monitor,    accent: 'text-teal-300 border-teal-400/25 bg-teal-400/[0.06]' },
+  { key: 'files',    href: '/freehold-intelligence/drive/files',            Icon: FolderOpen, accent: 'text-sky-300 border-sky-400/25 bg-sky-400/[0.06]' },
   { key: 'cloud',    href: '/freehold-intelligence/cloud',                  Icon: Cloud,      accent: 'text-emerald-300 border-emerald-400/25 bg-emerald-400/[0.06]' },
 ]
 
