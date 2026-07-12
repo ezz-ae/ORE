@@ -331,6 +331,8 @@ export default function NewCampaignPage() {
 
   // ── Creative: real ad preview + AI copy generation (existing generator) ──
   const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
+  // Full placements wall — one popup showing the ad across every surface.
+  const [placementsOpen, setPlacementsOpen] = useState(false)
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
   const [variants, setVariants] = useState<GeneratedCreativeVariant[]>([])
   const [genLoading, setGenLoading] = useState(false)
@@ -1352,6 +1354,10 @@ export default function NewCampaignPage() {
                       {t(`lm.newCampaign.s3.placement.${p}`)}
                     </button>
                   ))}
+                  <button type="button" onClick={() => setPlacementsOpen(true)}
+                    className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20">
+                    {t('lm.newCampaign.s3.previewAll')}
+                  </button>
                 </div>
                 {/* The rendered ad */}
                 <div className="overflow-hidden rounded-2xl border border-line bg-black">
@@ -1550,6 +1556,68 @@ export default function NewCampaignPage() {
         )}
 
         {/* ── Step 4: Review & Launch ───────────────────────────────────── */}
+        {placementsOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setPlacementsOpen(false)}>
+            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[15px] font-semibold text-white">{t('lm.newCampaign.s3.placementsTitle')}</div>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{t('lm.newCampaign.s3.placementsNote')}</p>
+                </div>
+                <button type="button" onClick={() => setPlacementsOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
+                  {t('lm.newCampaign.s3.closePreview')}
+                </button>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {([
+                  { key: 'fbFeed', kind: 'square' as const },
+                  { key: 'igFeed', kind: 'square' as const },
+                  { key: 'igStory', kind: 'vertical' as const },
+                  { key: 'fbStory', kind: 'vertical' as const },
+                  { key: 'reels', kind: 'vertical' as const },
+                ]).map(({ key, kind }) => (
+                  <div key={key}>
+                    <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t(`lm.newCampaign.s3.pl.${key}`)}</div>
+                    <div className="overflow-hidden rounded-xl border border-line bg-black">
+                      {kind === 'square' ? (
+                        <div className="bg-[#18181b]">
+                          <div className="flex items-center gap-1.5 px-2 py-1.5">
+                            <div className="h-4 w-4 rounded-full bg-gold/80" />
+                            <div className="text-[8px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+                          </div>
+                          {form.primaryText && <div className="px-2 pb-1.5 text-[8px] leading-snug text-slate-200">{form.primaryText.slice(0, 90)}</div>}
+                          <div className="aspect-square w-full bg-surface-2">
+                            {form.imageUrl
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                              : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-[8px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                          </div>
+                          <div className="flex items-center justify-between gap-1.5 bg-[#0f0f11] px-2 py-1.5">
+                            <div className="min-w-0"><div className="truncate text-[8px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div></div>
+                            <span className="shrink-0 rounded bg-gold/90 px-1.5 py-0.5 text-[7px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative aspect-[9/16] w-full bg-surface-2">
+                          {form.imageUrl
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                            : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-[8px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2">
+                            <div className="text-[9px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
+                            <div className="mt-0.5 line-clamp-2 text-[7px] text-slate-300">{form.primaryText}</div>
+                            <span className="mt-1 inline-block rounded bg-gold/90 px-1.5 py-0.5 text-[7px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {step === 4 && (
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s4.heading')}</h2>

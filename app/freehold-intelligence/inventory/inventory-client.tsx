@@ -323,9 +323,12 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
   return (
     <tr className="group transition hover:bg-surface-2">
-      {/* Name */}
+      {/* Name — the row's one navigation target (the separate View pill was
+          link clutter: View + Live + LP per row was three competing arrows). */}
       <td className="max-w-[200px] pl-5 pr-4 py-3.5">
-        <div className="truncate font-medium text-slate-100">{prop.name}</div>
+        <Link href={`/freehold-intelligence/inventory/${prop.id}`} className="block truncate font-medium text-slate-100 transition hover:text-gold">
+          {prop.name}
+        </Link>
         <div className="mt-0.5 text-sm capitalize text-slate-500">{prop.type}</div>
       </td>
 
@@ -358,20 +361,9 @@ function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
 
       {/* Landing status */}
       <td className="px-4 py-3.5">
-        {prop.landingUrl ? (
-          <a
-            href={prop.landingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium transition hover:opacity-80 ${landingBadge(prop.landingStatus)}`}
-          >
-            {landingLabel(prop.landingStatus, t)} <ArrowUpRight className="h-3 w-3" />
-          </a>
-        ) : (
-          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${landingBadge(prop.landingStatus)}`}>
-            {landingLabel(prop.landingStatus, t)}
-          </span>
-        )}
+        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${landingBadge(prop.landingStatus)}`}>
+          {landingLabel(prop.landingStatus, t)}
+        </span>
       </td>
 
       {/* Leads 30d */}
@@ -385,20 +377,12 @@ function PropertyRow({ prop, t }: { prop: InventoryProperty; t: TFn }) {
 
       {/* Actions */}
       <td className="pr-5 pl-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/freehold-intelligence/inventory/${prop.id}`}
-            className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-3 py-1 text-sm text-slate-400 transition hover:border-white/20 hover:text-white"
-          >
-            {t('inv.action.view')} <ArrowUpRight className="h-3 w-3" />
-          </Link>
-          <Link
-            href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-sm text-gold/80 transition hover:border-gold/40 hover:text-gold"
-          >
-            <Sparkles className="h-3 w-3" /> LP
-          </Link>
-        </div>
+        <Link
+          href={`/freehold-intelligence/inventory/${prop.id}/generate`}
+          className="inline-flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-sm text-gold/80 transition hover:border-gold/40 hover:text-gold"
+        >
+          <Sparkles className="h-3 w-3" /> LP
+        </Link>
       </td>
     </tr>
   )

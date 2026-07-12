@@ -305,12 +305,6 @@ export default function AdsLivePage() {
             >
               {t('lm.ads.google.label')} <ArrowUpRight className="h-3.5 w-3.5 text-[#4285F4]" />
             </Link>
-            <Link
-              href="/freehold-intelligence/ads-live/preview"
-              className="inline-flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:border-gold/30 hover:text-white"
-            >
-              {t('lm.live.adPreview')} <ArrowUpRight className="h-3.5 w-3.5 text-gold" />
-            </Link>
           </div>
         </>
       )}
