@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
+import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
 
 type Landing = {
   slug: string
@@ -105,6 +106,8 @@ export default function LandingEditorPage() {
   const [aiInstruction, setAiInstruction] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
   const [aiTurns, setAiTurns] = useState<AiTurn[]>([])
+  // One-level snapshot so an AI edit driven from the side chat is reversible.
+  const [aiUndo, setAiUndo] = useState<{ fields: Record<AiField, string>; sections: LpSection[] } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -184,9 +187,12 @@ export default function LandingEditorPage() {
   }
 
   // AI chat-to-edit — instruction → Gemini → concrete field edits applied live.
-  async function askAi(raw?: string) {
+  // HEADLESS: the ONE Expert side chat is this page's instruction box (the
+  // surface is registered below). Returns a factual summary the chat reports,
+  // and snapshots the page first so the edit is reversible from the chat.
+  async function askAi(raw?: string): Promise<{ ok: boolean; summary: string }> {
     const instruction = (raw ?? aiInstruction).trim()
-    if (!instruction || !form || aiBusy) return
+    if (!instruction || !form || aiBusy) return { ok: false, summary: '' }
     setAiBusy(true)
     try {
       const res = await fetch(`/api/crm/landing-pages/${slug}/ai-edit`, {
@@ -204,14 +210,22 @@ export default function LandingEditorPage() {
         }),
       })
       const d = await res.json()
-      if (res.status !== 200) { toast.error(d.error || t('lpe.ai.failed')); return }
-      if (d.unavailable) { toast.error(t('lpe.ai.unavailable')); return }
+      if (res.status !== 200) { const m = d.error || t('lpe.ai.failed'); toast.error(m); return { ok: false, summary: m } }
+      if (d.unavailable) { const m = t('lpe.ai.unavailable'); toast.error(m); return { ok: false, summary: m } }
       const changes = (d.changes ?? {}) as Partial<Record<AiField, string>>
       const applied = AI_FIELDS.filter((f) => typeof changes[f] === 'string' && changes[f])
       // Layout ops (reorder / show-hide sections) the AI proposed on the canvas.
       const layout = d.layout as { order?: string[]; hide?: string[]; show?: string[] } | undefined
       const layoutTouched = !!layout && ((layout.order?.length ?? 0) + (layout.hide?.length ?? 0) + (layout.show?.length ?? 0) > 0)
-      if (applied.length === 0 && !layoutTouched) { toast.error(t('lpe.ai.noChanges')); return }
+      if (applied.length === 0 && !layoutTouched) { const m = t('lpe.ai.noChanges'); toast.error(m); return { ok: false, summary: m } }
+      // Snapshot the exact state BEFORE mutating so the chat can undo it.
+      setAiUndo({
+        fields: {
+          headline: form.headline, subheadline: form.subheadline, ctaText: form.ctaText,
+          seoTitle: form.seoTitle, seoDescription: form.seoDescription,
+        },
+        sections: form.sections ? form.sections.map((s) => ({ type: s.type, data: { ...s.data } })) : [],
+      })
       for (const f of applied) set(f, changes[f] as string)
       if (layoutTouched && form.sections) {
         const order = layout!.order ?? []
@@ -222,14 +236,52 @@ export default function LandingEditorPage() {
           .map((s, i) => ({ s, i }))
           .sort((a, b) => (order.length ? idx(a.s.type) - idx(b.s.type) || a.i - b.i : a.i - b.i))
           .map(({ s }) => (hide.has(s.type) ? { ...s, data: { ...s.data, _hidden: true } } : show.has(s.type) ? { ...s, data: { ...s.data, _hidden: false } } : s))
-        applySections(next)
+        setSections(next)
       }
       setAiTurns((prev) => [...prev, { instruction, note: String(d.note || ''), fields: applied }].slice(-5))
       setAiInstruction('')
-      toast.success(layoutTouched && applied.length === 0 ? t('lpe.ai.layoutApplied') : t('lpe.ai.applied').replace('{count}', String(applied.length)))
-    } catch { toast.error(t('lpe.ai.failed')) }
+      const summary = layoutTouched && applied.length === 0
+        ? t('lpe.ai.layoutApplied')
+        : t('lpe.ai.applied').replace('{count}', String(applied.length))
+      toast.success(summary)
+      return { ok: true, summary: d.note ? `${summary} — ${d.note}` : summary }
+    } catch { const m = t('lpe.ai.failed'); toast.error(m); return { ok: false, summary: m } }
     finally { setAiBusy(false) }
   }
+
+  // Reverse the last AI edit driven from the chat (fields + layout together).
+  function undoAi(): boolean {
+    if (!aiUndo || !form) return false
+    setForm((prev) => (prev ? { ...prev, ...aiUndo.fields, sections: aiUndo.sections } : prev))
+    setAiUndo(null)
+    return true
+  }
+
+  // ── Register this page as the ONE Expert chat's edit surface ────────────────
+  // Typing in the side chat now edits THIS landing page live (no second chat
+  // panel). Refs keep the registration stable while calling the latest state.
+  const askAiRef = useRef(askAi); askAiRef.current = askAi
+  const undoAiRef = useRef(undoAi); undoAiRef.current = undoAi
+  const canUndoRef = useRef(false); canUndoRef.current = aiUndo !== null
+  const tRef = useRef(t); tRef.current = t
+  const titleRef = useRef(''); titleRef.current = form?.headline || form?.slug || t('lpe.ai.artifact')
+  useEffect(() => {
+    if (!form) return
+    const surface: ExpertEditorSurface = {
+      kind: 'landing',
+      title: titleRef.current,
+      presets: () => ['punchier', 'arabic', 'seo', 'layout'].map((k) => {
+        const label = tRef.current(`lpe.ai.chip.${k}`)
+        return { label, instruction: label }
+      }),
+      apply: (instruction) => askAiRef.current(instruction),
+      canUndo: () => canUndoRef.current,
+      undo: () => undoAiRef.current(),
+    }
+    registerExpertEditor(surface)
+    return () => unregisterExpertEditor(surface)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!form])
 
   // ── Layout canvas — reorder / show-hide the page's real section blocks ──────
   const [layoutSaving, setLayoutSaving] = useState(false)
@@ -473,32 +525,20 @@ export default function LandingEditorPage() {
             </button>
             {aiOpen && (
               <div className="mt-3 space-y-3">
-                <p className="text-[11px] leading-relaxed text-slate-400">{t('lpe.ai.hint')}</p>
-                <div className="flex items-start gap-2">
-                  <textarea
-                    rows={2}
-                    className="fld resize-none"
-                    value={aiInstruction}
-                    onChange={(e) => setAiInstruction(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); askAi() } }}
-                    placeholder={t('lpe.ai.placeholder')}
-                    disabled={aiBusy}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => askAi()}
-                    disabled={aiBusy || !aiInstruction.trim()}
-                    className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-xl bg-gold px-3.5 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50"
-                  >
-                    {aiBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {t('lpe.ai.send')}
-                  </button>
-                </div>
+                <p className="text-[11px] leading-relaxed text-slate-400">{t('lpe.ai.chatHint')}</p>
+                <button
+                  type="button"
+                  onClick={() => openExpert()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" /> {t('lpe.ai.openChat')}
+                </button>
                 <div className="flex flex-wrap gap-1.5">
                   {[t('lpe.ai.chip.punchier'), t('lpe.ai.chip.arabic'), t('lpe.ai.chip.seo'), t('lpe.ai.chip.layout')].map((chip) => (
                     <button
                       key={chip}
                       type="button"
-                      onClick={() => askAi(chip)}
+                      onClick={() => sendToExpert(chip)}
                       disabled={aiBusy}
                       className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] text-slate-300 transition hover:border-gold/40 hover:text-white disabled:opacity-50"
                     >
@@ -506,6 +546,9 @@ export default function LandingEditorPage() {
                     </button>
                   ))}
                 </div>
+                {aiBusy && (
+                  <p className="flex items-center gap-1.5 text-[11px] text-gold/80"><Loader2 className="h-3 w-3 animate-spin" /> {t('lpe.ai.working')}</p>
+                )}
                 {aiTurns.length > 0 && (
                   <ul className="space-y-1.5 border-t border-line/60 pt-3">
                     {aiTurns.map((turn, i) => (
