@@ -43,14 +43,16 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireSession()
   if ('res' in auth) return auth.res
   const body = await req.json().catch(() => ({})) as {
-    id?: string; title?: string; content?: string; url?: string
+    id?: string; title?: string; content?: string; url?: string; folder?: string | null
   }
   const id = String(body.id ?? '').trim()
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
-  const patch: { title?: string; content?: string | null; url?: string | null } = {}
+  const patch: { title?: string; content?: string | null; url?: string | null; folder?: string | null } = {}
   if (typeof body.title === 'string' && body.title.trim()) patch.title = body.title
   if (typeof body.content === 'string') patch.content = body.content.slice(0, 100_000)
   if (typeof body.url === 'string' && /^(https?:\/\/|data:)/.test(body.url)) patch.url = body.url.slice(0, 2000)
+  // folder: string moves the item into that folder; null (explicit) unfiles it.
+  if ('folder' in body) patch.folder = body.folder == null ? null : String(body.folder)
   if (!Object.keys(patch).length) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   const item = await updateLibraryItem(id, auth.user.email, auth.user.role, patch)
   if (!item) return NextResponse.json({ error: 'Not an editable library item' }, { status: 404 })

@@ -18,6 +18,8 @@ export interface LibraryItem {
   content: string | null
   /** External or hosted media URL (images, videos, PDFs). */
   url: string | null
+  /** Optional folder name the user filed it under (empty = unfiled). */
+  folder: string | null
   createdBy: string
   createdAt: string
 }
@@ -37,6 +39,7 @@ const ensure = async () => {
       created_at  timestamptz NOT NULL DEFAULT now()
     )
   `)
+  await query(`ALTER TABLE freehold_site_library ADD COLUMN IF NOT EXISTS folder text`)
 }
 const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
 
@@ -46,6 +49,7 @@ const mapRow = (r: Record<string, unknown>): LibraryItem => ({
   title: String(r.title ?? 'Untitled'),
   content: r.content == null ? null : String(r.content),
   url: r.url == null ? null : String(r.url),
+  folder: r.folder ? String(r.folder) : null,
   createdBy: String(r.user_email ?? r.created_by ?? ''),
   createdAt: String(r.created_at ?? ''),
 })
@@ -64,7 +68,7 @@ export async function listLibrary(email: string, role?: Role | string | null, ki
     if (own) { params.push(email); where = `WHERE user_email = $${params.length}` }
 
     const items = (await query<Record<string, unknown>>(
-      `SELECT id, user_email, kind, title, content, url, created_at::text
+      `SELECT id, user_email, kind, title, content, url, folder, created_at::text
        FROM freehold_site_library ${where}
        ORDER BY created_at DESC LIMIT 200`,
       params,
@@ -90,17 +94,18 @@ export async function listLibrary(email: string, role?: Role | string | null, ki
 
 export async function saveLibraryItem(
   email: string,
-  item: { kind: LibraryKind; title: string; content?: string | null; url?: string | null },
+  item: { kind: LibraryKind; title: string; content?: string | null; url?: string | null; folder?: string | null },
 ): Promise<LibraryItem | null> {
   try {
     await ensureOnce()
     const id = `lib-${randomUUID()}`
+    const folder = item.folder?.trim() ? item.folder.trim().slice(0, 80) : null
     await query(
-      `INSERT INTO freehold_site_library (id, user_email, kind, title, content, url)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [id, email, item.kind, item.title.slice(0, 200), item.content ?? null, item.url ?? null],
+      `INSERT INTO freehold_site_library (id, user_email, kind, title, content, url, folder)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [id, email, item.kind, item.title.slice(0, 200), item.content ?? null, item.url ?? null, folder],
     )
-    return { id, kind: item.kind, title: item.title, content: item.content ?? null, url: item.url ?? null, createdBy: email, createdAt: new Date().toISOString() }
+    return { id, kind: item.kind, title: item.title, content: item.content ?? null, url: item.url ?? null, folder, createdBy: email, createdAt: new Date().toISOString() }
   } catch {
     return null
   }
@@ -116,7 +121,7 @@ export async function updateLibraryItem(
   id: string,
   email: string,
   role: Role | string | null | undefined,
-  patch: { title?: string; content?: string | null; url?: string | null },
+  patch: { title?: string; content?: string | null; url?: string | null; folder?: string | null },
 ): Promise<LibraryItem | null> {
   try {
     await ensureOnce()
@@ -127,12 +132,16 @@ export async function updateLibraryItem(
     }
     if (patch.content !== undefined) { params.push(patch.content); sets.push(`content = $${params.length}`) }
     if (patch.url !== undefined) { params.push(patch.url); sets.push(`url = $${params.length}`) }
+    if (patch.folder !== undefined) {
+      const f = patch.folder?.trim() ? patch.folder.trim().slice(0, 80) : null
+      params.push(f); sets.push(`folder = $${params.length}`)
+    }
     if (!sets.length) return null
     let owner = ''
     if (!isMgmt(role)) { params.push(email); owner = ` AND user_email = $${params.length}` }
     const rows = await query<Record<string, unknown>>(
       `UPDATE freehold_site_library SET ${sets.join(', ')} WHERE id = $1${owner}
-       RETURNING id, user_email, kind, title, content, url, created_at::text`,
+       RETURNING id, user_email, kind, title, content, url, folder, created_at::text`,
       params,
     )
     return rows[0] ? mapRow(rows[0]) : null
