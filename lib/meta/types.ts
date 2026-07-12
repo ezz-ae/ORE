@@ -113,17 +113,35 @@ export interface MetaApiResponse<T> {
 
 // Internal types for the wizard / UI
 
+/** One id+name entry from Meta's live targeting vocabulary. */
+export interface TargetingEntity {
+  id: string
+  name: string
+}
+
 export interface CampaignTargeting {
   countries: string[]
   cityKeys: string[]
   ageMin: number
   ageMax: number
   publisherPlatforms: string[]
-  interests: { id: string; name: string }[]
+  interests: TargetingEntity[]
   /** Meta gender codes: 1 = men, 2 = women. Omitted / empty = all genders. */
   genders?: number[]
   /** Meta locale (language) keys from the adlocale vocabulary. Empty = all. */
   locales?: number[]
+  /** Behavioral segments from Meta's live vocabulary (expats, frequent travellers…). */
+  behaviors?: TargetingEntity[]
+  /**
+   * AND-narrowing: a person must match the base interests/behaviors AND at
+   * least one entry of EVERY group (Meta flexible_spec semantics). This is
+   * what makes an audience genuinely narrow instead of a bag of interests.
+   */
+  narrowing?: Array<{ interests?: TargetingEntity[]; behaviors?: TargetingEntity[] }>
+  /** People to exclude (e.g. real-estate agents when advertising to buyers). */
+  exclusions?: { interests?: TargetingEntity[]; behaviors?: TargetingEntity[] }
+  /** Meta Custom/Lookalike audience ids to include (from the Audiences tab). */
+  customAudienceIds?: string[]
 }
 
 /** A Meta ad locale (language) from the live adlocale search vocabulary. */

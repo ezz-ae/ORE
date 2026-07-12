@@ -60,7 +60,7 @@ export interface TargetingRecommendation {
 }
 
 export const STRATEGY_LABELS: Record<TargetingStrategy, string> = {
-  advantage_broad: 'Advantage+ broad',
+  advantage_broad: 'Signal engine — auto-optimizes on our lead data',
   lookalike_qualified: 'Lookalike of qualified leads',
   retargeting_warm: 'Warm retargeting',
   interest_refined: 'Refined interests (cold start)',

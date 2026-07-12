@@ -110,7 +110,7 @@ export function LeadForm({ propertyName, slug, ctaText, L, palette, pixels = {} 
         <input
           type="tel"
           required
-          placeholder="+971 __ ___ ____"
+          placeholder={L['form.phonePlaceholder']}
           value={form.phone}
           onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
           className={inputClass}

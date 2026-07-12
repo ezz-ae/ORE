@@ -203,6 +203,7 @@ const EN: Record<string, string> = {
 
   "form.name": "Full Name",
   "form.namePlaceholder": "Your full name",
+  "form.phonePlaceholder": "Your phone number",
   "form.phone": "Phone / WhatsApp",
   "form.email": "Email",
   "form.sending": "Sending…",
@@ -381,6 +382,7 @@ const AR: Record<string, string> = {
 
   "form.name": "الاسم الكامل",
   "form.namePlaceholder": "اسمك الكامل",
+  "form.phonePlaceholder": "رقم هاتفك",
   "form.phone": "الهاتف / واتساب",
   "form.email": "البريد الإلكتروني",
   "form.sending": "جارٍ الإرسال…",
@@ -559,6 +561,7 @@ const RU: Record<string, string> = {
 
   "form.name": "Полное имя",
   "form.namePlaceholder": "Ваше полное имя",
+  "form.phonePlaceholder": "Ваш номер телефона",
   "form.phone": "Телефон / WhatsApp",
   "form.email": "Эл. почта",
   "form.sending": "Отправка…",

@@ -6,7 +6,7 @@ import {
   ArrowLeft, Megaphone,
   Activity,
   BarChart3, Zap,
-  Monitor, ClipboardList, Crosshair, Palette,
+  Monitor, ClipboardList, Crosshair, Palette, Users,
   Search, Radio,
   FileText, FileCheck, Shield,
 } from 'lucide-react'
@@ -38,6 +38,7 @@ const MANAGER_NAV_SECTIONS = [
       { label: 'Creative',      href: '/freehold-intelligence/lead-machine/creatives',                   Icon: Palette     },
       { label: 'Lead forms',    href: '/freehold-intelligence/lead-machine/forms',                       Icon: ClipboardList},
       { label: 'Targeting',     href: '/freehold-intelligence/lead-machine/targeting',                   Icon: Crosshair   },
+      { label: 'Audiences',     href: '/freehold-intelligence/lead-machine/audiences',                   Icon: Users       },
     ],
   },
   {

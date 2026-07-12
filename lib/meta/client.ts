@@ -206,12 +206,38 @@ export async function getReachEstimate(
     // A minimal, valid targeting_spec for the estimate — geo + age + gender +
     // interests. Kept independent of createAdSet so the proven launch path is
     // untouched.
+    const narrowing = (targeting.narrowing ?? []).filter((g) => (g.interests?.length || 0) + (g.behaviors?.length || 0) > 0)
+    const baseGroup: Record<string, unknown> = {
+      ...(targeting.interests.length ? { interests: targeting.interests } : {}),
+      ...(targeting.behaviors?.length ? { behaviors: targeting.behaviors } : {}),
+    }
     const spec: Record<string, unknown> = {
       geo_locations: { countries: targeting.countries.length ? targeting.countries : ['AE'] },
       age_min: targeting.ageMin,
       age_max: targeting.ageMax,
       ...(targeting.genders && targeting.genders.length ? { genders: targeting.genders } : {}),
-      ...(targeting.interests.length ? { interests: targeting.interests } : {}),
+      ...(narrowing.length
+        ? {
+            flexible_spec: [
+              ...(Object.keys(baseGroup).length ? [baseGroup] : []),
+              ...narrowing.map((g) => ({
+                ...(g.interests?.length ? { interests: g.interests } : {}),
+                ...(g.behaviors?.length ? { behaviors: g.behaviors } : {}),
+              })),
+            ],
+          }
+        : baseGroup),
+      ...(targeting.customAudienceIds?.length
+        ? { custom_audiences: targeting.customAudienceIds.map((id) => ({ id })) }
+        : {}),
+      ...(targeting.exclusions && ((targeting.exclusions.interests?.length || 0) + (targeting.exclusions.behaviors?.length || 0) > 0)
+        ? {
+            exclusions: {
+              ...(targeting.exclusions.interests?.length ? { interests: targeting.exclusions.interests } : {}),
+              ...(targeting.exclusions.behaviors?.length ? { behaviors: targeting.exclusions.behaviors } : {}),
+            },
+          }
+        : {}),
     }
     const res = await apiFetch<{ data?: Array<{ estimate_mau_lower_bound?: number; estimate_mau_upper_bound?: number; estimate_dau?: number; estimate_ready?: boolean }> }>(
       `/${adAccountId}/delivery_estimate`,
@@ -305,34 +331,71 @@ export async function createAdSet(params: {
       : {}),
   }
 
-  // Explicit Advantage-audience choice (required on newer accounts):
-  // broad (no interests) → let the algorithm expand; interests → respect them.
-  const advantageAudience = params.targeting.interests.length > 0 ? 0 : 1
+  // Explicit Advantage-audience choice (required on newer accounts): any real
+  // audience definition (interests, behaviors, narrowing, custom audiences) →
+  // respect it; nothing at all → let the algorithm expand on our signals.
+  const t = params.targeting
+  const behaviors = t.behaviors ?? []
+  const narrowing = (t.narrowing ?? []).filter((g) => (g.interests?.length || 0) + (g.behaviors?.length || 0) > 0)
+  const excludedInterests = t.exclusions?.interests ?? []
+  const excludedBehaviors = t.exclusions?.behaviors ?? []
+  const customAudienceIds = t.customAudienceIds ?? []
+  const hasAudienceDefinition =
+    t.interests.length > 0 || behaviors.length > 0 || narrowing.length > 0 || customAudienceIds.length > 0
+  const advantageAudience = hasAudienceDefinition ? 0 : 1
   // Advantage+ audiences treat the age band as a suggestion only — Meta
   // rejects a hard age_min > 25 (subcode 1870188) or age_max < 65 (1870189).
   // Clamp both bounds; the algorithm still skews delivery to the intended
   // age band via its signals.
-  const ageMin = advantageAudience === 1 ? Math.min(params.targeting.ageMin, 25) : params.targeting.ageMin
-  const ageMax = advantageAudience === 1 ? Math.max(params.targeting.ageMax, 65) : params.targeting.ageMax
+  const ageMin = advantageAudience === 1 ? Math.min(t.ageMin, 25) : t.ageMin
+  const ageMax = advantageAudience === 1 ? Math.max(t.ageMax, 65) : t.ageMax
+
+  // Base interests/behaviors + AND-narrowing groups → Meta flexible_spec: a
+  // person must match at least one entry of EVERY group. Without narrowing,
+  // plain top-level keys keep the proven single-group shape.
+  const baseGroup: Record<string, unknown> = {
+    ...(t.interests.length > 0 ? { interests: t.interests } : {}),
+    ...(behaviors.length > 0 ? { behaviors } : {}),
+  }
+  const interestSpec: Record<string, unknown> = narrowing.length > 0
+    ? {
+        flexible_spec: [
+          ...(Object.keys(baseGroup).length > 0 ? [baseGroup] : []),
+          ...narrowing.map((g) => ({
+            ...(g.interests?.length ? { interests: g.interests } : {}),
+            ...(g.behaviors?.length ? { behaviors: g.behaviors } : {}),
+          })),
+        ],
+      }
+    : baseGroup
 
   const targetingSpec: Record<string, unknown> = {
     geo_locations: {
-      countries: params.targeting.countries,
-      ...(params.targeting.cityKeys.length > 0
-        ? { cities: params.targeting.cityKeys.map((key) => ({ key })) }
+      countries: t.countries,
+      ...(t.cityKeys.length > 0
+        ? { cities: t.cityKeys.map((key) => ({ key })) }
         : {}),
     },
     age_min: ageMin,
     age_max: ageMax,
     ...placementSpec,
-    ...(params.targeting.genders && params.targeting.genders.length > 0
-      ? { genders: params.targeting.genders }
+    ...(t.genders && t.genders.length > 0
+      ? { genders: t.genders }
       : {}),
-    ...(params.targeting.interests.length > 0
-      ? { interests: params.targeting.interests }
+    ...interestSpec,
+    ...(t.locales && t.locales.length > 0
+      ? { locales: t.locales }
       : {}),
-    ...(params.targeting.locales && params.targeting.locales.length > 0
-      ? { locales: params.targeting.locales }
+    ...(customAudienceIds.length > 0
+      ? { custom_audiences: customAudienceIds.map((id) => ({ id })) }
+      : {}),
+    ...(excludedInterests.length > 0 || excludedBehaviors.length > 0
+      ? {
+          exclusions: {
+            ...(excludedInterests.length > 0 ? { interests: excludedInterests } : {}),
+            ...(excludedBehaviors.length > 0 ? { behaviors: excludedBehaviors } : {}),
+          },
+        }
       : {}),
     targeting_automation: { advantage_audience: advantageAudience },
   }
@@ -768,6 +831,99 @@ function hashPhone(phone: string): string {
 }
 
 export interface BuyerContact { email?: string | null; phone?: string | null }
+
+// ─── Live targeting vocabulary ────────────────────────────────────────────────
+// Real Meta interest/behavior entities with real audience sizes — never a
+// hardcoded id (they rot) and never an invented segment name.
+
+export interface VocabularyEntry {
+  id: string
+  name: string
+  /** Meta's own audience-size band for the segment, when it reports one. */
+  audienceLower?: number
+  audienceUpper?: number
+  /** Category path, e.g. "Behaviors > Travel". */
+  path?: string
+}
+
+type RawVocabRow = {
+  id?: string | number
+  name?: string
+  audience_size_lower_bound?: number
+  audience_size_upper_bound?: number
+  path?: string[]
+}
+
+const mapVocab = (rows: RawVocabRow[] | undefined): VocabularyEntry[] =>
+  (rows ?? [])
+    .filter((r) => r.id && r.name)
+    .map((r) => ({
+      id: String(r.id),
+      name: String(r.name),
+      audienceLower: r.audience_size_lower_bound,
+      audienceUpper: r.audience_size_upper_bound,
+      path: Array.isArray(r.path) ? r.path.join(' > ') : undefined,
+    }))
+
+/** Search Meta's live interest vocabulary (type=adinterest). */
+export async function searchInterests(q: string, limit = 25): Promise<VocabularyEntry[]> {
+  const res = await apiFetch<{ data?: RawVocabRow[] }>('/search', undefined, {
+    type: 'adinterest',
+    q,
+    limit: String(Math.min(limit, 50)),
+  })
+  return mapVocab(res.data)
+}
+
+/**
+ * Browse Meta's live behavior/demographic vocabulary (adTargetingCategory).
+ * Meta returns the full class list — filter by the query here.
+ */
+export async function searchBehaviors(
+  q: string,
+  cls: 'behaviors' | 'demographics' | 'life_events' = 'behaviors',
+  limit = 25,
+): Promise<VocabularyEntry[]> {
+  const res = await apiFetch<{ data?: RawVocabRow[] }>('/search', undefined, {
+    type: 'adTargetingCategory',
+    class: cls,
+    limit: '500',
+  })
+  const all = mapVocab(res.data)
+  const needle = q.trim().toLowerCase()
+  const hits = needle ? all.filter((e) => e.name.toLowerCase().includes(needle) || e.path?.toLowerCase().includes(needle)) : all
+  return hits.slice(0, Math.min(limit, 50))
+}
+
+/** The ad account's Custom + Lookalike audiences with real size bands. */
+export interface CustomAudienceSummary {
+  id: string
+  name: string
+  subtype: string
+  approxLower: number | null
+  approxUpper: number | null
+  timeUpdated: string | null
+}
+
+export async function listCustomAudiences(): Promise<CustomAudienceSummary[]> {
+  const { adAccountId } = await creds()
+  const res = await apiFetch<{ data?: Array<Record<string, unknown>> }>(
+    `/${adAccountId}/customaudiences`,
+    undefined,
+    {
+      fields: 'id,name,subtype,approximate_count_lower_bound,approximate_count_upper_bound,time_updated',
+      limit: '100',
+    },
+  )
+  return (res.data ?? []).map((r) => ({
+    id: String(r.id ?? ''),
+    name: String(r.name ?? ''),
+    subtype: String(r.subtype ?? ''),
+    approxLower: typeof r.approximate_count_lower_bound === 'number' ? r.approximate_count_lower_bound : null,
+    approxUpper: typeof r.approximate_count_upper_bound === 'number' ? r.approximate_count_upper_bound : null,
+    timeUpdated: r.time_updated ? String(r.time_updated) : null,
+  }))
+}
 
 export async function createCustomAudience(name: string, description: string): Promise<{ id: string }> {
   const { adAccountId } = await creds()

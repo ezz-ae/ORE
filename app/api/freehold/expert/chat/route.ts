@@ -201,6 +201,18 @@ function parseBlocks(raw: string): ExpertBlock[] {
   return [{ type: 'text', content: text }]
 }
 
+// One human-readable line per executed tool, for the "hit the tool limit"
+// reply — so a cut-off turn still tells the user what actually happened.
+function summarizeToolResult(result: unknown): string {
+  if (!result || typeof result !== 'object') return 'done'
+  const r = result as Record<string, unknown>
+  if (typeof r.error === 'string' && r.error) return `failed — ${r.error.slice(0, 140)}`
+  for (const key of ['message', 'summary', 'status', 'url', 'reviewUrl', 'wizardUrl', 'path']) {
+    if (typeof r[key] === 'string' && r[key]) return String(r[key]).slice(0, 160)
+  }
+  return 'done'
+}
+
 export async function POST(request: NextRequest) {
   const generatedAt = new Date().toISOString()
   try {
@@ -280,7 +292,7 @@ export async function POST(request: NextRequest) {
 
 YOU ARE THE MARKETING COORDINATOR AGENT. You can execute REAL tools via your specialist agents. To call one, respond with ONLY this JSON (no blocks, no prose):
 {"tool_call": {"name": "<tool_name>", "args": { ... }}}
-After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 3 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result.
+After each call the conversation gains a TOOL_RESULT message; then either call another tool (max 5 per turn) or give your final answer in the normal {"blocks":[...]} format, grounded in the real results. NEVER invent or guess a tool result. NEVER repeat a call you already made this turn — its result is already in the conversation.
 Tools marked ⚠destructive change live campaigns/money/content: set "confirm": true ONLY when the user's own latest message explicitly requests or confirms that exact action. Otherwise first answer with blocks that ask for confirmation (an "actions" block whose prompt states the exact action, e.g. "Yes — pause campaign X").
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
@@ -299,20 +311,47 @@ Your tools:${renderToolDocs(tools)}`
     }))
 
     // Tool loop: execute → feed the observation back → let the model continue.
+    // Guards: a per-turn budget; a duplicate-call breaker (a model re-issuing
+    // the identical call would burn the whole budget on one action); and a
+    // hard rule that raw tool_call JSON never becomes the reply — leaked call
+    // JSON was being persisted into the session and poisoning the next turn
+    // (the "repeated tool call without TOOL_RESULT" failure on "continue").
+    const MAX_TOOLS_PER_TURN = 5
     const toolsUsed: string[] = []
-    for (let i = 0; i < 4 && tools.length > 0; i++) {
+    const resultNotes: string[] = []
+    const seenCalls = new Set<string>()
+    const limitReply = () =>
+      JSON.stringify({
+        blocks: [{
+          type: 'text',
+          content: resultNotes.length
+            ? `I hit this turn's tool limit. Done so far:\n${resultNotes.join('\n')}\nSay "continue" and I'll pick up from here.`
+            : `I hit this turn's tool limit before finishing — say "continue" and I'll pick up from here.`,
+        }],
+      })
+
+    for (let i = 0; i <= MAX_TOOLS_PER_TURN && tools.length > 0; i++) {
       const call = parseToolCall(raw)
       if (!call) break
-      if (toolsUsed.length >= 3) {
-        raw = JSON.stringify({ blocks: [{ type: 'text', content: 'I hit the tool limit for one turn — here is what I have so far. Ask me to continue.' }] })
+      if (toolsUsed.length >= MAX_TOOLS_PER_TURN) {
+        raw = limitReply()
         break
       }
-      const result = await runCoordinatorTool(tools, call, toolCtx)
-      toolsUsed.push(call.name)
+      const callKey = `${call.name}:${JSON.stringify(call.args)}`
+      let observation: string
+      if (seenCalls.has(callKey)) {
+        observation = `DUPLICATE_CALL ${call.name}: you already ran this exact call this turn — its TOOL_RESULT is above. Use it, or give your final answer now.`
+      } else {
+        seenCalls.add(callKey)
+        const result = await runCoordinatorTool(tools, call, toolCtx)
+        toolsUsed.push(call.name)
+        resultNotes.push(`• ${call.name}: ${summarizeToolResult(result)}`)
+        observation = `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}`
+      }
       loopHistory = [
         ...(loopHistory ?? []),
         { role: 'model' as const, text: JSON.stringify({ tool_call: call }) },
-        { role: 'user' as const, text: `TOOL_RESULT ${call.name}: ${JSON.stringify(result).slice(0, 6000)}` },
+        { role: 'user' as const, text: observation },
       ]
       raw = stripThinking(await queryServerAgent(message, {
         sessionId,
@@ -324,6 +363,10 @@ Your tools:${renderToolDocs(tools)}`
         history: loopHistory,
       }))
     }
+
+    // Never let a dangling tool_call escape the loop — it would render as
+    // gibberish AND corrupt the saved session for every later turn.
+    if (tools.length > 0 && parseToolCall(raw)) raw = limitReply()
 
     const blocks = parseBlocks(raw)
     // Persist the turn to the account's session so nothing is lost on reload —
