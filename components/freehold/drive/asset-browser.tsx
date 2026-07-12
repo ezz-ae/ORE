@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Image as ImageIcon, Video, FileText, FileType2, StickyNote, Megaphone,
-  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput, Upload,
+  Trash2, ExternalLink, Plus, Loader2, X, Pencil, Search, Monitor, Folder, FolderOpen, FolderInput, Upload, Cloud,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { KIND_META, editorTypeForKind, editorHrefForItem, type DriveKind, type EditorType } from '@/lib/freehold/drive'
@@ -233,6 +233,10 @@ export function AssetBrowser({ scope }: { scope: 'all' | 'library' }) {
         <button type="button" onClick={() => setAddOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
           <Plus className="h-3.5 w-3.5" /> {t('drive.save')}
         </button>
+        <Link href="/freehold-intelligence/cloud"
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
+          <Cloud className="h-3.5 w-3.5" /> {t('cloud.title')}
+        </Link>
       </div>
 
       {/* Folder rail — the user's own folders + an Unfiled bucket */}
