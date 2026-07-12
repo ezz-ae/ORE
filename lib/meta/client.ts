@@ -25,6 +25,7 @@ import type {
   MetaAdFormat,
   MetaLocale,
   AdDestination,
+  MetaCta,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -629,6 +630,89 @@ export async function createAd(params: {
     creative: { creative_id: params.creativeId },
     status:   params.status,
   })
+}
+
+// ─── Ad editing ───────────────────────────────────────────────────────────────
+// Meta creatives are immutable once created — the REAL edit flow is: read the
+// ad's current creative, build a NEW creative with the merged fields, then
+// repoint the ad at it. The old creative stays in the account's history.
+
+export interface AdCreativeSnapshot {
+  id: string
+  name: string
+  status: string
+  creative: {
+    id: string
+    primaryText: string
+    headline: string
+    description: string
+    landingUrl: string
+    ctaType: string
+    imageUrl: string
+  } | null
+}
+
+/** One ad with its current creative content — the "before" of an edit. */
+export async function getAdWithCreative(adId: string): Promise<AdCreativeSnapshot> {
+  const ad = await apiFetch<{
+    id: string; name?: string; status?: string
+    creative?: { id?: string; body?: string; title?: string; object_story_spec?: { link_data?: { link?: string; message?: string; name?: string; description?: string; picture?: string; call_to_action?: { type?: string } } } }
+  }>(`/${adId}`, undefined, {
+    fields: 'id,name,status,creative{id,body,title,object_story_spec}',
+  })
+  const ld = ad.creative?.object_story_spec?.link_data
+  return {
+    id: String(ad.id),
+    name: String(ad.name ?? ''),
+    status: String(ad.status ?? ''),
+    creative: ad.creative?.id
+      ? {
+          id: String(ad.creative.id),
+          primaryText: ld?.message ?? ad.creative.body ?? '',
+          headline: ld?.name ?? ad.creative.title ?? '',
+          description: ld?.description ?? '',
+          landingUrl: ld?.link ?? '',
+          ctaType: ld?.call_to_action?.type ?? 'LEARN_MORE',
+          imageUrl: ld?.picture ?? '',
+        }
+      : null,
+  }
+}
+
+/** The ads under a campaign, with current copy — the edit flow's directory. */
+export async function listCampaignAds(campaignId: string): Promise<AdCreativeSnapshot[]> {
+  const res = await apiFetch<{ data?: Array<Record<string, unknown>> }>(`/${campaignId}/ads`, undefined, {
+    fields: 'id,name,status,creative{id,body,title,object_story_spec}',
+    limit: '25',
+  })
+  const rows = res.data ?? []
+  return Promise.all(rows.map((r) => getAdWithCreative(String(r.id))))
+}
+
+const CTA_TYPES: MetaCta[] = ['LEARN_MORE', 'SIGN_UP', 'GET_QUOTE', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW', 'DOWNLOAD', 'WHATSAPP_MESSAGE', 'CALL_NOW']
+
+/**
+ * Edit a live ad's copy/creative: merge the changes over the current values,
+ * create the new creative, repoint the ad. Returns before + after.
+ */
+export async function updateAdCreativeContent(
+  adId: string,
+  changes: { primaryText?: string; headline?: string; description?: string; landingUrl?: string; imageUrl?: string; cta?: string },
+): Promise<{ adId: string; before: AdCreativeSnapshot['creative']; after: CampaignCreative; creativeId: string }> {
+  const current = await getAdWithCreative(adId)
+  if (!current.creative) throw new MetaApiError('This ad has no editable link creative.', 0, 'unsupported')
+  const cta = (changes.cta && CTA_TYPES.includes(changes.cta as MetaCta) ? changes.cta : current.creative.ctaType) as MetaCta
+  const merged: CampaignCreative = {
+    primaryText: changes.primaryText ?? current.creative.primaryText,
+    headline: changes.headline ?? current.creative.headline,
+    description: changes.description ?? current.creative.description,
+    landingUrl: changes.landingUrl ?? current.creative.landingUrl,
+    cta: CTA_TYPES.includes(cta) ? cta : 'LEARN_MORE',
+    imageUrl: changes.imageUrl ?? current.creative.imageUrl ?? undefined,
+  }
+  const created = await createAdCreative({ name: `${current.name} — edited`, creative: merged })
+  await apiPost(`/${adId}`, { creative: { creative_id: created.id } })
+  return { adId, before: current.creative, after: merged, creativeId: created.id }
 }
 
 export async function listAds(adSetId: string): Promise<MetaAd[]> {

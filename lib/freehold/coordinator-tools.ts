@@ -2,6 +2,7 @@ import {
   listCampaigns, getCampaign, getCampaignInsights,
   updateCampaignStatus, updateAdSet, listAdSets, getAdSet,
   launchFullCampaign, listLeadForms, createLeadForm,
+  listCampaignAds, updateAdCreativeContent,
 } from '@/lib/meta/client'
 import { UAE_INTERESTS } from '@/lib/meta/targeting-catalog'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
@@ -212,6 +213,53 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         metaConnected: connected,
         wizardUrl: `/freehold-intelligence/lead-machine/campaigns/new?${qs.toString()}`,
         note: 'Present the plan in plain language. Offer BOTH follow-ups: open the prefilled wizard (navigate to wizardUrl) or launch it paused via ads_launch_campaign after the user confirms.',
+      }
+    },
+  },
+  {
+    name: 'ads_list_ads', agent: 'ads_agent',
+    description: 'READ the ads inside a campaign with their CURRENT copy (primary text, headline, description, link, CTA). Use before editing an ad so you quote the real current content and get the adId.',
+    params: '{ "campaignId": string }',
+    roles: ADS_READERS,
+    run: async (args) => {
+      const campaignId = s(args.campaignId)
+      if (!campaignId) return { error: 'campaignId is required' }
+      const ads = await listCampaignAds(campaignId)
+      return {
+        ads: ads.map((a) => ({
+          adId: a.id, name: a.name, status: a.status,
+          copy: a.creative
+            ? { primaryText: a.creative.primaryText, headline: a.creative.headline, description: a.creative.description, landingUrl: a.creative.landingUrl, cta: a.creative.ctaType }
+            : null,
+        })),
+      }
+    },
+  },
+  {
+    name: 'ads_edit_ad', agent: 'ads_agent', destructive: true,
+    description: 'EDIT a live ad’s creative/copy for real: builds a new creative with the changed fields (primary text, headline, description, landing URL, image URL, CTA) and repoints the ad — the Meta-correct flow, since creatives are immutable. Get the adId from ads_list_ads first. Only pass the fields the user wants changed.',
+    params: '{ "adId": string, "primaryText"?: string, "headline"?: string, "description"?: string, "landingUrl"?: string, "imageUrl"?: string, "cta"?: string, "confirm": true }',
+    roles: OPERATORS,
+    run: async (args) => {
+      const adId = s(args.adId)
+      if (!adId) return { error: 'adId is required — call ads_list_ads to find it' }
+      const changes = {
+        primaryText: s(args.primaryText) || undefined,
+        headline: s(args.headline) || undefined,
+        description: s(args.description) || undefined,
+        landingUrl: s(args.landingUrl) || undefined,
+        imageUrl: s(args.imageUrl) || undefined,
+        cta: s(args.cta) || undefined,
+      }
+      if (!Object.values(changes).some(Boolean)) return { error: 'Pass at least one field to change.' }
+      const result = await updateAdCreativeContent(adId, changes)
+      return {
+        ok: true,
+        adId: result.adId,
+        newCreativeId: result.creativeId,
+        before: result.before,
+        after: result.after,
+        note: 'The ad now serves the new creative. Meta may re-review it; delivery continues per campaign status.',
       }
     },
   },
