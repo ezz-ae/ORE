@@ -3,7 +3,12 @@
 // Never list bug fixes or internal plumbing (e.g. "fixed Meta integration").
 // Bump CHANGELOG_VERSION whenever you add an entry so users see the popup once.
 
-export interface ChangeItem { title: string; body: string }
+export interface ChangeItem {
+  title: string
+  body: string
+  /** Show only to these roles (undefined = everyone). Filtered in the panel. */
+  roles?: string[]
+}
 export interface ChangeEntry {
   version: number
   date: string
@@ -12,6 +17,18 @@ export interface ChangeEntry {
 }
 
 export const CHANGELOG: ChangeEntry[] = [
+  {
+    version: 6,
+    date: '2026-07-12',
+    title: 'Audiences, smarter campaign setup & a chat that acts',
+    items: [
+      { title: 'Audiences tab', body: 'Ads → Audiences: build behavioral audiences on Meta’s live vocabulary (real segments, real sizes), narrow with AND-rules, exclude who you don’t want, and upload a lead list to create a lookalike. Attach any saved audience to a campaign in one click.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'New launches without a landing page', body: 'Campaign setup starts with Campaign Sources: upload the brochure or paste the listing/developer link and the AI writes the ad from it. The landing URL is optional — empty uses the project’s public page.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'Preview all placements', body: 'On the creative step, one click shows your ad across Facebook Feed, Instagram Feed, Stories and Reels — before anything launches.', roles: ['admin', 'ceo', 'director', 'sales_manager', 'marketing'] },
+      { title: 'The chat takes real actions', body: 'Ask the Expert to analyse a campaign, edit a live ad’s copy, create a Meta lead form, or rank your audiences for a listing. Every action it takes shows as an “Actions taken” chip on the reply — work you can verify, not talk.' },
+      { title: 'Notebook writes from your real data', body: 'The generator (brochures, ad copy, market reports, WhatsApp messages…) now grounds on your live inventory, market intelligence and campaign results — and “Edit in Drive editor” turns any output into an editable document.' },
+    ],
+  },
   {
     version: 5,
     date: '2026-07-02',

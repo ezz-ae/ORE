@@ -207,6 +207,44 @@ const SECTIONS: QASection[] = [
     Icon: Megaphone,
     items: [
       {
+        q: T('How do I build and reuse audiences?', 'كيف أبني الجماهير وأعيد استخدامها؟', 'Как создавать и переиспользовать аудитории?'),
+        a: T(
+          'Ads → Audiences. Search Meta’s live vocabulary for real interests and behaviors (each shows its true segment size), narrow with AND-rules, exclude who you don’t want — or upload a lead list CSV to build a lookalike. Every saved audience attaches to a campaign in one click, and the AI can rank the best match for a listing.',
+          'الإعلانات ← الجماهير. ابحث في قاموس ميتا الحي عن اهتمامات وسلوكيات حقيقية (كلٌّ بحجمه الفعلي)، وضيّق بقواعد «و»، واستبعد من لا تريده — أو ارفع ملف CSV بعملائك لبناء جمهور مشابه. كل جمهور محفوظ يُرفق بالحملة بنقرة، ويمكن للذكاء الاصطناعي ترتيب الأنسب لعقارك.',
+          'Реклама → Аудитории. Ищите в живом словаре Meta реальные интересы и поведение (у каждого — настоящий размер сегмента), сужайте AND-правилами, исключайте лишних — или загрузите CSV с лидами для lookalike. Любая сохранённая аудитория подключается к кампании в один клик, а ИИ ранжирует лучшую для объекта.',
+        ),
+        links: [{ label: T('Open Audiences', 'افتح الجماهير', 'Открыть Аудитории'), href: '/freehold-intelligence/lead-machine/audiences' }],
+        roles: MGMT_MKT,
+      },
+      {
+        q: T('The project is a new launch with no landing page — can I still run ads?', 'المشروع إطلاق جديد بلا صفحة هبوط — هل أستطيع الإعلان؟', 'Новый запуск без посадочной — можно ли запускать рекламу?'),
+        a: T(
+          'Yes. On step 1 of campaign setup, add Campaign Sources: upload the brochure/fact sheet (the AI extracts the real facts) or paste the listing/developer link. The ad copy is written from that material, and the landing URL is optional — when empty, the ad points to the project’s public page.',
+          'نعم. في الخطوة 1 من إعداد الحملة أضف مصادر الحملة: ارفع البروشور/ورقة الحقائق (يستخرج الذكاء الاصطناعي الحقائق) أو الصق رابط الإعلان أو المطوّر. يُكتب نص الإعلان من هذه المواد، وصفحة الهبوط اختيارية — الفراغ يوجّه الإعلان إلى صفحة المشروع العامة.',
+          'Да. На шаге 1 добавьте Источники кампании: загрузите брошюру/фактлист (ИИ извлечёт факты) или вставьте ссылку на листинг/застройщика. Текст объявления пишется из этих материалов, а посадочная необязательна — пустое поле ведёт на публичную страницу проекта.',
+        ),
+        links: [{ label: T('New campaign', 'حملة جديدة', 'Новая кампания'), href: '/freehold-intelligence/lead-machine/campaigns/new' }],
+        roles: MGMT_MKT,
+      },
+      {
+        q: T('Can I see the ad on every placement before launch?', 'هل أرى الإعلان في كل المواضع قبل الإطلاق؟', 'Можно увидеть объявление на всех плейсментах до запуска?'),
+        a: T(
+          'Yes — on the creative step, “Preview all placements” opens a wall showing your image and copy across Facebook Feed, Instagram Feed, both Stories and Reels.',
+          'نعم — في خطوة الإبداع، «معاينة كل المواضع» تفتح جداراً يعرض صورتك ونصك عبر فيسبوك وإنستغرام والقصص وريلز.',
+          'Да — на шаге креатива «Все плейсменты» открывает стену: ваша картинка и текст в ленте Facebook, Instagram, Stories и Reels.',
+        ),
+        roles: MGMT_MKT,
+      },
+      {
+        q: T('What can the AI chat actually DO in ads?', 'ما الذي تستطيع المحادثة فعله حقاً في الإعلانات؟', 'Что чат ИИ реально ДЕЛАЕТ в рекламе?'),
+        a: T(
+          'Real actions, not advice: analyse a campaign’s live numbers, list its ads with their current copy, EDIT a live ad (headline, text, link, image, CTA), create a Meta lead form that syncs to the CRM, rank your saved audiences for a listing, plan a campaign from your own lead outcomes, and launch it paused. Every action shows as an “Actions taken” chip on the reply.',
+          'إجراءات حقيقية لا نصائح: تحليل أرقام الحملة الحية، وسرد إعلاناتها بنصوصها الحالية، وتعديل إعلان مباشر (العنوان، النص، الرابط، الصورة، الزر)، وإنشاء نموذج عملاء ميتا يتزامن مع CRM، وترتيب جماهيرك لعقار، وتخطيط حملة من نتائج عملائك، وإطلاقها متوقفة. كل إجراء يظهر كشارة «الإجراءات المنفَّذة» على الرد.',
+          'Реальные действия, а не советы: анализ живых цифр кампании, список её объявлений с текущими текстами, РЕДАКТИРОВАНИЕ живого объявления (заголовок, текст, ссылка, картинка, CTA), создание лид-формы Meta с синхронизацией в CRM, ранжирование аудиторий, план кампании на ваших данных и запуск на паузе. Каждое действие видно чипом «Выполненные действия».',
+        ),
+        roles: MGMT_MKT,
+      },
+      {
         q: T('How do I run a Meta lead campaign?', 'كيف أطلق حملة عملاء على Meta؟', 'Как запустить лид-кампанию Meta?'),
         a: T(
           'The wizard walks you from project → creative → budget → launch. Launch paused first — nothing spends until you flip it live.',

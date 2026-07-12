@@ -59,6 +59,38 @@ const STARTER_KEYS = [
   'expert.starter4',
 ]
 
+// Page-aware starters: the chat is an operator, so its opening actions match
+// the surface the user is standing on — ads pages offer ad actions, the
+// notebook offers deliverables, the CRM offers pipeline moves. Falls back to
+// the general starters elsewhere. Tools stay role-gated server-side.
+const PAGE_STARTERS: { match: (p: string) => boolean; keys: string[] }[] = [
+  {
+    match: (p) => p.includes('/lead-machine/audiences'),
+    keys: ['expert.st.aud1', 'expert.st.aud2', 'expert.st.aud3'],
+  },
+  {
+    match: (p) => p.includes('/lead-machine/campaigns') || p.includes('/ads-live'),
+    keys: ['expert.st.camp1', 'expert.st.camp2', 'expert.st.camp3'],
+  },
+  {
+    match: (p) => p.includes('/lead-machine/landings'),
+    keys: ['expert.st.land1', 'expert.st.land2', 'expert.st.land3'],
+  },
+  {
+    match: (p) => p.includes('/lead-machine/forms'),
+    keys: ['expert.st.form1', 'expert.st.form2', 'expert.st.camp1'],
+  },
+  {
+    match: (p) => p.includes('/crm'),
+    keys: ['expert.st.crm1', 'expert.st.crm2', 'expert.st.crm3'],
+  },
+]
+
+function startersForPath(pathname: string | null): string[] {
+  const p = pathname ?? ''
+  return PAGE_STARTERS.find((e) => e.match(p))?.keys ?? STARTER_KEYS
+}
+
 const PAGE_LABELS: { match: (p: string) => boolean; labelKey: string }[] = [
   { match: (p) => p === '/freehold-intelligence', labelKey: 'nav.home' },
   { match: (p) => p.startsWith('/freehold-intelligence/lead-machine'), labelKey: 'expert.pageLeadMachine' },
@@ -610,7 +642,7 @@ export function ExpertChat() {
                 </p>
               </div>
               <div className="grid gap-2">
-                {STARTER_KEYS.map((k) => (
+                {startersForPath(pathname).map((k) => (
                   <button key={k} onClick={() => send(t(k))}
                     className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-left text-sm text-slate-300 transition-colors hover:border-gold/30 hover:bg-gold/[0.06] hover:text-white">
                     {t(k)}
