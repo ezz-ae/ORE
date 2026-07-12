@@ -57,7 +57,7 @@ function EmbeddingModelNode({ data, selected }: NodeProps<Node<EmbeddingModelNod
                 value={data.dimensions || 1536}
                 onChange={(e) => handleUpdate("dimensions", Number.parseInt(e.target.value))}
                 className="h-8 text-xs nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
           </div>

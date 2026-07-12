@@ -108,11 +108,11 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.img.format")}</Label>
               <Select value={currentFormat} onValueChange={selectFormat}>
-                <SelectTrigger className="h-8 text-xs" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,7 +130,7 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.img.aspect")}</Label>
               <Select value={data.aspectRatio || "1:1"} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

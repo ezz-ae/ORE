@@ -62,13 +62,13 @@ function HttpRequestNode({ data, selected }: NodeProps<Node<HttpRequestNodeData>
                 onChange={(e) => handleUpdate("url", e.target.value)}
                 placeholder="https://api.example.com"
                 className="h-8 text-xs font-mono nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Method</Label>
               <Select value={data.method || "GET"} onValueChange={(value) => handleUpdate("method", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -88,7 +88,7 @@ function HttpRequestNode({ data, selected }: NodeProps<Node<HttpRequestNodeData>
                 placeholder='{"Content-Type": "application/json"}'
                 rows={2}
                 className="font-mono text-xs resize-none nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
             <div className="space-y-1.5">
@@ -99,7 +99,7 @@ function HttpRequestNode({ data, selected }: NodeProps<Node<HttpRequestNodeData>
                 placeholder='{"key": "value"}'
                 rows={2}
                 className="font-mono text-xs resize-none nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
           </div>

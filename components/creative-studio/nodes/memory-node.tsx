@@ -86,7 +86,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Operation</Label>
               <Select value={operation} onValueChange={(value) => handleUpdate("operation", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -105,7 +105,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
                 value={data.sessionId || "default"}
                 onChange={(e) => handleUpdate("sessionId", e.target.value)}
                 className="h-8 text-xs font-mono nodrag"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                 placeholder="default"
               />
             </div>
@@ -117,7 +117,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
                   value={data.key || ""}
                   onChange={(e) => handleUpdate("key", e.target.value)}
                   className="h-8 text-xs font-mono nodrag"
-                  onMouseDown={stopPropagation}
+                  onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                   placeholder="memory_key"
                 />
               </div>
@@ -127,7 +127,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Type</Label>
                 <Select value={data.memoryType || "fact"} onValueChange={(value) => handleUpdate("memoryType", value)}>
-                  <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
+                  <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -148,7 +148,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
                   value={data.messageRole || "user"}
                   onValueChange={(value) => handleUpdate("messageRole", value)}
                 >
-                  <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
+                  <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -170,7 +170,7 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
                   value={data.limit || 10}
                   onChange={(e) => handleUpdate("limit", Number.parseInt(e.target.value))}
                   className="h-8 text-xs font-mono nodrag"
-                  onMouseDown={stopPropagation}
+                  onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                 />
               </div>
             )}

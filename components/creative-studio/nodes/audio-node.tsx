@@ -52,7 +52,7 @@ function AudioNode({ data, selected }: NodeProps<Node<AudioNodeData>>) {
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Voice</Label>
               <Select value={data.voice || "alloy"} onValueChange={(value) => handleUpdate("voice", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -64,7 +64,7 @@ function AudioNode({ data, selected }: NodeProps<Node<AudioNodeData>>) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5" onMouseDown={stopPropagation}>
+            <div className="space-y-1.5" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
               <Label className="text-xs text-muted-foreground">Speed: {data.speed || 1.0}</Label>
               <Slider
                 min={0.25}

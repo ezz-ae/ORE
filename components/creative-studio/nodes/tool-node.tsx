@@ -59,7 +59,7 @@ function ToolNode({ data, selected }: NodeProps<Node<ToolNodeData>>) {
                 onChange={(e) => handleUpdate("name", e.target.value)}
                 placeholder="customTool"
                 className="h-8 text-xs font-mono"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
             <div className="space-y-1.5">
@@ -70,7 +70,7 @@ function ToolNode({ data, selected }: NodeProps<Node<ToolNodeData>>) {
                 placeholder="What does this tool do?"
                 rows={2}
                 className="text-xs resize-none"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
             <div className="space-y-1.5">
@@ -81,7 +81,7 @@ function ToolNode({ data, selected }: NodeProps<Node<ToolNodeData>>) {
                 placeholder="// Tool implementation"
                 rows={5}
                 className="font-mono text-xs resize-none"
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
               />
             </div>
           </div>

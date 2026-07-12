@@ -149,7 +149,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
         )}
 
         {isExpanded && (
-          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation}>
+          <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             {/* Persona presets */}
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.pres.persona")}</Label>
@@ -182,7 +182,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.gender")}</Label>
               <Select value={currentGender} onValueChange={(value) => handleUpdate("gender", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +198,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.ethnicity")}</Label>
               <Select value={currentEthnicity} onValueChange={(value) => handleUpdate("ethnicity", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,7 +214,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.age")}</Label>
               <Select value={currentAgeRange} onValueChange={(value) => handleUpdate("ageRange", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onMouseDown={stopPropagation}>
+                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,7 +232,7 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
               <Textarea
                 value={data.description || ""}
                 onChange={(e) => handleUpdate("description", e.target.value)}
-                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation} onMouseDown={stopPropagation}
                 placeholder={t("pcsn.pres.descPh")}
                 className="min-h-[60px] text-xs font-mono resize-none"
                 disabled={isLocked}
