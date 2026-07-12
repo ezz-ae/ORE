@@ -19,6 +19,7 @@ import { searchCrmLeads } from '@/lib/data'
 import { listLibrary, saveLibraryItem } from '@/lib/freehold/library'
 import { listAudiences, type SavedAudience } from '@/lib/freehold/audiences'
 import { genImage } from '@/lib/creative-studio/providers'
+import { z } from 'zod'
 
 /**
  * Coordinator tools — the Vertex-ADK-style "marketing coordinator" layer of
@@ -56,6 +57,8 @@ export interface CoordinatorTool {
   description: string
   /** Human-readable args spec rendered into the prompt. */
   params: string
+  /** Zod schema for the tool's args (used by the AI-SDK tool builder). */
+  schema: z.ZodType<Record<string, unknown>>
   /** Mutates money/live campaigns/content — requires args.confirm === true. */
   destructive?: boolean
   roles: CoordinatorRole[]
@@ -91,6 +94,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_list_campaigns', agent: 'ads_agent',
     description: 'List the Meta campaigns on the connected ad account (id, name, status, daily budget).',
     params: '{}', roles: ADS_READERS,
+    schema: z.object({}),
     run: async () => {
       const campaigns = await listCampaigns()
       return campaigns.slice(0, 25).map((c) => ({
@@ -103,6 +107,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_campaign_insights', agent: 'ads_agent',
     description: 'Live performance for one campaign: spend, impressions, clicks, leads, CPC/CPM (this month).',
     params: '{ "campaignId": string }', roles: ADS_READERS,
+    schema: z.object({ campaignId: z.string() }),
     run: async (args) => {
       const id = s(args.campaignId)
       if (!id) return { error: 'campaignId is required' }
@@ -114,12 +119,17 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_campaign_quality', agent: 'ads_agent',
     description: 'The live lead-quality score (0–100) for a campaign, computed from its REAL CRM leads (wrong numbers, duplicates, funnel progress). Null score = not enough signal yet.',
     params: '{ "campaignId": string, "campaignName": string }', roles: ADS_READERS,
+    schema: z.object({ campaignId: z.string(), campaignName: z.string() }),
     run: async (args) => getCampaignQuality(s(args.campaignId), s(args.campaignName)),
   },
   {
     name: 'ads_pause_campaign', agent: 'ads_agent', destructive: true,
     description: 'PAUSE a live Meta campaign (stops spend).',
     params: '{ "campaignId": string, "confirm": true }', roles: OPERATORS,
+    schema: z.object({
+      campaignId: z.string(),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args) => {
       await updateCampaignStatus(s(args.campaignId), 'PAUSED')
       return { ok: true, campaignId: s(args.campaignId), status: 'PAUSED' }
@@ -129,6 +139,10 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_resume_campaign', agent: 'ads_agent', destructive: true,
     description: 'Set a paused Meta campaign ACTIVE (spend resumes).',
     params: '{ "campaignId": string, "confirm": true }', roles: OPERATORS,
+    schema: z.object({
+      campaignId: z.string(),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args) => {
       await updateCampaignStatus(s(args.campaignId), 'ACTIVE')
       return { ok: true, campaignId: s(args.campaignId), status: 'ACTIVE' }
@@ -138,6 +152,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_list_adsets', agent: 'ads_agent',
     description: 'List a campaign’s ad sets (id, name, status, daily budget) — budgets live on ad sets.',
     params: '{ "campaignId": string }', roles: ADS_READERS,
+    schema: z.object({ campaignId: z.string() }),
     run: async (args) => {
       const sets = await listAdSets(s(args.campaignId))
       return sets.map((x) => ({ id: x.id, name: x.name, status: x.status, dailyBudgetAED: x.daily_budget ? Math.round(Number(x.daily_budget) / 100) : null }))
@@ -147,6 +162,11 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_set_adset_budget', agent: 'ads_agent', destructive: true,
     description: 'Change an ad set’s daily budget in AED (min 50).',
     params: '{ "adSetId": string, "dailyBudgetAED": number, "confirm": true }', roles: OPERATORS,
+    schema: z.object({
+      adSetId: z.string(),
+      dailyBudgetAED: z.number().describe('new daily budget in AED, min 50'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args) => {
       const budget = n(args.dailyBudgetAED)
       if (!Number.isFinite(budget) || budget < 50) return { error: 'dailyBudgetAED must be ≥ 50' }
@@ -158,6 +178,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'ads_list_rules', agent: 'ads_agent',
     description: 'List this account’s automation rules on the lead-quality score / CPL / spend.',
     params: '{ "campaignId"?: string }', roles: ADS_READERS,
+    schema: z.object({ campaignId: z.string().optional().describe('filter to one campaign; omit for all rules') }),
     run: async (args, ctx) => listRules(ctx.email, s(args.campaignId) || undefined),
   },
   {
@@ -165,6 +186,15 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: `Create an automation rule, e.g. "if quality < 60 pause". metric: ${RULE_METRICS.join('|')}; operator: ${RULE_OPERATORS.join('|')}; action: ${RULE_ACTIONS.join('|')} (budget_up/down need actionValue %).`,
     params: '{ "campaignId": string, "metric": string, "operator": string, "threshold": number, "action": string, "actionValue"?: number, "confirm": true }',
     roles: OPERATORS,
+    schema: z.object({
+      campaignId: z.string().describe('campaign the rule applies to'),
+      metric: z.string().describe(`one of: ${RULE_METRICS.join('|')}`),
+      operator: z.string().describe(`one of: ${RULE_OPERATORS.join('|')}`),
+      threshold: z.number(),
+      action: z.string().describe(`one of: ${RULE_ACTIONS.join('|')}`),
+      actionValue: z.number().optional().describe('percent for budget_up/down actions'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args, ctx) => {
       const rule = await createRule(ctx.email, {
         campaignId: s(args.campaignId) || null,
@@ -183,6 +213,11 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'BUILD a data-driven campaign plan for a listing: the learning loop reads real campaign/CRM outcomes + network benchmarks and returns strategy, audience (ages, cities, interests), daily budget, creative angle, and a prefilled wizard link. Non-destructive — nothing launches.',
     params: '{ "listingName": string, "area"?: string, "priceAED"?: number }',
     roles: OPERATORS,
+    schema: z.object({
+      listingName: z.string(),
+      area: z.string().optional().describe('area/community of the listing'),
+      priceAED: z.number().optional().describe('listing price in AED'),
+    }),
     run: async (args, ctx) => {
       const name = s(args.listingName)
       if (!name) return { error: 'listingName is required' }
@@ -221,6 +256,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'READ the ads inside a campaign with their CURRENT copy (primary text, headline, description, link, CTA). Use before editing an ad so you quote the real current content and get the adId.',
     params: '{ "campaignId": string }',
     roles: ADS_READERS,
+    schema: z.object({ campaignId: z.string() }),
     run: async (args) => {
       const campaignId = s(args.campaignId)
       if (!campaignId) return { error: 'campaignId is required' }
@@ -240,6 +276,16 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'EDIT a live ad’s creative/copy for real: builds a new creative with the changed fields (primary text, headline, description, landing URL, image URL, CTA) and repoints the ad — the Meta-correct flow, since creatives are immutable. Get the adId from ads_list_ads first. Only pass the fields the user wants changed.',
     params: '{ "adId": string, "primaryText"?: string, "headline"?: string, "description"?: string, "landingUrl"?: string, "imageUrl"?: string, "cta"?: string, "confirm": true }',
     roles: OPERATORS,
+    schema: z.object({
+      adId: z.string().describe('the ad to edit — get it from ads_list_ads'),
+      primaryText: z.string().optional(),
+      headline: z.string().optional(),
+      description: z.string().optional(),
+      landingUrl: z.string().optional(),
+      imageUrl: z.string().optional(),
+      cta: z.string().optional(),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args) => {
       const adId = s(args.adId)
       if (!adId) return { error: 'adId is required — call ads_list_ads to find it' }
@@ -268,6 +314,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'READ the Meta instant lead forms on the connected account: name, status, lead counts. Use before creating a form (reuse beats duplication) and when wiring a Meta Lead campaign.',
     params: '{}',
     roles: ADS_READERS,
+    schema: z.object({}),
     run: async () => {
       const forms = await listLeadForms()
       return {
@@ -284,6 +331,13 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'CREATE a real Meta instant lead form on the connected account with the standard fields (full name, email, phone). Leads collected by it sync into the CRM. Use when the user asks for a lead form — do NOT tell them to build it in Ads Manager.',
     params: '{ "formName": string, "listingName": string, "listingSlug"?: string, "landingUrl"?: string, "confirm": true }',
     roles: OPERATORS,
+    schema: z.object({
+      formName: z.string(),
+      listingName: z.string(),
+      listingSlug: z.string().optional(),
+      landingUrl: z.string().optional(),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args) => {
       const formName = s(args.formName)
       const listingName = s(args.listingName)
@@ -314,6 +368,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'READ the saved audiences (Audiences tab): behavioral/narrow definitions and lookalikes seeded from real lead lists, with their composition and one-click attach links. Use before planning a campaign so a real audience gets attached instead of guessed interests.',
     params: '{}',
     roles: ADS_READERS,
+    schema: z.object({}),
     run: async () => {
       const audiences = await listAudiences()
       if (!audiences.length) {
@@ -331,6 +386,11 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'RANK the best-match audiences for a listing: saved lookalikes first (seeded from real lead contacts), then narrow behavioral definitions, grounded by the learning loop’s call on our own outcomes. Returns attach links so the campaign starts with a real audience in one click. Non-destructive.',
     params: '{ "listingName": string, "area"?: string, "priceAED"?: number }',
     roles: ADS_READERS,
+    schema: z.object({
+      listingName: z.string().optional().describe('listing to match audiences to; omit for a generic ranking'),
+      area: z.string().optional(),
+      priceAED: z.number().optional(),
+    }),
     run: async (args, ctx) => {
       const name = s(args.listingName)
       const listing = name ? { name, area: s(args.area), price: n(args.priceAED) || 0 } : null
@@ -359,6 +419,19 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     description: 'LAUNCH a Meta campaign (always PAUSED — spend never starts until someone resumes it). Builds campaign + ad set + creative + ad on the connected account. Use after ads_plan_campaign and the user’s explicit go-ahead.',
     params: '{ "campaignName": string, "listingName": string, "dailyBudgetAED": number, "ageMin": number, "ageMax": number, "interestIds"?: string[], "headline": string, "primaryText": string, "landingUrl": string, "cityKeys"?: string[], "confirm": true }',
     roles: OPERATORS,
+    schema: z.object({
+      campaignName: z.string(),
+      listingName: z.string(),
+      dailyBudgetAED: z.number().describe('daily budget in AED, min 50'),
+      ageMin: z.number().optional().describe('min audience age (defaults to 28)'),
+      ageMax: z.number().optional().describe('max audience age (defaults to 60)'),
+      interestIds: z.array(z.string()).optional().describe('UAE interest ids to target'),
+      headline: z.string(),
+      primaryText: z.string(),
+      landingUrl: z.string().describe('full https landing URL'),
+      cityKeys: z.array(z.string()).optional().describe('Meta city keys; defaults to Dubai'),
+      confirm: z.boolean().optional().describe('set true only after the user explicitly confirmed this exact action'),
+    }),
     run: async (args, ctx) => {
       const campaignName = s(args.campaignName)
       const listingName = s(args.listingName)
@@ -412,6 +485,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'landing_list', agent: 'landing_agent',
     description: 'List the landing pages (slug, title, status, leads) — the ONE store behind /lp/<slug>.',
     params: '{}', roles: EVERYONE,
+    schema: z.object({}),
     run: async () => {
       const rows = await getLandingPagesForDashboard(30)
       return rows.map((r) => ({
@@ -424,6 +498,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'landing_get', agent: 'landing_agent',
     description: 'Load one landing page for review: headline, sections (order/visibility), SEO, publish state. Editor: /freehold-intelligence/lead-machine/landings/<slug>/edit',
     params: '{ "slug": string }', roles: EVERYONE,
+    schema: z.object({ slug: z.string() }),
     run: async (args) => {
       const page = await getLandingPageForEditor(s(args.slug))
       if (!page) return { error: `No landing page with slug "${s(args.slug)}"` }
@@ -436,6 +511,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'crm_search_leads', agent: 'crm_agent',
     description: 'Search CRM leads by name/phone/email/project. Brokers see only their own book.',
     params: '{ "q": string }', roles: EVERYONE,
+    schema: z.object({ q: z.string().describe('name, phone, email, or project to search for') }),
     run: async (args, ctx) => {
       const q = s(args.q)
       if (!q) return { error: 'q is required' }
@@ -449,6 +525,9 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'library_list', agent: 'creative_agent',
     description: 'List the account’s Library assets (reports, notes, creatives, images, videos, pdfs).',
     params: '{ "kind"?: "report"|"note"|"creative"|"image"|"video"|"pdf" }', roles: EVERYONE,
+    schema: z.object({
+      kind: z.enum(['report', 'note', 'creative', 'image', 'video', 'pdf']).optional().describe('filter assets by kind'),
+    }),
     run: async (args, ctx) => {
       const items = await listLibrary(ctx.email, ctx.role, s(args.kind) || undefined)
       return items.slice(0, 20).map((i) => ({ id: i.id, kind: i.kind, title: i.title, createdAt: i.createdAt }))
@@ -458,6 +537,10 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'creative_generate_image', agent: 'creative_agent',
     description: 'Generate a REAL marketing image from a prompt (same engine as Creative Studio), save it to the Library, and return the Drive editor path where it can be QR-stamped/edited and then used as ad media.',
     params: '{ "prompt": string, "aspectRatio"?: "1:1"|"4:5"|"9:16"|"16:9" }', roles: OPERATORS,
+    schema: z.object({
+      prompt: z.string(),
+      aspectRatio: z.enum(['1:1', '4:5', '9:16', '16:9']).optional(),
+    }),
     run: async (args, ctx) => {
       const prompt = s(args.prompt)
       if (!prompt) return { error: 'prompt is required' }
@@ -474,6 +557,7 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
     name: 'research_save_note', agent: 'research_agent',
     description: 'Save a research note / summary to the Library (kind: note) so it persists beyond the chat.',
     params: '{ "title": string, "content": string }', roles: EVERYONE,
+    schema: z.object({ title: z.string(), content: z.string() }),
     run: async (args, ctx) => {
       const title = s(args.title); const content = s(args.content)
       if (!title || !content) return { error: 'title and content are required' }
