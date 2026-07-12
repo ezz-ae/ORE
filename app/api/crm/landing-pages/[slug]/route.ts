@@ -167,18 +167,12 @@ export async function PATCH(
     }
 
     // Smart flags: until-sold-out auto-unpublish + auto price-from-market.
-    if (hasKey(body, "unpublishOnSoldOut") || hasKey(body, "autoUpdatePricing")) {
+    if (hasKey(body, "autoUpdatePricing")) {
       await query(
         `UPDATE freehold_site_project_landing_pages
-         SET unpublish_on_sold_out = COALESCE($2, unpublish_on_sold_out),
-             auto_update_pricing = COALESCE($3, auto_update_pricing),
-             updated_at = now()
+         SET auto_update_pricing = $2, updated_at = now()
          WHERE lower(slug) = $1`,
-        [
-          slug.trim().toLowerCase(),
-          hasKey(body, "unpublishOnSoldOut") ? !!body.unpublishOnSoldOut : null,
-          hasKey(body, "autoUpdatePricing") ? !!body.autoUpdatePricing : null,
-        ],
+        [slug.trim().toLowerCase(), !!body.autoUpdatePricing],
       )
     }
 

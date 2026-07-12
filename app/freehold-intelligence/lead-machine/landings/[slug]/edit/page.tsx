@@ -17,7 +17,6 @@ type Landing = {
   status: 'draft' | 'published'
   publishFrom: string
   publishTo: string
-  unpublishOnSoldOut: boolean
   autoUpdatePricing: boolean
   seoTitle: string
   seoDescription: string
@@ -644,12 +643,11 @@ export default function LandingEditorPage() {
             <p className="mt-1 text-[12px] text-slate-500">{t('lpe.schedule.sub')}</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label={t('lpe.f.publishFrom')}><input type="datetime-local" className="fld" value={form.publishFrom} onChange={(e) => set('publishFrom', e.target.value)} /></Field>
-              <Field label={t('lpe.f.publishTo')}><input type="datetime-local" className="fld" value={form.publishTo} onChange={(e) => set('publishTo', e.target.value)} disabled={form.unpublishOnSoldOut} /></Field>
+              <Field label={t('lpe.f.publishTo')}><input type="datetime-local" className="fld" value={form.publishTo} onChange={(e) => set('publishTo', e.target.value)} /></Field>
             </div>
-            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-surface-2/50 p-3 text-[12px] text-slate-300">
-              <input type="checkbox" checked={form.unpublishOnSoldOut} onChange={(e) => set('unpublishOnSoldOut', e.target.checked)} className="mt-0.5" />
-              <span className="flex items-center gap-1.5"><PackageX className="h-3.5 w-3.5 shrink-0 text-gold" /> {t('lpe.schedule.soldOut')}</span>
-            </label>
+            <p className="mt-3 flex items-start gap-2.5 rounded-xl border border-line bg-surface-2/50 p-3 text-[12px] leading-relaxed text-slate-400">
+              <PackageX className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" /> {t('lpe.schedule.soldOutNote')}
+            </p>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setScheduleOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
               <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lpe.schedule.apply')}</button>

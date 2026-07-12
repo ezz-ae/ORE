@@ -89,6 +89,9 @@ export interface LandingPageData {
   pixels: CampaignPixelIds
   sections: LandingSection[]
   project: LandingProjectSummary | null
+  /** True when the project has no available units — the page stays live and
+      shows an honest "Sold Out" state instead of coming down. */
+  soldOut: boolean
 }
 
 export interface LandingPageDashboardRow {
@@ -123,7 +126,6 @@ export interface LandingPageEditorData {
   googleTagId: string
   googleConversionId: string
   tiktokPixelId: string
-  unpublishOnSoldOut: boolean
   autoUpdatePricing: boolean
   updatedAt: string | null
   /** The page's section blocks, in render order — powers the layout canvas. */
@@ -706,18 +708,22 @@ export async function getLandingPageBySlug(
   const projectSlug = pickString(row.project_slug, row.projectSlug)
   const project = await getProjectSummary(projectSlug)
 
-  // "Keep live until sold out": when the flag is on, the page auto-unpublishes
-  // the moment the project has no available units left — no manual unpublish,
-  // no dead campaign pointing at a sold project.
-  if (!options?.includeDraft && row.unpublish_on_sold_out === true && projectSlug) {
-    const soldOut = await query<{ available: number }>(
+  // Sold-out honesty: a sold-out off-plan project's page stays LIVE (never
+  // unpublished — that would 404 the campaign and lose the SEO) and instead
+  // shows a truthful "Sold Out" state. Detected from the live inventory.
+  let soldOut = false
+  if (projectSlug) {
+    soldOut = await query<{ available: number }>(
       `SELECT COALESCE((payload->>'availableUnits')::int,
               (SELECT COUNT(*)::int FROM jsonb_array_elements(payload->'units') u
-                 WHERE COALESCE((u->>'available')::boolean, true))) AS available
-       FROM freehold_site_projects WHERE lower(slug) = $1 LIMIT 1`,
+                 WHERE COALESCE((u->>'available')::boolean, true)),
+              1) AS available
+       FROM freehold_site_projects
+       WHERE lower(slug) = $1 AND (status = 'sold_out' OR status = 'soldout'
+             OR (payload->>'availableUnits') = '0')
+       LIMIT 1`,
       [projectSlug.toLowerCase()],
-    ).then((r) => r[0] && Number(r[0].available) === 0).catch(() => false)
-    if (soldOut) return null
+    ).then((r) => r.length > 0 && Number(r[0].available) === 0).catch(() => false)
   }
 
   const title = pickString(row.headline, row.title, project?.name) || "Freehold Real Estate"
@@ -757,6 +763,7 @@ export async function getLandingPageBySlug(
     pixels: mergePixels(await getGlobalPixels(), readPixels(row)),
     sections: normalizeSections(sectionsRaw, project, row),
     project,
+    soldOut,
   }
 }
 
@@ -808,7 +815,6 @@ export async function getLandingPageForEditor(slug: string): Promise<LandingPage
     googleTagId: pickString(row.google_tag_id, row.googleTagId),
     googleConversionId: pickString(row.google_conversion_id, row.googleConversionId),
     tiktokPixelId: pickString(row.tiktok_pixel_id, row.tiktokPixelId),
-    unpublishOnSoldOut: row.unpublish_on_sold_out === true,
     autoUpdatePricing: row.auto_update_pricing === true,
     updatedAt: pickString(row.updated_at, row.created_at) || null,
     sections: normalizeSections(sectionsRaw, project, row),

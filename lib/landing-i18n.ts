@@ -50,6 +50,7 @@ const EN: Record<string, string> = {
   "hero.form.title": "Request Investment Pack",
   "hero.form.subtitle": "Floor plans, pricing, and ROI analysis — delivered within 24 hours.",
   "hero.whatsapp": "WhatsApp",
+  "lp.soldOut": "SOLD OUT",
 
   "desc.eyebrow": "About the Project",
   "desc.aboutPrefix": "About",
@@ -229,6 +230,7 @@ const AR: Record<string, string> = {
   "hero.form.title": "اطلب الحزمة الاستثمارية",
   "hero.form.subtitle": "مخططات الطوابق والأسعار وتحليل العائد على الاستثمار — تصلك خلال 24 ساعة.",
   "hero.whatsapp": "واتساب",
+  "lp.soldOut": "نفدت الكمية",
 
   "desc.eyebrow": "عن المشروع",
   "desc.aboutPrefix": "عن",
@@ -408,6 +410,7 @@ const RU: Record<string, string> = {
   "hero.form.title": "Запросить инвестиционный пакет",
   "hero.form.subtitle": "Планировки, цены и анализ доходности — в течение 24 часов.",
   "hero.whatsapp": "WhatsApp",
+  "lp.soldOut": "ПРОДАНО",
 
   "desc.eyebrow": "О проекте",
   "desc.aboutPrefix": "О проекте",

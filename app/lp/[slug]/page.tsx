@@ -117,6 +117,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     isDraft: false,
     seo: { title: `${prop.name} | Freehold Property UAE`, description: `${prop.name} in ${prop.area}. From ${priceText}. ${yieldText}.`, ogImage: '/logo.png' },
     pixels: {},
+    soldOut: false,
     sections,
     project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, amenities: [], faqs: [] },
   }
@@ -189,6 +190,11 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
               </div>
             )}
 
+            {page.soldOut && (
+              <div className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-rose-300">
+                {L['lp.soldOut']}
+              </div>
+            )}
             <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight sm:text-[56px] lg:text-[64px]" style={{ color: p.textPrimary }}>
               {title}
             </h1>
