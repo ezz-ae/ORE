@@ -8,7 +8,7 @@ import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 
 export type HttpRequestNodeData = {
   url: string
@@ -67,18 +67,11 @@ function HttpRequestNode({ data, selected }: NodeProps<Node<HttpRequestNodeData>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Method</Label>
-              <Select value={data.method || "GET"} onValueChange={(value) => handleUpdate("method", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["GET", "POST", "PUT", "DELETE", "PATCH"].map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={data.method || "GET"}
+                onChange={(value) => handleUpdate("method", value)}
+                options={["GET", "POST", "PUT", "DELETE", "PATCH"].map((m) => ({ value: m, label: m }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Headers (JSON)</Label>

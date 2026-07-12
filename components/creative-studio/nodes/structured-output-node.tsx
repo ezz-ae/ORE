@@ -7,7 +7,7 @@ import { FileJson } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 
 export type StructuredOutputNodeData = {
   schemaName: string
@@ -62,15 +62,14 @@ function StructuredOutputNode({ data, selected }: NodeProps<Node<StructuredOutpu
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Mode</Label>
-              <Select value={data.mode || "object"} onValueChange={(value) => handleUpdate("mode", value)}>
-                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="object">Object</SelectItem>
-                  <SelectItem value="array">Array</SelectItem>
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={data.mode || "object"}
+                onChange={(value) => handleUpdate("mode", value)}
+                options={[
+                  { value: "object", label: "Object" },
+                  { value: "array", label: "Array" },
+                ]}
+              />
             </div>
           </div>
         )}
