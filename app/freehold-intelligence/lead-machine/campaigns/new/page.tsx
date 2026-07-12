@@ -24,7 +24,10 @@ interface WizardListing {
   paymentPlan: string | null
   landingUrl: string
 }
-import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant } from '@/lib/meta/types'
+import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting } from '@/lib/meta/types'
+
+// A saved audience from the Audiences tab, attachable to this launch.
+interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec: CampaignTargeting }
 import { useT } from '@/lib/i18n/provider'
 
 // ─── UAE interest targets ────────────────────────────────────────────────────
@@ -181,6 +184,27 @@ export default function NewCampaignPage() {
   })
   const [uploadingImg, setUploadingImg] = useState(false)
   const [audienceOpen, setAudienceOpen] = useState(false)
+
+  // Saved audiences (Audiences tab). Attaching one overrides the audience
+  // fields of the launch — countries, age, gender, language, interests,
+  // behaviors, narrowing, exclusions, attached Meta audiences — while the
+  // wizard's placements still apply. ?audience=<id> pre-attaches.
+  const [savedAudiences, setSavedAudiences] = useState<SavedAudienceOption[]>([])
+  const [attachedAudience, setAttachedAudience] = useState<SavedAudienceOption | null>(null)
+  useEffect(() => {
+    fetch('/api/freehold/ads/audiences')
+      .then((r) => r.json())
+      .then((d) => {
+        const list: SavedAudienceOption[] = Array.isArray(d?.audiences) ? d.audiences : []
+        setSavedAudiences(list)
+        const wanted = new URLSearchParams(window.location.search).get('audience')
+        if (wanted) {
+          const hit = list.find((a) => a.id === wanted)
+          if (hit) setAttachedAudience(hit)
+        }
+      })
+      .catch(() => null)
+  }, [])
 
   // Data Quality Test — verify the listing's info before it becomes an ad/landing.
   type DataQuality = {
@@ -574,15 +598,20 @@ export default function NewCampaignPage() {
       listingId:      form.listingId,
       listingName:    listing?.projectName ?? form.campaignName,
       dailyBudgetAED: form.dailyBudgetAED,
-      targeting: {
-        countries:          form.countries.length ? form.countries : ['AE'],
-        cityKeys:           form.cityKeys,
-        ageMin:             form.ageMin,
-        ageMax:             form.ageMax,
-        genders:            form.genders,
-        publisherPlatforms: form.publisherPlatforms,
-        interests,
-      },
+      // An attached saved audience IS the audience — its full definition
+      // (behaviors, narrowing, exclusions, Meta audiences) replaces the manual
+      // fields; only the wizard's placements still apply.
+      targeting: attachedAudience
+        ? { ...attachedAudience.spec, publisherPlatforms: form.publisherPlatforms }
+        : {
+            countries:          form.countries.length ? form.countries : ['AE'],
+            cityKeys:           form.cityKeys,
+            ageMin:             form.ageMin,
+            ageMax:             form.ageMax,
+            genders:            form.genders,
+            publisherPlatforms: form.publisherPlatforms,
+            interests,
+          },
       creative: {
         primaryText: form.primaryText,
         headline:    form.headline,
@@ -877,6 +906,38 @@ export default function NewCampaignPage() {
         {step === 2 && (
           <div className="space-y-6">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s2.heading')}</h2>
+
+            {/* Saved audiences — attach a definition from the Audiences tab */}
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gold"><Users className="h-3.5 w-3.5" /> {t('lm.aud.attach.title')}</span>
+                <Link href="/freehold-intelligence/lead-machine/audiences" className="text-[11px] font-medium text-slate-400 underline-offset-2 hover:text-white hover:underline">{t('lm.aud.attach.open')}</Link>
+              </div>
+              {savedAudiences.length === 0 ? (
+                <p className="mt-2 text-xs text-slate-500">{t('lm.aud.attach.none')}</p>
+              ) : (
+                <>
+                  <p className="mt-1 text-[11px] text-slate-500">{t('lm.aud.attach.sub')}</p>
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {savedAudiences.map((a) => {
+                      const on = attachedAudience?.id === a.id
+                      return (
+                        <button key={a.id} type="button" onClick={() => setAttachedAudience(on ? null : a)}
+                          className={`rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition ${on ? 'border-gold/50 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-300 hover:border-white/15'}`}>
+                          {a.name}{on ? ` — ${t('lm.aud.attach.attached')}` : ''}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {attachedAudience && (
+                    <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg border border-gold/25 bg-gold/[0.06] px-3 py-2">
+                      <span className="text-[11px] text-slate-300">{t('lm.aud.attach.overrides')}</span>
+                      <button type="button" onClick={() => setAttachedAudience(null)} className="text-[11px] font-semibold text-slate-400 hover:text-white">{t('lm.aud.attach.detach')}</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
             {/* Buyer Match — the audience that actually buys THIS listing, from
                 our own deals + leads, with a live Meta reach estimate. */}
