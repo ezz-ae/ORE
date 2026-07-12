@@ -9,6 +9,7 @@ import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame
 import { AiEditorRail } from '@/components/freehold/drive/ai-editor-rail'
 import { AiUnavailable, DOC_LIMIT, type ArtifactAdapter, type PresetChip } from '@/lib/freehold/drive-ai-rail'
 import type { DriveKind } from '@/lib/freehold/drive'
+import { useAutosaveDraft } from '@/lib/freehold/use-autosave-draft'
 
 type Item = { id: string; kind: DriveKind; title: string; content: string | null; url: string | null }
 
@@ -56,6 +57,13 @@ export default function DriveDocEditor() {
   // rail can detect edits made after an AI change and confirm before undoing them.
   const [revision, setRevision] = useState(0)
 
+  // Draft-everything: unsaved edits autosave (and flush on tab close) so the
+  // work is resumable from the Drive "Continue editing" shelf. Cleared on Save.
+  const { clearDraft } = useAutosaveDraft({
+    kind: 'doc', refKey: id, href: `/freehold-intelligence/drive/editor/doc/${id}`,
+    title: title || item?.title, active: dirty, data: { title, content },
+  })
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -87,7 +95,7 @@ export default function DriveDocEditor() {
         toast.error(t('ed.saveFailed')); return
       }
       if (!res.ok) { toast.error(t('ed.saveFailed')); return }
-      setDirty(false); toast.success(t('ed.saved'))
+      setDirty(false); clearDraft(); toast.success(t('ed.saved'))
     } catch { toast.error(t('ed.saveFailed')) } finally { setSaving(false) }
   }
 
