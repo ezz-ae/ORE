@@ -374,7 +374,7 @@ Your tools:${renderToolDocs(tools)}`
     const persistedId = sessionUser
       ? await appendExpertTurn(sessionId, sessionUser.email, message, blocks)
       : sessionId
-    const data = { blocks, skill: skill.id, sessionId: persistedId }
+    const data = { blocks, skill: skill.id, sessionId: persistedId, toolsUsed }
 
     const response: McpResponseEnvelope<typeof data> = {
       requestId: crypto.randomUUID(),
