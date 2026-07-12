@@ -5,7 +5,7 @@ import { memo } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { Brain } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -85,18 +85,11 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Operation</Label>
-              <Select value={operation} onValueChange={(value) => handleUpdate("operation", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPERATIONS.map((op) => (
-                    <SelectItem key={op.value} value={op.value}>
-                      {op.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={operation}
+                onChange={(value) => handleUpdate("operation", value)}
+                options={OPERATIONS.map((op) => ({ value: op.value, label: op.label }))}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -126,39 +119,22 @@ function MemoryNode({ data, selected }: NodeProps<Node<MemoryNodeData>>) {
             {operation === "save" && (
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Type</Label>
-                <Select value={data.memoryType || "fact"} onValueChange={(value) => handleUpdate("memoryType", value)}>
-                  <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEMORY_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <NodeSelect
+                  value={data.memoryType || "fact"}
+                  onChange={(value) => handleUpdate("memoryType", value)}
+                  options={MEMORY_TYPES.map((type) => ({ value: type.value, label: type.label }))}
+                />
               </div>
             )}
 
             {operation === "addMessage" && (
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Role</Label>
-                <Select
+                <NodeSelect
                   value={data.messageRole || "user"}
-                  onValueChange={(value) => handleUpdate("messageRole", value)}
-                >
-                  <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MESSAGE_ROLES.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => handleUpdate("messageRole", value)}
+                  options={MESSAGE_ROLES.map((role) => ({ value: role.value, label: role.label }))}
+                />
               </div>
             )}
 

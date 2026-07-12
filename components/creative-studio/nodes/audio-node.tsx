@@ -6,7 +6,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { Mic } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 import { Slider } from "@/components/ui/slider"
 
 export type AudioNodeData = {
@@ -51,18 +51,11 @@ function AudioNode({ data, selected }: NodeProps<Node<AudioNodeData>>) {
           <div className="mt-3 space-y-3" onClick={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Voice</Label>
-              <Select value={data.voice || "alloy"} onValueChange={(value) => handleUpdate("voice", value)}>
-                <SelectTrigger className="h-8 text-xs nodrag" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["alloy", "echo", "fable", "onyx", "nova", "shimmer"].map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={data.voice || "alloy"}
+                onChange={(value) => handleUpdate("voice", value)}
+                options={["alloy", "echo", "fable", "onyx", "nova", "shimmer"].map((v) => ({ value: v, label: v }))}
+              />
             </div>
             <div className="space-y-1.5" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
               <Label className="text-xs text-muted-foreground">Speed: {data.speed || 1.0}</Label>

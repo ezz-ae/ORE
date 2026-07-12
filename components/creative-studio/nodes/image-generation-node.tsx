@@ -6,7 +6,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { ImageIcon, Lock, Unlock } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
@@ -111,46 +111,26 @@ function ImageGenerationNode({ data, selected }: NodeProps<Node<ImageGenerationN
           <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.img.format")}</Label>
-              <Select value={currentFormat} onValueChange={selectFormat}>
-                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {IMAGE_FORMATS.map((f) => (
-                    <SelectItem key={f.value} value={f.value} className="py-1.5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs">{f.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{f.hint}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={currentFormat}
+                onChange={selectFormat}
+                options={IMAGE_FORMATS.map((f) => ({ value: f.value, label: `${f.label} — ${f.hint}` }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.img.aspect")}</Label>
-              <Select value={data.aspectRatio || "1:1"} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1:1" className="text-xs py-1.5">
-                    1:1 ({t("pcsn.img.square")})
-                  </SelectItem>
-                  <SelectItem value="16:9" className="text-xs py-1.5">
-                    16:9 ({t("pcsn.img.landscape")})
-                  </SelectItem>
-                  <SelectItem value="9:16" className="text-xs py-1.5">
-                    9:16 ({t("pcsn.img.portrait")})
-                  </SelectItem>
-                  <SelectItem value="4:3" className="text-xs py-1.5">
-                    4:3
-                  </SelectItem>
-                  <SelectItem value="3:4" className="text-xs py-1.5">
-                    3:4
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                value={data.aspectRatio || "1:1"}
+                onChange={(value) => handleUpdate("aspectRatio", value)}
+                options={[
+                  { value: "1:1", label: `1:1 (${t("pcsn.img.square")})` },
+                  { value: "16:9", label: `16:9 (${t("pcsn.img.landscape")})` },
+                  { value: "9:16", label: `9:16 (${t("pcsn.img.portrait")})` },
+                  { value: "4:3", label: "4:3" },
+                  { value: "3:4", label: "3:4" },
+                ]}
+              />
             </div>
           </div>
         )}

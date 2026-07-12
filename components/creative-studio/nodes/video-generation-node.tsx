@@ -6,7 +6,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { Video, Play } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 import { CREATIVE_FORMATS } from "@/lib/creative-studio/constants"
 import { useT } from "@/lib/i18n/provider"
 
@@ -83,53 +83,31 @@ function VideoGenerationNode({ data, selected }: NodeProps<Node<VideoGenerationN
           <div className="mt-3 space-y-3 nodrag nopan" onClick={stopPropagation} onPointerDown={stopPropagation}>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-foreground font-medium">{t("pcsn.vid.format")}</Label>
-              <Select value={currentFormat} onValueChange={selectFormat}>
-                <SelectTrigger className="h-8 text-xs" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {VIDEO_FORMATS.map((f) => (
-                    <SelectItem key={f.value} value={f.value} className="py-1.5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs">{f.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{f.hint}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                value={currentFormat}
+                onChange={selectFormat}
+                options={VIDEO_FORMATS.map((f) => ({ value: f.value, label: `${f.label} — ${f.hint}` }))}
+              />
               <p className="text-[9px] text-muted-foreground">{t("pcsn.vid.providerNote")}</p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.aspect")}</Label>
-              <Select value={currentAspectRatio} onValueChange={(value) => handleUpdate("aspectRatio", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASPECT_RATIOS.map((ratio) => (
-                    <SelectItem key={ratio.value} value={ratio.value} className="text-xs py-1.5">
-                      {ratio.value} ({t(ratio.descKey)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                value={currentAspectRatio}
+                onChange={(value) => handleUpdate("aspectRatio", value)}
+                options={ASPECT_RATIOS.map((ratio) => ({ value: ratio.value, label: `${ratio.value} (${t(ratio.descKey)})` }))}
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.vid.duration")}</Label>
-              <Select value={data.duration?.toString() || "8s"} onValueChange={(value) => handleUpdate("duration", value)}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DURATIONS.map((dur) => (
-                    <SelectItem key={dur.value} value={dur.value} className="text-xs py-1.5">
-                      {t("pcsn.vid.seconds", { sec: dur.sec })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                value={data.duration?.toString() || "8s"}
+                onChange={(value) => handleUpdate("duration", value)}
+                options={DURATIONS.map((dur) => ({ value: dur.value, label: t("pcsn.vid.seconds", { sec: dur.sec }) }))}
+              />
             </div>
 
             <div className="bg-muted/50 rounded p-2 space-y-1">

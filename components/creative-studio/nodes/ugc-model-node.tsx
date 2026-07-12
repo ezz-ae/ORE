@@ -6,7 +6,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { User, Lock, Unlock, Play } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NodeSelect } from "./node-select"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -181,50 +181,35 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
             {isCustom && (<>
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.gender")}</Label>
-              <Select value={currentGender} onValueChange={(value) => handleUpdate("gender", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENDERS.map((gender) => (
-                    <SelectItem key={gender.value} value={gender.value} className="text-xs py-1.5">
-                      {gender.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                disabled={isLocked}
+                value={currentGender}
+                onChange={(value) => handleUpdate("gender", value)}
+                options={GENDERS.map((gender) => ({ value: gender.value, label: gender.label }))}
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.ethnicity")}</Label>
-              <Select value={currentEthnicity} onValueChange={(value) => handleUpdate("ethnicity", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ETHNICITIES.map((eth) => (
-                    <SelectItem key={eth.value} value={eth.value} className="text-xs py-1.5">
-                      {eth.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                disabled={isLocked}
+                value={currentEthnicity}
+                onChange={(value) => handleUpdate("ethnicity", value)}
+                options={ETHNICITIES.map((eth) => ({ value: eth.value, label: eth.label }))}
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-[10px] text-muted-foreground">{t("pcsn.pres.age")}</Label>
-              <Select value={currentAgeRange} onValueChange={(value) => handleUpdate("ageRange", value)} disabled={isLocked}>
-                <SelectTrigger className="h-8 text-xs font-mono" onPointerDown={stopPropagation} onMouseDown={stopPropagation}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {AGE_RANGES.map((age) => (
-                    <SelectItem key={age.value} value={age.value} className="text-xs py-1.5">
-                      {age.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NodeSelect
+                mono
+                disabled={isLocked}
+                value={currentAgeRange}
+                onChange={(value) => handleUpdate("ageRange", value)}
+                options={AGE_RANGES.map((age) => ({ value: age.value, label: age.label }))}
+              />
             </div>
 
             <div className="space-y-1.5">
