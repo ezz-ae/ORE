@@ -1,3 +1,5 @@
+import { getGlobalPixels, mergePixels } from '@/lib/freehold/tracking-pixels'
+
 import { query } from "@/lib/db"
 
 type JsonValue = Record<string, unknown> | Array<unknown> | string | number | boolean | null
@@ -121,6 +123,8 @@ export interface LandingPageEditorData {
   googleTagId: string
   googleConversionId: string
   tiktokPixelId: string
+  unpublishOnSoldOut: boolean
+  autoUpdatePricing: boolean
   updatedAt: string | null
   /** The page's section blocks, in render order — powers the layout canvas. */
   sections: LandingSection[]
@@ -508,6 +512,8 @@ const ensureLandingPagesSchema = async () => {
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_status text`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_from timestamptz`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS publish_to timestamptz`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS unpublish_on_sold_out boolean DEFAULT false`)
+  await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS auto_update_pricing boolean DEFAULT false`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS sections_json jsonb`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS sections jsonb`)
   await query(`ALTER TABLE freehold_site_project_landing_pages ADD COLUMN IF NOT EXISTS content_json jsonb`)
@@ -700,6 +706,20 @@ export async function getLandingPageBySlug(
   const projectSlug = pickString(row.project_slug, row.projectSlug)
   const project = await getProjectSummary(projectSlug)
 
+  // "Keep live until sold out": when the flag is on, the page auto-unpublishes
+  // the moment the project has no available units left — no manual unpublish,
+  // no dead campaign pointing at a sold project.
+  if (!options?.includeDraft && row.unpublish_on_sold_out === true && projectSlug) {
+    const soldOut = await query<{ available: number }>(
+      `SELECT COALESCE((payload->>'availableUnits')::int,
+              (SELECT COUNT(*)::int FROM jsonb_array_elements(payload->'units') u
+                 WHERE COALESCE((u->>'available')::boolean, true))) AS available
+       FROM freehold_site_projects WHERE lower(slug) = $1 LIMIT 1`,
+      [projectSlug.toLowerCase()],
+    ).then((r) => r[0] && Number(r[0].available) === 0).catch(() => false)
+    if (soldOut) return null
+  }
+
   const title = pickString(row.headline, row.title, project?.name) || "Freehold Real Estate"
   const subtitle =
     pickString(row.subheadline, row.subtitle) ||
@@ -734,7 +754,7 @@ export async function getLandingPageBySlug(
       description: seoDescription,
       ogImage: seoOgImage,
     },
-    pixels: readPixels(row),
+    pixels: mergePixels(await getGlobalPixels(), readPixels(row)),
     sections: normalizeSections(sectionsRaw, project, row),
     project,
   }
@@ -788,6 +808,8 @@ export async function getLandingPageForEditor(slug: string): Promise<LandingPage
     googleTagId: pickString(row.google_tag_id, row.googleTagId),
     googleConversionId: pickString(row.google_conversion_id, row.googleConversionId),
     tiktokPixelId: pickString(row.tiktok_pixel_id, row.tiktokPixelId),
+    unpublishOnSoldOut: row.unpublish_on_sold_out === true,
+    autoUpdatePricing: row.auto_update_pricing === true,
     updatedAt: pickString(row.updated_at, row.created_at) || null,
     sections: normalizeSections(sectionsRaw, project, row),
   }

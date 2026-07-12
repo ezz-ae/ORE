@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, Send, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 
@@ -17,13 +17,11 @@ type Landing = {
   status: 'draft' | 'published'
   publishFrom: string
   publishTo: string
+  unpublishOnSoldOut: boolean
+  autoUpdatePricing: boolean
   seoTitle: string
   seoDescription: string
   ogImage: string
-  metaPixelId: string
-  googleTagId: string
-  googleConversionId: string
-  tiktokPixelId: string
   updatedAt: string | null
   sections?: LpSection[]
 }
@@ -93,6 +91,10 @@ export default function LandingEditorPage() {
   const slug = String(params?.slug || '')
 
   const [form, setForm] = useState<Landing | null>(null)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [regen, setRegen] = useState(false)
@@ -154,6 +156,20 @@ export default function LandingEditorPage() {
       toast.success(t('lpe.regenDone'))
     } catch { toast.error(t('lpe.regenFailed')) }
     finally { setRegen(false) }
+  }
+
+  // Delete the landing page — typed "delete" confirmation, then the page is
+  // gone and the user returns to the landings list.
+  async function doDelete() {
+    if (deleteConfirm.trim().toLowerCase() !== 'delete') return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/crm/landing-pages/${slug}`, { method: 'DELETE' })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { toast.error(d.error || t('lpe.del.failed')); setDeleting(false); return }
+      toast.success(t('lpe.del.done'))
+      window.location.href = '/freehold-intelligence/lead-machine/landings'
+    } catch { toast.error(t('lpe.del.failed')); setDeleting(false) }
   }
 
   // Landing pre-flight — real server-side checks against the live /lp/<slug>.
@@ -400,6 +416,12 @@ export default function LandingEditorPage() {
           <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
             {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
           </button>
+          <button type="button" onClick={() => setScheduleOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
+            <CalendarClock className="h-3.5 w-3.5" /> {t('lpe.schedule.btn')}
+          </button>
+          <button type="button" onClick={() => { setDeleteConfirm(''); setDeleteOpen(true) }} className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20">
+            <Trash2 className="h-3.5 w-3.5" /> {t('lpe.del.btn')}
+          </button>
           <button type="button" onClick={() => save()} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.save')}
           </button>
@@ -585,21 +607,18 @@ export default function LandingEditorPage() {
             <Field label={t('lpe.f.ogImage')}><input className="fld" value={form.ogImage} onChange={(e) => set('ogImage', e.target.value)} placeholder="https://…" /></Field>
           </Section>
 
-          <Section title={t('lpe.grp.tracking')}>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('lpe.f.metaPixel')}><input className="fld" value={form.metaPixelId} onChange={(e) => set('metaPixelId', e.target.value)} placeholder="000000000000000" /></Field>
-              <Field label={t('lpe.f.tiktokPixel')}><input className="fld" value={form.tiktokPixelId} onChange={(e) => set('tiktokPixelId', e.target.value)} /></Field>
-              <Field label={t('lpe.f.googleTag')}><input className="fld" value={form.googleTagId} onChange={(e) => set('googleTagId', e.target.value)} placeholder="G-XXXXXXX" /></Field>
-              <Field label={t('lpe.f.googleConv')}><input className="fld" value={form.googleConversionId} onChange={(e) => set('googleConversionId', e.target.value)} placeholder="AW-XXXXXXX" /></Field>
-            </div>
-          </Section>
-
-          <Section title={t('lpe.grp.schedule')}>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('lpe.f.publishFrom')}><input type="datetime-local" className="fld" value={form.publishFrom} onChange={(e) => set('publishFrom', e.target.value)} /></Field>
-              <Field label={t('lpe.f.publishTo')}><input type="datetime-local" className="fld" value={form.publishTo} onChange={(e) => set('publishTo', e.target.value)} /></Field>
-            </div>
-            <p className="text-[11px] leading-relaxed text-slate-500">{t('lpe.scheduleHint')}</p>
+          {/* Auto-update pricing — the killer option: the live page price
+              tracks the project's current market price instead of a frozen
+              editor value. */}
+          <Section title={t('lpe.grp.smart')}>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface-2/50 p-3">
+              <input type="checkbox" checked={form.autoUpdatePricing} onChange={(e) => set('autoUpdatePricing', e.target.checked)} className="mt-0.5" />
+              <span>
+                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-white"><TrendingUp className="h-3.5 w-3.5 text-gold" /> {t('lpe.autoPrice.title')}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-slate-500">{t('lpe.autoPrice.body')}</span>
+              </span>
+            </label>
+            <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{t('lpe.trackingMoved')}</p>
           </Section>
         </div>
 
@@ -616,6 +635,46 @@ export default function LandingEditorPage() {
           <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')}</p>
         </div>
       </div>
+
+      {/* Schedule run — pick a window OR keep it live until the project sells out */}
+      {scheduleOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setScheduleOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><CalendarClock className="h-4 w-4 text-gold" /> {t('lpe.schedule.title')}</div>
+            <p className="mt-1 text-[12px] text-slate-500">{t('lpe.schedule.sub')}</p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Field label={t('lpe.f.publishFrom')}><input type="datetime-local" className="fld" value={form.publishFrom} onChange={(e) => set('publishFrom', e.target.value)} /></Field>
+              <Field label={t('lpe.f.publishTo')}><input type="datetime-local" className="fld" value={form.publishTo} onChange={(e) => set('publishTo', e.target.value)} disabled={form.unpublishOnSoldOut} /></Field>
+            </div>
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-line bg-surface-2/50 p-3 text-[12px] text-slate-300">
+              <input type="checkbox" checked={form.unpublishOnSoldOut} onChange={(e) => set('unpublishOnSoldOut', e.target.checked)} className="mt-0.5" />
+              <span className="flex items-center gap-1.5"><PackageX className="h-3.5 w-3.5 shrink-0 text-gold" /> {t('lpe.schedule.soldOut')}</span>
+            </label>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setScheduleOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
+              <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lpe.schedule.apply')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete — typed confirmation */}
+      {deleteOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setDeleteOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-rose-500/30 bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><Trash2 className="h-4 w-4 text-rose-400" /> {t('lpe.del.title')}</div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">{t('lpe.del.warn')}</p>
+            <input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder={t('lpe.del.placeholder')} className="fld mt-3" autoFocus />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button type="button" onClick={() => setDeleteOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
+              <button type="button" onClick={doDelete} disabled={deleteConfirm.trim().toLowerCase() !== 'delete' || deleting}
+                className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-400 disabled:opacity-40">
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} {t('lpe.del.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`.fld{width:100%;border-radius:12px;border:1px solid var(--line,#26262b);background:var(--surface-2,#151518);padding:10px 12px;font-size:14px;color:#fff;outline:none}.fld::placeholder{color:#64748b}.fld:focus{border-color:rgba(212,175,55,.4)}`}</style>
     </div>
