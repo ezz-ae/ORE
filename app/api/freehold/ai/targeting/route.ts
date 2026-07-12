@@ -122,7 +122,29 @@ function clampRecommendation(raw: Record<string, unknown>): TargetingRecommendat
   }
 }
 
+type ListingCtx = { name?: string; area?: string; price?: number; type?: string }
+
 export async function GET() {
+  return recommend(null)
+}
+
+/** POST { listing } — the wizard sends the SELECTED listing so the
+ *  recommendation is tailored to that asset and its price band, not generic. */
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({})) as { listing?: ListingCtx }
+  const l = body.listing
+  const listing: ListingCtx | null = l && typeof l === 'object'
+    ? {
+        name: String(l.name ?? '').slice(0, 120),
+        area: String(l.area ?? '').slice(0, 80),
+        price: Number(l.price) || 0,
+        type: String(l.type ?? '').slice(0, 60),
+      }
+    : null
+  return recommend(listing)
+}
+
+async function recommend(listing: ListingCtx | null) {
   const auth = await requireSession([...ALLOWED])
   if ('res' in auth) return auth.res
 
@@ -144,6 +166,7 @@ CAMPAIGN PERFORMANCE (real):
 ${JSON.stringify(perf.campaigns, null, 1)}
 
 SEED POOLS AVAILABLE FOR LOOKALIKES: ${qualifiedPool} qualified leads, ${closedPool} closed buyers in the CRM.
+${listing && listing.name ? `\nTHIS CAMPAIGN'S LISTING (tailor cities, age band, budget and the creative angle to THIS asset and its price band — a Marina short-let investor is not a Hills villa family):\n${JSON.stringify(listing)}` : ''}
 
 QUALITY SIGNAL: crm.qualified/closed vs crm.lost per campaign shows which delivery produced REAL buyers. A cheap-CPL campaign whose leads mark "lost" is worse than a pricier one that closes.
 
