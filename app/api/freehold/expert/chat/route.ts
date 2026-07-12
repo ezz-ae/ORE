@@ -310,19 +310,30 @@ Tools marked destructive change live campaigns/money/content: pass confirm:true 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
     const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
 
-    let raw: string
+    let raw: string | undefined
     const toolsUsed: string[] = []
+    let sdkError: string | null = null
 
     if (process.env.EXPERT_USE_AI_SDK === '1' && sessionUser) {
       // ── AI SDK path (native multi-step tool-calling) ──────────────────────
-      const sdk = await runExpertSdk({
-        message, systemPrompt: sdkSystemPrompt, context: fullContext,
-        history: durableHistory, toolCtx, hasTools: tools.length > 0,
-      })
-      raw = stripThinking(sdk.raw)
-      toolsUsed.push(...sdk.toolsUsed)
-    } else {
-      // ── Legacy path: hand-rolled JSON tool_call loop ──────────────────────
+      try {
+        const sdk = await runExpertSdk({
+          message, systemPrompt: sdkSystemPrompt, context: fullContext,
+          history: durableHistory, toolCtx, hasTools: tools.length > 0,
+        })
+        raw = stripThinking(sdk.raw)
+        toolsUsed.push(...sdk.toolsUsed)
+      } catch (err) {
+        // The SDK path is opt-in and unproven against every tool schema — never
+        // let it break the chat: capture why, then fall through to the legacy
+        // path below (which cannot throw — its model ladder is fully caught).
+        sdkError = err instanceof Error ? err.message : String(err)
+        console.error('[expert] AI SDK path failed — falling back to legacy:', sdkError)
+      }
+    }
+
+    if (raw === undefined) {
+      // ── Legacy path: JSON tool_call loop (also the AI-SDK fallback) ────────
       let loopHistory = durableHistory
       raw = stripThinking(await queryServerAgent(message, {
         sessionId,
@@ -393,7 +404,7 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
       if (tools.length > 0 && parseToolCall(raw, toolNames)) raw = limitReply()
     }
 
-    const blocks = parseBlocks(raw)
+    const blocks = parseBlocks(raw ?? '')
     // Persist the turn to the account's session so nothing is lost on reload —
     // and return the (possibly newly created) session id to the client.
     const persistedId = sessionUser
@@ -412,7 +423,7 @@ The user is currently on ${body.page ?? 'an unknown page'} — prefer that surfa
         `Context: ${Object.entries(systemContext).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}`,
         ...(toolsUsed.length ? [`Tools executed: ${toolsUsed.join(', ')}`] : []),
       ],
-      warnings: [],
+      warnings: sdkError ? [`AI SDK path fell back to legacy: ${sdkError}`] : [],
       nextActions: ['Act on a button', 'Ask a follow-up'],
       generatedAt,
     }
