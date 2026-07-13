@@ -64,6 +64,17 @@ export interface LandingProjectSummary {
   priceFromAed: number | null
   priceToAed: number | null
   rentalYield: number | null
+  /** Rental / ROI intelligence from Hex FH-YIELD-02 (payload.roiCalculator and
+      payload.rentalIntelligence). Members are null until a project is enriched —
+      the landing ROI section reads these live and self-hides when they're all
+      absent rather than rendering blank "—" cards. */
+  roi?: {
+    projectedYield: number | null
+    annualIncome: number | null
+    monthlyIncome: number | null
+    fiveYearRental: number | null
+    breakEvenYears: number | null
+  }
   paymentPlan?: {
     downPayment?: number
     duringConstruction?: number
@@ -757,6 +768,29 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     }))
     .filter((item) => item.question && item.answer)
 
+  // Rental/ROI figures for the landing "Why This Investment Works" card. Prefer
+  // Hex's computed roiCalculator (the investment-returns card), then the
+  // rentalIntelligence strip; the projected (net) yield also falls back to the
+  // top-level rental_yield column and investmentHighlights. Every member stays
+  // null when a project hasn't been enriched — the reader then hides the section.
+  const roiCalc = toObject(payload.roiCalculator)
+  const rentalIntel = toObject(payload.rentalIntelligence)
+  const invHighlights = toObject(payload.investmentHighlights)
+  const roi = {
+    projectedYield: pickNumber(
+      roiCalc.projectedYield,
+      rentalIntel.projectedYield,
+      row.rental_yield,
+      invHighlights.rentalYield,
+      invHighlights.expectedROI,
+      payload.roi,
+    ),
+    annualIncome: pickNumber(roiCalc.annualIncome, rentalIntel.annualIncome),
+    monthlyIncome: pickNumber(roiCalc.monthlyIncome, rentalIntel.monthlyIncome),
+    fiveYearRental: pickNumber(roiCalc.fiveYearRental, rentalIntel.fiveYearRental),
+    breakEvenYears: pickNumber(roiCalc.breakEvenYears),
+  }
+
   return {
     slug: pickString(row.slug, payload.slug) || projectSlug,
     name: pickString(row.name, payload.name) || "Dubai Project",
@@ -765,7 +799,8 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     heroImage: pickString(row.hero_image, payload.heroImage, toObject(payload.mediaSource).heroImage) || "/logo.png",
     priceFromAed: pickNumber(row.price_from_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceFrom : null),
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
-    rentalYield: pickNumber(row.rental_yield, toObject(payload.investmentHighlights).rentalYield),
+    rentalYield: pickNumber(row.rental_yield, invHighlights.rentalYield),
+    roi,
     paymentPlan: normalizePaymentPlan(
       payload.paymentPlan ?? pfd.paymentPlan,
       payload.paymentPlans ?? pfd.paymentPlans,

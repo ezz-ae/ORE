@@ -503,12 +503,29 @@ function PaymentPlanSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; 
 }
 
 function RoiSection({ d, page, L, p }: { d: Record<string, unknown>; page: LandingPageData; L: Dict; p: LpPalette }) {
-  const yield_ = Number(pick(d, 'rentalYield', 'expectedRoi')) || 0
-  const price = Number(pick(d, 'startPriceAed')) || page.project?.priceFromAed || 0
+  // Only strictly-positive values count as real; 0 / NaN / blank all read as
+  // "not available" so a card shows "—" and a fully-empty section self-hides.
+  const pos = (v: unknown): number | null => {
+    const n = typeof v === 'number' ? v : Number(v)
+    return Number.isFinite(n) && n > 0 ? n : null
+  }
+  // Prefer the project's live ROI intelligence (re-read from the DB on every
+  // request, so Hex FH-YIELD-02 fills land immediately) over the frozen section
+  // snapshot that was captured when the page was first built.
+  const proj = page.project
+  const yield_ = pos(proj?.roi?.projectedYield) ?? pos(proj?.rentalYield) ?? pos(pick(d, 'rentalYield', 'expectedRoi'))
+  const price = pos(pick(d, 'startPriceAed')) ?? pos(proj?.priceFromAed)
 
-  const annual = price > 0 && yield_ > 0 ? price * (yield_ / 100) : null
-  const monthly = annual ? annual / 12 : null
-  const fiveYr = annual ? annual * 5 : null
+  // Authoritative income figures from Hex when present; otherwise a transparent
+  // projection off a real yield + starting price (the disclaimer flags it).
+  const derivedAnnual = yield_ && price ? price * (yield_ / 100) : null
+  const annual = pos(proj?.roi?.annualIncome) ?? derivedAnnual
+  const monthly = pos(proj?.roi?.monthlyIncome) ?? (annual ? annual / 12 : null)
+  const fiveYr = pos(proj?.roi?.fiveYearRental) ?? (annual ? annual * 5 : null)
+
+  // NOTHING-FAKE: with no real yield and no income figures, hide the whole
+  // section instead of rendering four blank "—" cards.
+  if (!yield_ && !annual && !monthly && !fiveYr) return null
 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
@@ -524,7 +541,7 @@ function RoiSection({ d, page, L, p }: { d: Record<string, unknown>; page: Landi
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="col-span-2 rounded-2xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07] p-7 text-center sm:col-span-1">
             <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60 mb-3">{L['roi.projectedYield']}</div>
-            <div className="text-[56px] font-bold text-[#D4AF37] leading-none">{yield_ > 0 ? `${yield_.toFixed(1)}%` : '—'}</div>
+            <div className="text-[56px] font-bold text-[#D4AF37] leading-none">{yield_ ? `${yield_.toFixed(1)}%` : '—'}</div>
             <div className="mt-2 text-[12px]" style={{ color: p.textFaint }}>{L['roi.projectedYieldSub']}</div>
           </div>
           {[
@@ -829,6 +846,9 @@ function NeighborhoodSection({ d, page, L, p }: { d: Record<string, unknown>; pa
 function MarketIntelligenceSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpPalette }) {
   const summary = pick(d, 'summary')
   const bullets = pickArr(d, 'bullets').map(toStr).filter(Boolean)
+  // NOTHING-FAKE: never render just the header + pulsing "live" badge over no
+  // content — the section self-hides when it has neither a summary nor bullets.
+  if (!summary && !bullets.length) return null
 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider, background: p.bgAlt }}>
