@@ -161,6 +161,26 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = toObject(project.payload)
+    // Refreshed projects (Hex FH-REFRESH-02) carry the rich PF fields ONLY under
+    // payload.propertyFinderDetail; net-new projects carry them top-level. Read
+    // top-level first, then fall back to the PF snapshot so both render fully.
+    const pfd = toObject(payload.propertyFinderDetail)
+    const amenityItems = (toArray(payload.amenities).length ? toArray(payload.amenities) : toArray(pfd.amenities))
+      .filter((item) => typeof item === "string")
+    const faqItems = (toArray(payload.faqs).length ? toArray(payload.faqs) : toArray(pfd.faqs))
+      .map((item) => {
+        const asObj = toObject(item)
+        return { question: toText(asObj.question), answer: toText(asObj.answer) }
+      })
+      .filter((f) => f.question && f.answer)
+    const galleryImages = (toArray(payload.images).length ? toArray(payload.images) : toArray(pfd.images))
+      .map((img) => (typeof img === "string" ? img : toText(toObject(img).url) || toText(toObject(img).href)))
+      .filter(Boolean)
+      .slice(0, 8)
+    const planStages = normalizePaymentPlan(
+      payload.paymentPlan ?? pfd.paymentPlan,
+      payload.paymentPlans ?? pfd.paymentPlans,
+    )
     const finalProjectSlug = toText(project.slug) || projectSlug
     const baseSlugFromInput = slugify(toText(body.slug))
     const baseSlug =
@@ -230,7 +250,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
+        const plan = planStages
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
@@ -244,19 +264,13 @@ export async function POST(req: NextRequest) {
       {
         type: "amenities",
         data: {
-          items: toArray(payload.amenities).filter((item) => typeof item === "string"),
+          items: amenityItems,
         },
       },
       {
         type: "faq",
         data: {
-          items: toArray(payload.faqs).map((item) => {
-            const asObj = toObject(item)
-            return {
-              question: toText(asObj.question),
-              answer: toText(asObj.answer),
-            }
-          }),
+          items: faqItems,
         },
       },
       {
@@ -324,7 +338,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
+        const plan = planStages
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
@@ -340,12 +354,12 @@ export async function POST(req: NextRequest) {
       },
       {
         type: "gallery",
-        data: {},
+        data: { images: galleryImages },
       },
       {
         type: "amenities",
         data: {
-          items: toArray(payload.amenities).filter((item) => typeof item === "string"),
+          items: amenityItems,
         },
       },
       {
@@ -365,7 +379,7 @@ export async function POST(req: NextRequest) {
       {
         type: "faq",
         data: {
-          items: [],
+          items: faqItems,
         },
       },
       {
@@ -393,12 +407,12 @@ export async function POST(req: NextRequest) {
       },
       {
         type: "gallery",
-        data: {},
+        data: { images: galleryImages },
       },
       {
         type: "amenities",
         data: {
-          items: toArray(payload.amenities).filter((item) => typeof item === "string"),
+          items: amenityItems,
         },
       },
       {
@@ -417,7 +431,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
+        const plan = planStages
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
@@ -434,10 +448,7 @@ export async function POST(req: NextRequest) {
       {
         type: "faq",
         data: {
-          items: toArray(payload.faqs).map((item) => {
-            const asObj = toObject(item)
-            return { question: toText(asObj.question), answer: toText(asObj.answer) }
-          }),
+          items: faqItems,
         },
       },
       {
