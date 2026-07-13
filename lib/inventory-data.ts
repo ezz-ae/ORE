@@ -210,6 +210,10 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     sizeRange: '',
     roi: row.rental_yield ? Number(row.rental_yield) : null,
     landingStatus: mapLandingStatus(landing),
+    // The landing page's own slug when one exists (published OR draft/pending) —
+    // lets staff preview/edit a draft landing, which the public landingUrl below
+    // deliberately hides. Null when the project has no landing page row at all.
+    landingSlug: landing?.slug ?? null,
     // Only link out when the page is actually published — the public /lp route
     // resolves by the page's own slug and 404s on drafts. Drafts render as a
     // non-clickable badge instead of a dead "Live ↗" link.

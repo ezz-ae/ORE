@@ -7,6 +7,8 @@ import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from
 import { UAE_INTERESTS, UAE_CITIES, type TargetingRecommendation, type TargetingStrategy } from '@/lib/meta/targeting-catalog'
 import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
+import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
+import { useSession } from '@/lib/freehold/use-session'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
@@ -20,6 +22,9 @@ interface WizardListing {
   projectId: string
   projectName: string
   area: string
+  developer: string
+  landingStatus: string
+  landingSlug: string | null
   imageUrl: string
   startingPrice: number | null
   paymentPlan: string | null
@@ -152,6 +157,10 @@ const fmtReach = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String
 export default function NewCampaignPage() {
   const t = useT()
   const router = useRouter()
+  // Landing pages are editable only by non-broker accounts (Cor/Bashar/Yamen);
+  // brokers get preview-only in the picker.
+  const { user } = useSession()
+  const canEditLandings = !!user && user.role !== 'broker'
   const [step,    setStep]    = useState<WizardStep>(1)
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
@@ -489,6 +498,9 @@ export default function NewCampaignPage() {
             projectId: String(p.slug || ''),
             projectName: String(p.name || ''),
             area: String(p.area || ''),
+            developer: String(p.developer || ''),
+            landingStatus: String(p.landingStatus || 'missing'),
+            landingSlug: (p.landingSlug as string) || null,
             imageUrl: (p.heroImage as string) || '',
             startingPrice: typeof p.startingPriceAED === 'number' ? p.startingPriceAED : null,
             paymentPlan: (p.paymentPlan as string) || null,
@@ -843,18 +855,15 @@ export default function NewCampaignPage() {
 
             <div data-coach="wiz-listing">
               <Label>{t('lm.newCampaign.s1.label.listing')}</Label>
-              <select
-                className={inputCls()}
+              <CampaignListingPicker
+                listings={listings}
                 value={form.listingId}
-                onChange={(e) => onListingChange(e.target.value)}
-              >
-                <option value="" disabled>
-                  {listingsLoading ? t('common.loading') : t('lm.newCampaign.s1.pickProject')}
-                </option>
-                {listings.map((l) => (
-                  <option key={l.id} value={l.id}>{l.projectName} · {l.area}</option>
-                ))}
-              </select>
+                onChange={onListingChange}
+                loading={listingsLoading}
+                canEdit={canEditLandings}
+                t={t}
+                inputCls={inputCls()}
+              />
               {form.listingId && (
                 <button type="button" onClick={runDataQuality}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20">
