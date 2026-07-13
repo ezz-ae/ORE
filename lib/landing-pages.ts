@@ -1,6 +1,7 @@
 import { getGlobalPixels, mergePixels } from '@/lib/freehold/tracking-pixels'
 
 import { query } from "@/lib/db"
+import { normalizePaymentPlan } from "@/lib/payment-plan"
 
 type JsonValue = Record<string, unknown> | Array<unknown> | string | number | boolean | null
 
@@ -199,38 +200,6 @@ const normalizeLandingStatus = (value: unknown): "draft" | "published" => {
   return ["published", "active", "live"].includes(normalized) ? "published" : "draft"
 }
 
-// Returns undefined when the project carries no real plan numbers — a public
-// page must never advertise an invented payment structure.
-const normalizePaymentPlan = (plan?: {
-  downPayment?: number
-  duringConstruction?: number
-  onHandover?: number
-  postHandover?: number
-}) => {
-  const hasReal =
-    typeof plan?.downPayment === "number" ||
-    typeof plan?.duringConstruction === "number" ||
-    typeof plan?.onHandover === "number" ||
-    typeof plan?.postHandover === "number"
-  if (!hasReal) return undefined
-
-  const normalized = {
-    downPayment: Math.max(0, plan?.downPayment ?? 0),
-    duringConstruction: Math.max(0, plan?.duringConstruction ?? 0),
-    onHandover: Math.max(0, plan?.onHandover ?? 0),
-    postHandover: Math.max(0, plan?.postHandover ?? 0),
-  }
-
-  const total =
-    normalized.downPayment +
-    normalized.duringConstruction +
-    normalized.onHandover +
-    normalized.postHandover
-
-  if (total <= 0) return undefined
-  return normalized
-}
-
 const toDate = (value: unknown) => {
   if (!value) return null
   const raw = typeof value === "string" ? value : String(value)
@@ -411,7 +380,7 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
     // Payment plan renders only from real numbers — no invented 20/50/30.
     ...(() => {
       const plan = normalizePaymentPlan(project?.paymentPlan)
-      return plan ? [{ type: "payment-plan", data: plan } as LandingSection] : []
+      return plan ? [{ type: "payment-plan", data: { ...plan } } as LandingSection] : []
     })(),
     {
       type: "roi",
@@ -518,7 +487,7 @@ export const buildCampaignSections = (
     // Payment plan renders only from real numbers — no invented 20/50/30.
     ...(() => {
       const plan = normalizePaymentPlan(project?.paymentPlan)
-      return plan ? [{ type: "payment-plan", data: plan } as LandingSection] : []
+      return plan ? [{ type: "payment-plan", data: { ...plan } } as LandingSection] : []
     })(),
     {
       type: "key-facts",
@@ -765,7 +734,6 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
   if (!row) return null
 
   const payload = toObject(row.payload)
-  const paymentPlan = toObject(payload.paymentPlan)
   const amenities = toArray(payload.amenities).map((item) => pickString(item)).filter(Boolean)
   const faqs = toArray(payload.faqs)
     .map((item) => toObject(item))
@@ -784,12 +752,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     priceFromAed: pickNumber(row.price_from_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceFrom : null),
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
     rentalYield: pickNumber(row.rental_yield, toObject(payload.investmentHighlights).rentalYield),
-    paymentPlan: normalizePaymentPlan({
-      downPayment: pickNumber(paymentPlan.downPayment) ?? undefined,
-      duringConstruction: pickNumber(paymentPlan.duringConstruction) ?? undefined,
-      onHandover: pickNumber(paymentPlan.onHandover) ?? undefined,
-      postHandover: pickNumber(paymentPlan.postHandover) ?? undefined,
-    }),
+    paymentPlan: normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans),
     amenities,
     faqs,
   }
