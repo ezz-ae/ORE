@@ -6,7 +6,8 @@ import { createLocalCampaign } from '@/lib/meta/local-store'
 import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
-import { deductCreditsForCampaign, getCreditBalance } from '@/lib/freehold/credits-db'
+import { deductCreditsForCampaign, refundCredits, settleCampaignReservation, getCreditBalance } from '@/lib/freehold/credits-db'
+import { randomUUID } from 'crypto'
 import { decideCampaignAction, type CampaignIntent, type RouterDecision } from '@/lib/meta/campaign-router'
 import {
   buildProjectAdStructure, recordCampaignProject,
@@ -64,8 +65,16 @@ export async function POST(req: NextRequest) {
 
   const creditsToSpend = brokerId ? Math.round((body.dailyBudgetAED ?? 100) / 10) : 0
 
-  // Fail closed on money: a broker cannot launch a campaign they can't fund.
-  // Checked server-side before any launch so the balance is authoritative.
+  // ── Money: RESERVE credits BEFORE launching (fail-closed) ────────────────────
+  // A campaign must never reach the auction without its credits already committed.
+  // The debit is atomic (row-locked, balance re-derived under the lock), booked
+  // under a placeholder reference; two concurrent launches for the same broker
+  // serialize on that lock, so the second can't slip past a stale balance read and
+  // over-serve. The getCreditBalance check below is only the fast, friendly 402 —
+  // the reservation debit is the authority. If the launch then fails or falls back
+  // to a demo campaign that never serves, the reservation is refunded.
+  const reservationRef = `res-${randomUUID()}`
+  let reserved = false
   if (brokerId && creditsToSpend > 0) {
     const bal = await getCreditBalance(brokerId)
     if ((bal?.balance ?? 0) < creditsToSpend) {
@@ -74,14 +83,30 @@ export async function POST(req: NextRequest) {
         { status: 402 },
       )
     }
+    const reservation = await deductCreditsForCampaign(brokerId, reservationRef, body.campaignName, creditsToSpend)
+    if (!reservation.ok) {
+      // Lost the race, or a concurrent spend drained the balance — never launch.
+      return NextResponse.json(
+        { error: 'Insufficient credits to launch this campaign.', balance: reservation.balance ?? 0, required: creditsToSpend },
+        { status: reservation.reason === 'insufficient' ? 402 : 500 },
+      )
+    }
+    reserved = true
   }
 
-  // Persist broker attribution + (optionally) deduct launch credits. Attribution
-  // is best-effort; the credit deduction is guarded (deductCreditsForCampaign
-  // refuses to drive the balance negative) so spend always reconciles. A demo/
-  // local campaign (Meta not connected) never serves an ad, so it is attributed
-  // but NOT charged — mirroring the Google demo fallback.
-  async function recordBrokerSpend(campaignId: string, charge = true) {
+  // Give the reserved credits back when a launch does NOT actually serve an ad
+  // (Meta rejected it, or it fell back to a local/demo campaign).
+  async function releaseReservation() {
+    if (reserved && brokerId) {
+      await refundCredits(brokerId, reservationRef, creditsToSpend, 'Refund: campaign did not launch/serve').catch(() => {})
+      reserved = false
+    }
+  }
+
+  // Persist broker↔campaign attribution (best-effort link). The money is already
+  // reserved above, so this never charges — on a real launch the reservation is
+  // separately reconciled to the true campaign id.
+  async function attributeCampaign(campaignId: string) {
     if (!brokerId) return
     try {
       await ensureBrokerTable()
@@ -91,13 +116,8 @@ export async function POST(req: NextRequest) {
          ON CONFLICT (campaign_id) DO NOTHING`,
         [campaignId, brokerId, body.campaignName],
       )
-      if (!charge) return
-      const deduction = await deductCreditsForCampaign(brokerId, campaignId, body.campaignName, creditsToSpend)
-      if (!deduction.ok) {
-        console.error('[meta/launch] credit deduction failed after launch', { campaignId, brokerId, reason: deduction.reason })
-      }
     } catch {
-      // Non-fatal — attribution/credits logging failed.
+      // Non-fatal — attribution logging failed.
     }
   }
 
@@ -123,6 +143,9 @@ export async function POST(req: NextRequest) {
     decision = decideCampaignAction(intent, structure)
     const autonomy = await getAutonomyLevel()
     if (autonomy === 3 && decision.action === 'hold') {
+      // No new campaign serves on this path → return the reserved credits first,
+      // so a held launch never charges the broker.
+      await releaseReservation()
       await recordDecision({
         projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
         action: 'hold', outcome: 'auto', reason: decision.reason,
@@ -173,7 +196,10 @@ export async function POST(req: NextRequest) {
       cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
     })
 
-    await recordBrokerSpend(result.campaignId)
+    // Launch succeeded → the campaign will serve, so the reservation stands.
+    // Attribute the broker and reconcile the reservation to the real campaign id.
+    await attributeCampaign(result.campaignId)
+    await settleCampaignReservation(brokerId ?? '', reservationRef, result.campaignId)
     await recordCampaignProject(result.campaignId, projectSlug) // link for the router
     await recordLaunchDecision(result.campaignId)
     // Persist the wizard's autopilot policy — the autopilot pass reads it.
@@ -185,9 +211,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof MetaConfigError) {
       // Not connected → persist a local campaign (mirrors the Google flow) so
-      // the wizard's success screen + detail page work end to end.
+      // the wizard's success screen + detail page work end to end. A demo campaign
+      // never serves an ad, so release the reservation (attribute, don't charge).
+      await releaseReservation()
       const local = await createLocalCampaign(body, brokerId)
-      await recordBrokerSpend(local.campaignId, false) // demo campaign never serves → attribute, don't charge
+      await attributeCampaign(local.campaignId)
       await recordCampaignProject(local.campaignId, projectSlug)
       await recordLaunchDecision(local.campaignId)
       if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
@@ -195,6 +223,8 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ ...local, brokerId, demo: true, decision }, { status: 201 })
     }
+    // A real launch failed → nothing serves → return the reserved credits.
+    await releaseReservation()
     if (err instanceof MetaApiError) {
       return NextResponse.json(
         { error: err.message, code: err.code, type: err.type },

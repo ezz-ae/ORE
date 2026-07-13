@@ -218,6 +218,34 @@ export async function deductCreditsForCampaign(
   }
 }
 
+/**
+ * Attach the real campaign id to a reservation once the launch succeeds. Credits
+ * are reserved (debited) BEFORE the Meta launch under a placeholder reference, so
+ * on success we rewrite that placeholder to the true campaign id — keeping the
+ * ledger note and the allocations list pointing at the live campaign. Best-effort
+ * and cosmetic: the balance math never depends on the campaign id.
+ */
+export async function settleCampaignReservation(
+  brokerId: string,
+  reservationRef: string,
+  realCampaignId: string,
+): Promise<void> {
+  if (!brokerId || !reservationRef || !realCampaignId || reservationRef === realCampaignId) return
+  try {
+    await query(
+      `UPDATE ad_spend_allocations SET campaign_id = $3, updated_at = now()
+       WHERE broker_id = $1 AND campaign_id = $2`,
+      [brokerId, reservationRef, realCampaignId],
+    )
+    await query(
+      `UPDATE credit_ledger
+       SET meta = jsonb_set(COALESCE(meta, '{}'::jsonb), '{campaign_id}', to_jsonb($3::text))
+       WHERE broker_id = $1 AND type = 'spend' AND meta->>'campaign_id' = $2`,
+      [brokerId, reservationRef, realCampaignId],
+    )
+  } catch { /* Non-fatal — reconciliation is cosmetic; the debit already stands. */ }
+}
+
 /** Return credits to a broker — reverses a deduction when a campaign launch
  *  fails after the spend was recorded. */
 export async function refundCredits(

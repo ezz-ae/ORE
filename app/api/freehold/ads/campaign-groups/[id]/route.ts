@@ -41,7 +41,11 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
         if (entry.status === 'ACTIVE') {
           // A FAILED insights fetch is not "AED 0" — flag it so the arm renders
           // "—" (unavailable) rather than fabricating a zero as a real number.
-          try { entry.insights = await getCampaignInsights(id) } catch (e) { entry.insightsError = e instanceof MetaApiError }
+          // ANY throw counts: a timeout / dropped socket surfaces as TypeError and
+          // a 5xx HTML gateway body as SyntaxError — neither is a MetaApiError, yet
+          // both mean "no signal", so we must not read them as a real zero. We are
+          // already past a successful listCampaigns() here, so Meta IS connected.
+          try { entry.insights = await getCampaignInsights(id) } catch { entry.insightsError = true }
         }
       }),
     )
@@ -87,9 +91,11 @@ async function campaignRollup(campaignId: string): Promise<{ adSets: unknown[]; 
     })
     return { adSets: rows, error: false }
   } catch (err) {
-    // Meta rate-limit / API error is NOT "no ad sets" — flag it so the UI can
-    // say "unavailable" instead of implying the campaign is empty.
-    return { adSets: [], error: err instanceof MetaApiError }
+    // Meta rate-limit / API / transport error is NOT "no ad sets" — flag it so the
+    // UI says "unavailable" instead of implying the campaign is empty. Only a
+    // genuine not-connected (MetaConfigError) is a legitimately empty structure
+    // (e.g. a local/demo campaign), so everything ELSE is treated as a failure.
+    return { adSets: [], error: !(err instanceof MetaConfigError) }
   }
 }
 
