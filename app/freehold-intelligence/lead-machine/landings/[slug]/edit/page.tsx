@@ -7,7 +7,9 @@ import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOf
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
+import { useSession } from '@/lib/freehold/use-session'
 import { useAutosaveDraft } from '@/lib/freehold/use-autosave-draft'
+import { Send } from 'lucide-react'
 import { LANDING_TEMPLATES } from '@/lib/landing-templates'
 
 type Landing = {
@@ -92,6 +94,15 @@ export default function LandingEditorPage() {
   const params = useParams<{ slug: string }>()
   const slug = String(params?.slug || '')
 
+  // Brokers can't edit the live page — they open it in PROPOSAL mode: a draft
+  // copy they save + send for approval. Any non-broker account (Cor/Bashar/Yamen)
+  // edits and publishes directly.
+  const { ready: sessionReady, user } = useSession()
+  const proposalMode = sessionReady && !!user && user.role === 'broker'
+  const [requestId, setRequestId] = useState<string | null>(null)
+  const [proposalNote, setProposalNote] = useState('')
+  const [sending, setSending] = useState(false)
+
   const [form, setForm] = useState<Landing | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -119,18 +130,45 @@ export default function LandingEditorPage() {
     title: form?.headline, active: edited, data: form ?? {},
   })
 
+  // Overlay a broker's own resumable proposal (fields + sections) onto the live
+  // content, so re-opening the editor picks up where they left off.
+  const overlayDraft = (base: Landing, draft: { proposedFields?: Record<string, unknown>; proposedSections?: LpSection[] | null } | null): Landing => {
+    if (!draft) return base
+    const out: Landing = { ...base }
+    const f = draft.proposedFields || {}
+    for (const k of ['headline', 'subheadline', 'ctaText', 'seoTitle', 'seoDescription', 'heroImage'] as const) {
+      if (typeof f[k] === 'string') out[k] = f[k] as string
+    }
+    if (Array.isArray(draft.proposedSections) && draft.proposedSections.length) out.sections = draft.proposedSections
+    return out
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
+      if (proposalMode) {
+        const res = await fetch(`/api/freehold/landing-edits/for-landing?slug=${encodeURIComponent(slug)}`, { cache: 'no-store' })
+        const d = await res.json()
+        if (res.ok && d.landing) {
+          const draft = d.draft as { id: string; proposedFields?: Record<string, unknown>; proposedSections?: LpSection[] | null; note?: string | null } | null
+          setForm(overlayDraft(d.landing as Landing, draft))
+          setRequestId(draft?.id ?? null)
+          setProposalNote(draft?.note ?? '')
+          setEdited(false)
+        } else setNotFound(true)
+        return
+      }
       const res = await fetch(`/api/crm/landing-pages/${slug}`, { cache: 'no-store' })
       const d = await res.json()
       if (res.ok && d.landing) { setForm(d.landing as Landing); setEdited(false) }
       else setNotFound(true)
     } catch { setNotFound(true) }
     finally { setLoading(false) }
-  }, [slug])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, proposalMode])
 
-  useEffect(() => { if (slug) load() }, [slug, load])
+  // Wait for the session so the right load path (proposal vs direct) runs once.
+  useEffect(() => { if (slug && sessionReady) load() }, [slug, sessionReady, load])
 
   function set<K extends keyof Landing>(k: K, v: Landing[K]) {
     setEdited(true)
@@ -153,6 +191,35 @@ export default function LandingEditorPage() {
       toast.success(d.landing?.status === 'pending_publish' ? t('lpe.pendingPublish') : t('lpe.saved'))
     } catch { toast.error(t('lpe.saveFailed')) }
     finally { setSaving(false) }
+  }
+
+  // Broker proposal: save/send a DRAFT copy to the approval queue. Never touches
+  // the live page — an approver publishes it. `submit` sends it for approval.
+  async function saveProposal(submit: boolean) {
+    if (!form) return
+    if (submit) setSending(true); else setSaving(true)
+    try {
+      const res = await fetch('/api/freehold/landing-edits', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          landingSlug: slug,
+          projectSlug: form.projectSlug || undefined,
+          proposedFields: {
+            headline: form.headline, subheadline: form.subheadline, ctaText: form.ctaText,
+            seoTitle: form.seoTitle, seoDescription: form.seoDescription, heroImage: form.heroImage,
+          },
+          proposedSections: form.sections ?? [],
+          note: proposalNote,
+          submit,
+        }),
+      })
+      const d = await res.json()
+      if (!res.ok) { toast.error(d.error || t('lpe.saveFailed')); return }
+      if (d.request?.id) setRequestId(d.request.id)
+      setEdited(false); clearDraft()
+      toast.success(submit ? t('lpe.proposal.sent') : t('lpe.proposal.savedDraft'))
+    } catch { toast.error(t('lpe.saveFailed')) }
+    finally { if (submit) setSending(false); else setSaving(false) }
   }
 
   async function regenerate() {
@@ -278,7 +345,9 @@ export default function LandingEditorPage() {
   const tRef = useRef(t); tRef.current = t
   const titleRef = useRef(''); titleRef.current = form?.headline || form?.slug || t('lpe.ai.artifact')
   useEffect(() => {
-    if (!form) return
+    // The AI edit surface writes to the live page (admin-only) — never register
+    // it in broker proposal mode.
+    if (!form || proposalMode) return
     const surface: ExpertEditorSurface = {
       kind: 'landing',
       title: titleRef.current,
@@ -487,26 +556,58 @@ export default function LandingEditorPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={runTest} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
-            {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
-          </button>
-          <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
-            {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
-          </button>
-          <button type="button" onClick={() => setScheduleOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
-            <CalendarClock className="h-3.5 w-3.5" /> {t('lpe.schedule.btn')}
-          </button>
-          <button type="button" onClick={() => { setDeleteConfirm(''); setDeleteOpen(true) }} className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20">
-            <Trash2 className="h-3.5 w-3.5" /> {t('lpe.del.btn')}
-          </button>
-          <button type="button" onClick={() => save()} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.save')}
-          </button>
-          <button type="button" onClick={() => save(form.status === 'published' ? 'draft' : 'published')} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
-            {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')}
-          </button>
+          {proposalMode ? (
+            <>
+              <button type="button" onClick={() => saveProposal(false)} disabled={saving || sending} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.proposal.saveDraft')}
+              </button>
+              <button type="button" onClick={() => saveProposal(true)} disabled={saving || sending} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+                {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} {t('lpe.proposal.send')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={runTest} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
+              </button>
+              <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
+              </button>
+              <button type="button" onClick={() => setScheduleOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
+                <CalendarClock className="h-3.5 w-3.5" /> {t('lpe.schedule.btn')}
+              </button>
+              <button type="button" onClick={() => { setDeleteConfirm(''); setDeleteOpen(true) }} className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20">
+                <Trash2 className="h-3.5 w-3.5" /> {t('lpe.del.btn')}
+              </button>
+              <button type="button" onClick={() => save()} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.save')}
+              </button>
+              <button type="button" onClick={() => save(form.status === 'published' ? 'draft' : 'published')} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+                {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')}
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {proposalMode && (
+        <div className="mb-5 rounded-2xl border border-gold/25 bg-gold/[0.05] p-4">
+          <div className="flex items-start gap-2 text-sm text-gold">
+            <Send className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-semibold">{t('lpe.proposal.bannerTitle')}</p>
+              <p className="mt-0.5 text-[12px] leading-relaxed text-slate-300">{t('lpe.proposal.bannerBody')}</p>
+            </div>
+          </div>
+          <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lpe.proposal.noteLabel')}</label>
+          <textarea rows={2} value={proposalNote} onChange={(e) => setProposalNote(e.target.value)}
+            placeholder={t('lpe.proposal.notePh')}
+            className="mt-1 w-full resize-none rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-gold/40" />
+          <Link href="/freehold-intelligence/lead-machine/landings/requests" className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-gold/80 transition hover:text-gold">
+            {t('lper.mineTitle')} →
+          </Link>
+        </div>
+      )}
 
       {test && (
         <div className="mb-5 rounded-2xl border border-line bg-surface-2/60 p-4">
@@ -541,7 +642,8 @@ export default function LandingEditorPage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_1.05fr]">
         {/* Editor */}
         <div className="space-y-5">
-          {/* AI chat-to-edit */}
+          {/* AI chat-to-edit — hidden in broker proposal mode (admin-only route) */}
+          {!proposalMode && (
           <div className="rounded-2xl border border-gold/25 bg-gold/[0.04] p-4">
             <button type="button" onClick={() => setAiOpen((o) => !o)} className="flex w-full items-center justify-between gap-2">
               <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gold/90">
@@ -589,6 +691,7 @@ export default function LandingEditorPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Layout canvas — reorder / show-hide the page's real section blocks */}
           {form.sections && form.sections.length > 0 && (
@@ -600,9 +703,11 @@ export default function LandingEditorPage() {
                 <div className="flex items-center gap-1.5">
                   <button type="button" onClick={undoLayout} disabled={past.length === 0} title={t('lpe.layout.undo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Undo2 className="h-3.5 w-3.5" /></button>
                   <button type="button" onClick={redoLayout} disabled={futureStack.length === 0} title={t('lpe.layout.redo')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white disabled:opacity-30"><Redo2 className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
-                    {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
-                  </button>
+                  {!proposalMode && (
+                    <button type="button" onClick={saveLayout} disabled={layoutSaving} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
+                      {layoutSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.layout.save')}
+                    </button>
+                  )}
                 </div>
               </div>
               <ul className="space-y-1.5">
