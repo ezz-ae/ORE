@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
+import { isLandingTemplateKey } from "@/lib/landing-pages"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -163,7 +164,7 @@ export async function POST(req: NextRequest) {
     const projectSlug = toText(body.projectSlug)
     const campaignName = toText(body.campaignName) || "campaign"
     const status = toText(body.status) || "draft"
-    const template = toText(body.template) === "campaign" ? "campaign" : "classic"
+    const template = isLandingTemplateKey(toText(body.template)) ? toText(body.template) : "classic"
 
     if (!projectSlug) {
       return NextResponse.json({ error: "projectSlug is required" }, { status: 400 })
@@ -402,7 +403,82 @@ export async function POST(req: NextRequest) {
       },
     ]
 
-    const sections = template === "campaign" ? campaignSections : classicSections
+    // Signature — a lifestyle & prestige story for premium waterfront / branded
+    // communities (e.g. DAMAC Lagoons). Leads with visuals and the lived
+    // experience, then the Golden Visa + social-proof prestige hooks, and only
+    // then asks for the lead. Same section types/data shapes as the others.
+    const signatureSections = [
+      {
+        type: "hero",
+        data: {
+          title: headline,
+          subtitle: subheadline,
+          eyebrow: `Waterfront living · ${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
+          chips: [toText(project.area) || "Dubai", "Signature community", formattedPrice],
+        },
+      },
+      {
+        type: "gallery",
+        data: {},
+      },
+      {
+        type: "amenities",
+        data: {
+          items: toArray(payload.amenities).filter((item) => typeof item === "string"),
+        },
+      },
+      {
+        type: "why-dubai",
+        data: {},
+      },
+      {
+        type: "neighborhood",
+        data: {
+          area: toText(project.area) || "Dubai",
+        },
+      },
+      {
+        type: "golden-visa",
+        data: {},
+      },
+      // Included only when the project record carries real plan numbers.
+      ...(() => {
+        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        return plan ? [{ type: "payment-plan", data: plan }] : []
+      })(),
+      {
+        type: "social-proof",
+        data: {},
+      },
+      {
+        type: "lead-form",
+        data: {
+          title: "Arrange a private viewing",
+          subtitle: "Leave your details and a senior consultant will walk you through the community, units and payment plan.",
+        },
+      },
+      {
+        type: "faq",
+        data: {
+          items: toArray(payload.faqs).map((item) => {
+            const asObj = toObject(item)
+            return { question: toText(asObj.question), answer: toText(asObj.answer) }
+          }),
+        },
+      },
+      {
+        type: "lead-form",
+        data: {
+          title: "Register your interest",
+          subtitle: "Limited signature units — get the full price list and floor plans.",
+        },
+      },
+    ]
+
+    const sections =
+      template === "campaign" ? campaignSections
+      : template === "signature" ? signatureSections
+      : classicSections
 
     await ensureLandingTable()
     const columns = await getLandingColumns()

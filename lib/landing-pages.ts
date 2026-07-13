@@ -571,6 +571,17 @@ export const buildCampaignSections = (
   ]
 }
 
+// The landing-page template catalog lives in a dependency-free module so client
+// components can import it without pulling this DB-backed file into the browser.
+// Re-exported here for server callers that already import from landing-pages.
+export {
+  LANDING_TEMPLATES,
+  LANDING_TEMPLATE_KEYS,
+  landingTemplate,
+  isLandingTemplateKey,
+} from "./landing-templates"
+export type { LandingTemplateKey, LandingTemplateMeta } from "./landing-templates"
+
 const ensureLandingPagesSchema = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS freehold_site_project_landing_pages (
