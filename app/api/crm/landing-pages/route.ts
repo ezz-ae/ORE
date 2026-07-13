@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
 import { isLandingTemplateKey } from "@/lib/landing-pages"
+import { normalizePaymentPlan } from "@/lib/payment-plan"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -39,33 +40,6 @@ const toNumber = (value: unknown) => {
     if (Number.isFinite(parsed)) return parsed
   }
   return null
-}
-
-// Returns undefined when the project record has no real plan numbers — the
-// public page must never advertise an invented 20/50/30 structure.
-const normalizePaymentPlan = (plan: Record<string, unknown>) => {
-  const hasReal =
-    toNumber(plan.downPayment) !== null ||
-    toNumber(plan.duringConstruction) !== null ||
-    toNumber(plan.onHandover) !== null ||
-    toNumber(plan.postHandover) !== null
-  if (!hasReal) return undefined
-
-  const normalized = {
-    downPayment: Math.max(0, toNumber(plan.downPayment) ?? 0),
-    duringConstruction: Math.max(0, toNumber(plan.duringConstruction) ?? 0),
-    onHandover: Math.max(0, toNumber(plan.onHandover) ?? 0),
-    postHandover: Math.max(0, toNumber(plan.postHandover) ?? 0),
-  }
-
-  const total =
-    normalized.downPayment +
-    normalized.duringConstruction +
-    normalized.onHandover +
-    normalized.postHandover
-
-  if (total <= 0) return undefined
-  return normalized
 }
 
 const ensureLandingTable = async () => {
@@ -256,7 +230,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
@@ -350,7 +324,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
@@ -443,7 +417,7 @@ export async function POST(req: NextRequest) {
       },
       // Included only when the project record carries real plan numbers.
       ...(() => {
-        const plan = normalizePaymentPlan(toObject(payload.paymentPlan))
+        const plan = normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans)
         return plan ? [{ type: "payment-plan", data: plan }] : []
       })(),
       {
