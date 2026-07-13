@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   ArrowLeft, DollarSign,
-  LayoutDashboard, Receipt, CreditCard, FileCheck2, BarChart3, Wallet,
+  LayoutDashboard, Receipt, CreditCard, FileCheck2, BarChart3, Wallet, Bot,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
@@ -17,6 +17,7 @@ const tabs = [
   { labelKey: 'finance.nav.contracts', href: '/freehold-intelligence/finance/contracts',                   Icon: FileCheck2      },
   { labelKey: 'finance.nav.reports',   href: '/freehold-intelligence/finance/reports',                     Icon: BarChart3       },
   { labelKey: 'finance.nav.credits',   href: '/freehold-intelligence/finance/credits',                     Icon: Wallet          },
+  { labelKey: 'finance.nav.creditRules', href: '/freehold-intelligence/finance/credit-rules',              Icon: Bot             },
 ]
 
 export default function FinanceLayout({ children }: { children: React.ReactNode }) {

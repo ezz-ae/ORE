@@ -3,7 +3,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import {
   getCampaignGroup, renameCampaignGroup, addGroupMember, removeGroupMember, deleteCampaignGroup,
 } from '@/lib/meta/campaign-groups'
-import { listCampaigns, getCampaignInsights, MetaConfigError } from '@/lib/meta/client'
+import { listCampaigns, getCampaignInsights, listAdSets, listAds, MetaConfigError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
@@ -40,6 +40,47 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
 const metaLeads = (ins: MetaInsights | null) =>
   (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
 
+const filsToAed = (v: string | undefined | null) => (v ? Number(v) / 100 : 0)
+// Spend/leads/CPL for any node id (campaign, ad set, or ad) — the /{id}/insights
+// endpoint is generic. Returns zeros when Meta is off or the node is inactive.
+async function nodeMetrics(id: string): Promise<{ spendAED: number; leads: number; cpl: number }> {
+  try {
+    const ins = await getCampaignInsights(id)
+    const spendAED = Number(ins?.spend) || 0
+    const leads = metaLeads(ins)
+    return { spendAED, leads, cpl: leads > 0 ? spendAED / leads : 0 }
+  } catch {
+    return { spendAED: 0, leads: 0, cpl: 0 }
+  }
+}
+
+// The 3-level rollup for one campaign: ad sets (audience/language) → ads (creative).
+// Live from Meta; empty when unconfigured. Best-effort — never throws.
+async function campaignRollup(campaignId: string) {
+  try {
+    const adSets = await listAdSets(campaignId)
+    return await Promise.all(
+      adSets.map(async (as) => {
+        const [m, ads] = await Promise.all([nodeMetrics(as.id), listAds(as.id).catch(() => [])])
+        const adRows = await Promise.all(
+          ads.map(async (ad) => ({
+            id: ad.id, name: ad.name, status: ad.status,
+            ...(await nodeMetrics(ad.id)),
+          })),
+        )
+        return {
+          id: as.id, name: as.name, status: as.status,
+          dailyBudgetAED: filsToAed(as.daily_budget),
+          ...m,
+          ads: adRows,
+        }
+      }),
+    )
+  } catch {
+    return []
+  }
+}
+
 // GET → the group plus a per-arm comparison (spend / leads / CPL from Meta,
 // funnel + quality score from our CRM). No fabricated numbers: unattributed
 // arms report null quality and 0 spend/leads.
@@ -60,7 +101,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const spendAED = Number(c?.insights?.spend) || 0
       const leads = metaLeads(c?.insights ?? null)
       const cpl = leads > 0 ? spendAED / leads : 0
-      const quality = await getCampaignQuality(m.campaignId, name)
+      const [quality, adSets] = await Promise.all([
+        getCampaignQuality(m.campaignId, name),
+        campaignRollup(m.campaignId),
+      ])
       return {
         campaignId: m.campaignId,
         label: m.label,
@@ -70,6 +114,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         running: c?.status === 'ACTIVE',
         spendAED, leads, cpl,
         quality,
+        adSets, // 3-level rollup: ad sets (audience/language) → ads (creative)
       }
     }),
   )
