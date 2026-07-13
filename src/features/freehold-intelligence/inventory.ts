@@ -35,6 +35,9 @@ export interface InventoryProperty {
   sizeRange: string
   roi: number | null
   landingStatus: LandingStatus
+  /** The landing page's own slug when a page row exists (published or draft),
+      else null. Used to preview/edit a draft landing that landingUrl hides. */
+  landingSlug: string | null
   landingUrl: string | null
   hasImages: boolean
   imageCount: number
@@ -187,6 +190,7 @@ function mapProjectToInventory(p: typeof projects[0], index: number): InventoryP
     sizeRange: sizeRangeFor(p.unitTypes),
     roi: AREA_ROI[p.area] ?? 6.5,
     landingStatus,
+    landingSlug: landingStatus !== 'missing' ? slug : null,
     landingUrl: landingStatus !== 'missing' ? `/lp/${slug}` : null,
     hasImages: readiness >= 85,
     imageCount: readiness >= 85 ? Math.round(readiness / 11) : 0,
