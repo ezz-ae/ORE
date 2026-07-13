@@ -14,7 +14,7 @@ type AdSetRow = { id: string; name: string; status: string; dailyBudgetAED: numb
 type Member = {
   campaignId: string; label: string; objective: string; name: string
   status: string; running: boolean; spendAED: number; leads: number; cpl: number; quality: Quality
-  adSets?: AdSetRow[]; rollupError?: boolean
+  adSets?: AdSetRow[]; rollupError?: boolean; metricsError?: boolean
 }
 type GroupData = {
   group: { id: string; name: string; projectSlug: string | null; createdAt: string }
@@ -142,11 +142,11 @@ export default function GroupDetailClient({ id }: { id: string }) {
                 </span>
               </div>
 
-              {/* Metrics */}
+              {/* Metrics — "—" when the live insights fetch failed (not a real 0). */}
               <div className="mt-3 grid grid-cols-3 gap-2">
-                <Metric label={t('cg.metric.spend')} value={aed(m.spendAED)} />
-                <Metric label={t('cg.metric.leads')} value={String(m.leads)} />
-                <Metric label={t('cg.metric.cpl')} value={m.cpl > 0 ? aed(m.cpl) : '—'} highlight={isCplWinner} />
+                <Metric label={t('cg.metric.spend')} value={m.metricsError ? '—' : aed(m.spendAED)} />
+                <Metric label={t('cg.metric.leads')} value={m.metricsError ? '—' : String(m.leads)} />
+                <Metric label={t('cg.metric.cpl')} value={m.metricsError ? '—' : (m.cpl > 0 ? aed(m.cpl) : '—')} highlight={isCplWinner && !m.metricsError} />
               </div>
 
               {/* CRM quality */}

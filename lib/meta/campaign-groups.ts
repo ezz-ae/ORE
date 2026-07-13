@@ -172,6 +172,25 @@ export async function deleteCampaignGroup(id: string): Promise<void> {
   await query(`DELETE FROM meta_campaign_groups WHERE id = $1`, [id])
 }
 
+/** Of the given campaign ids, the subset attributed to this broker (via
+ *  meta_campaign_brokers). Used to stop a broker foldering another broker's
+ *  campaign into their group (which would leak that campaign's metrics and
+ *  unlink it from its owner). Managers bypass this and may fold any campaign. */
+export async function filterOwnedCampaigns(brokerId: string, campaignIds: string[]): Promise<Set<string>> {
+  const owned = new Set<string>()
+  if (!brokerId || !campaignIds.length) return owned
+  try {
+    const rows = await query<{ campaign_id: string }>(
+      `SELECT campaign_id FROM meta_campaign_brokers WHERE broker_id = $1 AND campaign_id = ANY($2)`,
+      [brokerId, campaignIds],
+    )
+    for (const r of rows) owned.add(r.campaign_id)
+  } catch {
+    // table missing / DB error → broker owns nothing here (fail closed)
+  }
+  return owned
+}
+
 /** Map campaignId → its group's { id, name } for the given ids (for list badges). */
 export async function getGroupsForCampaigns(campaignIds: string[]): Promise<Map<string, { id: string; name: string }>> {
   const map = new Map<string, { id: string; name: string }>()

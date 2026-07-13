@@ -116,8 +116,14 @@ Broker request: """${clean.slice(0, 800)}"""`
     const objRaw = String(parsed.objective ?? 'unclear')
     const objective = OBJECTIVE_OF[objRaw] ?? ''
     const lang = String(parsed.language ?? '')
-    const budget = typeof parsed.dailyBudgetAED === 'number' && Number.isFinite(parsed.dailyBudgetAED) && parsed.dailyBudgetAED > 0
+    // Ground the model's budget in the actual text — never accept a number the
+    // broker didn't state (NOTHING-FAKE). Prefer the value the text confirms.
+    const textBudget = budgetOf(clean)
+    const modelBudget = typeof parsed.dailyBudgetAED === 'number' && Number.isFinite(parsed.dailyBudgetAED) && parsed.dailyBudgetAED > 0
       ? parsed.dailyBudgetAED : null
+    const budget = textBudget !== null
+      ? (modelBudget === textBudget ? modelBudget : textBudget)
+      : null
     const clarification = objective ? null
       : (typeof parsed.clarification === 'string' && parsed.clarification.trim() ? parsed.clarification.trim() : fallbackRead(clean).needsClarification)
     return {

@@ -107,16 +107,25 @@ export function languageFingerprint(targeting: Record<string, unknown> | undefin
 // From the wizard's app-side CampaignTargeting — MUST produce the same key shape.
 export function audienceFingerprintFromTargeting(t: CampaignTargeting | undefined): string {
   const g = t
-  const base: Group = { interests: (g?.interests ?? []).map((i) => i.id), behaviors: (g?.behaviors ?? []).map((b) => b.id) }
-  const groups: Group[] = (g?.narrowing?.length ?? 0) > 0
-    ? [base, ...(g!.narrowing!).map((n) => ({ interests: (n.interests ?? []).map((i) => i.id), behaviors: (n.behaviors ?? []).map((b) => b.id) }))]
+  const behaviors = g?.behaviors ?? []
+  const narrowing = (g?.narrowing ?? []).filter((n) => (n.interests?.length || 0) + (n.behaviors?.length || 0) > 0)
+  const customAudienceIds = g?.customAudienceIds ?? []
+  const base: Group = { interests: (g?.interests ?? []).map((i) => i.id), behaviors: behaviors.map((b) => b.id) }
+  const groups: Group[] = narrowing.length > 0
+    ? [base, ...narrowing.map((n) => ({ interests: (n.interests ?? []).map((i) => i.id), behaviors: (n.behaviors ?? []).map((b) => b.id) }))]
     : [base]
+  // Broad (Advantage+) audiences get their age band clamped to 25/65 by
+  // createAdSet — mirror that here so the wizard key matches the live read-back
+  // (else an identical broad audience never matches → duplicate ad sets).
+  const isBroad = (g?.interests?.length ?? 0) === 0 && behaviors.length === 0 && narrowing.length === 0 && customAudienceIds.length === 0
+  const ageMin = isBroad ? Math.min(g?.ageMin ?? 25, 25) : (g?.ageMin ?? '')
+  const ageMax = isBroad ? Math.max(g?.ageMax ?? 65, 65) : (g?.ageMax ?? '')
   return keyFrom({
     countries: sortStr(g?.countries ?? []),
     cities: sortStr(g?.cityKeys ?? []),
-    ageMin: String(g?.ageMin ?? ''), ageMax: String(g?.ageMax ?? ''),
+    ageMin: String(ageMin), ageMax: String(ageMax),
     genders: sortStr(g?.genders ?? []),
-    customAudiences: sortStr(g?.customAudienceIds ?? []),
+    customAudiences: sortStr(customAudienceIds),
     groups,
   })
 }
@@ -173,7 +182,9 @@ async function buildCampaign(c: MetaCampaign): Promise<ExistingCampaign> {
     status: c.status,
     ageDays,
     leads,
-    learning: ageDays < LEARNING_DAYS || leads < LEARNING_LEADS,
+    // Learning = genuinely young AND under the conversion threshold. Using AND
+    // (not OR) means a mature low-volume campaign isn't marked "learning" forever.
+    learning: ageDays < LEARNING_DAYS && leads < LEARNING_LEADS,
     dailyBudgetAED: campBudget > 0 ? campBudget : adsetBudget,
     adSets,
   }

@@ -1,4 +1,4 @@
-import { query } from '@/lib/db'
+import { query, withTransaction } from '@/lib/db'
 import { notifyBrokerLowCredits } from '@/lib/transactional-email'
 import { creditsEarnedForCommission, type CreditTier } from '@/lib/freehold/credits-shared'
 
@@ -159,37 +159,60 @@ export async function deductCreditsForCampaign(
 ): Promise<{ ok: boolean; newBalance?: number; reason?: 'insufficient'; balance?: number }> {
   try {
     await ensureCreditsSchema()
-    // Ensure account exists
+    // Ensure the account row exists so it can be locked inside the transaction.
     await query(`
       INSERT INTO broker_credit_accounts (broker_id, tier, allocated)
       VALUES ($1, 'Starter', 0)
       ON CONFLICT (broker_id) DO NOTHING
     `, [brokerId])
-    // Fail closed on money: never let a spend drive the balance negative. Balance
-    // is the ledger-derived view (allocation + refund + adjustment - spend).
-    const current = await getCreditBalance(brokerId)
-    const bal = current?.balance ?? 0
-    if (credits > 0 && bal < credits) {
-      return { ok: false, reason: 'insufficient', balance: bal }
+
+    // Atomic debit: lock the broker's account row, re-derive the balance from the
+    // ledger under that lock, and only insert the 'spend' when it stays >= 0. Two
+    // concurrent launches for the same broker now serialize on the row lock, so a
+    // broker can never overspend by racing (fail-closed on money).
+    const result = await withTransaction(async (q) => {
+      await q(
+        `SELECT broker_id FROM broker_credit_accounts WHERE broker_id = $1 FOR UPDATE`,
+        [brokerId],
+      )
+      const balRows = await q<{ balance: number }>(
+        `SELECT COALESCE(SUM(CASE
+            WHEN type = 'allocation' THEN  amount
+            WHEN type = 'spend'      THEN -amount
+            WHEN type = 'refund'     THEN  amount
+            WHEN type = 'adjustment' THEN  amount
+            WHEN type = 'earn'       THEN  amount
+            ELSE 0
+          END), 0)::integer AS balance
+         FROM credit_ledger WHERE broker_id = $1`,
+        [brokerId],
+      )
+      const bal = balRows[0]?.balance ?? 0
+      if (credits > 0 && bal < credits) {
+        return { ok: false as const, reason: 'insufficient' as const, balance: bal }
+      }
+      await q(
+        `INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
+         VALUES ($1, 'spend', $2, $3, $4)`,
+        [brokerId, credits, `Campaign: ${campaignName}`, JSON.stringify({ campaign_id: campaignId })],
+      )
+      await q(
+        `INSERT INTO ad_spend_allocations (broker_id, campaign_id, campaign_name, credits_allocated)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT DO NOTHING`,
+        [brokerId, campaignId, campaignName, credits],
+      )
+      return { ok: true as const, newBalance: bal - credits }
+    })
+
+    if (result.ok) {
+      // Low-balance warning (threshold 20) — best-effort, never blocks the spend.
+      const remaining = result.newBalance
+      if (remaining > 0 && remaining <= 20) {
+        await notifyBrokerLowCredits(brokerId, remaining).catch(() => {})
+      }
     }
-    // Record spend in ledger
-    await query(`
-      INSERT INTO credit_ledger (broker_id, type, amount, note, meta)
-      VALUES ($1, 'spend', $2, $3, $4)
-    `, [brokerId, credits, `Campaign: ${campaignName}`, JSON.stringify({ campaign_id: campaignId })])
-    // Record allocation
-    await query(`
-      INSERT INTO ad_spend_allocations (broker_id, campaign_id, campaign_name, credits_allocated)
-      VALUES ($1, $2, $3, $4)
-      ON CONFLICT DO NOTHING
-    `, [brokerId, campaignId, campaignName, credits])
-    const balance = await getCreditBalance(brokerId)
-    // Low-balance warning (threshold 20) — best-effort, never blocks the spend.
-    const remaining = balance?.balance ?? 0
-    if (remaining > 0 && remaining <= 20) {
-      await notifyBrokerLowCredits(brokerId, remaining).catch(() => {})
-    }
-    return { ok: true, newBalance: balance?.balance }
+    return result
   } catch {
     return { ok: false }
   }

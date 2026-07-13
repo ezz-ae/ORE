@@ -38,3 +38,34 @@ export async function query<T extends QueryResultRow = QueryResultRow>(text: str
   const result = await getPool().query<T>(text, params)
   return result.rows
 }
+
+/** A single-connection query bound to an open transaction. */
+export type TxQuery = <T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params?: unknown[],
+) => Promise<T[]>
+
+/**
+ * Run `fn` inside a single BEGIN/COMMIT transaction on one pooled connection,
+ * so `SELECT ... FOR UPDATE` row locks hold for the whole callback. Rolls back
+ * (and rethrows) on any error. Throws if no database is configured — callers
+ * that must stay non-fatal should wrap this in their own try/catch.
+ */
+export async function withTransaction<T>(fn: (q: TxQuery) => Promise<T>): Promise<T> {
+  if (!rawConnectionString) {
+    throw new Error("Missing NEON_DATABASE_URL or DATABASE_URL environment variable")
+  }
+  const client = await getPool().connect()
+  const scoped: TxQuery = async (text, params = []) => (await client.query(text, params)).rows as never
+  try {
+    await client.query("BEGIN")
+    const out = await fn(scoped)
+    await client.query("COMMIT")
+    return out
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {})
+    throw err
+  } finally {
+    client.release()
+  }
+}

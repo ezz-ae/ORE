@@ -76,10 +76,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Persist broker attribution + deduct launch credits. Attribution is
-  // best-effort; the credit deduction is guarded (deductCreditsForCampaign
-  // refuses to drive the balance negative) so spend always reconciles.
-  async function recordBrokerSpend(campaignId: string) {
+  // Persist broker attribution + (optionally) deduct launch credits. Attribution
+  // is best-effort; the credit deduction is guarded (deductCreditsForCampaign
+  // refuses to drive the balance negative) so spend always reconciles. A demo/
+  // local campaign (Meta not connected) never serves an ad, so it is attributed
+  // but NOT charged — mirroring the Google demo fallback.
+  async function recordBrokerSpend(campaignId: string, charge = true) {
     if (!brokerId) return
     try {
       await ensureBrokerTable()
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
          ON CONFLICT (campaign_id) DO NOTHING`,
         [campaignId, brokerId, body.campaignName],
       )
+      if (!charge) return
       const deduction = await deductCreditsForCampaign(brokerId, campaignId, body.campaignName, creditsToSpend)
       if (!deduction.ok) {
         console.error('[meta/launch] credit deduction failed after launch', { campaignId, brokerId, reason: deduction.reason })
@@ -184,7 +187,7 @@ export async function POST(req: NextRequest) {
       // Not connected → persist a local campaign (mirrors the Google flow) so
       // the wizard's success screen + detail page work end to end.
       const local = await createLocalCampaign(body, brokerId)
-      await recordBrokerSpend(local.campaignId)
+      await recordBrokerSpend(local.campaignId, false) // demo campaign never serves → attribute, don't charge
       await recordCampaignProject(local.campaignId, projectSlug)
       await recordLaunchDecision(local.campaignId)
       if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {

@@ -406,13 +406,30 @@ function UnitsSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: LpP
 }
 
 function KeyFactsSection({ d, p }: { d: Record<string, unknown>; p: LpPalette }) {
-  const items = pickArr(d, 'items') as Array<{ label?: string; value?: string }>
+  const all = pickArr(d, 'items') as Array<{ label?: string; value?: string }>
+  // Render every real fact (up to 6) — appended facts like Rental Yield / Unit
+  // types must not be silently sliced away. Columns adapt to the count so 5–6
+  // facts wrap into rows instead of overflowing a fixed four-up strip.
+  const items = all.filter((it) => it && (it.label || it.value)).slice(0, 6)
   if (!items.length) return null
+  const cols = items.length <= 4 ? items.length : 3
+  const colClass: Record<number, string> = {
+    1: 'sm:grid-cols-1', 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4',
+  }
   return (
     <div className="border-b" style={{ borderBottomColor: p.divider, background: p.bgAlt }}>
-      <div className="mx-auto grid max-w-6xl overflow-hidden sm:grid-cols-4">
-        {items.slice(0, 4).map(({ label, value }, i) => (
-          <div key={i} className="px-6 py-6 text-center sm:border-l" style={{ borderLeftColor: i === 0 ? 'transparent' : p.divider }}>
+      <div className={`mx-auto grid max-w-6xl grid-cols-2 overflow-hidden ${colClass[cols] ?? 'sm:grid-cols-3'}`}>
+        {items.map(({ label, value }, i) => (
+          <div
+            key={i}
+            className="px-6 py-6 text-center"
+            style={{
+              borderLeftWidth: i % cols === 0 ? 0 : 1,
+              borderLeftColor: p.divider,
+              borderTopWidth: i >= cols ? 1 : 0,
+              borderTopColor: p.divider,
+            }}
+          >
             <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: p.textFaint }}>{label}</div>
             <div className="mt-2 text-[22px] font-bold" style={{ color: p.textPrimary }}>{value || '—'}</div>
           </div>
