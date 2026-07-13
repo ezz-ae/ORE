@@ -7,6 +7,7 @@ import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
   AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
+  Crop, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -130,6 +131,9 @@ export default function DriveImageEditor() {
   // before an undo discards edits made after an AI turn.
   const [sourceUrl, setSourceUrl] = useState('')
   const [revision, setRevision] = useState(0)
+  // Tabbed tool panel + mobile bottom-sheet access (the rail is hidden < lg).
+  const [tab, setTab] = useState<'crop' | 'adjust' | 'text' | 'brand'>('crop')
+  const [mobileTools, setMobileTools] = useState(false)
 
   const { w: W, h: H } = PRESETS[preset]
 
@@ -434,16 +438,42 @@ export default function DriveImageEditor() {
   const sectionH = 'flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gold'
   const rowBtn = 'rounded-lg border border-line bg-surface px-2.5 py-2 text-xs text-slate-200 transition hover:border-gold/30'
 
-  const toolRail = hasSource ? (
-    <div className="space-y-5">
-      {/* Placement */}
+  // Little proportional rectangles for the aspect-ratio chips.
+  const CHIP: Record<PresetKey, { w: number; h: number }> = {
+    '1_1': { w: 22, h: 22 }, '4_5': { w: 18, h: 22 }, '9_16': { w: 13, h: 23 }, '16_9': { w: 26, h: 15 }, 'link': { w: 26, h: 14 },
+  }
+  const TABS = [
+    { k: 'crop' as const, icon: Crop, label: 'ed.image.tab.crop' },
+    { k: 'adjust' as const, icon: SlidersHorizontal, label: 'ed.image.tab.adjust' },
+    { k: 'text' as const, icon: Type, label: 'ed.image.tab.text' },
+    { k: 'brand' as const, icon: Sparkles, label: 'ed.image.tab.brand' },
+  ]
+
+  const toolContent = hasSource ? (
+    <div>
+      {/* Tab bar — groups the tools so the panel isn't one long scroll */}
+      <div className="sticky top-0 z-10 -mx-3 mb-4 grid grid-cols-4 gap-1 border-b border-white/[0.06] bg-chrome px-3 pb-3 pt-1">
+        {TABS.map((tb) => (
+          <button key={tb.k} type="button" onClick={() => setTab(tb.k)}
+            className={`flex flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] font-medium transition ${tab === tb.k ? 'bg-gold/15 text-gold' : 'text-slate-400 hover:text-white'}`}>
+            <tb.icon className="h-4 w-4" /> {t(tb.label)}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-5">
+      {tab === 'crop' && (<>
+      {/* Placement — visual aspect chips */}
       <section className="space-y-2">
         <div className={sectionH}><Move className="h-3.5 w-3.5" /> {t('ed.tool.placement')}</div>
-        <div className="grid gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           {PRESET_ORDER.map((k) => (
             <button key={k} type="button" onClick={() => { setPreset(k); mark() }}
-              className={`${rowBtn} text-start ${preset === k ? 'border-gold/50 bg-gold/10 text-gold' : ''}`}>
-              {t(PRESETS[k].key)}
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[11px] transition ${preset === k ? 'border-gold/50 bg-gold/10 text-gold' : 'border-line bg-surface text-slate-300 hover:border-gold/30'}`}>
+              <span className="grid h-6 w-7 shrink-0 place-items-center">
+                <span className="block rounded-[2px] border-2 border-current" style={{ width: CHIP[k].w, height: CHIP[k].h }} />
+              </span>
+              <span className="truncate text-start">{t(PRESETS[k].key)}</span>
             </button>
           ))}
         </div>
@@ -459,7 +489,9 @@ export default function DriveImageEditor() {
           <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
         </button>
       </section>
+      </>)}
 
+      {tab === 'adjust' && (<>
       {/* Colors */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
@@ -486,7 +518,9 @@ export default function DriveImageEditor() {
           </div>
         ))}
       </section>
+      </>)}
 
+      {tab === 'text' && (<>
       {/* Text */}
       <section className="space-y-2">
         <div className={sectionH}><Type className="h-3.5 w-3.5" /> {t('ed.tool.text')}</div>
@@ -532,7 +566,9 @@ export default function DriveImageEditor() {
           </div>
         )}
       </section>
+      </>)}
 
+      {tab === 'brand' && (<>
       {/* Logo */}
       <section className="space-y-2">
         <div className={sectionH}><ImagePlus className="h-3.5 w-3.5" /> {t('ed.tool.logo')}</div>
@@ -588,8 +624,9 @@ export default function DriveImageEditor() {
         <label className="block text-[11px] text-slate-400">{t('ed.tool.width')} · {frame.width}px</label>
         <input type="range" min={2} max={96} step={1} value={frame.width} onChange={(e) => { setFrame((f) => ({ ...f, width: Number(e.target.value) })); mark() }} className="w-full accent-gold" />
       </section>
+      </>)}
 
-      {/* Export */}
+      {/* Export — persistent footer (visible on every tab) */}
       <section className="space-y-2 border-t border-white/[0.07] pt-4">
         <div className={sectionH}><Download className="h-3.5 w-3.5" /> {t('ed.tool.export')}</div>
         <button type="button" onClick={download} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
@@ -600,6 +637,7 @@ export default function DriveImageEditor() {
         </button>
         <p className="text-[10px] leading-snug text-slate-500">{t('ed.image.ai.boundary')}</p>
       </section>
+      </div>
     </div>
   ) : undefined // no source yet → the canvas dropzone is the single upload surface
 
@@ -646,7 +684,7 @@ export default function DriveImageEditor() {
       dirty={dirty}
       saving={saving}
       onSave={hasSource ? save : undefined}
-      toolRail={toolRail}
+      toolRail={toolContent}
       aiRail={aiRail}
       actions={hasSource ? (
         <button type="button" onClick={download} title={t('ed.download')} className="rounded-full border border-line p-1.5 text-slate-400 transition hover:text-white">
@@ -657,6 +695,30 @@ export default function DriveImageEditor() {
       {/* Hidden file inputs (always mounted) */}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onSourceFile(f); e.target.value = '' }} />
       <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onLogoFile(f); e.target.value = '' }} />
+
+      {/* Mobile tools — the desktop rail is hidden < lg, so the same panel is
+          reachable from a floating button as a bottom sheet. */}
+      {hasSource && (
+        <div className="lg:hidden">
+          {!mobileTools && (
+            <button type="button" onClick={() => setMobileTools(true)}
+              className="fixed bottom-5 left-1/2 z-[95] flex -translate-x-1/2 items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink shadow-2xl shadow-black/40">
+              <SlidersHorizontal className="h-4 w-4" /> {t('ed.image.tools')}
+            </button>
+          )}
+          {mobileTools && (
+            <div className="fixed inset-0 z-[96] bg-black/50" onClick={() => setMobileTools(false)}>
+              <div className="absolute inset-x-0 bottom-0 max-h-[80vh] rounded-t-2xl border-t border-white/10 bg-chrome" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-3 py-2.5">
+                  <span className="text-sm font-semibold text-white">{t('ed.image.tools')}</span>
+                  <button type="button" onClick={() => setMobileTools(false)} className="rounded-full p-1.5 text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>
+                </div>
+                <div className="max-h-[68vh] overflow-y-auto px-3 pb-6">{toolContent}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {hasSource ? (
         <div className="flex h-full w-full items-center justify-center bg-[#0d0d0f] p-4">
