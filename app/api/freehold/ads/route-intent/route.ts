@@ -5,6 +5,7 @@ import { decideCampaignAction, type CampaignIntent } from '@/lib/meta/campaign-r
 import { buildProjectAdStructure } from '@/lib/meta/campaign-structure'
 import { evaluateSpendAuthority } from '@/lib/meta/spend-authority'
 import { getApplicableSpendRules } from '@/lib/meta/spend-rules'
+import { readCampaignIntent } from '@/lib/meta/intent-reader'
 import { getCampaignInsights } from '@/lib/meta/client'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
@@ -22,22 +23,44 @@ const metaLeads = (ins: MetaInsights | null) =>
 export async function POST(req: NextRequest) {
   const auth = await requireSession()
   if ('res' in auth) return auth.res
-  const body = (await req.json().catch(() => ({}))) as Partial<CampaignIntent> & { projectSlug?: string }
+  const body = (await req.json().catch(() => ({}))) as Partial<CampaignIntent> & { projectSlug?: string; text?: string }
   const projectSlug = String(body.projectSlug ?? '').trim()
   if (!projectSlug) return NextResponse.json({ error: 'projectSlug is required.' }, { status: 400 })
 
+  const structure = await buildProjectAdStructure(projectSlug)
+
+  // Freeform ask → structured intent, grounded in what's already running. If the
+  // objective is genuinely unclear, ask ONE question instead of guessing.
+  let objectiveKey = String(body.objectiveKey ?? '')
+  let language = String(body.language ?? '')
+  let hasNewCreative = body.hasNewCreative !== false
+  let dailyBudgetAED = Number(body.dailyBudgetAED) || 0
+  let read: Awaited<ReturnType<typeof readCampaignIntent>> | null = null
+  if (typeof body.text === 'string' && body.text.trim()) {
+    read = await readCampaignIntent(body.text, {
+      projectSlug,
+      runningObjectives: [...new Set(structure.campaigns.map((c) => c.objectiveKey).filter(Boolean))],
+    })
+    if (!read.objective && read.needsClarification) {
+      return NextResponse.json({ clarification: read.needsClarification, read })
+    }
+    objectiveKey = read.objective || objectiveKey
+    language = read.language || language
+    hasNewCreative = read.hasNewCreative
+    if (read.dailyBudgetAED) dailyBudgetAED = read.dailyBudgetAED
+  }
+
   const intent: CampaignIntent = {
     projectSlug,
-    objectiveKey: String(body.objectiveKey ?? ''),
-    language: String(body.language ?? ''),
+    objectiveKey,
+    language,
     audienceKey: String(body.audienceKey ?? ''),
-    hasNewCreative: body.hasNewCreative !== false, // a wizard launch always brings a creative
-    dailyBudgetAED: Number(body.dailyBudgetAED) || 0,
+    hasNewCreative,
+    dailyBudgetAED,
     brokerId: auth.user.brokerId ?? auth.user.email,
     brokerExperience: body.brokerExperience,
   }
 
-  const structure = await buildProjectAdStructure(projectSlug)
   const decision = decideCampaignAction(intent, structure)
 
   // For a budget move, compute how much the AI may fund autonomously right now.
@@ -73,5 +96,5 @@ export async function POST(req: NextRequest) {
     ? { decision: spend.decision, approvedDailyBudgetAED: spend.approvedDailyBudgetAED }
     : spend
 
-  return NextResponse.json({ decision, spend: safeSpend })
+  return NextResponse.json({ decision, spend: safeSpend, read })
 }
