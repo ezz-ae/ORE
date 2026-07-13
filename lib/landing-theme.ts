@@ -90,7 +90,58 @@ const DAY: LpPalette = {
   placeholder: "rgba(11,11,15,0.30)",
 }
 
-export function lpPalette(theme: LpTheme): LpPalette {
+// "Lagoon" palette for the Signature template — a cool, aqua-tinted atmosphere
+// (turquoise water + the same gold accent) that reads as a premium waterfront /
+// branded community, visibly distinct from the warm default without touching
+// the gold accent baked into the section components.
+const SIGNATURE_NIGHT: LpPalette = {
+  bg: "#04090C",
+  bgAlt: "#07131A",
+  bgGradient:
+    "radial-gradient(ellipse 100% 80% at 20% 50%, rgba(45,180,190,0.16) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 80% 20%, rgba(212,175,55,0.08) 0%, transparent 50%), linear-gradient(135deg, #04090C 0%, #07141C 50%, #04090C 100%)",
+  surface: "rgba(255,255,255,0.02)",
+  surfaceStrong: "rgba(255,255,255,0.05)",
+  surfaceBorder: "rgba(120,220,225,0.12)",
+  divider: "rgba(120,220,225,0.08)",
+  textPrimary: "#FFFFFF",
+  textMuted: "rgba(255,255,255,0.55)",
+  textFaint: "rgba(255,255,255,0.35)",
+  heroOverlaySide:
+    "linear-gradient(to right, rgba(4,9,12,0.95) 0%, rgba(4,9,12,0.80) 50%, rgba(4,9,12,0.60) 100%)",
+  heroOverlayBottom:
+    "linear-gradient(to top, #04090C 0%, transparent 60%, transparent 100%)",
+  topbarBg: "rgba(4,9,12,0.95)",
+  formBg: "rgba(7,19,26,0.90)",
+  inputBg: "rgba(255,255,255,0.03)",
+  placeholder: "rgba(255,255,255,0.20)",
+}
+
+const SIGNATURE_DAY: LpPalette = {
+  bg: "#EFF5F4",
+  bgAlt: "#E2ECEB",
+  bgGradient:
+    "radial-gradient(ellipse 100% 80% at 20% 50%, rgba(20,160,165,0.16) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 80% 20%, rgba(212,175,55,0.10) 0%, transparent 50%), linear-gradient(135deg, #EFF5F4 0%, #F5FAF9 50%, #E6F0EE 100%)",
+  surface: "#FFFFFF",
+  surfaceStrong: "rgba(8,32,31,0.045)",
+  surfaceBorder: "rgba(8,32,31,0.10)",
+  divider: "rgba(8,32,31,0.08)",
+  textPrimary: "#08201F",
+  textMuted: "rgba(8,32,31,0.62)",
+  textFaint: "rgba(8,32,31,0.45)",
+  heroOverlaySide:
+    "linear-gradient(to right, rgba(239,245,244,0.96) 0%, rgba(239,245,244,0.82) 50%, rgba(239,245,244,0.55) 100%)",
+  heroOverlayBottom:
+    "linear-gradient(to top, #EFF5F4 0%, transparent 60%, transparent 100%)",
+  topbarBg: "rgba(239,245,244,0.95)",
+  formBg: "rgba(255,255,255,0.94)",
+  inputBg: "rgba(8,32,31,0.03)",
+  placeholder: "rgba(8,32,31,0.30)",
+}
+
+// The template drives the atmosphere; `signature` gets the lagoon palette, all
+// others keep the warm default. Unknown/empty template → default.
+export function lpPalette(theme: LpTheme, template?: string | null): LpPalette {
+  if (template === "signature") return theme === "day" ? SIGNATURE_DAY : SIGNATURE_NIGHT
   return theme === "day" ? DAY : NIGHT
 }
 

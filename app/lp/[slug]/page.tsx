@@ -1144,11 +1144,13 @@ export default async function LandingPage({
   const L = LP_CHROME[lang]
   const dir = lpDir(lang)
   const theme = resolveTheme(sp.theme)
-  const palette = lpPalette(theme)
 
   const page = await getPage(slug)
-  if (!page) return <NotFound L={L} p={palette} />
-  if (page.isDraft && !(await canPreviewDrafts())) return <NotFound L={L} p={palette} />
+  if (!page) return <NotFound L={L} p={lpPalette(theme)} />
+  if (page.isDraft && !(await canPreviewDrafts())) return <NotFound L={L} p={lpPalette(theme)} />
+
+  // The template drives the page's atmosphere (Signature → lagoon palette).
+  const palette = lpPalette(theme, page.template)
 
   const localized = await translateLandingContent(page, lang)
   const price = fmtAed(localized.project?.priceFromAed, L)
