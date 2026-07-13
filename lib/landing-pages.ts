@@ -734,8 +734,14 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
   if (!row) return null
 
   const payload = toObject(row.payload)
-  const amenities = toArray(payload.amenities).map((item) => pickString(item)).filter(Boolean)
-  const faqs = toArray(payload.faqs)
+  // Refreshed projects (Hex FH-REFRESH-02) keep the rich PF fields under
+  // payload.propertyFinderDetail; net-new projects keep them top-level. Prefer
+  // top-level, fall back to the PF snapshot so both render fully.
+  const pfd = toObject(payload.propertyFinderDetail)
+  const amenitiesRaw = toArray(payload.amenities).length ? toArray(payload.amenities) : toArray(pfd.amenities)
+  const amenities = amenitiesRaw.map((item) => pickString(item)).filter(Boolean)
+  const faqsRaw = toArray(payload.faqs).length ? toArray(payload.faqs) : toArray(pfd.faqs)
+  const faqs = faqsRaw
     .map((item) => toObject(item))
     .map((item) => ({
       question: pickString(item.question),
@@ -752,7 +758,10 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     priceFromAed: pickNumber(row.price_from_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceFrom : null),
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
     rentalYield: pickNumber(row.rental_yield, toObject(payload.investmentHighlights).rentalYield),
-    paymentPlan: normalizePaymentPlan(payload.paymentPlan, payload.paymentPlans),
+    paymentPlan: normalizePaymentPlan(
+      payload.paymentPlan ?? pfd.paymentPlan,
+      payload.paymentPlans ?? pfd.paymentPlans,
+    ),
     amenities,
     faqs,
   }
