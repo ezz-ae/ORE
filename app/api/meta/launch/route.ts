@@ -7,6 +7,13 @@ import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { LaunchCampaignPayload } from '@/lib/meta/types'
 import { query } from '@/lib/db'
 import { deductCreditsForCampaign, getCreditBalance } from '@/lib/freehold/credits-db'
+import { decideCampaignAction, type CampaignIntent, type RouterDecision } from '@/lib/meta/campaign-router'
+import {
+  buildProjectAdStructure, recordCampaignProject,
+  audienceFingerprintFromTargeting, languageFingerprintFromTargeting,
+} from '@/lib/meta/campaign-structure'
+import { recordDecision } from '@/lib/meta/decision-log'
+import { getAutonomyLevel } from '@/lib/freehold/agent-autonomy'
 
 async function ensureBrokerTable() {
   await query(
@@ -91,6 +98,62 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Intent routing ──────────────────────────────────────────────────────────
+  // Read the request as intent against what's already running for this project.
+  // By default (advisory autonomy) this only RECORDS the recommendation — the
+  // launch proceeds unchanged. Under full autopilot, a redundant duplicate
+  // launched during the learning phase is silently HELD (the identical campaign
+  // is already working; a competitor would just burn credits in the same auction).
+  const projectSlug = String(body.listingId)
+  const intent: CampaignIntent = {
+    projectSlug,
+    objectiveKey: String(body.objective),
+    language: languageFingerprintFromTargeting(body.targeting),
+    audienceKey: audienceFingerprintFromTargeting(body.targeting),
+    hasNewCreative: true, // a wizard launch always brings its own creative
+    dailyBudgetAED: body.dailyBudgetAED,
+    brokerId: brokerId ?? sessionUser.email,
+  }
+  let decision: RouterDecision | null = null
+  try {
+    const structure = await buildProjectAdStructure(projectSlug)
+    decision = decideCampaignAction(intent, structure)
+    const autonomy = await getAutonomyLevel()
+    if (autonomy === 3 && decision.action === 'hold') {
+      await recordDecision({
+        projectSlug, campaignId: decision.targetCampaignId ?? null, brokerId: intent.brokerId,
+        action: 'hold', outcome: 'auto', reason: decision.reason,
+      })
+      // Point the wizard's success screen at the live campaign already serving
+      // this objective — no new (competing) campaign, no credits spent.
+      return NextResponse.json(
+        { campaignId: decision.targetCampaignId, held: true, decision, brokerId },
+        { status: 200 },
+      )
+    }
+  } catch {
+    decision = null // routing is best-effort; never block a real launch
+  }
+
+  async function recordLaunchDecision(campaignId: string) {
+    if (!decision) return
+    // A real campaign WAS launched and credits WERE committed on this path, so
+    // the ledger records an executed new_campaign with the true budget movement.
+    // When a smarter action was available, that nuance lives in the reason — we
+    // never label a live launch as 'blocked'/held (which means "nothing spent").
+    const wasBest = decision.action === 'new_campaign'
+    await recordDecision({
+      projectSlug, campaignId, brokerId: intent.brokerId,
+      action: 'new_campaign',
+      outcome: 'auto',
+      reason: wasBest
+        ? decision.reason
+        : `Launched a new campaign. The intent router recommended "${decision.action}" to avoid competing spend on this objective — fold the arms via Campaign Groups. ${decision.adminNote}`,
+      spendBeforeAED: 0,
+      spendAfterAED: body.dailyBudgetAED,
+    })
+  }
+
   try {
     const result = await launchFullCampaign({
       campaignName:     body.campaignName,
@@ -108,22 +171,26 @@ export async function POST(req: NextRequest) {
     })
 
     await recordBrokerSpend(result.campaignId)
+    await recordCampaignProject(result.campaignId, projectSlug) // link for the router
+    await recordLaunchDecision(result.campaignId)
     // Persist the wizard's autopilot policy — the autopilot pass reads it.
     if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
       await setCampaignAutoEnhance(result.campaignId, body.autoEnhance)
     }
 
-    return NextResponse.json({ ...result, brokerId }, { status: 201 })
+    return NextResponse.json({ ...result, brokerId, decision }, { status: 201 })
   } catch (err) {
     if (err instanceof MetaConfigError) {
       // Not connected → persist a local campaign (mirrors the Google flow) so
       // the wizard's success screen + detail page work end to end.
       const local = await createLocalCampaign(body, brokerId)
       await recordBrokerSpend(local.campaignId)
+      await recordCampaignProject(local.campaignId, projectSlug)
+      await recordLaunchDecision(local.campaignId)
       if (body.autoEnhance === 'on' || body.autoEnhance === 'approval' || body.autoEnhance === 'off') {
         await setCampaignAutoEnhance(local.campaignId, body.autoEnhance)
       }
-      return NextResponse.json({ ...local, brokerId, demo: true }, { status: 201 })
+      return NextResponse.json({ ...local, brokerId, demo: true, decision }, { status: 201 })
     }
     if (err instanceof MetaApiError) {
       return NextResponse.json(

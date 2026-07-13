@@ -4,14 +4,17 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Trophy, Trash2, Plus, X, ExternalLink, Check } from 'lucide-react'
+import { ArrowLeft, Loader2, Trophy, Trash2, Plus, X, ExternalLink, Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 
 type Funnel = { key: string; count: number; pct: number }
 type Quality = { score: number | null; attributed: number; reached: number; qualified: number; won: number; junk: number; funnel: Funnel[] }
+type AdRow = { id: string; name: string; status: string; spendAED: number; leads: number; cpl: number }
+type AdSetRow = { id: string; name: string; status: string; dailyBudgetAED: number; spendAED: number; leads: number; cpl: number; ads: AdRow[] }
 type Member = {
   campaignId: string; label: string; objective: string; name: string
   status: string; running: boolean; spendAED: number; leads: number; cpl: number; quality: Quality
+  adSets?: AdSetRow[]; rollupError?: boolean
 }
 type GroupData = {
   group: { id: string; name: string; projectSlug: string | null; createdAt: string }
@@ -40,6 +43,7 @@ export default function GroupDetailClient({ id }: { id: string }) {
   const [campaigns, setCampaigns] = useState<LiveCampaign[]>([])
   const [adding, setAdding] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [openRollup, setOpenRollup] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -169,6 +173,44 @@ export default function GroupDetailClient({ id }: { id: string }) {
                   <p className="mt-2 text-[11px] text-slate-500">{t('cg.quality.noneYet')}</p>
                 )}
               </div>
+
+              {/* Meta rollup failed (rate limit / API) — say so, don't imply empty. */}
+              {m.rollupError && (m.adSets?.length ?? 0) === 0 && (
+                <p className="mt-3 text-[11px] text-slate-500">{t('cg.rollup.unavailable')}</p>
+              )}
+
+              {/* 3-level rollup: ad sets (audience/language) → ads (creative) */}
+              {(m.adSets?.length ?? 0) > 0 && (
+                <div className="mt-3">
+                  <button type="button" onClick={() => setOpenRollup((prev) => { const n = new Set(prev); n.has(m.campaignId) ? n.delete(m.campaignId) : n.add(m.campaignId); return n })}
+                    className="flex w-full items-center justify-between rounded-lg border border-line bg-surface-2/40 px-2.5 py-1.5 text-[11px] text-slate-300 transition hover:border-line-strong">
+                    <span>{t('cg.rollup.title', { n: String(m.adSets?.length ?? 0) })}</span>
+                    {openRollup.has(m.campaignId) ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                  {openRollup.has(m.campaignId) && (
+                    <div className="mt-1.5 space-y-1.5">
+                      {(m.adSets ?? []).map((as) => (
+                        <div key={as.id} className="rounded-lg border border-line bg-surface/50 p-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-200">{as.name}</span>
+                            <span className="shrink-0 text-[10px] text-slate-500">{aed(as.spendAED)} · {as.leads}L · {as.cpl > 0 ? aed(as.cpl) : '—'}</span>
+                          </div>
+                          {as.ads.length > 0 && (
+                            <div className="mt-1 space-y-0.5 border-t border-line pt-1">
+                              {as.ads.map((ad) => (
+                                <div key={ad.id} className="flex items-center justify-between gap-2 pl-2 text-[10px]">
+                                  <span className="min-w-0 flex-1 truncate text-slate-400">{ad.name}</span>
+                                  <span className="shrink-0 text-slate-500">{aed(ad.spendAED)} · {ad.leads}L · {ad.cpl > 0 ? aed(ad.cpl) : '—'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Winner ribbons + link */}
               <div className="mt-3 flex flex-wrap items-center gap-1.5">

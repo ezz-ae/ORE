@@ -3,10 +3,25 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import {
   getCampaignGroup, renameCampaignGroup, addGroupMember, removeGroupMember, deleteCampaignGroup,
 } from '@/lib/meta/campaign-groups'
-import { listCampaigns, getCampaignInsights, MetaConfigError } from '@/lib/meta/client'
+import { listCampaigns, getCampaignInsights, listAdSets, listAds, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { MetaInsights } from '@/lib/meta/types'
+
+// Run async work with a concurrency cap, so a big group doesn't fan out hundreds
+// of simultaneous Meta insight calls and trip the rate limiter.
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let next = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++
+      out[i] = await fn(items[i])
+    }
+  })
+  await Promise.all(workers)
+  return out
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,6 +55,41 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
 const metaLeads = (ins: MetaInsights | null) =>
   (ins?.actions ?? []).filter((a) => a.action_type.includes('lead')).reduce((s, a) => s + (Number(a.value) || 0), 0)
 
+const filsToAed = (v: string | undefined | null) => (v ? Number(v) / 100 : 0)
+// Spend/leads/CPL for any node id (campaign, ad set, or ad) — the /{id}/insights
+// endpoint is generic. Returns zeros when Meta is off or the node is inactive.
+async function nodeMetrics(id: string): Promise<{ spendAED: number; leads: number; cpl: number }> {
+  try {
+    const ins = await getCampaignInsights(id)
+    const spendAED = Number(ins?.spend) || 0
+    const leads = metaLeads(ins)
+    return { spendAED, leads, cpl: leads > 0 ? spendAED / leads : 0 }
+  } catch {
+    return { spendAED: 0, leads: 0, cpl: 0 }
+  }
+}
+
+// The 3-level rollup for one campaign: ad sets (audience/language) → ads
+// (creative). Live from Meta with a bounded fan-out. `error: true` distinguishes
+// a Meta failure (show "unavailable") from a genuinely empty campaign.
+async function campaignRollup(campaignId: string): Promise<{ adSets: unknown[]; error: boolean }> {
+  try {
+    const adSets = await listAdSets(campaignId)
+    const rows = await mapLimit(adSets, 4, async (as) => {
+      const [m, ads] = await Promise.all([nodeMetrics(as.id), listAds(as.id).catch(() => [])])
+      const adRows = await mapLimit(ads, 4, async (ad) => ({
+        id: ad.id, name: ad.name, status: ad.status, ...(await nodeMetrics(ad.id)),
+      }))
+      return { id: as.id, name: as.name, status: as.status, dailyBudgetAED: filsToAed(as.daily_budget), ...m, ads: adRows }
+    })
+    return { adSets: rows, error: false }
+  } catch (err) {
+    // Meta rate-limit / API error is NOT "no ad sets" — flag it so the UI can
+    // say "unavailable" instead of implying the campaign is empty.
+    return { adSets: [], error: err instanceof MetaApiError }
+  }
+}
+
 // GET → the group plus a per-arm comparison (spend / leads / CPL from Meta,
 // funnel + quality score from our CRM). No fabricated numbers: unattributed
 // arms report null quality and 0 spend/leads.
@@ -60,7 +110,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       const spendAED = Number(c?.insights?.spend) || 0
       const leads = metaLeads(c?.insights ?? null)
       const cpl = leads > 0 ? spendAED / leads : 0
-      const quality = await getCampaignQuality(m.campaignId, name)
+      const [quality, rollup] = await Promise.all([
+        getCampaignQuality(m.campaignId, name),
+        campaignRollup(m.campaignId),
+      ])
       return {
         campaignId: m.campaignId,
         label: m.label,
@@ -70,6 +123,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         running: c?.status === 'ACTIVE',
         spendAED, leads, cpl,
         quality,
+        adSets: rollup.adSets, // 3-level rollup: ad sets (audience/language) → ads (creative)
+        rollupError: rollup.error, // true = Meta failure, not an empty campaign
       }
     }),
   )
