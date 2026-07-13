@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
+import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import {
-  getCampaignGroup, renameCampaignGroup, addGroupMember, removeGroupMember, deleteCampaignGroup,
+  getCampaignGroup, renameCampaignGroup, addGroupMember, removeGroupMember, deleteCampaignGroup, filterOwnedCampaigns,
 } from '@/lib/meta/campaign-groups'
 import { listCampaigns, getCampaignInsights, listAdSets, listAds, MetaConfigError, MetaApiError } from '@/lib/meta/client'
 import { listLocalCampaigns } from '@/lib/meta/local-store'
@@ -26,7 +27,7 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type CampaignLite = { name: string; status: string; objective: string; insights: MetaInsights | null }
+type CampaignLite = { name: string; status: string; objective: string; insights: MetaInsights | null; insightsError: boolean }
 
 // Resolve every campaign the account can see (Meta live, else the local store)
 // into a lite map, with insights attached for the active ones.
@@ -34,18 +35,20 @@ async function campaignMap(): Promise<Map<string, CampaignLite>> {
   const map = new Map<string, CampaignLite>()
   try {
     const campaigns = await listCampaigns()
-    for (const c of campaigns) map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null })
+    for (const c of campaigns) map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null, insightsError: false })
     await Promise.all(
       [...map.entries()].map(async ([id, entry]) => {
         if (entry.status === 'ACTIVE') {
-          try { entry.insights = await getCampaignInsights(id) } catch { /* leave null */ }
+          // A FAILED insights fetch is not "AED 0" — flag it so the arm renders
+          // "—" (unavailable) rather than fabricating a zero as a real number.
+          try { entry.insights = await getCampaignInsights(id) } catch (e) { entry.insightsError = e instanceof MetaApiError }
         }
       }),
     )
   } catch (err) {
     if (err instanceof MetaConfigError) {
       for (const c of await listLocalCampaigns()) {
-        map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null })
+        map.set(c.id, { name: c.name, status: c.status, objective: c.objective, insights: null, insightsError: false })
       }
     }
   }
@@ -122,6 +125,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         status: c?.status || 'UNKNOWN',
         running: c?.status === 'ACTIVE',
         spendAED, leads, cpl,
+        metricsError: c?.insightsError ?? false, // true = Meta failure; show "—", not a real 0
         quality,
         adSets: rollup.adSets, // 3-level rollup: ad sets (audience/language) → ads (creative)
         rollupError: rollup.error, // true = Meta failure, not an empty campaign
@@ -167,6 +171,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     } else if (action === 'addMember') {
       const campaignId = String(body.campaignId ?? '').trim()
       if (!campaignId) return NextResponse.json({ error: 'campaignId is required.' }, { status: 400 })
+      // A broker may only fold in a campaign attributed to them (managers: any).
+      const isManager = (MANAGEMENT_ROLES as readonly string[]).includes(auth.user.role)
+      if (!isManager) {
+        const owned = await filterOwnedCampaigns(auth.user.brokerId ?? auth.user.email, [campaignId])
+        if (!owned.has(campaignId)) return NextResponse.json({ error: 'That campaign is not yours to add.' }, { status: 403 })
+      }
       await addGroupMember(id, campaignId, String(body.objective ?? ''), String(body.label ?? ''))
     } else if (action === 'removeMember') {
       const campaignId = String(body.campaignId ?? '').trim()

@@ -86,22 +86,39 @@ function fromKeys(o: Record<string, unknown>): PaymentPlanStages | undefined {
   })
 }
 
-// 2/3) Free text: "10% down / 50% during construction / 40% on handover".
+// 2/3) Free text, either label order:
+//   "10% down / 50% during build / 40% on handover"  (label AFTER the number)
+//   "Down payment: 20%, Construction: 50%, Handover: 30%"  (label BEFORE)
 function fromDescription(text: string): PaymentPlanStages | undefined {
-  // Capture each "<pct>%" with the label that follows it, up to the next number
-  // (so a trailing "60" of the next stage isn't swallowed into this label).
-  const matches = [...text.matchAll(/(\d+(?:\.\d+)?)\s*%\s*([^\d%]*)/g)]
-  if (!matches.length) return undefined
   const acc: PaymentPlanStages = { downPayment: 0, duringConstruction: 0, onHandover: 0, postHandover: 0 }
   let hit = false
-  matches.forEach((m, i) => {
-    const p = toPct(m[1])
-    if (p === null) return
-    // First unlabeled % reads as the down payment; later ones as construction.
-    const bucket = bucketFor(m[2] || "") ?? (i === 0 ? "downPayment" : "duringConstruction")
-    acc[bucket] += p
-    hit = true
-  })
+  const pctOf = (s: string): number | null => {
+    const m = s.match(/(\d+(?:\.\d+)?)\s*%/)
+    return m ? toPct(m[1]) : null
+  }
+  // When the plan is delimited (comma / slash / newline / "and"), each segment
+  // carries its OWN label + number regardless of order — bucket by the segment.
+  if (/[,;/\n]|\band\b/i.test(text)) {
+    text.split(/[,;/\n]+|\band\b/i).map((s) => s.trim()).filter(Boolean).forEach((seg, i) => {
+      const p = pctOf(seg)
+      if (p === null) return
+      const bucket = bucketFor(seg) ?? (i === 0 ? "downPayment" : "duringConstruction")
+      acc[bucket] += p
+      hit = true
+    })
+  } else {
+    // Undelimited run: capture each "<pct>%" with the label that FOLLOWS it, up
+    // to the next number (so a trailing "60" of the next stage isn't swallowed).
+    const matches = [...text.matchAll(/(\d+(?:\.\d+)?)\s*%\s*([^\d%]*)/g)]
+    if (!matches.length) return undefined
+    matches.forEach((m, i) => {
+      const p = toPct(m[1])
+      if (p === null) return
+      const bucket = bucketFor(m[2] || "") ?? (i === 0 ? "downPayment" : "duringConstruction")
+      acc[bucket] += p
+      hit = true
+    })
+  }
   return hit ? finalize(acc) : undefined
 }
 

@@ -665,6 +665,11 @@ const normalizeSections = (
       .filter(Boolean) as LandingSection[]
   }
 
+  // Sections that came from storage carry a DELIBERATE order — the template's
+  // arrangement (campaign = lead-form high) or the editor's reordering. Only the
+  // fully-default path (nothing stored) gets sorted into fallbackOrder.
+  const hadStoredOrder = sections.length > 0
+
   if (!sections.length) {
     sections = buildDefaultSections(project, row)
   }
@@ -713,7 +718,10 @@ const normalizeSections = (
     }
   }
 
-  withFallbacks.sort((a, b) => fallbackOrder.indexOf(a.type) - fallbackOrder.indexOf(b.type))
+  // Preserve the stored/authored order; only sort a purely-default page.
+  if (!hadStoredOrder) {
+    withFallbacks.sort((a, b) => fallbackOrder.indexOf(a.type) - fallbackOrder.indexOf(b.type))
+  }
   return withFallbacks
 }
 

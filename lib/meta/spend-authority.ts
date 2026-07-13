@@ -100,6 +100,17 @@ export function evaluateSpendAuthority(
     }
   }
 
+  // Never fund on absent data — regardless of which gates a rule sets. With no
+  // attributed lead / no CPL signal there is nothing to justify autonomous spend.
+  if (results.cplAED === null || results.leads <= 0) {
+    return {
+      decision: 'blocked',
+      approvedDailyBudgetAED: current,
+      reason: 'No attributed-result signal yet (no leads / no CPL) — the increase is held for admin approval.',
+      ruleId: null,
+    }
+  }
+
   // Each satisfied rule authorizes a ceiling; the AI may use the most generous
   // envelope the admin has granted. Track the best miss reason if none pass.
   let bestCeiling = current
