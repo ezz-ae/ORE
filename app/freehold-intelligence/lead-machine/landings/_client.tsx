@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -42,7 +42,17 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   const [bulkCreating, setBulkCreating] = useState(false)
   const [generatingId, setGeneratingId] = useState<string | null>(null)
   const [template, setTemplate] = useState<LandingTemplateKey>('classic')
+  // Pending broker edit-requests awaiting an approver — badge on the inbox link.
+  // Only counted for approvers (the API returns canApprove:false for brokers).
+  const [pendingEdits, setPendingEdits] = useState(0)
   const t = useT()
+
+  useEffect(() => {
+    fetch('/api/freehold/landing-edits?status=pending', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.canApprove && Array.isArray(d.requests)) setPendingEdits(d.requests.length) })
+      .catch(() => {})
+  }, [])
 
   const props = properties
     .filter((p) => filter === 'All' || p.landingStatus === filter)
@@ -124,6 +134,11 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
               className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium text-slate-200 transition hover:text-white"
             >
               <Inbox className="h-3.5 w-3.5" /> {t('lper.navLabel')}
+              {pendingEdits > 0 && (
+                <span className="ms-0.5 inline-flex min-w-[18px] items-center justify-center rounded-full bg-gold px-1.5 py-0.5 text-[10px] font-bold leading-none text-ink">
+                  {pendingEdits}
+                </span>
+              )}
             </Link>
             <button
               data-coach="lm-landing-create"
