@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap } from 'lucide-react'
+import { Megaphone, Plus, AlertCircle, ArrowUpRight, Zap, Layers } from 'lucide-react'
 import { CampaignList } from './_components/CampaignList'
 import { PageHeader, StatCard, buttonClass } from '@/components/freehold/ui'
 import { DemoNotice } from '@/components/freehold/demo-badge'
@@ -102,11 +102,15 @@ export default async function CampaignsPage() {
         title={t('lm.campaigns.title')}
         subtitle={isConfigError ? t('lm.campaigns.subtitleNotConnected') : t('lm.campaigns.subtitle', { n: String(n), plural: n !== 1 ? 's' : '' })}
         actions={
-          // ONE launch entry — /campaigns/launch was only a redirect to /new,
-          // so two side-by-side buttons led to the same wizard.
-          <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass('primary', 'md')}>
-            <Plus className="h-3.5 w-3.5" /> {t('lm.campaigns.newCampaign')}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/freehold-intelligence/lead-machine/campaigns/groups" className={buttonClass('secondary', 'md')}>
+              <Layers className="h-3.5 w-3.5" /> {t('cg.nav')}
+            </Link>
+            {/* ONE launch entry — /campaigns/launch was only a redirect to /new. */}
+            <Link href="/freehold-intelligence/lead-machine/campaigns/new" className={buttonClass('primary', 'md')}>
+              <Plus className="h-3.5 w-3.5" /> {t('lm.campaigns.newCampaign')}
+            </Link>
+          </div>
         }
       />
 
