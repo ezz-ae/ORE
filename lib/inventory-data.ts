@@ -1,4 +1,5 @@
 import { query } from "@/lib/db"
+import { normalizePaymentPlan } from "@/lib/payment-plan"
 import type {
   InventoryProperty,
   LandingStatus,
@@ -54,13 +55,32 @@ function mapLandingStatus(landing: LandingInfo | undefined): LandingStatus {
   return landing.pendingReview ? 'pending_review' : 'draft'
 }
 
+// Refreshed projects (Hex FH-REFRESH-02) keep PF fields under
+// payload.propertyFinderDetail; net-new keep them top-level. Read the snapshot.
+const pfDetail = (payload: Record<string, unknown> | null): Record<string, unknown> =>
+  payload && typeof payload.propertyFinderDetail === 'object' && payload.propertyFinderDetail
+    ? (payload.propertyFinderDetail as Record<string, unknown>)
+    : {}
+
 function extractPaymentPlan(payload: Record<string, unknown> | null): string | null {
-  if (!payload?.paymentPlan) return null
-  const pp = payload.paymentPlan
-  if (typeof pp === 'string') return pp
+  const pp = payload?.paymentPlan
+  if (typeof pp === 'string' && pp.trim()) return pp
   if (pp && typeof pp === 'object') {
     const r = pp as Record<string, unknown>
-    return (r.description || r.summary || r.label) as string | null
+    const desc = (r.description || r.summary || r.label) as string | undefined
+    if (desc) return desc
+  }
+  // Normalized fallback covers top-level + the PF snapshot's paymentPlans array.
+  const pfd = pfDetail(payload)
+  const stages = normalizePaymentPlan(
+    (payload?.paymentPlan ?? pfd.paymentPlan) as unknown,
+    (payload?.paymentPlans ?? pfd.paymentPlans) as unknown,
+  )
+  if (stages) {
+    const parts = [stages.downPayment, stages.duringConstruction, stages.onHandover, stages.postHandover]
+      .filter((n) => n > 0)
+      .map((n) => `${n}%`)
+    if (parts.length) return parts.join(' / ')
   }
   return null
 }
@@ -77,6 +97,9 @@ function extractUnitTypes(payload: Record<string, unknown> | null): string[] {
       ),
     ]
   }
+  // PF snapshot exposes propertyTypes (string[]) for refreshed projects.
+  const pt = pfDetail(payload).propertyTypes
+  if (Array.isArray(pt)) return [...new Set(pt.map((t) => String(t)).filter(Boolean))]
   return []
 }
 
