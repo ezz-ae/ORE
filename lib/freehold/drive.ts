@@ -17,7 +17,7 @@ export const EDITOR_STATUS: Record<EditorType, EditorStatus> = {
   doc:     'real',
   image:   'real',
   video:   'scoped',
-  pdf:     'view',
+  pdf:     'scoped', // view + AI extract + real page edits (stamp/rotate/delete/merge) via pdf-lib
 }
 
 // Which editor opens a given Library asset. A text-only creative (no url)
