@@ -6,8 +6,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Download, ExternalLink, FileSearch, BookOpen, ArrowLeft, ScanText, Stamp, QrCode, Upload, Save,
+  Layers, RotateCw, Trash2, FilePlus,
 } from 'lucide-react'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
 import QRCode from 'qrcode'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -45,6 +46,16 @@ export default function DrivePdfSurface() {
   const [footer, setFooter] = useState('')
   const [pageTarget, setPageTarget] = useState<'first' | 'last' | 'all'>('all')
   const [stamping, setStamping] = useState(false)
+  // Page editing — real structural edits via pdf-lib (rotate / delete / merge).
+  // The working document lives in `work`; each op reloads, mutates, re-saves it.
+  const [showPages, setShowPages] = useState(false)
+  const [pagesSrc, setPagesSrc] = useState<File | null>(null)
+  const pagesSrcRef = useRef<HTMLInputElement | null>(null)
+  const mergeRef = useRef<HTMLInputElement | null>(null)
+  const [work, setWork] = useState<Uint8Array | null>(null)
+  const [pageCount, setPageCount] = useState(0)
+  const [delSpec, setDelSpec] = useState('')
+  const [pageBusy, setPageBusy] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -139,6 +150,79 @@ export default function DrivePdfSurface() {
     } catch { toast.error(t('ed.pdf.stampFailed')) } finally { setStamping(false) }
   }
 
+  // ── Page editing (rotate / delete / merge) — real pdf-lib document edits ──────
+  async function loadWork(): Promise<PDFDocument | null> {
+    let bytes: ArrayBuffer | Uint8Array | null = work
+    if (!bytes) {
+      if (pagesSrc) bytes = await pagesSrc.arrayBuffer()
+      else if (item?.url) { try { const r = await fetch(item.url); if (r.ok) bytes = await r.arrayBuffer() } catch { /* CORS */ } }
+    }
+    if (!bytes) { toast.error(t('ed.pdf.stampNeedFile')); return null }
+    try { return await PDFDocument.load(bytes) } catch { toast.error(t('ed.pdf.pagesLoadFailed')); return null }
+  }
+  async function commitDoc(pdf: PDFDocument) {
+    const out = await pdf.save()
+    setWork(out); setPageCount(pdf.getPageCount())
+  }
+  async function openPages() {
+    setShowPages(true)
+    if (!work) { setPageBusy(true); try { const pdf = await loadWork(); if (pdf) await commitDoc(pdf) } finally { setPageBusy(false) } }
+  }
+  async function rotateAll() {
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      pdf.getPages().forEach((p) => p.setRotation(degrees(((p.getRotation().angle || 0) + 90) % 360)))
+      await commitDoc(pdf); toast.success(t('ed.pdf.pagesRotated'))
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function deletePages() {
+    const nums = delSpec.split(/[,\s]+/).map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n))
+    if (!nums.length) { toast.error(t('ed.pdf.pagesPickDelete')); return }
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const total = pdf.getPageCount()
+      const idx = [...new Set(nums.map((n) => n - 1).filter((i) => i >= 0 && i < total))].sort((a, b) => b - a)
+      if (!idx.length) { toast.error(t('ed.pdf.pagesPickDelete')); return }
+      if (idx.length >= total) { toast.error(t('ed.pdf.pagesCantDeleteAll')); return }
+      idx.forEach((i) => pdf.removePage(i))
+      await commitDoc(pdf); setDelSpec(''); toast.success(t('ed.pdf.pagesDeleted'))
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function mergePdf(file: File | null) {
+    if (!file) return
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const other = await PDFDocument.load(await file.arrayBuffer())
+      const copied = await pdf.copyPages(other, other.getPageIndices())
+      copied.forEach((p) => pdf.addPage(p))
+      await commitDoc(pdf); toast.success(t('ed.pdf.pagesMerged'))
+    } catch { toast.error(t('ed.pdf.pagesMergeFailed')) } finally { setPageBusy(false) }
+  }
+  function downloadWork() {
+    if (!work) return
+    const blob = new Blob([work.slice() as unknown as BlobPart], { type: 'application/pdf' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = `${(item?.title || 'document').replace(/[^\w-]+/g, '_').slice(0, 50)}-edited.pdf`
+    a.click(); URL.revokeObjectURL(a.href)
+  }
+  async function saveWork() {
+    if (!work) return
+    setPageBusy(true)
+    try {
+      const dataUrl = `data:application/pdf;base64,${u8ToBase64(work)}`
+      const res = await fetch('/api/freehold/drive/save-pdf', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: `${item?.title || 'PDF'} — edited`, dataUrl }),
+      })
+      const d = await res.json()
+      if (res.ok && d.item) { toast.success(t('ed.pdf.pagesSaved')); router.push(`/freehold-intelligence/drive/editor/pdf/${d.item.id}`) }
+      else toast.error(d.error || t('ed.pdf.stampFailed'))
+    } catch { toast.error(t('ed.pdf.stampFailed')) } finally { setPageBusy(false) }
+  }
+
   if (loading) return (
     <div className="flex h-[calc(100vh-56px)] items-center justify-center text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
   )
@@ -194,6 +278,15 @@ export default function DrivePdfSurface() {
         </Link>
       </section>
 
+      {/* Pages — real structural edits (rotate / delete / merge) via pdf-lib */}
+      <section className="space-y-2 border-t border-white/[0.07] pt-4">
+        <div className={sectionH}><Layers className="h-3.5 w-3.5" /> {t('ed.pdf.pages')}</div>
+        <button type="button" onClick={() => (showPages ? setShowPages(false) : openPages())} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
+          <Layers className="h-3.5 w-3.5" /> {showPages ? t('ed.pdf.pagesClose') : t('ed.pdf.pagesOpen')}
+        </button>
+        <p className="text-[10px] leading-snug text-slate-500">{t('ed.pdf.pagesNote')}</p>
+      </section>
+
       {/* Stamp — real in-place stamping (Trakhees permit QR + number + footer) */}
       <section className="space-y-2 border-t border-white/[0.07] pt-4">
         <div className={sectionH}><Stamp className="h-3.5 w-3.5" /> {t('ed.pdf.stamp')}</div>
@@ -222,8 +315,51 @@ export default function DrivePdfSurface() {
         onChange={(e) => { const f = e.target.files?.[0]; if (f) extract(f); e.target.value = '' }} />
       <input ref={stampFileRef} type="file" accept="application/pdf,.pdf" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0] ?? null; setStampFile(f); e.target.value = '' }} />
+      <input ref={pagesSrcRef} type="file" accept="application/pdf,.pdf" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0] ?? null; setPagesSrc(f); setWork(null); setPageCount(0); e.target.value = '' }} />
+      <input ref={mergeRef} type="file" accept="application/pdf,.pdf" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0] ?? null; mergePdf(f); e.target.value = '' }} />
 
-      {showStamp ? (
+      {showPages ? (
+        <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
+          <div className="mb-4 flex items-center gap-2">
+            <button type="button" onClick={() => setShowPages(false)} className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" /> {t('ed.pdf.view')}</button>
+          </div>
+          <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-white"><Layers className="h-4 w-4 text-gold" /> {t('ed.pdf.pagesTitle')}</h2>
+          <p className="mb-4 text-xs text-slate-500">{work ? t('ed.pdf.pageCount', { n: String(pageCount) }) : t('ed.pdf.pagesNote')}</p>
+          <div className="space-y-3 rounded-2xl border border-line bg-surface-2/40 p-4">
+            {!item.url && (
+              <div>
+                <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.stampSource')}</label>
+                <button type="button" onClick={() => pagesSrcRef.current?.click()} className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-slate-200 transition hover:border-gold/30">
+                  <Upload className="h-3.5 w-3.5" /> {pagesSrc ? pagesSrc.name.slice(0, 40) : t('ed.pdf.stampUpload')}
+                </button>
+              </div>
+            )}
+            <button type="button" onClick={rotateAll} disabled={pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+              {pageBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} {t('ed.pdf.rotate')}
+            </button>
+            <div>
+              <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.deletePagesLabel')}</label>
+              <div className="flex gap-1.5">
+                <input value={delSpec} onChange={(e) => setDelSpec(e.target.value)} inputMode="numeric" placeholder="2, 5" className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600" />
+                <button type="button" onClick={deletePages} disabled={pageBusy || !delSpec.trim()} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-50"><Trash2 className="h-4 w-4" /> {t('ed.pdf.deletePagesCta')}</button>
+              </div>
+            </div>
+            <button type="button" onClick={() => mergeRef.current?.click()} disabled={pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
+              <FilePlus className="h-4 w-4" /> {t('ed.pdf.mergeCta')}
+            </button>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={saveWork} disabled={pageBusy || !work} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                {pageBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('ed.pdf.pagesSave')}
+              </button>
+              <button type="button" onClick={downloadWork} disabled={!work} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-slate-200 transition hover:text-white disabled:opacity-50">
+                <Download className="h-4 w-4" /> {t('ed.download')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : showStamp ? (
         <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
           <div className="mb-4 flex items-center gap-2">
             <button type="button" onClick={() => setShowStamp(false)} className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" /> {t('ed.pdf.view')}</button>
