@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
-import { isLandingTemplateKey } from "@/lib/landing-pages"
+import { isLandingTemplateKey, landingTemplate } from "@/lib/landing-pages"
 import { normalizePaymentPlan } from "@/lib/payment-plan"
 
 export const runtime = "nodejs"
@@ -207,263 +207,131 @@ export async function POST(req: NextRequest) {
         ? `${project.rental_yield.toFixed(1)}% rental yield`
         : "Yield details on request"
 
-    const classicSections = [
-      {
-        type: "hero",
-        data: {
-          title: headline,
-          subtitle: subheadline,
-          eyebrow: `${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
-          chips: [toText(project.area) || "Dubai", formattedPrice, formattedYield],
-        },
-      },
-      {
-        type: "market-intelligence",
-        data: {
-          title: "AI Market Read",
-          subtitle: "A smarter campaign narrative derived from the listing.",
-          summary: `${toText(project.name) || finalProjectSlug} is being positioned in ${toText(project.area) || "Dubai"} for buyers seeking ${formattedYield.toLowerCase()} and guided access to live availability.`,
-          bullets: [
-            `Area focus: ${toText(project.area) || "Dubai"}`,
-            `Entry point: ${formattedPrice}`,
-            `Income lens: ${formattedYield}`,
-            `Campaign path: /lp/${finalSlug}`,
-          ],
-        },
-      },
-      {
-        type: "key-facts",
-        data: {
-          items: [
-            { label: "Project", value: toText(project.name) || finalProjectSlug },
-            { label: "Area", value: toText(project.area) || "Dubai" },
-            {
-              label: "Starting Price",
-              value: formattedPrice,
-            },
-            {
-              label: "Rental Yield",
-              value: formattedYield,
-            },
-          ],
-        },
-      },
-      // Included only when the project record carries real plan numbers.
-      ...(() => {
-        const plan = planStages
-        return plan ? [{ type: "payment-plan", data: plan }] : []
-      })(),
-      {
-        type: "roi",
-        data: {
-          expectedRoi: typeof project.rental_yield === "number" ? project.rental_yield : 0,
-          rentalYield: typeof project.rental_yield === "number" ? project.rental_yield : 0,
-          startPriceAed: typeof project.price_from_aed === "number" ? project.price_from_aed : 0,
-        },
-      },
-      {
-        type: "amenities",
-        data: {
-          items: amenityItems,
-        },
-      },
-      {
-        type: "faq",
-        data: {
-          items: faqItems,
-        },
-      },
-      {
-        type: "why-dubai",
-        data: {},
-      },
-      {
-        type: "location",
-        data: {
-          area: toText(project.area) || "Dubai",
-          developer: toText(toObject(payload.developer).name) || "Freehold",
-          title: "Location & Positioning",
-          subtitle: "Use this page to qualify the buyer and frame the project quickly.",
-          highlights: [
-            `${toText(project.area) || "Dubai"} market focus`,
-            `Developer: ${toText(toObject(payload.developer).name) || "Freehold"}`,
-            `Starting price: ${formattedPrice}`,
-          ],
-        },
-      },
-      {
-        type: "ai-concierge",
-        data: {
-          title: "Ask Freehold AI",
-          subtitle: "Use AI to compare this launch, explain ROI, and qualify the lead before a broker handoff.",
-          prompts: [
-            `Is ${toText(project.name) || finalProjectSlug} better for yield or appreciation?`,
-            `Compare ${toText(project.area) || "this area"} with Downtown Dubai`,
-            `What type of investor usually buys in this project?`,
-          ],
-        },
-      },
-      {
-        type: "download-brochure",
-        data: {},
-      },
-      {
-        type: "lead-form",
-        data: {
-          title: "Get brochure & latest inventory",
-          subtitle: "Submit your details and our team will contact you with AI-backed talking points and live availability.",
-        },
-      },
-    ]
+    // Extra content pulled from the (now richer) inventory — PF-snapshot aware,
+    // so refreshed projects fill the same holders as net-new ones.
+    const realDeveloper = toText(toObject(payload.developer).name) || toText(pfd.developerName)
+    const developerName = realDeveloper || "Freehold"
+    const developerLogo = toText(toObject(payload.developer).logoUrl) || toText(pfd.developerLogo)
+    const descriptionText = (toText(payload.description) || toText(payload.llm_context) || toText(pfd.descriptionPlain)).slice(0, 1400)
+    const unitRows = toArray(payload.units)
+      .map((u) => {
+        const o = toObject(u)
+        return {
+          type: toText(o.type) || toText(o.name),
+          size: toText(o.size),
+          price: toText(o.price) || toText(o.priceRange),
+          features: toArray(o.features).filter((f) => typeof f === "string"),
+        }
+      })
+      .filter((u) => u.type)
+    const propertyTypeLabels = toArray(pfd.propertyTypes).map((t) => toText(t)).filter(Boolean)
 
-    // Conversion-optimized arrangement for cold paid (Meta) traffic: lead capture
-    // high (right after hero), payment-plan hook + scarcity lead, closing CTA.
-    // Same section types/data shapes as classic so existing components render it.
-    const campaignSections = [
-      {
-        type: "hero",
-        data: {
-          title: headline,
-          subtitle: subheadline,
-          eyebrow: `Limited units · ${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
-          chips: [formattedPrice, "Direct payment plan", "No bank required"],
-        },
-      },
-      {
-        type: "lead-form",
-        data: {
-          title: "Register your interest",
-          subtitle: "Limited units — get the price list, floor plans and full payment plan.",
-        },
-      },
-      // Included only when the project record carries real plan numbers.
-      ...(() => {
-        const plan = planStages
-        return plan ? [{ type: "payment-plan", data: plan }] : []
-      })(),
-      {
-        type: "key-facts",
-        data: {
-          items: [
-            { label: "Project", value: toText(project.name) || finalProjectSlug },
-            { label: "Area", value: toText(project.area) || "Dubai" },
-            { label: "Developer", value: toText(toObject(payload.developer).name) || "Freehold" },
-            { label: "Starting Price", value: formattedPrice },
-          ],
-        },
-      },
-      {
-        type: "gallery",
-        data: { images: galleryImages },
-      },
-      {
-        type: "amenities",
-        data: {
-          items: amenityItems,
-        },
-      },
-      {
-        type: "location",
-        data: {
-          area: toText(project.area) || "Dubai",
-          developer: toText(toObject(payload.developer).name) || "Freehold",
-          title: "Location & Positioning",
-          subtitle: "Use this page to qualify the buyer and frame the project quickly.",
-          highlights: [
-            `${toText(project.area) || "Dubai"} market focus`,
-            `Developer: ${toText(toObject(payload.developer).name) || "Freehold"}`,
-            `Starting price: ${formattedPrice}`,
-          ],
-        },
-      },
-      {
-        type: "faq",
-        data: {
-          items: faqItems,
-        },
-      },
-      {
-        type: "lead-form",
-        data: {
-          title: "Speak to a specialist",
-          subtitle: "Our team will call you with live availability and the best unit for your budget.",
-        },
-      },
-    ]
+    // Build each section's data from its TYPE — one source of truth, so every
+    // template renders the same rich data and any empty holder self-hides.
+    let leadFormSeen = 0
+    const sectionData = (type: string): Record<string, unknown> => {
+      switch (type) {
+        case "hero":
+          return {
+            title: headline,
+            subtitle: subheadline,
+            eyebrow:
+              template === "signature"
+                ? `Waterfront living · ${toText(project.area) || "Dubai"} · ${developerName}`
+                : template === "campaign"
+                  ? `Limited units · ${toText(project.area) || "Dubai"} · ${developerName}`
+                  : `${toText(project.area) || "Dubai"} · ${developerName}`,
+            chips:
+              template === "campaign"
+                ? [formattedPrice, "Direct payment plan", "No bank required"]
+                : template === "signature"
+                  ? [toText(project.area) || "Dubai", "Signature community", formattedPrice]
+                  : [toText(project.area) || "Dubai", formattedPrice, formattedYield],
+          }
+        case "market-intelligence":
+          return {
+            title: "AI Market Read",
+            subtitle: "A smarter campaign narrative derived from the listing.",
+            summary: `${toText(project.name) || finalProjectSlug} is being positioned in ${toText(project.area) || "Dubai"} for buyers seeking ${formattedYield.toLowerCase()} and guided access to live availability.`,
+            bullets: [
+              `Area focus: ${toText(project.area) || "Dubai"}`,
+              `Entry point: ${formattedPrice}`,
+              `Income lens: ${formattedYield}`,
+              `Developer: ${developerName}`,
+            ],
+          }
+        case "description":
+          return descriptionText ? { title: "About the project", body: descriptionText } : {}
+        case "key-facts":
+          return {
+            items: [
+              { label: "Project", value: toText(project.name) || finalProjectSlug },
+              { label: "Area", value: toText(project.area) || "Dubai" },
+              { label: "Developer", value: developerName },
+              { label: "Starting Price", value: formattedPrice },
+              ...(formattedYield.startsWith("Yield") ? [] : [{ label: "Rental Yield", value: formattedYield }]),
+              ...(propertyTypeLabels.length ? [{ label: "Unit types", value: propertyTypeLabels.join(", ") }] : []),
+            ],
+          }
+        case "payment-plan":
+          return planStages ? { ...planStages } : {}
+        case "roi":
+          return {
+            expectedRoi: typeof project.rental_yield === "number" ? project.rental_yield : 0,
+            rentalYield: typeof project.rental_yield === "number" ? project.rental_yield : 0,
+            startPriceAed: typeof project.price_from_aed === "number" ? project.price_from_aed : 0,
+          }
+        case "units":
+          // Only real unit rows (type + price/size) — bare type labels go to
+          // key-facts instead, so we never render empty price/size cards.
+          return { units: unitRows }
+        case "gallery":
+          return { images: galleryImages }
+        case "amenities":
+          return { items: amenityItems }
+        case "developer-profile":
+          // Hides for the Freehold-brand fallback; only a real developer shows.
+          return realDeveloper ? { name: realDeveloper, logo: developerLogo || undefined } : {}
+        case "location":
+          return {
+            area: toText(project.area) || "Dubai",
+            developer: developerName,
+            title: "Location & Positioning",
+            subtitle: "The commercial frame brokers can use immediately in a client conversation.",
+            highlights: [
+              `${toText(project.area) || "Dubai"} demand corridor`,
+              `Developer: ${developerName}`,
+              `Entry point: ${formattedPrice}`,
+            ],
+          }
+        case "neighborhood":
+          return { area: toText(project.area) || "Dubai" }
+        case "ai-concierge":
+          return {
+            title: "Ask Freehold AI",
+            subtitle: "Let the AI explain ROI, compare areas, and qualify the next step before a broker call.",
+            prompts: [
+              `Is ${toText(project.name) || finalProjectSlug} better for rental yield or appreciation?`,
+              `Compare ${toText(project.area) || "this area"} with Dubai Marina`,
+              `What kind of buyer is this project best for?`,
+            ],
+          }
+        case "faq":
+          return { items: faqItems }
+        case "lead-form": {
+          leadFormSeen += 1
+          return leadFormSeen === 1
+            ? { title: "Register your interest", subtitle: "Limited units — get the price list, floor plans and full payment plan." }
+            : { title: "Speak to a specialist", subtitle: "Our team will call you with live availability and the best unit for your budget." }
+        }
+        // why-dubai / golden-visa / social-proof / download-brochure render from
+        // built-in localized content — no per-project data needed.
+        default:
+          return {}
+      }
+    }
 
-    // Signature — a lifestyle & prestige story for premium waterfront / branded
-    // communities (e.g. DAMAC Lagoons). Leads with visuals and the lived
-    // experience, then the Golden Visa + social-proof prestige hooks, and only
-    // then asks for the lead. Same section types/data shapes as the others.
-    const signatureSections = [
-      {
-        type: "hero",
-        data: {
-          title: headline,
-          subtitle: subheadline,
-          eyebrow: `Waterfront living · ${toText(project.area) || "Dubai"} · ${toText(toObject(payload.developer).name) || "Freehold"}`,
-          chips: [toText(project.area) || "Dubai", "Signature community", formattedPrice],
-        },
-      },
-      {
-        type: "gallery",
-        data: { images: galleryImages },
-      },
-      {
-        type: "amenities",
-        data: {
-          items: amenityItems,
-        },
-      },
-      {
-        type: "why-dubai",
-        data: {},
-      },
-      {
-        type: "neighborhood",
-        data: {
-          area: toText(project.area) || "Dubai",
-        },
-      },
-      {
-        type: "golden-visa",
-        data: {},
-      },
-      // Included only when the project record carries real plan numbers.
-      ...(() => {
-        const plan = planStages
-        return plan ? [{ type: "payment-plan", data: plan }] : []
-      })(),
-      {
-        type: "social-proof",
-        data: {},
-      },
-      {
-        type: "lead-form",
-        data: {
-          title: "Arrange a private viewing",
-          subtitle: "Leave your details and a senior consultant will walk you through the community, units and payment plan.",
-        },
-      },
-      {
-        type: "faq",
-        data: {
-          items: faqItems,
-        },
-      },
-      {
-        type: "lead-form",
-        data: {
-          title: "Register your interest",
-          subtitle: "Limited signature units — get the full price list and floor plans.",
-        },
-      },
-    ]
-
-    const sections =
-      template === "campaign" ? campaignSections
-      : template === "signature" ? signatureSections
-      : classicSections
+    const sections = landingTemplate(template).sections.map((type) => ({ type, data: sectionData(type) }))
 
     await ensureLandingTable()
     const columns = await getLandingColumns()
