@@ -121,7 +121,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     soldOut: false,
     template: 'classic',
     sections,
-    project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, amenities: [], faqs: [] },
+    project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, gallery: [], amenities: [], faqs: [] },
   }
 }
 
@@ -301,10 +301,14 @@ function GallerySection({ d, page, L, p }: { d: Record<string, unknown>; page: L
     .map((img) => (typeof img === 'string' ? img.trim() : toStr(toObj(img).url) || toStr(toObj(img).src) || toStr(toObj(img).image)))
     .filter(Boolean)
   const heroImage = page.heroImage && !page.heroImage.endsWith('/logo.png') ? page.heroImage : ''
-  const images = Array.from(new Set([...(heroImage ? [heroImage] : []), ...dataImages])).slice(0, 6)
+  // Also pull the project's full, live image set from the DB (not just the
+  // frozen section snapshot) so every real image a project has is shown.
+  const projectImages = page.project?.gallery ?? []
+  const images = Array.from(new Set([...(heroImage ? [heroImage] : []), ...dataImages, ...projectImages])).slice(0, 6)
 
-  // Match how AmenitiesSection / DeveloperSection bail when their data is absent.
-  if (!images.length) return null
+  // A single image is already shown as the hero — only render a gallery when the
+  // project has at least two real images. Fewer → self-hide (no padded tiles).
+  if (images.length < 2) return null
 
   return (
     <section className="border-t px-5 py-20 sm:px-8" style={{ borderTopColor: p.divider }}>
