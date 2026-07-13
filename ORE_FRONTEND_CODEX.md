@@ -8,11 +8,16 @@
 
 | Table | Rows |
 |-------|------|
-| freehold_site_projects | 975 |
-| freehold_site_developer_profiles | 26 |
-| freehold_site_area_profiles | 26 |
-| freehold_site_blog_posts | 96 |
-| freehold_site_project_landing_pages | 1025 |
+| freehold_site_projects | 2,840 |
+| freehold_site_developer_profiles | 572 |
+| freehold_site_area_profiles | 155 |
+| freehold_site_blog_posts | 96 † |
+| freehold_site_project_landing_pages | 1025 † |
+
+_Projects / developer / area counts reconciled against live Neon on 2026-07-13
+(were 975 / 26 / 26). Point-in-time — the source of truth is a live `SELECT COUNT(*)`.
+† blog_posts and landing_pages were not part of the 2026-07-13 reconciliation —
+treat as unverified._
 
 ---
 
