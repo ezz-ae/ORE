@@ -130,6 +130,16 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     ? ((row.payload as Record<string, unknown>).status as string | undefined)
     : undefined
 
+  // Data confidence from the inventory pipeline (Hex/Neon H-jobs). Mirrored into
+  // payload.confidence — read it there so the repo never depends on a top-level
+  // column it doesn't own. 'estimated' = PF-derived, 'verified' = DLD-reconciled;
+  // null until the pipeline stamps it (do NOT assume it's populated).
+  const rawConf = row.payload && typeof row.payload === 'object'
+    ? String((row.payload as Record<string, unknown>).confidence ?? '').toLowerCase()
+    : ''
+  const dataConfidence: 'estimated' | 'verified' | null =
+    rawConf === 'verified' ? 'verified' : rawConf === 'estimated' ? 'estimated' : null
+
   // Composite scores
   const dataQuality = Math.min(
     100,
@@ -184,6 +194,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     hasImages,
     imageCount: hasImages ? 1 : 0,
     dataQuality,
+    dataConfidence,
     adReadiness,
     linkedCampaigns: 0,
     leads30d,
