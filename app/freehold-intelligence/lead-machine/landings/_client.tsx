@@ -10,6 +10,7 @@ import {
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
+import { LANDING_TEMPLATES, type LandingTemplateKey } from '@/lib/landing-templates'
 
 type StatusFilter = 'All' | 'live' | 'draft' | 'pending_review' | 'missing'
 
@@ -40,7 +41,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
   const [query, setQuery] = useState('')
   const [bulkCreating, setBulkCreating] = useState(false)
   const [generatingId, setGeneratingId] = useState<string | null>(null)
-  const [template, setTemplate] = useState<'classic' | 'campaign'>('classic')
+  const [template, setTemplate] = useState<LandingTemplateKey>('classic')
   const t = useT()
 
   const props = properties
@@ -109,12 +110,13 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
               <span className="text-slate-600">{t('lm.landings.tpl.label')}</span>
               <select
                 value={template}
-                onChange={(e) => setTemplate(e.target.value as 'classic' | 'campaign')}
-                title={t('lm.landings.tpl.campaignHint')}
+                onChange={(e) => setTemplate(e.target.value as LandingTemplateKey)}
+                title={t(LANDING_TEMPLATES.find((x) => x.key === template)?.descKey ?? 'lm.landings.tpl.campaignHint')}
                 className="bg-transparent text-xs font-medium text-white outline-none"
               >
-                <option value="classic" className="bg-surface text-white">{t('lm.landings.tpl.classic')}</option>
-                <option value="campaign" className="bg-surface text-white">{t('lm.landings.tpl.campaign')}</option>
+                {LANDING_TEMPLATES.map((tpl) => (
+                  <option key={tpl.key} value={tpl.key} className="bg-surface text-white">{t(tpl.nameKey)}</option>
+                ))}
               </select>
             </label>
             <button

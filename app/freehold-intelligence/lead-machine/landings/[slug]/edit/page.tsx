@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
 import { useAutosaveDraft } from '@/lib/freehold/use-autosave-draft'
+import { LANDING_TEMPLATES } from '@/lib/landing-templates'
 
 type Landing = {
   slug: string
@@ -352,6 +353,20 @@ export default function LandingEditorPage() {
     if (!form?.sections || !type) return
     applySections([...form.sections, { type, data: { title: '', subtitle: '' } }])
   }
+  // Insert a whole template's block skeleton at the end of the page. Hero is a
+  // page-level singleton, so it's skipped when one already exists; every other
+  // block (lead-form, gallery, etc.) may legitimately repeat and is appended.
+  function insertTemplate(key: string) {
+    if (!form?.sections || !key) return
+    const tpl = LANDING_TEMPLATES.find((x) => x.key === key)
+    if (!tpl) return
+    const hasHero = form.sections.some((s) => s.type === 'hero')
+    const blocks = tpl.sections
+      .filter((type) => !(type === 'hero' && hasHero))
+      .map((type) => ({ type, data: {} as Record<string, unknown> }))
+    applySections([...form.sections, ...blocks])
+    toast.success(t('lpe.layout.tplInserted', { name: t(tpl.nameKey) }))
+  }
   function setSectionField(i: number, key: string, value: unknown) {
     if (!form?.sections) return
     setSections(form.sections.map((s, k) => (k === i ? { ...s, data: { ...s.data, [key]: value } } : s)))
@@ -631,10 +646,14 @@ export default function LandingEditorPage() {
                   )
                 })}
               </ul>
-              <div className="mt-2.5 flex items-center gap-2">
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <select value="" onChange={(e) => { addSection(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs">
                   <option value="">{t('lpe.layout.add')}</option>
                   {ADD_TYPES.map((ty) => <option key={ty} value={ty}>{sectionLabel(ty)}</option>)}
+                </select>
+                <select value="" onChange={(e) => { insertTemplate(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs" title={t('lpe.layout.insertTplHint')}>
+                  <option value="">{t('lpe.layout.insertTpl')}</option>
+                  {LANDING_TEMPLATES.map((tpl) => <option key={tpl.key} value={tpl.key}>{t(tpl.nameKey)}</option>)}
                 </select>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">{t('lpe.layout.hint')}</p>

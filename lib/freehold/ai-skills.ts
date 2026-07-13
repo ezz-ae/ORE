@@ -5,6 +5,12 @@
 // which part of the platform calls it. Each skill ships its own system prompt,
 // suggested prompts, and the roles allowed to use it.
 
+import { LANDING_TEMPLATES } from '@/lib/landing-templates'
+
+// A compact catalog of the landing designs the chat can create with, so the
+// model names/recommends a real template instead of inventing one.
+const TEMPLATE_CATALOG = LANDING_TEMPLATES.map((t) => `- ${t.key}: ${t.aiHint}`).join('\n')
+
 export type SkillId =
   | 'expert'
   | 'web_designer'
@@ -114,6 +120,13 @@ Section pool by audience:
 
 When asked to "generate" or "create" a landing page, tell the user exactly which API call to make and
 which audience type fits the property's positioning.
+
+## Landing page templates (layouts)
+A landing page is created from one of these reusable design templates (POST /api/crm/landing-pages
+with { "projectSlug": "<slug>", "template": "<key>" }). Recommend the one that fits the goal:
+${TEMPLATE_CATALOG}
+For a paid campaign (e.g. a Meta launch) recommend "campaign"; for a premium waterfront / branded
+community launch recommend "signature"; for an information-rich page for warm buyers, "classic".
 
 ## Writing landing page copy manually
 - Hero: headline + subhead that leads with the property's strongest angle (yield % / scarcity / prestige)
