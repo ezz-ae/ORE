@@ -182,14 +182,14 @@ export function CampaignListingPicker({ listings, value, onChange, loading, canE
                         >
                           <Eye className="h-4 w-4" />
                         </a>
-                        {canEdit && edit && (
+                        {edit && (
                           <a
                             href={edit}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            title={t('lm.newCampaign.s1.picker.edit')}
-                            aria-label={t('lm.newCampaign.s1.picker.edit')}
+                            title={t(canEdit ? 'lm.newCampaign.s1.picker.edit' : 'lm.newCampaign.s1.picker.suggest')}
+                            aria-label={t(canEdit ? 'lm.newCampaign.s1.picker.edit' : 'lm.newCampaign.s1.picker.suggest')}
                             className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-surface hover:text-gold"
                           >
                             <Pencil className="h-4 w-4" />

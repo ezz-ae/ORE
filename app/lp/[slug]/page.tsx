@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
+import { getRequest as getLandingEditRequest } from '@/lib/freehold/landing-edit-requests'
 import {
   LP_CHROME, normalizeLpLang, lpDir, lpFill, translateLandingContent, type LpLang,
 } from '@/lib/landing-i18n'
@@ -1164,7 +1165,23 @@ export default async function LandingPage({
 
   const page = await getPage(slug)
   if (!page) return <NotFound L={L} p={lpPalette(theme)} />
-  if (page.isDraft && !(await canPreviewDrafts())) return <NotFound L={L} p={lpPalette(theme)} />
+  const staff = await canPreviewDrafts()
+  if (page.isDraft && !staff) return <NotFound L={L} p={lpPalette(theme)} />
+
+  // Staff preview of a broker's proposed edit (opened from the approvals inbox):
+  // overlay the proposal's sections/CTA so an approver sees exactly what they'd
+  // publish. Gated to staff — anonymous visitors never see an unapproved draft.
+  const editRequestId = typeof sp.editRequest === 'string' ? sp.editRequest : ''
+  if (editRequestId && staff) {
+    const proposal = await getLandingEditRequest(editRequestId).catch(() => null)
+    if (proposal && proposal.landingSlug.toLowerCase() === slug.toLowerCase()) {
+      if (Array.isArray(proposal.proposedSections) && proposal.proposedSections.length) {
+        page.sections = proposal.proposedSections as unknown as typeof page.sections
+      }
+      const cta = (proposal.proposedFields || {}).ctaText
+      if (typeof cta === 'string' && cta) page.ctaText = cta
+    }
+  }
 
   // The template drives the page's atmosphere (Signature → lagoon palette).
   const palette = lpPalette(theme, page.template)

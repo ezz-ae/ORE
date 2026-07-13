@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   Globe, Sparkles, ArrowUpRight, Search, Plus, CheckCircle2,
-  AlertTriangle, Clock, Pencil, Loader2,
+  AlertTriangle, Clock, Pencil, Loader2, Inbox,
 } from 'lucide-react'
 import type { InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { PageHeader, StatCard } from '@/components/freehold/ui'
@@ -119,6 +119,12 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                 ))}
               </select>
             </label>
+            <Link
+              href="/freehold-intelligence/lead-machine/landings/requests"
+              className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-2 text-xs font-medium text-slate-200 transition hover:text-white"
+            >
+              <Inbox className="h-3.5 w-3.5" /> {t('lper.navLabel')}
+            </Link>
             <button
               data-coach="lm-landing-create"
               onClick={bulkCreate}
