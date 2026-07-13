@@ -33,8 +33,9 @@ export const LANDING_TEMPLATES: LandingTemplateMeta[] = [
     aiHint:
       "Full brochure — market read, key facts, ROI, amenities, FAQ, AI concierge. Best for warm or returning buyers who want depth before a call.",
     sections: [
-      "hero", "market-intelligence", "key-facts", "payment-plan", "roi",
-      "amenities", "faq", "why-dubai", "location", "ai-concierge",
+      "hero", "description", "gallery", "market-intelligence", "key-facts",
+      "units", "payment-plan", "roi", "golden-visa", "amenities",
+      "developer-profile", "location", "faq", "ai-concierge",
       "download-brochure", "lead-form",
     ],
   },
@@ -56,9 +57,9 @@ export const LANDING_TEMPLATES: LandingTemplateMeta[] = [
     aiHint:
       "Lifestyle & prestige story for premium waterfront and branded communities — visuals and amenities first, Golden Visa & social proof, then capture. Best for signature launches like DAMAC Lagoons.",
     sections: [
-      "hero", "gallery", "amenities", "why-dubai", "neighborhood",
-      "golden-visa", "payment-plan", "social-proof", "lead-form", "faq",
-      "lead-form",
+      "hero", "description", "gallery", "amenities", "why-dubai",
+      "neighborhood", "developer-profile", "golden-visa", "payment-plan",
+      "units", "social-proof", "lead-form", "faq", "lead-form",
     ],
   },
 ]
