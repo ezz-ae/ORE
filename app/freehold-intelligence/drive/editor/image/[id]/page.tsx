@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import QRCode from 'qrcode'
 import {
   Loader2, Upload, Type, ImagePlus, QrCode, Frame, Download, Trash2, Plus,
-  AlignLeft, AlignCenter, AlignRight, Bold, Move,
+  AlignLeft, AlignCenter, AlignRight, Bold, Move, Palette, RotateCcw,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
@@ -22,6 +22,10 @@ type TextLayer = { id: string; text: string; x: number; y: number; size: number;
 type LogoLayer = { url: string; img: HTMLImageElement | null; x: number; y: number; scale: number }
 type QrLayer = { value: string; url: string; img: HTMLImageElement | null; x: number; y: number; scale: number; stamp: boolean }
 type BrandFrame = { on: boolean; color: string; width: number }
+// Color adjustments apply to the source photo only (CSS filter on the draw).
+// brightness/contrast/saturate are percentages (100 = untouched);
+// grayscale/sepia are 0–100 (0 = off).
+type ColorAdj = { brightness: number; contrast: number; saturate: number; grayscale: number; sepia: number }
 type Drag =
   | { kind: 'image'; startPx: number; startPy: number; startPanX: number; startPanY: number }
   | { kind: 'text'; id: string; ox: number; oy: number }
@@ -48,6 +52,11 @@ const IMAGE_PRESETS: PresetChip[] = [
   { labelKey: 'ed.image.ai.chipWhiteBg', instructionKey: 'ed.image.ai.chipWhiteBg' },
   { labelKey: 'ed.image.ai.chipSkyline', instructionKey: 'ed.image.ai.chipSkyline' },
 ]
+const COLOR_DEFAULT: ColorAdj = { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, sepia: 0 }
+const colorFilter = (c: ColorAdj) =>
+  `brightness(${c.brightness}%) contrast(${c.contrast}%) saturate(${c.saturate}%) grayscale(${c.grayscale}%) sepia(${c.sepia}%)`
+const colorIsDefault = (c: ColorAdj) =>
+  c.brightness === 100 && c.contrast === 100 && c.saturate === 100 && c.grayscale === 0 && c.sepia === 0
 const FONT = '"Segoe UI", "Noto Sans Arabic", "Noto Kufi Arabic", Tahoma, system-ui, sans-serif'
 const AR_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/
 const isArabic = (s: string) => AR_RE.test(s)
@@ -115,6 +124,7 @@ export default function DriveImageEditor() {
   const [permitInput, setPermitInput] = useState('')
   const [qrBusy, setQrBusy] = useState(false)
   const [frame, setFrame] = useState<BrandFrame>({ on: false, color: '#D4AF37', width: 24 })
+  const [colors, setColors] = useState<ColorAdj>(COLOR_DEFAULT)
   // Source-layer URL is the reversible unit for the AI co-editor (undo swaps the
   // photo back). `revision` bumps on manual edits only, so the rail can warn
   // before an undo discards edits made after an AI turn.
@@ -170,10 +180,13 @@ export default function DriveImageEditor() {
     ctx.fillStyle = '#111114'
     ctx.fillRect(0, 0, W, H)
 
-    // Source (cover + zoom + pan)
+    // Source (cover + zoom + pan) — color adjustments apply to the photo only.
     if (img) {
       const r = sourceRect(img.naturalWidth, img.naturalHeight, W, H, zoom, pan.x, pan.y)
+      const filtered = !colorIsDefault(colors)
+      if (filtered) { ctx.save(); ctx.filter = colorFilter(colors) }
       ctx.drawImage(img, r.dx, r.dy, r.dw, r.dh)
+      if (filtered) ctx.restore()
     }
 
     // Text layers
@@ -233,7 +246,7 @@ export default function DriveImageEditor() {
       ctx.strokeRect(frame.width / 2, frame.width / 2, W - frame.width, H - frame.width)
       ctx.restore()
     }
-  }, [W, H, img, zoom, pan, texts, logo, qr, frame])
+  }, [W, H, img, zoom, pan, texts, logo, qr, frame, colors])
 
   useEffect(() => { redraw() }, [redraw])
 
@@ -445,6 +458,33 @@ export default function DriveImageEditor() {
         <button type="button" onClick={() => fileRef.current?.click()} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
           <Upload className="h-3.5 w-3.5" /> {t('ed.image.uploadCta')}
         </button>
+      </section>
+
+      {/* Colors */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className={sectionH}><Palette className="h-3.5 w-3.5" /> {t('ed.tool.colors')}</div>
+          {!colorIsDefault(colors) && (
+            <button type="button" onClick={() => { setColors(COLOR_DEFAULT); mark() }}
+              title={t('ed.image.color.reset')} className="flex items-center gap-1 text-[10px] text-slate-500 transition hover:text-gold">
+              <RotateCcw className="h-3 w-3" /> {t('ed.image.color.reset')}
+            </button>
+          )}
+        </div>
+        {([
+          ['brightness', 'ed.image.color.brightness', 0, 200] as const,
+          ['contrast', 'ed.image.color.contrast', 0, 200] as const,
+          ['saturate', 'ed.image.color.saturation', 0, 200] as const,
+          ['grayscale', 'ed.image.color.grayscale', 0, 100] as const,
+          ['sepia', 'ed.image.color.warmth', 0, 100] as const,
+        ]).map(([k, labelKey, lo, hi]) => (
+          <div key={k}>
+            <label className="block text-[11px] text-slate-400">{t(labelKey)} · {colors[k]}%</label>
+            <input type="range" min={lo} max={hi} step={1} value={colors[k]}
+              onChange={(e) => { const v = Number(e.target.value); setColors((c) => ({ ...c, [k]: v })); mark() }}
+              className="w-full accent-gold" />
+          </div>
+        ))}
       </section>
 
       {/* Text */}
