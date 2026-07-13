@@ -28,9 +28,11 @@ data in Neon rich, consistent, and honest.
 
 | Table | Rows (approx) | Purpose |
 |---|---|---|
-| `freehold_site_projects` | ~3,655 | Full market inventory. One row per project. `payload` JSONB is the complete object; `llm_context` TEXT is pre-formatted RAG context for Gemini. |
-| `freehold_site_area_profiles` | ~10 | Area hubs: images, `avg_yield`, `median_price_aed`, `project_count`, descriptions, `payload`. |
-| `freehold_site_developer_profiles` | ~64 | Developer pages: logo, track record, honesty index, `payload`. |
+| `freehold_site_projects` | ~2,840 | Full market inventory. One row per project. `payload` JSONB is the complete object; `llm_context` TEXT is pre-formatted RAG context for Gemini. |
+| `freehold_site_area_profiles` | ~155 | Area hubs: images, `avg_yield`, `median_price_aed`, `project_count`, descriptions, `payload`. |
+| `freehold_site_developer_profiles` | ~572 | Developer pages: logo, track record, honesty index, `payload`. |
+
+_Row counts reconciled against live Neon on 2026-07-13 (were ~3,655 / ~10 / ~64 in earlier docs). Approximate and point-in-time — the source of truth is a live `SELECT COUNT(*)`. There is no `freehold_site_units` table; unit data lives in `payload.units[]`._
 
 ### Zone B — SHARED BRAIN (Hex may feed through the defined door only)
 

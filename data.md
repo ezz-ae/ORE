@@ -1,11 +1,16 @@
 
-Repo: https://github.com/ezz-ae/GC-realestate
+Repo: https://github.com/ezz-ae/ORE
 Data: Neon PostgreSQL (already connected via NEON_DATABASE_URL)
 
 ━━━ NEON TABLES (live, query directly) ━━━━━━━━━━━━━━━━━━━━━━━━
-  freehold_site_projects           3,655 rows  — full project schema + llm_context
-  freehold_site_area_profiles         10 rows  — area images, yields, descriptions
-  freehold_site_developer_profiles    64 rows  — logos, track records, honesty index
+  freehold_site_projects           2,840 rows  — full project schema + llm_context
+  freehold_site_area_profiles        155 rows  — area images, yields, descriptions
+  freehold_site_developer_profiles   572 rows  — logos, track records, honesty index
+
+  (Row counts are point-in-time — reconciled against live Neon on 2026-07-13.
+   The source of truth is a live SELECT COUNT(*); do not treat these as fixed.
+   There is NO freehold_site_units table — unit data lives in payload.units[],
+   queried via jsonb_array_elements(payload->'units') as shown below.)
 
   Key columns on freehold_site_projects:
     id, name, slug, area, developer_id, developer_name
