@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Save, Scissors, Captions, Megaphone, Camera,
-  ArrowUpToLine, ArrowDownToLine, Info, Download,
+  ArrowUpToLine, ArrowDownToLine, Info, Download, Upload,
 } from 'lucide-react'
+import { upload } from '@vercel/blob/client'
 import { useT } from '@/lib/i18n/provider'
 import { DriveEditorFrame } from '@/components/freehold/drive/drive-editor-frame'
 import type { DriveKind } from '@/lib/freehold/drive'
@@ -104,9 +105,12 @@ export default function DriveVideoEditor() {
   const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const endActiveRef = useRef(false)
   const exportingRef = useRef(false)
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [dropping, setDropping] = useState(false)
   const [saving, setSaving] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -131,6 +135,7 @@ export default function DriveVideoEditor() {
     let alive = true
     async function run() {
       if (!id) return
+      if (id === 'new') { setLoading(false); return } // blank editor → upload dropzone
       setLoading(true)
       try {
         const res = await fetch('/api/freehold/library', { cache: 'no-store' })
@@ -472,14 +477,53 @@ export default function DriveVideoEditor() {
     }
   }
 
+  // ── Upload (source clip) ──────────────────────────────────────────────────────
+  // A video can't start blank, so the "new" editor is an upload surface: the
+  // clip goes straight to Blob, becomes a Library video, then opens the editor.
+  async function onVideoFile(file: File) {
+    if (uploading) return
+    if (!file.type.startsWith('video/')) { toast.error(t('ed.video.uploadInvalid')); return }
+    setUploading(true)
+    try {
+      const name = file.name.replace(/\.[^.]+$/, '') || 'Video'
+      const blob = await upload(file.name, file, { access: 'public', handleUploadUrl: '/api/freehold/drive/upload-video' })
+      const res = await fetch('/api/freehold/library', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'video', title: name, url: blob.url }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.item?.id) { toast.error(d.error || t('ed.video.uploadFailed')); return }
+      router.replace(`/freehold-intelligence/drive/editor/video/${d.item.id}`)
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : t('ed.video.uploadFailed'))
+    } finally { setUploading(false) }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="flex h-[calc(100vh-56px)] items-center justify-center text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
   )
+  // No source yet (a fresh "new" editor, or a stale link) → the upload dropzone.
   if (notFound || !item) return (
-    <div className="flex h-[calc(100vh-56px)] flex-col items-center justify-center gap-3 text-center">
-      <p className="text-sm text-slate-400">{t('ed.notFound')}</p>
-      <button onClick={() => router.push('/freehold-intelligence/drive')} className="text-sm text-gold hover:opacity-80">{t('drive.homeTitle')}</button>
+    <div className="mx-auto flex h-[calc(100vh-56px)] w-full max-w-md flex-col items-center justify-center p-6">
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDropping(true) }}
+        onDragLeave={() => setDropping(false)}
+        onDrop={(e) => { e.preventDefault(); setDropping(false); const f = e.dataTransfer.files?.[0]; if (f) onVideoFile(f) }}
+        className={`flex w-full flex-col items-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 text-center transition ${dropping ? 'border-gold bg-gold/5' : 'border-line bg-surface-2/30'}`}
+      >
+        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/10 text-gold">
+          {uploading ? <Loader2 className="h-7 w-7 animate-spin" /> : <Upload className="h-7 w-7" />}
+        </span>
+        {notFound && id !== 'new' && <p className="text-xs text-slate-500">{t('ed.notFound')}</p>}
+        <p className="text-sm font-semibold text-white">{uploading ? t('ed.video.uploading') : (dropping ? t('ed.video.dropHere') : t('ed.video.uploadTitle'))}</p>
+        <p className="text-xs text-slate-500">{t('ed.video.uploadHint')}</p>
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+          className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
+          <Upload className="h-3.5 w-3.5" /> {t('ed.video.uploadCta')}
+        </button>
+        <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onVideoFile(f); e.target.value = '' }} />
+      </div>
     </div>
   )
 
