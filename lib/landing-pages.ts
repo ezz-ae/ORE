@@ -75,6 +75,11 @@ export interface LandingProjectSummary {
     fiveYearRental: number | null
     breakEvenYears: number | null
   }
+  /** Real project image URLs (mediaSource.gallery / gallery / galleryImages /
+      images / PF-detail images), deduped and filtered to http(s) URLs — never
+      the logo fallback. Drives the landing gallery so every image a project
+      actually has is shown; the section self-hides when there are too few. */
+  gallery: string[]
   paymentPlan?: {
     downPayment?: number
     duringConstruction?: number
@@ -374,6 +379,14 @@ const buildDefaultSections = (project: LandingProjectSummary | null, row: Landin
         ],
       },
     },
+    // Gallery renders only from the project's REAL images (never placeholder
+    // tiles) and self-hides when a project has too few to be worth a gallery.
+    {
+      type: "gallery",
+      data: {
+        images: project?.gallery ?? [],
+      },
+    },
     {
       type: "key-facts",
       data: {
@@ -513,7 +526,9 @@ export const buildCampaignSections = (
     },
     {
       type: "gallery",
-      data: {},
+      data: {
+        images: project?.gallery ?? [],
+      },
     },
     {
       type: "amenities",
@@ -791,6 +806,29 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     breakEvenYears: pickNumber(roiCalc.breakEvenYears),
   }
 
+  // Real project images for the landing gallery — pulled live from the payload
+  // so every image a project actually has is shown. Deduped, http(s) only, the
+  // logo fallback excluded. The gallery section self-hides when too few remain.
+  const media = toObject(payload.mediaSource)
+  const toImageUrl = (img: unknown): string => {
+    if (typeof img === "string") return img.trim()
+    const obj = toObject(img)
+    return pickString(obj.url, obj.src, obj.image, obj.imageUrl, obj.href)
+  }
+  const gallery = Array.from(
+    new Set(
+      [
+        ...toArray(media.gallery),
+        ...toArray(payload.gallery),
+        ...toArray(payload.galleryImages),
+        ...toArray(payload.images),
+        ...toArray(pfd.images),
+      ]
+        .map(toImageUrl)
+        .filter((url) => /^https?:\/\//i.test(url) && !url.endsWith("/logo.png")),
+    ),
+  )
+
   return {
     slug: pickString(row.slug, payload.slug) || projectSlug,
     name: pickString(row.name, payload.name) || "Dubai Project",
@@ -801,6 +839,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     priceToAed: pickNumber(row.price_to_aed, toArray(payload.units)[0] ? toObject(toArray(payload.units)[0]).priceTo : null),
     rentalYield: pickNumber(row.rental_yield, invHighlights.rentalYield),
     roi,
+    gallery,
     paymentPlan: normalizePaymentPlan(
       payload.paymentPlan ?? pfd.paymentPlan,
       payload.paymentPlans ?? pfd.paymentPlans,
