@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Loader2, Download, ExternalLink, FileSearch, BookOpen, ArrowLeft, ScanText, Stamp, QrCode, Upload, Save,
-  Layers, RotateCw, Trash2, FilePlus,
+  Layers, RotateCw, Trash2, FilePlus, ArrowUp, ArrowDown, ImagePlus, Palette, FileImage,
 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
 import QRCode from 'qrcode'
@@ -53,9 +53,24 @@ export default function DrivePdfSurface() {
   const pagesSrcRef = useRef<HTMLInputElement | null>(null)
   const mergeRef = useRef<HTMLInputElement | null>(null)
   const [work, setWork] = useState<Uint8Array | null>(null)
+  const [workUrl, setWorkUrl] = useState<string | null>(null) // live preview of the edited doc
   const [pageCount, setPageCount] = useState(0)
   const [delSpec, setDelSpec] = useState('')
   const [pageBusy, setPageBusy] = useState(false)
+  const addImgRef = useRef<HTMLInputElement | null>(null)
+  // Brand & cover — rebrand the brochure and cover the developer's contact band.
+  const [showBrand, setShowBrand] = useState(false)
+  const brandLogoRef = useRef<HTMLInputElement | null>(null)
+  const [brandLogo, setBrandLogo] = useState<{ dataUrl: string; png: boolean } | null>(null)
+  const [barPos, setBarPos] = useState<'none' | 'top' | 'bottom'>('bottom')
+  const [barPct, setBarPct] = useState(8)
+  const [barColor, setBarColor] = useState('#0a0a0a')
+  const [logoCorner, setLogoCorner] = useState<'tl' | 'tr' | 'bl' | 'br'>('br')
+  const [logoScale, setLogoScale] = useState(0.14)
+  const [brandFooter, setBrandFooter] = useState('')
+  const [brandTextColor, setBrandTextColor] = useState('#ffffff')
+  const [brandTarget, setBrandTarget] = useState<'all' | 'first' | 'last'>('all')
+  const [brandBusy, setBrandBusy] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -78,6 +93,15 @@ export default function DrivePdfSurface() {
     run()
     return () => { alive = false }
   }, [id])
+
+  // Live preview: every edit to `work` re-points the viewer iframe at the edited
+  // PDF (the browser's native renderer), so reorder/brand/cover are visible.
+  useEffect(() => {
+    if (!work) { setWorkUrl(null); return }
+    const u = URL.createObjectURL(new Blob([work.slice() as unknown as BlobPart], { type: 'application/pdf' }))
+    setWorkUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [work])
 
   async function extract(file: File) {
     if (file.type && file.type !== 'application/pdf') { toast.error(t('ed.pdf.extractFailed')); return }
@@ -223,6 +247,113 @@ export default function DrivePdfSurface() {
     } catch { toast.error(t('ed.pdf.stampFailed')) } finally { setPageBusy(false) }
   }
 
+  // Per-page ops on the working document.
+  async function movePage(i: number, dir: -1 | 1) {
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const j = i + dir
+      if (j < 0 || j >= pdf.getPageCount()) return
+      const page = pdf.getPage(i)
+      pdf.removePage(i)
+      pdf.insertPage(j, page)
+      await commitDoc(pdf)
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function rotateOne(i: number) {
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const p = pdf.getPage(i)
+      p.setRotation(degrees(((p.getRotation().angle || 0) + 90) % 360))
+      await commitDoc(pdf)
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function deleteOne(i: number) {
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      if (pdf.getPageCount() <= 1) { toast.error(t('ed.pdf.pagesCantDeleteAll')); return }
+      pdf.removePage(i)
+      await commitDoc(pdf); toast.success(t('ed.pdf.pagesDeleted'))
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function addBlank() {
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const pages = pdf.getPages()
+      const size = pages.length ? pages[pages.length - 1].getSize() : { width: 595, height: 842 }
+      pdf.addPage([size.width, size.height])
+      await commitDoc(pdf); toast.success(t('ed.pdf.pageAdded'))
+    } catch { toast.error(t('ed.pdf.pagesLoadFailed')) } finally { setPageBusy(false) }
+  }
+  async function addImagePage(file: File | null) {
+    if (!file) return
+    setPageBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      const img = file.type.includes('png') ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes)
+      const pages = pdf.getPages()
+      const size = pages.length ? pages[pages.length - 1].getSize() : { width: img.width, height: img.height }
+      const page = pdf.addPage([size.width, size.height])
+      const s = Math.min(size.width / img.width, size.height / img.height)
+      const w = img.width * s, h = img.height * s
+      page.drawImage(img, { x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h })
+      await commitDoc(pdf); toast.success(t('ed.pdf.pageAdded'))
+    } catch { toast.error(t('ed.pdf.pagesMergeFailed')) } finally { setPageBusy(false) }
+  }
+  async function openBrand() {
+    setShowStamp(false); setShowPages(false); setShowExtract(false); setShowBrand(true)
+    if (!work) { setPageBusy(true); try { const pdf = await loadWork(); if (pdf) await commitDoc(pdf) } finally { setPageBusy(false) } }
+  }
+
+  // Brand & cover — draw a colour bar (covers the developer's contact band),
+  // a logo in a corner, and a footer line onto the target pages.
+  const hexRgb = (hex: string) => {
+    const m = hex.replace('#', '')
+    const s = m.length === 3 ? m.split('').map((c) => c + c).join('') : m
+    const n = parseInt(s || '000000', 16)
+    return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255)
+  }
+  function onBrandLogo(file: File | null) {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setBrandLogo({ dataUrl: String(reader.result || ''), png: file.type.includes('png') })
+    reader.readAsDataURL(file)
+  }
+  async function applyBrand() {
+    setBrandBusy(true)
+    try {
+      const pdf = await loadWork(); if (!pdf) return
+      const font = await pdf.embedFont(StandardFonts.Helvetica)
+      const logoImg = brandLogo ? (brandLogo.png ? await pdf.embedPng(brandLogo.dataUrl) : await pdf.embedJpg(brandLogo.dataUrl)) : null
+      const pages = pdf.getPages()
+      const targets = brandTarget === 'all' ? pages : brandTarget === 'first' ? [pages[0]] : [pages[pages.length - 1]]
+      for (const p of targets) {
+        const { width, height } = p.getSize()
+        if (barPos !== 'none' && barPct > 0) {
+          const bh = height * (barPct / 100)
+          const by = barPos === 'top' ? height - bh : 0
+          p.drawRectangle({ x: 0, y: by, width, height: bh, color: hexRgb(barColor) })
+          if (brandFooter.trim()) p.drawText(brandFooter.trim().slice(0, 120), { x: 20, y: by + bh / 2 - 4, size: Math.max(8, bh * 0.3), font, color: hexRgb(brandTextColor) })
+        } else if (brandFooter.trim()) {
+          p.drawText(brandFooter.trim().slice(0, 120), { x: 20, y: 16, size: 9, font, color: hexRgb(brandTextColor) })
+        }
+        if (logoImg) {
+          const lw = width * logoScale
+          const lh = lw * (logoImg.height / logoImg.width)
+          const margin = 16
+          const lx = logoCorner.endsWith('l') ? margin : width - lw - margin
+          const ly = logoCorner.startsWith('t') ? height - lh - margin : margin
+          p.drawImage(logoImg, { x: lx, y: ly, width: lw, height: lh })
+        }
+      }
+      await commitDoc(pdf); toast.success(t('ed.pdf.branded'))
+    } catch { toast.error(t('ed.pdf.brandFailed')) } finally { setBrandBusy(false) }
+  }
+
   if (loading) return (
     <div className="flex h-[calc(100vh-56px)] items-center justify-center text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /></div>
   )
@@ -295,6 +426,15 @@ export default function DrivePdfSurface() {
         </button>
         <p className="text-[10px] leading-snug text-slate-500">{t('ed.pdf.stampNote')}</p>
       </section>
+
+      {/* Brand & cover — rebrand + cover the developer's contact details */}
+      <section className="space-y-2 border-t border-white/[0.07] pt-4">
+        <div className={sectionH}><Palette className="h-3.5 w-3.5" /> {t('ed.pdf.brand')}</div>
+        <button type="button" onClick={() => (showBrand ? setShowBrand(false) : openBrand())} className={`${rowBtn} flex w-full items-center justify-center gap-1.5`}>
+          <Palette className="h-3.5 w-3.5" /> {showBrand ? t('ed.pdf.pagesClose') : t('ed.pdf.brandOpen')}
+        </button>
+        <p className="text-[10px] leading-snug text-slate-500">{t('ed.pdf.brandNote')}</p>
+      </section>
     </div>
   )
 
@@ -319,8 +459,81 @@ export default function DrivePdfSurface() {
         onChange={(e) => { const f = e.target.files?.[0] ?? null; setPagesSrc(f); setWork(null); setPageCount(0); e.target.value = '' }} />
       <input ref={mergeRef} type="file" accept="application/pdf,.pdf" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0] ?? null; mergePdf(f); e.target.value = '' }} />
+      <input ref={addImgRef} type="file" accept="image/png,image/jpeg" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0] ?? null; addImagePage(f); e.target.value = '' }} />
+      <input ref={brandLogoRef} type="file" accept="image/png,image/jpeg" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0] ?? null; onBrandLogo(f); e.target.value = '' }} />
 
-      {showPages ? (
+      {showBrand ? (
+        <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
+          <div className="mb-4 flex items-center gap-2">
+            <button type="button" onClick={() => setShowBrand(false)} className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" /> {t('ed.pdf.view')}</button>
+          </div>
+          <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-white"><Palette className="h-4 w-4 text-gold" /> {t('ed.pdf.brandTitle')}</h2>
+          <p className="mb-4 text-xs text-slate-500">{t('ed.pdf.brandHelp')}</p>
+          <div className="space-y-3 rounded-2xl border border-line bg-surface-2/40 p-4">
+            <div>
+              <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.coverBar')}</label>
+              <div className="flex gap-1.5">
+                {(['none', 'top', 'bottom'] as const).map((pos) => (
+                  <button key={pos} type="button" onClick={() => setBarPos(pos)} className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition ${barPos === pos ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>{t(`ed.pdf.bar.${pos}`)}</button>
+                ))}
+              </div>
+            </div>
+            {barPos !== 'none' && (
+              <>
+                <div>
+                  <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.barHeight')} · {barPct}%</label>
+                  <input type="range" min={3} max={25} step={1} value={barPct} onChange={(e) => setBarPct(Number(e.target.value))} className="w-full accent-gold" />
+                </div>
+                <label className="flex items-center gap-2 text-[11px] text-slate-400">{t('ed.pdf.barColor')}
+                  <input type="color" value={barColor} onChange={(e) => setBarColor(e.target.value)} className="h-6 w-8 cursor-pointer rounded border border-line bg-transparent" />
+                </label>
+              </>
+            )}
+            <div>
+              <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.brandFooter')}</label>
+              <div className="flex items-center gap-2">
+                <input value={brandFooter} onChange={(e) => setBrandFooter(e.target.value)} dir="auto" placeholder={t('ed.pdf.brandFooterPh')} className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600" />
+                <input type="color" value={brandTextColor} onChange={(e) => setBrandTextColor(e.target.value)} title={t('ed.pdf.textColor')} className="h-8 w-9 cursor-pointer rounded border border-line bg-transparent" />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.brandLogo')}</label>
+              <button type="button" onClick={() => brandLogoRef.current?.click()} className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-slate-200 transition hover:border-gold/30">
+                <ImagePlus className="h-3.5 w-3.5" /> {brandLogo ? t('ed.pdf.logoSet') : t('ed.pdf.uploadLogo')}
+              </button>
+              {brandLogo && (
+                <div className="mt-2 space-y-2">
+                  <div className="grid grid-cols-4 gap-1">
+                    {([['tl', '↖'], ['tr', '↗'], ['bl', '↙'], ['br', '↘']] as const).map(([c, g]) => (
+                      <button key={c} type="button" onClick={() => setLogoCorner(c)} className={`rounded-lg border py-1.5 text-sm transition ${logoCorner === c ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line text-slate-400'}`}>{g}</button>
+                    ))}
+                  </div>
+                  <label className="block text-[11px] text-slate-400">{t('ed.pdf.logoSize')} · {Math.round(logoScale * 100)}%</label>
+                  <input type="range" min={0.06} max={0.4} step={0.01} value={logoScale} onChange={(e) => setLogoScale(Number(e.target.value))} className="w-full accent-gold" />
+                  <button type="button" onClick={() => setBrandLogo(null)} className="text-[11px] text-rose-300 hover:text-rose-200">{t('ed.tool.remove')}</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.page')}</label>
+              <div className="flex gap-1.5">
+                {(['first', 'last', 'all'] as const).map((pt) => (
+                  <button key={pt} type="button" onClick={() => setBrandTarget(pt)} className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${brandTarget === pt ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line text-slate-400 hover:text-slate-200'}`}>{t(`ed.pdf.page.${pt}`)}</button>
+                ))}
+              </div>
+            </div>
+            <button type="button" onClick={applyBrand} disabled={brandBusy || pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+              {brandBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Palette className="h-4 w-4" />} {t('ed.pdf.applyBrand')}
+            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={saveWork} disabled={pageBusy || !work} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-slate-200 transition hover:text-white disabled:opacity-50"><Save className="h-4 w-4" /> {t('ed.pdf.pagesSave')}</button>
+              <button type="button" onClick={downloadWork} disabled={!work} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-slate-200 transition hover:text-white disabled:opacity-50"><Download className="h-4 w-4" /> {t('ed.download')}</button>
+            </div>
+          </div>
+        </div>
+      ) : showPages ? (
         <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
           <div className="mb-4 flex items-center gap-2">
             <button type="button" onClick={() => setShowPages(false)} className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"><ArrowLeft className="h-4 w-4" /> {t('ed.pdf.view')}</button>
@@ -336,8 +549,27 @@ export default function DrivePdfSurface() {
                 </button>
               </div>
             )}
+            {/* Per-page list — reorder / rotate / delete */}
+            {work && pageCount > 0 && (
+              <div className="max-h-64 space-y-1.5 overflow-y-auto">
+                {Array.from({ length: pageCount }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5">
+                    <span className="flex-1 text-xs text-slate-200">{t('ed.pdf.pageN', { n: String(i + 1) })}</span>
+                    <button type="button" disabled={pageBusy || i === 0} onClick={() => movePage(i, -1)} title={t('ed.pdf.moveUp')} className="rounded p-1 text-slate-400 transition hover:text-white disabled:opacity-30"><ArrowUp className="h-3.5 w-3.5" /></button>
+                    <button type="button" disabled={pageBusy || i === pageCount - 1} onClick={() => movePage(i, 1)} title={t('ed.pdf.moveDown')} className="rounded p-1 text-slate-400 transition hover:text-white disabled:opacity-30"><ArrowDown className="h-3.5 w-3.5" /></button>
+                    <button type="button" disabled={pageBusy} onClick={() => rotateOne(i)} title={t('ed.pdf.rotate')} className="rounded p-1 text-slate-400 transition hover:text-white disabled:opacity-50"><RotateCw className="h-3.5 w-3.5" /></button>
+                    <button type="button" disabled={pageBusy || pageCount <= 1} onClick={() => deleteOne(i)} title={t('ed.pdf.deletePagesCta')} className="rounded p-1 text-rose-400 transition hover:text-rose-300 disabled:opacity-30"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Add page */}
+            <div className="flex gap-1.5">
+              <button type="button" onClick={addBlank} disabled={pageBusy} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-slate-200 transition hover:border-gold/30 disabled:opacity-50"><FilePlus className="h-3.5 w-3.5" /> {t('ed.pdf.addBlank')}</button>
+              <button type="button" onClick={() => addImgRef.current?.click()} disabled={pageBusy} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-slate-200 transition hover:border-gold/30 disabled:opacity-50"><ImagePlus className="h-3.5 w-3.5" /> {t('ed.pdf.addImage')}</button>
+            </div>
             <button type="button" onClick={rotateAll} disabled={pageBusy} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-slate-200 transition hover:border-gold/30 disabled:opacity-50">
-              {pageBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} {t('ed.pdf.rotate')}
+              {pageBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} {t('ed.pdf.rotateAll')}
             </button>
             <div>
               <label className="mb-1 block text-[11px] text-slate-400">{t('ed.pdf.deletePagesLabel')}</label>
@@ -427,9 +659,9 @@ export default function DrivePdfSurface() {
             })}
           </dl>
         </div>
-      ) : url ? (
+      ) : (workUrl || url) ? (
         <iframe
-          src={url}
+          src={workUrl || url || undefined}
           title={item.title}
           sandbox="allow-same-origin allow-scripts allow-popups allow-downloads"
           className="h-full w-full border-0 bg-[#0d0d0f]"
