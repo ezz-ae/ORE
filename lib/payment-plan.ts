@@ -99,10 +99,16 @@ function fromDescription(text: string): PaymentPlanStages | undefined {
   // When the plan is delimited (comma / slash / newline / "and"), each segment
   // carries its OWN label + number regardless of order — bucket by the segment.
   if (/[,;/\n]|\band\b/i.test(text)) {
-    text.split(/[,;/\n]+|\band\b/i).map((s) => s.trim()).filter(Boolean).forEach((seg, i) => {
-      const p = pctOf(seg)
-      if (p === null) return
-      const bucket = bucketFor(seg) ?? (i === 0 ? "downPayment" : "duringConstruction")
+    // Keep only segments that carry a percent, so first/last positions are
+    // meaningful for the label-less fallback: mirror fromStages — first → down,
+    // LAST → handover, middle → construction. So "10%/50%/40%" reads 10 down / 50
+    // during / 40 handover, not 90% construction with the handover tranche lost.
+    const segs = text.split(/[,;/\n]+|\band\b/i)
+      .map((s) => s.trim())
+      .map((seg) => ({ seg, p: pctOf(seg) }))
+      .filter((x): x is { seg: string; p: number } => x.p !== null)
+    segs.forEach(({ seg, p }, i) => {
+      const bucket = bucketFor(seg) ?? (i === 0 ? "downPayment" : i === segs.length - 1 ? "onHandover" : "duringConstruction")
       acc[bucket] += p
       hit = true
     })
@@ -114,7 +120,7 @@ function fromDescription(text: string): PaymentPlanStages | undefined {
     matches.forEach((m, i) => {
       const p = toPct(m[1])
       if (p === null) return
-      const bucket = bucketFor(m[2] || "") ?? (i === 0 ? "downPayment" : "duringConstruction")
+      const bucket = bucketFor(m[2] || "") ?? (i === 0 ? "downPayment" : i === matches.length - 1 ? "onHandover" : "duringConstruction")
       acc[bucket] += p
       hit = true
     })

@@ -40,11 +40,20 @@ const langOf = (s: string): string => {
   return ''
 }
 const budgetOf = (s: string): number | null => {
-  // "aed 300", "300 aed", "300/day", "budget 300"
-  const m = s.replace(/,/g, '').match(/(?:aed|budget|spend|dhs?|درهم)\s*([0-9]{2,6})|([0-9]{2,6})\s*(?:aed|\/?\s*day|dhs?|درهم)/i)
+  // "aed 300", "budget: 300", "300 aed", "300/day", "300 per day", "300 a day",
+  // "300 dirhams", "300 daily". Broad enough to catch how a broker actually writes
+  // it, so a real budget isn't dropped as if it were never stated.
+  const m = (s || '').replace(/,/g, '').match(
+    /(?:aed|budget|spend|dhs?|dirhams?|درهم)\s*:?\s*([0-9]{2,7})|([0-9]{2,7})\s*(?:aed|dhs?|dirhams?|درهم|daily|\/?\s*(?:per\s+|a\s+)?day)/i,
+  )
   const n = m ? Number(m[1] || m[2]) : NaN
   return Number.isFinite(n) && n > 0 ? n : null
 }
+// Does the broker's text contain this exact figure as a standalone number? Lets
+// us honour an AI-extracted budget the regex above didn't phrase-match (e.g. "my
+// budget is 300 per day") WITHOUT inventing a number the broker never wrote.
+const textHasNumber = (s: string, n: number): boolean =>
+  new RegExp(`(?<![\\d.])${n}(?![\\d.])`).test((s || '').replace(/,/g, ''))
 const hasCreativeSignal = (s: string): boolean =>
   /\b(new|better|fresh|another|different|my)\s+(creative|ad|image|photo|video|reel|design|banner)\b|new creative|better creative/i.test(s)
 
@@ -117,13 +126,14 @@ Broker request: """${clean.slice(0, 800)}"""`
     const objective = OBJECTIVE_OF[objRaw] ?? ''
     const lang = String(parsed.language ?? '')
     // Ground the model's budget in the actual text — never accept a number the
-    // broker didn't state (NOTHING-FAKE). Prefer the value the text confirms.
+    // broker didn't state (NOTHING-FAKE). Prefer the regex-confirmed figure; else
+    // accept the model's number ONLY when the broker's own words contain it.
     const textBudget = budgetOf(clean)
     const modelBudget = typeof parsed.dailyBudgetAED === 'number' && Number.isFinite(parsed.dailyBudgetAED) && parsed.dailyBudgetAED > 0
-      ? parsed.dailyBudgetAED : null
+      ? Math.round(parsed.dailyBudgetAED) : null
     const budget = textBudget !== null
-      ? (modelBudget === textBudget ? modelBudget : textBudget)
-      : null
+      ? textBudget
+      : (modelBudget !== null && textHasNumber(clean, modelBudget) ? modelBudget : null)
     const clarification = objective ? null
       : (typeof parsed.clarification === 'string' && parsed.clarification.trim() ? parsed.clarification.trim() : fallbackRead(clean).needsClarification)
     return {
