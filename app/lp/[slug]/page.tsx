@@ -658,7 +658,7 @@ function WhyDubaiSection({ d, L, p }: { d: Record<string, unknown>; L: Dict; p: 
               </div>
               <div className="text-[28px] font-bold" style={{ color: p.textPrimary }}>{stat}</div>
               <div className="mt-1.5 text-[13px] font-medium" style={{ color: p.textMuted }}>{label}</div>
-              <div className="mt-1 text-[11px]" style={{ color: p.textFaint }}>{sub}</div>
+              {sub ? <div className="mt-1 text-[11px]" style={{ color: p.textFaint }}>{sub}</div> : null}
             </div>
           ))}
         </div>
