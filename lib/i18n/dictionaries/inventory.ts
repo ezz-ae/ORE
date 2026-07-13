@@ -149,6 +149,10 @@ const en: Dict = {
   // property detail
   'inv.detail.notFound': 'Property not found.',
   'inv.detail.back': 'Back to Inventory',
+  'inv.confidence.verified': 'DLD-verified',
+  'inv.confidence.verified.hint': 'Reconciled with Dubai Land Department (DLD) records.',
+  'inv.confidence.estimated': 'Estimated',
+  'inv.confidence.estimated.hint': 'Derived from portal data — not yet reconciled with the DLD.',
   'inv.detail.generateLandingPage': 'Generate Landing Page',
   'inv.detail.landingSection': 'Landing Page',
   'inv.detail.notPublished': 'not published yet',
@@ -438,6 +442,10 @@ const ar: Dict = {
 
   'inv.detail.notFound': 'العقار غير موجود.',
   'inv.detail.back': 'العودة إلى المخزون',
+  'inv.confidence.verified': 'موثّق من دائرة الأراضي',
+  'inv.confidence.verified.hint': 'تمت مطابقته مع سجلات دائرة الأراضي والأملاك في دبي (DLD).',
+  'inv.confidence.estimated': 'تقديري',
+  'inv.confidence.estimated.hint': 'مستمد من بيانات المنصات، لم تتم مطابقته بعد مع دائرة الأراضي.',
   'inv.detail.generateLandingPage': 'توليد صفحة هبوط',
   'inv.detail.landingSection': 'صفحة الهبوط',
   'inv.detail.notPublished': 'لم تُنشر بعد',
@@ -722,6 +730,10 @@ const ru: Dict = {
 
   'inv.detail.notFound': 'Объект не найден.',
   'inv.detail.back': 'Назад в Каталог',
+  'inv.confidence.verified': 'Проверено DLD',
+  'inv.confidence.verified.hint': 'Сверено с записями Земельного департамента Дубая (DLD).',
+  'inv.confidence.estimated': 'Оценочно',
+  'inv.confidence.estimated.hint': 'Получено из данных порталов, ещё не сверено с DLD.',
   'inv.detail.generateLandingPage': 'Сгенерировать лендинг',
   'inv.detail.landingSection': 'Посадочная страница',
   'inv.detail.notPublished': 'ещё не опубликована',

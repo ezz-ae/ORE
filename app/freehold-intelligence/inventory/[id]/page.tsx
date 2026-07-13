@@ -9,6 +9,8 @@ import {
   Tag,
   TrendingUp,
   Megaphone,
+  BadgeCheck,
+  CircleDashed,
 } from 'lucide-react'
 import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
@@ -128,6 +130,17 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-medium ${statusBadge(prop.status)}`}>
             {statusLabel(prop.status, t)}
           </span>
+          {/* Data confidence from the inventory pipeline — an honest trust signal,
+              only shown once the pipeline stamps it (never a fake "verified"). */}
+          {prop.dataConfidence && (
+            <span
+              title={t(`inv.confidence.${prop.dataConfidence}.hint`)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm font-medium ${prop.dataConfidence === 'verified' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/25 bg-amber-400/[0.08] text-amber-300'}`}
+            >
+              {prop.dataConfidence === 'verified' ? <BadgeCheck className="h-3.5 w-3.5" /> : <CircleDashed className="h-3.5 w-3.5" />}
+              {t(`inv.confidence.${prop.dataConfidence}`)}
+            </span>
+          )}
           <span className="text-sm capitalize text-slate-500">{prop.type}</span>
         </div>
         <h1 className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-tight text-white sm:text-[44px]">

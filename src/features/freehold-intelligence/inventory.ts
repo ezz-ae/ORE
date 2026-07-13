@@ -39,6 +39,9 @@ export interface InventoryProperty {
   hasImages: boolean
   imageCount: number
   dataQuality: number
+  /** Inventory-pipeline confidence: 'verified' = DLD-reconciled, 'estimated' =
+      PF-derived, null = not yet stamped. Sourced from payload.confidence. */
+  dataConfidence?: 'estimated' | 'verified' | null
   adReadiness: number
   linkedCampaigns: number
   leads30d: number
