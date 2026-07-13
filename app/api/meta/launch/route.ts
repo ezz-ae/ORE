@@ -137,14 +137,20 @@ export async function POST(req: NextRequest) {
 
   async function recordLaunchDecision(campaignId: string) {
     if (!decision) return
-    const applied = decision.action === 'new_campaign'
+    // A real campaign WAS launched and credits WERE committed on this path, so
+    // the ledger records an executed new_campaign with the true budget movement.
+    // When a smarter action was available, that nuance lives in the reason — we
+    // never label a live launch as 'blocked'/held (which means "nothing spent").
+    const wasBest = decision.action === 'new_campaign'
     await recordDecision({
       projectSlug, campaignId, brokerId: intent.brokerId,
-      action: decision.action,
-      outcome: applied ? 'auto' : 'blocked',
-      reason: applied
+      action: 'new_campaign',
+      outcome: 'auto',
+      reason: wasBest
         ? decision.reason
-        : `Recommended ${decision.action} — launched as a new campaign; autonomous reroute pending admin/execution. ${decision.adminNote}`,
+        : `Launched a new campaign. The intent router recommended "${decision.action}" to avoid competing spend on this objective — fold the arms via Campaign Groups. ${decision.adminNote}`,
+      spendBeforeAED: 0,
+      spendAfterAED: body.dailyBudgetAED,
     })
   }
 

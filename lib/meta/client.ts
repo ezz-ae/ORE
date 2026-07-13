@@ -264,8 +264,11 @@ export async function deleteCampaign(campaignId: string): Promise<{ success: boo
 // ─── Ad Sets ─────────────────────────────────────────────────────────────────
 
 export async function listAdSets(campaignId: string): Promise<MetaAdSet[]> {
+  // Explicit high limit so a multi-ad-set (ABO) campaign isn't silently capped
+  // at Meta's default page size — the budget rollup must see every ad set.
   const res = await apiFetch<{ data: MetaAdSet[] }>(`/${campaignId}/adsets`, undefined, {
     fields: 'id,name,status,daily_budget,targeting,optimization_goal,billing_event',
+    limit: '200',
   })
   return res.data ?? []
 }

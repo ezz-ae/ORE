@@ -14,7 +14,7 @@ type AdSetRow = { id: string; name: string; status: string; dailyBudgetAED: numb
 type Member = {
   campaignId: string; label: string; objective: string; name: string
   status: string; running: boolean; spendAED: number; leads: number; cpl: number; quality: Quality
-  adSets?: AdSetRow[]
+  adSets?: AdSetRow[]; rollupError?: boolean
 }
 type GroupData = {
   group: { id: string; name: string; projectSlug: string | null; createdAt: string }
@@ -173,6 +173,11 @@ export default function GroupDetailClient({ id }: { id: string }) {
                   <p className="mt-2 text-[11px] text-slate-500">{t('cg.quality.noneYet')}</p>
                 )}
               </div>
+
+              {/* Meta rollup failed (rate limit / API) — say so, don't imply empty. */}
+              {m.rollupError && (m.adSets?.length ?? 0) === 0 && (
+                <p className="mt-3 text-[11px] text-slate-500">{t('cg.rollup.unavailable')}</p>
+              )}
 
               {/* 3-level rollup: ad sets (audience/language) → ads (creative) */}
               {(m.adSets?.length ?? 0) > 0 && (

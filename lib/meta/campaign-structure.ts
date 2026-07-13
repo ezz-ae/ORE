@@ -1,5 +1,5 @@
 import { query } from '@/lib/db'
-import { listCampaigns, getCampaignInsights, listAdSets, listAds } from '@/lib/meta/client'
+import { getCampaign, getCampaignInsights, listAdSets, listAds } from '@/lib/meta/client'
 import type { MetaCampaign, MetaAdSet, MetaInsights, CampaignTargeting } from '@/lib/meta/types'
 import type { ProjectAdStructure, ExistingCampaign, ExistingAdSet, ExistingAd } from '@/lib/meta/campaign-router'
 
@@ -54,30 +54,47 @@ export async function getCampaignIdsForProject(projectSlug: string): Promise<Set
 // ── Fingerprints ──────────────────────────────────────────────────────────────
 // Both the live-Meta read path and the wizard's request path normalize into the
 // SAME shape, then through the SAME key builder — otherwise "same audience"
-// would never match across the two sources.
+// would never match across the two sources. Interests/behaviors are compared as
+// GROUPS so a narrowed (flexible_spec) audience matches its wizard equivalent and
+// stays distinct from a flat audience with the same total interests. This mirrors
+// createAdSet: a narrowed audience becomes flexible_spec = [baseGroup, …groups]
+// with no top-level interests; a flat audience keeps top-level interests only.
+type Group = { interests: string[]; behaviors: string[] }
 interface AudienceNormal {
   countries: string[]; cities: string[]; ageMin: string; ageMax: string
-  genders: string[]; interests: string[]; behaviors: string[]; customAudiences: string[]
+  genders: string[]; customAudiences: string[]; groups: Group[]
 }
 const sortStr = (v: Array<string | number>): string[] => v.map(String).filter(Boolean).sort()
 const asStrArr = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => (typeof x === 'string' || typeof x === 'number' ? String(x) : (x && typeof x === 'object' && 'id' in (x as Record<string, unknown>) ? String((x as Record<string, unknown>).id) : ''))).filter(Boolean).sort() : []
 
+// Serialize interest/behavior groups order-independently; empty groups are
+// dropped (createAdSet omits an empty base group), so the two paths agree.
+const groupsKey = (groups: Group[]): string =>
+  groups
+    .map((g) => ({ i: sortStr(g.interests), b: sortStr(g.behaviors) }))
+    .filter((g) => g.i.length || g.b.length)
+    .map((g) => `i:${g.i.join(',')};b:${g.b.join(',')}`)
+    .sort()
+    .join('||')
+
 const keyFrom = (a: AudienceNormal): string =>
   [`c:${a.countries.join(',')}`, `city:${a.cities.join(',')}`, `age:${a.ageMin}-${a.ageMax}`,
-    `g:${a.genders.join(',')}`, `int:${a.interests.join(',')}`, `beh:${a.behaviors.join(',')}`,
-    `ca:${a.customAudiences.join(',')}`].join('|')
+    `g:${a.genders.join(',')}`, `ca:${a.customAudiences.join(',')}`, `grp:${groupsKey(a.groups)}`].join('|')
 
 // From a live ad set's untyped Graph `targeting` Record.
 export function audienceFingerprint(targeting: Record<string, unknown> | undefined): string {
   const t = targeting || {}
   const geo = (t.geo_locations && typeof t.geo_locations === 'object' ? t.geo_locations : {}) as Record<string, unknown>
   const cities = Array.isArray(geo.cities) ? sortStr(geo.cities.map((c) => String((c as Record<string, unknown>)?.key ?? ''))) : []
+  const fs = Array.isArray(t.flexible_spec) ? (t.flexible_spec as Array<Record<string, unknown>>) : null
+  const groups: Group[] = fs
+    ? fs.map((g) => ({ interests: asStrArr(g.interests), behaviors: asStrArr(g.behaviors) }))
+    : [{ interests: asStrArr(t.interests), behaviors: asStrArr(t.behaviors) }]
   return keyFrom({
     countries: asStrArr(geo.countries), cities,
     ageMin: String(t.age_min ?? ''), ageMax: String(t.age_max ?? ''),
-    genders: asStrArr(t.genders), interests: asStrArr(t.interests),
-    behaviors: asStrArr(t.behaviors), customAudiences: asStrArr(t.custom_audiences),
+    genders: asStrArr(t.genders), customAudiences: asStrArr(t.custom_audiences), groups,
   })
 }
 
@@ -90,14 +107,17 @@ export function languageFingerprint(targeting: Record<string, unknown> | undefin
 // From the wizard's app-side CampaignTargeting — MUST produce the same key shape.
 export function audienceFingerprintFromTargeting(t: CampaignTargeting | undefined): string {
   const g = t
+  const base: Group = { interests: (g?.interests ?? []).map((i) => i.id), behaviors: (g?.behaviors ?? []).map((b) => b.id) }
+  const groups: Group[] = (g?.narrowing?.length ?? 0) > 0
+    ? [base, ...(g!.narrowing!).map((n) => ({ interests: (n.interests ?? []).map((i) => i.id), behaviors: (n.behaviors ?? []).map((b) => b.id) }))]
+    : [base]
   return keyFrom({
     countries: sortStr(g?.countries ?? []),
     cities: sortStr(g?.cityKeys ?? []),
     ageMin: String(g?.ageMin ?? ''), ageMax: String(g?.ageMax ?? ''),
     genders: sortStr(g?.genders ?? []),
-    interests: sortStr((g?.interests ?? []).map((i) => i.id)),
-    behaviors: sortStr((g?.behaviors ?? []).map((b) => b.id)),
     customAudiences: sortStr(g?.customAudienceIds ?? []),
+    groups,
   })
 }
 export function languageFingerprintFromTargeting(t: CampaignTargeting | undefined): string {
@@ -168,8 +188,10 @@ export async function buildProjectAdStructure(projectSlug: string): Promise<Proj
   try {
     const ids = await getCampaignIdsForProject(projectSlug)
     if (ids.size === 0) return { projectSlug, campaigns: [] }
-    const all = await listCampaigns()
-    const mine = all.filter((c) => ids.has(c.id) && c.status !== 'DELETED' && c.status !== 'ARCHIVED')
+    // Fetch each LINKED campaign directly — listCampaigns() only returns the
+    // first account page, so a linked campaign beyond it would be invisible.
+    const fetched = await Promise.all([...ids].map((id) => getCampaign(id).catch(() => null)))
+    const mine = fetched.filter((c): c is MetaCampaign => !!c && c.status !== 'DELETED' && c.status !== 'ARCHIVED')
     const campaigns = await Promise.all(mine.map(buildCampaign))
     return { projectSlug, campaigns }
   } catch {
