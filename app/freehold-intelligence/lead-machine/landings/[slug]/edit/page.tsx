@@ -102,6 +102,10 @@ export default function LandingEditorPage() {
   const [requestId, setRequestId] = useState<string | null>(null)
   const [proposalNote, setProposalNote] = useState('')
   const [sending, setSending] = useState(false)
+  // A fields-only proposal must NOT ship a full sections snapshot (which would
+  // revert intervening layout edits on approve). Track whether the broker touched
+  // the layout/section content, and only propose sections when they did.
+  const [sectionsTouched, setSectionsTouched] = useState(false)
 
   const [form, setForm] = useState<Landing | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
@@ -154,6 +158,8 @@ export default function LandingEditorPage() {
           setForm(overlayDraft(d.landing as Landing, draft))
           setRequestId(draft?.id ?? null)
           setProposalNote(draft?.note ?? '')
+          // A resumed draft that already carried section edits keeps proposing them.
+          setSectionsTouched(Array.isArray(draft?.proposedSections) && (draft?.proposedSections?.length ?? 0) > 0)
           setEdited(false)
         } else setNotFound(true)
         return
@@ -208,7 +214,9 @@ export default function LandingEditorPage() {
             headline: form.headline, subheadline: form.subheadline, ctaText: form.ctaText,
             seoTitle: form.seoTitle, seoDescription: form.seoDescription, heroImage: form.heroImage,
           },
-          proposedSections: form.sections ?? [],
+          // Only include sections when the broker actually edited them — a
+          // fields-only proposal leaves the live layout untouched on approve.
+          proposedSections: sectionsTouched ? (form.sections ?? []) : undefined,
           note: proposalNote,
           submit,
         }),
@@ -369,7 +377,7 @@ export default function LandingEditorPage() {
   function sectionLabel(type: string) {
     return type.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   }
-  function setSections(next: LpSection[]) { setEdited(true); setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
+  function setSections(next: LpSection[]) { setEdited(true); setSectionsTouched(true); setForm((prev) => (prev ? { ...prev, sections: next } : prev)) }
   // Undo / redo — structural canvas changes (reorder, add, remove, hide, AI) push
   // the prior state; text edits stay untracked to avoid per-keystroke history.
   const [past, setPast] = useState<LpSection[][]>([])

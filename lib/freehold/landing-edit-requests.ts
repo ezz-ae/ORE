@@ -234,19 +234,24 @@ export async function submitDraft(id: string, requestedBy: string): Promise<{ ok
 }
 
 /** Apply the proposal's fields + sections to the live landing and publish it. */
-async function applyProposal(req: LandingEditRequest, reviewerName: string): Promise<boolean> {
-  const existing = await getLandingPageForEditor(req.landingSlug)
-  if (!existing) return false
-  const f = req.proposedFields || {}
+interface EditorContent { headline: string; subheadline: string; heroImage: string; ctaText: string; seoTitle: string; seoDescription: string }
+
+async function applyProposalContent(
+  landingSlug: string,
+  existing: EditorContent,
+  fields: Record<string, unknown>,
+  sections: ProposedSection[] | null,
+  reviewerName: string,
+): Promise<void> {
   const str = (v: unknown, fallback: string) => (typeof v === 'string' && v.trim() ? v : fallback)
-  const headline = str(f.headline, existing.headline)
-  if (!headline) return false
-  const subheadline = str(f.subheadline, existing.subheadline)
-  const heroImage = str(f.heroImage, existing.heroImage)
-  const ctaText = str(f.ctaText, existing.ctaText)
-  const seoTitle = str(f.seoTitle, existing.seoTitle)
-  const seoDescription = str(f.seoDescription, existing.seoDescription)
-  const slug = req.landingSlug.trim().toLowerCase()
+  const headline = str(fields.headline, existing.headline)
+  if (!headline) return
+  const subheadline = str(fields.subheadline, existing.subheadline)
+  const heroImage = str(fields.heroImage, existing.heroImage)
+  const ctaText = str(fields.ctaText, existing.ctaText)
+  const seoTitle = str(fields.seoTitle, existing.seoTitle)
+  const seoDescription = str(fields.seoDescription, existing.seoDescription)
+  const slug = landingSlug.trim().toLowerCase()
   const nowIso = new Date().toISOString()
 
   await query(
@@ -262,33 +267,63 @@ async function applyProposal(req: LandingEditRequest, reviewerName: string): Pro
      WHERE lower(slug) = $1`,
     [slug, headline, subheadline, heroImage, ctaText, seoTitle, seoDescription, reviewerName, nowIso],
   )
-  if (req.proposedSections && req.proposedSections.length) {
+  // Only overwrite sections when the proposal carries them — a fields-only
+  // proposal must not revert intervening layout edits back to a stale snapshot.
+  if (sections && sections.length) {
     await query(
       `UPDATE freehold_site_project_landing_pages
        SET sections_json = $2::jsonb, sections = $2::jsonb, updated_at = now()
        WHERE lower(slug) = $1`,
-      [slug, JSON.stringify(req.proposedSections)],
+      [slug, JSON.stringify(sections)],
     )
   }
-  return true
 }
 
-/** Approver publishes a pending proposal: apply it live, mark approved. */
+/**
+ * Approver publishes a pending proposal. CLAIM-FIRST: the row is flipped
+ * pending → approved atomically BEFORE the live page is touched, so a concurrent
+ * broker pull-back-to-draft (or a second approver) makes the claim match 0 rows
+ * and the live page is never mutated without a recorded approval. The claimed
+ * snapshot is applied exactly (not re-read), and the claim is rolled back if the
+ * live write throws.
+ */
 export async function approveRequest(id: string, reviewerName: string): Promise<{ ok: boolean; reason?: string }> {
   await ensureLandingEditSchema()
   try {
     const req = await getRequest(id)
     if (!req) return { ok: false, reason: 'not_found' }
     if (req.status !== 'pending') return { ok: false, reason: 'not_pending' }
-    const applied = await applyProposal(req, reviewerName)
-    if (!applied) return { ok: false, reason: 'landing_missing' }
-    const rows = await query<{ id: string }>(
+    const existing = await getLandingPageForEditor(req.landingSlug)
+    if (!existing) return { ok: false, reason: 'landing_missing' }
+
+    const claimed = await query<{ proposed_fields: Record<string, unknown> | null; proposed_sections: ProposedSection[] | null }>(
       `UPDATE freehold_site_landing_edit_requests
        SET status = 'approved', reviewed_by = $2, reviewed_at = now(), updated_at = now()
-       WHERE id = $1 AND status = 'pending' RETURNING id`,
+       WHERE id = $1 AND status = 'pending'
+       RETURNING proposed_fields, proposed_sections`,
       [id, reviewerName],
     )
-    return { ok: !!rows[0] }
+    if (!claimed[0]) return { ok: false, reason: 'not_pending' }
+
+    try {
+      await applyProposalContent(
+        req.landingSlug,
+        existing,
+        claimed[0].proposed_fields ?? {},
+        Array.isArray(claimed[0].proposed_sections) ? claimed[0].proposed_sections : null,
+        reviewerName,
+      )
+    } catch {
+      // Live write failed after the claim — revert so the request can be retried.
+      await query(
+        `UPDATE freehold_site_landing_edit_requests
+         SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL, updated_at = now()
+         WHERE id = $1 AND status = 'approved'`,
+        [id],
+      ).catch(() => {})
+      return { ok: false, reason: 'apply_failed' }
+    }
+    return { ok: true }
   } catch { return { ok: false, reason: 'error' } }
 }
 
