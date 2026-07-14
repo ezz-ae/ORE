@@ -125,6 +125,33 @@ export default function InventoryClient({ initialProperties }: { initialProperti
   const analysis = getInventoryAnalysis(initialProperties)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [query, setQuery] = useState('')
+  const [tagSel, setTagSel] = useState<string[]>([])
+
+  // Tag-group facets built ONLY from real property tags (handover · payment ·
+  // price · highlights · area). Status tags are excluded — the status pills
+  // already cover them. Groups with no tags simply don't render.
+  const tagCounts = initialProperties.reduce<Record<string, number>>((acc, p) => {
+    for (const tag of p.tags) acc[tag] = (acc[tag] || 0) + 1
+    return acc
+  }, {})
+  const groupOf = (tag: string): string | null =>
+    tag === 'Ready' || tag === 'Off-Plan' ? null
+      : tag.startsWith('Handover ') ? 'handover'
+        : /Monthly|Post-Handover|Plan$/.test(tag) ? 'payment'
+          : /^(Under )?AED /.test(tag) ? 'price'
+            : tag === 'High Yield' || tag === 'Golden Visa' ? 'highlights'
+              : 'area'
+  const tagGroups = (['handover', 'payment', 'price', 'highlights', 'area'] as const)
+    .map((g) => ({
+      group: g,
+      tags: Object.keys(tagCounts)
+        .filter((tag) => groupOf(tag) === g)
+        .sort((a, b) => (tagCounts[b] - tagCounts[a]) || a.localeCompare(b))
+        .slice(0, g === 'area' ? 10 : 8),
+    }))
+    .filter((g) => g.tags.length > 0)
+  const toggleTag = (tag: string) =>
+    setTagSel((prev) => (prev.includes(tag) ? prev.filter((x) => x !== tag) : [...prev, tag]))
 
   // Only show a status filter chip when at least one property actually has that
   // status — a permanent "0 results" filter (e.g. off-plan showing nothing)
@@ -137,13 +164,16 @@ export default function InventoryClient({ initialProperties }: { initialProperti
 
   const filtered = initialProperties
     .filter((p) => filter === 'all' || p.status === filter)
+    .filter((p) => tagSel.every((tg) => p.tags.includes(tg)))
     .filter((p) => {
       if (!query.trim()) return true
       const q = query.toLowerCase()
       return (
         p.name.toLowerCase().includes(q) ||
         p.area.toLowerCase().includes(q) ||
-        p.developer.toLowerCase().includes(q)
+        p.developer.toLowerCase().includes(q) ||
+        // Tags are searchable too — "1% monthly", "handover 2027", "golden visa".
+        p.tags.some((tag) => tag.toLowerCase().includes(q))
       )
     })
     .sort((a, b) => b.adReadiness - a.adReadiness)
@@ -267,6 +297,23 @@ export default function InventoryClient({ initialProperties }: { initialProperti
           />
         </div>
       </div>
+
+      {/* Tag groups — real-data facets (handover · payment · price · area). */}
+      {tagGroups.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {tagGroups.map(({ group, tags }) => (
+            <div key={group} className="flex flex-wrap items-center gap-1.5">
+              <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t(`inv.tagGroup.${group}`)}</span>
+              {tags.map((tag) => (
+                <button key={tag} onClick={() => toggleTag(tag)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${tagSel.includes(tag) ? 'border-gold/40 bg-gold/[0.12] text-[#F8E7AE]' : 'border-line bg-surface-2 text-slate-400 hover:text-slate-200'}`}>
+                  {tag} <span className={tagSel.includes(tag) ? 'text-gold/60' : 'text-slate-600'}>{tagCounts[tag]}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Table */}
       <div className="mt-5 overflow-x-auto rounded-[20px] border border-line bg-surface-2">
