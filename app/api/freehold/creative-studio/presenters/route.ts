@@ -44,7 +44,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ presenter: { id: persona.id, name: persona.name, faceUrl: saved[persona.id].faceUrl } })
   }
 
-  const prompt = `Professional photorealistic portrait headshot of ${persona.description} Natural studio lighting, plain neutral background, looking straight at camera, head and shoulders, sharp focus, high detail. A consistent character reference for a Dubai real-estate video presenter. No text, no logos, no watermark.`
+  // The persona's demographics MUST anchor the image — the free-text
+  // description alone doesn't state gender, so without this the model can (and
+  // did) render e.g. Layla as a man. Lead the prompt with gender/ethnicity/age.
+  const genderNoun: Record<string, string> = { female: 'woman', male: 'man', 'non-binary': 'person' }
+  const subject = [
+    persona.ageRange ? `${persona.ageRange}-year-old` : '',
+    persona.ethnicity ? persona.ethnicity.replace(/-/g, ' ') : '',
+    genderNoun[persona.gender] ?? 'person',
+  ].filter(Boolean).join(' ')
+  const prompt = `Professional photorealistic portrait headshot of a ${subject}. ${persona.description} Natural studio lighting, plain neutral background, looking straight at camera, head and shoulders, sharp focus, high detail. A consistent character reference for a Dubai real-estate video presenter. No text, no logos, no watermark.`
 
   let url: string
   try {

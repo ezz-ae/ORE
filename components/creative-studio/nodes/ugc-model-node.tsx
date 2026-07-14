@@ -3,7 +3,7 @@
 import type React from "react"
 import { memo, useState, useEffect, useCallback } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
-import { User, Lock, Unlock, Play, Loader2, Sparkles, CheckCircle2 } from "lucide-react"
+import { User, Lock, Unlock, Play, Loader2, Sparkles, CheckCircle2, RefreshCw } from "lucide-react"
 import { getStatusColor } from "@/lib/creative-studio/node-utils"
 import { Label } from "@/components/ui/label"
 import { NodeSelect } from "./node-select"
@@ -125,13 +125,14 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
   }
 
   // Generate this persona's face ONCE for the account; reused thereafter.
-  const generateFace = useCallback(async () => {
+  // `regenerate` overwrites an existing saved face (e.g. a wrong-gender one).
+  const generateFace = useCallback(async (regenerate = false) => {
     if (!personaObj || genning) return
     setGenning(true)
     try {
       const res = await fetch("/api/freehold/creative-studio/presenters", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ personaId: personaObj.id }),
+        body: JSON.stringify({ personaId: personaObj.id, regenerate }),
       })
       const d = await res.json().catch(() => ({}))
       if (res.ok && d.presenter?.faceUrl) {
@@ -234,9 +235,14 @@ function UgcModelNode({ id, data, selected }: NodeProps<Node<UgcModelNodeData>>)
                     <span className="flex items-center gap-1 text-[10px] text-emerald-500">
                       <CheckCircle2 className="h-3 w-3" /> {t("pcsn.pres.reusable")}
                     </span>
+                    {/* Replace a wrong saved face (e.g. the wrong gender). */}
+                    <Button size="sm" variant="ghost" className="ml-auto h-7 gap-1 text-[10px]" disabled={genning} onClick={() => generateFace(true)}>
+                      {genning ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      {t("pcsn.pres.regen")}
+                    </Button>
                   </>
                 ) : (
-                  <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" disabled={genning} onClick={generateFace}>
+                  <Button size="sm" variant="outline" className="h-7 gap-1 text-[10px]" disabled={genning} onClick={() => generateFace(false)}>
                     {genning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     {t("pcsn.pres.genFace")}
                   </Button>
