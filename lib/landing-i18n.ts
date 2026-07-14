@@ -174,6 +174,7 @@ const EN: Record<string, string> = {
   "leadForm.benefit4": "0% buyer commission — always",
 
   "brochure.eyebrow": "Free Download",
+  "brochure.download": "Download Brochure",
   "brochure.title": "Download the Full Brochure",
   "brochure.subtitle":
     "Floor plans, specifications, payment schedule, and full investment analysis in one document.",
@@ -354,6 +355,7 @@ const AR: Record<string, string> = {
   "leadForm.benefit4": "عمولة 0% على المشتري — دائماً",
 
   "brochure.eyebrow": "تحميل مجاني",
+  "brochure.download": "تحميل الكتيّب",
   "brochure.title": "حمّل الكتيّب الكامل",
   "brochure.subtitle":
     "مخططات الطوابق والمواصفات وجدول السداد والتحليل الاستثماري الكامل في مستند واحد.",
@@ -534,6 +536,7 @@ const RU: Record<string, string> = {
   "leadForm.benefit4": "0% комиссии с покупателя — всегда",
 
   "brochure.eyebrow": "Бесплатная загрузка",
+  "brochure.download": "Скачать брошюру",
   "brochure.title": "Скачать полную брошюру",
   "brochure.subtitle":
     "Планировки, спецификации, график оплаты и полный инвестиционный анализ в одном документе.",

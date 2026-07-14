@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import {
   Phone, MapPin, Check, TrendingUp, Shield, Star, Building2, Globe, Wifi,
   ChevronRight, MessageCircle, Sparkles, Clock, Award, Users, Car, Plane,
-  ShoppingBag, GraduationCap, Coffee, Dumbbell, Trees, Waves, Sun, Moon,
+  ShoppingBag, GraduationCap, Coffee, Dumbbell, Trees, Waves, Sun, Moon, Download,
 } from 'lucide-react'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { getLandingPageBySlug, type LandingSection, type LandingPageData } from '@/lib/landing-pages'
@@ -121,7 +121,7 @@ function inventoryToLandingPage(prop: InventoryProperty | null): LandingPageData
     soldOut: false,
     template: 'classic',
     sections,
-    project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, gallery: [], amenities: [], faqs: [] },
+    project: { slug: prop.slug, name: prop.name, area: prop.area, developerName: prop.developer, heroImage: '/logo.png', priceFromAed: prop.startingPriceAED, priceToAed: prop.maxPriceAED, rentalYield: prop.roi, gallery: [], brochureUrl: null, amenities: [], faqs: [] },
   }
 }
 
@@ -967,6 +967,11 @@ function LeadFormSection({ d, page, L, p }: { d: Record<string, unknown>; page: 
 function DownloadBrochureSection({ d, page, L, p }: { d: Record<string, unknown>; page: LandingPageData; L: Dict; p: LpPalette }) {
   const title = pick(d, 'title') || L['brochure.title']
   const subtitle = pick(d, 'subtitle') || L['brochure.subtitle']
+  // Prefer a real brochure file — the button then downloads it directly. When
+  // there's no brochure, fall back to the lead form (no dead "download" link).
+  const authored = pick(d, 'brochureUrl', 'url', 'brochure')
+  const brochureUrl = /^https?:\/\//i.test(authored) ? authored : (page.project?.brochureUrl || '')
+  const hasBrochure = /^https?:\/\//i.test(brochureUrl)
 
   return (
     <section className="border-t px-5 py-16 sm:px-8" style={{ borderTopColor: p.divider }}>
@@ -976,9 +981,15 @@ function DownloadBrochureSection({ d, page, L, p }: { d: Record<string, unknown>
             <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]/60">{L['brochure.eyebrow']}</div>
             <h3 className="text-[28px] font-bold" style={{ color: p.textPrimary }}>{title}</h3>
             <p className="mx-auto mt-3 text-[14px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>
-            <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
-              {page.ctaText} <ChevronRight className="h-4 w-4" />
-            </a>
+            {hasBrochure ? (
+              <a href={brochureUrl} target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
+                {L['brochure.download']} <Download className="h-4 w-4" />
+              </a>
+            ) : (
+              <a href="#lead-form" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-9 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547]">
+                {page.ctaText} <ChevronRight className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>
