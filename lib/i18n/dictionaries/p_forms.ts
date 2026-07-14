@@ -22,6 +22,8 @@ const en: Dict = {
 
   // step 1 — basics
   'pforms.basics.listing': 'Listing',
+  'pforms.basics.wiredFromAd': 'Wired from your ad',
+  'pforms.created.unwired': 'This form is not wired to any ad yet, so it collects nothing until a campaign uses it. Attach it in the campaign wizard when you launch.',
   'pforms.basics.selectListing': 'Select listing…',
   'pforms.basics.formName': 'Form name',
   'pforms.basics.formNamePlaceholder': 'e.g. Palm Jumeirah — Lead Form',
@@ -146,6 +148,8 @@ const ar: Dict = {
   'pforms.created.viewForm': 'عرض النموذج',
 
   'pforms.basics.listing': 'القائمة',
+  'pforms.basics.wiredFromAd': 'موصول من إعلانك',
+  'pforms.created.unwired': 'هذا النموذج غير موصول بأي إعلان بعد، لذا لن يجمع شيئًا حتى تستخدمه حملة. اربطه في معالج الحملات عند الإطلاق.',
   'pforms.basics.selectListing': 'اختر قائمة…',
   'pforms.basics.formName': 'اسم النموذج',
   'pforms.basics.formNamePlaceholder': 'مثال: نخلة جميرا — نموذج العملاء المحتملين',
@@ -255,6 +259,8 @@ const ru: Dict = {
   'pforms.created.viewForm': 'Открыть форму',
 
   'pforms.basics.listing': 'Объект',
+  'pforms.basics.wiredFromAd': 'Привязано из объявления',
+  'pforms.created.unwired': 'Форма пока не привязана ни к одному объявлению и ничего не собирает, пока её не использует кампания. Подключите её в мастере кампаний при запуске.',
   'pforms.basics.selectListing': 'Выберите объект…',
   'pforms.basics.formName': 'Название формы',
   'pforms.basics.formNamePlaceholder': 'напр. Палм Джумейра — Форма лидов',

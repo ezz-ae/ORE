@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, ArrowRight, Check, FileText, AlertCircle,
@@ -92,6 +92,22 @@ export default function NewFormPage() {
   const [created, setCreated] = useState<{ id: string } | null>(null)
   const { projects } = useLiveProjects()
 
+  // Opened from the campaign wizard: the ad already knows its listing and
+  // landing page — wire them in instead of asking the user to pick again.
+  const sp = useSearchParams()
+  const wiredProject = sp.get('project') ?? ''
+  const wiredLp = sp.get('lp') ?? ''
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (prefilled.current || !wiredProject || projects.length === 0) return
+    if (projects.some((l) => l.id === wiredProject)) {
+      prefilled.current = true
+      onListingChange(wiredProject)
+      if (wiredLp) setForm((prev) => ({ ...prev, landingUrl: wiredLp }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wiredProject, wiredLp, projects])
+
   function onListingChange(id: string) {
     const listing = projects.find((l) => l.id === id)
     const landing = listing?.hasLanding ? listing : null
@@ -174,6 +190,13 @@ export default function NewFormPage() {
         </div>
         <h2 className="text-[28px] font-semibold text-white">{t('pforms.created.title')}</h2>
         <p className="mt-3 text-sm text-slate-400">{t('pforms.created.subtitle')}</p>
+        {/* Honest state: a form no ad uses collects nothing — say so instead of
+            implying it is live. Wired-from-ad creations skip the caveat. */}
+        {!wiredProject && (
+          <p className="mx-auto mt-4 max-w-md rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-[12px] leading-relaxed text-amber-300">
+            {t('pforms.created.unwired')}
+          </p>
+        )}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`/freehold-intelligence/lead-machine/forms/${created.id}`}
@@ -227,16 +250,24 @@ export default function NewFormPage() {
         <div className="mt-8 space-y-5">
           <div>
             <label className="mb-2 block text-xs font-medium text-slate-400">{t('pforms.basics.listing')}</label>
-            <select
-              value={form.listingId}
-              onChange={(e) => onListingChange(e.target.value)}
-              className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
-            >
-              <option value="">{t('pforms.basics.selectListing')}</option>
-              {projects.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
-            </select>
+            {wiredProject && form.listingId === wiredProject ? (
+              <div className="flex items-center gap-2 rounded-[14px] border border-gold/30 bg-gold/[0.06] px-4 py-3 text-[14px] text-white">
+                <Check className="h-4 w-4 shrink-0 text-gold" />
+                <span className="min-w-0 truncate">{projects.find((l) => l.id === form.listingId)?.name ?? form.listingId}</span>
+                <span className="ms-auto shrink-0 text-[11px] text-gold/70">{t('pforms.basics.wiredFromAd')}</span>
+              </div>
+            ) : (
+              <select
+                value={form.listingId}
+                onChange={(e) => onListingChange(e.target.value)}
+                className="w-full rounded-[14px] border border-line bg-surface px-4 py-3 text-[14px] text-white outline-none focus:border-gold/40 transition"
+              >
+                <option value="">{t('pforms.basics.selectListing')}</option>
+                {projects.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
