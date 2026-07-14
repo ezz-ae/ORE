@@ -81,7 +81,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
       body: JSON.stringify({ projectSlug: p.slug, slug, audience: 'investor' }),
     }).catch(() => {})
 
-    setProperties((prev) => prev.map((x) => x.id === p.id ? { ...x, landingStatus: 'draft', landingUrl: `/lp/${slug}` } : x))
+    setProperties((prev) => prev.map((x) => x.id === p.id ? { ...x, landingStatus: 'draft', landingSlug: slug, landingUrl: `/lp/${slug}` } : x))
     return true
   }
 
@@ -252,7 +252,7 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   {p.landingStatus !== 'missing' && (
-                    <a href={`/lp/${p.slug}`} target="_blank" rel="noopener noreferrer"
+                    <a href={`/lp/${p.landingSlug ?? p.slug}`} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
                       <Globe className="h-3 w-3" />
                     </a>
@@ -263,13 +263,13 @@ export default function LandingsClient({ initialProperties }: { initialPropertie
                       ad's destination URL. */}
                   {p.landingStatus !== 'missing' && (
                     <Link
-                      href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(p.slug)}&name=${encodeURIComponent(p.name)}${p.startingPriceAED ? `&price=${p.startingPriceAED}` : ''}&lp=${encodeURIComponent(p.slug)}`}
+                      href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(p.slug)}&name=${encodeURIComponent(p.name)}${p.startingPriceAED ? `&price=${p.startingPriceAED}` : ''}&lp=${encodeURIComponent(p.landingSlug ?? p.slug)}`}
                       className="flex items-center gap-1 rounded-full border border-gold/25 bg-gold/[0.07] px-2.5 py-1.5 text-xs text-gold/80 transition hover:text-gold">
                       <Sparkles className="h-3 w-3" /> {t('lm.landings.createCampaign')}
                     </Link>
                   )}
 
-                  <Link href={p.landingStatus === 'missing' ? `/freehold-intelligence/inventory/${p.id}/generate` : `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(p.slug)}/edit`}
+                  <Link href={p.landingStatus === 'missing' ? `/freehold-intelligence/inventory/${p.id}/generate` : `/freehold-intelligence/lead-machine/landings/${encodeURIComponent(p.landingSlug ?? p.slug)}/edit`}
                     className="flex items-center gap-1 rounded-full border border-line px-2.5 py-1.5 text-xs text-slate-500 transition hover:text-slate-300">
                     <Pencil className="h-3 w-3" /> {t('lm.landings.edit')}
                   </Link>
