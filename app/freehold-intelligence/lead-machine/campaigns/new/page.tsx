@@ -10,7 +10,7 @@ import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
 import { useSession } from '@/lib/freehold/use-session'
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, Megaphone,
+  ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
   FolderOpen, Upload, X,
@@ -340,6 +340,8 @@ export default function NewCampaignPage() {
 
   // ── Creative: real ad preview + AI copy generation (existing generator) ──
   const [previewPlacement, setPreviewPlacement] = useState<'feed' | 'story'>('feed')
+  // The sticky preview rail switches between the ad mock and the live landing page.
+  const [previewTab, setPreviewTab] = useState<'ad' | 'landing'>('ad')
   // Full placements wall — one popup showing the ad across every surface.
   const [placementsOpen, setPlacementsOpen] = useState(false)
   const [genAngle, setGenAngle] = useState<'investor' | 'urgency' | 'lifestyle' | 'yield' | 'golden_visa' | 'end_user'>('investor')
@@ -797,6 +799,11 @@ export default function NewCampaignPage() {
 
   const selectedListing = listings.find((l) => l.id === form.listingId)
 
+  // Landing preview target — the /lp/ path inside whatever URL is set, so the
+  // rail iframes the same deployment (works in preview and production alike).
+  const lpMatch = form.landingUrl.match(/\/lp\/[A-Za-z0-9-]+/)
+  const lpPath = lpMatch ? lpMatch[0] : ''
+
   const summaryTiles = [
     { labelKey: 'lm.newCampaign.s4.tileLabel.listing',   value: selectedListing?.projectName ?? form.listingId },
     { labelKey: 'lm.newCampaign.s4.tileLabel.objective',  value: t(activeObjective.labelKey) },
@@ -807,7 +814,7 @@ export default function NewCampaignPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
 
       <Link href="/freehold-intelligence/lead-machine/campaigns" className="inline-flex items-center gap-1.5 text-xs text-slate-500 transition hover:text-white">
         <ArrowLeft className="h-3.5 w-3.5" /> {t('lm.newCampaign.back')}
@@ -822,8 +829,12 @@ export default function NewCampaignPage() {
         </h1>
       </div>
 
+      {/* Builder (left) + always-on live preview rail (right) — use the full tab. */}
+      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="min-w-0">
+
       {/* Step indicator */}
-      <div className="mt-8 flex items-center gap-0">
+      <div className="flex items-center gap-0">
         {STEPS.map((s, i) => {
           const active  = step === s.n
           const done    = step > s.n
@@ -1353,9 +1364,10 @@ export default function NewCampaignPage() {
           <div className="space-y-5">
             <h2 className="text-[18px] font-semibold text-white">{t('lm.newCampaign.s3.heading')}</h2>
 
-            {/* Live ad preview — the actual creative, per placement, not lines of text */}
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,260px)_1fr]">
-              <div>
+            {/* Live ad preview — inline on small screens only; the sticky rail
+                owns the preview on desktop, so the form keeps its full width. */}
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,260px)_1fr] lg:grid-cols-1">
+              <div className="lg:hidden">
                 <div className="mb-2 flex items-center gap-1.5">
                   {(['feed', 'story'] as const).map((p) => (
                     <button key={p} type="button" onClick={() => setPreviewPlacement(p)}
@@ -1368,40 +1380,7 @@ export default function NewCampaignPage() {
                     {t('lm.newCampaign.s3.previewAll')}
                   </button>
                 </div>
-                {/* The rendered ad */}
-                <div className="overflow-hidden rounded-2xl border border-line bg-black">
-                  {previewPlacement === 'feed' ? (
-                    <div className="bg-[#18181b]">
-                      <div className="flex items-center gap-2 px-3 py-2">
-                        <div className="h-7 w-7 rounded-full bg-gold/80" />
-                        <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
-                      </div>
-                      {form.primaryText && <div className="px-3 pb-2 text-[11px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
-                      <div className="aspect-square w-full bg-surface-2">
-                        {form.imageUrl
-                          // eslint-disable-next-line @next/next/no-img-element
-                          ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
-                          : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
-                        <div className="min-w-0"><div className="truncate text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[10px] text-slate-500">{form.description}</div></div>
-                        <span className="shrink-0 rounded-md bg-gold/90 px-2 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="relative aspect-[9/16] w-full bg-surface-2">
-                      {form.imageUrl
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
-                        : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-3">
-                        <div className="text-[12px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
-                        <div className="mt-0.5 line-clamp-2 text-[10px] text-slate-300">{form.primaryText}</div>
-                        <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <AdMock form={form} placement={previewPlacement} t={t} />
               </div>
 
               {/* AI copy generation — real Gemini variants (existing generator) */}
@@ -1567,7 +1546,7 @@ export default function NewCampaignPage() {
         {/* ── Step 4: Review & Launch ───────────────────────────────────── */}
         {placementsOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setPlacementsOpen(false)}>
-            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-line bg-surface p-6" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-[15px] font-semibold text-white">{t('lm.newCampaign.s3.placementsTitle')}</div>
@@ -1577,7 +1556,7 @@ export default function NewCampaignPage() {
                   {t('lm.newCampaign.s3.closePreview')}
                 </button>
               </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {([
                   { key: 'fbFeed', kind: 'square' as const },
                   { key: 'igFeed', kind: 'square' as const },
@@ -1591,19 +1570,19 @@ export default function NewCampaignPage() {
                       {kind === 'square' ? (
                         <div className="bg-[#18181b]">
                           <div className="flex items-center gap-1.5 px-2 py-1.5">
-                            <div className="h-4 w-4 rounded-full bg-gold/80" />
-                            <div className="text-[8px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+                            <div className="h-5 w-5 rounded-full bg-gold/80" />
+                            <div className="text-[10px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
                           </div>
-                          {form.primaryText && <div className="px-2 pb-1.5 text-[8px] leading-snug text-slate-200">{form.primaryText.slice(0, 90)}</div>}
+                          {form.primaryText && <div className="px-2 pb-1.5 text-[10px] leading-snug text-slate-200">{form.primaryText.slice(0, 90)}</div>}
                           <div className="aspect-square w-full bg-surface-2">
                             {form.imageUrl
                               // eslint-disable-next-line @next/next/no-img-element
                               ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
-                              : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-[8px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                              : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-[10px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
                           </div>
                           <div className="flex items-center justify-between gap-1.5 bg-[#0f0f11] px-2 py-1.5">
-                            <div className="min-w-0"><div className="truncate text-[8px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div></div>
-                            <span className="shrink-0 rounded bg-gold/90 px-1.5 py-0.5 text-[7px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+                            <div className="min-w-0"><div className="truncate text-[10px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div></div>
+                            <span className="shrink-0 rounded bg-gold/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                           </div>
                         </div>
                       ) : (
@@ -1611,11 +1590,11 @@ export default function NewCampaignPage() {
                           {form.imageUrl
                             // eslint-disable-next-line @next/next/no-img-element
                             ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
-                            : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-[8px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+                            : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-[10px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2">
-                            <div className="text-[9px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
-                            <div className="mt-0.5 line-clamp-2 text-[7px] text-slate-300">{form.primaryText}</div>
-                            <span className="mt-1 inline-block rounded bg-gold/90 px-1.5 py-0.5 text-[7px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+                            <div className="text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
+                            <div className="mt-0.5 line-clamp-2 text-[9px] text-slate-300">{form.primaryText}</div>
+                            <span className="mt-1 inline-block rounded bg-gold/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                           </div>
                         </div>
                       )}
@@ -1641,14 +1620,19 @@ export default function NewCampaignPage() {
               ))}
             </div>
 
-            {/* Creative preview */}
+            {/* Creative preview — the actual ad (image + copy), not lines of text */}
             <div className="rounded-[16px] border border-line bg-surface-2 p-5">
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500 mb-3">{t('lm.newCampaign.s4.creativePreview')}</div>
-              <div className="text-xs leading-relaxed text-slate-400 mb-2">{form.primaryText}</div>
-              <div className="text-[14px] font-semibold text-white">{form.headline}</div>
-              <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
-              <div className="mt-2 inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs text-gold">
-                {t(`lm.creatives.generate.cta.${form.cta}`)}
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,240px)_1fr]">
+                <AdMock form={form} placement="feed" t={t} />
+                <div>
+                  <div className="text-xs leading-relaxed text-slate-400 mb-2 whitespace-pre-line">{form.primaryText}</div>
+                  <div className="text-[14px] font-semibold text-white">{form.headline}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{form.description}</div>
+                  <div className="mt-2 inline-flex items-center rounded-full border border-gold/30 bg-gold/10 px-2.5 py-0.5 text-xs text-gold">
+                    {t(`lm.creatives.generate.cta.${form.cta}`)}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1765,6 +1749,104 @@ export default function NewCampaignPage() {
           </button>
         )}
       </div>
+      </div>
+
+      {/* ── Live preview rail — the ad + the landing page, visible on every step ── */}
+      <aside className="sticky top-6 hidden lg:block">
+        <div className="rounded-[24px] border border-line bg-surface p-4">
+          <div className="flex items-center gap-1.5">
+            {(['ad', 'landing'] as const).map((tab) => (
+              <button key={tab} type="button" onClick={() => setPreviewTab(tab)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${previewTab === tab ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400 hover:text-white'}`}>
+                {t(tab === 'ad' ? 'lm.newCampaign.preview.ad' : 'lm.newCampaign.preview.landing')}
+              </button>
+            ))}
+            {previewTab === 'ad' && (
+              <div className="ms-auto flex items-center gap-1.5">
+                {(['feed', 'story'] as const).map((p) => (
+                  <button key={p} type="button" onClick={() => setPreviewPlacement(p)}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${previewPlacement === p ? 'border-gold/40 bg-gold/15 text-gold' : 'border-line bg-surface-2 text-slate-400'}`}>
+                    {t(`lm.newCampaign.s3.placement.${p}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3">
+            {previewTab === 'ad' ? (
+              <>
+                <AdMock form={form} placement={previewPlacement} t={t} />
+                <button type="button" onClick={() => setPlacementsOpen(true)}
+                  className="mt-3 w-full rounded-full border border-gold/40 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  {t('lm.newCampaign.s3.previewAll')}
+                </button>
+              </>
+            ) : lpPath ? (
+              <>
+                <div className="overflow-hidden rounded-2xl border border-line bg-black">
+                  <iframe src={lpPath} title={t('lm.newCampaign.preview.landing')} className="h-[600px] w-full" />
+                </div>
+                <a href={lpPath} target="_blank" rel="noopener noreferrer"
+                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">
+                  {t('lm.newCampaign.preview.open')} <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+              </>
+            ) : (
+              <p className="rounded-2xl border border-line bg-surface-2 p-4 text-xs leading-relaxed text-slate-500">
+                {t('lm.newCampaign.preview.noLanding')}
+              </p>
+            )}
+          </div>
+        </div>
+      </aside>
+      </div>
+    </div>
+  )
+}
+
+// ─── Ad mock ──────────────────────────────────────────────────────────────────
+// The rendered ad, built ONLY from what the operator actually typed/picked
+// (copy, image, CTA) — a live mock of the creative, not fabricated content.
+// Used by the sticky preview rail, the mobile inline preview, and the review.
+function AdMock({ form, placement, t }: {
+  form: { primaryText: string; headline: string; description: string; imageUrl: string; cta: MetaCta }
+  placement: 'feed' | 'story'
+  t: (key: string, vars?: Record<string, string | number>) => string
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-black">
+      {placement === 'feed' ? (
+        <div className="bg-[#18181b]">
+          <div className="flex items-center gap-2 px-3 py-2">
+            <div className="h-7 w-7 rounded-full bg-gold/80" />
+            <div className="text-[11px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
+          </div>
+          {form.primaryText && <div className="px-3 pb-2 text-[12px] leading-snug text-slate-200 whitespace-pre-line">{form.primaryText.slice(0, 180)}</div>}
+          <div className="aspect-square w-full bg-surface-2">
+            {form.imageUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+              : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+          </div>
+          <div className="flex items-center justify-between gap-2 bg-[#0f0f11] px-3 py-2">
+            <div className="min-w-0"><div className="truncate text-[12px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div><div className="truncate text-[11px] text-slate-500">{form.description}</div></div>
+            <span className="shrink-0 rounded-md bg-gold/90 px-2 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="relative aspect-[9/16] w-full bg-surface-2">
+          {form.imageUrl
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+            : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-xs text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-3">
+            <div className="text-[13px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
+            <div className="mt-0.5 line-clamp-2 text-[11px] text-slate-300">{form.primaryText}</div>
+            <span className="mt-2 inline-block rounded-md bg-gold/90 px-2.5 py-1 text-[10px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
