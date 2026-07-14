@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, A
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
-import type { MetaCampaign, MetaAdSet, MetaInsights } from '@/lib/meta/types'
+import type { MetaCampaign, MetaAdSet, MetaInsights, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
 import type { CampaignQuality } from '@/lib/freehold/campaign-quality'
 import type { CampaignRule, RuleMetric, RuleOperator, RuleAction } from '@/lib/freehold/campaign-rules'
 
@@ -34,6 +34,7 @@ const selCls = 'rounded-lg border border-line bg-surface-2 px-2 py-1 text-xs tex
 // updateAdCreativeContent); these are what a plain landing-click ad can pick.
 const EDIT_CTA_OPTIONS = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
 type LibImage = { id: string; title: string; url: string | null }
+const PLACEMENT_KEYS: PlacementKey[] = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels']
 
 function leadsFrom(insights: MetaInsights | null): number {
   if (!insights?.actions) return 0
@@ -773,7 +774,8 @@ function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string 
           ) : editError && !form ? (
             <p className="text-xs text-rose-300">{editError}</p>
           ) : snapshot?.usesAssetFeedSpec ? (
-            <p className="text-xs leading-relaxed text-slate-400">{t('lm.cmd.edit.notEditable')}</p>
+            <AdPlacementEditor adId={ad.id}
+              onSaved={() => { setEditOpen(false); setSnapshot(null); setForm(null); setPdata(null) }} />
           ) : form ? (
             <div className="space-y-2.5">
               <div>
@@ -881,6 +883,270 @@ function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string 
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+type PlacementDefaultForm = { headline: string; primaryText: string; landingUrl: string; cta: string; imageUrl: string; imageHash: string }
+type PlacementSlot = 'default' | PlacementKey
+
+// Edits a live ad's PER-PLACEMENT creative — whichever placements it's
+// actually customized for (see getAdPlacementCreative's decode). Same
+// chip-per-placement UX as the campaign wizard's Step 3, bound to a live ad
+// instead of the launch draft, so a placement's image/copy stays editable
+// wherever it's displaying, not just at launch time.
+function AdPlacementEditor({ adId, onSaved }: { adId: string; onSaved: () => void }) {
+  const t = useT()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [defaultForm, setDefaultForm] = useState<PlacementDefaultForm | null>(null)
+  const [overrides, setOverrides] = useState<Partial<Record<PlacementKey, PlacementCreativeOverride>>>({})
+  const [openKey, setOpenKey] = useState<PlacementKey | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [imgTarget, setImgTarget] = useState<PlacementSlot | ''>('')
+  const [libTarget, setLibTarget] = useState<PlacementSlot | ''>('')
+  const [libImages, setLibImages] = useState<LibImage[]>([])
+  const [libLoading, setLibLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true); setError('')
+    fetch(`/api/meta/ads/${encodeURIComponent(adId)}/placements`)
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return
+        if (!ok || !d.ad || !d.ad.isPlacementCreative) { setError(d.error || t('lm.cmd.edit.notEditable')); return }
+        setDefaultForm({
+          headline: d.ad.default.headline, primaryText: d.ad.default.primaryText,
+          landingUrl: d.ad.landingUrl, cta: d.ad.ctaType,
+          imageUrl: d.ad.default.imageUrl, imageHash: d.ad.default.imageHash,
+        })
+        setOverrides(d.ad.overrides || {})
+      })
+      .catch(() => { if (!cancelled) setError(t('lm.cmd.edit.loadFailed')) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [adId, t])
+
+  function overrideOf(key: PlacementKey): PlacementCreativeOverride { return overrides[key] ?? {} }
+  function isCustomized(key: PlacementKey): boolean {
+    const ov = overrideOf(key)
+    return !!(ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl)
+  }
+  function setOverrideField<K extends keyof PlacementCreativeOverride>(key: PlacementKey, field: K, value: PlacementCreativeOverride[K]) {
+    setOverrides((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }))
+  }
+  function setSlotImage(slot: PlacementSlot, hash: string, url?: string) {
+    if (slot === 'default') { setDefaultForm((f) => (f ? { ...f, imageHash: hash, imageUrl: url || f.imageUrl } : f)); return }
+    setOverrides((prev) => ({ ...prev, [slot]: { ...prev[slot], imageHash: hash, imageUrl: url || prev[slot]?.imageUrl } }))
+  }
+  function clearOverride(key: PlacementKey) {
+    setOverrides((prev) => { const next = { ...prev }; delete next[key]; return next })
+  }
+
+  async function onUploadImage(slot: PlacementSlot, file: File | null) {
+    if (!file) return
+    setImgTarget(slot); setError('')
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(d?.error || 'Image upload failed'); return }
+      setSlotImage(slot, d.hash, d.url)
+    } catch { setError('Could not read the image file') } finally { setImgTarget('') }
+  }
+
+  async function toggleLibrary(slot: PlacementSlot) {
+    const next = libTarget === slot ? '' : slot
+    setLibTarget(next)
+    if (next && !libImages.length && !libLoading) {
+      setLibLoading(true)
+      try {
+        const r = await fetch('/api/freehold/library?kind=image', { cache: 'no-store' })
+        const d = await r.json().catch(() => ({}))
+        if (Array.isArray(d?.items)) setLibImages((d.items as LibImage[]).filter((i) => i.url))
+      } finally { setLibLoading(false) }
+    }
+  }
+
+  async function useLibraryImage(slot: PlacementSlot, item: LibImage) {
+    if (!item.url) return
+    if (item.url.startsWith('data:')) {
+      setImgTarget(slot); setError('')
+      try {
+        const res = await fetch('/api/meta/adimages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: item.url }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !d.hash) { setError(d?.error || 'Library image failed'); return }
+        setSlotImage(slot, d.hash, d.url)
+        setLibTarget('')
+      } finally { setImgTarget('') }
+    } else {
+      if (slot === 'default') setDefaultForm((f) => (f ? { ...f, imageUrl: item.url as string, imageHash: '' } : f))
+      else { setOverrideField(slot, 'imageUrl', item.url as string); setOverrideField(slot, 'imageHash', '') }
+      setLibTarget('')
+    }
+  }
+
+  async function save() {
+    if (!defaultForm || saving) return
+    setSaving(true); setError('')
+    try {
+      const cleanOverrides = Object.fromEntries(
+        (Object.entries(overrides) as Array<[PlacementKey, PlacementCreativeOverride]>)
+          .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl)),
+      )
+      const res = await fetch(`/api/meta/ads/${encodeURIComponent(adId)}/placements`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          headline: defaultForm.headline, primaryText: defaultForm.primaryText, landingUrl: defaultForm.landingUrl,
+          cta: defaultForm.cta, imageUrl: defaultForm.imageUrl || undefined, imageHash: defaultForm.imageHash || undefined,
+          overrides: cleanOverrides,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || d.error) { setError(d.error || t('lm.cmd.edit.saveFailed')); return }
+      toast.success(t('lm.cmd.edit.saved'))
+      onSaved()
+    } catch { setError(t('lm.cmd.edit.saveFailed')) } finally { setSaving(false) }
+  }
+
+  function imageRow(slot: PlacementSlot, imageUrl: string, placeholder?: string) {
+    return (
+      <div>
+        <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.imageUrl')}</label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-gold/40">
+            <Upload className="h-3.5 w-3.5" /> {imgTarget === slot ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
+            <input type="file" accept="image/*" className="hidden" disabled={!!imgTarget} onChange={(e) => onUploadImage(slot, e.target.files?.[0] ?? null)} />
+          </label>
+          <button type="button" onClick={() => toggleLibrary(slot)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${libTarget === slot ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface text-slate-200 hover:border-gold/40'}`}>
+            <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s3.pickLibrary')}
+          </button>
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+          ) : placeholder ? (
+            <span className="text-[11px] text-slate-500">{placeholder}</span>
+          ) : null}
+        </div>
+        {libTarget === slot && (
+          <div className="mt-2 rounded-lg border border-line bg-surface p-2">
+            {libLoading ? (
+              <p className="py-2 text-[11px] text-slate-500">{t('common.loading')}</p>
+            ) : libImages.length === 0 ? (
+              <p className="py-2 text-[11px] text-slate-500">{t('lm.newCampaign.s3.libEmpty')}</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+                {libImages.slice(0, 12).map((item) => (
+                  <button key={item.id} type="button" onClick={() => useLibraryImage(slot, item)}
+                    className="overflow-hidden rounded border border-line transition hover:border-gold/50" title={item.title}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.url ?? ''} alt={item.title} className="h-10 w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (loading) return <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
+  if (!defaultForm) return <p className="text-xs leading-relaxed text-slate-400">{error || t('lm.cmd.edit.notEditable')}</p>
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2.5">
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.headline')}</label>
+          <input value={defaultForm.headline} onChange={(e) => setDefaultForm((f) => (f ? { ...f, headline: e.target.value } : f))}
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.primaryText')}</label>
+          <textarea rows={2} value={defaultForm.primaryText} onChange={(e) => setDefaultForm((f) => (f ? { ...f, primaryText: e.target.value } : f))}
+            className="w-full resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.landingUrl')}</label>
+          <input value={defaultForm.landingUrl} onChange={(e) => setDefaultForm((f) => (f ? { ...f, landingUrl: e.target.value } : f))}
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.cta')}</label>
+          <select value={defaultForm.cta} onChange={(e) => setDefaultForm((f) => (f ? { ...f, cta: e.target.value } : f))}
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40">
+            {EDIT_CTA_OPTIONS.map((c) => <option key={c} value={c}>{t(`lm.creatives.generate.cta.${c}`)}</option>)}
+          </select>
+        </div>
+        {imageRow('default', defaultForm.imageUrl)}
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface p-3">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('lm.newCampaign.s3.perPlacement.title')}</div>
+        <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.s3.perPlacement.hint')}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {PLACEMENT_KEYS.map((key) => {
+            const open = openKey === key
+            const customized = isCustomized(key)
+            return (
+              <button key={key} type="button" onClick={() => setOpenKey(open ? null : key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+                  open ? 'border-gold/50 bg-gold/10 text-gold'
+                  : customized ? 'border-emerald-400/40 bg-emerald-400/[0.06] text-emerald-300'
+                  : 'border-line-strong bg-surface-2 text-slate-300 hover:text-white'}`}>
+                {customized && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                {t(`lm.newCampaign.s3.pl.${key}`)}
+              </button>
+            )
+          })}
+        </div>
+        {openKey && (
+          <div className="mt-3 rounded-lg border border-line bg-surface-2 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-semibold text-white">{t(`lm.newCampaign.s3.pl.${openKey}`)}</div>
+              {isCustomized(openKey) && (
+                <button type="button" onClick={() => clearOverride(openKey)}
+                  className="inline-flex items-center gap-1 text-[11px] text-slate-500 transition hover:text-rose-300">
+                  <X className="h-3 w-3" /> {t('lm.newCampaign.s3.perPlacement.clear')}
+                </button>
+              )}
+            </div>
+            <div className="mt-2 space-y-2">
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.headline')}</label>
+                <input value={overrideOf(openKey).headline ?? ''} onChange={(e) => setOverrideField(openKey, 'headline', e.target.value)}
+                  placeholder={defaultForm.headline} className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.primaryText')}</label>
+                <textarea rows={2} value={overrideOf(openKey).primaryText ?? ''} onChange={(e) => setOverrideField(openKey, 'primaryText', e.target.value)}
+                  placeholder={defaultForm.primaryText} className="w-full resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              {imageRow(openKey, overrideOf(openKey).imageUrl ?? '', t('lm.newCampaign.s3.perPlacement.useDefault'))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-xs text-rose-300">{error}</p>}
+
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={save} disabled={saving}
+          className="inline-flex items-center gap-2 rounded-lg bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {saving ? t('lm.cmd.edit.saving') : t('lm.cmd.edit.save')}
+        </button>
+      </div>
     </div>
   )
 }
