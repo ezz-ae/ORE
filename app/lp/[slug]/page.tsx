@@ -1226,7 +1226,14 @@ export default async function LandingPage({
   const price = fmtAed(localized.project?.priceFromAed, L)
 
   return (
-    <div className="min-h-screen" dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary }}>
+    <div className={`min-h-screen${theme === 'day' ? ' lp-day' : ''}`} dir={dir} lang={lang} style={{ background: palette.bg, color: palette.textPrimary }}>
+      {/* Day-theme contrast: the gold accent (#D4AF37) is tuned for dark
+          backgrounds; at 60-80% opacity on off-white it washes out. Remap all
+          gold TEXT (labels, eyebrows, stats) to a deep readable gold in day
+          mode — gold-filled buttons/backgrounds keep the brand tone. */}
+      {theme === 'day' && (
+        <style>{`.lp-day [class*="text-[#D4AF37]"]{color:#8E6D1A !important}`}</style>
+      )}
       <Tracker
         slug={localized.slug}
         projectSlug={localized.projectSlug}
