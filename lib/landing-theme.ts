@@ -74,12 +74,12 @@ const DAY: LpPalette = {
   bgGradient:
     "radial-gradient(ellipse 100% 80% at 20% 50%, rgba(212,175,55,0.22) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 80% 20%, rgba(120,110,80,0.06) 0%, transparent 50%), linear-gradient(135deg, #F7F5F0 0%, #FBFAF6 50%, #F0EBE0 100%)",
   surface: "#FFFFFF",
-  surfaceStrong: "rgba(11,11,15,0.045)",
-  surfaceBorder: "rgba(11,11,15,0.10)",
-  divider: "rgba(11,11,15,0.08)",
+  surfaceStrong: "rgba(11,11,15,0.07)",
+  surfaceBorder: "rgba(11,11,15,0.16)",
+  divider: "rgba(11,11,15,0.12)",
   textPrimary: "#0B0B0F",
-  textMuted: "rgba(11,11,15,0.62)",
-  textFaint: "rgba(11,11,15,0.45)",
+  textMuted: "rgba(11,11,15,0.74)",
+  textFaint: "rgba(11,11,15,0.58)",
   heroOverlaySide:
     "linear-gradient(to right, rgba(247,245,240,0.96) 0%, rgba(247,245,240,0.82) 50%, rgba(247,245,240,0.55) 100%)",
   heroOverlayBottom:
@@ -87,7 +87,7 @@ const DAY: LpPalette = {
   topbarBg: "rgba(247,245,240,0.95)",
   formBg: "rgba(255,255,255,0.94)",
   inputBg: "rgba(11,11,15,0.03)",
-  placeholder: "rgba(11,11,15,0.30)",
+  placeholder: "rgba(11,11,15,0.42)",
 }
 
 // "Lagoon" palette for the Signature template — a cool, aqua-tinted atmosphere
@@ -122,12 +122,12 @@ const SIGNATURE_DAY: LpPalette = {
   bgGradient:
     "radial-gradient(ellipse 100% 80% at 20% 50%, rgba(20,160,165,0.16) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 80% 20%, rgba(212,175,55,0.10) 0%, transparent 50%), linear-gradient(135deg, #EFF5F4 0%, #F5FAF9 50%, #E6F0EE 100%)",
   surface: "#FFFFFF",
-  surfaceStrong: "rgba(8,32,31,0.045)",
-  surfaceBorder: "rgba(8,32,31,0.10)",
-  divider: "rgba(8,32,31,0.08)",
+  surfaceStrong: "rgba(8,32,31,0.07)",
+  surfaceBorder: "rgba(8,32,31,0.16)",
+  divider: "rgba(8,32,31,0.12)",
   textPrimary: "#08201F",
-  textMuted: "rgba(8,32,31,0.62)",
-  textFaint: "rgba(8,32,31,0.45)",
+  textMuted: "rgba(8,32,31,0.74)",
+  textFaint: "rgba(8,32,31,0.58)",
   heroOverlaySide:
     "linear-gradient(to right, rgba(239,245,244,0.96) 0%, rgba(239,245,244,0.82) 50%, rgba(239,245,244,0.55) 100%)",
   heroOverlayBottom:
@@ -135,7 +135,7 @@ const SIGNATURE_DAY: LpPalette = {
   topbarBg: "rgba(239,245,244,0.95)",
   formBg: "rgba(255,255,255,0.94)",
   inputBg: "rgba(8,32,31,0.03)",
-  placeholder: "rgba(8,32,31,0.30)",
+  placeholder: "rgba(8,32,31,0.42)",
 }
 
 // The template drives the atmosphere; `signature` gets the lagoon palette, all
