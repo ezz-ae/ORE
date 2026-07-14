@@ -80,6 +80,10 @@ export interface LandingProjectSummary {
       the logo fallback. Drives the landing gallery so every image a project
       actually has is shown; the section self-hides when there are too few. */
   gallery: string[]
+  /** Real brochure file URL (payload.brochureUrl, mirrored bilaterally from the
+      top-level brochure column by Hex FH-REFRESH-02). Null until a project has
+      one — the download button links to the lead form instead of a dead file. */
+  brochureUrl: string | null
   paymentPlan?: {
     downPayment?: number
     duringConstruction?: number
@@ -829,6 +833,12 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     ),
   )
 
+  // Brochure file — read from payload.brochureUrl (Hex FH-REFRESH-02 mirrors the
+  // top-level brochure column here bilaterally), so no extra column select and
+  // no schema risk. Null when the project has no real brochure yet.
+  const brochureCandidate = pickString(payload.brochureUrl, pfd.brochureUrl, media.brochure)
+  const brochureUrl = /^https?:\/\//i.test(brochureCandidate) ? brochureCandidate : null
+
   return {
     slug: pickString(row.slug, payload.slug) || projectSlug,
     name: pickString(row.name, payload.name) || "Dubai Project",
@@ -840,6 +850,7 @@ const getProjectSummary = async (projectSlug: string): Promise<LandingProjectSum
     rentalYield: pickNumber(row.rental_yield, invHighlights.rentalYield),
     roi,
     gallery,
+    brochureUrl,
     paymentPlan: normalizePaymentPlan(
       payload.paymentPlan ?? pfd.paymentPlan,
       payload.paymentPlans ?? pfd.paymentPlans,
