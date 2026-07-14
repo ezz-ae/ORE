@@ -39,6 +39,24 @@ export default function QuickClient({ properties }: { properties: InventoryPrope
   const [brief, setBrief] = useState('')
 
   const [generating, setGenerating] = useState(false)
+  const [faceBusy, setFaceBusy] = useState<string | null>(null)
+
+  // Generate (or replace) a presenter's reusable face right here — nobody
+  // should have to hunt for the canvas node to fix a wrong or missing face.
+  async function generateFace(personaId: string, regenerate: boolean) {
+    if (faceBusy) return
+    setFaceBusy(personaId)
+    try {
+      const res = await fetch('/api/freehold/creative-studio/presenters', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personaId, regenerate }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.presenter?.faceUrl) { toast.error(d.error || t('cs.quick.failed')); return }
+      setPresenters((prev) => prev.map((x) => (x.id === personaId ? { ...x, faceUrl: d.presenter.faceUrl as string } : x)))
+      toast.success(t('cs.quick.faceReady'))
+    } catch { toast.error(t('cs.quick.failed')) } finally { setFaceBusy(null) }
+  }
   const [saving, setSaving] = useState(false)
   const [url, setUrl] = useState<string | null>(null)
   const [usedPresenter, setUsedPresenter] = useState(false)
@@ -131,34 +149,40 @@ export default function QuickClient({ properties }: { properties: InventoryPrope
         {/* Presenter */}
         <section className="rounded-xl border border-line bg-surface-2 p-4">
           <label className="mb-2.5 block text-[13px] font-semibold text-slate-200">{t('cs.quick.presenter')}</label>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <button type="button" onClick={() => setPresenterId('')}
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition ${presenterId === '' ? 'border-gold/50 bg-gold/10 text-gold' : 'border-line bg-surface text-slate-300 hover:text-white'}`}>
+              className={`flex min-h-[9rem] flex-col items-center justify-center gap-1.5 rounded-xl border text-xs font-medium transition ${presenterId === '' ? 'border-gold/50 bg-gold/10 text-gold' : 'border-line bg-surface text-slate-300 hover:text-white'}`}>
               {t('cs.quick.none')}
             </button>
             {presenters.map((p) => {
               const active = presenterId === p.id
+              const busy = faceBusy === p.id
               return (
-                <button key={p.id} type="button" onClick={() => setPresenterId(p.id)}
-                  className={`inline-flex items-center gap-2.5 rounded-xl border px-3 py-2 text-start transition ${active ? 'border-gold/50 bg-gold/10' : 'border-line bg-surface hover:border-white/20'}`}>
-                  {p.faceUrl ? (
-                    <span className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.faceUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
-                      <span className="absolute -bottom-1 -end-1 grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-white ring-2 ring-surface-2" title={t('cs.quick.reusable')}>
-                        <Check className="h-2.5 w-2.5" />
+                <div key={p.id}
+                  className={`overflow-hidden rounded-xl border transition ${active ? 'border-gold/50 bg-gold/10' : 'border-line bg-surface hover:border-white/20'}`}>
+                  <button type="button" onClick={() => setPresenterId(p.id)} className="block w-full text-start">
+                    {p.faceUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.faceUrl} alt={p.name} className="aspect-[3/4] w-full object-cover" />
+                    ) : (
+                      <span className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-1 bg-surface-2 text-slate-500">
+                        <span className="text-2xl font-semibold">{p.name.slice(0, 1)}</span>
+                        <span className="px-2 text-center text-[10px] leading-tight">{t('cs.quick.noFace')}</span>
                       </span>
+                    )}
+                    <span className="block px-2.5 pb-1 pt-2">
+                      <span className={`block truncate text-xs font-semibold ${active ? 'text-gold' : 'text-slate-200'}`}>{p.name}</span>
+                      <span className="block truncate text-[10px] text-slate-500">{p.tagline}</span>
                     </span>
-                  ) : (
-                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-surface-2 text-[11px] font-semibold text-slate-400">
-                      {p.name.slice(0, 1)}
-                    </span>
-                  )}
-                  <span className="min-w-0">
-                    <span className={`block text-xs font-semibold ${active ? 'text-gold' : 'text-slate-200'}`}>{p.name}</span>
-                    <span className="block text-[10px] text-slate-500">{p.faceUrl ? t('cs.quick.reusable') : t('cs.quick.noFace')}</span>
-                  </span>
-                </button>
+                  </button>
+                  <div className="px-2.5 pb-2.5">
+                    <button type="button" disabled={busy} onClick={() => generateFace(p.id, !!p.faceUrl)}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-gold/40 hover:text-gold disabled:opacity-60">
+                      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                      {p.faceUrl ? t('cs.quick.regenFace') : t('cs.quick.genFace')}
+                    </button>
+                  </div>
+                </div>
               )
             })}
           </div>

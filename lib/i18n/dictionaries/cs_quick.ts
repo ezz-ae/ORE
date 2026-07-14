@@ -24,6 +24,9 @@ const en: Dict = {
   'cs.quick.failed': 'Generation failed. Try again.',
   'cs.quick.noPresenterUsed': 'No saved face for this presenter yet, so it was generated without one. Generate the face on the canvas to reuse it.',
   'cs.quick.reusable': 'Reusable face',
+  'cs.quick.genFace': 'Generate face',
+  'cs.quick.regenFace': 'Regenerate face',
+  'cs.quick.faceReady': 'Face saved — it will be reused everywhere.',
 }
 
 const ar: Dict = {
@@ -47,6 +50,9 @@ const ar: Dict = {
   'cs.quick.failed': 'فشل الإنشاء. حاول مرة أخرى.',
   'cs.quick.noPresenterUsed': 'لا يوجد وجه محفوظ لهذا المقدّم بعد، لذا تم الإنشاء بدونه. أنشئ الوجه في لوحة التصميم لإعادة استخدامه.',
   'cs.quick.reusable': 'وجه قابل لإعادة الاستخدام',
+  'cs.quick.genFace': 'إنشاء وجه',
+  'cs.quick.regenFace': 'إعادة إنشاء الوجه',
+  'cs.quick.faceReady': 'تم حفظ الوجه — سيُعاد استخدامه في كل مكان.',
 }
 
 const ru: Dict = {
@@ -70,6 +76,9 @@ const ru: Dict = {
   'cs.quick.failed': 'Не удалось создать. Попробуйте снова.',
   'cs.quick.noPresenterUsed': 'Для этого ведущего пока нет сохранённого лица, поэтому изображение создано без него. Создайте лицо на холсте, чтобы использовать повторно.',
   'cs.quick.reusable': 'Повторно используемое лицо',
+  'cs.quick.genFace': 'Создать лицо',
+  'cs.quick.regenFace': 'Пересоздать лицо',
+  'cs.quick.faceReady': 'Лицо сохранено — будет использоваться везде.',
 }
 
 export const cs_quick = { en, ar, ru }
