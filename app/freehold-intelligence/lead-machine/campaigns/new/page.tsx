@@ -518,6 +518,16 @@ export default function NewCampaignPage() {
       .catch(() => {})
       .finally(() => setLeadFormsLoading(false))
   }, [form.productObjective])
+  // A just-created/attached form can lag out of Meta's list — keep it
+  // selectable in the picker so the wiring is never invisible ("can't find
+  // the form again").
+  useEffect(() => {
+    if (!leadFormId || leadFormsLoading) return
+    setLeadForms((prev) => (prev.some((f) => f.id === leadFormId)
+      ? prev
+      : [{ id: leadFormId, name: t('lm.newCampaign.leadForm.attachedOption') }, ...prev]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadFormId, leadFormsLoading])
 
   // Everything the user types is saved: restore the last draft on mount
   // (this device first, then the ACCOUNT — so a draft started on the laptop
@@ -530,8 +540,9 @@ export default function NewCampaignPage() {
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
       if (raw) {
-        const draft = JSON.parse(raw) as Partial<WizardState>
+        const draft = JSON.parse(raw) as Partial<WizardState> & { __leadFormId?: string }
         setForm((prev) => ({ ...prev, ...draft }))
+        if (typeof draft.__leadFormId === 'string' && draft.__leadFormId) setLeadFormId(draft.__leadFormId)
         restoredLocally = true
       }
     } catch { /* ignore corrupt drafts */ }
@@ -539,16 +550,22 @@ export default function NewCampaignPage() {
       const acctDraft = m.campaignDraft
       if (!restoredLocally && acctDraft && typeof acctDraft === 'object') {
         setForm((prev) => ({ ...prev, ...(acctDraft as Partial<WizardState>) }))
+        const savedFormId = (acctDraft as { __leadFormId?: string }).__leadFormId
+        if (typeof savedFormId === 'string' && savedFormId) setLeadFormId(savedFormId)
       }
       draftRestored.current = true
     })
   }, [])
   useEffect(() => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)) } catch { /* full/blocked storage */ }
+    // The attached lead form travels WITH the draft — leaving to edit the form
+    // (opens in a new tab) and coming back must never lose the wiring, and
+    // "Edit form" must always be able to find the form it just created.
+    const draft = { ...form, __leadFormId: leadFormId }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) } catch { /* full/blocked storage */ }
     // Account save waits for restore so a pristine form never clobbers a
     // draft the account already holds.
-    if (draftRestored.current) saveAccountMemoryDebounced('campaignDraft', form, 1500)
-  }, [form])
+    if (draftRestored.current) saveAccountMemoryDebounced('campaignDraft', draft, 1500)
+  }, [form, leadFormId])
 
   // Load real inventory for the project picker.
   useEffect(() => {
