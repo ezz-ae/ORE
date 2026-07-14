@@ -1245,7 +1245,9 @@ export default async function LandingPage({
       <Topbar page={localized} L={L} lang={lang} theme={theme} p={palette} />
       <div className="pt-[52px]">
         {localized.sections.map((section, i) => (
-          <Section key={`${section.type}-${i}`} section={section} page={localized} L={L} p={palette} />
+          <div key={`${section.type}-${i}`} data-lpe-sec={i}>
+            <Section section={section} page={localized} L={L} p={palette} />
+          </div>
         ))}
         <Footer page={localized} L={L} p={palette} />
       </div>

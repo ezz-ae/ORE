@@ -36,6 +36,21 @@ export function LpEditBridge() {
         window.location.origin,
       )
     }
+    // Locate-on-page: the editor posts a section index; scroll to it and flash
+    // a gold ring so the user sees exactly where that layout row lives.
+    const onLocate = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { source?: string; locate?: number }
+      if (d?.source !== 'fh-lpe-editor' || typeof d.locate !== 'number') return
+      const target = document.querySelector<HTMLElement>(`[data-lpe-sec="${d.locate}"]`)
+      if (!target) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      target.style.transition = 'box-shadow 200ms'
+      target.style.boxShadow = 'inset 0 0 0 3px rgba(212,175,55,0.85)'
+      window.setTimeout(() => { target.style.boxShadow = 'none' }, 1600)
+    }
+    window.addEventListener('message', onLocate)
+
     const stopNav = (e: Event) => e.preventDefault()
     for (const el of els) {
       el.setAttribute('contenteditable', 'plaintext-only')
@@ -46,6 +61,7 @@ export function LpEditBridge() {
       el.closest('a')?.addEventListener('click', stopNav)
     }
     return () => {
+      window.removeEventListener('message', onLocate)
       style.remove()
       for (const el of els) {
         el.removeAttribute('contenteditable')

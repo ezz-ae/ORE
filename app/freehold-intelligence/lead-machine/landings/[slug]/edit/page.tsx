@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX, Crosshair } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
@@ -118,6 +118,11 @@ export default function LandingEditorPage() {
   const [saving, setSaving] = useState(false)
   const [regen, setRegen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+  const previewRef = useRef<HTMLIFrameElement | null>(null)
+  // Show WHERE a section lives: scroll the live preview to it and flash a ring.
+  function locateSection(i: number) {
+    previewRef.current?.contentWindow?.postMessage({ source: 'fh-lpe-editor', locate: i }, window.location.origin)
+  }
   const [notFound, setNotFound] = useState(false)
   const [testing, setTesting] = useState(false)
   const [test, setTest] = useState<TestReport | null>(null)
@@ -822,10 +827,11 @@ export default function LandingEditorPage() {
                           <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
                           <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
                         </span>
-                        <button type="button" onClick={() => setExpanded(open ? null : i)} title={t('lpe.layout.editContent')} className="group flex min-w-0 flex-1 items-center gap-1.5 text-start text-xs text-slate-200 hover:text-white">
+                        <button type="button" onClick={() => { setExpanded(open ? null : i); if (!open) locateSection(i) }} title={t('lpe.layout.editContent')} className="group flex min-w-0 flex-1 items-center gap-1.5 text-start text-xs text-slate-200 hover:text-white">
                           <span className="truncate">{sectionLabel(s.type)}</span>
                           <Pencil className={`h-3 w-3 shrink-0 transition ${open ? 'text-gold' : 'text-slate-600 group-hover:text-gold'}`} />
                         </button>
+                        <button type="button" onClick={() => locateSection(i)} title={t('lpe.layout.locate')} className="text-slate-500 hover:text-gold"><Crosshair className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => duplicateSection(i)} title={t('lpe.layout.duplicate')} className="text-slate-500 hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
                           {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -900,7 +906,7 @@ export default function LandingEditorPage() {
               <a href={`/lp/${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">{t('lpe.openTab')} <ExternalLink className="h-3 w-3" /></a>
             </div>
           </div>
-          <iframe key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
+          <iframe ref={previewRef} key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
           <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')} · <span className="text-gold/70">{t('lpe.canvasHint')}</span></p>
         </div>
       </div>
@@ -953,7 +959,7 @@ export default function LandingEditorPage() {
         </div>
       )}
 
-      <style jsx>{`.fld{width:100%;border-radius:12px;border:1px solid var(--line,#26262b);background:var(--surface-2,#151518);padding:10px 12px;font-size:14px;color:#fff;outline:none}.fld::placeholder{color:#64748b}.fld:focus{border-color:rgba(212,175,55,.4)}`}</style>
+      <style jsx global>{`.fld{width:100%;border-radius:12px;border:1px solid var(--line,#26262b);background:var(--surface-2,#151518);padding:10px 12px;font-size:14px;color:#fff;outline:none}.fld::placeholder{color:#64748b}.fld:focus{border-color:rgba(212,175,55,.4)}`}</style>
     </div>
   )
 }
