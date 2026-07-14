@@ -18,6 +18,7 @@ import { LeadForm } from './_form'
 import { FaqAccordion } from './_faq'
 import { StickyLpCta } from './_sticky'
 import { Tracker } from './_tracker'
+import { LpEditBridge } from '@/components/lp/edit-bridge'
 
 type Dict = Record<string, string>
 
@@ -197,10 +198,10 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
                 {L['lp.soldOut']}
               </div>
             )}
-            <h1 className="text-[42px] font-bold leading-[1.1] tracking-tight sm:text-[56px] lg:text-[64px]" style={{ color: p.textPrimary }}>
+            <h1 data-lpe="headline" className="text-[42px] font-bold leading-[1.1] tracking-tight sm:text-[56px] lg:text-[64px]" style={{ color: p.textPrimary }}>
               {title}
             </h1>
-            <p className="mt-5 max-w-lg text-[17px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>
+            <p data-lpe="subheadline" className="mt-5 max-w-lg text-[17px] leading-relaxed" style={{ color: p.textMuted }}>{subtitle}</p>
 
             {chips.length > 0 && (
               <div className="mt-7 flex flex-wrap gap-2">
@@ -1242,6 +1243,9 @@ export default async function LandingPage({
         <Footer page={localized} L={L} p={palette} />
       </div>
       <StickyLpCta price={price} ctaText={localized.ctaText} slug={localized.slug} L={L} palette={palette} />
+      {/* On-canvas editing bridge — active only inside the staff editor's
+          iframe (?lpe=1). Persisting still goes through the authed editor API. */}
+      {sp.lpe === '1' && <LpEditBridge />}
     </div>
   )
 }
