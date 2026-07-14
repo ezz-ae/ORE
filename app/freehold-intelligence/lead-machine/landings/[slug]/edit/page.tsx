@@ -109,6 +109,8 @@ export default function LandingEditorPage() {
 
   const [form, setForm] = useState<Landing | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
+  // Publish-state menu — where the destructive action lives (never a toolbar button).
+  const [moreOpen, setMoreOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -176,9 +178,24 @@ export default function LandingEditorPage() {
   // Wait for the session so the right load path (proposal vs direct) runs once.
   useEffect(() => { if (slug && sessionReady) load() }, [slug, sessionReady, load])
 
+  // The landing test runs automatically on entry (staff editor only) — its
+  // findings surface as the guidance panel, so nobody has to remember a button.
+  const autoTested = useRef(false)
+  useEffect(() => {
+    if (form && !proposalMode && !autoTested.current) { autoTested.current = true; void runTest() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, proposalMode])
+
   function set<K extends keyof Landing>(k: K, v: Landing[K]) {
     setEdited(true)
     setForm((prev) => (prev ? { ...prev, [k]: v } : prev))
+  }
+
+  // Discard unsaved edits — reload the last saved state (only offered when dirty).
+  function discard() {
+    clearDraft()
+    setEdited(false)
+    void load()
   }
 
   async function save(nextStatus?: 'draft' | 'published') {
@@ -575,24 +592,56 @@ export default function LandingEditorPage() {
             </>
           ) : (
             <>
-              <button type="button" onClick={runTest} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
-                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
-              </button>
+              {/* Pre-final tools live apart from the commit cluster. The landing
+                  test runs automatically on entry — its findings render as the
+                  guidance panel below, not as a button next to final actions. */}
               <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
                 {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
               </button>
               <button type="button" onClick={() => setScheduleOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
                 <CalendarClock className="h-3.5 w-3.5" /> {t('lpe.schedule.btn')}
               </button>
-              <button type="button" onClick={() => { setDeleteConfirm(''); setDeleteOpen(true) }} className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20">
-                <Trash2 className="h-3.5 w-3.5" /> {t('lpe.del.btn')}
+
+              <span className="mx-1 hidden h-6 w-px bg-line sm:block" />
+
+              {/* Commit cluster: Discard appears only with edits; Save edits is
+                  gray until an edit exists, then takes the primary yellow. */}
+              {edited && (
+                <button type="button" onClick={discard} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-400 transition hover:text-white disabled:opacity-60">
+                  <Undo2 className="h-3.5 w-3.5" /> {t('lpe.discard')}
+                </button>
+              )}
+              <button type="button" onClick={() => save()} disabled={saving || !edited}
+                className={edited
+                  ? 'inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60'
+                  : 'inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-500'}>
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.saveEdits')}
               </button>
-              <button type="button" onClick={() => save()} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('lpe.save')}
-              </button>
-              <button type="button" onClick={() => save(form.status === 'published' ? 'draft' : 'published')} disabled={saving} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60">
-                {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')}
-              </button>
+              <div className="relative">
+                <button type="button" onClick={() => setMoreOpen((o) => !o)} disabled={saving}
+                  className={edited
+                    ? 'inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60'
+                    : 'inline-flex items-center gap-1 rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-60'}>
+                  {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')} <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {moreOpen && (
+                  <>
+                    <div className="fixed inset-0 z-[110]" onClick={() => setMoreOpen(false)} />
+                    <div className="absolute end-0 z-[111] mt-2 w-52 overflow-hidden rounded-xl border border-line bg-surface shadow-xl">
+                      <button type="button" onClick={() => { setMoreOpen(false); void save(form.status === 'published' ? 'draft' : 'published') }}
+                        className="block w-full px-4 py-2.5 text-start text-xs font-semibold text-slate-200 transition hover:bg-surface-2">
+                        {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')}
+                      </button>
+                      {/* Destructive action is deliberately buried here — never a
+                          toolbar button — and still requires typing DELETE. */}
+                      <button type="button" onClick={() => { setMoreOpen(false); setDeleteConfirm(''); setDeleteOpen(true) }}
+                        className="block w-full border-t border-line px-4 py-2.5 text-start text-xs font-semibold text-rose-300 transition hover:bg-rose-500/10">
+                        {t('lpe.del.btn')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -849,8 +898,15 @@ export default function LandingEditorPage() {
             <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><Trash2 className="h-4 w-4 text-rose-400" /> {t('lpe.del.title')}</div>
             <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">{t('lpe.del.warn')}</p>
             <input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder={t('lpe.del.placeholder')} className="fld mt-3" autoFocus />
-            <div className="mt-4 flex items-center justify-end gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
               <button type="button" onClick={() => setDeleteOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
+              {/* The safer path is offered first: take the page off air, keep the data. */}
+              {form.status === 'published' && (
+                <button type="button" onClick={() => { setDeleteOpen(false); void save('draft') }}
+                  className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
+                  {t('lpe.del.unpublishInstead')}
+                </button>
+              )}
               <button type="button" onClick={doDelete} disabled={deleteConfirm.trim().toLowerCase() !== 'delete' || deleting}
                 className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-400 disabled:opacity-40">
                 {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />} {t('lpe.del.confirm')}
