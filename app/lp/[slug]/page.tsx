@@ -221,7 +221,7 @@ function HeroSection({ d, page, L, p }: { d: Record<string, unknown>; page: Land
 
             <div className="mt-10 flex flex-wrap gap-3">
               <a href="#lead-form" className="inline-flex items-center gap-2 rounded-full bg-[#D4AF37] px-8 py-4 text-[15px] font-bold text-[#06080A] transition-all hover:bg-[#E8C547] active:scale-[0.98]">
-                {page.ctaText} <ChevronRight className="h-4 w-4" />
+                <span data-lpe="ctaText">{page.ctaText}</span> <ChevronRight className="h-4 w-4" />
               </a>
               <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[#25D366]/40 bg-[#25D366]/10 px-7 py-4 text-[15px] font-semibold text-[#25D366] transition-all hover:bg-[#25D366]/20">
                 <MessageCircle className="h-4 w-4" /> {L['hero.whatsapp']}

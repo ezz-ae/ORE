@@ -186,11 +186,14 @@ export default function LandingEditorPage() {
       if (e.origin !== window.location.origin) return
       const d = e.data as { source?: string; field?: string; value?: string }
       if (d?.source !== 'fh-lpe' || typeof d.value !== 'string') return
-      if (d.field !== 'headline' && d.field !== 'subheadline') return
+      if (d.field !== 'headline' && d.field !== 'subheadline' && d.field !== 'ctaText') return
       const field = d.field
       const v = d.value.trim()
       setForm((prev) => {
         if (!prev) return prev
+        // Only the hero's own texts mirror into the stored hero section — the
+        // CTA is a top-level field with no section counterpart.
+        if (field === 'ctaText') return { ...prev, ctaText: v }
         const heroKey = field === 'headline' ? 'title' : 'subtitle'
         const sections = Array.isArray(prev.sections)
           ? prev.sections.map((sec) => (sec.type === 'hero' ? { ...sec, data: { ...sec.data, [heroKey]: v } } : sec))
@@ -198,7 +201,7 @@ export default function LandingEditorPage() {
         return { ...prev, [field]: v, sections }
       })
       setEdited(true)
-      setSectionsTouched(true)
+      if (field !== 'ctaText') setSectionsTouched(true)
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
