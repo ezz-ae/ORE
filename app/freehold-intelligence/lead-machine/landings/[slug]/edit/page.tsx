@@ -32,6 +32,37 @@ type Landing = {
 
 type LpSection = { type: string; data: Record<string, unknown> }
 
+
+// Wireframe schematic per section type — shows the SHAPE of a section before
+// it is added (title bars, tile grids, form fields), never fake content.
+function SectionThumb({ type }: { type: string }) {
+  const bar = (w: string, h = 'h-1.5') => <div className={`${h} ${w} rounded-full bg-slate-600`} />
+  const tile = (n: number, cols: string, ratio = 'h-6') =>
+    <div className={`grid ${cols} gap-1`}>{Array.from({ length: n }, (_, i) => <div key={i} className={`${ratio} rounded bg-slate-700/70`} />)}</div>
+  let body: React.ReactNode
+  switch (type) {
+    case 'hero': body = <div className="space-y-1.5">{bar('w-3/4', 'h-2.5')}{bar('w-1/2')}<div className="h-3 w-16 rounded-full bg-gold/60" /></div>; break
+    case 'gallery': body = tile(6, 'grid-cols-3'); break
+    case 'units': body = <div className="space-y-1">{tile(3, 'grid-cols-1', 'h-3.5')}</div>; break
+    case 'key-facts': body = tile(4, 'grid-cols-4', 'h-7'); break
+    case 'payment-plan': body = tile(3, 'grid-cols-3', 'h-8'); break
+    case 'roi': body = <div className="flex gap-1"><div className="h-10 w-1/3 rounded bg-gold/40" /><div className="flex-1">{tile(3, 'grid-cols-3', 'h-10')}</div></div>; break
+    case 'why-dubai': body = tile(6, 'grid-cols-3', 'h-5'); break
+    case 'golden-visa': body = <div className="space-y-1.5"><div className="h-3 w-10 rounded-full bg-gold/50" />{bar('w-5/6')}{bar('w-2/3')}</div>; break
+    case 'amenities': body = <div className="flex flex-wrap gap-1">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-2.5 w-9 rounded-full bg-slate-700/70" />)}</div>; break
+    case 'location': body = <div className="space-y-1.5"><div className="h-7 w-full rounded bg-slate-700/70" />{bar('w-2/3')}{bar('w-1/2')}</div>; break
+    case 'developer-profile': body = <div className="flex gap-2"><div className="h-7 w-7 rounded-full bg-slate-600" /><div className="flex-1 space-y-1.5 pt-1">{bar('w-3/4')}{bar('w-1/2')}</div></div>; break
+    case 'social-proof': body = tile(3, 'grid-cols-3', 'h-9'); break
+    case 'market-intelligence': body = <div className="rounded border border-slate-700 p-1.5">{bar('w-5/6')}<div className="mt-1" />{bar('w-2/3')}</div>; break
+    case 'ai-concierge': body = <div className="space-y-1"><div className="h-3 w-2/3 rounded-lg rounded-bl-none bg-slate-700/70" /><div className="ms-auto h-3 w-1/2 rounded-lg rounded-br-none bg-gold/40" /></div>; break
+    case 'faq': body = <div className="space-y-1">{Array.from({ length: 3 }, (_, i) => <div key={i} className="flex items-center justify-between rounded border border-slate-700 px-1.5 py-1">{bar('w-2/3', 'h-1')}<span className="text-[8px] text-slate-500">＋</span></div>)}</div>; break
+    case 'download-brochure': body = <div className="flex items-center justify-between rounded border border-gold/30 bg-gold/[0.06] px-2 py-2">{bar('w-1/2')}<div className="h-3 w-10 rounded-full bg-gold/60" /></div>; break
+    case 'lead-form': body = <div className="space-y-1">{tile(2, 'grid-cols-1', 'h-3')}<div className="h-3 w-14 rounded-full bg-gold/60" /></div>; break
+    case 'neighborhood': case 'description': default: body = <div className="space-y-1.5">{bar('w-1/3', 'h-2')}{bar('w-full')}{bar('w-5/6')}{bar('w-2/3')}</div>
+  }
+  return <div className="rounded-lg border border-line bg-[#0c0d12] p-2.5">{body}</div>
+}
+
 type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
 type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
 
@@ -109,6 +140,7 @@ export default function LandingEditorPage() {
 
   const [form, setForm] = useState<Landing | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
   // Publish-state menu — where the destructive action lives (never a toolbar button).
   const [moreOpen, setMoreOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -850,10 +882,10 @@ export default function LandingEditorPage() {
                 })}
               </ul>
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <select value="" onChange={(e) => { addSection(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs">
-                  <option value="">{t('lpe.layout.add')}</option>
-                  {ADD_TYPES.map((ty) => <option key={ty} value={ty}>{sectionLabel(ty)}</option>)}
-                </select>
+                <button type="button" onClick={() => setAddOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  + {t('lpe.layout.add')}
+                </button>
                 <select value="" onChange={(e) => { insertTemplate(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs" title={t('lpe.layout.insertTplHint')}>
                   <option value="">{t('lpe.layout.insertTpl')}</option>
                   {LANDING_TEMPLATES.map((tpl) => <option key={tpl.key} value={tpl.key}>{t(tpl.nameKey)}</option>)}
@@ -927,6 +959,33 @@ export default function LandingEditorPage() {
             <div className="mt-4 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setScheduleOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
               <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lpe.schedule.apply')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add-section gallery — a wireframe preview per type, so the user SEES
+          what a section looks like before adding it (no more add-and-delete). */}
+      {addOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setAddOpen(false)}>
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[15px] font-semibold text-white">{t('lpe.layout.add')}</div>
+              <button type="button" onClick={() => setAddOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {ADD_TYPES.map((ty) => (
+                <button key={ty} type="button"
+                  onClick={() => {
+                    const idx = form.sections?.length ?? 0
+                    addSection(ty); setAddOpen(false)
+                    setTimeout(() => locateSection(idx), 600)
+                  }}
+                  className="group rounded-xl border border-line bg-surface-2 p-3 text-start transition hover:border-gold/40">
+                  <SectionThumb type={ty} />
+                  <div className="mt-2 text-xs font-semibold text-slate-200 group-hover:text-white">{sectionLabel(ty)}</div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
