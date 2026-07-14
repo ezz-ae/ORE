@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
@@ -28,6 +28,12 @@ const OP_OPTS: RuleOperator[] = ['lt', 'gt']
 const ACTION_OPTS: RuleAction[] = ['pause', 'resume', 'budget_up', 'budget_down', 'notify']
 const isBudgetAction = (a: RuleAction) => a === 'budget_up' || a === 'budget_down'
 const selCls = 'rounded-lg border border-line bg-surface-2 px-2 py-1 text-xs text-slate-100 outline-none focus:border-gold/40'
+
+// General link-type CTAs only — an ad whose destination is a lead form,
+// WhatsApp, or a phone call keeps its real CTA automatically (see
+// updateAdCreativeContent); these are what a plain landing-click ad can pick.
+const EDIT_CTA_OPTIONS = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
+type LibImage = { id: string; title: string; url: string | null }
 
 function leadsFrom(insights: MetaInsights | null): number {
   if (!insights?.actions) return 0
@@ -601,12 +607,30 @@ function RefineCol({ icon, title, items }: { icon: React.ReactNode; title: strin
 // post engagement for one ad. The preview `body` is Meta's own iframe HTML — the
 // exact markup Ads Manager renders — injected as-is; a placement Meta declines is
 // simply absent (never mocked).
+type AdSnapshot = {
+  id: string; name: string; status: string; usesAssetFeedSpec: boolean
+  destination?: string
+  creative: { primaryText: string; headline: string; description: string; landingUrl: string; ctaType: string; imageUrl: string; imageHash: string } | null
+}
+type EditForm = { primaryText: string; headline: string; description: string; landingUrl: string; cta: string; imageUrl: string; imageHash: string }
+
 function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string } }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [pdata, setPdata] = useState<{ previews: { format: string; body: string }[]; engagement: { likes: number; comments: number; shares: number } | null; demo?: boolean } | null>(null)
   const [fmt, setFmt] = useState(0)
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState('')
+  const [snapshot, setSnapshot] = useState<AdSnapshot | null>(null)
+  const [form, setForm] = useState<EditForm | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [imgBusy, setImgBusy] = useState(false)
+  const [libOpen, setLibOpen] = useState(false)
+  const [libImages, setLibImages] = useState<LibImage[]>([])
+  const [libLoading, setLibLoading] = useState(false)
 
   async function toggle() {
     const next = !open
@@ -621,24 +645,219 @@ function AdPreviewCard({ ad }: { ad: { id: string; name: string; status: string 
     }
   }
 
+  async function toggleEdit() {
+    const next = !editOpen
+    setEditOpen(next)
+    if (next && !snapshot && !editLoading) {
+      setEditLoading(true); setEditError('')
+      try {
+        const res = await fetch(`/api/meta/ads/${encodeURIComponent(ad.id)}`)
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !d.ad) { setEditError(d.error || t('lm.cmd.edit.loadFailed')); return }
+        setSnapshot(d.ad)
+        if (d.ad.creative) {
+          setForm({
+            primaryText: d.ad.creative.primaryText, headline: d.ad.creative.headline,
+            description: d.ad.creative.description, landingUrl: d.ad.creative.landingUrl,
+            cta: d.ad.creative.ctaType, imageUrl: d.ad.creative.imageUrl, imageHash: d.ad.creative.imageHash,
+          })
+        }
+      } catch { setEditError(t('lm.cmd.edit.loadFailed')) } finally { setEditLoading(false) }
+    }
+  }
+
+  function setField<K extends keyof EditForm>(key: K, value: EditForm[K]) {
+    setForm((f) => (f ? { ...f, [key]: value } : f))
+  }
+
+  async function onUploadImage(file: File | null) {
+    if (!file) return
+    setImgBusy(true); setEditError('')
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setEditError(d?.error || 'Image upload failed'); return }
+      setForm((f) => (f ? { ...f, imageHash: d.hash, imageUrl: d.url || f.imageUrl } : f))
+    } catch { setEditError('Could not read the image file') } finally { setImgBusy(false) }
+  }
+
+  async function toggleLibrary() {
+    const next = !libOpen
+    setLibOpen(next)
+    if (next && !libImages.length && !libLoading) {
+      setLibLoading(true)
+      try {
+        const r = await fetch('/api/freehold/library?kind=image', { cache: 'no-store' })
+        const d = await r.json().catch(() => ({}))
+        if (Array.isArray(d?.items)) setLibImages((d.items as LibImage[]).filter((i) => i.url))
+      } finally { setLibLoading(false) }
+    }
+  }
+
+  async function useLibraryImage(item: LibImage) {
+    if (!item.url) return
+    if (item.url.startsWith('data:')) {
+      setImgBusy(true); setEditError('')
+      try {
+        const res = await fetch('/api/meta/adimages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: item.url }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !d.hash) { setEditError(d?.error || 'Library image failed'); return }
+        setForm((f) => (f ? { ...f, imageHash: d.hash, imageUrl: d.url || f.imageUrl } : f))
+        setLibOpen(false)
+      } finally { setImgBusy(false) }
+    } else {
+      setForm((f) => (f ? { ...f, imageUrl: item.url as string, imageHash: '' } : f))
+      setLibOpen(false)
+    }
+  }
+
+  async function save() {
+    if (!form || saving) return
+    setSaving(true); setEditError('')
+    try {
+      const res = await fetch(`/api/meta/ads/${encodeURIComponent(ad.id)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          primaryText: form.primaryText, headline: form.headline, description: form.description,
+          landingUrl: form.landingUrl, cta: form.cta,
+          imageUrl: form.imageUrl || undefined, imageHash: form.imageHash || undefined,
+        }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || d.error) { setEditError(d.error || t('lm.cmd.edit.saveFailed')); return }
+      toast.success(t('lm.cmd.edit.saved'))
+      setEditOpen(false); setSnapshot(null); setForm(null)
+      setPdata(null) // stale — pointed at the old creative
+    } catch { setEditError(t('lm.cmd.edit.saveFailed')) } finally { setSaving(false) }
+  }
+
   const eng = pdata?.engagement
   const preview = pdata?.previews[fmt]
+  const ctaFixed = snapshot?.destination === 'whatsapp' || snapshot?.destination === 'phone'
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface-2">
-      <button type="button" onClick={toggle} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start transition hover:bg-white/[0.03]">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-slate-100">{ad.name}</div>
-          {eng && (
-            <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
-              <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 text-rose-400" /> {eng.likes.toLocaleString()}</span>
-              <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3 text-sky-400" /> {eng.comments.toLocaleString()}</span>
-              <span className="inline-flex items-center gap-1"><Share2 className="h-3 w-3 text-emerald-400" /> {eng.shares.toLocaleString()}</span>
+      <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+        <button type="button" onClick={toggle} className="flex min-w-0 flex-1 items-center justify-between gap-3 text-start">
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-slate-100">{ad.name}</div>
+            {eng && (
+              <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400">
+                <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3 text-rose-400" /> {eng.likes.toLocaleString()}</span>
+                <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3 text-sky-400" /> {eng.comments.toLocaleString()}</span>
+                <span className="inline-flex items-center gap-1"><Share2 className="h-3 w-3 text-emerald-400" /> {eng.shares.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        <button type="button" onClick={toggleEdit}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${editOpen ? 'border-gold/40 bg-gold/10 text-gold' : 'border-line-strong text-slate-300 hover:text-white'}`}>
+          <Pencil className="h-3.5 w-3.5" /> {t('lm.cmd.edit.button')}
+        </button>
+      </div>
+
+      {editOpen && (
+        <div className="border-t border-line p-4">
+          {editLoading ? (
+            <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> {t('common.loading')}</div>
+          ) : editError && !form ? (
+            <p className="text-xs text-rose-300">{editError}</p>
+          ) : snapshot?.usesAssetFeedSpec ? (
+            <p className="text-xs leading-relaxed text-slate-400">{t('lm.cmd.edit.notEditable')}</p>
+          ) : form ? (
+            <div className="space-y-2.5">
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.headline')}</label>
+                <input value={form.headline} onChange={(e) => setField('headline', e.target.value)}
+                  className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.primaryText')}</label>
+                <textarea rows={2} value={form.primaryText} onChange={(e) => setField('primaryText', e.target.value)}
+                  className="w-full resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.description')}</label>
+                <input value={form.description} onChange={(e) => setField('description', e.target.value)}
+                  className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.landingUrl')}</label>
+                <input value={form.landingUrl} onChange={(e) => setField('landingUrl', e.target.value)}
+                  className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40" />
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.cta')}</label>
+                <select value={form.cta} disabled={ctaFixed} onChange={(e) => setField('cta', e.target.value)}
+                  className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-slate-100 outline-none focus:border-gold/40 disabled:opacity-50">
+                  {EDIT_CTA_OPTIONS.map((c) => <option key={c} value={c}>{t(`lm.creatives.generate.cta.${c}`)}</option>)}
+                </select>
+                {ctaFixed && <p className="mt-1 text-[10px] text-slate-500">{t('lm.cmd.edit.ctaFixed')}</p>}
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.imageUrl')}</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line-strong bg-surface px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-gold/40">
+                    <Upload className="h-3.5 w-3.5" /> {imgBusy ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
+                    <input type="file" accept="image/*" className="hidden" disabled={imgBusy} onChange={(e) => onUploadImage(e.target.files?.[0] ?? null)} />
+                  </label>
+                  <button type="button" onClick={toggleLibrary}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${libOpen ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface text-slate-200 hover:border-gold/40'}`}>
+                    <FolderOpen className="h-3.5 w-3.5" /> {t('lm.newCampaign.s3.pickLibrary')}
+                  </button>
+                  {form.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={form.imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+                  )}
+                </div>
+                {libOpen && (
+                  <div className="mt-2 rounded-lg border border-line bg-surface p-2">
+                    {libLoading ? (
+                      <p className="py-2 text-[11px] text-slate-500">{t('common.loading')}</p>
+                    ) : libImages.length === 0 ? (
+                      <p className="py-2 text-[11px] text-slate-500">{t('lm.newCampaign.s3.libEmpty')}</p>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+                        {libImages.slice(0, 12).map((item) => (
+                          <button key={item.id} type="button" onClick={() => useLibraryImage(item)}
+                            className="overflow-hidden rounded border border-line transition hover:border-gold/50" title={item.title}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.url ?? ''} alt={item.title} className="h-10 w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {editError && <p className="text-xs text-rose-300">{editError}</p>}
+
+              <div className="flex items-center gap-2 pt-1">
+                <button type="button" onClick={save} disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gold px-3.5 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null} {saving ? t('lm.cmd.edit.saving') : t('lm.cmd.edit.save')}
+                </button>
+                <button type="button" onClick={() => setEditOpen(false)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-xs font-medium text-slate-300 transition hover:text-white">
+                  <X className="h-3.5 w-3.5" /> {t('lm.rule.cancel')}
+                </button>
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      )}
+
       {open && (
         <div className="border-t border-line p-4">
           {loading ? (

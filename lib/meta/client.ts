@@ -805,6 +805,20 @@ export interface AdCreativeSnapshot {
   id: string
   name: string
   status: string
+  /**
+   * True when this ad's creative uses asset_feed_spec (per-placement
+   * creative — either the landing-click path or one leg of a lead-form
+   * ad-set split). Editing THIS ad's single merged creative here would
+   * silently discard its per-placement images/copy, so callers must refuse
+   * to edit it — see updateAdCreativeContent.
+   */
+  usesAssetFeedSpec: boolean
+  /** Derived from the current call_to_action — reused so an edit preserves
+   * the ad's real destination (lead form / WhatsApp / call) instead of
+   * silently downgrading it to a plain link click. */
+  destination?: AdDestination
+  leadFormId?: string
+  destinationPhone?: string
   creative: {
     id: string
     primaryText: string
@@ -813,6 +827,7 @@ export interface AdCreativeSnapshot {
     landingUrl: string
     ctaType: string
     imageUrl: string
+    imageHash: string
   } | null
 }
 
@@ -820,15 +835,45 @@ export interface AdCreativeSnapshot {
 export async function getAdWithCreative(adId: string): Promise<AdCreativeSnapshot> {
   const ad = await apiFetch<{
     id: string; name?: string; status?: string
-    creative?: { id?: string; body?: string; title?: string; object_story_spec?: { link_data?: { link?: string; message?: string; name?: string; description?: string; picture?: string; call_to_action?: { type?: string } } } }
+    creative?: {
+      id?: string; body?: string; title?: string; asset_feed_spec?: unknown
+      object_story_spec?: {
+        link_data?: {
+          link?: string; message?: string; name?: string; description?: string
+          picture?: string; image_hash?: string
+          call_to_action?: { type?: string; value?: { link?: string; lead_gen_form_id?: string; app_destination?: string } }
+        }
+      }
+    }
   }>(`/${adId}`, undefined, {
-    fields: 'id,name,status,creative{id,body,title,object_story_spec}',
+    fields: 'id,name,status,creative{id,body,title,object_story_spec,asset_feed_spec}',
   })
   const ld = ad.creative?.object_story_spec?.link_data
+  const ctaValue = ld?.call_to_action?.value
+
+  let destination: AdDestination | undefined
+  let leadFormId: string | undefined
+  let destinationPhone: string | undefined
+  if (ctaValue?.lead_gen_form_id) {
+    destination = 'form'
+    leadFormId = ctaValue.lead_gen_form_id
+  } else if (ctaValue?.app_destination === 'WHATSAPP') {
+    destination = 'whatsapp'
+  } else if (ld?.call_to_action?.type === 'CALL_NOW' && ctaValue?.link?.startsWith('tel:')) {
+    destination = 'phone'
+    destinationPhone = ctaValue.link.slice(4)
+  } else if (ld) {
+    destination = 'landing'
+  }
+
   return {
     id: String(ad.id),
     name: String(ad.name ?? ''),
     status: String(ad.status ?? ''),
+    usesAssetFeedSpec: !!ad.creative?.asset_feed_spec,
+    destination,
+    leadFormId,
+    destinationPhone,
     creative: ad.creative?.id
       ? {
           id: String(ad.creative.id),
@@ -838,6 +883,7 @@ export async function getAdWithCreative(adId: string): Promise<AdCreativeSnapsho
           landingUrl: ld?.link ?? '',
           ctaType: ld?.call_to_action?.type ?? 'LEARN_MORE',
           imageUrl: ld?.picture ?? '',
+          imageHash: ld?.image_hash ?? '',
         }
       : null,
   }
@@ -858,13 +904,24 @@ const CTA_TYPES: MetaCta[] = ['LEARN_MORE', 'SIGN_UP', 'GET_QUOTE', 'CONTACT_US'
 /**
  * Edit a live ad's copy/creative: merge the changes over the current values,
  * create the new creative, repoint the ad. Returns before + after.
+ *
+ * Preserves the ad's real destination (lead form / WhatsApp / call) by
+ * passing the SAME destination/leadFormId/destinationPhone the ad already
+ * had through to createAdCreative — otherwise this would silently rebuild
+ * every edited ad as a plain link click, breaking its actual CTA.
  */
 export async function updateAdCreativeContent(
   adId: string,
-  changes: { primaryText?: string; headline?: string; description?: string; landingUrl?: string; imageUrl?: string; cta?: string },
+  changes: { primaryText?: string; headline?: string; description?: string; landingUrl?: string; imageUrl?: string; imageHash?: string; cta?: string },
 ): Promise<{ adId: string; before: AdCreativeSnapshot['creative']; after: CampaignCreative; creativeId: string }> {
   const current = await getAdWithCreative(adId)
   if (!current.creative) throw new MetaApiError('This ad has no editable link creative.', 0, 'unsupported')
+  if (current.usesAssetFeedSpec) {
+    throw new MetaApiError(
+      'This ad uses per-placement creative (a different image/headline per placement) and can\'t be edited as a single creative here — relaunch the campaign to change it.',
+      0, 'unsupported',
+    )
+  }
   const cta = (changes.cta && CTA_TYPES.includes(changes.cta as MetaCta) ? changes.cta : current.creative.ctaType) as MetaCta
   const merged: CampaignCreative = {
     primaryText: changes.primaryText ?? current.creative.primaryText,
@@ -872,9 +929,16 @@ export async function updateAdCreativeContent(
     description: changes.description ?? current.creative.description,
     landingUrl: changes.landingUrl ?? current.creative.landingUrl,
     cta: CTA_TYPES.includes(cta) ? cta : 'LEARN_MORE',
+    imageHash: changes.imageHash ?? current.creative.imageHash ?? undefined,
     imageUrl: changes.imageUrl ?? current.creative.imageUrl ?? undefined,
   }
-  const created = await createAdCreative({ name: `${current.name} — edited`, creative: merged })
+  const created = await createAdCreative({
+    name: `${current.name} — edited`,
+    creative: merged,
+    destination: current.destination,
+    leadFormId: current.leadFormId,
+    destinationPhone: current.destinationPhone,
+  })
   await apiPost(`/${adId}`, { creative: { creative_id: created.id } })
   return { adId, before: current.creative, after: merged, creativeId: created.id }
 }
