@@ -150,6 +150,28 @@ export interface MetaLocale {
   name: string
 }
 
+/**
+ * The 5 placement surfaces the campaign wizard lets an operator preview and
+ * (for landing-click ads) customize creative for. Maps 1:1 to Meta's
+ * publisher_platforms + facebook_positions/instagram_positions targeting
+ * vocabulary — see PLACEMENT_TARGETING in lib/meta/client.ts.
+ */
+export type PlacementKey = 'fbFeed' | 'igFeed' | 'igStory' | 'fbStory' | 'reels'
+
+/**
+ * A per-placement creative override. Every field is optional — a blank field
+ * inherits the matching field from the ad's default CampaignCreative below.
+ * An override with every field blank is equivalent to no override at all.
+ */
+export interface PlacementCreativeOverride {
+  headline?: string
+  primaryText?: string
+  /** External image URL (fallback) — used only when imageHash is absent. */
+  imageUrl?: string
+  /** Meta ad-account image hash from an uploaded file (preferred). */
+  imageHash?: string
+}
+
 export interface CampaignCreative {
   primaryText: string
   headline: string
@@ -160,6 +182,13 @@ export interface CampaignCreative {
   imageUrl?: string
   /** Meta ad-account image hash from an uploaded file (preferred). */
   imageHash?: string
+  /**
+   * Per-placement creative overrides (image / headline / primary text).
+   * Only applied when destination is 'landing' (a single shared CTA link) —
+   * lead-form / WhatsApp / call ads always use the default creative above.
+   * Blank/absent = every placement uses the default creative.
+   */
+  placementOverrides?: Partial<Record<PlacementKey, PlacementCreativeOverride>>
 }
 
 export interface LaunchCampaignPayload {

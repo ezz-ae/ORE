@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
-  Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
+  Monitor, Sparkles, ChevronRight, ChevronDown, Sliders, Crosshair, Gauge, MessageCircle, Phone,
   FolderOpen, Upload, X, Copy,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
@@ -31,7 +31,7 @@ interface WizardListing {
   paymentPlan: string | null
   landingUrl: string
 }
-import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting } from '@/lib/meta/types'
+import type { LaunchCampaignPayload, MetaCampaignObjective, MetaCta, GeneratedCreativeVariant, CampaignTargeting, PlacementKey, PlacementCreativeOverride } from '@/lib/meta/types'
 
 // A saved audience from the Audiences tab, attachable to this launch.
 interface SavedAudienceOption { id: string; name: string; kind: string; description: string; spec: CampaignTargeting }
@@ -70,6 +70,9 @@ interface WizardState {
   cta:           MetaCta
   imageUrl:      string
   imageHash:     string
+  // Per-placement creative overrides (landing-click ads only) — blank fields
+  // inherit the default creative above.
+  placementOverrides: Partial<Record<PlacementKey, PlacementCreativeOverride>>
   // Step 4
   launchStatus:  'ACTIVE' | 'PAUSED'
   cplCapAED:     number
@@ -113,6 +116,11 @@ const COUNTRY_CODES = ['AE', 'SA', 'KW', 'QA', 'BH', 'OM', 'GB', 'IN', 'RU', 'DE
 
 // Labels resolve through i18n (lm.creatives.generate.cta.<value>) at render.
 const CTA_OPTIONS: MetaCta[] = ['LEARN_MORE', 'GET_QUOTE', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW', 'APPLY_NOW']
+
+// The 5 placements the wizard previews AND — for landing-click ads — lets an
+// operator give a different image/headline/primary text. Labels reuse the
+// SAME lm.newCampaign.s3.pl.<key> keys the placements wall already has.
+const PLACEMENT_KEYS: PlacementKey[] = ['fbFeed', 'igFeed', 'igStory', 'fbStory', 'reels']
 
 const STEPS: { n: number; labelKey: string; icon: typeof Megaphone }[] = [
   { n: 1, labelKey: 'lm.newCampaign.step.campaign',  icon: Megaphone },
@@ -189,6 +197,7 @@ export default function NewCampaignPage() {
     cta:          'LEARN_MORE',
     imageUrl:     '',
     imageHash:    '',
+    placementOverrides: {},
     launchStatus: 'PAUSED',
     cplCapAED:    150,
     autoEnhance:  'approval',
@@ -724,6 +733,102 @@ export default function NewCampaignPage() {
     }
   }
 
+  // ── Per-placement creative overrides ────────────────────────────────────────
+  // Landing-click ads only (Meta's per-placement creative — asset_feed_spec —
+  // shares the destination's CTA-value slot that lead-form/WhatsApp/call ads
+  // need for their form id / phone number, so it isn't offered there).
+  const [overrideOpenKey, setOverrideOpenKey] = useState<PlacementKey | null>(null)
+  const [overrideUploading, setOverrideUploading] = useState<PlacementKey | ''>('')
+  const [overrideLibFor, setOverrideLibFor] = useState<PlacementKey | ''>('')
+
+  function overrideOf(key: PlacementKey): PlacementCreativeOverride {
+    return form.placementOverrides[key] ?? {}
+  }
+  function isCustomized(key: PlacementKey): boolean {
+    const ov = overrideOf(key)
+    return !!(ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl)
+  }
+  function setOverrideField<K extends keyof PlacementCreativeOverride>(key: PlacementKey, field: K, value: PlacementCreativeOverride[K]) {
+    setForm((prev) => ({
+      ...prev,
+      placementOverrides: { ...prev.placementOverrides, [key]: { ...prev.placementOverrides[key], [field]: value } },
+    }))
+  }
+  // Atomic hash+url update (mirrors the default-image pattern) so a stale
+  // imageUrl fallback can never win a race against its own imageHash write.
+  function setOverrideImage(key: PlacementKey, hash: string, url?: string) {
+    setForm((prev) => ({
+      ...prev,
+      placementOverrides: {
+        ...prev.placementOverrides,
+        [key]: { ...prev.placementOverrides[key], imageHash: hash, imageUrl: url || prev.placementOverrides[key]?.imageUrl },
+      },
+    }))
+  }
+  function clearOverride(key: PlacementKey) {
+    setForm((prev) => {
+      const next = { ...prev.placementOverrides }
+      delete next[key]
+      return { ...prev, placementOverrides: next }
+    })
+  }
+
+  async function onUploadOverrideImage(key: PlacementKey, file: File | null) {
+    if (!file) return
+    setOverrideUploading(key); setApiError(null)
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result)); r.onerror = () => reject(r.error)
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/meta/adimages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setApiError(d?.error || 'Image upload failed'); return }
+      setOverrideImage(key, d.hash, d.url)
+    } catch {
+      setApiError('Could not read the image file')
+    } finally {
+      setOverrideUploading('')
+    }
+  }
+
+  async function toggleOverrideLibrary(key: PlacementKey) {
+    const next = overrideLibFor === key ? '' : key
+    setOverrideLibFor(next)
+    if (!next || libImages.length || libLoading) return
+    setLibLoading(true)
+    try {
+      const r = await fetch('/api/freehold/library?kind=image', { cache: 'no-store' })
+      const d = await r.json().catch(() => ({}))
+      if (Array.isArray(d?.items)) setLibImages((d.items as LibImage[]).filter((i) => i.url))
+    } finally { setLibLoading(false) }
+  }
+
+  async function useOverrideLibraryImage(key: PlacementKey, item: LibImage) {
+    if (!item.url) return
+    if (item.url.startsWith('data:')) {
+      setOverrideUploading(key); setApiError(null)
+      try {
+        const res = await fetch('/api/meta/adimages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: item.url }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok || !d.hash) { setApiError(d?.error || t('lm.newCampaign.s3.libFailed')); return }
+        setOverrideImage(key, d.hash, d.url)
+        setOverrideLibFor('')
+      } finally { setOverrideUploading('') }
+    } else {
+      setOverrideField(key, 'imageUrl', item.url as string)
+      setOverrideField(key, 'imageHash', '')
+      setOverrideLibFor('')
+    }
+  }
+
   // ── Launch ─────────────────────────────────────────────────────────────────
   async function handleLaunch() {
     setLoading(true)
@@ -777,6 +882,15 @@ export default function NewCampaignPage() {
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
+        // Per-placement creative is only offered (and only meaningful) for a
+        // plain landing-click ad — strip it for every other destination so a
+        // stale draft never silently applies per-placement customization to
+        // a lead-form/WhatsApp/call ad.
+        placementOverrides: dest === 'landing'
+          ? Object.fromEntries(
+              Object.entries(form.placementOverrides).filter(([, ov]) =>
+                ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl)))
+          : undefined,
       },
       launchStatus: form.launchStatus,
       // The wiring that was missing: the picked instant form + destination
@@ -1609,6 +1723,104 @@ export default function NewCampaignPage() {
               )}
             </div>
 
+            {/* Per-placement creative — only meaningful for a plain landing-click
+                ad: lead-form/WhatsApp/call ads carry their CTA value (form id,
+                phone number) on the classic single-creative path, so per-
+                placement customization isn't offered there. */}
+            {activeObjective.dest === 'landing' ? (
+              <div className="rounded-[14px] border border-line bg-surface-2 p-4">
+                <Label>{t('lm.newCampaign.s3.perPlacement.title')}</Label>
+                <p className="mb-3 text-xs leading-relaxed text-slate-500">{t('lm.newCampaign.s3.perPlacement.hint')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {PLACEMENT_KEYS.map((key) => {
+                    const open = overrideOpenKey === key
+                    const customized = isCustomized(key)
+                    return (
+                      <button key={key} type="button" onClick={() => setOverrideOpenKey(open ? null : key)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                          open ? 'border-gold/50 bg-gold/10 text-gold'
+                          : customized ? 'border-emerald-400/40 bg-emerald-400/[0.06] text-emerald-300'
+                          : 'border-line bg-surface text-slate-300 hover:text-white'}`}>
+                        {customized && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" title={t('lm.newCampaign.s3.perPlacement.customized')} />}
+                        {t(`lm.newCampaign.s3.pl.${key}`)}
+                        <ChevronDown className={`h-3 w-3 transition ${open ? 'rotate-180' : ''}`} />
+                      </button>
+                    )
+                  })}
+                </div>
+                {overrideOpenKey && (
+                  <div className="mt-3 rounded-xl border border-line bg-surface p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold text-white">{t(`lm.newCampaign.s3.pl.${overrideOpenKey}`)}</div>
+                      {isCustomized(overrideOpenKey) && (
+                        <button type="button" onClick={() => clearOverride(overrideOpenKey!)}
+                          className="inline-flex items-center gap-1 text-[11px] text-slate-500 transition hover:text-rose-300">
+                          <X className="h-3 w-3" /> {t('lm.newCampaign.s3.perPlacement.clear')}
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-2.5">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.headline')}</label>
+                        <input className={inputCls()} value={overrideOf(overrideOpenKey).headline ?? ''}
+                          onChange={(e) => setOverrideField(overrideOpenKey!, 'headline', e.target.value)}
+                          placeholder={form.headline || t('lm.headlinePlaceholder')} />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.primaryText')}</label>
+                        <textarea rows={2} className={`${inputCls()} resize-none`} value={overrideOf(overrideOpenKey).primaryText ?? ''}
+                          onChange={(e) => setOverrideField(overrideOpenKey!, 'primaryText', e.target.value)}
+                          placeholder={form.primaryText || t('lm.primaryTextPlaceholder')} />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-medium text-slate-500">{t('lm.newCampaign.s3.label.imageUrl')}</label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-line-strong bg-surface-2 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 transition hover:border-gold/40">
+                            {overrideUploading === overrideOpenKey ? t('lm.newCampaign.s3.upload.uploading') : t('lm.newCampaign.s3.upload.uploadImage')}
+                            <input type="file" accept="image/*" className="hidden" disabled={overrideUploading === overrideOpenKey}
+                              onChange={(e) => onUploadOverrideImage(overrideOpenKey!, e.target.files?.[0] ?? null)} />
+                          </label>
+                          <button type="button" onClick={() => toggleOverrideLibrary(overrideOpenKey!)}
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${overrideLibFor === overrideOpenKey ? 'border-gold/40 bg-gold/[0.07] text-gold' : 'border-line-strong bg-surface-2 text-slate-200 hover:border-gold/40'}`}>
+                            {t('lm.newCampaign.s3.pickLibrary')}
+                          </button>
+                          {overrideOf(overrideOpenKey).imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={overrideOf(overrideOpenKey).imageUrl} alt="" className="h-9 w-14 rounded object-cover" />
+                          ) : (
+                            <span className="text-[11px] text-slate-500">{t('lm.newCampaign.s3.perPlacement.useDefault')}</span>
+                          )}
+                        </div>
+                        {overrideLibFor === overrideOpenKey && (
+                          <div className="mt-2 rounded-lg border border-line bg-surface-2 p-2">
+                            {libLoading ? (
+                              <p className="py-2 text-[11px] text-slate-500">{t('common.loading')}</p>
+                            ) : libImages.length === 0 ? (
+                              <p className="py-2 text-[11px] text-slate-500">{t('lm.newCampaign.s3.libEmpty')}</p>
+                            ) : (
+                              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+                                {libImages.slice(0, 12).map((item) => (
+                                  <button key={item.id} type="button" onClick={() => useOverrideLibraryImage(overrideOpenKey!, item)}
+                                    className="overflow-hidden rounded border border-line transition hover:border-gold/50" title={item.title}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={item.url ?? ''} alt={item.title} className="h-10 w-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-[11px] leading-relaxed text-slate-500">
+                {t('lm.newCampaign.s3.perPlacement.notAvailable')}
+              </p>
+            )}
+
             <div>
               <Label>{t('lm.newCampaign.s3.label.cta')}</Label>
               <select
@@ -1677,14 +1889,26 @@ export default function NewCampaignPage() {
               </div>
               <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {([
-                  { key: 'fbFeed', kind: 'square' as const },
-                  { key: 'igFeed', kind: 'square' as const },
-                  { key: 'igStory', kind: 'vertical' as const },
-                  { key: 'fbStory', kind: 'vertical' as const },
-                  { key: 'reels', kind: 'vertical' as const },
-                ]).map(({ key, kind }) => (
+                  { key: 'fbFeed' as PlacementKey, kind: 'square' as const },
+                  { key: 'igFeed' as PlacementKey, kind: 'square' as const },
+                  { key: 'igStory' as PlacementKey, kind: 'vertical' as const },
+                  { key: 'fbStory' as PlacementKey, kind: 'vertical' as const },
+                  { key: 'reels' as PlacementKey, kind: 'vertical' as const },
+                ]).map(({ key, kind }) => {
+                  // Merge this placement's override over the default creative —
+                  // an honest preview of what actually ships, not the same
+                  // creative re-shaped into 5 mock layouts.
+                  const ov = activeObjective.dest === 'landing' ? overrideOf(key) : {}
+                  const tileHeadline = ov.headline?.trim() || form.headline
+                  const tilePrimaryText = ov.primaryText?.trim() || form.primaryText
+                  const tileImageUrl = ov.imageUrl || form.imageUrl
+                  const customized = isCustomized(key) && activeObjective.dest === 'landing'
+                  return (
                   <div key={key}>
-                    <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t(`lm.newCampaign.s3.pl.${key}`)}</div>
+                    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      {customized && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" title={t('lm.newCampaign.s3.perPlacement.customized')} />}
+                      {t(`lm.newCampaign.s3.pl.${key}`)}
+                    </div>
                     <div className="overflow-hidden rounded-xl border border-line bg-black">
                       {kind === 'square' ? (
                         <div className="bg-[#18181b]">
@@ -1692,34 +1916,35 @@ export default function NewCampaignPage() {
                             <div className="h-5 w-5 rounded-full bg-gold/80" />
                             <div className="text-[10px] leading-tight"><div className="font-semibold text-white">Freehold Property</div><div className="text-slate-500">{t('lm.newCampaign.s3.sponsored')}</div></div>
                           </div>
-                          {form.primaryText && <div className="px-2 pb-1.5 text-[10px] leading-snug text-slate-200">{form.primaryText.slice(0, 90)}</div>}
+                          {tilePrimaryText && <div className="px-2 pb-1.5 text-[10px] leading-snug text-slate-200">{tilePrimaryText.slice(0, 90)}</div>}
                           <div className="aspect-square w-full bg-surface-2">
-                            {form.imageUrl
+                            {tileImageUrl
                               // eslint-disable-next-line @next/next/no-img-element
-                              ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                              ? <img src={tileImageUrl} alt="" className="h-full w-full object-cover" />
                               : <div className="flex h-full items-center justify-center bg-gradient-to-br from-gold/20 to-transparent text-[10px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
                           </div>
                           <div className="flex items-center justify-between gap-1.5 bg-[#0f0f11] px-2 py-1.5">
-                            <div className="min-w-0"><div className="truncate text-[10px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div></div>
+                            <div className="min-w-0"><div className="truncate text-[10px] font-semibold text-white">{tileHeadline || t('lm.newCampaign.s3.headlinePh')}</div></div>
                             <span className="shrink-0 rounded bg-gold/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                           </div>
                         </div>
                       ) : (
                         <div className="relative aspect-[9/16] w-full bg-surface-2">
-                          {form.imageUrl
+                          {tileImageUrl
                             // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={form.imageUrl} alt="" className="h-full w-full object-cover" />
+                            ? <img src={tileImageUrl} alt="" className="h-full w-full object-cover" />
                             : <div className="flex h-full items-center justify-center bg-gradient-to-b from-gold/20 to-transparent text-[10px] text-slate-500">{t('lm.newCampaign.s3.noImage')}</div>}
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2">
-                            <div className="text-[11px] font-semibold text-white">{form.headline || t('lm.newCampaign.s3.headlinePh')}</div>
-                            <div className="mt-0.5 line-clamp-2 text-[9px] text-slate-300">{form.primaryText}</div>
+                            <div className="text-[11px] font-semibold text-white">{tileHeadline || t('lm.newCampaign.s3.headlinePh')}</div>
+                            <div className="mt-0.5 line-clamp-2 text-[9px] text-slate-300">{tilePrimaryText}</div>
                             <span className="mt-1 inline-block rounded bg-gold/90 px-1.5 py-0.5 text-[9px] font-semibold text-ink">{t(`lm.creatives.generate.cta.${form.cta}`)}</span>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>

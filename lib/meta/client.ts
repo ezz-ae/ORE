@@ -26,6 +26,8 @@ import type {
   MetaLocale,
   AdDestination,
   MetaCta,
+  PlacementKey,
+  PlacementCreativeOverride,
 } from './types'
 
 const API_BASE = 'https://graph.facebook.com/v20.0'
@@ -493,6 +495,80 @@ export async function validateInterests(
 
 // ─── Creatives & Ads ─────────────────────────────────────────────────────────
 
+// PlacementKey → Meta's real publisher_platforms / facebook_positions /
+// instagram_positions targeting vocabulary. Used both by the ad set's
+// placement targeting (elsewhere) and by asset_customization_rules below, so
+// a creative override actually lands on the placement it was made for.
+const PLACEMENT_TARGETING: Record<PlacementKey, { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] }> = {
+  fbFeed:  { publisher_platforms: ['facebook'],               facebook_positions: ['feed'] },
+  igFeed:  { publisher_platforms: ['instagram'],               instagram_positions: ['stream'] },
+  igStory: { publisher_platforms: ['instagram'],               instagram_positions: ['story'] },
+  fbStory: { publisher_platforms: ['facebook'],                facebook_positions: ['story'] },
+  reels:   { publisher_platforms: ['facebook', 'instagram'],   facebook_positions: ['facebook_reels'], instagram_positions: ['reels'] },
+}
+
+/**
+ * Build Meta's `asset_feed_spec` (the "placement asset customization" shape)
+ * from a default creative + a set of non-empty per-placement overrides. Each
+ * distinct image hash / body text / title text becomes exactly one labelled
+ * asset (deduped), and one `asset_customization_rules` entry per overridden
+ * placement points at its labels — plus a catch-all rule (lowest priority,
+ * listed last) so every placement NOT explicitly overridden still gets the
+ * default creative instead of silently falling through with no creative.
+ */
+function buildAssetFeedSpec(params: {
+  defaultCreative: CampaignCreative
+  overrides: Array<[PlacementKey, PlacementCreativeOverride]>
+  ctaType: string
+}) {
+  const imageLabels = new Map<string, string>()   // hash -> label
+  const bodyLabels = new Map<string, string>()     // text -> label
+  const titleLabels = new Map<string, string>()    // text -> label
+  const labelFor = (map: Map<string, string>, prefix: string, value: string) => {
+    let label = map.get(value)
+    if (!label) { label = `${prefix}_${map.size}`; map.set(value, label) }
+    return label
+  }
+
+  const defaultImageHash = params.defaultCreative.imageHash
+  const defaultBody = params.defaultCreative.primaryText
+  const defaultTitle = params.defaultCreative.headline
+  if (defaultImageHash) labelFor(imageLabels, 'img', defaultImageHash)
+  labelFor(bodyLabels, 'body', defaultBody)
+  labelFor(titleLabels, 'title', defaultTitle)
+
+  const rules: Record<string, unknown>[] = params.overrides.map(([key, ov], i) => {
+    const imageHash = ov.imageHash || defaultImageHash
+    const body = ov.primaryText?.trim() || defaultBody
+    const title = ov.headline?.trim() || defaultTitle
+    return {
+      customization_spec: PLACEMENT_TARGETING[key],
+      ...(imageHash ? { image_label: { name: labelFor(imageLabels, 'img', imageHash) } } : {}),
+      body_label: { name: labelFor(bodyLabels, 'body', body) },
+      title_label: { name: labelFor(titleLabels, 'title', title) },
+      priority: i + 1,
+    }
+  })
+  // Catch-all — broadest customization_spec, lowest priority, always last —
+  // covers every placement the ad set serves that has no specific rule above.
+  rules.push({
+    customization_spec: { publisher_platforms: ['facebook', 'instagram'] },
+    ...(defaultImageHash ? { image_label: { name: labelFor(imageLabels, 'img', defaultImageHash) } } : {}),
+    body_label: { name: labelFor(bodyLabels, 'body', defaultBody) },
+    title_label: { name: labelFor(titleLabels, 'title', defaultTitle) },
+    priority: rules.length + 1,
+  })
+
+  return {
+    images: [...imageLabels.entries()].map(([hash, label]) => ({ hash, adlabels: [{ name: label }] })),
+    bodies: [...bodyLabels.entries()].map(([text, label]) => ({ text, adlabels: [{ name: label }] })),
+    titles: [...titleLabels.entries()].map(([text, label]) => ({ text, adlabels: [{ name: label }] })),
+    link_urls: [{ website_url: params.defaultCreative.landingUrl }],
+    call_to_action_types: [params.ctaType],
+    asset_customization_rules: rules,
+  }
+}
+
 export async function createAdCreative(params: {
   name: string
   creative: CampaignCreative
@@ -519,6 +595,31 @@ export async function createAdCreative(params: {
     callToAction = { type: 'CALL_NOW', value: { link: `tel:${params.destinationPhone.replace(/\s+/g, '')}` } }
   } else {
     callToAction = { type: params.creative.cta, value: { link: params.creative.landingUrl } }
+  }
+
+  // Placement-customized creative (asset_feed_spec) is only offered for the
+  // plain landing-click case — the wizard hides it for other destinations,
+  // and this is the defense-in-depth check for a stale/replayed payload:
+  // lead-form / WhatsApp / call ads always use ONE creative for every
+  // placement, since the CTA value (form id / phone / WhatsApp) lives on the
+  // classic object_story_spec.link_data path, not on asset_feed_spec.
+  const overrideEntries = (params.destination === undefined || params.destination === 'landing')
+    ? (Object.entries(params.creative.placementOverrides ?? {}) as Array<[PlacementKey, PlacementCreativeOverride]>)
+        .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl))
+    : []
+
+  if (overrideEntries.length > 0) {
+    const assetFeedSpec = buildAssetFeedSpec({
+      defaultCreative: params.creative,
+      overrides: overrideEntries,
+      ctaType: params.creative.cta,
+    })
+    return apiPost(`/${adAccountId}/adcreatives`, {
+      name:              params.name,
+      object_story_spec: { page_id: pageId },
+      asset_feed_spec:   assetFeedSpec,
+      url_tags: 'utm_source=meta&utm_medium=paid&utm_campaign={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}',
+    })
   }
 
   const linkData: Record<string, unknown> = {
@@ -1170,6 +1271,19 @@ export async function launchFullCampaign(params: {
   if (!creativeInput.imageHash && creativeInput.imageUrl) {
     const hash = await ingestImageFromUrl(creativeInput.imageUrl)
     if (hash) creativeInput.imageHash = hash
+  }
+  // Same ingestion for any per-placement override image that only carries a
+  // pasted/library URL — asset_feed_spec requires a native hash (no `picture`
+  // URL fallback exists there), so an override without one silently falls
+  // back to the default image at the createAdCreative layer.
+  if (creativeInput.placementOverrides) {
+    const entries = Object.entries(creativeInput.placementOverrides) as Array<[PlacementKey, PlacementCreativeOverride]>
+    const ingested = await Promise.all(entries.map(async ([key, ov]) => {
+      if (ov.imageHash || !ov.imageUrl) return [key, ov] as const
+      const hash = await ingestImageFromUrl(ov.imageUrl)
+      return [key, hash ? { ...ov, imageHash: hash } : ov] as const
+    }))
+    creativeInput.placementOverrides = Object.fromEntries(ingested)
   }
   const creative = await step('creative', () => createAdCreative({
     name:             `${params.listingName} — Creative`,
