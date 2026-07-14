@@ -178,6 +178,32 @@ export default function LandingEditorPage() {
   // Wait for the session so the right load path (proposal vs direct) runs once.
   useEffect(() => { if (slug && sessionReady) load() }, [slug, sessionReady, load])
 
+  // On-canvas edits (stage 1): the preview iframe posts headline/subheadline
+  // edits typed directly on the design. Update the form AND the stored hero
+  // section (when one exists) so the saved page shows exactly what was typed.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { source?: string; field?: string; value?: string }
+      if (d?.source !== 'fh-lpe' || typeof d.value !== 'string') return
+      if (d.field !== 'headline' && d.field !== 'subheadline') return
+      const field = d.field
+      const v = d.value.trim()
+      setForm((prev) => {
+        if (!prev) return prev
+        const heroKey = field === 'headline' ? 'title' : 'subtitle'
+        const sections = Array.isArray(prev.sections)
+          ? prev.sections.map((sec) => (sec.type === 'hero' ? { ...sec, data: { ...sec.data, [heroKey]: v } } : sec))
+          : prev.sections
+        return { ...prev, [field]: v, sections }
+      })
+      setEdited(true)
+      setSectionsTouched(true)
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [])
+
   // The landing test runs automatically on entry (staff editor only) — its
   // findings surface as the guidance panel, so nobody has to remember a button.
   const autoTested = useRef(false)
@@ -871,8 +897,8 @@ export default function LandingEditorPage() {
               <a href={`/lp/${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">{t('lpe.openTab')} <ExternalLink className="h-3 w-3" /></a>
             </div>
           </div>
-          <iframe key={previewKey} src={`/lp/${slug}`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
-          <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')}</p>
+          <iframe key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
+          <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')} · <span className="text-gold/70">{t('lpe.canvasHint')}</span></p>
         </div>
       </div>
 
