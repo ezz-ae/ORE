@@ -184,9 +184,12 @@ export interface CampaignCreative {
   imageHash?: string
   /**
    * Per-placement creative overrides (image / headline / primary text).
-   * Only applied when destination is 'landing' (a single shared CTA link) —
-   * lead-form / WhatsApp / call ads always use the default creative above.
-   * Blank/absent = every placement uses the default creative.
+   * Applied for 'landing' (via Meta's asset_feed_spec, one ad) and 'form'
+   * (via a separate single-creative ad set per customized placement — Meta
+   * restricts the asset_feed_spec field needed to carry a lead_gen_form_id
+   * to internal/Special-Ad-Category apps, so lead ads can't use the same
+   * single-ad mechanism). WhatsApp / call ads always use the default
+   * creative above. Blank/absent = every placement uses the default creative.
    */
   placementOverrides?: Partial<Record<PlacementKey, PlacementCreativeOverride>>
 }
@@ -232,6 +235,19 @@ export interface LaunchCampaignResult {
   adId: string
   creativeId: string
   status: 'ACTIVE' | 'PAUSED'
+  /**
+   * Present only when a lead-form launch had per-placement creative overrides
+   * — one entry per ad set actually created (one per customized placement,
+   * plus a `placementKey: null` entry for the remaining/untouched placements
+   * if any). `adSetId`/`adId`/`creativeId` above mirror the first entry here.
+   */
+  placementAdSets?: Array<{
+    placementKey: PlacementKey | null
+    adSetId: string
+    adId: string
+    creativeId: string
+    dailyBudgetAED: number
+  }>
 }
 
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────

@@ -318,6 +318,12 @@ export async function createAdSet(params: {
   destination?: AdDestination
   /** Cost-per-result ceiling in AED → COST_CAP bid strategy on the ad set. */
   cplCapAED?: number
+  /**
+   * Narrow this ad set to an EXACT placement set — used when a lead-form
+   * launch splits into one ad set per customized placement (see
+   * launchFullCampaign). Overrides the platform-derived placementSpec below.
+   */
+  placementOverride?: { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] }
 }): Promise<{ id: string }> {
   const { adAccountId, pageId, pixelId: accountPixel } = await creds()
   const pixelId = params.pixelId || accountPixel
@@ -327,15 +333,17 @@ export async function createAdSet(params: {
   // automatic — Meta's recommendation). Explicit platforms get the complete
   // modern position set, Reels included, exactly as Ads Manager would.
   const platforms = params.targeting.publisherPlatforms
-  const placementSpec: Record<string, unknown> = platforms.length === 0 ? {} : {
-    publisher_platforms: platforms,
-    ...(platforms.includes('facebook')
-      ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] }
-      : {}),
-    ...(platforms.includes('instagram')
-      ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
-      : {}),
-  }
+  const placementSpec: Record<string, unknown> = params.placementOverride
+    ? { ...params.placementOverride }
+    : platforms.length === 0 ? {} : {
+        publisher_platforms: platforms,
+        ...(platforms.includes('facebook')
+          ? { facebook_positions: ['feed', 'story', 'facebook_reels', 'marketplace', 'search'] }
+          : {}),
+        ...(platforms.includes('instagram')
+          ? { instagram_positions: ['stream', 'story', 'reels', 'explore'] }
+          : {}),
+      }
 
   // Explicit Advantage-audience choice (required on newer accounts): any real
   // audience definition (interests, behaviors, narrowing, custom audiences) →
@@ -507,6 +515,54 @@ const PLACEMENT_TARGETING: Record<PlacementKey, { publisher_platforms: string[];
   reels:   { publisher_platforms: ['facebook', 'instagram'],   facebook_positions: ['facebook_reels'], instagram_positions: ['reels'] },
 }
 
+const PLACEMENT_KEYS = Object.keys(PLACEMENT_TARGETING) as PlacementKey[]
+
+// Plain English backend naming for the multi-ad-set split below — Ads
+// Manager naming, not user-facing UI, so it doesn't need i18n.
+const PLACEMENT_LABELS: Record<PlacementKey, string> = {
+  fbFeed:  'Facebook Feed',
+  igFeed:  'Instagram Feed',
+  igStory: 'Instagram Story',
+  fbStory: 'Facebook Story',
+  reels:   'Reels',
+}
+
+/** Union of several placements' targeting vocabulary — used to build the
+ * "everything not customized" ad set when a lead-form launch splits by
+ * placement (see launchFullCampaign). */
+function unionPlacementTargeting(keys: PlacementKey[]): { publisher_platforms: string[]; facebook_positions?: string[]; instagram_positions?: string[] } {
+  const platforms = new Set<string>()
+  const fbPositions = new Set<string>()
+  const igPositions = new Set<string>()
+  for (const key of keys) {
+    const t = PLACEMENT_TARGETING[key]
+    t.publisher_platforms.forEach((p) => platforms.add(p))
+    t.facebook_positions?.forEach((p) => fbPositions.add(p))
+    t.instagram_positions?.forEach((p) => igPositions.add(p))
+  }
+  return {
+    publisher_platforms: [...platforms],
+    ...(fbPositions.size > 0 ? { facebook_positions: [...fbPositions] } : {}),
+    ...(igPositions.size > 0 ? { instagram_positions: [...igPositions] } : {}),
+  }
+}
+
+/** Merge a placement override over the default creative for a classic
+ * single-creative ad (the lead-form multi-ad-set path) — blank override
+ * fields inherit the default. Strips placementOverrides so createAdCreative
+ * never mistakes this merged, single-placement creative for one that still
+ * needs asset_feed_spec treatment. */
+function mergeCreativeForPlacement(base: CampaignCreative, override: PlacementCreativeOverride): CampaignCreative {
+  return {
+    ...base,
+    headline:    override.headline?.trim() || base.headline,
+    primaryText: override.primaryText?.trim() || base.primaryText,
+    imageHash:   override.imageHash || base.imageHash,
+    imageUrl:    override.imageUrl || base.imageUrl,
+    placementOverrides: undefined,
+  }
+}
+
 /**
  * Build Meta's `asset_feed_spec` (the "placement asset customization" shape)
  * from a default creative + a set of non-empty per-placement overrides. Each
@@ -597,12 +653,16 @@ export async function createAdCreative(params: {
     callToAction = { type: params.creative.cta, value: { link: params.creative.landingUrl } }
   }
 
-  // Placement-customized creative (asset_feed_spec) is only offered for the
-  // plain landing-click case — the wizard hides it for other destinations,
-  // and this is the defense-in-depth check for a stale/replayed payload:
-  // lead-form / WhatsApp / call ads always use ONE creative for every
-  // placement, since the CTA value (form id / phone / WhatsApp) lives on the
-  // classic object_story_spec.link_data path, not on asset_feed_spec.
+  // Placement-customized creative via asset_feed_spec is only used for the
+  // plain landing-click case. Lead-form ads DO get per-placement creative,
+  // but through a different real mechanism — launchFullCampaign splits them
+  // into a separate single-creative ad set per customized placement — because
+  // Meta restricts the asset_feed_spec field that would carry a
+  // lead_gen_form_id (AdAssetFeedSpec.call_to_actions) to internal/Special-Ad-
+  // Category apps. So a 'form' destination reaching this function always has
+  // its placementOverrides already merged away (mergeCreativeForPlacement) or
+  // absent; this check is the defense-in-depth backstop for a stale/replayed
+  // payload. WhatsApp/call ads always use ONE creative for every placement.
   const overrideEntries = (params.destination === undefined || params.destination === 'landing')
     ? (Object.entries(params.creative.placementOverrides ?? {}) as Array<[PlacementKey, PlacementCreativeOverride]>)
         .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl))
@@ -1250,32 +1310,23 @@ export async function launchFullCampaign(params: {
     }
   }
 
-  // 2 — Ad Set. Interests are re-validated by NAME against Meta's live
-  // vocabulary; stale ids drop instead of failing the launch.
+  // 2 — Interests are re-validated by NAME against Meta's live vocabulary;
+  // stale ids drop instead of failing the launch.
   const validatedInterests = await validateInterests(params.targeting.interests)
-  const adSet = await step('ad set', () => createAdSet({
-    campaignId:     campaign.id,
-    name:           `${params.listingName} — Ad Set`,
-    objective:      params.objective,
-    dailyBudgetAED: params.dailyBudgetAED,
-    targeting:      { ...params.targeting, interests: validatedInterests },
-    status:         params.launchStatus,
-    pixelId:        pixelId ?? undefined,
-    destination:    params.destination,
-    cplCapAED:      params.cplCapAED,
-  }))
+  const baseTargeting = { ...params.targeting, interests: validatedInterests }
 
-  // 3 — Creative. Prefer a NATIVE image: ingest the external URL into the ad
-  // account first (image_hash); external `picture` URLs are the flaky path.
+  // 3 — Creative prep. Prefer a NATIVE image: ingest the external URL into
+  // the ad account first (image_hash); external `picture` URLs are flaky.
   const creativeInput = { ...params.creative }
   if (!creativeInput.imageHash && creativeInput.imageUrl) {
     const hash = await ingestImageFromUrl(creativeInput.imageUrl)
     if (hash) creativeInput.imageHash = hash
   }
   // Same ingestion for any per-placement override image that only carries a
-  // pasted/library URL — asset_feed_spec requires a native hash (no `picture`
-  // URL fallback exists there), so an override without one silently falls
-  // back to the default image at the createAdCreative layer.
+  // pasted/library URL — a native hash is required everywhere an override's
+  // image actually gets used (asset_feed_spec, and the per-placement ad sets
+  // below), so an override without one would otherwise silently fall back
+  // to the default image.
   if (creativeInput.placementOverrides) {
     const entries = Object.entries(creativeInput.placementOverrides) as Array<[PlacementKey, PlacementCreativeOverride]>
     const ingested = await Promise.all(entries.map(async ([key, ov]) => {
@@ -1285,6 +1336,114 @@ export async function launchFullCampaign(params: {
     }))
     creativeInput.placementOverrides = Object.fromEntries(ingested)
   }
+
+  const overridePairs = (Object.entries(creativeInput.placementOverrides ?? {}) as Array<[PlacementKey, PlacementCreativeOverride]>)
+    .filter(([, ov]) => ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl))
+
+  // Lead-form ads with per-placement overrides can't use asset_feed_spec
+  // (see createAdCreative) — the real mechanism is a separate single-creative
+  // ad set per customized placement, each narrowed to just that placement,
+  // plus one shared ad set for everything left untouched. Every other case
+  // (landing-click with overrides via asset_feed_spec, or no overrides at
+  // all) keeps the original single ad-set/ad/creative shape.
+  if (params.destination === 'form' && overridePairs.length > 0) {
+    const customizedKeys = overridePairs.map(([key]) => key)
+    const defaultKeys = PLACEMENT_KEYS.filter((key) => !customizedKeys.includes(key))
+    const groups = customizedKeys.length + (defaultKeys.length > 0 ? 1 : 0)
+    const totalFils = Math.round(params.dailyBudgetAED * 100)
+    const baseFils = Math.floor(totalFils / groups)
+    const remainderFils = totalFils - baseFils * groups
+
+    const placementAdSets: NonNullable<LaunchCampaignResult['placementAdSets']> = []
+    let first = true
+    for (const [key, override] of overridePairs) {
+      const fils = baseFils + (first ? remainderFils : 0)
+      first = false
+      const dailyBudgetAED = fils / 100
+      const label = PLACEMENT_LABELS[key]
+      const adSet = await step(`ad set (${label})`, () => createAdSet({
+        campaignId: campaign.id,
+        name: `${params.listingName} — Ad Set — ${label}`,
+        objective: params.objective,
+        dailyBudgetAED,
+        targeting: baseTargeting,
+        status: params.launchStatus,
+        pixelId: pixelId ?? undefined,
+        destination: params.destination,
+        cplCapAED: params.cplCapAED,
+        placementOverride: PLACEMENT_TARGETING[key],
+      }))
+      const creative = await step(`creative (${label})`, () => createAdCreative({
+        name: `${params.listingName} — Creative — ${label}`,
+        creative: mergeCreativeForPlacement(creativeInput, override),
+        destination: params.destination,
+        leadFormId: params.leadFormId,
+        destinationPhone: params.destinationPhone,
+      }))
+      const ad = await step(`ad (${label})`, () => createAd({
+        adSetId: adSet.id,
+        name: `${params.listingName} — Ad — ${label}`,
+        creativeId: creative.id,
+        status: params.launchStatus,
+      }))
+      placementAdSets.push({ placementKey: key, adSetId: adSet.id, adId: ad.id, creativeId: creative.id, dailyBudgetAED })
+    }
+
+    if (defaultKeys.length > 0) {
+      const dailyBudgetAED = baseFils / 100
+      const adSet = await step('ad set (other placements)', () => createAdSet({
+        campaignId: campaign.id,
+        name: `${params.listingName} — Ad Set — Other placements`,
+        objective: params.objective,
+        dailyBudgetAED,
+        targeting: baseTargeting,
+        status: params.launchStatus,
+        pixelId: pixelId ?? undefined,
+        destination: params.destination,
+        cplCapAED: params.cplCapAED,
+        placementOverride: unionPlacementTargeting(defaultKeys),
+      }))
+      const creative = await step('creative (other placements)', () => createAdCreative({
+        name: `${params.listingName} — Creative — Default`,
+        creative: { ...creativeInput, placementOverrides: undefined },
+        destination: params.destination,
+        leadFormId: params.leadFormId,
+        destinationPhone: params.destinationPhone,
+      }))
+      const ad = await step('ad (other placements)', () => createAd({
+        adSetId: adSet.id,
+        name: `${params.listingName} — Ad — Default`,
+        creativeId: creative.id,
+        status: params.launchStatus,
+      }))
+      placementAdSets.push({ placementKey: null, adSetId: adSet.id, adId: ad.id, creativeId: creative.id, dailyBudgetAED })
+    }
+
+    const primary = placementAdSets[0]
+    return {
+      campaignId: campaign.id,
+      adSetId:    primary.adSetId,
+      creativeId: primary.creativeId,
+      adId:       primary.adId,
+      status:     params.launchStatus,
+      placementAdSets,
+    }
+  }
+
+  // 4 — Ad Set (single, unchanged shape)
+  const adSet = await step('ad set', () => createAdSet({
+    campaignId:     campaign.id,
+    name:           `${params.listingName} — Ad Set`,
+    objective:      params.objective,
+    dailyBudgetAED: params.dailyBudgetAED,
+    targeting:      baseTargeting,
+    status:         params.launchStatus,
+    pixelId:        pixelId ?? undefined,
+    destination:    params.destination,
+    cplCapAED:      params.cplCapAED,
+  }))
+
+  // 5 — Creative
   const creative = await step('creative', () => createAdCreative({
     name:             `${params.listingName} — Creative`,
     creative:         creativeInput,
@@ -1293,7 +1452,7 @@ export async function launchFullCampaign(params: {
     destinationPhone: params.destinationPhone,
   }))
 
-  // 4 — Ad
+  // 6 — Ad
   const ad = await step('ad', () => createAd({
     adSetId:    adSet.id,
     name:       `${params.listingName} — Ad`,
