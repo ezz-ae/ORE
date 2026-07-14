@@ -448,6 +448,13 @@ export default function NewCampaignPage() {
   }
 
   const activeObjective = PRODUCT_OBJECTIVES.find((o) => o.key === form.productObjective) ?? PRODUCT_OBJECTIVES[0]
+  // Landing-click ads get per-placement creative via Meta's asset_feed_spec.
+  // Lead ads get it too, but via a different real mechanism — a separate ad
+  // set per customized placement (see launchFullCampaign in lib/meta/client)
+  // — because Meta restricts the asset_feed_spec field that would carry a
+  // lead_gen_form_id to internal/Special-Ad-Category apps only. WhatsApp/
+  // call ads still use one shared creative for every placement.
+  const supportsPlacementCreative = activeObjective.dest === 'landing' || activeObjective.dest === 'form'
 
   // Lead form — wired into the Meta Lead objective. The forms feature already
   // exists (/lead-machine/forms + /api/meta/forms); the builder now lets you
@@ -882,11 +889,11 @@ export default function NewCampaignPage() {
         cta:         form.cta,
         imageUrl:    form.imageUrl || undefined,
         imageHash:   form.imageHash || undefined,
-        // Per-placement creative is only offered (and only meaningful) for a
-        // plain landing-click ad — strip it for every other destination so a
+        // Per-placement creative is only offered (and only meaningful) for
+        // landing-click and lead-form ads — strip it for WhatsApp/call so a
         // stale draft never silently applies per-placement customization to
-        // a lead-form/WhatsApp/call ad.
-        placementOverrides: dest === 'landing'
+        // an ad that only carries one shared creative.
+        placementOverrides: (dest === 'landing' || dest === 'form')
           ? Object.fromEntries(
               Object.entries(form.placementOverrides).filter(([, ov]) =>
                 ov && (ov.headline?.trim() || ov.primaryText?.trim() || ov.imageHash || ov.imageUrl)))
@@ -1723,14 +1730,25 @@ export default function NewCampaignPage() {
               )}
             </div>
 
-            {/* Per-placement creative — only meaningful for a plain landing-click
-                ad: lead-form/WhatsApp/call ads carry their CTA value (form id,
-                phone number) on the classic single-creative path, so per-
+            {/* Per-placement creative — offered for landing-click AND lead-form
+                ads. WhatsApp/call ads carry their CTA value (WhatsApp number /
+                phone) on the classic single-creative path only, so per-
                 placement customization isn't offered there. */}
-            {activeObjective.dest === 'landing' ? (
+            {supportsPlacementCreative ? (
               <div className="rounded-[14px] border border-line bg-surface-2 p-4">
                 <Label>{t('lm.newCampaign.s3.perPlacement.title')}</Label>
                 <p className="mb-3 text-xs leading-relaxed text-slate-500">{t('lm.newCampaign.s3.perPlacement.hint')}</p>
+                {activeObjective.dest === 'form' && (() => {
+                  const customizedCount = PLACEMENT_KEYS.filter(isCustomized).length
+                  if (!customizedCount) return null
+                  const groups = customizedCount + (customizedCount < PLACEMENT_KEYS.length ? 1 : 0)
+                  const perSet = Math.round((form.dailyBudgetAED / groups) * 100) / 100
+                  return (
+                    <p className="mb-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2 text-[11px] leading-relaxed text-amber-300/90">
+                      {t('lm.newCampaign.s3.perPlacement.leadSplitNote', { n: groups, perSet: perSet.toLocaleString() })}
+                    </p>
+                  )
+                })()}
                 <div className="flex flex-wrap gap-2">
                   {PLACEMENT_KEYS.map((key) => {
                     const open = overrideOpenKey === key
@@ -1898,11 +1916,11 @@ export default function NewCampaignPage() {
                   // Merge this placement's override over the default creative —
                   // an honest preview of what actually ships, not the same
                   // creative re-shaped into 5 mock layouts.
-                  const ov = activeObjective.dest === 'landing' ? overrideOf(key) : {}
+                  const ov = supportsPlacementCreative ? overrideOf(key) : {}
                   const tileHeadline = ov.headline?.trim() || form.headline
                   const tilePrimaryText = ov.primaryText?.trim() || form.primaryText
                   const tileImageUrl = ov.imageUrl || form.imageUrl
-                  const customized = isCustomized(key) && activeObjective.dest === 'landing'
+                  const customized = isCustomized(key) && supportsPlacementCreative
                   return (
                   <div key={key}>
                     <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
