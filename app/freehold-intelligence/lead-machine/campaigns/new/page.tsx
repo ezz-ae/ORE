@@ -9,11 +9,12 @@ import { TARGETING_TEMPLATES } from '@/lib/meta/targeting-templates'
 import { TabPopup } from '@/components/freehold/ui/tab-popup'
 import { CampaignListingPicker } from '@/components/freehold/campaign-listing-picker'
 import { useSession } from '@/lib/freehold/use-session'
+import { toast } from 'sonner'
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, Megaphone,
   DollarSign, Users, FileText, Rocket, AlertCircle, Loader2,
   Monitor, Sparkles, ChevronRight, Sliders, Crosshair, Gauge, MessageCircle, Phone,
-  FolderOpen, Upload, X,
+  FolderOpen, Upload, X, Copy,
 } from 'lucide-react'
 // Real inventory replaces the old seed listings: the picker loads live projects
 // from /api/freehold/inventory so campaigns are always built on real stock.
@@ -445,6 +446,66 @@ export default function NewCampaignPage() {
   type LeadFormLite = { id: string; name: string; leads_count?: number; status?: string }
   const [leadForms, setLeadForms] = useState<LeadFormLite[]>([])
   const [leadFormId, setLeadFormId] = useState('')
+  // In-ad form creation: the form is created (or duplicated) in a popup and
+  // attached to THIS ad immediately — the wizard and its state never unload.
+  const [formPopupOpen, setFormPopupOpen] = useState(false)
+  const [newFormName, setNewFormName] = useState('')
+  const [formBusy, setFormBusy] = useState(false)
+  const [dupBusyId, setDupBusyId] = useState<string | null>(null)
+
+  async function createFormPayload(name: string, questions: Array<{ type: string; label?: string; key?: string; options?: Array<{ value: string; label: string }> }>) {
+    const listing = listings.find((l) => l.id === form.listingId)
+    const res = await fetch('/api/meta/forms', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        listingId: form.listingId,
+        listingName: listing?.projectName ?? name,
+        landingUrl: form.landingUrl,
+        questions,
+        privacyPolicyUrl: 'https://freholdintelligence.com/privacy',
+        thankYouTitle: t('pforms.default.thankYouTitle'),
+        thankYouBody: t('pforms.default.thankYouBody'),
+      }),
+    })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok || !d.id) throw new Error(d.error || t('pforms.error.createFailed'))
+    return d.id as string
+  }
+
+  function attachForm(id: string, name: string) {
+    setLeadForms((prev) => [{ id, name, status: 'ACTIVE', leads_count: 0, created_time: new Date().toISOString() } as LeadFormLite, ...prev])
+    setLeadFormId(id)
+    setFormPopupOpen(false)
+    toast.success(t('lm.newCampaign.leadForm.attached'))
+  }
+
+  async function createInlineForm() {
+    if (!newFormName.trim() || formBusy) return
+    setFormBusy(true)
+    try {
+      const id = await createFormPayload(newFormName.trim(), [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }])
+      attachForm(id, newFormName.trim())
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('pforms.error.createFailed')) }
+    finally { setFormBusy(false) }
+  }
+
+  async function duplicateForm(src: LeadFormLite) {
+    if (dupBusyId) return
+    setDupBusyId(src.id)
+    try {
+      // Copy the source form's real questions so the duplicate matches it.
+      const res = await fetch(`/api/meta/forms/${src.id}`, { cache: 'no-store' })
+      const d = await res.json().catch(() => ({}))
+      const qs = Array.isArray(d.form?.questions) && d.form.questions.length
+        ? d.form.questions.map((q: { type: string; label?: string; key?: string }) => ({ type: q.type, ...(q.label ? { label: q.label } : {}), ...(q.key ? { key: q.key } : {}) }))
+        : [{ type: 'FULL_NAME' }, { type: 'PHONE' }, { type: 'EMAIL' }]
+      const name = `${src.name} · copy`
+      const id = await createFormPayload(name, qs)
+      attachForm(id, name)
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('pforms.error.createFailed')) }
+    finally { setDupBusyId(null) }
+  }
   const [leadFormsLoading, setLeadFormsLoading] = useState(false)
   // Destination number for call / WhatsApp objectives (E.164, e.g. +9715…).
   const [destinationPhone, setDestinationPhone] = useState('')
@@ -971,13 +1032,16 @@ export default function NewCampaignPage() {
                     ))}
                   </select>
                   {leadFormId ? (
-                    <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-2 text-xs text-slate-300 transition hover:text-white">
-                      {t('lm.newCampaign.leadForm.edit')} <ArrowRight className="h-3.5 w-3.5" />
+                    <Link href={`/freehold-intelligence/lead-machine/forms/${leadFormId}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-2 text-xs text-slate-300 transition hover:text-white">
+                      {t('lm.newCampaign.leadForm.edit')} <ArrowUpRight className="h-3.5 w-3.5" />
                     </Link>
                   ) : null}
-                  <Link href={`/freehold-intelligence/lead-machine/forms/new?project=${encodeURIComponent(form.listingId)}&lp=${encodeURIComponent(form.landingUrl)}`} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  {/* Created IN the ad via popup — the wizard never unloads and
+                      the new form attaches to this ad immediately. */}
+                  <button type="button" onClick={() => { setNewFormName(`${selectedListing?.projectName ?? form.campaignName ?? ''} — Lead Form`.trim()); setFormPopupOpen(true) }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
                     <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.create')}
-                  </Link>
+                  </button>
                 </div>
                 {!leadFormsLoading && leadForms.length === 0 && (
                   <p className="mt-2 text-[11px] text-slate-500">{t('lm.newCampaign.leadForm.empty')}</p>
@@ -1539,6 +1603,44 @@ export default function NewCampaignPage() {
                   <option key={c} value={c}>{t(`lm.creatives.generate.cta.${c}`)}</option>
                 ))}
               </select>
+            </div>
+          </div>
+        )}
+
+        {/* In-ad lead-form popup: create new or duplicate an existing form —
+            either way it attaches to this ad instantly. */}
+        {formPopupOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setFormPopupOpen(false)}>
+            <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[15px] font-semibold text-white">{t('lm.newCampaign.leadForm.popupTitle')}</div>
+                <button type="button" onClick={() => setFormPopupOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">{t('lm.newCampaign.s3.closePreview')}</button>
+              </div>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{t('lm.newCampaign.leadForm.popupHint')}</p>
+
+              <label className="mt-4 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lm.newCampaign.leadForm.nameLabel')}</label>
+              <input value={newFormName} onChange={(e) => setNewFormName(e.target.value)} className={`${inputCls(!newFormName.trim())} mt-1`} />
+              <button type="button" onClick={createInlineForm} disabled={formBusy || !newFormName.trim()}
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gold px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE] disabled:opacity-50">
+                {formBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {t('lm.newCampaign.leadForm.createAttach')}
+              </button>
+
+              {leadForms.length > 0 && (
+                <>
+                  <div className="mt-5 mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lm.newCampaign.leadForm.orDuplicate')}</div>
+                  <div className="max-h-52 space-y-1.5 overflow-y-auto">
+                    {leadForms.map((f) => (
+                      <div key={f.id} className="flex items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2">
+                        <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{f.name}</span>
+                        <button type="button" disabled={!!dupBusyId} onClick={() => duplicateForm(f)}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                          {dupBusyId === f.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />} {t('lm.newCampaign.leadForm.duplicate')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
