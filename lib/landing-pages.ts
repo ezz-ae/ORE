@@ -139,7 +139,8 @@ export interface LandingPageEditorData {
   subheadline: string
   heroImage: string
   ctaText: string
-  status: "draft" | "published"
+  /** archived = off air like a draft, but explicitly parked (never rendered publicly). */
+  status: "draft" | "published" | "archived"
   publishFrom: string
   publishTo: string
   seoTitle: string
@@ -215,8 +216,9 @@ const pickNumber = (...values: unknown[]) => {
   return null
 }
 
-const normalizeLandingStatus = (value: unknown): "draft" | "published" => {
+const normalizeLandingStatus = (value: unknown): "draft" | "published" | "archived" => {
   const normalized = pickString(value).toLowerCase()
+  if (normalized === "archived") return "archived"
   return ["published", "active", "live"].includes(normalized) ? "published" : "draft"
 }
 
