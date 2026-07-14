@@ -835,7 +835,18 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
       link_text: 'Privacy Policy',
     },
     ...(payload.thankYouTitle
-      ? { thank_you_page: { title: payload.thankYouTitle, body: payload.thankYouBody ?? '' } }
+      ? {
+          thank_you_page: {
+            title: payload.thankYouTitle,
+            body: payload.thankYouBody ?? '',
+            // Meta requires a button on the thank-you page ((#100)
+            // thank_you_page[button_type] is required) — send the lead to the
+            // property landing page.
+            button_type: 'VIEW_WEBSITE',
+            button_text: 'Visit site',
+            website_url: payload.landingUrl,
+          },
+        }
       : {}),
   })
 }
