@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic"
 
 const toText = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 
-const normalizeStatus = (value: unknown): "draft" | "published" => {
+const normalizeStatus = (value: unknown): "draft" | "published" | "archived" => {
   const normalized = toText(value).toLowerCase()
+  if (normalized === "archived") return "archived"
   return ["published", "active", "live"].includes(normalized) ? "published" : "draft"
 }
 
@@ -195,9 +196,36 @@ export async function DELETE(
     if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
     if (!isAdminRole(user.role)) return NextResponse.json({ error: "Only admins can delete landing pages." }, { status: 403 })
     const { slug } = await params
+    const normalizedSlug = slug.trim().toLowerCase()
+
+    // Rule: a landing wired to ad campaigns is never deleted — archive it.
+    // Deleting it would 404 live ad clicks and orphan the campaign history.
+    try {
+      const page = await query<{ project_slug: string | null }>(
+        `SELECT project_slug FROM freehold_site_project_landing_pages WHERE lower(slug) = $1 LIMIT 1`,
+        [normalizedSlug],
+      )
+      const projectSlug = page[0]?.project_slug?.trim().toLowerCase()
+      if (projectSlug) {
+        const wired = await query<{ n: number }>(
+          `SELECT COUNT(*)::int AS n FROM meta_campaign_groups WHERE lower(project_slug) = $1`,
+          [projectSlug],
+        )
+        if (Number(wired[0]?.n) > 0) {
+          return NextResponse.json(
+            { error: "This landing page is wired to ad campaigns and cannot be deleted. Archive it instead.", wiredToAds: true },
+            { status: 409 },
+          )
+        }
+      }
+    } catch {
+      // meta_campaign_groups may not exist yet (no campaigns ever grouped) —
+      // in that case there is nothing wired and deletion may proceed.
+    }
+
     const rows = await query<{ slug: string }>(
       `DELETE FROM freehold_site_project_landing_pages WHERE lower(slug) = $1 RETURNING slug`,
-      [slug.trim().toLowerCase()],
+      [normalizedSlug],
     )
     if (!rows.length) return NextResponse.json({ error: "Landing page not found." }, { status: 404 })
     return NextResponse.json({ ok: true })

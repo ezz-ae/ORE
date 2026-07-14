@@ -19,7 +19,7 @@ type Landing = {
   subheadline: string
   heroImage: string
   ctaText: string
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'archived'
   publishFrom: string
   publishTo: string
   autoUpdatePricing: boolean
@@ -198,7 +198,7 @@ export default function LandingEditorPage() {
     void load()
   }
 
-  async function save(nextStatus?: 'draft' | 'published') {
+  async function save(nextStatus?: 'draft' | 'published' | 'archived') {
     if (!form) return
     setSaving(true)
     try {
@@ -632,6 +632,12 @@ export default function LandingEditorPage() {
                         className="block w-full px-4 py-2.5 text-start text-xs font-semibold text-slate-200 transition hover:bg-surface-2">
                         {form.status === 'published' ? t('lpe.unpublish') : t('lpe.publish')}
                       </button>
+                      {form.status !== 'archived' && (
+                        <button type="button" onClick={() => { setMoreOpen(false); void save('archived') }}
+                          className="block w-full border-t border-line px-4 py-2.5 text-start text-xs font-semibold text-slate-200 transition hover:bg-surface-2">
+                          {t('lpe.archive')}
+                        </button>
+                      )}
                       {/* Destructive action is deliberately buried here — never a
                           toolbar button — and still requires typing DELETE. */}
                       <button type="button" onClick={() => { setMoreOpen(false); setDeleteConfirm(''); setDeleteOpen(true) }}
@@ -900,11 +906,13 @@ export default function LandingEditorPage() {
             <input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder={t('lpe.del.placeholder')} className="fld mt-3" autoFocus />
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
               <button type="button" onClick={() => setDeleteOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
-              {/* The safer path is offered first: take the page off air, keep the data. */}
-              {form.status === 'published' && (
-                <button type="button" onClick={() => { setDeleteOpen(false); void save('draft') }}
+              {/* The safer path is offered first: archive — off air, data kept.
+                  Landings wired to ad campaigns can ONLY be archived (the API
+                  refuses their deletion with a 409). */}
+              {form.status !== 'archived' && (
+                <button type="button" onClick={() => { setDeleteOpen(false); void save('archived') }}
                   className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">
-                  {t('lpe.del.unpublishInstead')}
+                  {t('lpe.del.archiveInstead')}
                 </button>
               )}
               <button type="button" onClick={doDelete} disabled={deleteConfirm.trim().toLowerCase() !== 'delete' || deleting}
