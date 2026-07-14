@@ -37,6 +37,11 @@ const en: Dict = {
 
   // filters
   'inv.filter.all': 'All',
+  'inv.tagGroup.handover': 'Handover',
+  'inv.tagGroup.payment': 'Payment',
+  'inv.tagGroup.price': 'Price',
+  'inv.tagGroup.highlights': 'Highlights',
+  'inv.tagGroup.area': 'Area',
 
   // inventory-client (All Units)
   'inv.eyebrow': 'Inventory',
@@ -337,6 +342,11 @@ const ar: Dict = {
   'inv.verdict.hold': 'تأجيل',
 
   'inv.filter.all': 'الكل',
+  'inv.tagGroup.handover': 'التسليم',
+  'inv.tagGroup.payment': 'الدفع',
+  'inv.tagGroup.price': 'السعر',
+  'inv.tagGroup.highlights': 'مميزات',
+  'inv.tagGroup.area': 'المنطقة',
 
   'inv.eyebrow': 'المخزون',
   'inv.pageTitle': 'مخزون العقارات',
@@ -626,6 +636,11 @@ const ru: Dict = {
   'inv.verdict.hold': 'Отложить',
 
   'inv.filter.all': 'Все',
+  'inv.tagGroup.handover': 'Сдача',
+  'inv.tagGroup.payment': 'Оплата',
+  'inv.tagGroup.price': 'Цена',
+  'inv.tagGroup.highlights': 'Особенности',
+  'inv.tagGroup.area': 'Район',
 
   'inv.eyebrow': 'Каталог',
   'inv.pageTitle': 'Каталог объектов',
