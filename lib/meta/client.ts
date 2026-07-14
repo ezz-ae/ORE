@@ -769,8 +769,10 @@ export async function getAdEngagement(adId: string): Promise<{ likes: number; co
 // ─── Lead Gen Forms ───────────────────────────────────────────────────────────
 
 export async function listLeadForms(): Promise<MetaLeadForm[]> {
-  const { adAccountId } = await creds()
-  const res = await apiFetch<{ data: MetaLeadForm[] }>(`/${adAccountId}/leadgen_forms`, undefined, {
+  // Lead-gen forms are a PAGE asset — the act_ ad-account edge does not exist
+  // (Graph error subcode 33). The connected token must have a role on the page.
+  const { pageId } = await creds()
+  const res = await apiFetch<{ data: MetaLeadForm[] }>(`/${pageId}/leadgen_forms`, undefined, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url',
     limit:  '50',
   })
@@ -815,7 +817,7 @@ export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
 }
 
 export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ id: string }> {
-  const { adAccountId } = await creds()
+  const { pageId } = await creds()
   const questions = payload.questions.map((q) => ({
     type:    q.type,
     ...(q.label   ? { label:   q.label   } : {}),
@@ -823,7 +825,7 @@ export async function createLeadForm(payload: CreateLeadFormPayload): Promise<{ 
     ...(q.options ? { options: q.options } : {}),
   }))
 
-  return apiPost(`/${adAccountId}/leadgen_forms`, {
+  return apiPost(`/${pageId}/leadgen_forms`, {
     name:               payload.name,
     locale:             'en_US',
     follow_up_action_url: payload.landingUrl,

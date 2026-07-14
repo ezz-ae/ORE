@@ -975,7 +975,7 @@ export default function NewCampaignPage() {
                       {t('lm.newCampaign.leadForm.edit')} <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   ) : null}
-                  <Link href="/freehold-intelligence/lead-machine/forms/new" className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  <Link href={`/freehold-intelligence/lead-machine/forms/new?project=${encodeURIComponent(form.listingId)}&lp=${encodeURIComponent(form.landingUrl)}`} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
                     <Sparkles className="h-3.5 w-3.5" /> {t('lm.newCampaign.leadForm.create')}
                   </Link>
                 </div>
