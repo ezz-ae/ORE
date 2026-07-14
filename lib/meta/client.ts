@@ -943,6 +943,176 @@ export async function updateAdCreativeContent(
   return { adId, before: current.creative, after: merged, creativeId: created.id }
 }
 
+/** Resolve native image hashes to their preview URLs — best-effort; a hash
+ * Meta declines to resolve (or an unconnected account) just comes back blank
+ * rather than failing the whole read. */
+async function getAdImageUrls(hashes: string[]): Promise<Record<string, string>> {
+  const unique = [...new Set(hashes.filter(Boolean))]
+  if (!unique.length) return {}
+  try {
+    const { adAccountId } = await creds()
+    const res = await apiFetch<{ data?: Array<{ hash?: string; url?: string }> }>(`/${adAccountId}/adimages`, undefined, {
+      hashes: JSON.stringify(unique),
+      fields: 'hash,url',
+    })
+    const map: Record<string, string> = {}
+    for (const img of res.data ?? []) if (img.hash && img.url) map[img.hash] = img.url
+    return map
+  } catch {
+    return {}
+  }
+}
+
+function sameStringSet(a?: string[], b?: string[]): boolean {
+  const as = [...(a ?? [])].sort()
+  const bs = [...(b ?? [])].sort()
+  return as.length === bs.length && as.every((v, i) => v === bs[i])
+}
+
+export interface AdPlacementSnapshot {
+  id: string
+  name: string
+  status: string
+  /** False when this ad has no asset_feed_spec at all — nothing to decode. */
+  isPlacementCreative: boolean
+  landingUrl: string
+  ctaType: string
+  default: { headline: string; primaryText: string; imageHash: string; imageUrl: string }
+  overrides: Partial<Record<PlacementKey, PlacementCreativeOverride>>
+}
+
+/**
+ * Decode a live asset_feed_spec creative back into a default + per-placement
+ * overrides — the exact inverse of buildAssetFeedSpec below, so a launched
+ * landing-click ad's per-placement creative can be viewed and edited instead
+ * of only being settable at launch time.
+ *
+ * Round-trip works because buildAssetFeedSpec dedupes identical values to the
+ * SAME label: a placement whose rule shares its title/body/image label with
+ * the catch-all rule was never actually customized on that field — so
+ * comparing labels (not resolved text) tells us exactly what to show as
+ * "customized" vs. "inherits the default", with no guessing.
+ */
+export async function getAdPlacementCreative(adId: string): Promise<AdPlacementSnapshot> {
+  const ad = await apiFetch<{
+    id: string; name?: string; status?: string
+    creative?: {
+      id?: string
+      asset_feed_spec?: {
+        images?: Array<{ hash: string; adlabels?: Array<{ name: string }> }>
+        bodies?: Array<{ text: string; adlabels?: Array<{ name: string }> }>
+        titles?: Array<{ text: string; adlabels?: Array<{ name: string }> }>
+        link_urls?: Array<{ website_url?: string }>
+        call_to_action_types?: string[]
+        asset_customization_rules?: Array<{
+          customization_spec?: { publisher_platforms?: string[]; facebook_positions?: string[]; instagram_positions?: string[] }
+          image_label?: { name: string }
+          body_label?: { name: string }
+          title_label?: { name: string }
+          priority?: number
+        }>
+      }
+    }
+  }>(`/${adId}`, undefined, {
+    fields: 'id,name,status,creative{id,asset_feed_spec}',
+  })
+
+  const base = { id: String(ad.id), name: String(ad.name ?? ''), status: String(ad.status ?? '') }
+  const afs = ad.creative?.asset_feed_spec
+  const rules = afs?.asset_customization_rules ?? []
+  if (!afs || rules.length === 0) {
+    return {
+      ...base, isPlacementCreative: false, landingUrl: '', ctaType: '',
+      default: { headline: '', primaryText: '', imageHash: '', imageUrl: '' }, overrides: {},
+    }
+  }
+
+  const imageByLabel = new Map((afs.images ?? []).flatMap((i) => (i.adlabels ?? []).map((l) => [l.name, i.hash] as const)))
+  const bodyByLabel  = new Map((afs.bodies ?? []).flatMap((b) => (b.adlabels ?? []).map((l) => [l.name, b.text] as const)))
+  const titleByLabel = new Map((afs.titles ?? []).flatMap((t) => (t.adlabels ?? []).map((l) => [l.name, t.text] as const)))
+
+  // The catch-all rule is always written LAST with the highest priority
+  // number (see buildAssetFeedSpec) — the one real invariant to key off.
+  const catchAll = rules.reduce((a, b) => ((b.priority ?? 0) > (a.priority ?? 0) ? b : a))
+  const defaultHeadline = catchAll.title_label ? (titleByLabel.get(catchAll.title_label.name) ?? '') : ''
+  const defaultPrimaryText = catchAll.body_label ? (bodyByLabel.get(catchAll.body_label.name) ?? '') : ''
+  const defaultImageHash = catchAll.image_label ? (imageByLabel.get(catchAll.image_label.name) ?? '') : ''
+
+  const overrides: Partial<Record<PlacementKey, PlacementCreativeOverride>> = {}
+  for (const rule of rules) {
+    if (rule === catchAll) continue
+    const spec = rule.customization_spec ?? {}
+    const key = PLACEMENT_KEYS.find((k) => {
+      const t = PLACEMENT_TARGETING[k]
+      return sameStringSet(t.publisher_platforms, spec.publisher_platforms)
+        && sameStringSet(t.facebook_positions, spec.facebook_positions)
+        && sameStringSet(t.instagram_positions, spec.instagram_positions)
+    })
+    if (!key) continue // a rule we don't recognise — skip rather than guess
+    const headline = rule.title_label && rule.title_label.name !== catchAll.title_label?.name
+      ? (titleByLabel.get(rule.title_label.name) ?? '') : ''
+    const primaryText = rule.body_label && rule.body_label.name !== catchAll.body_label?.name
+      ? (bodyByLabel.get(rule.body_label.name) ?? '') : ''
+    const imageHash = rule.image_label && rule.image_label.name !== catchAll.image_label?.name
+      ? (imageByLabel.get(rule.image_label.name) ?? '') : ''
+    if (headline || primaryText || imageHash) overrides[key] = { headline, primaryText, imageHash }
+  }
+
+  const hashes = [defaultImageHash, ...Object.values(overrides).map((o) => o?.imageHash ?? '')]
+  const urls = await getAdImageUrls(hashes)
+  const overridesWithUrls = Object.fromEntries(
+    (Object.entries(overrides) as Array<[PlacementKey, PlacementCreativeOverride]>)
+      .map(([k, o]) => [k, { ...o, imageUrl: o.imageHash ? (urls[o.imageHash] ?? '') : '' }]),
+  ) as Partial<Record<PlacementKey, PlacementCreativeOverride>>
+
+  return {
+    ...base,
+    isPlacementCreative: true,
+    landingUrl: afs.link_urls?.[0]?.website_url ?? '',
+    ctaType: afs.call_to_action_types?.[0] ?? 'LEARN_MORE',
+    default: {
+      headline: defaultHeadline, primaryText: defaultPrimaryText,
+      imageHash: defaultImageHash, imageUrl: defaultImageHash ? (urls[defaultImageHash] ?? '') : '',
+    },
+    overrides: overridesWithUrls,
+  }
+}
+
+/**
+ * Edit a live per-placement (asset_feed_spec) ad: rebuild it from a new
+ * default + override set and repoint the ad — same immutable-creative
+ * pattern as updateAdCreativeContent, via the SAME encoder (buildAssetFeedSpec,
+ * called through createAdCreative) that launchFullCampaign already uses, so
+ * a saved edit is indistinguishable from one written at launch time.
+ */
+export async function updateAdPlacementCreative(
+  adId: string,
+  changes: {
+    headline?: string; primaryText?: string; landingUrl?: string; cta?: string
+    imageUrl?: string; imageHash?: string
+    overrides: Partial<Record<PlacementKey, PlacementCreativeOverride>>
+  },
+): Promise<{ adId: string; creativeId: string }> {
+  const current = await getAdPlacementCreative(adId)
+  if (!current.isPlacementCreative) {
+    throw new MetaApiError('This ad does not use per-placement creative.', 0, 'unsupported')
+  }
+  const cta = (changes.cta && CTA_TYPES.includes(changes.cta as MetaCta) ? changes.cta : current.ctaType) as MetaCta
+  const merged: CampaignCreative = {
+    primaryText: changes.primaryText ?? current.default.primaryText,
+    headline: changes.headline ?? current.default.headline,
+    description: '', // asset_feed_spec creatives don't carry a description
+    landingUrl: changes.landingUrl ?? current.landingUrl,
+    cta: CTA_TYPES.includes(cta) ? cta : 'LEARN_MORE',
+    imageHash: changes.imageHash ?? current.default.imageHash ?? undefined,
+    imageUrl: changes.imageUrl ?? current.default.imageUrl ?? undefined,
+    placementOverrides: changes.overrides,
+  }
+  const created = await createAdCreative({ name: `${current.name} — edited`, creative: merged })
+  await apiPost(`/${adId}`, { creative: { creative_id: created.id } })
+  return { adId, creativeId: created.id }
+}
+
 export async function listAds(adSetId: string): Promise<MetaAd[]> {
   const res = await apiFetch<{ data: MetaAd[] }>(`/${adSetId}/ads`, undefined, {
     fields: 'id,name,status,creative{id,name}',
