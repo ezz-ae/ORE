@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   Sparkles,
   Globe,
-  Image as ImageIcon,
   Tag,
   TrendingUp,
   Megaphone,
@@ -16,7 +15,7 @@ import { getInventoryPropertyBySlug } from '@/lib/inventory-data'
 import { getProjectDealActivity } from '@/lib/deals'
 import { verifySession, SESSION_COOKIE } from '@/lib/freehold/auth-edge'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
-import { type PropertyStatus, type LandingStatus } from '@/src/features/freehold-intelligence/inventory'
+import { type PropertyStatus } from '@/src/features/freehold-intelligence/inventory'
 import { getServerT } from '@/lib/i18n/server'
 
 function fmtAed(n: number): string {
@@ -48,19 +47,6 @@ function statusBadge(status: PropertyStatus) {
 
 function statusLabel(status: PropertyStatus, t: TFn): string {
   return t(`inv.status.${status}`)
-}
-
-function landingBadge(status: LandingStatus) {
-  switch (status) {
-    case 'live':           return 'bg-gold/10 text-gold border-gold/20'
-    case 'draft':          return 'bg-amber-400/10 text-amber-300 border-amber-400/20'
-    case 'pending_review': return 'bg-teal-400/10 text-teal-300 border-teal-400/20'
-    case 'missing':        return 'bg-rose-400/10 text-slate-400 border-rose-400/20'
-  }
-}
-
-function landingLabel(status: LandingStatus, t: TFn): string {
-  return t(`inv.landing.${status}`)
 }
 
 function readinessBar(value: number) {
@@ -151,12 +137,34 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-2.5">
-          <Link
-            href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
-          >
-            <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
-          </Link>
+          {/* Landing actions live up here as buttons — no separate box below. */}
+          {prop.landingSlug ? (
+            <>
+              {prop.landingUrl && (
+                <a
+                  href={prop.landingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+                >
+                  <Globe className="h-4 w-4" /> {t('inv.detail.viewLanding')}
+                </a>
+              )}
+              <Link
+                href={`/freehold-intelligence/lead-machine/landings/${prop.landingSlug}/edit`}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${prop.landingUrl ? 'border border-gold/30 bg-gold/[0.07] text-gold hover:bg-gold/[0.14]' : 'bg-gold text-ink hover:bg-[#F8E7AE]'}`}
+              >
+                <Sparkles className="h-4 w-4" /> {t('inv.detail.editLanding')}
+              </Link>
+            </>
+          ) : (
+            <Link
+              href={`/freehold-intelligence/inventory/${prop.id}/generate`}
+              className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-[#F8E7AE]"
+            >
+              <Sparkles className="h-4 w-4" /> {t('inv.detail.generateLandingPage')}
+            </Link>
+          )}
           {canLaunchAds && (
             <Link
               href={`/freehold-intelligence/lead-machine/campaigns/new?project=${encodeURIComponent(prop.id)}&name=${encodeURIComponent(prop.name)}&price=${prop.startingPriceAED ?? ''}`}
@@ -259,126 +267,70 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Sales booked — the deal → inventory reverse edge (real approved/closed deals) */}
-      <section className="mt-8">
-        <div className="rounded-[20px] border border-line bg-surface-2 p-5">
-          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-            <TrendingUp className="h-3.5 w-3.5" /> {t('inv.detail.sales.title')}
-          </div>
-
-          {sales.dealsBooked === 0 ? (
-            <p className="text-sm text-slate-500">{t('inv.detail.sales.empty')}</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: t('inv.detail.sales.booked'), value: String(sales.dealsBooked) },
-                  { label: t('inv.detail.sales.value'), value: fmtAed(sales.salesValueAed) },
-                  { label: t('inv.detail.sales.commission'), value: fmtAed(sales.commissionAed) },
-                ].map(({ label, value }) => (
-                  <div key={label} className="rounded-[14px] border border-line bg-surface-2 p-3">
-                    <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</div>
-                    <div className="mt-1.5 text-[22px] font-semibold tabular-nums text-gold">{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {isManagement && (
-                <div className="mt-5">
-                  <div className="mb-2 text-xs uppercase tracking-[0.14em] text-slate-500">{t('inv.detail.sales.recent')}</div>
-                  <div className="divide-y divide-line">
-                    {sales.recent.map((d) => (
-                      <div key={d.id} className="flex items-center justify-between gap-4 py-2.5">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm text-slate-200">{d.leadName || '—'}</div>
-                          <div className="truncate text-xs text-slate-500">{d.agentName || '—'}</div>
-                        </div>
-                        <div className="shrink-0 text-right text-sm tabular-nums text-slate-300">
-                          {fmtAed(d.propertyValueAed)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Link
-                    href="/freehold-intelligence/management/deals"
-                    className="mt-3 inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold"
-                  >
-                    {t('inv.detail.sales.viewAll')} <ArrowUpRight className="h-3 w-3" />
-                  </Link>
+      {/* Sales booked — only when there are real approved/closed deals. This is
+          not a shop, so most projects have none and the whole box self-hides. */}
+      {sales.dealsBooked > 0 && (
+        <section className="mt-8">
+          <div className="rounded-[20px] border border-line bg-surface-2 p-5">
+            <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              <TrendingUp className="h-3.5 w-3.5" /> {t('inv.detail.sales.title')}
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: t('inv.detail.sales.booked'), value: String(sales.dealsBooked) },
+                { label: t('inv.detail.sales.value'), value: fmtAed(sales.salesValueAed) },
+                { label: t('inv.detail.sales.commission'), value: fmtAed(sales.commissionAed) },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-[14px] border border-line bg-surface-2 p-3">
+                  <div className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</div>
+                  <div className="mt-1.5 text-[22px] font-semibold tabular-nums text-gold">{value}</div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+              ))}
+            </div>
 
-      {/* Tags */}
+            {isManagement && (
+              <div className="mt-5">
+                <div className="mb-2 text-xs uppercase tracking-[0.14em] text-slate-500">{t('inv.detail.sales.recent')}</div>
+                <div className="divide-y divide-line">
+                  {sales.recent.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between gap-4 py-2.5">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm text-slate-200">{d.leadName || '—'}</div>
+                        <div className="truncate text-xs text-slate-500">{d.agentName || '—'}</div>
+                      </div>
+                      <div className="shrink-0 text-right text-sm tabular-nums text-slate-300">
+                        {fmtAed(d.propertyValueAed)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Link
+                  href="/freehold-intelligence/management/deals"
+                  className="mt-3 inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold"
+                >
+                  {t('inv.detail.sales.viewAll')} <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Tags — searchable, valuable chips derived from real fields. */}
       {prop.tags.length > 0 && (
         <section className="mt-8">
           <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-            <Tag className="h-3 w-3" /> Tags
+            <Tag className="h-3 w-3" /> {t('inv.detail.tags')}
           </div>
           <div className="flex flex-wrap gap-2">
             {prop.tags.map((tag) => (
-              <span key={tag} className="rounded-full border border-line bg-surface-2 px-3 py-1 text-xs text-slate-400">
-                {tag.replace(/_/g, ' ')}
+              <span key={tag} className="rounded-full border border-gold/20 bg-gold/[0.06] px-3 py-1 text-xs font-medium text-gold/90">
+                {tag}
               </span>
             ))}
           </div>
         </section>
       )}
-
-      {/* Landing status */}
-      <section className="mt-8">
-        <div className="rounded-[20px] border border-line bg-surface-2 p-5">
-          <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-            <Globe className="h-3.5 w-3.5" /> {t('inv.detail.landingSection')}
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${landingBadge(prop.landingStatus)}`}>
-              {landingLabel(prop.landingStatus, t)}
-            </span>
-            {prop.landingUrl && prop.landingStatus === 'live' ? (
-              <a href={prop.landingUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-gold/70 transition hover:text-gold">
-                {prop.landingUrl} <ArrowUpRight className="h-3 w-3" />
-              </a>
-            ) : prop.landingUrl ? (
-              <span className="text-xs text-slate-500">{prop.landingUrl} · {t('inv.detail.notPublished')}</span>
-            ) : null}
-          </div>
-
-          <div className="mt-4 flex items-center gap-2 text-xs">
-            <ImageIcon className="h-3.5 w-3.5 text-slate-500" />
-            {prop.hasImages ? (
-              <span className="text-slate-400">{t(prop.imageCount === 1 ? 'inv.detail.imagesAvailable.one' : 'inv.detail.imagesAvailable.many', { count: prop.imageCount })}</span>
-            ) : (
-              <span className="text-slate-400/70">{t('inv.detail.noImages')}</span>
-            )}
-          </div>
-
-          {prop.landingStatus === 'missing' ? (
-            <div className="mt-4">
-              <Link
-                href={`/freehold-intelligence/inventory/${prop.id}/generate`}
-                className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2 text-xs text-gold transition hover:bg-gold/[0.12]"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> {t('inv.detail.generateNow')}
-              </Link>
-            </div>
-          ) : prop.landingUrl ? (
-            /* One canonical editor — same destination as Ads → Landing pages and Drive. */
-            <div className="mt-4">
-              <Link
-                href={`/freehold-intelligence/lead-machine/landings/${prop.landingUrl.replace('/lp/', '')}/edit`}
-                className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2 text-xs text-gold transition hover:bg-gold/[0.12]"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> {t('inv.detail.editLanding')}
-              </Link>
-            </div>
-          ) : null}
-        </div>
-      </section>
 
     </div>
   )

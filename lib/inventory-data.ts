@@ -181,6 +181,31 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     ),
   )
 
+  const propStatus = mapStatus(payloadStatus || row.status)
+  const priceFrom = row.price_from_aed ? Number(row.price_from_aed) : null
+  const yieldPct = row.rental_yield ? Number(row.rental_yield) : null
+  const plan = (paymentPlan || '').toLowerCase()
+  const split = paymentPlan ? paymentPlan.match(/(\d{2,3})\s*\/\s*(\d{2,3})/) : null
+  const paymentTag =
+    /\b1\s*%/.test(plan) && /month/.test(plan) ? '1% Monthly'
+      : /post[\s-]*handover/.test(plan) ? 'Post-Handover'
+        : split ? `${split[1]}/${split[2]} Plan`
+          : null
+  // Searchable, genuinely useful tags — derived only from real fields (drives
+  // the detail chips + inventory filters). Never invented; each drops if absent.
+  const tags = [
+    propStatus === 'ready' || propStatus === 'active' ? 'Ready'
+      : propStatus === 'off_plan' || propStatus === 'under_construction' ? 'Off-Plan' : null,
+    handoverYear ? `Handover ${handoverYear}` : null,
+    paymentTag,
+    yieldPct != null && yieldPct >= 7 ? 'High Yield' : null,
+    row.golden_visa_eligible ? 'Golden Visa' : null,
+    priceFrom != null && priceFrom > 0
+      ? (priceFrom < 1_000_000 ? 'Under AED 1M' : priceFrom < 2_000_000 ? 'AED 1M–2M' : 'AED 2M+')
+      : null,
+    row.area || null,
+  ].filter((x): x is string => Boolean(x))
+
   return {
     id: row.slug,
     slug: row.slug,
@@ -196,7 +221,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
           : unitTypes.some((t) => /Office|Retail/i.test(t))
             ? 'commercial'
             : 'apartment',
-    status: mapStatus(payloadStatus || row.status),
+    status: propStatus,
     startingPriceAED: row.price_from_aed ? Number(row.price_from_aed) : null,
     maxPriceAED: row.price_to_aed ? Number(row.price_to_aed) : null,
     heroImage: row.hero_image || null,
@@ -230,7 +255,7 @@ function mapRowToInventory(row: DBProjectRow, landingMap: Map<string, LandingInf
     views30d: 0,
     // No updated_at column — leave empty rather than always-today.
     lastUpdated: '',
-    tags: row.golden_visa_eligible ? ['golden_visa'] : [],
+    tags,
   }
 }
 
