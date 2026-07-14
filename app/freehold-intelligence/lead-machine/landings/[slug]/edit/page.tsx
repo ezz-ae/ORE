@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX, Crosshair } from 'lucide-react'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
@@ -31,6 +31,37 @@ type Landing = {
 }
 
 type LpSection = { type: string; data: Record<string, unknown> }
+
+
+// Wireframe schematic per section type — shows the SHAPE of a section before
+// it is added (title bars, tile grids, form fields), never fake content.
+function SectionThumb({ type }: { type: string }) {
+  const bar = (w: string, h = 'h-1.5') => <div className={`${h} ${w} rounded-full bg-slate-600`} />
+  const tile = (n: number, cols: string, ratio = 'h-6') =>
+    <div className={`grid ${cols} gap-1`}>{Array.from({ length: n }, (_, i) => <div key={i} className={`${ratio} rounded bg-slate-700/70`} />)}</div>
+  let body: React.ReactNode
+  switch (type) {
+    case 'hero': body = <div className="space-y-1.5">{bar('w-3/4', 'h-2.5')}{bar('w-1/2')}<div className="h-3 w-16 rounded-full bg-gold/60" /></div>; break
+    case 'gallery': body = tile(6, 'grid-cols-3'); break
+    case 'units': body = <div className="space-y-1">{tile(3, 'grid-cols-1', 'h-3.5')}</div>; break
+    case 'key-facts': body = tile(4, 'grid-cols-4', 'h-7'); break
+    case 'payment-plan': body = tile(3, 'grid-cols-3', 'h-8'); break
+    case 'roi': body = <div className="flex gap-1"><div className="h-10 w-1/3 rounded bg-gold/40" /><div className="flex-1">{tile(3, 'grid-cols-3', 'h-10')}</div></div>; break
+    case 'why-dubai': body = tile(6, 'grid-cols-3', 'h-5'); break
+    case 'golden-visa': body = <div className="space-y-1.5"><div className="h-3 w-10 rounded-full bg-gold/50" />{bar('w-5/6')}{bar('w-2/3')}</div>; break
+    case 'amenities': body = <div className="flex flex-wrap gap-1">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-2.5 w-9 rounded-full bg-slate-700/70" />)}</div>; break
+    case 'location': body = <div className="space-y-1.5"><div className="h-7 w-full rounded bg-slate-700/70" />{bar('w-2/3')}{bar('w-1/2')}</div>; break
+    case 'developer-profile': body = <div className="flex gap-2"><div className="h-7 w-7 rounded-full bg-slate-600" /><div className="flex-1 space-y-1.5 pt-1">{bar('w-3/4')}{bar('w-1/2')}</div></div>; break
+    case 'social-proof': body = tile(3, 'grid-cols-3', 'h-9'); break
+    case 'market-intelligence': body = <div className="rounded border border-slate-700 p-1.5">{bar('w-5/6')}<div className="mt-1" />{bar('w-2/3')}</div>; break
+    case 'ai-concierge': body = <div className="space-y-1"><div className="h-3 w-2/3 rounded-lg rounded-bl-none bg-slate-700/70" /><div className="ms-auto h-3 w-1/2 rounded-lg rounded-br-none bg-gold/40" /></div>; break
+    case 'faq': body = <div className="space-y-1">{Array.from({ length: 3 }, (_, i) => <div key={i} className="flex items-center justify-between rounded border border-slate-700 px-1.5 py-1">{bar('w-2/3', 'h-1')}<span className="text-[8px] text-slate-500">＋</span></div>)}</div>; break
+    case 'download-brochure': body = <div className="flex items-center justify-between rounded border border-gold/30 bg-gold/[0.06] px-2 py-2">{bar('w-1/2')}<div className="h-3 w-10 rounded-full bg-gold/60" /></div>; break
+    case 'lead-form': body = <div className="space-y-1">{tile(2, 'grid-cols-1', 'h-3')}<div className="h-3 w-14 rounded-full bg-gold/60" /></div>; break
+    case 'neighborhood': case 'description': default: body = <div className="space-y-1.5">{bar('w-1/3', 'h-2')}{bar('w-full')}{bar('w-5/6')}{bar('w-2/3')}</div>
+  }
+  return <div className="rounded-lg border border-line bg-[#0c0d12] p-2.5">{body}</div>
+}
 
 type LpCheck = { id: string; label: string; status: 'pass' | 'warn' | 'fail'; detail: string }
 type TestReport = { ok: boolean; url?: string; passed?: number; warned?: number; failed?: number; checks: LpCheck[] }
@@ -109,6 +140,7 @@ export default function LandingEditorPage() {
 
   const [form, setForm] = useState<Landing | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
   // Publish-state menu — where the destructive action lives (never a toolbar button).
   const [moreOpen, setMoreOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -118,6 +150,11 @@ export default function LandingEditorPage() {
   const [saving, setSaving] = useState(false)
   const [regen, setRegen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+  const previewRef = useRef<HTMLIFrameElement | null>(null)
+  // Show WHERE a section lives: scroll the live preview to it and flash a ring.
+  function locateSection(i: number) {
+    previewRef.current?.contentWindow?.postMessage({ source: 'fh-lpe-editor', locate: i }, window.location.origin)
+  }
   const [notFound, setNotFound] = useState(false)
   const [testing, setTesting] = useState(false)
   const [test, setTest] = useState<TestReport | null>(null)
@@ -822,10 +859,11 @@ export default function LandingEditorPage() {
                           <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronUp className="h-3.5 w-3.5" /></button>
                           <button type="button" onClick={() => moveSection(i, 1)} disabled={i === form.sections!.length - 1} className="text-slate-500 hover:text-white disabled:opacity-30"><ChevronDown className="h-3.5 w-3.5" /></button>
                         </span>
-                        <button type="button" onClick={() => setExpanded(open ? null : i)} title={t('lpe.layout.editContent')} className="group flex min-w-0 flex-1 items-center gap-1.5 text-start text-xs text-slate-200 hover:text-white">
+                        <button type="button" onClick={() => { setExpanded(open ? null : i); if (!open) locateSection(i) }} title={t('lpe.layout.editContent')} className="group flex min-w-0 flex-1 items-center gap-1.5 text-start text-xs text-slate-200 hover:text-white">
                           <span className="truncate">{sectionLabel(s.type)}</span>
                           <Pencil className={`h-3 w-3 shrink-0 transition ${open ? 'text-gold' : 'text-slate-600 group-hover:text-gold'}`} />
                         </button>
+                        <button type="button" onClick={() => locateSection(i)} title={t('lpe.layout.locate')} className="text-slate-500 hover:text-gold"><Crosshair className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => duplicateSection(i)} title={t('lpe.layout.duplicate')} className="text-slate-500 hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => toggleSection(i)} title={hidden ? t('lpe.layout.show') : t('lpe.layout.hide')} className="text-slate-500 hover:text-white">
                           {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -844,10 +882,10 @@ export default function LandingEditorPage() {
                 })}
               </ul>
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <select value="" onChange={(e) => { addSection(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs">
-                  <option value="">{t('lpe.layout.add')}</option>
-                  {ADD_TYPES.map((ty) => <option key={ty} value={ty}>{sectionLabel(ty)}</option>)}
-                </select>
+                <button type="button" onClick={() => setAddOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20">
+                  + {t('lpe.layout.add')}
+                </button>
                 <select value="" onChange={(e) => { insertTemplate(e.target.value); e.target.value = '' }} className="fld max-w-[220px] text-xs" title={t('lpe.layout.insertTplHint')}>
                   <option value="">{t('lpe.layout.insertTpl')}</option>
                   {LANDING_TEMPLATES.map((tpl) => <option key={tpl.key} value={tpl.key}>{t(tpl.nameKey)}</option>)}
@@ -900,7 +938,7 @@ export default function LandingEditorPage() {
               <a href={`/lp/${slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gold/70 hover:text-gold">{t('lpe.openTab')} <ExternalLink className="h-3 w-3" /></a>
             </div>
           </div>
-          <iframe key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
+          <iframe ref={previewRef} key={previewKey} src={`/lp/${slug}?lpe=1`} title="preview" className="h-[70vh] w-full rounded-xl border border-line bg-white lg:h-[calc(100%-2rem)]" />
           <p className="mt-2 text-[11px] text-slate-600">{t('lpe.previewNote')} · <span className="text-gold/70">{t('lpe.canvasHint')}</span></p>
         </div>
       </div>
@@ -921,6 +959,33 @@ export default function LandingEditorPage() {
             <div className="mt-4 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setScheduleOpen(false)} className="rounded-full border border-line bg-surface-2 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
               <button type="button" onClick={() => { setScheduleOpen(false); void save() }} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-ink transition hover:bg-[#F8E7AE]">{t('lpe.schedule.apply')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add-section gallery — a wireframe preview per type, so the user SEES
+          what a section looks like before adding it (no more add-and-delete). */}
+      {addOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={() => setAddOpen(false)}>
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-surface p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[15px] font-semibold text-white">{t('lpe.layout.add')}</div>
+              <button type="button" onClick={() => setAddOpen(false)} className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">{t('common.cancel')}</button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {ADD_TYPES.map((ty) => (
+                <button key={ty} type="button"
+                  onClick={() => {
+                    const idx = form.sections?.length ?? 0
+                    addSection(ty); setAddOpen(false)
+                    setTimeout(() => locateSection(idx), 600)
+                  }}
+                  className="group rounded-xl border border-line bg-surface-2 p-3 text-start transition hover:border-gold/40">
+                  <SectionThumb type={ty} />
+                  <div className="mt-2 text-xs font-semibold text-slate-200 group-hover:text-white">{sectionLabel(ty)}</div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -953,7 +1018,7 @@ export default function LandingEditorPage() {
         </div>
       )}
 
-      <style jsx>{`.fld{width:100%;border-radius:12px;border:1px solid var(--line,#26262b);background:var(--surface-2,#151518);padding:10px 12px;font-size:14px;color:#fff;outline:none}.fld::placeholder{color:#64748b}.fld:focus{border-color:rgba(212,175,55,.4)}`}</style>
+      <style jsx global>{`.fld{width:100%;border-radius:12px;border:1px solid var(--line,#26262b);background:var(--surface-2,#151518);padding:10px 12px;font-size:14px;color:#fff;outline:none}.fld::placeholder{color:#64748b}.fld:focus{border-color:rgba(212,175,55,.4)}`}</style>
     </div>
   )
 }

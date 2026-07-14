@@ -20,11 +20,24 @@ export function LpEditBridge() {
 
     const style = document.createElement('style')
     style.textContent = `
-      [data-lpe] { cursor: text; transition: box-shadow 120ms; }
-      [data-lpe]:hover { box-shadow: 0 0 0 2px rgba(212,175,55,0.45); border-radius: 4px; }
-      [data-lpe]:focus { outline: none; box-shadow: 0 0 0 2px rgba(212,175,55,0.9); border-radius: 4px; }
+      [data-lpe] { cursor: text; transition: box-shadow 120ms; outline: 1.5px dashed rgba(212,175,55,0.5); outline-offset: 4px; border-radius: 4px; }
+      [data-lpe]:hover { box-shadow: 0 0 0 2px rgba(212,175,55,0.45); }
+      [data-lpe]:focus { outline: none; box-shadow: 0 0 0 2px rgba(212,175,55,0.9); }
+      #fh-lpe-badge { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 9999;
+        background: rgba(10,10,14,0.92); color: #E8C547; border: 1px solid rgba(212,175,55,0.4);
+        border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 600; pointer-events: none; }
     `
     document.head.appendChild(style)
+
+    // Edit-mode badge — makes on-canvas editing discoverable (and its absence
+    // tells us instantly the bridge did not attach).
+    const badge = document.createElement('div')
+    badge.id = 'fh-lpe-badge'
+    const lang = (document.documentElement.lang || 'en').slice(0, 2)
+    badge.textContent = lang === 'ar' ? '✏ انقر على النص المميّز لتعديله مباشرة'
+      : lang === 'ru' ? '✏ Кликните выделенный текст, чтобы изменить его'
+      : '✏ Click highlighted text to edit it directly'
+    document.body.appendChild(badge)
 
     const els = Array.from(document.querySelectorAll<HTMLElement>('[data-lpe]'))
     const onInput = (e: Event) => {
@@ -36,6 +49,21 @@ export function LpEditBridge() {
         window.location.origin,
       )
     }
+    // Locate-on-page: the editor posts a section index; scroll to it and flash
+    // a gold ring so the user sees exactly where that layout row lives.
+    const onLocate = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { source?: string; locate?: number }
+      if (d?.source !== 'fh-lpe-editor' || typeof d.locate !== 'number') return
+      const target = document.querySelector<HTMLElement>(`[data-lpe-sec="${d.locate}"]`)
+      if (!target) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      target.style.transition = 'box-shadow 200ms'
+      target.style.boxShadow = 'inset 0 0 0 3px rgba(212,175,55,0.85)'
+      window.setTimeout(() => { target.style.boxShadow = 'none' }, 1600)
+    }
+    window.addEventListener('message', onLocate)
+
     const stopNav = (e: Event) => e.preventDefault()
     for (const el of els) {
       el.setAttribute('contenteditable', 'plaintext-only')
@@ -46,6 +74,8 @@ export function LpEditBridge() {
       el.closest('a')?.addEventListener('click', stopNav)
     }
     return () => {
+      window.removeEventListener('message', onLocate)
+      badge.remove()
       style.remove()
       for (const el of els) {
         el.removeAttribute('contenteditable')
