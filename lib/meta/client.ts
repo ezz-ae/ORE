@@ -1205,6 +1205,19 @@ export async function searchAdLocales(q: string): Promise<MetaLocale[]> {
     .map((l) => ({ key: l.key, name: l.name }))
 }
 
+/**
+ * Subscribe the connected Page to Meta's `leadgen` real-time webhook field —
+ * the piece that makes a new lead push to us instantly instead of waiting on
+ * a poll. Idempotent (safe to call repeatedly). This does NOT configure the
+ * app-level Callback URL / Verify Token — that half only exists in Meta's App
+ * Dashboard (Webhooks product) and has no API equivalent, so it's a one-time
+ * manual step for whoever administers the Meta App.
+ */
+export async function subscribePageToLeadgenWebhook(): Promise<{ success: boolean }> {
+  const { pageId } = await creds()
+  return apiPost(`/${pageId}/subscribed_apps`, { subscribed_fields: 'leadgen' })
+}
+
 export async function getLeadForm(formId: string): Promise<MetaLeadForm> {
   return apiFetch<MetaLeadForm>(`/${formId}`, undefined, {
     fields: 'id,name,status,leads_count,created_time,locale,follow_up_action_url,questions',
