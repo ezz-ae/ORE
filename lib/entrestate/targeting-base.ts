@@ -265,3 +265,62 @@ export async function getBaseStats(): Promise<Array<{ tenantId: string; rows: nu
     return []
   }
 }
+
+export interface BaseQuality {
+  tenantId: string
+  rows: number
+  outcomes: { lead: number; qualified: number; closed: number; lost: number }
+  /** % of rows that have each dimension filled — the "criteria" the pool was
+   *  actually imported with, without exposing a single row's real values. */
+  fieldCoverage: { field: string; pct: number }[]
+}
+
+const COVERAGE_FIELDS = [
+  { field: 'platform', col: 'platform' },
+  { field: 'area', col: 'area' },
+  { field: 'projectType', col: 'project_type' },
+  { field: 'priceBand', col: 'price_band' },
+  { field: 'ageBand', col: 'age_band' },
+  { field: 'city', col: 'city' },
+  { field: 'interest', col: 'interest' },
+] as const
+
+/** Row count + outcome mix + per-field fill-rate for one tenant — the
+ * quality signal shown on the Data Pool page and handed to the AI. Never
+ * touches a row's actual values, only how many rows have each field set. */
+export async function getBaseQuality(tenantId: string): Promise<BaseQuality | null> {
+  try {
+    await ensureOnce()
+    const rows = await query<Record<string, string>>(
+      `SELECT COUNT(*)::int AS total,
+              COUNT(*) FILTER (WHERE outcome = 'lead')::int AS lead,
+              COUNT(*) FILTER (WHERE outcome = 'qualified')::int AS qualified,
+              COUNT(*) FILTER (WHERE outcome = 'closed')::int AS closed,
+              COUNT(*) FILTER (WHERE outcome = 'lost')::int AS lost,
+              COUNT(*) FILTER (WHERE platform IS NOT NULL)::int AS platform_n,
+              COUNT(*) FILTER (WHERE area IS NOT NULL)::int AS area_n,
+              COUNT(*) FILTER (WHERE project_type IS NOT NULL)::int AS project_type_n,
+              COUNT(*) FILTER (WHERE price_band IS NOT NULL)::int AS price_band_n,
+              COUNT(*) FILTER (WHERE age_band IS NOT NULL)::int AS age_band_n,
+              COUNT(*) FILTER (WHERE city IS NOT NULL)::int AS city_n,
+              COUNT(*) FILTER (WHERE interest IS NOT NULL)::int AS interest_n
+       FROM entrestate_lead_history WHERE tenant_id = $1`,
+      [tenantId],
+    )
+    const r = rows[0]
+    const total = Number(r?.total) || 0
+    if (!r || total === 0) return null
+    const pct = (n: string) => Math.round((Number(n) / total) * 100)
+    return {
+      tenantId,
+      rows: total,
+      outcomes: {
+        lead: Number(r.lead) || 0, qualified: Number(r.qualified) || 0,
+        closed: Number(r.closed) || 0, lost: Number(r.lost) || 0,
+      },
+      fieldCoverage: COVERAGE_FIELDS.map(({ field, col }) => ({ field, pct: pct(r[`${col}_n`]) })),
+    }
+  } catch {
+    return null
+  }
+}

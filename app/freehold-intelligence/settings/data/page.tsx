@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Database, UploadCloud, Loader2, Sparkles, FileSpreadsheet } from 'lucide-react'
+import { Database, UploadCloud, Loader2, Sparkles, FileSpreadsheet, BarChart3 } from 'lucide-react'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -16,6 +16,22 @@ interface Stat { tenantId: string; rows: number; lastImport: string | null }
 // exact number when Settings → Data Security → number masking is on — the
 // server decides which, so the client just renders whatever it gets.
 interface Benchmark { platform: string; area: string; interest: string; ageBand: string; leads: number | string; qualifiedRate: number; closeRate: number; tenants: number }
+// Row count, outcome mix, and per-field fill-rate for one tenant — never a
+// row's actual values. Mirrors lib/entrestate/targeting-base.ts BaseQuality.
+interface Quality {
+  tenantId: string
+  rows: number
+  outcomes: { lead: number; qualified: number; closed: number; lost: number }
+  fieldCoverage: { field: string; pct: number }[]
+}
+
+const FIELD_LABEL_KEY: Record<string, string> = {
+  platform: 'sd.field.platform', area: 'sd.field.area', projectType: 'sd.field.projectType',
+  priceBand: 'sd.field.priceBand', ageBand: 'sd.field.ageBand', city: 'sd.field.city', interest: 'sd.field.interest',
+}
+const OUTCOME_COLOR: Record<string, string> = {
+  lead: '#94A3B8', qualified: '#D4AF37', closed: '#34D399', lost: '#F87171',
+}
 
 const FIELD_ALIASES: Record<string, string> = {
   source: 'source', platform: 'platform', campaign: 'campaign', area: 'area',
@@ -79,6 +95,7 @@ export default function DataBasePage() {
   const t = useT()
   const [stats, setStats] = useState<Stat[]>([])
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>([])
+  const [quality, setQuality] = useState<{ base: Quality | null; this: Quality | null }>({ base: null, this: null })
   const [tenant, setTenant] = useState<'base' | 'this'>('base')
   const [text, setText] = useState('')
   const [importing, setImporting] = useState(false)
@@ -91,6 +108,7 @@ export default function DataBasePage() {
       .then((d) => {
         if (Array.isArray(d?.stats)) setStats(d.stats)
         if (Array.isArray(d?.benchmarks)) setBenchmarks(d.benchmarks)
+        if (d?.quality) setQuality({ base: d.quality.base ?? null, this: d.quality.this ?? null })
       })
       .catch(() => {})
   }
@@ -247,6 +265,57 @@ export default function DataBasePage() {
                 <span className="shrink-0 text-slate-400">{s.rows.toLocaleString()} {t('sd.rows')}</span>
               </div>
             ))}
+          </div>
+        </Panel>
+      )}
+
+      {/* Data Pool quality — how much, and how complete, for the tenant currently selected above */}
+      {quality[tenant] && (
+        <Panel className="mt-6">
+          <PanelHeader title={t('sd.quality.title')} icon={<BarChart3 className="h-4 w-4 text-gold" />} />
+          <div className="p-5">
+            <p className="text-xs text-slate-500">{t('sd.quality.subtitle')}</p>
+
+            {/* Outcome mix */}
+            <div className="mt-4">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('sd.quality.outcomes')}</div>
+              <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-surface-3">
+                <div className="flex h-full w-full">
+                  {(['lead', 'qualified', 'closed', 'lost'] as const).map((k) => {
+                    const q = quality[tenant]!
+                    const pct = q.rows > 0 ? (q.outcomes[k] / q.rows) * 100 : 0
+                    return pct > 0 ? (
+                      <div key={k} style={{ width: `${pct}%`, background: OUTCOME_COLOR[k] }} title={`${t(`sd.outcome.${k}`)}: ${q.outcomes[k]}`} />
+                    ) : null
+                  })}
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                {(['lead', 'qualified', 'closed', 'lost'] as const).map((k) => (
+                  <span key={k} className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <span className="h-2 w-2 rounded-full" style={{ background: OUTCOME_COLOR[k] }} />
+                    {t(`sd.outcome.${k}`)} <span className="text-slate-300">{quality[tenant]!.outcomes[k]}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Field coverage — criteria, never the actual values */}
+            <div className="mt-5">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{t('sd.quality.criteria')}</div>
+              <div className="mt-2.5 space-y-2">
+                {quality[tenant]!.fieldCoverage.map((f) => (
+                  <div key={f.field} className="flex items-center gap-3">
+                    <span className="w-24 shrink-0 text-xs text-slate-400">{t(FIELD_LABEL_KEY[f.field] ?? f.field)}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3">
+                      <div className="h-full rounded-full bg-gold/70" style={{ width: `${f.pct}%` }} />
+                    </div>
+                    <span className="w-9 shrink-0 text-end text-xs tabular-nums text-slate-300">{f.pct}%</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2.5 text-[11px] leading-relaxed text-slate-500">{t('sd.quality.criteriaNote')}</p>
+            </div>
           </div>
         </Panel>
       )}

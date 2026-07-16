@@ -6,6 +6,7 @@ import {
 } from '@/lib/meta/client'
 import { UAE_INTERESTS } from '@/lib/meta/targeting-catalog'
 import { recommendTargeting } from '@/lib/freehold/targeting-recommend'
+import { getBaseStats, getBaseQuality, getNetworkBenchmarks, TENANT_ID, BASE_TENANT } from '@/lib/entrestate/targeting-base'
 import { setCampaignAutoEnhance } from '@/lib/meta/campaign-prefs'
 import type { AutonomyLevel } from '@/lib/freehold/agent-router'
 import { getCampaignQuality } from '@/lib/freehold/campaign-quality'
@@ -411,6 +412,28 @@ export const COORDINATOR_TOOLS: CoordinatorTool[] = [
         note: ranked.length
           ? 'Recommend the top audience by name and offer its attachUrl to start the campaign with it attached.'
           : 'No saved audiences yet — suggest building a lookalike from the lead list or a behavioral audience on the Audiences tab, then plan with ads_plan_campaign.',
+      }
+    },
+  },
+  {
+    name: 'ads_data_pool_status', agent: 'ads_agent',
+    description: 'READ the Data Pool (Settings → Data Pool / network targeting base): how many historical lead rows are stored — the system-wide seed and this tenant’s own imports — their outcome mix (lead/qualified/closed/lost), per-field completeness, and the current best cross-tenant benchmark segments that feed ads_plan_campaign. Read-only; never returns a raw row or PII, only counts.',
+    params: '{}',
+    roles: ADS_READERS,
+    schema: z.object({}),
+    run: async () => {
+      const [stats, benchmarks, baseQuality, thisQuality] = await Promise.all([
+        getBaseStats(), getNetworkBenchmarks(5),
+        getBaseQuality(BASE_TENANT), getBaseQuality(TENANT_ID),
+      ])
+      return {
+        stats,
+        quality: { systemSeed: baseQuality, thisTenant: thisQuality },
+        topBenchmarkSegments: benchmarks,
+        importUrl: '/freehold-intelligence/settings/data',
+        note: stats.length === 0
+          ? 'The Data Pool is empty — no historical rows imported yet. Suggest importing via Settings → Data Pool.'
+          : 'Use this to explain data coverage/quality when asked, or to note how much signal backs a recommendation from ads_plan_campaign.',
       }
     },
   },

@@ -8,7 +8,7 @@ export const languages: Record<Locale, Dict> = {
   en: {
     'settings.tab.languages': 'Languages',
     'settings.tab.automation': 'Automation',
-    'settings.tab.data': 'Data base',
+    'settings.tab.data': 'Data Pool',
     'settings.nav.automation': 'Automation',
     'settings.lang.title': 'Languages',
     'settings.lang.subtitle': 'Platform, writing, and AI languages — and how team input is handled',
@@ -30,7 +30,7 @@ export const languages: Record<Locale, Dict> = {
   ar: {
     'settings.tab.languages': 'اللغات',
     'settings.tab.automation': 'الأتمتة',
-    'settings.tab.data': 'قاعدة البيانات',
+    'settings.tab.data': 'مجمع البيانات',
     'settings.nav.automation': 'الأتمتة',
     'settings.lang.title': 'اللغات',
     'settings.lang.subtitle': 'لغات المنصة والكتابة والذكاء الاصطناعي — وكيفية التعامل مع مدخلات الفريق',
@@ -52,7 +52,7 @@ export const languages: Record<Locale, Dict> = {
   ru: {
     'settings.tab.languages': 'Языки',
     'settings.tab.automation': 'Автоматизация',
-    'settings.tab.data': 'База данных',
+    'settings.tab.data': 'Пул данных',
     'settings.nav.automation': 'Автоматизация',
     'settings.lang.title': 'Языки',
     'settings.lang.subtitle': 'Языки платформы, написания и ИИ — и обработка ввода команды',

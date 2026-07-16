@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import {
-  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getNetworkBenchmarks, bucketCount,
+  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getBaseQuality, getNetworkBenchmarks, bucketCount,
   TENANT_ID, BASE_TENANT, type HistoryRow,
 } from '@/lib/entrestate/targeting-base'
 import { getDataSecurityConfig } from '@/lib/freehold/data-security-config'
@@ -17,14 +17,20 @@ export async function GET() {
   if ('res' in auth) return auth.res
   const security = await getDataSecurityConfig()
   const excludeTenantIds = security.networkBenchmarksOptOut ? [TENANT_ID, `${TENANT_ID}-live`] : []
-  const [stats, rawBenchmarks] = await Promise.all([getBaseStats(), getNetworkBenchmarks(15, excludeTenantIds)])
+  const [stats, rawBenchmarks, baseQuality, thisQuality] = await Promise.all([
+    getBaseStats(), getNetworkBenchmarks(15, excludeTenantIds),
+    getBaseQuality(BASE_TENANT), getBaseQuality(TENANT_ID),
+  ])
   // Masking happens HERE (server-side) so it's a real control, not a
   // client-side overlay someone could bypass by reading the network tab.
   const benchmarks = rawBenchmarks.map((b) => ({
     ...b,
     leads: security.maskBenchmarkNumbers ? bucketCount(b.leads) : b.leads,
   }))
-  return NextResponse.json({ tenantId: TENANT_ID, baseTenant: BASE_TENANT, stats, benchmarks })
+  return NextResponse.json({
+    tenantId: TENANT_ID, baseTenant: BASE_TENANT, stats, benchmarks,
+    quality: { base: baseQuality, this: thisQuality },
+  })
 }
 
 /**
