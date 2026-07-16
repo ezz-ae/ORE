@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import type { ExpertBlock, ExpertAction } from '@/lib/freehold/expert-blocks'
 import {
   EXPERT_SEND, EXPERT_OPEN, EXPERT_EDITOR_CHANGED,
-  getExpertEditor, type ExpertEditorSurface,
+  getExpertEditor, type ExpertEditorSurface, type ExpertContextRef,
 } from '@/lib/freehold/expert-bus'
 import { loadAccountMemory, saveAccountMemory, saveAccountMemoryDebounced } from '@/lib/freehold/account-memory'
 import { useT } from '@/lib/i18n/provider'
@@ -39,7 +39,7 @@ function blocksToHtml(blocks: ExpertBlock[]): { html: string; title: string } {
   return { html: `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#e2e8f0">${parts.join('') || '<p>(empty)</p>'}</div>`, title }
 }
 
-type Message = { role: 'user'; content: string } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[] }
+type Message = { role: 'user'; content: string; ref?: ExpertContextRef } | { role: 'assistant'; blocks: ExpertBlock[]; toolsUsed?: string[] }
 
 type SessionSummary = { id: string; title: string; messageCount: number; updatedAt: string }
 
@@ -129,6 +129,12 @@ export function ExpertChat() {
   const [savedIdx, setSavedIdx] = useState<number | null>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  // A paste that contains a newline arrives as a burst of keydown events in
+  // some environments (remote-desktop clients, clipboard-manager/autotype
+  // tools) rather than one atomic paste event — without this guard, the Enter
+  // handler below reads that embedded newline as "send now" mid-paste and
+  // cuts the message off. Sits true for one tick after a real paste event.
+  const pastingRef = useRef(false)
   // Empty = "no conversation yet": the server mints an id on the first turn
   // and we adopt it, so every conversation is durable from message one.
   const sessionId = useRef('')
@@ -224,7 +230,9 @@ export function ExpertChat() {
     }
   }
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) so a large paste resizes before the
+  // browser paints — otherwise the box visibly jumps height for one frame.
+  useLayoutEffect(() => {
     if (!taRef.current) return
     taRef.current.style.height = 'auto'
     taRef.current.style.height = Math.min(taRef.current.scrollHeight, 160) + 'px'
@@ -454,7 +462,7 @@ export function ExpertChat() {
     return () => window.removeEventListener(EXPERT_EDITOR_CHANGED, sync)
   }, [])
 
-  const send = useCallback(async (text?: string) => {
+  const send = useCallback(async (text?: string, ref?: ExpertContextRef) => {
     const message = (text ?? value).trim()
     if (!message || pending) return
 
@@ -477,7 +485,7 @@ export function ExpertChat() {
       return
     }
 
-    setMessages((m) => [...m, { role: 'user', content: message }])
+    setMessages((m) => [...m, { role: 'user', content: message, ref }])
     setValue('')
     setPending(true)
     // The attachment travels with THIS message, then the slot clears.
@@ -492,6 +500,7 @@ export function ExpertChat() {
           context: {
             ...(mode !== 'auto' ? { chatMode: mode } : {}),
             ...(att ? { attachment: att } : {}),
+            ...(ref ? { ref } : {}),
           },
         }),
       })
@@ -516,9 +525,9 @@ export function ExpertChat() {
   // Listen for messages pushed from any on-page AI box → unified conversation.
   useEffect(() => {
     function onSend(e: Event) {
-      const msg = (e as CustomEvent).detail?.message as string | undefined
+      const detail = (e as CustomEvent).detail as { message?: string; ref?: ExpertContextRef } | undefined
       setOpen(true)
-      if (msg) send(msg)
+      if (detail?.message) send(detail.message, detail.ref)
     }
     function onOpen() { setOpen(true) }
     window.addEventListener(EXPERT_SEND, onSend)
@@ -659,7 +668,10 @@ export function ExpertChat() {
         </div>
 
         {/* Conversation */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-3.5 py-4">
+        {/* min-w-0 overrides the flex default (min-width:auto) — without it
+            an oversized descendant (a long unbroken string) stretches this
+            panel wider than its set width instead of wrapping/scrolling. */}
+        <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3.5 py-4">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col">
               <div className="mb-4 rounded-xl border border-gold/15 bg-gold/[0.05] p-4">
@@ -680,8 +692,15 @@ export function ExpertChat() {
             <div className="grid gap-4">
               {messages.map((m, i) =>
                 m.role === 'user' ? (
-                  <div key={i} className="ms-auto max-w-[90%] rounded-xl rounded-ee-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
-                    {m.content}
+                  <div key={i} className="ms-auto grid max-w-[90%] justify-items-end gap-1">
+                    {m.ref && (
+                      <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-gold/25 bg-gold/[0.08] px-2.5 py-1 text-[11px] font-medium text-gold">
+                        {t(`expert.ref.${m.ref.kind}`)}: {m.ref.label}
+                      </span>
+                    )}
+                    <div className="max-w-full break-words rounded-xl rounded-ee-md border border-line-strong bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-slate-100">
+                      {m.content}
+                    </div>
                   </div>
                 ) : (
                   <div key={i} className="grid gap-2.5">
@@ -768,7 +787,16 @@ export function ExpertChat() {
             <div className="flex items-end gap-2 px-2 py-1">
               <textarea
                 ref={taRef} value={value} onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+                onPaste={() => {
+                  pastingRef.current = true
+                  // Cleared after the paste's own keydown/input events have
+                  // already fired, so only THIS paste's Enter (if any) is skipped.
+                  setTimeout(() => { pastingRef.current = false }, 0)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing || pastingRef.current) return
+                  e.preventDefault(); send()
+                }}
                 rows={1} placeholder={t('expert.composerPlaceholder')}
                 className="flex-1 cursor-text resize-none bg-transparent py-1 text-sm leading-6 text-white outline-none placeholder:text-slate-500"
               />
@@ -895,8 +923,8 @@ function BlockView({
   switch (block.type) {
     case 'text':
       return (
-        <div className="rounded-xl rounded-bl-md border border-gold/15 bg-gold/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
-          <div className="whitespace-pre-wrap">{block.content}</div>
+        <div className="min-w-0 max-w-full rounded-xl rounded-bl-md border border-gold/15 bg-gold/[0.05] px-4 py-3 text-sm leading-relaxed text-slate-200">
+          <div className="whitespace-pre-wrap break-words">{block.content}</div>
         </div>
       )
 

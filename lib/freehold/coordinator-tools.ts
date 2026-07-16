@@ -618,8 +618,11 @@ export function parseToolCall(
       } catch { /* keep going */ }
     }
 
-    // 3 — python/function style: tool_name(arg='v', n=3) — optionally print(...)
-    const fn = trimmed.match(/^(?:print\s*\(\s*)?([a-z][a-z0-9_]*)\s*\(([^)]*)\)/i)
+    // 3 — python/function style: tool_name(arg='v', n=3) — optionally
+    // print(...) and optionally specialist-qualified (ads_agent.tool_name(...)
+    // — the model sometimes drifts into this dotted form under pressure); the
+    // qualifier is discarded, only the real tool name after the dot is matched.
+    const fn = trimmed.match(/^(?:print\s*\(\s*)?(?:[a-z][a-z0-9_]*\.)?([a-z][a-z0-9_]*)\s*\(([^)]*)\)/i)
     if (fn && knownNames.includes(fn[1])) {
       const args: Record<string, unknown> = {}
       for (const m of fn[2].matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(?:'([^']*)'|"([^"]*)"|(true|false)|(-?\d+(?:\.\d+)?))/g)) {

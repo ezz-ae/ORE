@@ -188,7 +188,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <div className="space-y-5">
 
           {/* Ask the Expert about this lead */}
-          <LeadExpertStrip name={lead.name} />
+          <LeadExpertStrip id={lead.id} name={lead.name} />
 
           {/* Contact + intent score */}
           <div className="grid gap-3 sm:grid-cols-3">

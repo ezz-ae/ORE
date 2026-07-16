@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { Sparkles, ArrowUp } from 'lucide-react'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 
@@ -22,8 +22,12 @@ export function AiPrompt({
 }) {
   const [value, setValue] = useState('')
   const taRef = useRef<HTMLTextAreaElement>(null)
+  // See components/freehold/expert-chat.tsx for why: a paste containing a
+  // newline can arrive as per-character keydown events in some environments,
+  // and without this guard the Enter handler below reads it as "send now".
+  const pastingRef = useRef(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!taRef.current) return
     taRef.current.style.height = 'auto'
     taRef.current.style.height = Math.min(taRef.current.scrollHeight, 180) + 'px'
@@ -48,7 +52,14 @@ export function AiPrompt({
             ref={taRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            onPaste={() => {
+              pastingRef.current = true
+              setTimeout(() => { pastingRef.current = false }, 0)
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing || pastingRef.current) return
+              e.preventDefault(); send()
+            }}
             rows={1}
             placeholder={placeholder}
             className="flex-1 cursor-text resize-none bg-transparent text-base leading-7 text-white outline-none placeholder:text-slate-500"

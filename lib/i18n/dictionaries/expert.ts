@@ -71,7 +71,11 @@ const en: Dict = {
   "expert.useColorPrompt": "Use the accent colour {color} — apply it and show the result.",
   "expert.editLandingPrompt": "Edit this landing — rewrite the hero headline 3 ways and tighten the sections.",
   "expert.launchLandingPrompt": "Launch this landing — give me the publish + tracking + ad-request plan.",
-  "expert.refineMediaPrompt": "Refine this media brief: \"{label}\". Give 3 stronger variations of the prompt."
+  "expert.refineMediaPrompt": "Refine this media brief: \"{label}\". Give 3 stronger variations of the prompt.",
+  "expert.ref.campaign": "Campaign",
+  "expert.ref.lead": "Lead",
+  "expert.ref.project": "Project",
+  "expert.ref.unit": "Unit"
 }
 
 const ar: Dict = {
@@ -143,7 +147,11 @@ const ar: Dict = {
   "expert.useColorPrompt": "استخدم اللون المميّز {color} — طبّقه وأظهر النتيجة.",
   "expert.editLandingPrompt": "عدّل صفحة الهبوط هذه — أعد كتابة العنوان الرئيسي بثلاث صيغ وأحكِم الأقسام.",
   "expert.launchLandingPrompt": "أطلق صفحة الهبوط هذه — أعطني خطة النشر والتتبّع وطلب الإعلانات.",
-  "expert.refineMediaPrompt": "حسّن موجز الوسائط هذا: «{label}». قدّم 3 صيغ أقوى للموجّه."
+  "expert.refineMediaPrompt": "حسّن موجز الوسائط هذا: «{label}». قدّم 3 صيغ أقوى للموجّه.",
+  "expert.ref.campaign": "حملة",
+  "expert.ref.lead": "عميل محتمل",
+  "expert.ref.project": "مشروع",
+  "expert.ref.unit": "وحدة"
 }
 
 const ru: Dict = {
@@ -215,7 +223,11 @@ const ru: Dict = {
   "expert.useColorPrompt": "Используй акцентный цвет {color} — примени его и покажи результат.",
   "expert.editLandingPrompt": "Отредактируй этот лендинг — перепиши главный заголовок в трёх вариантах и подтяни разделы.",
   "expert.launchLandingPrompt": "Запусти этот лендинг — дай план публикации, отслеживания и запроса рекламы.",
-  "expert.refineMediaPrompt": "Доработай этот медиа-бриф: «{label}». Предложи 3 более сильных варианта запроса."
+  "expert.refineMediaPrompt": "Доработай этот медиа-бриф: «{label}». Предложи 3 более сильных варианта запроса.",
+  "expert.ref.campaign": "Кампания",
+  "expert.ref.lead": "Лид",
+  "expert.ref.project": "Проект",
+  "expert.ref.unit": "Юнит"
 }
 
 export const expertChat = { en, ar, ru }
