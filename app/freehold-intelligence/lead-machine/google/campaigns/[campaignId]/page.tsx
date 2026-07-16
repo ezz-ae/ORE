@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   ArrowLeft,
   Play,
@@ -11,6 +12,7 @@ import {
   Loader2,
   Search,
   ArrowUpRight,
+  Copy,
 } from 'lucide-react'
 import type {
   GoogleCampaign,
@@ -256,6 +258,53 @@ export default function GoogleCampaignDetailPage({
     .sort((a, b) => (b.metrics?.impressions ?? 0) - (a.metrics?.impressions ?? 0))
     .slice(0, 20)
 
+  // Plain-text dump of everything this page knows about the campaign — meant
+  // to be pasted straight into an AI conversation (this app's Expert, or any
+  // other tool). Only ever includes data already loaded on this page.
+  function copyFullInfo() {
+    if (!campaign) return
+    const lines: string[] = []
+    lines.push(`Google Ads Campaign — ${campaign.name}`)
+    lines.push(`ID: ${campaign.id}`)
+    lines.push(`Type: ${campaign.type.replace(/_/g, ' ')}`)
+    lines.push(`Status: ${campaign.status}`)
+    lines.push(`Bidding strategy: ${campaign.biddingStrategyType.replace(/_/g, ' ')}`)
+    lines.push(`Daily budget: AED ${Math.round(campaign.dailyBudgetMicros / 1_000_000).toLocaleString()}`)
+    if (campaign.startDate) lines.push(`Started: ${campaign.startDate}`)
+    lines.push('')
+    lines.push('Performance (30 days)')
+    lines.push(`Impressions: ${m ? m.impressions.toLocaleString() : '—'}`)
+    lines.push(`Clicks: ${m ? m.clicks.toLocaleString() : '—'}`)
+    lines.push(`CTR: ${m ? fmtPct(m.ctr) : '—'}`)
+    lines.push(`Avg CPC: ${m ? fmtMicros(m.averageCpcMicros) : '—'}`)
+    lines.push(`Spend: ${m ? fmtMicros(m.costMicros) : '—'}`)
+    lines.push(`Conversions: ${m ? Math.round(m.conversions).toLocaleString() : '—'}`)
+    if (adGroups.length > 0) {
+      lines.push('')
+      lines.push(`Ad groups (${adGroups.length})`)
+      for (const ag of adGroups) lines.push(`- ${ag.name} — ${ag.status}`)
+    }
+    if (topKeywords.length > 0) {
+      lines.push('')
+      lines.push(`Top keywords (${topKeywords.length})`)
+      for (const kw of topKeywords) {
+        const qs = kw.qualityScore != null ? `, quality score ${kw.qualityScore}/10` : ''
+        lines.push(`- "${kw.text}" (${kw.matchType}${qs}) — ${(kw.metrics?.impressions ?? 0).toLocaleString()} impr., ${(kw.metrics?.clicks ?? 0).toLocaleString()} clicks`)
+      }
+    }
+    if (ads.length > 0) {
+      lines.push('')
+      lines.push(`Ads (${ads.length}) — Responsive Search Ads`)
+      for (const ad of ads) {
+        lines.push(`- Status: ${ad.status}, strength: ${ad.adStrength}`)
+        lines.push(`  Headlines: ${ad.headlines.map((h) => h.text).join(' | ')}`)
+        lines.push(`  Descriptions: ${ad.descriptions.map((d) => d.text).join(' | ')}`)
+      }
+    }
+    navigator.clipboard?.writeText(lines.join('\n'))
+    toast.success(t('lm.google.campaignDetail.copyInfoOk'))
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -380,6 +429,13 @@ export default function GoogleCampaignDetailPage({
 
               {/* Controls */}
               <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  onClick={copyFullInfo}
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-line bg-surface-2 px-3 py-2 text-xs text-slate-400 transition hover:text-white"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {t('lm.google.campaignDetail.copyInfo')}
+                </button>
                 <button
                   onClick={() => campaignId && fetchAll(campaignId, true)}
                   disabled={refreshing || togglingStatus}

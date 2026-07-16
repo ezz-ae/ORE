@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, RefreshCw, AlertCircle, Zap } from 'lucide-react'
+import { toast } from 'sonner'
+import { ArrowUpRight, RefreshCw, AlertCircle, Zap, Copy } from 'lucide-react'
 import type { GoogleCampaign, GoogleReportSummary } from '@/lib/google/types'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
@@ -146,6 +147,26 @@ export default function GoogleAdsPage() {
     else { setSortCol(col); setSortAsc(false) }
   }
 
+  // Plain-text dump of one campaign's live numbers — meant to be pasted
+  // straight into an AI conversation (this app's Expert, or any other tool).
+  function copyCampaignInfo(c: GoogleCampaign) {
+    const m = c.metrics
+    const lines = [
+      `Google Ads Campaign — ${c.name}`,
+      `ID: ${c.id}`,
+      `Type: ${c.type.replace('_', ' ')}`,
+      `Status: ${c.status === 'ENABLED' ? t('padsg.statusActive') : t('padsg.statusPaused')}`,
+      `Spend: ${fmtMicros(m?.costMicros ?? 0)}`,
+      `Impressions: ${(m?.impressions ?? 0).toLocaleString()}`,
+      `Clicks: ${(m?.clicks ?? 0).toLocaleString()}`,
+      `Conversions: ${Math.round(m?.conversions ?? 0)}`,
+      m ? `CTR: ${fmtPct(m.impressions > 0 ? m.clicks / m.impressions : 0)}` : null,
+      m ? `Avg CPC: ${fmtMicros(m.clicks > 0 ? m.costMicros / m.clicks : 0)}` : null,
+    ].filter((l): l is string => !!l).join('\n')
+    navigator.clipboard?.writeText(lines)
+    toast.success(t('padsg.copyOk'))
+  }
+
   const totalSpend = campaigns.reduce((s, c) => s + (c.metrics?.costMicros ?? 0), 0)
   const totalClicks = campaigns.reduce((s, c) => s + (c.metrics?.clicks ?? 0), 0)
   const totalConv   = campaigns.reduce((s, c) => s + (c.metrics?.conversions ?? 0), 0)
@@ -266,7 +287,7 @@ export default function GoogleAdsPage() {
               <div className="overflow-x-auto">
                 <div className="min-w-[700px] overflow-hidden rounded-xl border border-line bg-surface-2">
                   {/* Header */}
-                  <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 border-b border-line px-5 py-3">
+                  <div className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_32px_56px] gap-3 border-b border-line px-5 py-3">
                     {[
                       { label: t('padsg.thCampaign'), col: null },
                       { label: t('padsg.thType'),     col: null },
@@ -276,9 +297,10 @@ export default function GoogleAdsPage() {
                       { label: t('padsg.thClicks'),   col: 'clicks'      as SortCol },
                       { label: t('padsg.thConv'),    col: 'conversions' as SortCol },
                       { label: '',         col: null },
-                    ].map(({ label, col }) => (
+                      { label: '',         col: null },
+                    ].map(({ label, col }, i) => (
                       <button
-                        key={label}
+                        key={label || i}
                         onClick={() => col && handleSort(col)}
                         className={[
                           'text-left text-xs font-medium uppercase tracking-[0.14em] transition',
@@ -296,7 +318,7 @@ export default function GoogleAdsPage() {
                   {/* Rows */}
                   <div className="divide-y divide-line">
                     {sorted.map((c) => (
-                      <div key={c.id} className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_56px] gap-3 items-center px-5 py-4">
+                      <div key={c.id} className="grid grid-cols-[2fr_80px_70px_90px_70px_70px_70px_32px_56px] gap-3 items-center px-5 py-4">
                         <Link
                           href={`/freehold-intelligence/lead-machine/google/campaigns/${c.id}`}
                           className="flex items-center gap-2 min-w-0 hover:text-white transition"
@@ -321,6 +343,15 @@ export default function GoogleAdsPage() {
                         <span className="text-xs text-slate-400">{(c.metrics?.impressions ?? 0).toLocaleString()}</span>
                         <span className="text-xs text-slate-400">{(c.metrics?.clicks ?? 0).toLocaleString()}</span>
                         <span className="text-sm font-semibold text-gold">{Math.round(c.metrics?.conversions ?? 0)}</span>
+                        <button
+                          type="button"
+                          onClick={() => copyCampaignInfo(c)}
+                          aria-label={t('padsg.copyRow')}
+                          title={t('padsg.copyRow')}
+                          className="grid h-7 w-7 place-items-center justify-self-end rounded-lg border border-line-strong text-slate-500 transition hover:border-gold/30 hover:text-gold"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
                         <button
                           onClick={() => toggleStatus(c)}
                           disabled={toggling === c.id}
