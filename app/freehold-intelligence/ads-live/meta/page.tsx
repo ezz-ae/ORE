@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp, Loader2, PlugZap } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, Plus, Palette, ChevronDown, ChevronUp, Loader2, PlugZap, Copy } from 'lucide-react'
 import { ExpertDepth } from '@/components/freehold/expert-depth'
 import { useT } from '@/lib/i18n/provider'
 import type { MetaCampaign, MetaInsights } from '@/lib/meta/types'
@@ -19,6 +19,7 @@ interface Row {
   id: string
   name: string
   active: boolean
+  objective: string
   dailyBudget: number // AED
   spend: number
   impressions: number
@@ -43,6 +44,7 @@ function toRow(c: MetaCampaign & { insights?: MetaInsights | null }): Row {
     id: c.id,
     name: c.name,
     active: c.status === 'ACTIVE',
+    objective: c.objective ?? '',
     dailyBudget: c.daily_budget ? Math.round(Number(c.daily_budget) / 100) : 0,
     spend,
     impressions,
@@ -113,6 +115,25 @@ export default function MetaAdsPage() {
   function handleSort(col: SortCol) {
     if (sortCol === col) setSortAsc((v) => !v)
     else { setSortCol(col); setSortAsc(false) }
+  }
+
+  // Plain-text dump of one campaign's live numbers — meant to be pasted
+  // straight into an AI conversation (this app's Expert, or any other tool).
+  function copyCampaignInfo(r: Row) {
+    const lines = [
+      `Meta Ads Campaign — ${r.name}`,
+      `ID: ${r.id}`,
+      `Status: ${r.active ? t('lm.meta.status.active') : t('lm.meta.status.paused')}`,
+      r.objective ? `Objective: ${r.objective.replace(/_/g, ' ')}` : null,
+      `Daily budget: ${r.dailyBudget > 0 ? `AED ${r.dailyBudget}/day` : '—'}`,
+      `Spend: ${r.spend > 0 ? fmtAED(r.spend) : '—'}`,
+      `Impressions: ${r.impressions > 0 ? r.impressions.toLocaleString() : '—'}`,
+      `Clicks: ${r.clicks > 0 ? r.clicks.toLocaleString() : '—'}`,
+      `Leads: ${r.leads > 0 ? r.leads : '—'}`,
+      `Cost per lead: ${r.cpl > 0 ? fmtAED(r.cpl) : '—'}`,
+    ].filter((l): l is string => !!l).join('\n')
+    navigator.clipboard?.writeText(lines)
+    toast.success(t('lm.meta.copyOk'))
   }
 
   return (
@@ -252,7 +273,7 @@ export default function MetaAdsPage() {
         <div className="overflow-x-auto">
           <div className="min-w-[700px] overflow-hidden rounded-2xl border border-line bg-surface-2">
             {/* Table header */}
-            <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 border-b border-line px-5 py-3">
+            <div className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px_32px] gap-4 border-b border-line px-5 py-3">
               {[
                 { label: t('lm.meta.col.campaign'),    col: null },
                 { label: t('lm.meta.col.status'),      col: null },
@@ -262,6 +283,7 @@ export default function MetaAdsPage() {
                 { label: t('lm.meta.col.clicks'),      col: null },
                 { label: t('lm.meta.col.leads'),       col: 'leads' as SortCol },
                 { label: t('lm.meta.col.cpl'),         col: 'cpl' as SortCol },
+                { label: '',                           col: null },
               ].map(({ label, col }) => (
                 <button
                   key={label}
@@ -285,7 +307,7 @@ export default function MetaAdsPage() {
                 <Link
                   key={c.id}
                   href={`/freehold-intelligence/ads-live/meta/${c.id}`}
-                  className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px] gap-4 items-center px-5 py-4 transition hover:bg-white/[0.03]"
+                  className="grid grid-cols-[2fr_80px_100px_80px_90px_70px_60px_70px_32px] gap-4 items-center px-5 py-4 transition hover:bg-white/[0.03]"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.active ? 'bg-emerald-400' : 'bg-slate-500'}`} />
@@ -314,6 +336,15 @@ export default function MetaAdsPage() {
                   <div className="text-xs text-slate-300">
                     {c.cpl > 0 ? `AED ${c.cpl}` : '—'}
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); copyCampaignInfo(c) }}
+                    aria-label={t('lm.meta.copyRow')}
+                    title={t('lm.meta.copyRow')}
+                    className="grid h-7 w-7 place-items-center justify-self-end rounded-lg border border-line-strong text-slate-500 transition hover:border-gold/30 hover:text-gold"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
                 </Link>
               ))}
             </div>

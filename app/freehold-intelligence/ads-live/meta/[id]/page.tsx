@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen } from 'lucide-react'
+import { ArrowLeft, Loader2, Minus, Plus, Sparkles, Pause, Play, CheckCircle2, AlertTriangle, ArrowRight, Gauge, Zap, Trash2, Heart, MessageCircle, Share2, Eye, ChevronDown, Users, Pencil, X, Upload, FolderOpen, Copy } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import { sendToExpert } from '@/lib/freehold/expert-bus'
 import { computeOverlaps } from '@/lib/meta/audience-overlap'
@@ -237,6 +237,59 @@ export default function CampaignCommandPage() {
     sendToExpert(t('lm.cmd.refinePrompt', { name: data.campaign.name }), {
       kind: 'campaign', id, label: data.campaign.name, href: `/freehold-intelligence/ads-live/meta/${id}`,
     })
+  }
+
+  // Plain-text dump of everything this page knows about the campaign — meant
+  // to be pasted straight into an AI conversation (this app's Expert, or any
+  // other tool). Only ever includes data already loaded on this page.
+  function copyFullInfo() {
+    if (!data) return
+    const c = data.campaign
+    const lines: string[] = []
+    lines.push(`Meta Ads Campaign — ${c.name}`)
+    lines.push(`ID: ${id}`)
+    lines.push(`Status: ${active ? t('lm.cmd.live') : t('lm.cmd.paused')}`)
+    if (c.objective) lines.push(`Objective: ${c.objective.replace(/_/g, ' ')}`)
+    if (c.created_time) lines.push(`Created: ${new Date(c.created_time).toLocaleDateString()}`)
+    lines.push('')
+    lines.push('Performance')
+    lines.push(`Spend: ${kpis.spend > 0 ? fmtAED(kpis.spend) : '—'}`)
+    lines.push(`Impressions: ${kpis.impressions > 0 ? kpis.impressions.toLocaleString() : '—'}`)
+    lines.push(`Clicks: ${kpis.clicks > 0 ? kpis.clicks.toLocaleString() : '—'}`)
+    lines.push(`CTR: ${kpis.ctr > 0 ? `${kpis.ctr}%` : '—'}`)
+    lines.push(`Leads: ${kpis.leads > 0 ? kpis.leads : '—'}`)
+    lines.push(`Cost per lead: ${kpis.cpl > 0 ? fmtAED(kpis.cpl) : '—'}`)
+    if (quality && quality.score !== null) {
+      lines.push('')
+      lines.push('Lead quality (CRM funnel)')
+      lines.push(`Score: ${quality.score}/100`)
+      lines.push(`Reached: ${quality.reached}`)
+      lines.push(`Qualified: ${quality.qualified}`)
+      lines.push(`Won: ${quality.won}`)
+      lines.push(`Junk: ${quality.junk}`)
+    }
+    if (data.adSets.length > 0) {
+      lines.push('')
+      lines.push(`Ad sets (${data.adSets.length})`)
+      for (const a of data.adSets) {
+        const budget = Math.round(Number(a.daily_budget) / 100) || 0
+        lines.push(`- ${a.name} — ${a.status}, daily budget ${budget > 0 ? fmtAED(budget) : '—'}, ${a.ads?.length ?? 0} ads`)
+      }
+    }
+    const allAds = data.adSets.flatMap((a) => a.ads ?? [])
+    if (allAds.length > 0) {
+      lines.push('')
+      lines.push(`Ads (${allAds.length})`)
+      for (const ad of allAds) lines.push(`- ${ad.name} — ${ad.status}`)
+    }
+    const enabledRules = rules.filter((r) => r.enabled)
+    if (enabledRules.length > 0) {
+      lines.push('')
+      lines.push(`Active rules (${enabledRules.length})`)
+      for (const r of enabledRules) lines.push(`- ${ruleText(r)}`)
+    }
+    navigator.clipboard?.writeText(lines.join('\n'))
+    toast.success(t('lm.cmd.copyInfoOk'))
   }
 
   async function runRefine() {
@@ -478,6 +531,9 @@ export default function CampaignCommandPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button type="button" onClick={copyFullInfo} className="inline-flex items-center gap-1.5 text-xs text-slate-400 transition hover:text-white">
+              <Copy className="h-3.5 w-3.5" /> {t('lm.cmd.copyInfo')}
+            </button>
             <button type="button" onClick={openInExpert} className="text-xs text-slate-400 transition hover:text-white">{t('lm.cmd.openInExpert')}</button>
             <button type="button" onClick={runRefine} disabled={refineBusy}
               className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">

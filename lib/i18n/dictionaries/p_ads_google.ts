@@ -39,6 +39,8 @@ const en: Dict = {
   'padsg.statusPaused': 'Paused',
   'padsg.actionPause': 'Pause',
   'padsg.actionResume': 'Resume',
+  'padsg.copyRow': 'Copy campaign info for AI',
+  'padsg.copyOk': 'Campaign info copied — paste it anywhere.',
 
   'padsg.topSearchTerms': 'Top search terms',
   'padsg.fullReport': 'Full report',
@@ -93,6 +95,8 @@ const ar: Dict = {
   'padsg.statusPaused': 'متوقفة',
   'padsg.actionPause': 'إيقاف',
   'padsg.actionResume': 'استئناف',
+  'padsg.copyRow': 'نسخ معلومات الحملة للذكاء الاصطناعي',
+  'padsg.copyOk': 'تم نسخ معلومات الحملة — الصقها في أي مكان.',
 
   'padsg.topSearchTerms': 'أبرز عبارات البحث',
   'padsg.fullReport': 'التقرير الكامل',
@@ -147,6 +151,8 @@ const ru: Dict = {
   'padsg.statusPaused': 'Приостановлена',
   'padsg.actionPause': 'Пауза',
   'padsg.actionResume': 'Возобновить',
+  'padsg.copyRow': 'Скопировать данные кампании для ИИ',
+  'padsg.copyOk': 'Данные кампании скопированы — вставьте их куда угодно.',
 
   'padsg.topSearchTerms': 'Топ поисковых запросов',
   'padsg.fullReport': 'Полный отчёт',
