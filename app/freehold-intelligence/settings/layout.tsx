@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   ArrowLeft, Settings,
   Settings2, Users, Shield, CreditCard,
-  ShieldCheck, Bell, Code, Globe, Workflow, Database,
+  ShieldCheck, Bell, Code, Globe, Workflow, Database, Lock,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { useT } from '@/lib/i18n/provider'
@@ -32,6 +32,7 @@ const NAV_SECTIONS = [
     label: 'settings.nav.security',
     items: [
       { label: 'settings.tab.security',      href: '/freehold-intelligence/settings/security',                        Icon: ShieldCheck },
+      { label: 'settings.tab.dataSecurity',  href: '/freehold-intelligence/settings/data-security',                   Icon: Lock        },
       { label: 'settings.tab.notifications', href: '/freehold-intelligence/settings/notifications',                   Icon: Bell        },
     ],
   },
