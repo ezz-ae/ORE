@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
-  Users, Sparkles, Loader2, Search, X, Trash2, Upload, ShieldCheck, Rocket, Globe,
+  Users, Sparkles, Loader2, Search, X, Trash2, Upload, ShieldCheck, Rocket, Globe, Handshake,
 } from 'lucide-react'
 import { useT } from '@/lib/i18n/provider'
 import type { CampaignTargeting, TargetingEntity } from '@/lib/meta/types'
@@ -175,6 +175,40 @@ export default function AudiencesPage() {
     } finally { setLoading(false) }
   }, [])
   useEffect(() => { void load() }, [load])
+
+  // ── Lookalike from closed deals (automatic — no upload) ──
+  const [buyers, setBuyers] = useState<{ count: number; min: number; ready: boolean; metaConnected: boolean } | null>(null)
+  const [buyersName, setBuyersName] = useState('')
+  const [buyersCountry, setBuyersCountry] = useState('AE')
+  const [buyersRatio, setBuyersRatio] = useState(0.03)
+  const [buyersConfirm, setBuyersConfirm] = useState(false)
+  const [buyersWorking, setBuyersWorking] = useState(false)
+  const [buyersMsg, setBuyersMsg] = useState<string | null>(null)
+
+  const loadBuyers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/freehold/ads/lookalike')
+      const data = await res.json()
+      if (res.ok) setBuyers(data)
+    } catch { /* leave null — section stays hidden */ }
+  }, [])
+  useEffect(() => { void loadBuyers() }, [loadBuyers])
+
+  async function buildBuyersLookalike() {
+    setBuyersMsg(null)
+    setBuyersWorking(true)
+    try {
+      const res = await fetch('/api/freehold/ads/lookalike', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true, label: buyersName.trim() || 'Freehold', country: buyersCountry, ratio: buyersRatio }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed')
+      setBuyersMsg(t('lm.aud.buyers.done').replace('{n}', String(data.uploaded)))
+      setBuyersName(''); setBuyersConfirm(false)
+      await Promise.all([load(), loadBuyers()])
+    } catch (e) { setBuyersMsg(e instanceof Error ? e.message : 'Failed') } finally { setBuyersWorking(false) }
+  }
 
   // ── AI match ──
   const [match, setMatch] = useState({ name: '', area: '', price: '', type: '' })
@@ -533,6 +567,48 @@ export default function AudiencesPage() {
           {bMsg && <span className="text-[12px] text-slate-300">{bMsg}</span>}
         </div>
       </section>
+
+      {/* Lookalike from closed deals — automatic, no upload */}
+      {buyers && (
+        <section className="rounded-2xl border border-line bg-surface p-5">
+          <div className="flex items-center gap-2 text-[15px] font-semibold text-white"><Handshake className="h-4 w-4 text-gold" /> {t('lm.aud.buyers.title')}</div>
+          <p className="mt-1 max-w-3xl text-[12px] leading-relaxed text-slate-400">{t('lm.aud.buyers.sub')}</p>
+          {!buyers.metaConnected ? (
+            <p className="mt-3 text-[12px] text-amber-300">{t('lm.aud.buyers.needMeta')}</p>
+          ) : (
+            <div className="mt-4 space-y-3.5">
+              <p className={`text-[12px] font-semibold ${buyers.count >= buyers.min ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {buyers.count >= buyers.min
+                  ? t('lm.aud.buyers.count').replace('{n}', buyers.count.toLocaleString())
+                  : t('lm.aud.buyers.tooFew').replace('{n}', String(buyers.count)).replace('{min}', String(buyers.min))}
+              </p>
+              {buyers.ready && (
+                <>
+                  <div className="grid gap-2.5 md:grid-cols-3">
+                    <input value={buyersName} onChange={(e) => setBuyersName(e.target.value)} placeholder={t('lm.aud.buyers.namePh')} className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-gold/40" />
+                    <select value={buyersCountry} onChange={(e) => setBuyersCountry(e.target.value)} className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-gold/40">
+                      {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <select value={buyersRatio} onChange={(e) => setBuyersRatio(Number(e.target.value))} className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-slate-200 outline-none focus:border-gold/40">
+                      <option value={0.01}>1%</option><option value={0.03}>3%</option><option value={0.05}>5%</option><option value={0.1}>10%</option>
+                    </select>
+                  </div>
+                  <p className="text-[11px] text-slate-500">{t('lm.aud.seed.ratio')}: {t('lm.aud.seed.ratioNote')}</p>
+                  <label className="flex items-start gap-2 text-[12px] text-slate-300">
+                    <input type="checkbox" checked={buyersConfirm} onChange={(e) => setBuyersConfirm(e.target.checked)} className="mt-0.5" />
+                    <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 shrink-0 text-gold" /> {t('lm.aud.seed.confirm')}</span>
+                  </label>
+                  <button type="button" onClick={buildBuyersLookalike} disabled={!buyersConfirm || buyersWorking}
+                    className="flex items-center gap-1.5 rounded-lg bg-gold px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110 disabled:opacity-50">
+                    {buyersWorking ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('lm.aud.seed.working')}</> : t('lm.aud.seed.cta')}
+                  </button>
+                </>
+              )}
+              {buyersMsg && <p className="text-[12px] text-slate-300">{buyersMsg}</p>}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Lookalike from lead list */}
       <section className="rounded-2xl border border-line bg-surface p-5">

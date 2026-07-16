@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
-import { Database, UploadCloud, Loader2, Sparkles, FileSpreadsheet, BarChart3 } from 'lucide-react'
+import { Database, UploadCloud, Loader2, Sparkles, FileSpreadsheet, BarChart3, Users } from 'lucide-react'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -339,6 +340,21 @@ export default function DataBasePage() {
           <p className="px-5 py-3 text-[11px] leading-relaxed text-slate-500">{t('sd.benchNote')}</p>
         </Panel>
       )}
+
+      {/* This Data Pool is anonymized by design — real Meta Custom Audiences
+          need actual contacts, which live on the Audiences page instead. */}
+      <Panel className="mt-6">
+        <PanelHeader title={t('sd.audience.title')} icon={<Users className="h-4 w-4 text-gold" />} />
+        <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <p className="max-w-xl text-xs leading-relaxed text-slate-500">{t('sd.audience.body')}</p>
+          <Link
+            href="/freehold-intelligence/lead-machine/audiences"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90"
+          >
+            {t('sd.audience.cta')}
+          </Link>
+        </div>
+      </Panel>
     </div>
   )
 }
