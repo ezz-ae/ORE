@@ -6,6 +6,7 @@ import {
   buildLookalikeFromBuyers, isMetaConfigured, MetaApiError, MetaConfigError,
   type BuyerContact,
 } from '@/lib/meta/client'
+import { createAudience } from '@/lib/freehold/audiences'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,7 +67,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await buildLookalikeFromBuyers({ contacts, label, country, ratio })
-    return NextResponse.json({ ...result, source: contacts.length }, { status: 201 })
+    // Persist as a saved audience so the wizard can attach it in one click —
+    // same pattern as /api/freehold/ads/audiences/seed.
+    const audience = await createAudience({
+      name: `${label} — Closed Buyers Lookalike ${Math.round(ratio * 100)}% ${country}`,
+      description: `Lookalike of ${result.uploaded.toLocaleString()} closed-deal contacts (top ${Math.round(ratio * 100)}% most similar in ${country}).`,
+      kind: 'lookalike',
+      spec: { countries: [country], customAudienceIds: [result.lookalikeAudienceId] },
+      metaSourceAudienceId: result.sourceAudienceId,
+      metaLookalikeId: result.lookalikeAudienceId,
+      uploadedCount: result.uploaded,
+      createdBy: user.email,
+    })
+    return NextResponse.json({ ...result, source: contacts.length, audience }, { status: 201 })
   } catch (err) {
     if (err instanceof MetaConfigError)
       return NextResponse.json({ error: err.message, type: 'config' }, { status: 503 })

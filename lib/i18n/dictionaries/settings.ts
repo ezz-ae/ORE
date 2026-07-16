@@ -50,6 +50,9 @@ export const settings: Record<Locale, Dict> = {
     'sd.field.ageBand': 'Age band',
     'sd.field.city': 'City',
     'sd.field.interest': 'Interest',
+    'sd.audience.title': 'Build a Meta audience from your closed deals',
+    'sd.audience.body': 'This Data Pool is anonymized on purpose — no contacts. To build a real Meta Custom Audience or Lookalike, use your closed deals\' real contact info on the Audiences page.',
+    'sd.audience.cta': 'Open Audiences',
     // ── Data Security tab ──
     'settings.dataSecurity.title': 'Data security',
     'settings.dataSecurity.subtitle': 'Controls for how this workspace’s data reaches the shared network benchmarks, and what every upload is checked for.',
@@ -440,6 +443,9 @@ export const settings: Record<Locale, Dict> = {
     'sd.field.ageBand': 'الفئة العمرية',
     'sd.field.city': 'المدينة',
     'sd.field.interest': 'الاهتمام',
+    'sd.audience.title': 'ابنِ جمهور Meta من صفقاتك المغلقة',
+    'sd.audience.body': 'مجمع البيانات هذا مجهول الهوية عمداً — بلا جهات اتصال. لبناء جمهور Meta مخصص حقيقي أو جمهور مشابه، استخدم بيانات التواصل الحقيقية لصفقاتك المغلقة في صفحة الجماهير.',
+    'sd.audience.cta': 'فتح الجماهير',
     // ── Data Security tab ──
     'settings.dataSecurity.title': 'أمان البيانات',
     'settings.dataSecurity.subtitle': 'التحكم في كيفية وصول بيانات هذا النطاق إلى معايير الشبكة المشتركة، وما يُفحص في كل رفع.',
@@ -830,6 +836,9 @@ export const settings: Record<Locale, Dict> = {
     'sd.field.ageBand': 'Возрастная группа',
     'sd.field.city': 'Город',
     'sd.field.interest': 'Интерес',
+    'sd.audience.title': 'Создать аудиторию Meta из закрытых сделок',
+    'sd.audience.body': 'Этот пул данных намеренно обезличен — без контактов. Чтобы создать реальную Custom Audience или Lookalike в Meta, используйте реальные контакты закрытых сделок на странице «Аудитории».',
+    'sd.audience.cta': 'Открыть аудитории',
     // ── Data Security tab ──
     'settings.dataSecurity.title': 'Безопасность данных',
     'settings.dataSecurity.subtitle': 'Управление тем, как данные этого рабочего пространства попадают в общие сетевые бенчмарки, и что проверяется при каждой загрузке.',
