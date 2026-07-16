@@ -196,9 +196,13 @@ function parseBlocks(raw: string): ExpertBlock[] {
       }
     }
   }
-  // Plain prose is fine to show; anything that still looks like JSON/code is not.
+  // Plain prose is fine to show; anything that still looks like JSON/code is
+  // not — this is the backstop for a tool-call shape parseToolCall couldn't
+  // recognize (an unknown/misspelled tool name, or a genuinely new drift
+  // pattern): never let raw call/print syntax reach the user as a "reply".
   const text = raw.trim()
-  if (!text || text.startsWith('{') || text.startsWith('[')) return REPHRASE_FALLBACK
+  const looksLikeCode = /^\s*(?:print\s*\(|[a-z][a-z0-9_.]*\s*\([^)]*\)\s*;?\s*$)/i
+  if (!text || text.startsWith('{') || text.startsWith('[') || looksLikeCode.test(text)) return REPHRASE_FALLBACK
   return [{ type: 'text', content: text }]
 }
 
@@ -261,6 +265,15 @@ export async function POST(request: NextRequest) {
         ? `\n\nYou are advising MARKETING: focus on campaigns, ads, landing pages, content and attribution. Infrastructure/integration fixes are in scope only when they block ad delivery.`
         : `\n\nYou are advising an OPERATOR (owner/admin/manager): full-system scope is appropriate.`
 
+    // A detail page's "Ask the Expert" strip can pin a specific record to
+    // this turn (see lib/freehold/expert-bus.ts ExpertContextRef) — hand the
+    // model the exact id instead of making it infer one from a name in
+    // prose, which breaks when two records share a name.
+    const ref = body.context?.ref as { kind?: string; id?: string; label?: string } | undefined
+    const refGuidance = ref?.kind && ref.id
+      ? `\n\nThe user has attached ${ref.kind.toUpperCase()} id="${ref.id}" ("${ref.label ?? ref.id}") as the subject of this turn. Call the matching lookup tool with this EXACT id — do not search by name.`
+      : ''
+
     // Supervisor-Worker router: the composer's explicit mode chip wins;
     // otherwise the supervisor detects the lane from the message's intent
     // verbs (sync/nurture/debug/…) and swaps in that worker's prompt.
@@ -298,7 +311,7 @@ Tools marked ⚠destructive change live campaigns/money/content: set "confirm": 
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.
 Your tools:${renderToolDocs(tools)}`
 
-    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
+    const systemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${toolProtocol}\n${BLOCK_PROTOCOL}`
 
     // Behind EXPERT_USE_AI_SDK: the same guidance, but tools are called
     // natively by the AI SDK (no JSON tool_call protocol). The confirm rule and
@@ -308,7 +321,7 @@ Your tools:${renderToolDocs(tools)}`
 YOU ARE THE MARKETING COORDINATOR AGENT with REAL tools (ads / landing / crm / creative / research). Call the tools you need to get real data or take actions, then give your FINAL answer as {"blocks":[...]}. NEVER invent or guess a tool result.
 Tools marked destructive change live campaigns/money/content: pass confirm:true ONLY when the user's own latest message explicitly requests or confirms that exact action. If a tool returns needsConfirm, do NOT retry it — answer with an "actions" block whose prompt states the exact action (e.g. "Yes — pause campaign X") and wait.
 The user is currently on ${body.page ?? 'an unknown page'} — prefer that surface's specialist when routing.`
-    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
+    const sdkSystemPrompt = `${skill.systemPrompt}\n\n${MASTER_SYSTEM_PROMPT}${roleGuidance}${modeGuidance}${refGuidance}${tools.length ? `\n\n${autonomyGuidance(autonomy)}` : ''}${sdkToolGuidance}\n${BLOCK_PROTOCOL}`
 
     let raw: string | undefined
     const toolsUsed: string[] = []

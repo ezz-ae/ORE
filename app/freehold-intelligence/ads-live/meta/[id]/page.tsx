@@ -234,7 +234,9 @@ export default function CampaignCommandPage() {
 
   function openInExpert() {
     if (!data) return
-    sendToExpert(t('lm.cmd.refinePrompt', { name: data.campaign.name }))
+    sendToExpert(t('lm.cmd.refinePrompt', { name: data.campaign.name }), {
+      kind: 'campaign', id, label: data.campaign.name, href: `/freehold-intelligence/ads-live/meta/${id}`,
+    })
   }
 
   async function runRefine() {

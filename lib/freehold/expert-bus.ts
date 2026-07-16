@@ -11,12 +11,28 @@
 export const EXPERT_SEND = 'freehold:expert-send'
 export const EXPERT_OPEN = 'freehold:expert-open'
 
-/** Open the Expert panel and send a message into the shared conversation. */
-export function sendToExpert(message: string) {
+/**
+ * A specific system record "pinned" to a chat turn — e.g. the campaign, lead,
+ * or project a detail page's "Ask the Expert" strip was opened from. Lets the
+ * server hand the model a real id instead of the model having to infer one
+ * from a name mentioned in prose (two records can share a name; only one has
+ * this id).
+ */
+export interface ExpertContextRef {
+  kind: 'campaign' | 'lead' | 'project' | 'unit'
+  id: string
+  /** Display label for the chip shown on the user's message bubble. */
+  label: string
+  href?: string
+}
+
+/** Open the Expert panel and send a message into the shared conversation.
+ * `ref` optionally pins a specific record as this turn's subject. */
+export function sendToExpert(message: string, ref?: ExpertContextRef) {
   if (typeof window === 'undefined') return
   const text = message.trim()
   if (!text) return
-  window.dispatchEvent(new CustomEvent(EXPERT_SEND, { detail: { message: text } }))
+  window.dispatchEvent(new CustomEvent(EXPERT_SEND, { detail: { message: text, ref } }))
 }
 
 /** Just open the Expert panel without sending anything. */
