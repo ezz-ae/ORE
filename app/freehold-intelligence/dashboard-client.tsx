@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation'
 import {
   AlertCircle, Activity, ArrowUpRight, X, Globe, Sparkles,
   Users, Radio, Inbox, CalendarClock, Handshake, TrendingUp, ArrowRight,
+  Monitor, Wand2, Cloud, BookOpen, Bell,
 } from 'lucide-react'
 import { type InventoryProperty } from '@/src/features/freehold-intelligence/inventory'
 import { useSession } from '@/lib/freehold/use-session'
 import { Panel, PanelHeader } from '@/components/freehold/ui'
 import { useI18n } from '@/lib/i18n/provider'
+import { openWhatsNew } from '@/components/freehold/whats-new'
 
 // ─── The hub is a briefing, not a menu ───────────────────────────────────────
 // The nav spine already switches apps, and the Expert already answers
@@ -212,13 +214,20 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
   ]
 
   // Deep entry points — not the nav again; each goes INSIDE an app.
-  const deepLinks = [
-    { href: `${FI}/management/team`, Icon: Users, label: t('hub.go.team') },
-    { href: `${FI}/ads-live`, Icon: Radio, label: t('hub.go.liveAds') },
-    { href: `${FI}/crm/inbox`, Icon: Inbox, label: t('hub.go.inbox') },
-    { href: `${FI}/crm/follow-up`, Icon: CalendarClock, label: t('hub.go.followup') },
-    { href: `${FI}/management/deals`, Icon: Handshake, label: t('hub.go.deals') },
-    { href: `${FI}/analytics/marketing`, Icon: TrendingUp, label: t('hub.go.site') },
+  const deepLinks: Array<{ key: string; Icon: typeof Users; label: string; href?: string; onClick?: () => void }> = [
+    { key: 'team', href: `${FI}/management/team`, Icon: Users, label: t('hub.go.team') },
+    { key: 'ads', href: `${FI}/ads-live`, Icon: Radio, label: t('hub.go.liveAds') },
+    { key: 'inbox', href: `${FI}/crm/inbox`, Icon: Inbox, label: t('hub.go.inbox') },
+    { key: 'followup', href: `${FI}/crm/follow-up`, Icon: CalendarClock, label: t('hub.go.followup') },
+    { key: 'deals', href: `${FI}/management/deals`, Icon: Handshake, label: t('hub.go.deals') },
+    { key: 'site', href: `${FI}/analytics/marketing`, Icon: TrendingUp, label: t('hub.go.site') },
+    // From Drive — the same rooms/nav entries, surfaced as one-tap shortcuts.
+    { key: 'webDesigner', href: `${FI}/drive/web`, Icon: Monitor, label: t('drive.room.web.title') },
+    { key: 'editor', href: `${FI}/drive/editor`, Icon: Wand2, label: t('drive.nav.editor') },
+    { key: 'studio', href: `${FI}/drive/studio`, Icon: Sparkles, label: t('drive.room.studio.title') },
+    { key: 'cloud', href: `${FI}/cloud`, Icon: Cloud, label: t('drive.room.cloud.title') },
+    { key: 'whatsNew', onClick: openWhatsNew, Icon: Bell, label: t('whatsnew.menu') },
+    { key: 'guide', href: `${FI}/help`, Icon: BookOpen, label: t('hub.go.guide') },
   ]
 
   return (
@@ -257,12 +266,18 @@ export default function DashboardClient({ inventoryData }: { inventoryData: Inve
 
       {/* ── Deep entry points — a button group, not the nav again ───────────── */}
       <div className="mb-8 flex flex-wrap gap-2">
-        {deepLinks.map((l) => (
-          <Link key={l.href} href={l.href}
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-gold/40 hover:text-white">
-            <l.Icon className="h-3.5 w-3.5 text-gold" /> {l.label}
-          </Link>
-        ))}
+        {deepLinks.map((l) => {
+          const cls = "inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-gold/40 hover:text-white"
+          return l.href ? (
+            <Link key={l.key} href={l.href} className={cls}>
+              <l.Icon className="h-3.5 w-3.5 text-gold" /> {l.label}
+            </Link>
+          ) : (
+            <button key={l.key} type="button" onClick={l.onClick} className={cls}>
+              <l.Icon className="h-3.5 w-3.5 text-gold" /> {l.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* ── Live widgets — each renders only when it has something real ─────── */}
