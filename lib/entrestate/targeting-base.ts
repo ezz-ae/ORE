@@ -38,8 +38,19 @@ export interface HistoryRow {
 
 const OUTCOMES = new Set(['lead', 'qualified', 'closed', 'lost'])
 
-const norm = (v: unknown, max = 80): string | null => {
-  const s = String(v ?? '').trim().toLowerCase()
+// A cell starting with =, +, -, or @ is executed as a formula by Excel/Sheets
+// on export/re-open — the classic "CSV/spreadsheet formula injection" attack.
+// Any import (paste OR file upload) is untrusted input, so every string field
+// is defused the same way regardless of where it came from: a leading
+// straight quote neutralizes it in every spreadsheet app without changing
+// what a human reads. `sanitized` is an out-param (a plain object, not a
+// module-level counter) so concurrent imports never share mutable state.
+const FORMULA_LEAD_CHARS = /^[=+\-@]/
+
+function norm(v: unknown, max: number, sanitized: { count: number }): string | null {
+  let s = String(v ?? '').trim()
+  if (FORMULA_LEAD_CHARS.test(s)) { s = `'${s}`; sanitized.count += 1 }
+  s = s.toLowerCase()
   return s ? s.slice(0, max) : null
 }
 
@@ -86,10 +97,13 @@ const ensure = async () => {
 }
 const ensureOnce = async () => { if (!ensured) ensured = ensure().catch((e) => { ensured = null; throw e }); await ensured }
 
-/** Bulk-insert historical rows for a tenant (max ~2000 per call). */
-export async function importHistory(tenantId: string, rows: HistoryRow[]): Promise<number> {
+/** Bulk-insert historical rows for a tenant (max ~2000 per call). Returns how
+ * many rows landed and how many string cells were formula-injection-defused
+ * (an upload/paste-time security scan, not just a validation formality). */
+export async function importHistory(tenantId: string, rows: HistoryRow[]): Promise<{ inserted: number; sanitized: number }> {
   await ensureOnce()
   let inserted = 0
+  const sanitized = { count: 0 }
   // Insert in chunks of 200 with a single multi-VALUES statement per chunk.
   for (let i = 0; i < rows.length; i += 200) {
     const chunk = rows.slice(i, i + 200)
@@ -102,9 +116,9 @@ export async function importHistory(tenantId: string, rows: HistoryRow[]): Promi
       values.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},$${base + 9},$${base + 10},$${base + 11},$${base + 12},$${base + 13},$${base + 14})`)
       params.push(
         `hist-${randomUUID()}`, tenantId,
-        norm(r.source), norm(r.platform, 30), norm(r.campaign, 120), norm(r.area),
-        norm(r.projectType, 40), norm(r.priceBandAED, 40), norm(r.ageBand, 20),
-        norm(r.city, 60), norm(r.interest, 80), outcome, date,
+        norm(r.source, 80, sanitized), norm(r.platform, 30, sanitized), norm(r.campaign, 120, sanitized), norm(r.area, 80, sanitized),
+        norm(r.projectType, 40, sanitized), norm(r.priceBandAED, 40, sanitized), norm(r.ageBand, 20, sanitized),
+        norm(r.city, 60, sanitized), norm(r.interest, 80, sanitized), outcome, date,
         r.payload ? JSON.stringify(r.payload).slice(0, 8000) : null,
       )
     }
@@ -116,7 +130,7 @@ export async function importHistory(tenantId: string, rows: HistoryRow[]): Promi
     )
     inserted += chunk.length
   }
-  return inserted
+  return { inserted, sanitized: sanitized.count }
 }
 
 /**
@@ -189,10 +203,15 @@ export interface NetworkBenchmark {
  * Cross-tenant benchmarks — the shared benefit. Aggregates EVERY tenant's
  * signals; a minimum-volume threshold (k ≥ 5) keeps any single small segment
  * from being traceable to one client's book.
+ *
+ * @param excludeTenantIds Tenants that opted out of CONTRIBUTING (Settings →
+ *   Data Security → "network benchmarks"). They still see the benchmarks
+ *   below — this only removes their own rows from the aggregation.
  */
-export async function getNetworkBenchmarks(limit = 20): Promise<NetworkBenchmark[]> {
+export async function getNetworkBenchmarks(limit = 20, excludeTenantIds: string[] = []): Promise<NetworkBenchmark[]> {
   try {
     await ensureOnce()
+    const exclude = excludeTenantIds.filter(Boolean)
     const rows = await query<Record<string, string>>(
       `SELECT platform, area, project_type, price_band, age_band, city, interest,
               SUM(leads)::int AS leads,
@@ -200,11 +219,12 @@ export async function getNetworkBenchmarks(limit = 20): Promise<NetworkBenchmark
               SUM(closed)::int AS closed,
               COUNT(DISTINCT tenant_id)::int AS tenants
        FROM entrestate_targeting_signals
+       WHERE NOT (tenant_id = ANY($2::text[]))
        GROUP BY platform, area, project_type, price_band, age_band, city, interest
        HAVING SUM(leads) >= 5
        ORDER BY (SUM(closed)::float / GREATEST(SUM(leads), 1)) DESC, SUM(leads) DESC
        LIMIT $1`,
-      [limit],
+      [limit, exclude],
     )
     return rows.map((r) => ({
       platform: r.platform, area: r.area, projectType: r.project_type,
@@ -217,6 +237,19 @@ export async function getNetworkBenchmarks(limit = 20): Promise<NetworkBenchmark
   } catch {
     return []
   }
+}
+
+/** Bucket an exact count into a range so a shared benchmark never reveals
+ * one tenant's precise volume — "leads" stays useful for ranking without
+ * being a number anyone could reverse-engineer into a real business figure. */
+export function bucketCount(n: number): string {
+  if (n < 10) return `${n}`
+  if (n < 25) return '10-24'
+  if (n < 50) return '25-49'
+  if (n < 100) return '50-99'
+  if (n < 250) return '100-249'
+  if (n < 500) return '250-499'
+  return '500+'
 }
 
 /** Import stats for the operator view. */

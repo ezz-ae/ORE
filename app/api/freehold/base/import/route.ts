@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSession } from '@/lib/freehold/api-auth'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
 import {
-  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getNetworkBenchmarks,
+  importHistory, rebuildSignals, refreshLiveTenantSignals, getBaseStats, getNetworkBenchmarks, bucketCount,
   TENANT_ID, BASE_TENANT, type HistoryRow,
 } from '@/lib/entrestate/targeting-base'
+import { getDataSecurityConfig } from '@/lib/freehold/data-security-config'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,15 @@ export const maxDuration = 60
 export async function GET() {
   const auth = await requireSession([...MANAGEMENT_ROLES])
   if ('res' in auth) return auth.res
-  const [stats, benchmarks] = await Promise.all([getBaseStats(), getNetworkBenchmarks(15)])
+  const security = await getDataSecurityConfig()
+  const excludeTenantIds = security.networkBenchmarksOptOut ? [TENANT_ID, `${TENANT_ID}-live`] : []
+  const [stats, rawBenchmarks] = await Promise.all([getBaseStats(), getNetworkBenchmarks(15, excludeTenantIds)])
+  // Masking happens HERE (server-side) so it's a real control, not a
+  // client-side overlay someone could bypass by reading the network tab.
+  const benchmarks = rawBenchmarks.map((b) => ({
+    ...b,
+    leads: security.maskBenchmarkNumbers ? bucketCount(b.leads) : b.leads,
+  }))
   return NextResponse.json({ tenantId: TENANT_ID, baseTenant: BASE_TENANT, stats, benchmarks })
 }
 
@@ -40,10 +49,10 @@ export async function POST(req: NextRequest) {
   const tenantId = body.tenant === 'base' ? BASE_TENANT : TENANT_ID
 
   try {
-    const inserted = await importHistory(tenantId, body.rows)
+    const { inserted, sanitized } = await importHistory(tenantId, body.rows)
     await rebuildSignals(tenantId)
     await refreshLiveTenantSignals()
-    return NextResponse.json({ ok: true, tenantId, inserted }, { status: 201 })
+    return NextResponse.json({ ok: true, tenantId, inserted, sanitized }, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Import failed' }, { status: 500 })
   }

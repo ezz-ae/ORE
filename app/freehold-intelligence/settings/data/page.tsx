@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Database, UploadCloud, Loader2, Sparkles } from 'lucide-react'
+import { Database, UploadCloud, Loader2, Sparkles, FileSpreadsheet } from 'lucide-react'
 import { PageHeader, Panel, PanelHeader } from '@/components/freehold/ui'
 import { useT } from '@/lib/i18n/provider'
 
@@ -12,7 +12,10 @@ import { useT } from '@/lib/i18n/provider'
 // benchmarks every system user benefits from.
 
 interface Stat { tenantId: string; rows: number; lastImport: string | null }
-interface Benchmark { platform: string; area: string; interest: string; ageBand: string; leads: number; qualifiedRate: number; closeRate: number; tenants: number }
+// `leads` can come back as a bucketed range (e.g. "50-99") instead of an
+// exact number when Settings → Data Security → number masking is on — the
+// server decides which, so the client just renders whatever it gets.
+interface Benchmark { platform: string; area: string; interest: string; ageBand: string; leads: number | string; qualifiedRate: number; closeRate: number; tenants: number }
 
 const FIELD_ALIASES: Record<string, string> = {
   source: 'source', platform: 'platform', campaign: 'campaign', area: 'area',
@@ -22,6 +25,12 @@ const FIELD_ALIASES: Record<string, string> = {
   city: 'city', interest: 'interest', interests: 'interest',
   outcome: 'outcome', status: 'outcome',
   lead_date: 'leadDate', leaddate: 'leadDate', date: 'leadDate', created: 'leadDate',
+}
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+const ACCEPTED_EXT = ['.csv', '.txt', '.xlsx', '.xls']
+
+function aliasHeader(h: string): string {
+  return FIELD_ALIASES[h.trim().toLowerCase().replace(/\s+/g, '_')] ?? ''
 }
 
 // Minimal CSV parser (handles quoted cells with commas).
@@ -41,11 +50,27 @@ function parseCsv(text: string): Record<string, string>[] {
     out.push(cur)
     return out
   }
-  const headers = parseLine(lines[0]).map((h) => FIELD_ALIASES[h.trim().toLowerCase().replace(/\s+/g, '_')] ?? '')
+  const headers = parseLine(lines[0]).map(aliasHeader)
   return lines.slice(1).map((line) => {
     const cells = parseLine(line)
     const row: Record<string, string> = {}
     headers.forEach((h, i) => { if (h && cells[i]?.trim()) row[h] = cells[i].trim() })
+    return row
+  }).filter((r) => Object.keys(r).length > 0)
+}
+
+// Same header-aliasing as parseCsv, applied to objects already keyed by
+// their original (un-aliased) header text — the shape xlsx's sheet_to_json
+// returns, so a spreadsheet upload maps onto the exact same columns a pasted
+// CSV does, no separate parsing path to keep in sync.
+function remapObjectRows(raw: Record<string, unknown>[]): Record<string, string>[] {
+  return raw.map((r) => {
+    const row: Record<string, string> = {}
+    for (const [key, value] of Object.entries(r)) {
+      const h = aliasHeader(key)
+      const v = String(value ?? '').trim()
+      if (h && v) row[h] = v
+    }
     return row
   }).filter((r) => Object.keys(r).length > 0)
 }
@@ -57,6 +82,8 @@ export default function DataBasePage() {
   const [tenant, setTenant] = useState<'base' | 'this'>('base')
   const [text, setText] = useState('')
   const [importing, setImporting] = useState(false)
+  const [fileName, setFileName] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function load() {
     fetch('/api/freehold/base/import', { cache: 'no-store' })
@@ -68,6 +95,33 @@ export default function DataBasePage() {
       .catch(() => {})
   }
   useEffect(() => { load() }, [])
+
+  async function importRows(rows: Record<string, unknown>[]) {
+    if (!rows.length) { toast.error(t('sd.noRows')); return }
+    setImporting(true)
+    let done = 0
+    let sanitized = 0
+    try {
+      for (let i = 0; i < rows.length; i += 1000) {
+        const res = await fetch('/api/freehold/base/import', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant, rows: rows.slice(i, i + 1000) }),
+        })
+        const d = await res.json()
+        if (!res.ok) throw new Error(d?.error || 'Import failed')
+        done += d.inserted ?? 0
+        sanitized += d.sanitized ?? 0
+      }
+      toast.success(t('sd.imported', { n: done }))
+      if (sanitized > 0) toast.info(t('sd.sanitizedNote', { n: sanitized }))
+      setText('')
+      setFileName('')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('sd.importFailed'))
+    } finally { setImporting(false) }
+  }
 
   async function runImport() {
     const raw = text.trim()
@@ -84,26 +138,32 @@ export default function DataBasePage() {
       toast.error(t('sd.parseError'))
       return
     }
-    if (!rows.length) { toast.error(t('sd.noRows')); return }
+    await importRows(rows)
+  }
 
-    setImporting(true)
-    let done = 0
+  async function onFileSelected(file: File | null) {
+    if (!file) return
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+    if (!ACCEPTED_EXT.includes(ext)) { toast.error(t('sd.uploadBadType')); return }
+    if (file.size > MAX_UPLOAD_BYTES) { toast.error(t('sd.uploadTooLarge')); return }
+    setFileName(file.name)
     try {
-      for (let i = 0; i < rows.length; i += 1000) {
-        const res = await fetch('/api/freehold/base/import', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tenant, rows: rows.slice(i, i + 1000) }),
-        })
-        const d = await res.json()
-        if (!res.ok) throw new Error(d?.error || 'Import failed')
-        done += d.inserted ?? 0
+      let rows: Record<string, unknown>[] = []
+      if (ext === '.csv' || ext === '.txt') {
+        rows = parseCsv(await file.text())
+      } else {
+        const XLSX = await import('xlsx')
+        const buf = await file.arrayBuffer()
+        const wb = XLSX.read(buf, { type: 'array' })
+        const sheet = wb.Sheets[wb.SheetNames[0]]
+        const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+        rows = remapObjectRows(raw)
       }
-      toast.success(t('sd.imported', { n: done }))
-      setText('')
-      load()
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : t('sd.importFailed'))
-    } finally { setImporting(false) }
+      await importRows(rows)
+    } catch {
+      toast.error(t('sd.uploadReadError'))
+      setFileName('')
+    }
   }
 
   return (
@@ -136,6 +196,24 @@ export default function DataBasePage() {
               </button>
             ))}
           </div>
+
+          {/* Real file upload — CSV or Excel, not a placeholder */}
+          <div className="rounded-xl border border-dashed border-line-strong bg-surface-2 p-4">
+            <label className="flex cursor-pointer flex-col items-center gap-2 text-center">
+              <FileSpreadsheet className="h-6 w-6 text-gold" />
+              <span className="text-sm font-semibold text-white">{fileName || t('sd.uploadFile')}</span>
+              <span className="text-xs text-slate-500">{t('sd.uploadHint')}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt,.xlsx,.xls"
+                disabled={importing}
+                className="hidden"
+                onChange={(e) => onFileSelected(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
