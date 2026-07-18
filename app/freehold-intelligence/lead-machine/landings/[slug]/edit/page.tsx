@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX, Crosshair } from 'lucide-react'
+import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, RefreshCw, Eye, EyeOff, FlaskConical, CheckCircle2, AlertTriangle, XCircle, X, Wand2, ChevronDown, ChevronUp, Layers, Copy, Trash2, GripVertical, Undo2, Redo2, Pencil, CalendarClock, TrendingUp, PackageX, Crosshair, Download } from 'lucide-react'
+import QRCode from 'qrcode'
 import { toast } from 'sonner'
 import { useT, useI18n } from '@/lib/i18n/provider'
 import { registerExpertEditor, unregisterExpertEditor, sendToExpert, openExpert, type ExpertEditorSurface } from '@/lib/freehold/expert-bus'
@@ -119,6 +120,25 @@ const DEFAULT_FIELDS: FieldDef[] = [TITLE, SUBTITLE]
 const fieldsFor = (type: string): FieldDef[] => SECTION_FIELDS[type] ?? DEFAULT_FIELDS
 const asStr = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v))
 
+// ── Trackable QR code (offline/roadshow attribution) ────────────────────────
+// The public host is resolved server-side via lib/site.ts's getSiteUrl() (the
+// app's canonical-domain helper — same one the agent-profile QR code uses)
+// and handed to this client component through the landing-load API response
+// (see `siteBaseUrl` state below). We deliberately do NOT read
+// NEXT_PUBLIC_BASE_URL here: per .env.example that var is documented for
+// internal API self-calls & emails (e.g. the Vercel deployment URL), not the
+// public canonical domain a printed flyer's QR code needs — and reading any
+// NEXT_PUBLIC_* var from client code also requires it to be baked in at
+// *build* time to have any effect, which getSiteUrl() (called server-side, on
+// every request) avoids.
+const slugifyLabel = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)
+// utm_source=qr + utm_medium=offline is already recognized end-to-end by the
+// lead-capture tracker and ROI reporting — no backend change needed here.
+function buildQrTargetUrl(siteBaseUrl: string, slug: string, label: string) {
+  const campaign = slugifyLabel(label)
+  return `${siteBaseUrl}/lp/${slug}?utm_source=qr&utm_medium=offline${campaign ? `&utm_campaign=${encodeURIComponent(campaign)}` : ''}`
+}
+
 export default function LandingEditorPage() {
   const t = useT()
   const { dir } = useI18n()
@@ -150,6 +170,17 @@ export default function LandingEditorPage() {
   const [saving, setSaving] = useState(false)
   const [regen, setRegen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+  // Trackable QR (offline/roadshow attribution) — optional campaign label,
+  // client-generated PNG. Purely additive UI: no lead-capture/tracking change.
+  // `siteBaseUrl` comes from the load() API response (server-resolved via
+  // getSiteUrl() — see comment above buildQrTargetUrl); it's populated before
+  // `loading` ever flips false, so the QR section never renders with a stale
+  // fallback host.
+  const [qrLabel, setQrLabel] = useState('')
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [qrBusy, setQrBusy] = useState(false)
+  const [siteBaseUrl, setSiteBaseUrl] = useState('')
+  const qrTargetUrl = buildQrTargetUrl(siteBaseUrl, slug, qrLabel)
   const previewRef = useRef<HTMLIFrameElement | null>(null)
   // Show WHERE a section lives: scroll the live preview to it and flash a ring.
   function locateSection(i: number) {
@@ -200,12 +231,17 @@ export default function LandingEditorPage() {
           // A resumed draft that already carried section edits keeps proposing them.
           setSectionsTouched(Array.isArray(draft?.proposedSections) && (draft?.proposedSections?.length ?? 0) > 0)
           setEdited(false)
+          if (typeof d.siteUrl === 'string' && d.siteUrl) setSiteBaseUrl(d.siteUrl)
         } else setNotFound(true)
         return
       }
       const res = await fetch(`/api/crm/landing-pages/${slug}`, { cache: 'no-store' })
       const d = await res.json()
-      if (res.ok && d.landing) { setForm(d.landing as Landing); setEdited(false) }
+      if (res.ok && d.landing) {
+        setForm(d.landing as Landing)
+        setEdited(false)
+        if (typeof d.siteUrl === 'string' && d.siteUrl) setSiteBaseUrl(d.siteUrl)
+      }
       else setNotFound(true)
     } catch { setNotFound(true) }
     finally { setLoading(false) }
@@ -328,6 +364,34 @@ export default function LandingEditorPage() {
       toast.success(t('lpe.regenDone'))
     } catch { toast.error(t('lpe.regenFailed')) }
     finally { setRegen(false) }
+  }
+
+  // Trackable QR — re-encodes client-side (same 'qrcode' package/options as the
+  // permit QR in the drive image editor) whenever the target URL changes, i.e.
+  // on mount and whenever the operator edits the campaign label.
+  useEffect(() => {
+    let cancelled = false
+    setQrBusy(true)
+    QRCode.toDataURL(qrTargetUrl, { margin: 1, width: 640, color: { dark: '#000000', light: '#ffffff' } })
+      .then((url) => { if (!cancelled) setQrDataUrl(url) })
+      .catch(() => { if (!cancelled) toast.error(t('lpe.qr.failed')) })
+      .finally(() => { if (!cancelled) setQrBusy(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrTargetUrl])
+
+  function downloadQrPng() {
+    if (!qrDataUrl) return
+    const campaign = slugifyLabel(qrLabel)
+    const a = document.createElement('a')
+    a.href = qrDataUrl
+    a.download = `${slug}-qr${campaign ? `-${campaign}` : ''}.png`
+    a.click()
+  }
+
+  function copyQrUrl() {
+    if (!navigator.clipboard) return
+    navigator.clipboard.writeText(qrTargetUrl).then(() => toast.success(t('lpe.qr.copied'))).catch(() => {})
   }
 
   // Delete the landing page — typed "delete" confirmation, then the page is
@@ -659,10 +723,14 @@ export default function LandingEditorPage() {
           ) : (
             <>
               {/* Pre-final tools live apart from the commit cluster. The landing
-                  test runs automatically on entry — its findings render as the
-                  guidance panel below, not as a button next to final actions. */}
+                  test runs automatically on entry AND can be re-run manually here
+                  (e.g. after edits) — either way its findings render as the same
+                  guidance panel below. */}
               <button type="button" onClick={regenerate} disabled={regen} className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-60">
                 {regen ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} {t('lpe.regen')}
+              </button>
+              <button type="button" onClick={() => void runTest()} disabled={testing} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white disabled:opacity-60">
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />} {t('lpe.test.run')}
               </button>
               <button type="button" onClick={() => setScheduleOpen(true)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:text-white">
                 <CalendarClock className="h-3.5 w-3.5" /> {t('lpe.schedule.btn')}
@@ -926,6 +994,38 @@ export default function LandingEditorPage() {
               </span>
             </label>
             <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{t('lpe.trackingMoved')}</p>
+          </Section>
+
+          {/* Trackable QR code — offline/roadshow attribution. Encodes the live
+              URL with utm_source=qr&utm_medium=offline(+campaign) so a scanned
+              lead is automatically attributed in ROI reporting; no backend
+              tracking change, this is generation-only. */}
+          <Section title={t('lpe.grp.qr')}>
+            <p className="text-[11px] leading-relaxed text-slate-500">{t('lpe.qr.hint')}</p>
+            <Field label={t('lpe.qr.labelLabel')}>
+              <input className="fld" value={qrLabel} onChange={(e) => setQrLabel(e.target.value)} placeholder={t('lpe.qr.labelPh')} />
+            </Field>
+            <div className="flex flex-col items-start gap-3 rounded-xl border border-line bg-surface-2/50 p-3 sm:flex-row">
+              <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line bg-white p-1.5">
+                {qrDataUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={qrDataUrl} alt={t('lpe.grp.qr')} className="h-full w-full object-contain" />
+                  : <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <button type="button" onClick={downloadQrPng} disabled={!qrDataUrl || qrBusy}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20 disabled:opacity-50">
+                  <Download className="h-3.5 w-3.5" /> {t('lpe.qr.download')}
+                </button>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t('lpe.qr.urlLabel')}</label>
+                  <div className="flex items-center gap-1.5">
+                    <code dir="ltr" className="min-w-0 flex-1 select-all truncate rounded-lg border border-line bg-surface px-2 py-1.5 text-[11px] text-slate-300">{qrTargetUrl}</code>
+                    <button type="button" onClick={copyQrUrl} title={t('lpe.qr.copy')} className="shrink-0 rounded-lg border border-line p-1.5 text-slate-400 transition hover:text-white"><Copy className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </Section>
         </div>
 

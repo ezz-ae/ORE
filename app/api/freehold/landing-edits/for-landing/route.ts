@@ -3,6 +3,7 @@ import { requireSession } from '@/lib/freehold/api-auth'
 import { getLandingPageForEditor } from '@/lib/landing-pages'
 import { getOpenRequest } from '@/lib/freehold/landing-edit-requests'
 import type { SessionUser } from '@/lib/freehold/session-types'
+import { getSiteUrl } from '@/lib/site'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,5 +22,8 @@ export async function GET(req: NextRequest) {
   const landing = await getLandingPageForEditor(slug)
   if (!landing) return NextResponse.json({ error: 'Landing not found' }, { status: 404 })
   const draft = await getOpenRequest(slug, actorId(auth.user))
-  return NextResponse.json({ landing, draft })
+  // Resolved server-side via getSiteUrl() (same helper the agent-profile QR
+  // code uses) so the broker-proposal editor's trackable-QR link is correct
+  // without depending on a client-inlined NEXT_PUBLIC_* var.
+  return NextResponse.json({ landing, draft, siteUrl: getSiteUrl() })
 }

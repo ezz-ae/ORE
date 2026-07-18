@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { query } from "@/lib/db"
 import { getSessionUser, isAdminRole, canAuthorizePublish } from "@/lib/auth"
 import { getLandingPageForEditor } from "@/lib/landing-pages"
+import { getSiteUrl } from "@/lib/site"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -35,7 +36,11 @@ export async function GET(
   const { slug } = await params
   const data = await getLandingPageForEditor(slug)
   if (!data) return NextResponse.json({ error: "Landing page not found." }, { status: 404 })
-  return NextResponse.json({ landing: data })
+  // The canonical public site domain, resolved server-side (same helper the
+  // agent-profile QR code and sitemap/robots use) — never a client-inlined
+  // NEXT_PUBLIC_* var, so the editor's trackable-QR link is correct regardless
+  // of what was baked into the client bundle at build time.
+  return NextResponse.json({ landing: data, siteUrl: getSiteUrl() })
 }
 
 export async function PATCH(
