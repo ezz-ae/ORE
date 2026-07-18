@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Activity, Users, Briefcase,
-  TrendingUp, FileBarChart2, BarChart3,
+  TrendingUp, FileBarChart2, BarChart3, ShieldCheck,
 } from 'lucide-react'
 import { useSessionGuard } from '@/lib/freehold/use-session'
 import { MANAGEMENT_ROLES } from '@/lib/freehold/session-types'
@@ -19,6 +19,7 @@ const NAV = [
   { href: `${BASE}/deals`,   labelKey: 'mgmt.nav.deals',     Icon: Briefcase },
   { href: `${BASE}/roi`,     labelKey: 'mgmt.nav.roi',       Icon: TrendingUp },
   { href: `${BASE}/reports`, labelKey: 'mgmt.nav.reports',   Icon: FileBarChart2 },
+  { href: `${BASE}/training-integrity`, labelKey: 'mgmt.nav.trainingIntegrity', Icon: ShieldCheck },
 ]
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
