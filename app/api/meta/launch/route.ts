@@ -194,6 +194,9 @@ export async function POST(req: NextRequest) {
       destinationPhone: body.destinationPhone,
       lifetimeCapAED:   typeof body.lifetimeCapAED === 'number' && body.lifetimeCapAED > 0 ? body.lifetimeCapAED : undefined,
       cplCapAED:        typeof body.cplCapAED === 'number' && body.cplCapAED > 0 ? body.cplCapAED : undefined,
+      pixelId:          typeof body.pixelId === 'string' && body.pixelId.trim() ? body.pixelId.trim() : undefined,
+      placementMode:    body.placementMode === 'manual' ? 'manual' : undefined,
+      manualPlacements: Array.isArray(body.manualPlacements) ? body.manualPlacements.map(String) : undefined,
     })
 
     // Launch succeeded → the campaign will serve, so the reservation stands.

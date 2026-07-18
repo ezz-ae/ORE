@@ -183,6 +183,21 @@ export interface CampaignCreative {
   /** Meta ad-account image hash from an uploaded file (preferred). */
   imageHash?: string
   /**
+   * Meta's real "Multiple text options" / dynamic-creative feature — Meta
+   * auto-tests combinations of these headlines/descriptions within this ONE
+   * ad (not several separate ads). When either array has MORE THAN ONE
+   * entry, createAdCreative builds a real asset_feed_spec instead of the
+   * classic single object_story_spec. Absent, empty, or a single entry each
+   * is the exact backward-compatible single-creative path — callers that
+   * only know the singular `headline`/`description` fields (e.g. the
+   * coordinator agent tools) simply never set these and behave unchanged.
+   * `headline`/`description` above should still carry `headlines[0]` /
+   * `descriptions[0]` for any single-value context.
+   */
+  headlines?: string[]
+  /** See `headlines` above. */
+  descriptions?: string[]
+  /**
    * Per-placement creative overrides (image / headline / primary text).
    * Applied for 'landing' (via Meta's asset_feed_spec, one ad) and 'form'
    * (via a separate single-creative ad set per customized placement — Meta
@@ -217,6 +232,19 @@ export interface LaunchCampaignPayload {
   lifetimeCapAED?: number
   /** Cost-per-result ceiling in AED — becomes a COST_CAP bid on the ad set. */
   cplCapAED?: number
+  /**
+   * Placement targeting mode. 'automatic' (or omitted — the default, and what
+   * every existing caller sends today) keeps createAdSet's current
+   * publisherPlatforms-derived placement behavior unchanged. 'manual'
+   * restricts delivery to exactly the surfaces listed in manualPlacements.
+   */
+  placementMode?: 'automatic' | 'manual'
+  /**
+   * PlacementKey values (fbFeed/igFeed/igStory/fbStory/reels) to run on when
+   * placementMode is 'manual'. Ignored when placementMode is 'automatic' (or
+   * omitted) or when this is empty.
+   */
+  manualPlacements?: string[]
   /** Autopilot policy for THIS campaign: act / record-for-approval / skip. */
   autoEnhance?: 'on' | 'approval' | 'off'
 }
